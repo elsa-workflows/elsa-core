@@ -21,7 +21,8 @@ public class Endpoint(IAiToolRegistry toolRegistry) : ElsaEndpointWithoutRequest
         return await toolRegistry.ListAsync(new AiToolQuery
         {
             ActorId = AiHttpContextIdentity.GetActorId(HttpContext),
-            TenantId = AiHttpContextIdentity.GetTenantId(HttpContext)
+            TenantId = AiHttpContextIdentity.GetTenantId(HttpContext),
+            UserPermissions = AiHttpContextIdentity.GetPermissions(HttpContext)
         }, cancellationToken);
     }
 }

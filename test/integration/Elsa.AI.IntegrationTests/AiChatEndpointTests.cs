@@ -188,6 +188,34 @@ public class AiChatEndpointTests
         Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration sends tool results back to provider continuations")]
+    public async Task ChatOrchestrationSendsToolResultsBackToProviderContinuations()
+    {
+        var provider = new ToolContinuationAiProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiTool, EchoTool>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use a tool"
+                       }))
+            events.Add(streamEvent);
+
+        var continuation = Assert.Single(provider.Requests, x => x.ToolResults.Count == 1);
+        var toolResult = Assert.Single(continuation.ToolResults);
+
+        Assert.Equal("tool-call-1", toolResult.ToolCallId);
+        Assert.Equal("Echoed", toolResult.Result.Summary);
+        Assert.Contains(events, x => x.Type == "assistant.delta" && x.Data["content"]!.GetValue<string>() == "Used Echoed");
+    }
+
     [Fact(DisplayName = "Chat orchestration persists conversation state")]
     public async Task ChatOrchestrationPersistsConversationState()
     {
@@ -210,6 +238,42 @@ public class AiChatEndpointTests
 
         Assert.NotNull(conversation);
         Assert.Equal(AiConversationStatus.Completed, conversation.Status);
+        Assert.Contains(conversation.Messages, x => x.Role == AiMessageRole.User && x.Content == "Explain this workflow");
+    }
+
+    [Fact(DisplayName = "Chat orchestration forwards persisted message history")]
+    public async Task ChatOrchestrationForwardsPersistedMessageHistory()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "First"
+                       }))
+        {
+        }
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Second"
+                       }))
+        {
+        }
+
+        var secondRequest = provider.Requests.Last();
+
+        Assert.Contains(secondRequest.Messages, x => x.Role == AiMessageRole.User && x.Content == "First");
+        Assert.Contains(secondRequest.Messages, x => x.Role == AiMessageRole.Assistant);
+        Assert.Contains(secondRequest.Messages, x => x.Role == AiMessageRole.User && x.Content == "Second");
     }
 
     [Fact(DisplayName = "Chat orchestration limits resolved context payloads")]
@@ -333,7 +397,11 @@ public class AiChatEndpointTests
             {
                 Type = "assistant.delta",
                 Sequence = 1,
-                Timestamp = DateTimeOffset.UtcNow
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["content"] = "Captured"
+                }
             };
         }
     }
@@ -352,6 +420,53 @@ public class AiChatEndpointTests
                 Data = new JsonObject { ["content"] = new string('d', 512) },
                 Metadata = new JsonObject { ["content"] = new string('m', 512) }
             });
+    }
+
+    private class ToolContinuationAiProvider : IAiProvider
+    {
+        public string Name => "tool-continuation";
+        public List<AiTurnRequest> Requests { get; } = [];
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            Requests.Add(request);
+
+            if (request.ToolResults.Count == 0)
+            {
+                yield return new AiProviderEvent
+                {
+                    Type = "tool.call",
+                    Sequence = 1,
+                    Timestamp = DateTimeOffset.UtcNow,
+                    Data = new JsonObject
+                    {
+                        ["id"] = "tool-call-1",
+                        ["toolName"] = "echo",
+                        ["arguments"] = new JsonObject
+                        {
+                            ["text"] = "hello"
+                        }
+                    }
+                };
+
+                yield break;
+            }
+
+            yield return new AiProviderEvent
+            {
+                Type = "assistant.delta",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["content"] = $"Used {request.ToolResults.Single().Result.Summary}"
+                }
+            };
+        }
     }
 
     private class ToolCallAiProvider : IAiProvider

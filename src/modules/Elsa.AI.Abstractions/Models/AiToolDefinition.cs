@@ -60,6 +60,7 @@ public record AiToolQuery
     public AiToolDangerLevel? DangerLevel { get; init; }
     public string? TenantId { get; init; }
     public string? ActorId { get; init; }
+    public ICollection<string> UserPermissions { get; init; } = [];
 }
 
 public enum AiToolMutability

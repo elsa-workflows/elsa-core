@@ -17,4 +17,12 @@ internal static class AiHttpContextIdentity
         context?.User.FindFirstValue(TenantIdClaimType) ??
         context?.User.FindFirstValue("tenant_id") ??
         context?.User.FindFirstValue("tenantId");
+
+    public static ICollection<string> GetPermissions(HttpContext? context) =>
+        context?.User
+            .FindAll(PermissionNames.ClaimType)
+            .Select(x => x.Value)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.Ordinal)
+            .ToList() ?? [];
 }

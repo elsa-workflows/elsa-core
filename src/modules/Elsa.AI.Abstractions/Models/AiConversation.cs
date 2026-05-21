@@ -12,6 +12,7 @@ public record AiConversation
     public string? ProviderSessionId { get; init; }
     public AiRetentionMode RetentionMode { get; init; } = AiRetentionMode.Configured;
     public DateTimeOffset? RetentionExpiresAt { get; init; }
+    public IReadOnlyCollection<AiMessage> Messages { get; init; } = [];
 }
 
 public record AiMessage
@@ -34,6 +35,7 @@ public record AiChatRequest
     public ICollection<AiContextAttachment> Attachments { get; init; } = [];
     public string? TenantId { get; init; }
     public string UserId { get; init; } = default!;
+    public ICollection<string> UserPermissions { get; init; } = [];
 }
 
 public record AiStreamEvent
@@ -63,9 +65,18 @@ public record AiTurnRequest
 {
     public string ConversationId { get; init; } = default!;
     public string Message { get; init; } = "";
+    public IReadOnlyCollection<AiMessage> Messages { get; init; } = [];
     public IReadOnlyCollection<AiResolvedContext> Context { get; init; } = [];
     public IReadOnlyCollection<AiToolDefinition> Tools { get; init; } = [];
+    public IReadOnlyCollection<AiToolTurnResult> ToolResults { get; init; } = [];
     public string? Agent { get; init; }
+}
+
+public record AiToolTurnResult
+{
+    public string ToolCallId { get; init; } = default!;
+    public string ToolName { get; init; } = default!;
+    public AiToolResult Result { get; init; } = new();
 }
 
 public record AiProviderEvent

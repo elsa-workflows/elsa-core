@@ -94,6 +94,33 @@ public class AiToolRegistryTests
         Assert.Null(denied);
     }
 
+    [Fact(DisplayName = "Tool registry enforces tool permission requirements")]
+    public async Task ToolRegistryEnforcesToolPermissionRequirements()
+    {
+        var registry = new AiToolRegistry(
+            [
+                new TestTool(new AiToolDefinition
+                {
+                    Name = "restricted",
+                    DisplayName = "Restricted",
+                    EnabledByDefault = true,
+                    Permissions = ["workflows:write"]
+                })
+            ],
+            new AiToolEnablementService());
+
+        var denied = await registry.FindAsync("restricted", new AiToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
+        var allowed = await registry.FindAsync("restricted", new AiToolQuery
+        {
+            TenantId = "tenant-1",
+            ActorId = "user-1",
+            UserPermissions = ["workflows:write"]
+        });
+
+        Assert.Null(denied);
+        Assert.NotNull(allowed);
+    }
+
     [Fact(DisplayName = "Tool registry honors tenant and actor allowlists")]
     public async Task ToolRegistryHonorsTenantAndActorAllowlists()
     {

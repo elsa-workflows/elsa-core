@@ -20,50 +20,100 @@ public class AiOrchestrator(
     ILogger<AiOrchestrator> logger,
     IOptions<AiHostOptions> options) : IAiOrchestrator
 {
+    private const int MaxProviderTurns = 8;
+
     public async IAsyncEnumerable<AiStreamEvent> ExecuteChatAsync(AiChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
         var sequence = 0L;
         var provider = SelectProvider(request);
+        var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
+        var messages = conversation?.Messages.ToList() ?? [];
+        messages.Add(CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence));
+        var toolResults = new List<AiToolTurnResult>();
 
         yield return CreateEvent("conversation.started", conversationId, sequence++);
-        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, cancellationToken);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
         var context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
-        var tools = await toolRegistry.ListAsync(new AiToolQuery { Agent = request.Agent, ActorId = request.UserId, TenantId = request.TenantId }, cancellationToken);
+        var tools = await toolRegistry.ListAsync(new AiToolQuery
+        {
+            Agent = request.Agent,
+            ActorId = request.UserId,
+            TenantId = request.TenantId,
+            UserPermissions = request.UserPermissions
+        }, cancellationToken);
 
         if (provider == null)
         {
+            const string content = "Weaver is ready, but no AI provider is configured.";
             yield return CreateEvent("assistant.delta", conversationId, sequence++, new JsonObject
             {
-                ["content"] = "Weaver is ready, but no AI provider is configured."
+                ["content"] = content
             });
+            messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, content, sequence - 1));
         }
         else
         {
-            await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
-                           {
-                               ConversationId = conversationId,
-                               Message = request.Message,
-                               Context = context,
-                               Tools = tools,
-                               Agent = request.Agent
-                           }, cancellationToken))
+            for (var turn = 0; turn < MaxProviderTurns; turn++)
             {
-                var streamEvent = streamEventMapper.Map(conversationId, providerEvent);
-                sequence = Math.Max(sequence, streamEvent.Sequence + 1);
-                yield return streamEvent;
+                var currentTurnToolResults = new List<AiToolTurnResult>();
+                var assistantContent = new StringBuilder();
 
-                if (!TryReadToolCall(providerEvent, out var toolCall))
-                    continue;
+                await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
+                               {
+                                   ConversationId = conversationId,
+                                   Message = request.Message,
+                                   Messages = messages.ToList(),
+                                   Context = context,
+                                   Tools = tools,
+                                   ToolResults = toolResults.ToList(),
+                                   Agent = request.Agent
+                               }, cancellationToken))
+                {
+                    var streamEvent = streamEventMapper.Map(conversationId, providerEvent) with { Sequence = sequence++ };
+                    yield return streamEvent;
 
-                var toolResultEvent = await ExecuteToolCallAsync(toolCall, request, conversationId, sequence++, cancellationToken);
-                yield return toolResultEvent;
+                    if (TryReadAssistantContent(providerEvent, out var content))
+                        assistantContent.Append(content);
+
+                    if (!TryReadToolCall(providerEvent, out var toolCall))
+                        continue;
+
+                    if (toolResults.Any(x => string.Equals(x.ToolCallId, toolCall.Id, StringComparison.OrdinalIgnoreCase)) ||
+                        currentTurnToolResults.Any(x => string.Equals(x.ToolCallId, toolCall.Id, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    var toolExecution = await ExecuteToolCallAsync(toolCall, request, conversationId, sequence++, cancellationToken);
+                    yield return toolExecution.StreamEvent;
+
+                    currentTurnToolResults.Add(toolExecution.TurnResult);
+                    messages.Add(CreateMessage(conversationId, AiMessageRole.Tool, toolExecution.TurnResult.Result.Summary, toolExecution.StreamEvent.Sequence, new JsonObject
+                    {
+                        ["toolCallId"] = toolExecution.TurnResult.ToolCallId,
+                        ["toolName"] = toolExecution.TurnResult.ToolName,
+                        ["status"] = toolExecution.TurnResult.Result.Status.ToString()
+                    }));
+                }
+
+                if (assistantContent.Length > 0)
+                    messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, assistantContent.ToString(), sequence - 1));
+
+                if (currentTurnToolResults.Count == 0)
+                    break;
+
+                toolResults.AddRange(currentTurnToolResults);
+
+                if (turn == MaxProviderTurns - 1)
+                    yield return CreateEvent("assistant.delta", conversationId, sequence++, new JsonObject
+                    {
+                        ["content"] = "Tool execution stopped because the provider requested too many continuation turns."
+                    });
             }
         }
 
-        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, cancellationToken);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, messages, cancellationToken);
         await RecordChatAuditAsync("chat.completed", request, conversationId, provider?.Name, cancellationToken);
         yield return CreateEvent("conversation.completed", conversationId, sequence);
     }
@@ -120,16 +170,20 @@ public class AiOrchestrator(
         }
     }
 
-    private async ValueTask<AiStreamEvent> ExecuteToolCallAsync(ToolCall toolCall, AiChatRequest request, string conversationId, long sequence, CancellationToken cancellationToken)
+    private async ValueTask<ToolExecutionResult> ExecuteToolCallAsync(ToolCall toolCall, AiChatRequest request, string conversationId, long sequence, CancellationToken cancellationToken)
     {
         var tool = await toolRegistry.FindAsync(toolCall.Name, new AiToolQuery
         {
             Agent = request.Agent,
             ActorId = request.UserId,
-            TenantId = request.TenantId
+            TenantId = request.TenantId,
+            UserPermissions = request.UserPermissions
         }, cancellationToken);
         if (tool == null)
-            return CreateToolResultEvent(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = $"Tool '{toolCall.Name}' was not found." });
+        {
+            var result = new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = $"Tool '{toolCall.Name}' was not found." };
+            return CreateToolExecutionResult(conversationId, sequence, toolCall, result);
+        }
 
         try
         {
@@ -144,13 +198,13 @@ public class AiOrchestrator(
             }, cancellationToken);
             await RecordToolAuditAsync("tool.completed", request, conversationId, toolCall, cancellationToken);
 
-            return CreateToolResultEvent(conversationId, sequence, toolCall, LimitToolResult(result));
+            return CreateToolExecutionResult(conversationId, sequence, toolCall, LimitToolResult(result));
         }
         catch (Exception e)
         {
             logger.LogWarning(e, "AI tool {ToolName} failed for conversation {ConversationId}.", toolCall.Name, conversationId);
             await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
-            return CreateToolResultEvent(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = e.Message });
+            return CreateToolExecutionResult(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = e.Message });
         }
     }
 
@@ -188,6 +242,14 @@ public class AiOrchestrator(
             ["summary"] = result.Summary,
             ["error"] = result.Error,
             ["data"] = result.Data.DeepClone()
+        });
+
+    private static ToolExecutionResult CreateToolExecutionResult(string conversationId, long sequence, ToolCall toolCall, AiToolResult result) =>
+        new(CreateToolResultEvent(conversationId, sequence, toolCall, result), new AiToolTurnResult
+        {
+            ToolCallId = toolCall.Id,
+            ToolName = toolCall.Name,
+            Result = result
         });
 
     private IReadOnlyCollection<AiResolvedContext> LimitResolvedContext(IReadOnlyCollection<AiResolvedContext> contexts) =>
@@ -256,7 +318,29 @@ public class AiOrchestrator(
         return true;
     }
 
-    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, CancellationToken cancellationToken)
+    private static bool TryReadAssistantContent(AiProviderEvent providerEvent, out string content)
+    {
+        content = "";
+        if (!string.Equals(providerEvent.Type, "assistant.delta", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        content = providerEvent.Data["content"]?.GetValue<string>() ?? "";
+        return !string.IsNullOrEmpty(content);
+    }
+
+    private static AiMessage CreateMessage(string conversationId, AiMessageRole role, string content, long streamSequence, JsonObject? metadata = null) =>
+        new()
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            ConversationId = conversationId,
+            Role = role,
+            Content = content,
+            CreatedAt = DateTimeOffset.UtcNow,
+            StreamSequence = streamSequence,
+            Metadata = metadata ?? []
+        };
+
+    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
@@ -270,9 +354,11 @@ public class AiOrchestrator(
             CreatedAt = conversation is null || conversation.CreatedAt == default ? now : conversation.CreatedAt,
             UpdatedAt = now,
             RetentionMode = conversation?.RetentionMode ?? AiRetentionMode.Configured,
-            RetentionExpiresAt = conversation?.RetentionExpiresAt
+            RetentionExpiresAt = conversation?.RetentionExpiresAt,
+            Messages = messages.ToList()
         }, cancellationToken);
     }
 
     private readonly record struct ToolCall(string Id, string Name, JsonObject Arguments);
+    private readonly record struct ToolExecutionResult(AiStreamEvent StreamEvent, AiToolTurnResult TurnResult);
 }

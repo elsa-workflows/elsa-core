@@ -37,7 +37,8 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
         (query.DangerLevel == null || definition.DangerLevel == query.DangerLevel) &&
         (query.Agent == null || definition.AgentScopes.Count == 0 || definition.AgentScopes.Contains(query.Agent, StringComparer.OrdinalIgnoreCase)) &&
         IsVisibleForTenant(definition, query.TenantId) &&
-        IsVisibleForActor(definition, query.ActorId);
+        IsVisibleForActor(definition, query.ActorId) &&
+        HasRequiredPermissions(definition, query.UserPermissions);
 
     private static bool IsVisibleForTenant(AiToolDefinition definition, string? tenantId)
     {
@@ -59,5 +60,17 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
     {
         return definition.ActorIds.Count == 0 ||
                (!string.IsNullOrWhiteSpace(actorId) && definition.ActorIds.Contains(actorId, StringComparer.OrdinalIgnoreCase));
+    }
+
+    private static bool HasRequiredPermissions(AiToolDefinition definition, ICollection<string> userPermissions)
+    {
+        if (definition.Permissions.Count == 0)
+            return true;
+
+        var grantedPermissions = userPermissions
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.Ordinal);
+
+        return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
     }
 }

@@ -30,7 +30,8 @@ public class Endpoint(
         {
             ConversationId = request.ConversationId ?? Guid.NewGuid().ToString("N"),
             TenantId = AiHttpContextIdentity.GetTenantId(HttpContext),
-            UserId = AiHttpContextIdentity.GetActorId(HttpContext)
+            UserId = AiHttpContextIdentity.GetActorId(HttpContext),
+            UserPermissions = AiHttpContextIdentity.GetPermissions(HttpContext)
         };
         var response = HttpContext.Response;
         response.ContentType = "text/event-stream";
