@@ -45,6 +45,6 @@ public class KeyValueFeature : IShellFeature
         if (RegisterMemoryStore)
             services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
 
-        services.TryAddScoped<IKeyValueStore>(KeyValueStore);
+        services.AddScoped<IKeyValueStore>(KeyValueStore);
     }
 }

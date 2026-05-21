@@ -50,6 +50,22 @@ public class KeyValueFeatureTests
     }
 
     [Fact]
+    public void ModuleFeature_ConfiguredKeyValueStoreOverridesExistingRegistration()
+    {
+        _services.AddScoped<IKeyValueStore>(_ => new ExistingKeyValueStore());
+        var feature = new ModuleKeyValueFeature(_module)
+        {
+            KeyValueStore = _ => new CustomKeyValueStore()
+        };
+
+        feature.Apply();
+
+        using var provider = _services.BuildServiceProvider();
+        var store = provider.GetRequiredService<IKeyValueStore>();
+        Assert.IsType<CustomKeyValueStore>(store);
+    }
+
+    [Fact]
     public void ShellFeature_DoesNotRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
     {
         var feature = new ShellKeyValueFeature
@@ -77,7 +93,27 @@ public class KeyValueFeatureTests
         Assert.Contains(_services, x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
     }
 
-    private class CustomKeyValueStore : IKeyValueStore
+    [Fact]
+    public void ShellFeature_ConfiguredKeyValueStoreOverridesExistingRegistration()
+    {
+        _services.AddScoped<IKeyValueStore>(_ => new ExistingKeyValueStore());
+        var feature = new ShellKeyValueFeature
+        {
+            KeyValueStore = _ => new CustomKeyValueStore()
+        };
+
+        feature.ConfigureServices(_services);
+
+        using var provider = _services.BuildServiceProvider();
+        var store = provider.GetRequiredService<IKeyValueStore>();
+        Assert.IsType<CustomKeyValueStore>(store);
+    }
+
+    private class ExistingKeyValueStore : TestKeyValueStore;
+
+    private class CustomKeyValueStore : TestKeyValueStore;
+
+    private abstract class TestKeyValueStore : IKeyValueStore
     {
         public Task SaveAsync(SerializedKeyValuePair keyValuePair, CancellationToken cancellationToken) => Task.CompletedTask;
 

@@ -47,6 +47,6 @@ public class KeyValueFeature : FeatureBase
         if (RegisterMemoryStore)
             Services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
 
-        Services.TryAddScoped<IKeyValueStore>(KeyValueStore);
+        Services.AddScoped<IKeyValueStore>(KeyValueStore);
     }
 }
