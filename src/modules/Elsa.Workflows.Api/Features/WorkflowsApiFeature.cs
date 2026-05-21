@@ -6,6 +6,7 @@ using Elsa.SasTokens.Features;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Serialization;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Api.Services;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Runtime.Features;
@@ -36,6 +37,7 @@ public class WorkflowsApiFeature(IModule module) : FeatureBase(module)
         Module.AddFastEndpointsFromModule();
 
         Services.AddScoped<IWorkflowDefinitionLinker, StaticWorkflowDefinitionLinker>();
+        Services.AddScoped<WorkflowDefinitionScriptAuthorizationService>();
         Services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         Services.Configure<AuthorizationOptions>(options =>
         {

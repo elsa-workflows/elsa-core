@@ -26,6 +26,7 @@ using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable RedundantAssignment
@@ -42,6 +43,9 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
+var configuredAllowLocalDistributedRuntimeLockProvider = configuration.GetValue<bool?>("DistributedRuntime:AllowLocalLockProviderInDistributedRuntime");
+var allowLocalDistributedRuntimeLockProvider =
+    configuredAllowLocalDistributedRuntimeLockProvider ?? builder.Environment.IsDevelopment();
 
 services
     .AddElsa(elsa =>
@@ -79,6 +83,8 @@ services
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
                 runtime.UseDistributedRuntime();
+                // This sample host uses single-host file-system locks only for development or explicit single-host opt-in.
+                runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = allowLocalDistributedRuntimeLockProvider;
             })
             .UseWorkflowsApi()
             .UseFluentStorageProvider()
@@ -86,6 +92,7 @@ services
             .UseScheduling()
             .UseCSharp(options =>
             {
+                configuration.GetSection("Scripting:CSharp").Bind(options);
                 options.DisableWrappers = disableVariableWrappers;
                 options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
                 options.AppendScript("string SayHelloWorld() => Greet(\"World\");");
@@ -152,7 +159,9 @@ services.Configure<RuntimeOptions>(options => { options.InactivityThreshold = Ti
 services.Configure<BookmarkQueuePurgeOptions>(options => options.Ttl = TimeSpan.FromSeconds(3600));
 services.Configure<CachingOptions>(options => options.CacheDuration = TimeSpan.FromDays(1));
 services.Configure<IncidentOptions>(options => options.DefaultIncidentStrategy = typeof(ContinueWithIncidentsStrategy));
-services.AddHealthChecks();
+services
+    .AddHealthChecks()
+    .AddElsaReadinessChecks(includeDistributedLocks: true);
 services.AddControllers();
 services.AddCors(cors => cors.AddDefaultPolicy(policy => policy.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithExposedHeaders("*")));
 
@@ -168,7 +177,23 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 
 // Health checks.
-app.MapHealthChecks("/");
+app.MapHealthChecks("/health/live", new()
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new()
+{
+    Predicate = check => check.Tags.Contains(HealthCheckExtensions.ElsaTag) && check.Tags.Contains(HealthCheckExtensions.ReadinessTag),
+    ResultStatusCodes =
+    {
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+    }
+});
+app.MapHealthChecks("/", new()
+{
+    Predicate = _ => false
+});
 
 // Routing used for SignalR.
 app.UseRouting();

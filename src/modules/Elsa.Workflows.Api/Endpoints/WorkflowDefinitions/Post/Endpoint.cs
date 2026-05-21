@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
@@ -24,7 +25,8 @@ internal class Post(
     VariableDefinitionMapper variableDefinitionMapper,
     IDistributedLockProvider distributedLockProvider,
     IWorkflowDefinitionLinker linker,
-    IAuthorizationService authorizationService)
+    IAuthorizationService authorizationService,
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<SaveWorkflowDefinitionRequest, LinkedWorkflowDefinitionModel>
 {
     public override void Configure()
@@ -61,6 +63,13 @@ internal class Post(
         if (!authorizationResult.Succeeded)
         {
             await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
+        {
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 
@@ -110,4 +119,5 @@ internal class Post(
         var response = new Response(mappedDefinition, false, affectedWorkflows.Count);
         await HttpContext.Response.WriteAsJsonAsync(response, serializerOptions, cancellationToken);
     }
+
 }

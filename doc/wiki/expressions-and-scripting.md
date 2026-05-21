@@ -55,16 +55,23 @@ Additional JavaScript libraries are in [Elsa.Expressions.JavaScript.Libraries](.
 ```csharp
 elsa.UseCSharp(options =>
 {
+    options.AllowHostCodeExecution = true;
     options.DisableWrappers = disableVariableWrappers;
     options.AppendScript("string Greet(string name) => $\"Hello {name}!\";");
 });
 ```
 
+Roslyn C# scripting is privileged host-code execution, not a sandbox. Hosts must explicitly set `CSharpOptions.AllowHostCodeExecution` to `true` before C# expressions or `RunCSharp` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing C# must have the `exec:csharp-expressions` permission.
+
 ## Python
 
-[PythonFeature](../../src/modules/Elsa.Expressions.Python/Features/PythonFeature.cs) registers pythonnet-based evaluation and configures `PythonGlobalInterpreterManager` as a hosted service. Hosts must configure the Python DLL path or set `PYTHONNET_PYDLL`.
+[PythonFeature](../../src/modules/Elsa.Expressions.Python/Features/PythonFeature.cs) registers pythonnet-based evaluation and configures `PythonGlobalInterpreterManager` as a hosted service. Python.NET execution is privileged host-code execution, not a sandbox. Python code can access host process capabilities through pythonnet and must only be enabled for trusted workflow authors.
+
+Hosts must explicitly set `PythonOptions.AllowHostCodeExecution` to `true` before Python expressions or `RunPython` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing Python must have the `exec:python-expressions` permission. Hosts must also configure the Python DLL path or set `PYTHONNET_PYDLL`.
 
 The reference server binds `Scripting:Python` configuration in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
+
+Python.NET hardening is part of the broader script execution security tracking in [#7096](https://github.com/elsa-workflows/elsa-core/issues/7096).
 
 ## Liquid
 

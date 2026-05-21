@@ -7,6 +7,7 @@
         <PackageReference Include="Nuplane.Sources.Directory" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />

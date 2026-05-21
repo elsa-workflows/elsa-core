@@ -4,6 +4,7 @@ using Elsa.Alterations.Core.Models;
 using Elsa.Common;
 using Elsa.Workflows;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Alterations.Endpoints.Alterations.Submit;
 
@@ -35,11 +36,22 @@ public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
     /// <inheritdoc />
     public override async Task HandleAsync(AlterationPlanParams planParams, CancellationToken cancellationToken)
     {
+        if (!ValidateInput(planParams))
+        {
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            return;
+        }
+
         // Submit the plan.
         var planId = await _alterationPlanScheduler.SubmitAsync(planParams, cancellationToken);
 
         // Write response.
         var response = new Response(planId);
         await Send.OkAsync(response, cancellationToken);
+    }
+
+    private bool ValidateInput(AlterationPlanParams planParams)
+    {
+        return TimestampFilterValidation.Validate(planParams.Filter?.TimestampFilters, error => AddError(error));
     }
 }

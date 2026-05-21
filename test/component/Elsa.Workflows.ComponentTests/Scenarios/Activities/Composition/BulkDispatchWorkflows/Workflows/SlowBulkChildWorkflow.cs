@@ -1,5 +1,4 @@
 using Elsa.Extensions;
-using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 
@@ -19,7 +18,7 @@ public class SlowBulkChildWorkflow : WorkflowBase
         {
             Activities =
             {
-                Delay.FromMilliseconds(10),
+                new Inline(context => new ValueTask(Task.Delay(10, context.CancellationToken))),
                 new WriteLine(context => $"Processing item: {context.GetInput<string>(item)}")
             }
         };

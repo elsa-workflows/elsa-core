@@ -2,6 +2,7 @@ using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using JetBrains.Annotations;
@@ -10,7 +11,13 @@ using Microsoft.AspNetCore.Authorization;
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Publish;
 
 [PublicAPI]
-internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublisher workflowDefinitionPublisher, IWorkflowDefinitionLinker linker, IAuthorizationService authorizationService)
+internal class Publish(
+    IWorkflowDefinitionStore store,
+    IWorkflowDefinitionPublisher workflowDefinitionPublisher,
+    IWorkflowDefinitionLinker linker,
+    IAuthorizationService authorizationService,
+    IWorkflowDefinitionService workflowDefinitionService,
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
@@ -40,6 +47,14 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
         if (!authorizationResult.Succeeded)
         {
             await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
+        var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
+        {
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 

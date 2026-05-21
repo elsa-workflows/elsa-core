@@ -74,7 +74,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                 elsa.AddWorkflowsFrom<WorkflowServer>();
                 elsa.AddActivitiesFrom<WorkflowServer>();
                 elsa.AddActivityHost<TestHostMethod>();
-                elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseAdminApiKey());
+                elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseDevelopmentAdminApiKey());
                 elsa.UseFluentStorageProvider(sp =>
                 {
                     var assemblyLocation = Assembly.GetExecutingAssembly().Location;
@@ -109,6 +109,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
                     });
                     runtime.UseCache();
                     runtime.UseDistributedRuntime();
+                    runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
                     // Use test-specific bookmark queue worker without throttling to prevent timeouts
                     runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<TestBookmarkQueueWorker>();
                 });
@@ -177,6 +178,6 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
 
     protected override void ConfigureClient(HttpClient client)
     {
-        client.DefaultRequestHeaders.Authorization = new("ApiKey", AdminApiKeyProvider.DefaultApiKey);
+        client.DefaultRequestHeaders.Authorization = new("ApiKey", AdminApiKeyProvider.DevelopmentApiKey);
     }
 }

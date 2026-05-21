@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using Elsa.Common.Models;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.State;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.Execute;
 
-public static class WorkflowExecutionHelper
+internal static class WorkflowExecutionHelper
 {
     public static async Task ExecuteWorkflowAsync(
         IExecutionRequest request,
@@ -16,6 +17,7 @@ public static class WorkflowExecutionHelper
         IWorkflowRuntime workflowRuntime,
         IWorkflowStarter workflowStarter,
         IApiSerializer apiSerializer,
+        WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService,
         HttpContext httpContext,
         CancellationToken cancellationToken)
     {
@@ -26,6 +28,13 @@ public static class WorkflowExecutionHelper
         if (workflowGraph == null)
         {
             await httpContext.Response.SendNotFoundAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, httpContext.User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
+        {
+            await SendScriptAuthorizationFailureAsync(httpContext, scriptAuthorizationResult, cancellationToken);
             return;
         }
         
@@ -87,5 +96,16 @@ public static class WorkflowExecutionHelper
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
         await httpContext.Response.WriteAsync(faultedResponse, cancellationToken);
     }
-}
 
+    private static async Task SendScriptAuthorizationFailureAsync(HttpContext httpContext, WorkflowDefinitionScriptAuthorizationResult result, CancellationToken cancellationToken)
+    {
+        if (result.FailureReason == WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission)
+        {
+            await httpContext.Response.SendForbiddenAsync(cancellation: cancellationToken);
+            return;
+        }
+
+        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await httpContext.Response.WriteAsync(result.Message ?? "Workflow script authorization failed.", cancellationToken);
+    }
+}

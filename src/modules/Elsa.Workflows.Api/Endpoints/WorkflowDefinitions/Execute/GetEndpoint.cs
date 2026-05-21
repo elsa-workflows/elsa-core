@@ -1,4 +1,5 @@
 using Elsa.Abstractions;
+using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -13,7 +14,8 @@ internal class GetEndpoint(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRuntime workflowRuntime,
     IWorkflowStarter workflowStarter,
-    IApiSerializer apiSerializer)
+    IApiSerializer apiSerializer,
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService)
     : ElsaEndpoint<GetRequest>
 {
     /// <inheritdoc />
@@ -33,6 +35,7 @@ internal class GetEndpoint(
             workflowRuntime,
             workflowStarter,
             apiSerializer,
+            scriptAuthorizationService,
             HttpContext,
             cancellationToken);
     }
