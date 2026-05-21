@@ -119,7 +119,7 @@ public class ZipManagerTests : IDisposable
         var clock = Substitute.For<ISystemClock>();
         clock.UtcNow.Returns(_now);
         fileCacheStorageProvider ??= new BlobFileCacheStorageProvider(_blobStorage);
-        var options = Options.Create(new HttpFileCacheOptions
+        var options = Microsoft.Extensions.Options.Options.Create(new HttpFileCacheOptions
         {
             LocalCacheDirectory = _cacheDirectory,
             TimeToLive = TimeSpan.FromHours(1)
