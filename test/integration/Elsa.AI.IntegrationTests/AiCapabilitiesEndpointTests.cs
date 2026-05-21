@@ -23,6 +23,10 @@ public class AiCapabilitiesEndpointTests
         Assert.True(response.ConversationPersistence);
         Assert.True(response.ProposalReview);
         Assert.Contains("WorkflowDefinition", response.SupportedAttachmentKinds);
+        Assert.Contains("WorkflowInstance", response.SupportedAttachmentKinds);
+        Assert.DoesNotContain("ActivitySelection", response.SupportedAttachmentKinds);
+        Assert.DoesNotContain("DiagnosticsScope", response.SupportedAttachmentKinds);
+        Assert.DoesNotContain("TimeRange", response.SupportedAttachmentKinds);
     }
 
     [Fact(DisplayName = "Capabilities endpoint hides unavailable capabilities")]
