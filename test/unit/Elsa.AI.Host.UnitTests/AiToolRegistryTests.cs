@@ -71,6 +71,21 @@ public class AiToolRegistryTests
         Assert.Equal("host", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry exposes default tenant scoped tools without tenant context")]
+    public async Task ToolRegistryExposesDefaultTenantScopedToolsWithoutTenantContext()
+    {
+        var registry = new AiToolRegistry(
+            [
+                new TestTool(new AiToolDefinition { Name = "default", DisplayName = "Default" })
+            ],
+            new AiToolEnablementService());
+
+        var tools = await registry.ListAsync(new AiToolQuery { ActorId = "user-1" });
+
+        var tool = Assert.Single(tools);
+        Assert.Equal("default", tool.Name);
+    }
+
     [Fact(DisplayName = "Tool registry find applies tenant and actor filters")]
     public async Task ToolRegistryFindAppliesTenantAndActorFilters()
     {

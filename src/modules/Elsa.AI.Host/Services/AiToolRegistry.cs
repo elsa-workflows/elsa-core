@@ -53,7 +53,7 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
             return definition.TenantIds.Count == 0 || definition.TenantIds.Contains(tenantId, StringComparer.OrdinalIgnoreCase);
         }
 
-        return definition.TenantBehavior == AiTenantBehavior.HostScoped && definition.TenantIds.Count == 0;
+        return definition.TenantBehavior != AiTenantBehavior.CrossTenantDenied && definition.TenantIds.Count == 0;
     }
 
     private static bool IsVisibleForActor(AiToolDefinition definition, string? actorId)

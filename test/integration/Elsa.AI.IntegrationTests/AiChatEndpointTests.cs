@@ -271,9 +271,55 @@ public class AiChatEndpointTests
 
         var secondRequest = provider.Requests.Last();
 
+        Assert.Equal("Second", secondRequest.Message);
         Assert.Contains(secondRequest.Messages, x => x.Role == AiMessageRole.User && x.Content == "First");
         Assert.Contains(secondRequest.Messages, x => x.Role == AiMessageRole.Assistant);
-        Assert.Contains(secondRequest.Messages, x => x.Role == AiMessageRole.User && x.Content == "Second");
+        Assert.DoesNotContain(secondRequest.Messages, x => x.Role == AiMessageRole.User && x.Content == "Second");
+    }
+
+    [Fact(DisplayName = "Chat orchestration does not duplicate reconnect user messages")]
+    public async Task ChatOrchestrationDoesNotDuplicateReconnectUserMessages()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            UserId = "user-1",
+            Status = AiConversationStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.User,
+                    Content = "Retry me",
+                    CreatedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Retry me",
+                           IsReconnect = true
+                       }))
+        {
+        }
+
+        var conversation = await store.FindAsync("conversation-1");
+        var userMessages = conversation!.Messages.Where(x => x.Role == AiMessageRole.User && x.Content == "Retry me").ToList();
+
+        Assert.Single(userMessages);
     }
 
     [Fact(DisplayName = "Chat orchestration limits resolved context payloads")]

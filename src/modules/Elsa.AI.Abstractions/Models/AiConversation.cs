@@ -36,6 +36,7 @@ public record AiChatRequest
     public string? TenantId { get; init; }
     public string UserId { get; init; } = default!;
     public ICollection<string> UserPermissions { get; init; } = [];
+    public bool IsReconnect { get; init; }
 }
 
 public record AiStreamEvent

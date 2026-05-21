@@ -29,11 +29,16 @@ public class AiOrchestrator(
         var provider = SelectProvider(request);
         var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
         var messages = conversation?.Messages.ToList() ?? [];
-        messages.Add(CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence));
+        var isDuplicateReconnectMessage = request.IsReconnect && IsDuplicateUserMessage(messages, request.Message);
+        var providerHistory = isDuplicateReconnectMessage ? messages.Take(messages.Count - 1).ToList() : messages.ToList();
+
+        if (!isDuplicateReconnectMessage)
+            messages.Add(CreateMessage(conversationId, AiMessageRole.User, request.Message, sequence));
+
         var toolResults = new List<AiToolTurnResult>();
 
         yield return CreateEvent("conversation.started", conversationId, sequence++);
-        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, cancellationToken);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
         var context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
@@ -65,7 +70,7 @@ public class AiOrchestrator(
                                {
                                    ConversationId = conversationId,
                                    Message = request.Message,
-                                   Messages = messages.ToList(),
+                                   Messages = providerHistory.ToList(),
                                    Context = context,
                                    Tools = tools,
                                    ToolResults = toolResults.ToList(),
@@ -113,7 +118,7 @@ public class AiOrchestrator(
             }
         }
 
-        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, messages, cancellationToken);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, messages, conversation, cancellationToken);
         await RecordChatAuditAsync("chat.completed", request, conversationId, provider?.Name, cancellationToken);
         yield return CreateEvent("conversation.completed", conversationId, sequence);
     }
@@ -340,10 +345,15 @@ public class AiOrchestrator(
             Metadata = metadata ?? []
         };
 
-    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, CancellationToken cancellationToken)
+    private static bool IsDuplicateUserMessage(IReadOnlyCollection<AiMessage> messages, string message)
+    {
+        var lastMessage = messages.LastOrDefault();
+        return lastMessage is { Role: AiMessageRole.User } && string.Equals(lastMessage.Content, message, StringComparison.Ordinal);
+    }
+
+    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
-        var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
 
         await conversationStore.SaveAsync(new AiConversation
         {
