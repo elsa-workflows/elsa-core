@@ -121,6 +121,7 @@ public class Tests
                 elsa.UseWorkflowRuntime(workflowRuntime =>
                 {
                     workflowRuntime.UseDistributedRuntime();
+                    workflowRuntime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
                     workflowRuntime.ActivityExecutionLogStore = _ => activityExecutionStore;
                 });
             });

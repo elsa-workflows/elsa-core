@@ -135,6 +135,70 @@ Endpoint code lives under [Elsa.Workflows.Api/Endpoints/RuntimeAdmin](../../src/
 
 Distributed runtime support lives in [Elsa.Workflows.Runtime.Distributed](../../src/modules/Elsa.Workflows.Runtime.Distributed). It layers distributed coordination and resilience support on top of the base runtime. When making runtime changes, check whether the distributed project has a parallel worker or dispatcher that must honor the same semantics.
 
+### Distributed Lock Provider Safety
+
+The default workflow runtime lock provider is file-system based and writes under `App_Data/locks`. That provider is useful for single-host development and tests, but it is not safe for clustered deployments where nodes have separate file systems. When `UseDistributedRuntime()` is enabled, startup fails if Elsa detects the default file-system provider or the no-op provider unless the host explicitly opts in to local-only lock semantics:
+
+```csharp
+elsa.UseWorkflowRuntime(runtime =>
+{
+    runtime.UseDistributedRuntime();
+
+    // Single-host development/test only. Do not use this for clustered production deployments.
+    runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
+});
+```
+
+Production clustered deployments must configure an `IDistributedLockProvider` backed by infrastructure shared by all nodes. Common Medallion providers include:
+
+- Redis: `DistributedLock.Redis` with `Medallion.Threading.Redis.RedisDistributedSynchronizationProvider`.
+- SQL Server: `DistributedLock.SqlServer` with `Medallion.Threading.SqlServer.SqlDistributedSynchronizationProvider`.
+- PostgreSQL: `DistributedLock.Postgres` with `Medallion.Threading.Postgres.PostgresDistributedSynchronizationProvider`.
+
+Example SQL Server setup:
+
+```csharp
+using Medallion.Threading.SqlServer;
+
+elsa.UseWorkflowRuntime(runtime =>
+{
+    runtime.UseDistributedRuntime();
+    runtime.DistributedLockProvider = _ =>
+        new SqlDistributedSynchronizationProvider(configuration.GetConnectionString("SqlServer"));
+});
+```
+
+Example PostgreSQL setup:
+
+```csharp
+using Medallion.Threading.Postgres;
+
+elsa.UseWorkflowRuntime(runtime =>
+{
+    runtime.UseDistributedRuntime();
+    runtime.DistributedLockProvider = _ =>
+        new PostgresDistributedSynchronizationProvider(configuration.GetConnectionString("PostgreSql"));
+});
+```
+
+Example Redis setup:
+
+```csharp
+using Medallion.Threading.Redis;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")));
+
+elsa.UseWorkflowRuntime(runtime =>
+{
+    runtime.UseDistributedRuntime();
+    runtime.DistributedLockProvider = sp =>
+        new RedisDistributedSynchronizationProvider(sp.GetRequiredService<IConnectionMultiplexer>().GetDatabase());
+});
+```
+
 ## When To Change This Layer
 
 Change runtime for dispatch semantics, trigger/bookmark indexing, background work, execution logs, recovery, cancellation, graceful shutdown, or runtime stores. If a change only affects how definitions are saved or described, it belongs in management. If it only changes HTTP endpoint activity behavior, start in `Elsa.Http`.
