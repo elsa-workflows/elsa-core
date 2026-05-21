@@ -159,6 +159,92 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueDeadLetterItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<bool>("CanReplay")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("OriginalQueueItemId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTimeOffset?>("ReplayedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ReplayedQueueItemId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("StimulusHash")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueDeadLetterItem_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_BookmarkQueueDeadLetterItem_ActivityTypeName");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueDeadLetterItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_BookmarkQueueDeadLetterItem_CorrelationId");
+
+                    b.HasIndex(new[] { "DeadLetteredAt" }, "IX_BookmarkQueueDeadLetterItem_DeadLetteredAt");
+
+                    b.HasIndex(new[] { "OriginalQueueItemId" }, "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueDeadLetterItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueDeadLetterItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueDeadLetterItems", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
                 {
                     b.Property<string>("Id")
@@ -178,6 +264,18 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SerializedOptions")
                         .HasColumnType("longtext");

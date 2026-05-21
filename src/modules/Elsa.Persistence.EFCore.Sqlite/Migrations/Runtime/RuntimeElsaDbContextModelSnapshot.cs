@@ -155,6 +155,92 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueDeadLetterItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ActivityTypeName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("CanReplay")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("OriginalQueueItemId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("ReplayedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReplayedQueueItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StimulusHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueDeadLetterItem_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_BookmarkQueueDeadLetterItem_ActivityTypeName");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueDeadLetterItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_BookmarkQueueDeadLetterItem_CorrelationId");
+
+                    b.HasIndex(new[] { "DeadLetteredAt" }, "IX_BookmarkQueueDeadLetterItem_DeadLetteredAt");
+
+                    b.HasIndex(new[] { "OriginalQueueItemId" }, "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueDeadLetterItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueDeadLetterItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueDeadLetterItems", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
                 {
                     b.Property<string>("Id")
@@ -173,6 +259,18 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastErrorType")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("SerializedOptions")
