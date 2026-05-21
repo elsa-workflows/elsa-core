@@ -74,6 +74,12 @@ internal class ZipManager
         if (blob == null)
             return null;
 
+        if (!TryGetSafeBlobPath(blob.FullPath, fileCacheFilename, out var safeBlobPath))
+        {
+            _logger.LogWarning("Rejected unsafe cached zip blob path {FullPath}", blob.FullPath);
+            return null;
+        }
+
         // Check if the blob has expired.
         var expiresAt = DateTimeOffset.Parse(blob.Metadata["ExpiresAt"]);
 
@@ -82,7 +88,7 @@ internal class ZipManager
             // File expired. Try to delete it.
             try
             {
-                await fileCacheStorage.DeleteAsync(blob.FullPath, cancellationToken);
+                await fileCacheStorage.DeleteAsync(safeBlobPath, cancellationToken);
             }
             catch (Exception e)
             {
@@ -92,13 +98,7 @@ internal class ZipManager
             return null;
         }
 
-        if (!IsBlobPathSafe(blob.FullPath, fileCacheFilename))
-        {
-            _logger.LogWarning("Rejected unsafe cached zip blob path {FullPath}", blob.FullPath);
-            return null;
-        }
-
-        var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
+        var stream = await fileCacheStorage.OpenReadAsync(safeBlobPath, cancellationToken);
         return (blob, stream);
     }
     
@@ -221,24 +221,46 @@ internal class ZipManager
         return !invalidCharacters.Any();
     }
 
-    private bool IsBlobPathSafe(string path, string expectedFilename)
+    private bool TryGetSafeBlobPath(string path, string expectedFilename, out string safeBlobPath)
     {
+        safeBlobPath = default!;
+
         if (string.IsNullOrWhiteSpace(path))
             return false;
 
+        if (TryGetRootedBlobNamespacePath(path, expectedFilename, out safeBlobPath))
+            return true;
+
         if (!Path.IsPathRooted(path))
-            return IsCachePathSafe(path);
+        {
+            if (!IsCachePathSafe(path))
+                return false;
+
+            safeBlobPath = path;
+            return true;
+        }
 
         var fullPath = Path.GetFullPath(path);
         var fullCacheDirectory = GetFullCacheDirectory();
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        if (fullPath.StartsWith(fullCacheDirectory, comparison))
-            return true;
+        if (!fullPath.StartsWith(fullCacheDirectory, comparison))
+            return false;
 
+        safeBlobPath = fullPath;
+        return true;
+    }
+
+    private static bool TryGetRootedBlobNamespacePath(string path, string expectedFilename, out string safeBlobPath)
+    {
+        safeBlobPath = default!;
+
+        // FluentStorage directory blobs use "/file" as a blob namespace path.
         var blobPath = path.Replace('\\', '/');
-        return !blobPath.Contains("/../", StringComparison.Ordinal)
-               && !blobPath.EndsWith("/..", StringComparison.Ordinal)
-               && blobPath.EndsWith($"/{expectedFilename}", StringComparison.Ordinal);
+        if (blobPath != $"/{expectedFilename}")
+            return false;
+
+        safeBlobPath = expectedFilename;
+        return true;
     }
 
     private bool IsCachePathSafe(string path)

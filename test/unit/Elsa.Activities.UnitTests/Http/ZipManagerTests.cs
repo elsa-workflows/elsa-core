@@ -49,10 +49,11 @@ public class ZipManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAsync_ValidToken_OpensReturnedBlobFullPath()
+    public async Task LoadAsync_ValidToken_OpensReturnedBlobFullPathWithinCacheDirectory()
     {
         var provider = Substitute.For<IFileCacheStorageProvider>();
-        var blobStorage = new BlobStorageStub("download.tmp", "folder/download.tmp", [1, 2, 3], _now.AddMinutes(5));
+        var blobPath = Path.Join(_cacheDirectory, "download.tmp");
+        var blobStorage = new BlobStorageStub("download.tmp", blobPath, [1, 2, 3], _now.AddMinutes(5));
         var zipManager = CreateZipManager(provider);
         provider.GetStorage().Returns(blobStorage);
 
@@ -60,7 +61,21 @@ public class ZipManagerTests : IDisposable
 
         Assert.True(result.HasValue);
         Assert.Equal([1, 2, 3], result.Value.Content);
-        Assert.Equal("/folder/download.tmp", blobStorage.OpenedPath);
+        Assert.Equal(blobPath, blobStorage.OpenedPath);
+    }
+
+    [Fact]
+    public async Task LoadAsync_RootedPathOutsideCacheDirectory_ReturnsNull()
+    {
+        var provider = Substitute.For<IFileCacheStorageProvider>();
+        var blobStorage = new BlobStorageStub("download.tmp", Path.Join(Path.GetTempPath(), "download.tmp"), [1, 2, 3], _now.AddMinutes(5));
+        var zipManager = CreateZipManager(provider);
+        provider.GetStorage().Returns(blobStorage);
+
+        var result = await LoadAsync("download", zipManager);
+
+        Assert.Null(result);
+        Assert.Null(blobStorage.OpenedPath);
     }
 
     [Theory]

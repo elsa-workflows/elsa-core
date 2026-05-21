@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <Include>[Elsa.SasTokens]*</Include>
+        <CoverageIncludeFilter>[Elsa.SasTokens]*</CoverageIncludeFilter>
     </PropertyGroup>
 
     <ItemGroup>
