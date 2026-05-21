@@ -19,15 +19,32 @@ namespace Elsa.KeyValues.ShellFeatures;
 public class KeyValueFeature : IShellFeature
 {
     private static readonly Func<IServiceProvider, IKeyValueStore> DefaultKeyValueStore = sp => ActivatorUtilities.CreateInstance<MemoryKeyValueStore>(sp);
+    private Func<IServiceProvider, IKeyValueStore> _keyValueStore = DefaultKeyValueStore;
+    private bool? _registerMemoryStore;
 
     /// <summary>
     /// A factory that instantiates an <see cref="IKeyValueStore"/>.
     /// </summary>
-    public Func<IServiceProvider, IKeyValueStore> KeyValueStore { get; set; } = DefaultKeyValueStore;
+    public Func<IServiceProvider, IKeyValueStore> KeyValueStore
+    {
+        get => _keyValueStore;
+        set => _keyValueStore = value;
+    }
+
+    /// <summary>
+    /// Whether to register the in-memory backing store used by <see cref="MemoryKeyValueStore"/>.
+    /// </summary>
+    public bool RegisterMemoryStore
+    {
+        get => _registerMemoryStore ?? ReferenceEquals(KeyValueStore, DefaultKeyValueStore);
+        set => _registerMemoryStore = value;
+    }
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
+        if (RegisterMemoryStore)
+            services.TryAddSingleton<MemoryStore<SerializedKeyValuePair>>();
+
         services.TryAddScoped<IKeyValueStore>(KeyValueStore);
     }
 }

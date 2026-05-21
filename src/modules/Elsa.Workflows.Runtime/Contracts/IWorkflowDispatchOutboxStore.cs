@@ -20,6 +20,8 @@ public interface IWorkflowDispatchOutboxStore
     /// <summary>
     /// Returns up to the specified number of pending outbox items.
     /// </summary>
+    /// <param name="maxCount">The maximum number of pending items to return. Values less than or equal to 0 disable the limit.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default);
 
     /// <summary>

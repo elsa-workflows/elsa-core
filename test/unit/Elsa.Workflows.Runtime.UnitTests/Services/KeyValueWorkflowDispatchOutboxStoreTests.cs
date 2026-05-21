@@ -108,6 +108,9 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.DidNotReceive().SaveAsync(
             Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted"),
             Arg.Any<CancellationToken>());
+        await _keyValueStore.Received(1).FindManyAsync(
+            Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:" && x.StartsWith && x.OrderByKey && x.Take == 3),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]

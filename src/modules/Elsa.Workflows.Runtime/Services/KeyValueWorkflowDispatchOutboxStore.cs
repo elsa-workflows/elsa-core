@@ -209,10 +209,13 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
         var records = await keyValueStore.FindManyAsync(new KeyValueFilter
         {
             Key = LegacyKeyPrefix,
-            StartsWith = true
+            StartsWith = true,
+            OrderByKey = true,
+            Take = GetLegacyScanTake(maxCount)
         }, cancellationToken);
+        var recordList = records.ToList();
 
-        var recoverableItems = records
+        var recoverableItems = recordList
             .Where(IsRecoverableItemRecord)
             .Select(x => new
             {
@@ -236,7 +239,7 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
             items.Add(item);
         }
 
-        if (recoverableItemsToMigrate.Count == recoverableItems.Count)
+        if (IsLegacyScanComplete(recordList.Count, maxCount))
         {
             await keyValueStore.SaveAsync(new SerializedKeyValuePair
             {
@@ -302,6 +305,20 @@ public class KeyValueWorkflowDispatchOutboxStore(IKeyValueStore keyValueStore, I
     private static string GetIndexByIdKey(string id) => $"{IndexByIdKeyPrefix}{id}";
 
     private static string GetRecoveryKey(string id) => $"{RecoveryKeyPrefix}{id}";
+
+    private static int? GetLegacyScanTake(int maxCount)
+    {
+        if (maxCount <= 0)
+            return null;
+
+        return maxCount == int.MaxValue ? int.MaxValue : maxCount + 1;
+    }
+
+    private static bool IsLegacyScanComplete(int recordCount, int maxCount)
+    {
+        var scanTake = GetLegacyScanTake(maxCount);
+        return scanTake == null || recordCount < scanTake.Value;
+    }
 
     private static bool IsIndexKeyForId(string indexKey, string id)
     {
