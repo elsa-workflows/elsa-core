@@ -46,7 +46,7 @@ public class DistributedRuntimeLockProviderValidator(
 
         var message =
             $"The distributed workflow runtime is configured with local-only distributed lock provider '{localProviderTypeName}' through '{configuredProviderTypeName}'. " +
-            "This provider does not coordinate across nodes with separate file systems and can allow concurrent workflow processing in clustered deployments. " +
+            "This provider does not coordinate across application nodes and can allow concurrent workflow processing in clustered deployments. " +
             "Configure a cross-node IDistributedLockProvider such as Redis, SQL Server, or PostgreSQL, or explicitly set DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime to true for single-host development/test deployments.";
 
         throw new InvalidOperationException(message);

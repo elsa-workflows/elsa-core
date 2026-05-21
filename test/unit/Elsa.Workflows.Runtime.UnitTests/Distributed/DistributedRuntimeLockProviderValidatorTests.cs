@@ -171,8 +171,6 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         {
             // Best-effort cleanup for temp directories that may still be held by the OS.
         }
-
-        GC.SuppressFinalize(this);
     }
 
     private class WrappedDistributedLockProvider(IDistributedLockProvider innerProvider) : IDistributedLockProvider
