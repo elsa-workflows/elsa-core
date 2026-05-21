@@ -52,7 +52,7 @@ public class DefaultBookmarkQueuePurger(
 
                 if (deletedCount == 0)
                 {
-                    if (deadLetter.CanReplay)
+                    if (deadLetter.CanReplay && deadLetter.Reason == "Expired")
                     {
                         deadLetter.CanReplay = false;
                         await deadLetterStore.SaveAsync(deadLetter, cancellationToken);

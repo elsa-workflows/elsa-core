@@ -84,6 +84,51 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
+    public async Task PurgeAsync_WhenExpiredItemAlreadyHasFailedDeadLetter_PreservesReplay()
+    {
+        var expired = NewQueueItem("expired", _now.AddMinutes(-2));
+        await _queueStore.AddAsync(expired);
+        await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
+        {
+            Id = "failed-dead-letter",
+            OriginalQueueItemId = expired.Id,
+            WorkflowInstanceId = expired.WorkflowInstanceId,
+            BookmarkId = expired.BookmarkId,
+            StimulusHash = expired.StimulusHash,
+            ActivityTypeName = expired.ActivityTypeName,
+            OriginalCreatedAt = expired.CreatedAt,
+            DeadLetteredAt = _now.AddMinutes(-1),
+            Reason = "Failed",
+            DeliveryAttempts = 2,
+            CanReplay = true
+        });
+        var queueStore = new DeletingAfterPageQueueStore(_queueStore);
+        var purger = new DefaultBookmarkQueuePurger(
+            queueStore,
+            _deadLetterStore,
+            CreateManager(),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { Ttl = TimeSpan.FromMinutes(1), DeadLetterTtl = TimeSpan.FromDays(7) }),
+            NullLogger<DefaultBookmarkQueuePurger>.Instance);
+
+        await purger.PurgeAsync();
+
+        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
+        Assert.Equal("Failed", deadLetter.Reason);
+        Assert.True(deadLetter.CanReplay);
+        Assert.Null(deadLetter.ReplayedAt);
+        Assert.Null(deadLetter.ReplayedQueueItemId);
+
+        var replayResult = await CreateManager().ReplayAsync(deadLetter.Id);
+
+        Assert.True(replayResult.Succeeded);
+        Assert.Equal("generated-1", replayResult.QueueItemId);
+        var replayedItem = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "generated-1" });
+        Assert.NotNull(replayedItem);
+        await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task PurgeAsync_WhenDeadLetterWriteFails_DoesNotDeleteQueueItem()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
