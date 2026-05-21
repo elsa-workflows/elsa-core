@@ -177,6 +177,7 @@ public class AiChatEndpointTests
         await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
                        {
                            UserId = "user-1",
+                           TenantId = "tenant-1",
                            Message = "Use a tool"
                        }))
             events.Add(streamEvent);
@@ -185,6 +186,83 @@ public class AiChatEndpointTests
         Assert.Equal("echo", toolResult.Data["toolName"]!.GetValue<string>());
         Assert.Equal(AiToolInvocationStatus.Completed.ToString(), toolResult.Data["status"]!.GetValue<string>());
         Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
+    }
+
+    [Fact(DisplayName = "Chat orchestration persists conversation state")]
+    public async Task ChatOrchestrationPersistsConversationState()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+        {
+        }
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.NotNull(conversation);
+        Assert.Equal(AiConversationStatus.Completed, conversation.Status);
+    }
+
+    [Fact(DisplayName = "Chat orchestration limits resolved context payloads")]
+    public async Task ChatOrchestrationLimitsResolvedContextPayloads()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxResolvedContextBytes = 64);
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiContextProvider, LargeContextProvider>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain this workflow",
+                           Attachments = [new AiContextAttachment { Kind = LargeContextProvider.ContextKind, ReferenceId = "workflow-1" }]
+                       }))
+        {
+        }
+
+        var context = Assert.Single(provider.Requests.Single().Context);
+
+        Assert.True(context.Data["truncated"]!.GetValue<bool>());
+        Assert.Equal(64, context.Data["maxBytes"]!.GetValue<int>());
+        Assert.True(context.Metadata["truncated"]!.GetValue<bool>());
+    }
+
+    [Fact(DisplayName = "Chat orchestration limits tool result payloads")]
+    public async Task ChatOrchestrationLimitsToolResultPayloads()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxToolResultBytes = 64);
+        services.AddSingleton<IAiProvider, ToolCallAiProvider>();
+        services.AddSingleton<IAiTool, LargeEchoTool>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use a tool"
+                       }))
+            events.Add(streamEvent);
+
+        var toolResult = Assert.Single(events, x => x.Type == "tool.result");
+        var data = toolResult.Data["data"]!.AsObject();
+
+        Assert.True(data["truncated"]!.GetValue<bool>());
+        Assert.Equal(64, data["maxBytes"]!.GetValue<int>());
     }
 
     private class SequencedAiProvider : IAiProvider
@@ -238,6 +316,44 @@ public class AiChatEndpointTests
         }
     }
 
+    private class CapturingTurnProvider : IAiProvider
+    {
+        public string Name => "capturing";
+        public List<AiTurnRequest> Requests { get; } = [];
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            Requests.Add(request);
+
+            yield return new AiProviderEvent
+            {
+                Type = "assistant.delta",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+        }
+    }
+
+    private class LargeContextProvider : IAiContextProvider
+    {
+        public const string ContextKind = "LargeContext";
+        public string Kind => ContextKind;
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = ContextKind,
+                ReferenceId = request.Attachment.ReferenceId,
+                Summary = new string('s', 512),
+                Data = new JsonObject { ["content"] = new string('d', 512) },
+                Metadata = new JsonObject { ["content"] = new string('m', 512) }
+            });
+    }
+
     private class ToolCallAiProvider : IAiProvider
     {
         public string Name => "tool-caller";
@@ -284,6 +400,28 @@ public class AiChatEndpointTests
                 Data = new JsonObject
                 {
                     ["text"] = context.Arguments["text"]?.GetValue<string>()
+                }
+            });
+        }
+    }
+
+    private class LargeEchoTool : IAiTool
+    {
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "echo",
+            DisplayName = "Echo",
+            EnabledByDefault = true
+        };
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new AiToolResult
+            {
+                Summary = new string('s', 512),
+                Data = new JsonObject
+                {
+                    ["content"] = new string('d', 512)
                 }
             });
         }

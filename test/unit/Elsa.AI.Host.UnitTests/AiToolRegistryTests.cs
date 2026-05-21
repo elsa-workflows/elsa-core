@@ -27,6 +27,31 @@ public class AiToolRegistryTests
         Assert.Equal("tenant", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry allows cross-tenant denied tools for explicit tenant allowlists")]
+    public async Task ToolRegistryAllowsCrossTenantDeniedToolsForExplicitTenantAllowlists()
+    {
+        var registry = new AiToolRegistry(
+            [
+                new TestTool(new AiToolDefinition
+                {
+                    Name = "tenant-cross",
+                    DisplayName = "Tenant cross",
+                    TenantBehavior = AiTenantBehavior.CrossTenantDenied,
+                    TenantIds = ["tenant-1"]
+                })
+            ],
+            new AiToolEnablementService());
+
+        var tools = await registry.ListAsync(new AiToolQuery
+        {
+            TenantId = "tenant-1",
+            ActorId = "user-1"
+        });
+
+        var tool = Assert.Single(tools);
+        Assert.Equal("tenant-cross", tool.Name);
+    }
+
     [Fact(DisplayName = "Tool registry excludes cross-tenant denied tools from host queries")]
     public async Task ToolRegistryExcludesCrossTenantDeniedToolsFromHostQueries()
     {
@@ -46,6 +71,28 @@ public class AiToolRegistryTests
         Assert.Equal("host", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry find applies tenant and actor filters")]
+    public async Task ToolRegistryFindAppliesTenantAndActorFilters()
+    {
+        var registry = new AiToolRegistry(
+            [
+                new TestTool(new AiToolDefinition
+                {
+                    Name = "restricted",
+                    DisplayName = "Restricted",
+                    EnabledByDefault = true,
+                    TenantIds = ["tenant-1"],
+                    ActorIds = ["user-1"]
+                })
+            ],
+            new AiToolEnablementService());
+
+        var allowed = await registry.FindAsync("restricted", new AiToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
+        var denied = await registry.FindAsync("restricted", new AiToolQuery { TenantId = "tenant-2", ActorId = "user-1" });
+
+        Assert.NotNull(allowed);
+        Assert.Null(denied);
+    }
 
     [Fact(DisplayName = "Tool registry honors tenant and actor allowlists")]
     public async Task ToolRegistryHonorsTenantAndActorAllowlists()

@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
@@ -11,6 +13,7 @@ namespace Elsa.AI.Host.Services;
 public class AiOrchestrator(
     IEnumerable<IAiProvider> providers,
     IAiToolRegistry toolRegistry,
+    IAiConversationStore conversationStore,
     AiContextResolver contextResolver,
     AiStreamEventMapper streamEventMapper,
     IAiAuditSink auditSink,
@@ -24,9 +27,10 @@ public class AiOrchestrator(
         var provider = SelectProvider(request);
 
         yield return CreateEvent("conversation.started", conversationId, sequence++);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
-        var context = await contextResolver.ResolveAsync(request, cancellationToken);
+        var context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
         var tools = await toolRegistry.ListAsync(new AiToolQuery { Agent = request.Agent, ActorId = request.UserId, TenantId = request.TenantId }, cancellationToken);
 
         if (provider == null)
@@ -59,6 +63,7 @@ public class AiOrchestrator(
             }
         }
 
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, cancellationToken);
         await RecordChatAuditAsync("chat.completed", request, conversationId, provider?.Name, cancellationToken);
         yield return CreateEvent("conversation.completed", conversationId, sequence);
     }
@@ -117,7 +122,12 @@ public class AiOrchestrator(
 
     private async ValueTask<AiStreamEvent> ExecuteToolCallAsync(ToolCall toolCall, AiChatRequest request, string conversationId, long sequence, CancellationToken cancellationToken)
     {
-        var tool = await toolRegistry.FindAsync(toolCall.Name, cancellationToken);
+        var tool = await toolRegistry.FindAsync(toolCall.Name, new AiToolQuery
+        {
+            Agent = request.Agent,
+            ActorId = request.UserId,
+            TenantId = request.TenantId
+        }, cancellationToken);
         if (tool == null)
             return CreateToolResultEvent(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = $"Tool '{toolCall.Name}' was not found." });
 
@@ -134,7 +144,7 @@ public class AiOrchestrator(
             }, cancellationToken);
             await RecordToolAuditAsync("tool.completed", request, conversationId, toolCall, cancellationToken);
 
-            return CreateToolResultEvent(conversationId, sequence, toolCall, result);
+            return CreateToolResultEvent(conversationId, sequence, toolCall, LimitToolResult(result));
         }
         catch (Exception e)
         {
@@ -180,6 +190,56 @@ public class AiOrchestrator(
             ["data"] = result.Data.DeepClone()
         });
 
+    private IReadOnlyCollection<AiResolvedContext> LimitResolvedContext(IReadOnlyCollection<AiResolvedContext> contexts) =>
+        contexts.Select(context =>
+        {
+            if (GetUtf8Size(context) <= options.Value.MaxResolvedContextBytes)
+                return context;
+
+            return context with
+            {
+                Summary = Truncate(context.Summary, options.Value.MaxResolvedContextBytes),
+                Data = CreateTruncatedPayload(options.Value.MaxResolvedContextBytes),
+                Metadata = CreateTruncatedPayload(options.Value.MaxResolvedContextBytes)
+            };
+        }).ToList();
+
+    private AiToolResult LimitToolResult(AiToolResult result)
+    {
+        if (GetUtf8Size(result) <= options.Value.MaxToolResultBytes)
+            return result;
+
+        return result with
+        {
+            Summary = Truncate(result.Summary, options.Value.MaxToolResultBytes),
+            Data = CreateTruncatedPayload(options.Value.MaxToolResultBytes)
+        };
+    }
+
+    private static JsonObject CreateTruncatedPayload(int maxBytes) =>
+        new()
+        {
+            ["truncated"] = true,
+            ["maxBytes"] = maxBytes
+        };
+
+    private static int GetUtf8Size<T>(T value) =>
+        JsonSerializer.SerializeToUtf8Bytes(value).Length;
+
+    private static string Truncate(string value, int maxBytes)
+    {
+        if (string.IsNullOrEmpty(value))
+            return value;
+
+        var maxChars = Math.Min(value.Length, Math.Max(0, maxBytes / 4));
+        var truncated = value[..maxChars];
+
+        while (Encoding.UTF8.GetByteCount(truncated) > maxBytes && truncated.Length > 0)
+            truncated = truncated[..^1];
+
+        return truncated;
+    }
+
     private static bool TryReadToolCall(AiProviderEvent providerEvent, out ToolCall toolCall)
     {
         toolCall = default;
@@ -194,6 +254,24 @@ public class AiOrchestrator(
         var arguments = providerEvent.Data["arguments"]?.DeepClone() as JsonObject ?? [];
         toolCall = new ToolCall(id, name, arguments);
         return true;
+    }
+
+    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
+
+        await conversationStore.SaveAsync(new AiConversation
+        {
+            Id = conversationId,
+            TenantId = request.TenantId,
+            UserId = request.UserId,
+            Status = status,
+            CreatedAt = conversation is null || conversation.CreatedAt == default ? now : conversation.CreatedAt,
+            UpdatedAt = now,
+            RetentionMode = conversation?.RetentionMode ?? AiRetentionMode.Configured,
+            RetentionExpiresAt = conversation?.RetentionExpiresAt
+        }, cancellationToken);
     }
 
     private readonly record struct ToolCall(string Id, string Name, JsonObject Arguments);

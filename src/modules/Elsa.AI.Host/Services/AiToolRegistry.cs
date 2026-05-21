@@ -11,11 +11,7 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
     {
         var definitions = _tools
             .Select(x => x.Definition)
-            .Where(x => query.Mutability == null || x.Mutability == query.Mutability)
-            .Where(x => query.DangerLevel == null || x.DangerLevel == query.DangerLevel)
-            .Where(x => query.Agent == null || x.AgentScopes.Count == 0 || x.AgentScopes.Contains(query.Agent, StringComparer.OrdinalIgnoreCase))
-            .Where(x => IsVisibleForTenant(x, query.TenantId))
-            .Where(x => IsVisibleForActor(x, query.ActorId))
+            .Where(x => IsVisible(x, query))
             .Select(x => x with { IsEnabled = enablementService.IsEnabled(x) })
             .ToList();
 
@@ -24,24 +20,39 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
 
     public ValueTask<IAiTool?> FindAsync(string name, CancellationToken cancellationToken = default)
     {
+        return FindAsync(name, new AiToolQuery(), cancellationToken);
+    }
+
+    public ValueTask<IAiTool?> FindAsync(string name, AiToolQuery query, CancellationToken cancellationToken = default)
+    {
         var tool = _tools.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+        if (tool == null || !IsVisible(tool.Definition, query) || !enablementService.IsEnabled(tool.Definition))
+            tool = null;
+
         return ValueTask.FromResult(tool);
     }
 
+    private static bool IsVisible(AiToolDefinition definition, AiToolQuery query) =>
+        (query.Mutability == null || definition.Mutability == query.Mutability) &&
+        (query.DangerLevel == null || definition.DangerLevel == query.DangerLevel) &&
+        (query.Agent == null || definition.AgentScopes.Count == 0 || definition.AgentScopes.Contains(query.Agent, StringComparer.OrdinalIgnoreCase)) &&
+        IsVisibleForTenant(definition, query.TenantId) &&
+        IsVisibleForActor(definition, query.ActorId);
+
     private static bool IsVisibleForTenant(AiToolDefinition definition, string? tenantId)
     {
-        if (definition.TenantBehavior == AiTenantBehavior.CrossTenantDenied)
-            return false;
-
         if (!string.IsNullOrWhiteSpace(tenantId))
         {
             if (definition.TenantBehavior == AiTenantBehavior.HostScoped)
                 return false;
 
+            if (definition.TenantBehavior == AiTenantBehavior.CrossTenantDenied)
+                return definition.TenantIds.Contains(tenantId, StringComparer.OrdinalIgnoreCase);
+
             return definition.TenantIds.Count == 0 || definition.TenantIds.Contains(tenantId, StringComparer.OrdinalIgnoreCase);
         }
 
-        return definition.TenantIds.Count == 0;
+        return definition.TenantBehavior == AiTenantBehavior.HostScoped && definition.TenantIds.Count == 0;
     }
 
     private static bool IsVisibleForActor(AiToolDefinition definition, string? actorId)
