@@ -29,43 +29,61 @@ public class AlterationsApiTimestampFilterTests : IAsyncLifetime
         _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
         EndpointSecurityOptions.SecurityIsEnabled = false;
 
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-
-        builder.Services.AddFastEndpoints(o =>
+        try
         {
-            o.Assemblies = [typeof(DryRun).Assembly];
-            o.Filter = endpointType => endpointType == typeof(DryRun) || endpointType == typeof(SubmitEndpoint);
-        });
-        builder.Services.AddSingleton(Substitute.For<IWorkflowInstanceFinder>());
-        builder.Services.AddSingleton(Substitute.For<IAlterationPlanScheduler>());
-        builder.Services.AddSingleton(Substitute.For<IAlterationRunner>());
-        builder.Services.AddSingleton(Substitute.For<IAlteredWorkflowDispatcher>());
-        builder.Services.AddSingleton(Substitute.For<IAlterationPlanStore>());
-        builder.Services.AddSingleton(Substitute.For<IAlterationJobStore>());
-        builder.Services.AddSingleton(Substitute.For<IWorkflowDispatcher>());
-        builder.Services.AddSingleton(Substitute.For<IWorkflowInstanceStore>());
-        builder.Services.AddSingleton(Substitute.For<IIdentityGenerator>());
-        builder.Services.AddSingleton(Substitute.For<ISystemClock>());
-        builder.Services.AddLogging();
+            var builder = WebApplication.CreateSlimBuilder();
+            builder.WebHost.UseTestServer();
 
-        _app = builder.Build();
-        _app.UseFastEndpoints();
+            builder.Services.AddFastEndpoints(o =>
+            {
+                o.Assemblies = [typeof(DryRun).Assembly];
+                o.Filter = endpointType => endpointType == typeof(DryRun) || endpointType == typeof(SubmitEndpoint);
+            });
+            builder.Services.AddSingleton(Substitute.For<IWorkflowInstanceFinder>());
+            builder.Services.AddSingleton(Substitute.For<IAlterationPlanScheduler>());
+            builder.Services.AddSingleton(Substitute.For<IAlterationRunner>());
+            builder.Services.AddSingleton(Substitute.For<IAlteredWorkflowDispatcher>());
+            builder.Services.AddSingleton(Substitute.For<IAlterationPlanStore>());
+            builder.Services.AddSingleton(Substitute.For<IAlterationJobStore>());
+            builder.Services.AddSingleton(Substitute.For<IWorkflowDispatcher>());
+            builder.Services.AddSingleton(Substitute.For<IWorkflowInstanceStore>());
+            builder.Services.AddSingleton(Substitute.For<IIdentityGenerator>());
+            builder.Services.AddSingleton(Substitute.For<ISystemClock>());
+            builder.Services.AddLogging();
 
-        await _app.StartAsync();
-        _httpClient = _app.GetTestClient();
+            _app = builder.Build();
+            _app.UseFastEndpoints();
+
+            await _app.StartAsync();
+            _httpClient = _app.GetTestClient();
+        }
+        catch
+        {
+            EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
+            await DisposeAppAsync(false);
+            throw;
+        }
     }
 
     public async Task DisposeAsync()
     {
         EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
+        await DisposeAppAsync(true);
+    }
+
+    private async Task DisposeAppAsync(bool stopApp)
+    {
         _httpClient?.Dispose();
+        _httpClient = null;
 
         if (_app == null)
             return;
 
-        await _app.StopAsync();
+        if (stopApp)
+            await _app.StopAsync();
+
         await _app.DisposeAsync();
+        _app = null;
     }
 
     [Theory]

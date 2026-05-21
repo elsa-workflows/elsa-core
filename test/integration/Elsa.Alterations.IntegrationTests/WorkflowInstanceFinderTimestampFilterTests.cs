@@ -13,19 +13,25 @@ using Xunit.Abstractions;
 
 namespace Elsa.Alterations.IntegrationTests;
 
-public class WorkflowInstanceFinderTimestampFilterTests
+public class WorkflowInstanceFinderTimestampFilterTests : IDisposable
 {
+    private readonly IServiceProvider _services;
     private readonly IWorkflowInstanceFinder _workflowInstanceFinder;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
     public WorkflowInstanceFinderTimestampFilterTests(ITestOutputHelper testOutputHelper)
     {
-        var services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(testOutputHelper)
             .ConfigureElsa(elsa => elsa.UseAlterations())
             .Build();
         
-        _workflowInstanceFinder = services.GetRequiredService<IWorkflowInstanceFinder>();
-        _workflowInstanceStore = services.GetRequiredService<IWorkflowInstanceStore>();
+        _workflowInstanceFinder = _services.GetRequiredService<IWorkflowInstanceFinder>();
+        _workflowInstanceStore = _services.GetRequiredService<IWorkflowInstanceStore>();
+    }
+
+    public void Dispose()
+    {
+        (_services as IDisposable)?.Dispose();
     }
 
     [Fact]
