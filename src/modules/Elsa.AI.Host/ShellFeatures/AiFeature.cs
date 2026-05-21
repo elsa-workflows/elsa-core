@@ -21,6 +21,7 @@ public class AiFeature : IFastEndpointsShellFeature
     public TimeSpan ReconnectGrace { get; set; } = DefaultOptions.ReconnectGrace;
     public int MaxToolResultBytes { get; set; } = DefaultOptions.MaxToolResultBytes;
     public int MaxResolvedContextBytes { get; set; } = DefaultOptions.MaxResolvedContextBytes;
+    public string? DefaultProviderName { get; set; } = DefaultOptions.DefaultProviderName;
     public ICollection<AiProviderOptions> Providers { get; set; } = [];
 
     public void ConfigureServices(IServiceCollection services)
@@ -34,6 +35,7 @@ public class AiFeature : IFastEndpointsShellFeature
         options.ReconnectGrace = ReconnectGrace;
         options.MaxToolResultBytes = MaxToolResultBytes;
         options.MaxResolvedContextBytes = MaxResolvedContextBytes;
+        options.DefaultProviderName = DefaultProviderName;
         options.Providers = [..Providers];
     }
 }

@@ -1,5 +1,4 @@
 using Elsa.AI.Abstractions.Contracts;
-using Elsa.AI.Host.Services;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

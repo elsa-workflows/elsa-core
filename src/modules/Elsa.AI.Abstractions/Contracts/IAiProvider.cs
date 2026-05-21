@@ -4,6 +4,7 @@ namespace Elsa.AI.Abstractions.Contracts;
 
 public interface IAiProvider
 {
+    string Name { get; }
     ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default);
     IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, CancellationToken cancellationToken = default);
 }

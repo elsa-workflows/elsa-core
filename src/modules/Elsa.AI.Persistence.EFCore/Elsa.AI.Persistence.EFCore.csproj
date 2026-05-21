@@ -8,13 +8,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
-        <ProjectReference Include="..\Elsa.AI.Host\Elsa.AI.Host.csproj" />
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 
 </Project>

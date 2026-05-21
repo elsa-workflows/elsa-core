@@ -1,7 +1,9 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
+using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Streaming;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.AI.Host.Services;
 
@@ -9,7 +11,8 @@ public class AiOrchestrator(
     IEnumerable<IAiProvider> providers,
     IAiToolRegistry toolRegistry,
     AiContextResolver contextResolver,
-    AiStreamEventMapper streamEventMapper) : IAiOrchestrator
+    AiStreamEventMapper streamEventMapper,
+    IOptions<AiHostOptions> options) : IAiOrchestrator
 {
     public async IAsyncEnumerable<AiStreamEvent> ExecuteChatAsync(AiChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -20,7 +23,7 @@ public class AiOrchestrator(
 
         var context = await contextResolver.ResolveAsync(request, cancellationToken);
         var tools = await toolRegistry.ListAsync(new AiToolQuery { Agent = request.Agent, ActorId = request.UserId, TenantId = request.TenantId }, cancellationToken);
-        var provider = providers.FirstOrDefault();
+        var provider = SelectProvider(request);
 
         if (provider == null)
         {
@@ -57,4 +60,20 @@ public class AiOrchestrator(
             Timestamp = DateTimeOffset.UtcNow,
             Data = data ?? []
         };
+
+    private IAiProvider? SelectProvider(AiChatRequest request)
+    {
+        var availableProviders = providers.ToList();
+        var providerName = request.ProviderName ?? FindAgentProviderName(request.Agent) ?? options.Value.DefaultProviderName;
+
+        if (!string.IsNullOrWhiteSpace(providerName))
+            return availableProviders.FirstOrDefault(x => string.Equals(x.Name, providerName, StringComparison.OrdinalIgnoreCase));
+
+        return availableProviders.Count == 1 ? availableProviders[0] : null;
+    }
+
+    private string? FindAgentProviderName(string? agent) =>
+        string.IsNullOrWhiteSpace(agent)
+            ? null
+            : options.Value.Agents.FirstOrDefault(x => string.Equals(x.Name, agent, StringComparison.OrdinalIgnoreCase))?.ProviderName;
 }

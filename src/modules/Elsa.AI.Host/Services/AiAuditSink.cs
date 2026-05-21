@@ -15,8 +15,3 @@ public class AiAuditSink(IServiceScopeFactory scopeFactory) : IAiAuditSink
             await handler.RecordAsync(auditEvent, cancellationToken);
     }
 }
-
-public interface IAiAuditEventHandler
-{
-    ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default);
-}

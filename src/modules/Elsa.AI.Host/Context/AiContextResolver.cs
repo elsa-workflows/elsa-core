@@ -7,7 +7,9 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
 {
     private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "authorization", "credential"];
     private const string Redacted = "[redacted]";
-    private readonly Dictionary<string, IAiContextProvider> _providers = providers.ToDictionary(x => x.Kind, StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IAiContextProvider> _providers = providers
+        .GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(x => x.Key, x => x.Last(), StringComparer.OrdinalIgnoreCase);
 
     public async ValueTask<IReadOnlyCollection<AiResolvedContext>> ResolveAsync(AiChatRequest request, CancellationToken cancellationToken = default)
     {

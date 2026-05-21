@@ -7,6 +7,8 @@ namespace Elsa.AI.Copilot.Adapters;
 
 public class CopilotProvider(IOptions<CopilotOptions> options) : IAiProvider
 {
+    public string Name => options.Value.ProviderName ?? "copilot";
+
     public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default)
     {
         return ValueTask.FromResult(new AiSessionHandle

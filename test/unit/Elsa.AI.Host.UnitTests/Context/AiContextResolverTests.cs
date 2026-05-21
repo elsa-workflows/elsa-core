@@ -54,6 +54,27 @@ public class AiContextResolverTests
         Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Context resolver uses last provider when kinds duplicate")]
+    public async Task ContextResolverUsesLastProviderWhenKindsDuplicate()
+    {
+        var resolver = new AiContextResolver([new DuplicateContextProvider("first"), new DuplicateContextProvider("second")]);
+
+        var result = await resolver.ResolveAsync(new AiChatRequest
+        {
+            UserId = "user-1",
+            Attachments =
+            [
+                new AiContextAttachment
+                {
+                    Kind = "Duplicate"
+                }
+            ]
+        });
+
+        var context = Assert.Single(result);
+        Assert.Equal("second", context.Summary);
+    }
+
     private class SensitiveContextProvider : IAiContextProvider
     {
         public string Kind => "Sensitive";
@@ -73,6 +94,20 @@ public class AiContextResolverTests
                 {
                     ["apiKey"] = "key-value"
                 }
+            });
+        }
+    }
+
+    private class DuplicateContextProvider(string summary) : IAiContextProvider
+    {
+        public string Kind => "Duplicate";
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = Kind,
+                Summary = summary
             });
         }
     }

@@ -2,6 +2,7 @@ using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Text.Json.Nodes;
 
 namespace Elsa.AI.IntegrationTests;
 
@@ -49,8 +50,68 @@ public class AiChatEndpointTests
         Assert.Equal(3, completion.Sequence);
     }
 
+    [Fact(DisplayName = "Chat orchestration routes to requested provider")]
+    public async Task ChatOrchestrationRoutesToRequestedProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(new NamedAiProvider("first"));
+        services.AddSingleton<IAiProvider>(new NamedAiProvider("second"));
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           ProviderName = "second",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        var delta = Assert.Single(events, x => x.Type == "assistant.delta");
+        Assert.Equal("second", delta.Data["provider"]!.GetValue<string>());
+    }
+
+    [Fact(DisplayName = "Chat orchestration routes an agent to its configured provider")]
+    public async Task ChatOrchestrationRoutesAgentToConfiguredProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options =>
+        {
+            options.Agents =
+            [
+                new()
+                {
+                    Name = "workflow-author",
+                    DisplayName = "Workflow author",
+                    Description = "Creates safe workflow proposals",
+                    ProviderName = "second"
+                }
+            ];
+        });
+        services.AddSingleton<IAiProvider>(new NamedAiProvider("first"));
+        services.AddSingleton<IAiProvider>(new NamedAiProvider("second"));
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Agent = "workflow-author",
+                           Message = "Create a workflow"
+                       }))
+            events.Add(streamEvent);
+
+        var delta = Assert.Single(events, x => x.Type == "assistant.delta");
+        Assert.Equal("second", delta.Data["provider"]!.GetValue<string>());
+    }
+
     private class SequencedAiProvider : IAiProvider
     {
+        public string Name => "sequenced";
+
         public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
 
@@ -70,6 +131,30 @@ public class AiChatEndpointTests
                 Type = "assistant.delta",
                 Sequence = 2,
                 Timestamp = DateTimeOffset.UtcNow
+            };
+        }
+    }
+
+    private class NamedAiProvider(string name) : IAiProvider
+    {
+        public string Name => name;
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+
+            yield return new AiProviderEvent
+            {
+                Type = "assistant.delta",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["provider"] = name
+                }
             };
         }
     }

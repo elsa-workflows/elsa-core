@@ -5,6 +5,7 @@ using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.AI.Host.UnitTests;
 
@@ -63,6 +64,27 @@ public class AiRegistrationTests
 
         service.Enable(definition.Name);
         Assert.True(service.IsEnabled(definition));
+    }
+
+    [Fact(DisplayName = "In-memory conversation store evicts expired conversations")]
+    public async Task InMemoryConversationStoreEvictsExpiredConversations()
+    {
+        var store = new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions
+        {
+            ConversationRetention = TimeSpan.FromMinutes(5)
+        }));
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-10),
+            UpdatedAt = DateTimeOffset.UtcNow.AddMinutes(-10)
+        });
+
+        var result = await store.FindAsync("conversation-1");
+
+        Assert.Null(result);
     }
 
     private class ScopedAuditHandler : IAiAuditEventHandler

@@ -30,6 +30,7 @@ public record AiChatRequest
     public string? ConversationId { get; init; }
     public string Message { get; init; } = "";
     public string? Agent { get; init; }
+    public string? ProviderName { get; init; }
     public ICollection<AiContextAttachment> Attachments { get; init; } = [];
     public string? TenantId { get; init; }
     public string UserId { get; init; } = default!;

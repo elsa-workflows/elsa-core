@@ -43,6 +43,8 @@ public class AiCapabilitiesEndpointTests
 
     private class TestAiProvider : IAiProvider
     {
+        public string Name => "test";
+
         public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
 
