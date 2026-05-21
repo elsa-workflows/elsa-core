@@ -48,6 +48,11 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
     /// The bookmark queue items.
     /// </summary>
     public DbSet<BookmarkQueueItem> BookmarkQueueItems { get; set; } = null!;
+
+    /// <summary>
+    /// The bookmark queue dead-letter items.
+    /// </summary>
+    public DbSet<BookmarkQueueDeadLetterItem> BookmarkQueueDeadLetterItems { get; set; } = null!;
     
     /// <summary>
     /// The generic key value pairs.
@@ -63,6 +68,7 @@ public class RuntimeElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<ActivityExecutionRecord>(config);
         modelBuilder.ApplyConfiguration<StoredBookmark>(config);
         modelBuilder.ApplyConfiguration<BookmarkQueueItem>(config);
+        modelBuilder.ApplyConfiguration<BookmarkQueueDeadLetterItem>(config);
         modelBuilder.ApplyConfiguration<SerializedKeyValuePair>(config);
         modelBuilder.ApplyConfiguration<WorkflowInboxMessage>(config);
         

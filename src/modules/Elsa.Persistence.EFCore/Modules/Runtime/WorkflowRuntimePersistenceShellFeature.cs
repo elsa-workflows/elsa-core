@@ -19,6 +19,7 @@ public abstract class EFCoreWorkflowRuntimePersistenceShellFeatureBase : Persist
         services.AddScoped<ITriggerStore, EFCoreTriggerStore>();
         services.AddScoped<IBookmarkStore, EFCoreBookmarkStore>();
         services.AddScoped<IBookmarkQueueStore, EFBookmarkQueueStore>();
+        services.AddScoped<IBookmarkQueueDeadLetterStore, EFBookmarkQueueDeadLetterStore>();
         services.AddScoped<IWorkflowExecutionLogStore, EFCoreWorkflowExecutionLogStore>();
         services.AddScoped<IActivityExecutionStore, EFCoreActivityExecutionStore>();
         services.AddScoped<IKeyValueStore, EFCoreKeyValueStore>();
@@ -26,6 +27,7 @@ public abstract class EFCoreWorkflowRuntimePersistenceShellFeatureBase : Persist
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>(services);
         AddStore<StoredBookmark, EFCoreBookmarkStore>(services);
         AddStore<BookmarkQueueItem, EFBookmarkQueueStore>(services);
+        AddStore<BookmarkQueueDeadLetterItem, EFBookmarkQueueDeadLetterStore>(services);
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>(services);
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>(services);
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>(services);
