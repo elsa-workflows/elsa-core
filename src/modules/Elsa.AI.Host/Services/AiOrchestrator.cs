@@ -33,6 +33,18 @@ public class AiOrchestrator(
             conversation = null;
             conversationId = Guid.NewGuid().ToString("N");
         }
+        var providerSessionId = conversation?.ProviderSessionId;
+
+        if (provider != null && string.IsNullOrWhiteSpace(providerSessionId))
+        {
+            var session = await provider.CreateSessionAsync(new CreateAiSessionRequest
+            {
+                ConversationId = conversationId,
+                Agent = request.Agent,
+                TenantId = request.TenantId
+            }, cancellationToken);
+            providerSessionId = session.ProviderSessionId ?? session.Id;
+        }
 
         var messages = conversation?.Messages.ToList() ?? [];
         var isDuplicateReconnectMessage = request.IsReconnect && HasReconnectUserMessage(conversation, request.Message);
@@ -47,7 +59,7 @@ public class AiOrchestrator(
         var toolResults = isDuplicateReconnectMessage ? RestoreToolResults(messages) : new List<AiToolTurnResult>();
 
         yield return CreateEvent("conversation.started", conversationId, sequence++);
-        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, cancellationToken);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, providerSessionId, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
 
         IReadOnlyCollection<AiResolvedContext> context = [];
@@ -79,7 +91,7 @@ public class AiOrchestrator(
                 ["content"] = content
             });
             messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, content, sequence - 1));
-            await SaveConversationAsync(conversationId, request, AiConversationStatus.Failed, messages, conversation, cancellationToken);
+            await SaveConversationAsync(conversationId, request, AiConversationStatus.Failed, messages, conversation, providerSessionId, cancellationToken);
             await RecordChatAuditAsync("chat.failed", request, conversationId, provider?.Name, cancellationToken);
             yield return CreateEvent("conversation.completed", conversationId, sequence);
             yield break;
@@ -163,7 +175,7 @@ public class AiOrchestrator(
                     providerHistory.Add(userMessage);
 
                 providerHistory.AddRange(currentTurnMessages);
-                await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, cancellationToken);
+                await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, providerSessionId, cancellationToken);
 
                 if (turn == MaxProviderTurns - 1)
                     yield return CreateEvent("assistant.delta", conversationId, sequence++, new JsonObject
@@ -173,7 +185,7 @@ public class AiOrchestrator(
             }
         }
 
-        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, messages, conversation, cancellationToken);
+        await SaveConversationAsync(conversationId, request, AiConversationStatus.Completed, messages, conversation, providerSessionId, cancellationToken);
         await RecordChatAuditAsync("chat.completed", request, conversationId, provider?.Name, cancellationToken);
         yield return CreateEvent("conversation.completed", conversationId, sequence);
     }
@@ -358,7 +370,10 @@ public class AiOrchestrator(
         if (string.IsNullOrEmpty(value))
             return value;
 
-        var maxChars = Math.Min(value.Length, Math.Max(0, maxBytes / 4));
+        if (maxBytes <= 0)
+            return "";
+
+        var maxChars = Math.Min(value.Length, maxBytes);
         var truncated = value[..maxChars];
 
         while (Encoding.UTF8.GetByteCount(truncated) > maxBytes && truncated.Length > 0)
@@ -468,7 +483,7 @@ public class AiOrchestrator(
     private static string NormalizeTenantId(string? tenantId) =>
         string.IsNullOrWhiteSpace(tenantId) ? "" : tenantId;
 
-    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, CancellationToken cancellationToken)
+    private async ValueTask SaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, string? providerSessionId, CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -480,6 +495,7 @@ public class AiOrchestrator(
             Status = status,
             CreatedAt = conversation is null || conversation.CreatedAt == default ? now : conversation.CreatedAt,
             UpdatedAt = now,
+            ProviderSessionId = providerSessionId ?? conversation?.ProviderSessionId,
             RetentionMode = conversation?.RetentionMode ?? AiRetentionMode.Configured,
             RetentionExpiresAt = conversation?.RetentionExpiresAt,
             Messages = messages.ToList()

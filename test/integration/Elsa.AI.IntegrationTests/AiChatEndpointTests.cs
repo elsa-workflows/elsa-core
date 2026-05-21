@@ -276,6 +276,34 @@ public class AiChatEndpointTests
         Assert.Contains(conversation.Messages, x => x.Role == AiMessageRole.User && x.Content == "Explain this workflow");
     }
 
+    [Fact(DisplayName = "Chat orchestration creates provider sessions")]
+    public async Task ChatOrchestrationCreatesProviderSessions()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+        var store = serviceProvider.GetRequiredService<IAiConversationStore>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var sessionRequest = Assert.Single(provider.SessionRequests);
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.Equal("conversation-1", sessionRequest.ConversationId);
+        Assert.Equal("provider-session-conversation-1", conversation!.ProviderSessionId);
+    }
+
     [Fact(DisplayName = "Chat orchestration forwards persisted message history")]
     public async Task ChatOrchestrationForwardsPersistedMessageHistory()
     {
@@ -491,6 +519,7 @@ public class AiChatEndpointTests
 
         var context = Assert.Single(provider.Requests.Single().Context);
 
+        Assert.Equal(64, context.Summary.Length);
         Assert.True(context.Data["truncated"]!.GetValue<bool>());
         Assert.Equal(64, context.Data["maxBytes"]!.GetValue<int>());
         Assert.True(context.Metadata["truncated"]!.GetValue<bool>());
@@ -518,6 +547,7 @@ public class AiChatEndpointTests
         var toolResult = Assert.Single(events, x => x.Type == "tool.result");
         var data = toolResult.Data["data"]!.AsObject();
 
+        Assert.Equal(64, toolResult.Data["summary"]!.GetValue<string>().Length);
         Assert.True(data["truncated"]!.GetValue<bool>());
         Assert.Equal(64, data["maxBytes"]!.GetValue<int>());
     }
@@ -576,10 +606,18 @@ public class AiChatEndpointTests
     private class CapturingTurnProvider : IAiProvider
     {
         public string Name => "capturing";
+        public List<CreateAiSessionRequest> SessionRequests { get; } = [];
         public List<AiTurnRequest> Requests { get; } = [];
 
-        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
-            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default)
+        {
+            SessionRequests.Add(request);
+            return ValueTask.FromResult(new AiSessionHandle
+            {
+                Id = request.ConversationId,
+                ProviderSessionId = $"provider-session-{request.ConversationId}"
+            });
+        }
 
         public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
