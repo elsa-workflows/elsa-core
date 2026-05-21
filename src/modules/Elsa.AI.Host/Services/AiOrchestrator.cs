@@ -28,7 +28,7 @@ public class AiOrchestrator(
         var sequence = 0L;
         var provider = SelectProvider(request);
         var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
-        if (conversation != null && !BelongsToTenant(conversation, request.TenantId))
+        if (conversation != null && (!BelongsToTenant(conversation, request.TenantId) || !BelongsToUser(conversation, request.UserId)))
         {
             conversation = null;
             conversationId = Guid.NewGuid().ToString("N");
@@ -380,13 +380,21 @@ public class AiOrchestrator(
         if (maxBytes <= 0)
             return "";
 
-        var maxChars = Math.Min(value.Length, maxBytes);
-        var truncated = value[..maxChars];
+        if (Encoding.UTF8.GetByteCount(value) <= maxBytes)
+            return value;
 
-        while (Encoding.UTF8.GetByteCount(truncated) > maxBytes && truncated.Length > 0)
-            truncated = truncated[..^1];
+        var low = 0;
+        var high = Math.Min(value.Length, maxBytes);
+        while (low < high)
+        {
+            var candidate = (low + high + 1) / 2;
+            if (Encoding.UTF8.GetByteCount(value.AsSpan(0, candidate)) <= maxBytes)
+                low = candidate;
+            else
+                high = candidate - 1;
+        }
 
-        return truncated;
+        return value[..low];
     }
 
     private static bool TryReadToolCall(AiProviderEvent providerEvent, out ToolCall toolCall)
@@ -495,6 +503,9 @@ public class AiOrchestrator(
 
     private static bool BelongsToTenant(AiConversation conversation, string? tenantId) =>
         string.Equals(NormalizeTenantId(conversation.TenantId), NormalizeTenantId(tenantId), StringComparison.Ordinal);
+
+    private static bool BelongsToUser(AiConversation conversation, string userId) =>
+        string.IsNullOrWhiteSpace(conversation.UserId) || string.Equals(conversation.UserId, userId, StringComparison.Ordinal);
 
     private static string NormalizeTenantId(string? tenantId) =>
         string.IsNullOrWhiteSpace(tenantId) ? "" : tenantId;

@@ -3,6 +3,7 @@ using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Text;
 using System.Text.Json.Nodes;
 
 namespace Elsa.AI.IntegrationTests;
@@ -557,6 +558,57 @@ public class AiChatEndpointTests
         Assert.Single(original.Messages);
     }
 
+    [Fact(DisplayName = "Chat orchestration does not load foreign user conversation history")]
+    public async Task ChatOrchestrationDoesNotLoadForeignUserConversationHistory()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+        var store = serviceProvider.GetRequiredService<IAiConversationStore>();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            TenantId = "tenant-1",
+            UserId = "user-a",
+            Status = AiConversationStatus.Completed,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.User,
+                    Content = "User A secret",
+                    CreatedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           TenantId = "tenant-1",
+                           UserId = "user-b",
+                           Message = "Continue"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var request = Assert.Single(provider.Requests);
+        var original = await store.FindAsync("conversation-1");
+
+        Assert.DoesNotContain(request.Messages, x => x.Content == "User A secret");
+        Assert.Equal("user-a", original!.UserId);
+        Assert.Single(original.Messages);
+    }
+
     [Fact(DisplayName = "Chat orchestration limits resolved context payloads")]
     public async Task ChatOrchestrationLimitsResolvedContextPayloads()
     {
@@ -584,6 +636,33 @@ public class AiChatEndpointTests
         Assert.True(context.Data["truncated"]!.GetValue<bool>());
         Assert.Equal(64, context.Data["maxBytes"]!.GetValue<int>());
         Assert.True(context.Metadata["truncated"]!.GetValue<bool>());
+    }
+
+    [Fact(DisplayName = "Chat orchestration truncates multibyte context to the byte limit")]
+    public async Task ChatOrchestrationTruncatesMultibyteContextToTheByteLimit()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxResolvedContextBytes = 64);
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiContextProvider, MultibyteContextProvider>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain this workflow",
+                           Attachments = [new AiContextAttachment { Kind = MultibyteContextProvider.ContextKind, ReferenceId = "workflow-1" }]
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var context = Assert.Single(provider.Requests.Single().Context);
+
+        Assert.True(Encoding.UTF8.GetByteCount(context.Summary) <= 64);
+        Assert.True(context.Summary.Length > 16);
     }
 
     [Fact(DisplayName = "Chat orchestration limits tool result payloads")]
@@ -711,6 +790,20 @@ public class AiChatEndpointTests
                 Summary = new string('s', 512),
                 Data = new JsonObject { ["content"] = new string('d', 512) },
                 Metadata = new JsonObject { ["content"] = new string('m', 512) }
+            });
+    }
+
+    private class MultibyteContextProvider : IAiContextProvider
+    {
+        public const string ContextKind = "MultibyteContext";
+        public string Kind => ContextKind;
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = ContextKind,
+                ReferenceId = request.Attachment.ReferenceId,
+                Summary = new string('漢', 512)
             });
     }
 
