@@ -68,7 +68,7 @@ public static class WorkflowInstrumentation
             activity.SetTag(WorkflowOperationName, WorkflowExecuteOperation);
         }
 
-        if (shouldRecordStarted)
+        if (shouldRecordStarted && WorkflowStartedCounter.Enabled)
             WorkflowStartedCounter.Add(1, CreateWorkflowTags(context, false));
 
         return new WorkflowInstrumentationScope(activity);
@@ -92,7 +92,7 @@ public static class WorkflowInstrumentation
     {
         var activity = scope.Activity;
         var workflowException = exception ?? (context.SubStatus == Workflows.WorkflowSubStatus.Faulted ? context.Exception : null);
-        var cancelled = exception is OperationCanceledException || context.SubStatus == Workflows.WorkflowSubStatus.Cancelled;
+        var cancelled = exception is OperationCanceledException || (exception == null && context.SubStatus == Workflows.WorkflowSubStatus.Cancelled);
         var faulted = !cancelled && (workflowException != null || context.SubStatus == Workflows.WorkflowSubStatus.Faulted);
         var workflowSubStatus = cancelled ? Workflows.WorkflowSubStatus.Cancelled : faulted ? Workflows.WorkflowSubStatus.Faulted : (Workflows.WorkflowSubStatus?)null;
 
@@ -104,21 +104,22 @@ public static class WorkflowInstrumentation
             activity.Dispose();
         }
 
-        if (faulted)
+        if (faulted && WorkflowFaultedCounter.Enabled)
             WorkflowFaultedCounter.Add(1, CreateWorkflowTags(context, workflowSubStatusOverride: workflowSubStatus));
-        else if (context.SubStatus == Workflows.WorkflowSubStatus.Finished)
+        else if (context.SubStatus == Workflows.WorkflowSubStatus.Finished && WorkflowCompletedCounter.Enabled)
             WorkflowCompletedCounter.Add(1, CreateWorkflowTags(context));
     }
 
     internal static void StopActivity(ActivityInstrumentationScope scope, ActivityExecutionContext context, Exception? exception)
     {
         var activity = scope.Activity;
-        var cancelled = exception is OperationCanceledException || context.Status == Workflows.ActivityStatus.Canceled;
+        var cancelled = exception is OperationCanceledException || (exception == null && context.Status == Workflows.ActivityStatus.Canceled);
         var faulted = !cancelled && (exception != null || context.Status == Workflows.ActivityStatus.Faulted);
         var activityStatus = cancelled ? Workflows.ActivityStatus.Canceled : context.Status;
         var duration = Stopwatch.GetElapsedTime(scope.StartTimestamp).TotalSeconds;
 
-        ActivityDuration.Record(duration, CreateActivityTags(context, activityStatus, faulted));
+        if (ActivityDuration.Enabled)
+            ActivityDuration.Record(duration, CreateActivityTags(context, activityStatus, faulted));
 
         if (activity != null)
         {

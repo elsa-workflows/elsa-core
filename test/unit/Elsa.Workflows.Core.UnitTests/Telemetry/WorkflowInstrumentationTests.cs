@@ -233,6 +233,25 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
+    public async Task ActivityInvoker_Should_Record_Fault_When_Cancelled_Context_Throws_NonCancellation_Exception()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var invoker = new ActivityInvoker(new CancelledThenThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
+
+        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        Assert.Equal(ActivityStatusCode.Error, span.Status);
+        Assert.Equal(ActivityStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
+        Assert.Equal(true, GetTag(span.TagObjects, WorkflowInstrumentation.ActivityFaulted));
+        var activityDuration = GetActivityDuration(meterCapture, context);
+        Assert.Equal(ActivityStatus.Faulted.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
+        Assert.Equal(true, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+    }
+
+    [Fact]
     public async Task ActivityInvoker_Should_Not_Emit_ExceptionType_When_Faulted_Without_Exception()
     {
         using var activityCapture = new ActivityCapture();
@@ -265,6 +284,26 @@ public class WorkflowInstrumentationTests
         Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
         Assert.Equal(exception, context.Exception);
         _ = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
+    }
+
+    [Fact]
+    public async Task WorkflowRunner_Should_Record_Fault_When_Cancelled_Context_Throws_NonCancellation_Exception()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        var runner = CreateWorkflowRunner(context, new CancelledThenThrowingWorkflowExecutionPipeline());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
+
+        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        Assert.Equal(ActivityStatusCode.Error, span.Status);
+        Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
+        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
+        Assert.Equal(true, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
+        var faulted = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
+        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), faulted.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
     }
 
     private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline, INotificationSender? notificationSender = null)
@@ -402,6 +441,19 @@ public class WorkflowInstrumentationTests
         public Task ExecuteAsync(ActivityExecutionContext context) => throw new OperationCanceledException();
     }
 
+    private sealed class CancelledThenThrowingActivityExecutionPipeline : IActivityExecutionPipeline
+    {
+        public ActivityMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(ActivityExecutionContext context)
+        {
+            context.TransitionTo(ActivityStatus.Canceled);
+            throw new InvalidOperationException("Pipeline failed after cancellation.");
+        }
+    }
+
     private sealed class CompletingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
     {
         public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
@@ -475,6 +527,20 @@ public class WorkflowInstrumentationTests
         public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
 
         public Task ExecuteAsync(WorkflowExecutionContext context) => throw new OperationCanceledException();
+    }
+
+    private sealed class CancelledThenThrowingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
+    {
+        public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
+        public WorkflowMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
+
+        public Task ExecuteAsync(WorkflowExecutionContext context)
+        {
+            context.Cancel();
+            throw new InvalidOperationException("Pipeline failed after cancellation.");
+        }
     }
 
     private sealed class FaultingWorkflowExecutionPipeline(Exception exception) : IWorkflowExecutionPipeline
