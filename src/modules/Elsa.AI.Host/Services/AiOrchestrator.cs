@@ -33,6 +33,14 @@ public class AiOrchestrator(
             conversation = null;
             conversationId = Guid.NewGuid().ToString("N");
         }
+        var messages = conversation?.Messages.ToList() ?? [];
+
+        if (request.IsReconnect && IsCompletedReconnect(conversation, request.Message))
+        {
+            yield return CreateEvent("conversation.completed", conversationId, GetNextSequence(messages));
+            yield break;
+        }
+
         var providerSessionId = conversation?.ProviderSessionId;
 
         if (provider != null && string.IsNullOrWhiteSpace(providerSessionId))
@@ -46,7 +54,6 @@ public class AiOrchestrator(
             providerSessionId = session.ProviderSessionId ?? session.Id;
         }
 
-        var messages = conversation?.Messages.ToList() ?? [];
         var isDuplicateReconnectMessage = request.IsReconnect && HasReconnectUserMessage(conversation, request.Message);
         var providerHistory = messages.ToList();
         var userMessage = isDuplicateReconnectMessage
@@ -438,8 +445,17 @@ public class AiOrchestrator(
     private static bool HasReconnectUserMessage(AiConversation? conversation, string message)
     {
         return conversation is { Status: AiConversationStatus.Active } &&
-               conversation.Messages.Any(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(message), StringComparison.Ordinal));
+               HasUserMessage(conversation, message);
     }
+
+    private static bool IsCompletedReconnect(AiConversation? conversation, string message) =>
+        conversation is { Status: AiConversationStatus.Completed } && HasUserMessage(conversation, message);
+
+    private static bool HasUserMessage(AiConversation conversation, string message) =>
+        conversation.Messages.Any(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(message), StringComparison.Ordinal));
+
+    private static long GetNextSequence(IReadOnlyCollection<AiMessage> messages) =>
+        messages.Count == 0 ? 0 : messages.Max(x => x.StreamSequence) + 1;
 
     private static List<AiToolTurnResult> RestoreToolResults(IEnumerable<AiMessage> messages)
     {

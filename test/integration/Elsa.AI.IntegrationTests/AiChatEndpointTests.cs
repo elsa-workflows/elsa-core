@@ -388,6 +388,67 @@ public class AiChatEndpointTests
         Assert.Single(userMessages);
     }
 
+    [Fact(DisplayName = "Chat orchestration does not replay completed conversations on reconnect")]
+    public async Task ChatOrchestrationDoesNotReplayCompletedConversationsOnReconnect()
+    {
+        var turnProvider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(turnProvider);
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+        var events = new List<AiStreamEvent>();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            UserId = "user-1",
+            Status = AiConversationStatus.Completed,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.User,
+                    Content = "Retry me",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    StreamSequence = 0
+                },
+                new AiMessage
+                {
+                    Id = "message-2",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.Assistant,
+                    Content = "Done",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    StreamSequence = 1
+                }
+            ]
+        });
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Retry me",
+                           IsReconnect = true
+                       }))
+            events.Add(streamEvent);
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        var completedEvent = Assert.Single(events);
+        Assert.Equal("conversation.completed", completedEvent.Type);
+        Assert.Empty(turnProvider.SessionRequests);
+        Assert.Empty(turnProvider.Requests);
+        Assert.Equal(AiConversationStatus.Completed, conversation!.Status);
+        Assert.Equal(2, conversation.Messages.Count);
+    }
+
     [Fact(DisplayName = "Chat orchestration resumes persisted tool results on reconnect")]
     public async Task ChatOrchestrationResumesPersistedToolResultsOnReconnect()
     {
