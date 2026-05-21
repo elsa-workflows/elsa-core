@@ -65,7 +65,8 @@ public class AiOrchestrator(
         if (!isDuplicateReconnectMessage)
             messages.Add(userMessage);
 
-        var toolResults = isDuplicateReconnectMessage ? RestoreToolResults(messages) : new List<AiToolTurnResult>();
+        var knownToolCallIds = RestoreToolResults(messages).Select(x => x.ToolCallId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var pendingToolResults = isDuplicateReconnectMessage ? RestorePendingToolResults(messages) : new List<AiToolTurnResult>();
 
         await SaveConversationAsync(conversationId, request, AiConversationStatus.Active, messages, conversation, providerSessionId, cancellationToken);
         await RecordChatAuditAsync("chat.started", request, conversationId, provider?.Name, cancellationToken);
@@ -132,7 +133,7 @@ public class AiOrchestrator(
                                    Messages = providerHistory.ToList(),
                                    Context = context,
                                    Tools = tools,
-                                   ToolResults = toolResults.ToList(),
+                                   ToolResults = pendingToolResults.ToList(),
                                    Agent = request.Agent
                                }, cancellationToken))
                 {
@@ -145,7 +146,7 @@ public class AiOrchestrator(
                     if (!TryReadToolCall(providerEvent, out var toolCall))
                         continue;
 
-                    if (toolResults.Any(x => string.Equals(x.ToolCallId, toolCall.Id, StringComparison.OrdinalIgnoreCase)) ||
+                    if (knownToolCallIds.Contains(toolCall.Id) ||
                         currentTurnToolResults.Any(x => string.Equals(x.ToolCallId, toolCall.Id, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
@@ -178,7 +179,10 @@ public class AiOrchestrator(
                 if (currentTurnToolResults.Count == 0)
                     break;
 
-                toolResults.AddRange(currentTurnToolResults);
+                foreach (var toolResult in currentTurnToolResults)
+                    knownToolCallIds.Add(toolResult.ToolCallId);
+
+                pendingToolResults = currentTurnToolResults;
                 if (providerHistory.All(x => x.Id != userMessage.Id))
                     providerHistory.Add(userMessage);
 
@@ -470,6 +474,17 @@ public class AiOrchestrator(
     {
         return messages
             .Where(x => x.Role == AiMessageRole.Tool)
+            .Select(CreateToolTurnResult)
+            .OfType<AiToolTurnResult>()
+            .ToList();
+    }
+
+    private static List<AiToolTurnResult> RestorePendingToolResults(IReadOnlyCollection<AiMessage> messages)
+    {
+        return messages
+            .Reverse()
+            .TakeWhile(x => x.Role == AiMessageRole.Tool)
+            .Reverse()
             .Select(CreateToolTurnResult)
             .OfType<AiToolTurnResult>()
             .ToList();

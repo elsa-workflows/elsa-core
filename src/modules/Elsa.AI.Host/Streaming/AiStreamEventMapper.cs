@@ -1,4 +1,5 @@
 using Elsa.AI.Abstractions.Models;
+using System.Text.Json.Nodes;
 
 namespace Elsa.AI.Host.Streaming;
 
@@ -11,6 +12,6 @@ public class AiStreamEventMapper
             ConversationId = conversationId,
             Sequence = providerEvent.Sequence,
             Timestamp = providerEvent.Timestamp,
-            Data = providerEvent.Data
+            Data = (JsonObject)providerEvent.Data.DeepClone()
         };
 }
