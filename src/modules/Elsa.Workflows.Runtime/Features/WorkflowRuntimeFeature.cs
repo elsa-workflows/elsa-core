@@ -37,6 +37,7 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(WorkflowsFeature))]
 public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();

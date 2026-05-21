@@ -1,8 +1,10 @@
 using System.Reflection;
 using Elsa.Expressions.Options;
+using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Features;
 using NSubstitute;
 using RuntimeFeature = Elsa.Workflows.Runtime.Features.WorkflowRuntimeFeature;
 using ShellRuntimeFeature = Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature;
@@ -104,6 +106,16 @@ public class WorkflowRuntimeFeatureTests
     public void WorkflowsAdd_Throws_WhenTypeDoesNotImplementWorkflow()
     {
         Assert.Throws<ArgumentException>(() => _feature.Workflows.Add(typeof(NotAWorkflow)));
+    }
+
+    [Fact]
+    public void RuntimeFeature_DependsOnWorkflowsFeature()
+    {
+        var dependencyTypes = typeof(RuntimeFeature)
+            .GetCustomAttributes<DependsOnAttribute>()
+            .Select(x => x.Type);
+
+        Assert.Contains(typeof(WorkflowsFeature), dependencyTypes);
     }
 
     [Fact]
