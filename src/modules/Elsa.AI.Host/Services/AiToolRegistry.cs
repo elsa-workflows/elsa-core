@@ -64,7 +64,7 @@ public class AiToolRegistry(IEnumerable<IAiTool> tools, AiToolEnablementService 
 
         var grantedPermissions = userPermissions
             .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToHashSet(StringComparer.Ordinal);
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
     }

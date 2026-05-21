@@ -131,7 +131,7 @@ public class AiToolRegistryTests
         {
             TenantId = "tenant-1",
             ActorId = "user-1",
-            UserPermissions = ["workflows:write"]
+            UserPermissions = ["Workflows:Write"]
         });
 
         Assert.Null(denied);

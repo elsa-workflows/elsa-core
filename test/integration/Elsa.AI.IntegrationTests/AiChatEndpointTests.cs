@@ -337,16 +337,19 @@ public class AiChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var continuation = Assert.Single(provider.Requests, x => x.ToolResults.Count == 1);
-        var toolResult = Assert.Single(continuation.ToolResults);
+        var continuation = Assert.Single(provider.Requests, x => x.Messages.Any(message => message.Role == AiMessageRole.Tool));
         var continuationMessages = continuation.Messages.Where(x => x.Role is AiMessageRole.Assistant or AiMessageRole.Tool).ToList();
 
-        Assert.Equal("tool-call-1", toolResult.ToolCallId);
-        Assert.Equal("Echoed", toolResult.Result.Summary);
+        Assert.Empty(continuation.ToolResults);
         Assert.Collection(
             continuationMessages,
             assistant => Assert.Equal(AiMessageRole.Assistant, assistant.Role),
-            tool => Assert.Equal(AiMessageRole.Tool, tool.Role));
+            tool =>
+            {
+                Assert.Equal(AiMessageRole.Tool, tool.Role);
+                Assert.Equal("tool-call-1", tool.Metadata["toolCallId"]!.GetValue<string>());
+                Assert.Equal("Echoed", tool.Content);
+            });
         Assert.Contains(events, x => x.Type == "assistant.delta" && x.Data["content"]!.GetValue<string>() == "Used Echoed");
     }
 
@@ -628,13 +631,14 @@ public class AiChatEndpointTests
         }
 
         var reconnectRequest = provider.Requests.Last();
-        var restoredToolResult = Assert.Single(reconnectRequest.ToolResults);
+        var restoredToolMessage = Assert.Single(reconnectRequest.Messages, x => x.Role == AiMessageRole.Tool);
         var completedConversation = await store.FindAsync("conversation-1");
 
         Assert.Equal("", reconnectRequest.Message);
-        Assert.Equal("tool-call-1", restoredToolResult.ToolCallId);
-        Assert.Equal("echo", restoredToolResult.ToolName);
-        Assert.Equal("Echoed", restoredToolResult.Result.Summary);
+        Assert.Empty(reconnectRequest.ToolResults);
+        Assert.Equal("tool-call-1", restoredToolMessage.Metadata["toolCallId"]!.GetValue<string>());
+        Assert.Equal("echo", restoredToolMessage.Metadata["toolName"]!.GetValue<string>());
+        Assert.Equal("Echoed", restoredToolMessage.Content);
         Assert.Single(completedConversation!.Messages, x => x.Role == AiMessageRole.User && x.Content == "Use a tool");
         Assert.Single(completedConversation.Messages, x => x.Role == AiMessageRole.Tool);
         Assert.Equal(AiConversationStatus.Completed, completedConversation.Status);
@@ -826,6 +830,10 @@ public class AiChatEndpointTests
         Assert.Equal(64, data["maxBytes"]!.GetValue<int>());
     }
 
+    private static string? GetToolResultSummary(AiTurnRequest request) =>
+        request.ToolResults.FirstOrDefault()?.Result.Summary ??
+        request.Messages.LastOrDefault(x => x.Role == AiMessageRole.Tool)?.Content;
+
     private class SequencedAiProvider : IAiProvider
     {
         public string Name => "sequenced";
@@ -990,8 +998,9 @@ public class AiChatEndpointTests
         {
             await Task.Yield();
             Requests.Add(request);
+            var toolResultSummary = GetToolResultSummary(request);
 
-            if (request.ToolResults.Count == 0)
+            if (toolResultSummary == null)
             {
                 yield return new AiProviderEvent
                 {
@@ -1019,7 +1028,7 @@ public class AiChatEndpointTests
                 Timestamp = DateTimeOffset.UtcNow,
                 Data = new JsonObject
                 {
-                    ["content"] = $"Used {request.ToolResults.Single().Result.Summary}"
+                    ["content"] = $"Used {toolResultSummary}"
                 }
             };
         }
@@ -1068,8 +1077,9 @@ public class AiChatEndpointTests
         {
             await Task.Yield();
             Requests.Add(request);
+            var toolResultSummary = GetToolResultSummary(request);
 
-            if (request.ToolResults.Count == 0)
+            if (toolResultSummary == null)
             {
                 yield return new AiProviderEvent
                 {
@@ -1103,7 +1113,7 @@ public class AiChatEndpointTests
                 Timestamp = DateTimeOffset.UtcNow,
                 Data = new JsonObject
                 {
-                    ["content"] = $"Used {request.ToolResults.Single().Result.Summary}"
+                    ["content"] = $"Used {toolResultSummary}"
                 }
             };
         }

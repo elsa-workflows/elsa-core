@@ -135,7 +135,7 @@ public class AiOrchestrator(
                                    Messages = providerHistory.ToList(),
                                    Context = context,
                                    Tools = tools,
-                                   ToolResults = pendingToolResults.ToList(),
+                                   ToolResults = GetUnrepresentedToolResults(pendingToolResults, providerHistory),
                                    Agent = request.Agent,
                                    ProviderConfiguration = providerSelection.Configuration
                                }, cancellationToken))
@@ -509,6 +509,22 @@ public class AiOrchestrator(
             .Reverse()
             .Select(CreateToolTurnResult)
             .OfType<AiToolTurnResult>()
+            .ToList();
+    }
+
+    private static IReadOnlyCollection<AiToolTurnResult> GetUnrepresentedToolResults(IReadOnlyCollection<AiToolTurnResult> toolResults, IReadOnlyCollection<AiMessage> messages)
+    {
+        if (toolResults.Count == 0)
+            return [];
+
+        var representedToolCallIds = messages
+            .Where(x => x.Role == AiMessageRole.Tool)
+            .Select(x => x.Metadata["toolCallId"]?.GetValue<string>())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return toolResults
+            .Where(x => !representedToolCallIds.Contains(x.ToolCallId))
             .ToList();
     }
 
