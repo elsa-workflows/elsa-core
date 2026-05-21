@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.DistributedHosting.DistributedLocks;
@@ -76,11 +77,9 @@ public class DistributedRuntimeLockProviderValidator(
 
     private IEnumerable<IDistributedLockProvider> GetInnerProviders(IDistributedLockProvider provider)
     {
-        foreach (var property in provider.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        foreach (var property in provider.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(property => property.GetIndexParameters().Length == 0))
         {
-            if (property.GetIndexParameters().Length > 0)
-                continue;
-
             var returnsDistributedLockProvider = typeof(IDistributedLockProvider).IsAssignableFrom(property.PropertyType);
             var returnsDistributedLockProviders = TryGetDistributedLockProviderElementType(property.PropertyType, out _);
 
@@ -92,7 +91,7 @@ public class DistributedRuntimeLockProviderValidator(
             {
                 value = property.GetValue(provider);
             }
-            catch (Exception ex)
+            catch (TargetInvocationException ex)
             {
                 logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because the getter threw.", property.Name);
                 continue;
@@ -110,7 +109,7 @@ public class DistributedRuntimeLockProviderValidator(
                 {
                     enumerator = innerProviders.GetEnumerator();
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or TargetInvocationException)
                 {
                     logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because enumeration threw.", property.Name);
                     continue;
@@ -129,7 +128,7 @@ public class DistributedRuntimeLockProviderValidator(
 
                         providerItem = enumerator.Current;
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException or NotSupportedException)
                     {
                         logger.LogDebug(ex, "Skipping distributed lock provider property {PropertyName} because enumeration threw.", property.Name);
                         break;
@@ -155,10 +154,9 @@ public class DistributedRuntimeLockProviderValidator(
         if (type == typeof(string))
             return false;
 
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-            elementType = type.GetGenericArguments()[0];
-        else
-            elementType = type
+        elementType = type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+            ? type.GetGenericArguments()[0]
+            : type
                 .GetInterfaces()
                 .Where(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .Select(x => x.GetGenericArguments()[0])
