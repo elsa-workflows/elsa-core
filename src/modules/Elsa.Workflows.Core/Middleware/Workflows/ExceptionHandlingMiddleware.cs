@@ -43,6 +43,11 @@ public class ExceptionHandlingMiddleware : IWorkflowExecutionMiddleware
         {
             await _next(context);
         }
+        catch (OperationCanceledException)
+        {
+            context.Cancel();
+            throw;
+        }
         catch (Exception e)
         {
             _logger.LogWarning(e, "An exception was caught from a downstream middleware component");

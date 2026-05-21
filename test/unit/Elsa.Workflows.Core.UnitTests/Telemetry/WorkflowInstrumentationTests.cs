@@ -192,6 +192,24 @@ public class WorkflowInstrumentationTests
     }
 
     [Fact]
+    public async Task WorkflowRunner_Should_Record_Cancel_When_ExceptionHandlingMiddleware_Catches_Cancellation()
+    {
+        using var activityCapture = new ActivityCapture();
+        using var meterCapture = new MeterCapture();
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        var runner = CreateWorkflowRunner(context, new ExceptionHandlingCancellingWorkflowExecutionPipeline());
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => runner.RunAsync(context));
+
+        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        Assert.Equal(ActivityStatusCode.Ok, span.Status);
+        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
+        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
+        Assert.DoesNotContain(meterCapture.LongMeasurements, x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
+    }
+
+    [Fact]
     public async Task WorkflowRunner_Should_Not_Start_When_WorkflowExecuting_Handler_Changes_SubStatus()
     {
         using var activityCapture = new ActivityCapture();
@@ -558,6 +576,24 @@ public class WorkflowInstrumentationTests
         {
             var middleware = new ExceptionHandlingMiddleware(
                 _ => throw exception,
+                context.SystemClock,
+                NullLogger<ExceptionHandlingMiddleware>.Instance);
+
+            await middleware.InvokeAsync(context);
+        }
+    }
+
+    private sealed class ExceptionHandlingCancellingWorkflowExecutionPipeline : IWorkflowExecutionPipeline
+    {
+        public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
+        public WorkflowMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
+
+        public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
+
+        public async Task ExecuteAsync(WorkflowExecutionContext context)
+        {
+            var middleware = new ExceptionHandlingMiddleware(
+                _ => throw new OperationCanceledException(),
                 context.SystemClock,
                 NullLogger<ExceptionHandlingMiddleware>.Instance);
 
