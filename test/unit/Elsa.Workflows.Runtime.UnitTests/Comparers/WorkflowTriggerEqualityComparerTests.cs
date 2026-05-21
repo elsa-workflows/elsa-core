@@ -117,10 +117,42 @@ public class WorkflowTriggerEqualityComparerTests
         var payload = new TypedPayload(typeof(NestedPayload), new NestedPayload("orders"));
         var comparer = new WorkflowTriggerEqualityComparer(CreateTypeRegistry());
         var trigger = CreateTrigger("trigger-1", payload);
+        var expectedAliasPayload = JsonSerializer.Deserialize<object>(
+            """
+            {
+              "payloadType": "NestedPayload",
+              "value": {
+                "name": "orders",
+                "_type": "NestedPayload"
+              }
+            }
+            """,
+            PayloadSerializerOptions);
+        var assemblyQualifiedPayload = JsonSerializer.Deserialize<object>(
+            $$"""
+            {
+              "payloadType": "{{typeof(NestedPayload).AssemblyQualifiedName}}",
+              "value": {
+                "name": "orders",
+                "_type": "{{typeof(NestedPayload).AssemblyQualifiedName}}"
+              }
+            }
+            """,
+            PayloadSerializerOptions);
+        var missingTypePayload = JsonSerializer.Deserialize<object>(
+            """
+            {
+              "payloadType": "NestedPayload",
+              "value": {
+                "name": "orders"
+              }
+            }
+            """,
+            PayloadSerializerOptions);
 
-        var hashCode = comparer.GetHashCode(trigger);
-
-        Assert.NotEqual(0, hashCode);
+        Assert.True(comparer.Equals(trigger, CreateTrigger("trigger-2", expectedAliasPayload!)));
+        Assert.False(comparer.Equals(trigger, CreateTrigger("trigger-3", assemblyQualifiedPayload!)));
+        Assert.False(comparer.Equals(trigger, CreateTrigger("trigger-4", missingTypePayload!)));
     }
     
     /// <summary>
