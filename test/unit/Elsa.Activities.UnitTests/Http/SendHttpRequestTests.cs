@@ -1,22 +1,15 @@
-using System.Diagnostics;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using Elsa.Activities.UnitTests.Http.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
-using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace Elsa.Activities.UnitTests.Http;
 
-[Collection(nameof(SendHttpRequestTestCollection))]
 public class SendHttpRequestTests
 {
-    private const string TestActivitySourceName = "Elsa.Tests";
-
     [Theory]
     [InlineData("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
     [InlineData("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
@@ -68,68 +61,11 @@ public class SendHttpRequestTests
     [Fact]
     public async Task Should_Propagate_Current_Trace_Context()
     {
-        // Arrange
-        ActivityTraceId parentTraceId = default;
-        using var listener = new ActivityListener
+        await SendHttpRequestTestHelpers.AssertPropagatesCurrentTraceContextAsync(async (url, responseHandler) =>
         {
-            ShouldListenTo = source => source.Name == TestActivitySourceName || source.Name == "System.Net.Http",
-            Sample = (ref ActivityCreationOptions<ActivityContext> options) => options.Source.Name switch
-            {
-                TestActivitySourceName => ActivitySamplingResult.AllDataAndRecorded,
-                "System.Net.Http" when parentTraceId != default && options.Parent.TraceId == parentTraceId => ActivitySamplingResult.AllDataAndRecorded,
-                _ => ActivitySamplingResult.None
-            },
-            SampleUsingParentId = (ref ActivityCreationOptions<string> options) => options.Source.Name switch
-            {
-                TestActivitySourceName => ActivitySamplingResult.AllDataAndRecorded,
-                "System.Net.Http" when parentTraceId != default && options.Parent?.Contains(parentTraceId.ToString(), StringComparison.OrdinalIgnoreCase) == true => ActivitySamplingResult.AllDataAndRecorded,
-                _ => ActivitySamplingResult.None
-            }
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        using var source = new ActivitySource(TestActivitySourceName);
-        using var parentActivity = source.StartActivity("parent");
-        Assert.NotNull(parentActivity);
-        parentTraceId = parentActivity.TraceId;
-        await using var server = new TraceContextServer();
-        using var httpClient = new HttpClient();
-        var httpClientFactory = Substitute.For<IHttpClientFactory>();
-        httpClientFactory.CreateClient(Arg.Any<string>()).Returns(httpClient);
-        var sendHttpRequest = CreateSendHttpRequest(server.Uri);
-
-        // Act
-        await new ActivityTestFixture(sendHttpRequest)
-            .WithHttpServices()
-            .ConfigureServices(services => services.AddSingleton(httpClientFactory))
-            .ExecuteAsync();
-        var headers = await server.GetRequestHeadersAsync();
-
-        // Assert
-        Assert.True(headers.TryGetValue("traceparent", out var traceParent));
-        var traceParentParts = traceParent.Split('-');
-        Assert.Equal(4, traceParentParts.Length);
-        Assert.Equal("00", traceParentParts[0]);
-        Assert.Equal(parentActivity.TraceId.ToString(), traceParentParts[1]);
-        Assert.NotEqual(parentActivity.SpanId.ToString(), traceParentParts[2]);
-    }
-
-    [Theory]
-    [MemberData(nameof(ExpectedTraceContextServerTeardownTasks))]
-    public async Task TraceContextServer_Dispose_Should_Ignore_Expected_Completed_Request_Task_Failures(Task<Dictionary<string, string>> requestTask)
-    {
-        var server = TraceContextServer.CreateForTeardownTest(requestTask);
-
-        await server.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task TraceContextServer_Dispose_Should_Rethrow_Unexpected_Completed_Request_Task_Failures()
-    {
-        var requestTask = Task.FromException<Dictionary<string, string>>(new InvalidDataException("Malformed request."));
-        var server = TraceContextServer.CreateForTeardownTest(requestTask);
-
-        await Assert.ThrowsAsync<InvalidDataException>(async () => await server.DisposeAsync());
+            var sendHttpRequest = CreateSendHttpRequest(url);
+            await ExecuteActivityAsync(sendHttpRequest, responseHandler);
+        });
     }
 
     [Theory]
@@ -265,137 +201,6 @@ public class SendHttpRequestTests
         public HttpRequestMessage? CapturedRequest { get; set; }
     }
 
-    private sealed class TraceContextServer : IAsyncDisposable
-    {
-        private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(10);
-        private static readonly TimeSpan HeaderReadTimeout = TimeSpan.FromSeconds(2);
-        private static readonly TimeSpan TeardownTimeout = TimeSpan.FromSeconds(2);
-        private const int MaxHeaderLineLength = 16 * 1024;
-
-        private readonly TcpListener _listener = new(IPAddress.Loopback, 0);
-        private readonly CancellationTokenSource _cancellationTokenSource = new();
-        private readonly Task<Dictionary<string, string>> _requestTask;
-
-        public TraceContextServer()
-        {
-            _listener.Start();
-            var port = ((IPEndPoint)_listener.LocalEndpoint).Port;
-            Uri = new($"http://127.0.0.1:{port}/traced");
-            _requestTask = AcceptRequestAsync();
-        }
-
-        private TraceContextServer(Task<Dictionary<string, string>> requestTask)
-        {
-            Uri = new("http://127.0.0.1/");
-            _requestTask = requestTask;
-        }
-
-        public Uri Uri { get; }
-
-        public static TraceContextServer CreateForTeardownTest(Task<Dictionary<string, string>> requestTask) => new(requestTask);
-
-        public async Task<Dictionary<string, string>> GetRequestHeadersAsync()
-        {
-            try
-            {
-                return await _requestTask.WaitAsync(RequestTimeout);
-            }
-            catch (TimeoutException ex)
-            {
-                throw new TimeoutException("The trace context test server did not receive an HTTP request before the timeout elapsed.", ex);
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            using var cancellationTokenSource = _cancellationTokenSource;
-            cancellationTokenSource.Cancel();
-            _listener.Stop();
-
-            try
-            {
-                await _requestTask.WaitAsync(TeardownTimeout).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (IsExpectedTeardownException(ex))
-            {
-                Trace.WriteLine($"TraceContextServer teardown ignored exception: {ex}");
-            }
-        }
-
-        private async Task<Dictionary<string, string>> AcceptRequestAsync()
-        {
-            using var client = await _listener.AcceptTcpClientAsync(_cancellationTokenSource.Token);
-            await using var stream = client.GetStream();
-            await using var writer = new StreamWriter(stream, Encoding.ASCII, leaveOpen: true) { NewLine = "\r\n", AutoFlush = true };
-            var headers = await ReadHeadersAsync(stream, _cancellationTokenSource.Token);
-
-            await writer.WriteAsync("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n{}");
-            return headers;
-        }
-
-        private static async Task<Dictionary<string, string>> ReadHeadersAsync(NetworkStream stream, CancellationToken cancellationToken)
-        {
-            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeout.CancelAfter(HeaderReadTimeout);
-
-            try
-            {
-                return await ReadHeadersCoreAsync(stream, timeout.Token);
-            }
-            catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new TimeoutException("Timed out while reading the HTTP request headers.", ex);
-            }
-        }
-
-        private static async Task<Dictionary<string, string>> ReadHeadersCoreAsync(NetworkStream stream, CancellationToken cancellationToken)
-        {
-            using var reader = new StreamReader(stream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true);
-            var headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-            if (await ReadLineAsync(reader, cancellationToken) == null)
-                throw new IOException("The HTTP client closed the connection before sending a request line.");
-
-            while (await ReadLineAsync(reader, cancellationToken) is { } line)
-            {
-                if (line.Length == 0)
-                    return headers;
-
-                var separator = line.IndexOf(':');
-
-                if (separator > 0)
-                    headers[line[..separator]] = line[(separator + 1)..].Trim();
-            }
-
-            throw new IOException("The HTTP client closed the connection before completing the request headers.");
-        }
-
-        private static async Task<string?> ReadLineAsync(StreamReader reader, CancellationToken cancellationToken)
-        {
-            var line = await reader.ReadLineAsync(cancellationToken);
-
-            if (line?.Length > MaxHeaderLineLength)
-                throw new InvalidDataException($"The HTTP request header line exceeded {MaxHeaderLineLength} bytes.");
-
-            return line;
-        }
-
-        private static bool IsExpectedTeardownException(Exception exception)
-        {
-            return exception is IOException or OperationCanceledException or ObjectDisposedException or SocketException or TimeoutException ||
-                   exception.InnerException is not null && IsExpectedTeardownException(exception.InnerException);
-        }
-    }
-
-    public static TheoryData<Task<Dictionary<string, string>>> ExpectedTraceContextServerTeardownTasks()
-    {
-        return new()
-        {
-            Task.FromException<Dictionary<string, string>>(new IOException("The HTTP client closed the connection during teardown.")),
-            Task.FromCanceled<Dictionary<string, string>>(new CancellationToken(canceled: true))
-        };
-    }
-
     private static SendHttpRequest CreateSendHttpRequest(
         Uri url,
         string method = "GET",
@@ -491,9 +296,4 @@ public class SendHttpRequestTests
     {
         return (_, _) => throw ((TException)Activator.CreateInstance(typeof(TException), message)!);
     }
-}
-
-[CollectionDefinition(nameof(SendHttpRequestTestCollection), DisableParallelization = true)]
-public sealed class SendHttpRequestTestCollection
-{
 }

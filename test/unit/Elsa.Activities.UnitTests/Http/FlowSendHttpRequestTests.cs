@@ -57,6 +57,16 @@ public class FlowSendHttpRequestTests
         Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
     }
 
+    [Fact]
+    public async Task Should_Propagate_Current_Trace_Context()
+    {
+        await SendHttpRequestTestHelpers.AssertPropagatesCurrentTraceContextAsync(async (url, responseHandler) =>
+        {
+            var flowSendHttpRequest = CreateFlowSendHttpRequest(url);
+            await ExecuteActivityAsync(flowSendHttpRequest, responseHandler);
+        });
+    }
+
     [Theory]
     [MemberData(nameof(StatusCodeOutcomeTestCases))]
     public async Task Should_Return_Outcome_Based_On_Status_Code(
