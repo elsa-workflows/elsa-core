@@ -42,6 +42,25 @@ public class AiRegistrationTests
         Assert.Equal(1, ScopedAuditHandler.RecordedCount);
     }
 
+    [Fact(DisplayName = "Ai audit sink isolates handler failures")]
+    public async Task AiAuditSinkIsolatesHandlerFailures()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddScoped<IAiAuditEventHandler, ThrowingAuditHandler>();
+        services.AddScoped<ScopedAuditHandler>();
+        services.AddScoped<IAiAuditEventHandler>(sp => sp.GetRequiredService<ScopedAuditHandler>());
+        ScopedAuditHandler.RecordedCount = 0;
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        var sink = provider.GetRequiredService<IAiAuditSink>();
+
+        await sink.RecordAsync(new AiAuditEvent { Type = "chat.started", ActorId = "user-1" });
+
+        Assert.Equal(1, ScopedAuditHandler.RecordedCount);
+    }
+
+
     [Fact(DisplayName = "Tool enablement supports concurrent access")]
     public void ToolEnablementSupportsConcurrentAccess()
     {
@@ -96,5 +115,11 @@ public class AiRegistrationTests
             RecordedCount++;
             return ValueTask.CompletedTask;
         }
+    }
+
+    private class ThrowingAuditHandler : IAiAuditEventHandler
+    {
+        public ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Audit sink unavailable.");
     }
 }

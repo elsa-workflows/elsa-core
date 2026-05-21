@@ -3,6 +3,7 @@ using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
 using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Streaming;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.AI.Host.Services;
@@ -13,6 +14,7 @@ public class AiOrchestrator(
     AiContextResolver contextResolver,
     AiStreamEventMapper streamEventMapper,
     IAiAuditSink auditSink,
+    ILogger<AiOrchestrator> logger,
     IOptions<AiHostOptions> options) : IAiOrchestrator
 {
     public async IAsyncEnumerable<AiStreamEvent> ExecuteChatAsync(AiChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
@@ -45,8 +47,15 @@ public class AiOrchestrator(
                                Agent = request.Agent
                            }, cancellationToken))
             {
-                sequence = Math.Max(sequence, providerEvent.Sequence + 1);
-                yield return streamEventMapper.Map(conversationId, providerEvent);
+                var streamEvent = streamEventMapper.Map(conversationId, providerEvent);
+                sequence = Math.Max(sequence, streamEvent.Sequence + 1);
+                yield return streamEvent;
+
+                if (!TryReadToolCall(providerEvent, out var toolCall))
+                    continue;
+
+                var toolResultEvent = await ExecuteToolCallAsync(toolCall, request, conversationId, sequence++, cancellationToken);
+                yield return toolResultEvent;
             }
         }
 
@@ -82,20 +91,110 @@ public class AiOrchestrator(
 
     private async ValueTask RecordChatAuditAsync(string type, AiChatRequest request, string conversationId, string? providerName, CancellationToken cancellationToken)
     {
-        await auditSink.RecordAsync(new AiAuditEvent
+        try
         {
-            Type = type,
-            TenantId = request.TenantId,
-            ActorId = request.UserId,
-            ConversationId = conversationId,
-            Timestamp = DateTimeOffset.UtcNow,
-            Summary = type == "chat.started" ? "Chat started" : "Chat completed",
-            Data = new JsonObject
+            await auditSink.RecordAsync(new AiAuditEvent
             {
-                ["agent"] = request.Agent,
-                ["provider"] = providerName,
-                ["attachmentCount"] = request.Attachments.Count
-            }
-        }, cancellationToken);
+                Type = type,
+                TenantId = request.TenantId,
+                ActorId = request.UserId,
+                ConversationId = conversationId,
+                Timestamp = DateTimeOffset.UtcNow,
+                Summary = type == "chat.started" ? "Chat started" : "Chat completed",
+                Data = new JsonObject
+                {
+                    ["agent"] = request.Agent,
+                    ["provider"] = providerName,
+                    ["attachmentCount"] = request.Attachments.Count
+                }
+            }, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Failed to record AI chat audit event {AuditEventType} for conversation {ConversationId}.", type, conversationId);
+        }
     }
+
+    private async ValueTask<AiStreamEvent> ExecuteToolCallAsync(ToolCall toolCall, AiChatRequest request, string conversationId, long sequence, CancellationToken cancellationToken)
+    {
+        var tool = await toolRegistry.FindAsync(toolCall.Name, cancellationToken);
+        if (tool == null)
+            return CreateToolResultEvent(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = $"Tool '{toolCall.Name}' was not found." });
+
+        try
+        {
+            await RecordToolAuditAsync("tool.invoked", request, conversationId, toolCall, cancellationToken);
+            var result = await tool.ExecuteAsync(new AiToolExecutionContext
+            {
+                ConversationId = conversationId,
+                TenantId = request.TenantId,
+                ActorId = request.UserId,
+                Agent = request.Agent,
+                Arguments = toolCall.Arguments
+            }, cancellationToken);
+            await RecordToolAuditAsync("tool.completed", request, conversationId, toolCall, cancellationToken);
+
+            return CreateToolResultEvent(conversationId, sequence, toolCall, result);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "AI tool {ToolName} failed for conversation {ConversationId}.", toolCall.Name, conversationId);
+            await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
+            return CreateToolResultEvent(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = e.Message });
+        }
+    }
+
+    private async ValueTask RecordToolAuditAsync(string type, AiChatRequest request, string conversationId, ToolCall toolCall, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await auditSink.RecordAsync(new AiAuditEvent
+            {
+                Type = type,
+                TenantId = request.TenantId,
+                ActorId = request.UserId,
+                ConversationId = conversationId,
+                ToolInvocationId = toolCall.Id,
+                Timestamp = DateTimeOffset.UtcNow,
+                Summary = $"{toolCall.Name} {type}",
+                Data = new JsonObject
+                {
+                    ["toolName"] = toolCall.Name
+                }
+            }, cancellationToken);
+        }
+        catch (Exception e)
+        {
+            logger.LogWarning(e, "Failed to record AI tool audit event {AuditEventType} for tool {ToolName}.", type, toolCall.Name);
+        }
+    }
+
+    private static AiStreamEvent CreateToolResultEvent(string conversationId, long sequence, ToolCall toolCall, AiToolResult result) =>
+        CreateEvent("tool.result", conversationId, sequence, new JsonObject
+        {
+            ["toolCallId"] = toolCall.Id,
+            ["toolName"] = toolCall.Name,
+            ["status"] = result.Status.ToString(),
+            ["summary"] = result.Summary,
+            ["error"] = result.Error,
+            ["data"] = result.Data.DeepClone()
+        });
+
+    private static bool TryReadToolCall(AiProviderEvent providerEvent, out ToolCall toolCall)
+    {
+        toolCall = default;
+        if (!string.Equals(providerEvent.Type, "tool.call", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var name = providerEvent.Data["toolName"]?.GetValue<string>() ?? providerEvent.Data["name"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        var id = providerEvent.Data["id"]?.GetValue<string>() ?? Guid.NewGuid().ToString("N");
+        var arguments = providerEvent.Data["arguments"]?.DeepClone() as JsonObject ?? [];
+        toolCall = new ToolCall(id, name, arguments);
+        return true;
+    }
+
+    private readonly record struct ToolCall(string Id, string Name, JsonObject Arguments);
 }

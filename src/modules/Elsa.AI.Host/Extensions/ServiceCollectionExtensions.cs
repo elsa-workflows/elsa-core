@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
         if (configureOptions != null)
             services.Configure(configureOptions);
 
+        services.AddLogging();
         services.AddOptions<AiHostOptions>();
         services.TryAddSingleton<InMemoryAiConversationStore>();
         services.TryAddSingleton<IAiConversationStore>(sp => sp.GetRequiredService<InMemoryAiConversationStore>());

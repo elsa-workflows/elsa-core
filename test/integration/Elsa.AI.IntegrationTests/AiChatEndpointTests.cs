@@ -142,6 +142,51 @@ public class AiChatEndpointTests
             completed => Assert.Equal("chat.completed", completed.Type));
     }
 
+    [Fact(DisplayName = "Chat orchestration continues when audit sink fails")]
+    public async Task ChatOrchestrationContinuesWhenAuditSinkFails()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.RemoveAll<IAiAuditSink>();
+        services.AddSingleton<IAiAuditSink, ThrowingAuditSink>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        Assert.Contains(events, x => x.Type == "conversation.completed");
+    }
+
+    [Fact(DisplayName = "Chat orchestration executes provider tool calls")]
+    public async Task ChatOrchestrationExecutesProviderToolCalls()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider, ToolCallAiProvider>();
+        services.AddSingleton<IAiTool, EchoTool>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Use a tool"
+                       }))
+            events.Add(streamEvent);
+
+        var toolResult = Assert.Single(events, x => x.Type == "tool.result");
+        Assert.Equal("echo", toolResult.Data["toolName"]!.GetValue<string>());
+        Assert.Equal(AiToolInvocationStatus.Completed.ToString(), toolResult.Data["status"]!.GetValue<string>());
+        Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
+    }
+
     private class SequencedAiProvider : IAiProvider
     {
         public string Name => "sequenced";
@@ -193,6 +238,57 @@ public class AiChatEndpointTests
         }
     }
 
+    private class ToolCallAiProvider : IAiProvider
+    {
+        public string Name => "tool-caller";
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+
+            yield return new AiProviderEvent
+            {
+                Type = "tool.call",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["id"] = "tool-call-1",
+                    ["toolName"] = "echo",
+                    ["arguments"] = new JsonObject
+                    {
+                        ["text"] = "hello"
+                    }
+                }
+            };
+        }
+    }
+
+    private class EchoTool : IAiTool
+    {
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "echo",
+            DisplayName = "Echo",
+            EnabledByDefault = true
+        };
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new AiToolResult
+            {
+                Summary = "Echoed",
+                Data = new JsonObject
+                {
+                    ["text"] = context.Arguments["text"]?.GetValue<string>()
+                }
+            });
+        }
+    }
+
     private class CapturingAuditSink : IAiAuditSink
     {
         public List<AiAuditEvent> Events { get; } = [];
@@ -202,5 +298,11 @@ public class AiChatEndpointTests
             Events.Add(auditEvent);
             return ValueTask.CompletedTask;
         }
+    }
+
+    private class ThrowingAuditSink : IAiAuditSink
+    {
+        public ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Audit sink unavailable.");
     }
 }
