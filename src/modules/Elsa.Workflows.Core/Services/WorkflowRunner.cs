@@ -230,7 +230,9 @@ public class WorkflowRunner(
         }
         catch (Exception e)
         {
-            workflowExecutionContext.Exception ??= e;
+            if (e is not OperationCanceledException)
+                workflowExecutionContext.Exception ??= e;
+
             workflowExecutionException = e;
             throw;
         }

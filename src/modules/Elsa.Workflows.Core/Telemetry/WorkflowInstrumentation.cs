@@ -258,14 +258,19 @@ public static class WorkflowInstrumentation
 
     private static void AddIfNotNull(ref TagList tags, string key, object? value)
     {
-        if (value != null)
-            tags.Add(key, value);
+        if (ShouldAddTag(value))
+            tags.Add(key, value!);
     }
 
     private static void AddIfNotNull(DiagnosticsActivity activity, string key, object? value)
     {
-        if (value != null)
+        if (ShouldAddTag(value))
             activity.SetTag(key, value);
+    }
+
+    private static bool ShouldAddTag(object? value)
+    {
+        return value is not null && (value is not string stringValue || !string.IsNullOrWhiteSpace(stringValue));
     }
 }
 

@@ -304,7 +304,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
     /// <summary>
     /// Gets the exception that occurred during workflow execution, if any.
     /// </summary>
-    public Exception? Exception { get; internal set; }
+    internal Exception? Exception { get; set; }
 
     /// Gets the clock used to determine the current time.
     public ISystemClock SystemClock { get; }

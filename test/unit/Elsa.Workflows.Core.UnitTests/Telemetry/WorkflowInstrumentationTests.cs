@@ -94,6 +94,8 @@ public class WorkflowInstrumentationTests
         var context = activityExecutionContext.WorkflowExecutionContext;
         context.Workflow.WorkflowMetadata = new("Test workflow");
         context.ParentWorkflowInstanceId = "parent-instance-id";
+        context.CorrelationId = "";
+        context.Workflow.Identity = context.Workflow.Identity with { TenantId = " " };
         var runner = CreateWorkflowRunner(context, new CompletingWorkflowExecutionPipeline());
 
         await runner.RunAsync(context);
@@ -104,10 +106,13 @@ public class WorkflowInstrumentationTests
         var workflowSubStatus = GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus);
         Assert.Equal(WorkflowSubStatus.Finished.ToString(), workflowSubStatus);
         Assert.Equal("parent-instance-id", GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowParentInstanceId));
+        Assert.False(HasTag(span.TagObjects, WorkflowInstrumentation.WorkflowCorrelationId));
+        Assert.False(HasTag(span.TagObjects, WorkflowInstrumentation.TenantId));
         Assert.False(HasTag(span.TagObjects, "workflow.parent_instance.id"));
         var started = GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
         var completed = GetWorkflowMeasurement(meterCapture, "elsa.workflow.completed", context);
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
+        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.TenantId));
         Assert.False(completed.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
         Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowSubStatus));
         Assert.Equal(WorkflowSubStatus.Finished.ToString(), completed.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
@@ -123,12 +128,11 @@ public class WorkflowInstrumentationTests
         context.Workflow.WorkflowMetadata = new("Test workflow");
         var runner = CreateWorkflowRunner(context, new ThrowingWorkflowExecutionPipeline());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
 
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
         Assert.Equal("workflow.execute", span.OperationName);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(exception, context.Exception);
         Assert.Equal(WorkflowSubStatus.Executing, context.SubStatus);
         Assert.Equal(context.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowInstanceId));
         Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
@@ -283,7 +287,6 @@ public class WorkflowInstrumentationTests
         var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
         Assert.Equal(ActivityStatusCode.Error, span.Status);
         Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
-        Assert.Equal(exception, context.Exception);
         _ = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
     }
 
