@@ -293,6 +293,30 @@ public class AiChatEndpointTests
         Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration redacts tool exception messages from stream events")]
+    public async Task ChatOrchestrationRedactsToolExceptionMessagesFromStreamEvents()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider, ToolCallAiProvider>();
+        services.AddSingleton<IAiTool, ThrowingTool>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use a tool"
+                       }))
+            events.Add(streamEvent);
+
+        var toolResult = Assert.Single(events, x => x.Type == "tool.result");
+        Assert.Equal(AiToolInvocationStatus.Failed.ToString(), toolResult.Data["status"]!.GetValue<string>());
+        Assert.Equal("Tool execution failed.", toolResult.Data["error"]!.GetValue<string>());
+    }
+
     [Fact(DisplayName = "Chat orchestration sends tool results back to provider continuations")]
     public async Task ChatOrchestrationSendsToolResultsBackToProviderContinuations()
     {
@@ -1110,6 +1134,20 @@ public class AiChatEndpointTests
                 }
             });
         }
+    }
+
+    private class ThrowingTool : IAiTool
+    {
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "echo",
+            DisplayName = "Echo",
+            TenantBehavior = AiTenantBehavior.TenantScoped,
+            EnabledByDefault = true
+        };
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Sensitive internal tool failure.");
     }
 
     private class LargeEchoTool : IAiTool

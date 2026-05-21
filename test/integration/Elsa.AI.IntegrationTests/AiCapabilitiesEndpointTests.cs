@@ -67,7 +67,7 @@ public class AiCapabilitiesEndpointTests
 
     private class TestProposalStore : IAiProposalStore
     {
-        public ValueTask<AiProposal?> FindAsync(string id, CancellationToken cancellationToken = default) => ValueTask.FromResult<AiProposal?>(null);
+        public ValueTask<AiProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default) => ValueTask.FromResult<AiProposal?>(null);
         public ValueTask SaveAsync(AiProposal proposal, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     }
 }

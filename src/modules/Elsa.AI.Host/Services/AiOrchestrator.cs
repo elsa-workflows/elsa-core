@@ -315,7 +315,7 @@ public class AiOrchestrator(
         {
             logger.LogWarning(e, "AI tool {ToolName} failed for conversation {ConversationId}.", toolCall.Name, conversationId);
             await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
-            return CreateToolExecutionResult(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = e.Message });
+            return CreateToolExecutionResult(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = "Tool execution failed." });
         }
     }
 

@@ -1,12 +1,9 @@
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elsa.AI.Persistence.EFCore.Migrations;
 
-[DbContext(typeof(AiDbContext))]
-[Migration("20260521002000_Initial")]
 public partial class Initial : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

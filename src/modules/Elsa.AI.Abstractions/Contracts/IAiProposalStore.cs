@@ -10,7 +10,7 @@ public interface IAiConversationStore
 
 public interface IAiProposalStore
 {
-    ValueTask<AiProposal?> FindAsync(string id, CancellationToken cancellationToken = default);
+    ValueTask<AiProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default);
     ValueTask SaveAsync(AiProposal proposal, CancellationToken cancellationToken = default);
 }
 

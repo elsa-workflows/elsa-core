@@ -3,14 +3,17 @@ using System.Text.Json.Nodes;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.AI.Persistence.EFCore.Stores;
 
 public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
 {
-    public async ValueTask<AiProposal?> FindAsync(string id, CancellationToken cancellationToken = default)
+    public async ValueTask<AiProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default)
     {
-        var record = await dbContext.Proposals.FindAsync([id], cancellationToken);
+        var record = await dbContext.Proposals.FirstOrDefaultAsync(
+            x => x.Id == id && x.TenantId == tenantId,
+            cancellationToken);
         return record == null ? null : Map(record);
     }
 

@@ -28,7 +28,7 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         await store.SaveAsync(proposal);
         _dbContext.ChangeTracker.Clear();
 
-        var reloaded = await store.FindAsync(proposal.Id);
+        var reloaded = await store.FindAsync(proposal.Id, null);
 
         Assert.NotNull(reloaded);
         Assert.Equal(AiProposalStatus.Validated, reloaded.Status);
@@ -49,11 +49,36 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         await store.SaveAsync(proposal);
         _dbContext.ChangeTracker.Clear();
 
-        var reloaded = await store.FindAsync(proposal.Id);
+        var reloaded = await store.FindAsync(proposal.Id, null);
 
         Assert.NotNull(reloaded);
         Assert.False(string.IsNullOrWhiteSpace(reloaded.Id));
         Assert.NotEqual(default, reloaded.CreatedAt);
+    }
+
+    [Fact(DisplayName = "Proposal store scopes reads by tenant")]
+    public async Task ProposalStoreScopesReadsByTenant()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        var proposal = new AiProposal
+        {
+            Id = "proposal-tenant",
+            TenantId = "tenant-1",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedBy = "user-1"
+        };
+
+        await store.SaveAsync(proposal);
+        _dbContext.ChangeTracker.Clear();
+
+        var allowed = await store.FindAsync(proposal.Id, "tenant-1");
+        var denied = await store.FindAsync(proposal.Id, "tenant-2");
+        var host = await store.FindAsync(proposal.Id, null);
+
+        Assert.NotNull(allowed);
+        Assert.Null(denied);
+        Assert.Null(host);
     }
 
     [Fact(DisplayName = "Proposal store validates required proposal fields before saving")]
@@ -93,7 +118,7 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
 
-        var reloaded = await store.FindAsync(proposal.Id);
+        var reloaded = await store.FindAsync(proposal.Id, null);
 
         Assert.NotNull(reloaded);
         Assert.Equal(AiProposalKind.WorkflowCreate, reloaded.Kind);
@@ -121,7 +146,7 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
 
-        var reloaded = await store.FindAsync(proposal.Id);
+        var reloaded = await store.FindAsync(proposal.Id, null);
 
         Assert.NotNull(reloaded);
         Assert.Equal(AiProposalKind.WorkflowCreate, reloaded.Kind);
