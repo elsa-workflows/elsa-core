@@ -239,9 +239,14 @@ public class AiChatEndpointTests
 
         var continuation = Assert.Single(provider.Requests, x => x.ToolResults.Count == 1);
         var toolResult = Assert.Single(continuation.ToolResults);
+        var continuationMessages = continuation.Messages.Where(x => x.Role is AiMessageRole.Assistant or AiMessageRole.Tool).ToList();
 
         Assert.Equal("tool-call-1", toolResult.ToolCallId);
         Assert.Equal("Echoed", toolResult.Result.Summary);
+        Assert.Collection(
+            continuationMessages,
+            assistant => Assert.Equal(AiMessageRole.Assistant, assistant.Role),
+            tool => Assert.Equal(AiMessageRole.Tool, tool.Role));
         Assert.Contains(events, x => x.Type == "assistant.delta" && x.Data["content"]!.GetValue<string>() == "Used Echoed");
     }
 

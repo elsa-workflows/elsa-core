@@ -102,6 +102,7 @@ public class AiOrchestrator(
             {
                 var currentTurnToolResults = new List<AiToolTurnResult>();
                 var currentTurnMessages = new List<AiMessage>();
+                var currentTurnToolMessages = new List<AiMessage>();
                 assistantContent.Clear();
 
                 await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
@@ -138,16 +139,21 @@ public class AiOrchestrator(
                         ["toolName"] = toolExecution.TurnResult.ToolName,
                         ["status"] = toolExecution.TurnResult.Result.Status.ToString()
                     });
-                    messages.Add(toolMessage);
-                    currentTurnMessages.Add(toolMessage);
+                    currentTurnToolMessages.Add(toolMessage);
                 }
 
-                if (assistantContent.Length > 0)
+                if (assistantContent.Length > 0 || currentTurnToolMessages.Count > 0)
                 {
-                    var assistantMessage = CreateMessage(conversationId, AiMessageRole.Assistant, assistantContent.ToString(), sequence - 1);
+                    var assistantSequence = currentTurnToolMessages.Count > 0
+                        ? currentTurnToolMessages.Min(x => x.StreamSequence) - 1
+                        : sequence - 1;
+                    var assistantMessage = CreateMessage(conversationId, AiMessageRole.Assistant, assistantContent.ToString(), assistantSequence, CreateAssistantToolCallMetadata(currentTurnToolResults));
                     messages.Add(assistantMessage);
                     currentTurnMessages.Add(assistantMessage);
                 }
+
+                messages.AddRange(currentTurnToolMessages);
+                currentTurnMessages.AddRange(currentTurnToolMessages);
 
                 if (currentTurnToolResults.Count == 0)
                     break;
@@ -398,6 +404,21 @@ public class AiOrchestrator(
             StreamSequence = streamSequence,
             Metadata = metadata ?? []
         };
+
+    private static JsonObject? CreateAssistantToolCallMetadata(IReadOnlyCollection<AiToolTurnResult> toolResults)
+    {
+        if (toolResults.Count == 0)
+            return null;
+
+        var toolCallIds = new JsonArray();
+        foreach (var toolResult in toolResults)
+            toolCallIds.Add(toolResult.ToolCallId);
+
+        return new JsonObject
+        {
+            ["toolCallIds"] = toolCallIds
+        };
+    }
 
     private static bool HasReconnectUserMessage(AiConversation? conversation, string message)
     {
