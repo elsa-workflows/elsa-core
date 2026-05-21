@@ -12,7 +12,7 @@ public class AiToolEnablementService
         if (definition.Mutability == AiToolMutability.Administrative)
             return false;
 
-        if (definition.Mutability == AiToolMutability.ReadOnly && definition.EnabledByDefault)
+        if (definition.EnabledByDefault)
             return true;
 
         return _enabledToolNames.ContainsKey(definition.Name);

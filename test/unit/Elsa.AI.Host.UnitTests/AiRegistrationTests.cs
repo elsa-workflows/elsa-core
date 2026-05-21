@@ -99,6 +99,20 @@ public class AiRegistrationTests
         Assert.True(service.IsEnabled(definition));
     }
 
+    [Fact(DisplayName = "Tool enablement honors proposal tools enabled by default")]
+    public void ToolEnablementHonorsProposalToolsEnabledByDefault()
+    {
+        var service = new AiToolEnablementService();
+        var definition = new AiToolDefinition
+        {
+            Name = "workflow.propose",
+            Mutability = AiToolMutability.Proposal,
+            EnabledByDefault = true
+        };
+
+        Assert.True(service.IsEnabled(definition));
+    }
+
     [Fact(DisplayName = "AI host allows context provider overrides on startup")]
     public async Task AiHostAllowsContextProviderOverridesOnStartup()
     {
