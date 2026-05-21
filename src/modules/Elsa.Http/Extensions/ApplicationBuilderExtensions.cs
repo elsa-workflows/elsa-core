@@ -23,7 +23,7 @@ public static class ApplicationBuilderExtensions
     /// <param name="policyName">The registered ASP.NET Core rate limiting policy name. Leave empty to skip rate limiting.</param>
     public static IApplicationBuilder UseWorkflowsRateLimiting(this IApplicationBuilder app, PathString? basePath, string? policyName)
     {
-        var normalizedBasePath = basePath.HasValue ? basePath.Value.Value : null;
+        var normalizedBasePath = basePath?.ToString();
         return app.UseWorkflowsRateLimiting(normalizedBasePath, policyName);
     }
 

@@ -117,7 +117,8 @@ public static class WebApplicationExtensions
                     }
                     finally
                     {
-                        context.SetEndpoint(originalEndpoint);
+                        if (ReferenceEquals(context.GetEndpoint(), rateLimitingEndpoint))
+                            context.SetEndpoint(originalEndpoint);
                     }
                 });
             });
