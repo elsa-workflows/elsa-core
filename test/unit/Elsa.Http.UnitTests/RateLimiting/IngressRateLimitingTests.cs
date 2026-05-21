@@ -136,6 +136,19 @@ public class IngressRateLimitingTests
     }
 
     [Fact]
+    public async Task UseRateLimitingPolicyForPath_DefaultOverloadRequiresMatchedEndpoint()
+    {
+        await using var app = await CreateAppWithEndpointRouteAsync(app => app.UseRateLimitingPolicyForPath("/proxy", PolicyName, "Proxy rate limiting endpoint"));
+        var client = app.GetTestClient();
+
+        var firstResponse = await client.GetAsync("/proxy/downstream");
+        var secondResponse = await client.GetAsync("/proxy/downstream");
+
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task UseWorkflowsApiRateLimiting_UsesExistingGlobalRateLimiterMiddleware()
     {
         var policy = new CountingRateLimiterPolicy();

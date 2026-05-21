@@ -74,7 +74,7 @@ public static class WebApplicationExtensions
     /// rate limiter middleware handles matching requests.
     /// </remarks>
     public static IApplicationBuilder UseRateLimitingPolicyForPath(this IApplicationBuilder app, PathString pathPrefix, string policyName, string displayName) =>
-        app.UseRateLimitingPolicyForPath(pathPrefix, policyName, displayName, false);
+        app.UseRateLimitingPolicyForPath(pathPrefix, policyName, displayName, true);
 
     /// <summary>
     /// Applies an ASP.NET Core rate limiting policy to requests targeting the specified path prefix.

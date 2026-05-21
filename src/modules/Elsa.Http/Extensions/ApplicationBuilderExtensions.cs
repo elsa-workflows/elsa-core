@@ -40,7 +40,7 @@ public static class ApplicationBuilderExtensions
 
         var pathPrefix = NormalizeBasePath(basePath);
         return pathPrefix.HasValue
-            ? app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa HTTP workflow trigger rate limiting endpoint")
+            ? app.UseRateLimitingPolicyForPath(pathPrefix, policyName, "Elsa HTTP workflow trigger rate limiting endpoint", requireMatchedEndpoint: false)
             : app;
     }
 
