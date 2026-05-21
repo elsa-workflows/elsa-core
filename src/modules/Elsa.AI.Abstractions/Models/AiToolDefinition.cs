@@ -12,6 +12,8 @@ public record AiToolDefinition
     public AiTenantBehavior TenantBehavior { get; init; } = AiTenantBehavior.TenantScoped;
     public AiToolAuditBehavior AuditBehavior { get; init; } = AiToolAuditBehavior.RecordInvocation;
     public ICollection<string> AgentScopes { get; init; } = [];
+    public ICollection<string> TenantIds { get; init; } = [];
+    public ICollection<string> ActorIds { get; init; } = [];
     public string? Provider { get; init; }
     public bool EnabledByDefault { get; init; }
     public bool IsEnabled { get; init; }

@@ -30,6 +30,22 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
         Assert.Equal("Prompt submitted", record.Summary);
     }
 
+    [Fact(DisplayName = "Audit sink persists events with generated IDs")]
+    public async Task AuditSinkPersistsEventsWithGeneratedIds()
+    {
+        var sink = new EFCoreAiAuditSink(_dbContext);
+
+        await sink.RecordAsync(new AiAuditEvent
+        {
+            ActorId = "user-1",
+            Type = "prompt.submitted",
+            Timestamp = DateTimeOffset.UtcNow
+        });
+
+        var record = await _dbContext.AuditRecords.SingleAsync();
+        Assert.False(string.IsNullOrWhiteSpace(record.Id));
+    }
+
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();

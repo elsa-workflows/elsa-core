@@ -63,6 +63,34 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Equal(AiProposalStatus.Validated, reloaded.Status);
     }
 
+    [Fact(DisplayName = "Proposal store falls back when persisted enum values are invalid")]
+    public async Task ProposalStoreFallsBackWhenPersistedEnumValuesAreInvalid()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        var proposal = new AiProposal
+        {
+            Id = "proposal-3",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowUpdate,
+            Status = AiProposalStatus.Validated,
+            CreatedBy = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        await store.SaveAsync(proposal);
+        var record = await _dbContext.Proposals.FindAsync(proposal.Id);
+        record!.Kind = "renamed-kind";
+        record.Status = "renamed-status";
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync(proposal.Id);
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(AiProposalKind.WorkflowCreate, reloaded.Kind);
+        Assert.Equal(AiProposalStatus.Draft, reloaded.Status);
+    }
+
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();

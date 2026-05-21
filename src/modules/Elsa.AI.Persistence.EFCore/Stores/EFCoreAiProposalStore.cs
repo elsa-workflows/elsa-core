@@ -33,8 +33,8 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
             Id = record.Id,
             TenantId = record.TenantId,
             ConversationId = record.ConversationId,
-            Kind = Enum.Parse<AiProposalKind>(record.Kind, ignoreCase: true),
-            Status = Enum.Parse<AiProposalStatus>(record.Status, ignoreCase: true),
+            Kind = ParseEnum(record.Kind, AiProposalKind.WorkflowCreate),
+            Status = ParseEnum(record.Status, AiProposalStatus.Draft),
             BaselineWorkflowDefinitionId = record.BaselineWorkflowDefinitionId,
             BaselineVersionId = record.BaselineVersionId,
             WorkflowPayload = JsonSerializer.Deserialize<JsonObject>(record.WorkflowPayload) ?? [],
@@ -70,4 +70,7 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
         record.AppliedBy = proposal.AppliedBy;
         record.AppliedAt = proposal.AppliedAt;
     }
+
+    private static TEnum ParseEnum<TEnum>(string value, TEnum defaultValue) where TEnum : struct =>
+        Enum.TryParse<TEnum>(value, ignoreCase: true, out var result) ? result : defaultValue;
 }
