@@ -51,6 +51,9 @@ var identityTokenSection = identitySection.GetSection("Tokens");
 var ingressRateLimitingSection = configuration.GetSection("IngressRateLimiting");
 var useIngressRateLimiting = ingressRateLimitingSection.GetValue("Enabled", false);
 var registerIngressRateLimitingPolicies = ingressRateLimitingSection.GetValue("RegisterReferencePolicies", useIngressRateLimiting);
+var configuredAllowLocalDistributedRuntimeLockProvider = configuration.GetValue<bool?>("DistributedRuntime:AllowLocalLockProviderInDistributedRuntime");
+var allowLocalDistributedRuntimeLockProvider =
+    configuredAllowLocalDistributedRuntimeLockProvider ?? builder.Environment.IsDevelopment();
 
 services
     .AddElsa(elsa =>
@@ -88,6 +91,8 @@ services
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
                 runtime.UseDistributedRuntime();
+                // This sample host uses single-host file-system locks only for development or explicit single-host opt-in.
+                runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = allowLocalDistributedRuntimeLockProvider;
             })
             .UseWorkflowsApi()
             .UseFluentStorageProvider()
