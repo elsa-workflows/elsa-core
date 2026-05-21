@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides EF Core persistence for Elsa AI proposals and audit records.
+        </Description>
+        <PackageTags>elsa module ai persistence efcore</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.AI.Host\Elsa.AI.Host.csproj" />
+    </ItemGroup>
+
+</Project>
