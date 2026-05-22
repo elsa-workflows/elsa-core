@@ -26,6 +26,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : Persisten
             feature.TriggerStore = sp => sp.GetRequiredService<EFCoreTriggerStore>();
             feature.BookmarkStore = sp => sp.GetRequiredService<EFCoreBookmarkStore>();
             feature.BookmarkQueueStore = sp => sp.GetRequiredService<EFBookmarkQueueStore>();
+            feature.BookmarkQueueDeadLetterStore = sp => sp.GetRequiredService<EFBookmarkQueueDeadLetterStore>();
             feature.WorkflowExecutionLogStore = sp => sp.GetRequiredService<EFCoreWorkflowExecutionLogStore>();
             feature.ActivityExecutionLogStore = sp => sp.GetRequiredService<EFCoreActivityExecutionStore>();
         });
@@ -38,6 +39,7 @@ public class EFCoreWorkflowRuntimePersistenceFeature(IModule module) : Persisten
         AddEntityStore<StoredTrigger, EFCoreTriggerStore>();
         AddStore<StoredBookmark, EFCoreBookmarkStore>();
         AddStore<BookmarkQueueItem, EFBookmarkQueueStore>();
+        AddStore<BookmarkQueueDeadLetterItem, EFBookmarkQueueDeadLetterStore>();
         AddEntityStore<WorkflowExecutionLogRecord, EFCoreWorkflowExecutionLogStore>();
         AddEntityStore<ActivityExecutionRecord, EFCoreActivityExecutionStore>();
         AddStore<SerializedKeyValuePair, EFCoreKeyValueStore>();

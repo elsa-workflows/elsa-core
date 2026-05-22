@@ -1,3 +1,4 @@
+using Elsa.Expressions.Options;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.Management.Entities;
@@ -26,6 +27,7 @@ public class EFCoreWorkflowDefinitionPersistenceFeature(IModule module) : Persis
     public override void Apply()
     {
         base.Apply();
+        Services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(EFCoreWorkflowDefinitionStore.WorkflowDefinitionStateType, "EFCoreWorkflowDefinitionState"));
         AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>();
     }
 }

@@ -74,8 +74,9 @@ public class PublishEventTests : AppComponentTest
 
         // Verify the payload structure and content
         var payloadJson = JsonSerializer.Serialize(receivedPayload);
-        Assert.Contains("\"Status\"", payloadJson);
-        Assert.Contains("\"Shipped\"", payloadJson);
+        using var payloadDocument = JsonDocument.Parse(payloadJson);
+        var statusProperty = Assert.Single(payloadDocument.RootElement.EnumerateObject(), x => string.Equals(x.Name, "Status", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("Shipped", statusProperty.Value.GetString());
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)

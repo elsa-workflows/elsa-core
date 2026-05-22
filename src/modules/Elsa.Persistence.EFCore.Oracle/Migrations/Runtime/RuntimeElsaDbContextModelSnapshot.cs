@@ -159,6 +159,92 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                     b.ToTable("ActivityExecutionRecords", "Elsa");
                 });
 
+            modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueDeadLetterItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ActivityInstanceId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("ActivityTypeName")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("BookmarkId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<bool>("CanReplay")
+                        .HasColumnType("BOOLEAN");
+
+                    b.Property<string>("CorrelationId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<DateTimeOffset>("DeadLetteredAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("NUMBER(10)");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<DateTimeOffset>("OriginalCreatedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("OriginalQueueItemId")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<DateTimeOffset?>("ReplayedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("ReplayedQueueItemId")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("SerializedOptions")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("StimulusHash")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.Property<string>("WorkflowInstanceId")
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex(new[] { "ActivityInstanceId" }, "IX_BookmarkQueueDeadLetterItem_ActivityInstanceId");
+
+                    b.HasIndex(new[] { "ActivityTypeName" }, "IX_BookmarkQueueDeadLetterItem_ActivityTypeName");
+
+                    b.HasIndex(new[] { "BookmarkId" }, "IX_BookmarkQueueDeadLetterItem_BookmarkId");
+
+                    b.HasIndex(new[] { "CorrelationId" }, "IX_BookmarkQueueDeadLetterItem_CorrelationId");
+
+                    b.HasIndex(new[] { "DeadLetteredAt" }, "IX_BookmarkQueueDeadLetterItem_DeadLetteredAt");
+
+                    b.HasIndex(new[] { "OriginalQueueItemId" }, "IX_BookmarkQueueDeadLetterItem_OriginalQueueItemId")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "TenantId" }, "IX_BookmarkQueueDeadLetterItem_TenantId");
+
+                    b.HasIndex(new[] { "WorkflowInstanceId" }, "IX_BookmarkQueueDeadLetterItem_WorkflowInstanceId");
+
+                    b.ToTable("BookmarkQueueDeadLetterItems", "Elsa");
+                });
+
             modelBuilder.Entity("Elsa.Workflows.Runtime.Entities.BookmarkQueueItem", b =>
                 {
                     b.Property<string>("Id")
@@ -178,6 +264,18 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<int>("DeliveryAttempts")
+                        .HasColumnType("NUMBER(10)");
+
+                    b.Property<DateTimeOffset?>("LastAttemptedAt")
+                        .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<string>("LastErrorMessage")
+                        .HasColumnType("NVARCHAR2(2000)");
+
+                    b.Property<string>("LastErrorType")
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("SerializedOptions")
                         .HasColumnType("NVARCHAR2(2000)");

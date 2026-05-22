@@ -102,7 +102,7 @@ The runtime can use in-memory stores by default or EF Core stores when persisten
 
 ## API Layer
 
-[WorkflowsApiFeature](../../src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs) registers FastEndpoints from the module and depends on workflow management, workflow instances, workflow runtime, and SAS tokens. The default route prefix is `elsa/api`, defined in [ApiEndpointOptions](../../src/modules/Elsa.Workflows.Api/Options/ApiEndpointOptions.cs) and applied by [UseWorkflowsApi](../../src/common/Elsa.Api.Common/Extensions/WebApplicationExtensions.cs).
+[WorkflowsApiFeature](../../src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs) registers FastEndpoints from the module and depends on workflow management, workflow instances, workflow runtime, and SAS tokens. The default route prefix is `elsa/api`, defined in [ApiEndpointOptions](../../src/modules/Elsa.Workflows.Api/Options/ApiEndpointOptions.cs) and applied by [MapWorkflowsApi](../../src/common/Elsa.Api.Common/Extensions/WebApplicationExtensions.cs) in endpoint-routed ASP.NET hosts.
 
 Real-time workflow updates are in [RealTimeWorkflowUpdatesFeature](../../src/modules/Elsa.Workflows.Api/Features/RealTimeWorkflowUpdatesFeature.cs) and [WorkflowInstanceHub](../../src/modules/Elsa.Workflows.Api/RealTime/Hubs/WorkflowInstanceHub.cs).
 

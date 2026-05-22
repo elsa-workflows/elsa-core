@@ -1,4 +1,5 @@
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Telemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
@@ -41,10 +42,25 @@ public class ActivityInvoker(
     /// <inheritdoc />
     public async Task InvokeAsync(ActivityExecutionContext activityExecutionContext)
     {
-        var loggerState = loggerStateGenerator.GenerateLoggerState(activityExecutionContext);
-        using var loggingScope = logger.BeginScope(loggerState);
+        var telemetryScope = WorkflowInstrumentation.StartActivity(activityExecutionContext);
+        Exception? exception = null;
 
-        // Execute the activity execution pipeline.
-        await pipeline.ExecuteAsync(activityExecutionContext);
+        try
+        {
+            var loggerState = loggerStateGenerator.GenerateLoggerState(activityExecutionContext);
+            using var loggingScope = logger.BeginScope(loggerState);
+
+            // Execute the activity execution pipeline.
+            await pipeline.ExecuteAsync(activityExecutionContext);
+        }
+        catch (Exception e)
+        {
+            exception = e;
+            throw;
+        }
+        finally
+        {
+            WorkflowInstrumentation.StopActivity(telemetryScope, activityExecutionContext, exception);
+        }
     }
 }

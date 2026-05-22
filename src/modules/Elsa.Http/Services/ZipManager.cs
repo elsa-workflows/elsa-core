@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.IO.Compression;
 using Elsa.Common;
 using Elsa.Http.Options;
@@ -12,6 +13,8 @@ namespace Elsa.Http.Services;
 /// </summary>
 internal class ZipManager
 {
+    private const int MaxDownloadCorrelationIdLength = 128;
+    private static readonly SearchValues<char> DownloadCorrelationIdCharacters = SearchValues.Create("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.");
     private readonly ISystemClock _clock;
     private readonly IFileCacheStorageProvider _fileCacheStorageProvider;
     private readonly IOptions<HttpFileCacheOptions> _fileCacheOptions;
@@ -61,12 +64,23 @@ internal class ZipManager
     /// <returns>A tuple containing the blob and the stream.</returns>
     public async Task<(Blob, Stream)?> LoadAsync(string downloadCorrelationId, CancellationToken cancellationToken = default)
     {
+        if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
+        {
+            _logger.LogDebug("Rejected invalid zip download correlation ID");
+            return null;
+        }
+
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
         var blob = await fileCacheStorage.GetBlobAsync(fileCacheFilename, cancellationToken);
 
         if (blob == null)
             return null;
+
+        if (!TryGetSafeBlobPath(blob.FullPath, fileCacheFilename, out var safeBlobPath))
+        {
+            _logger.LogWarning("Rejected unsafe cached zip blob path {FullPath}", blob.FullPath);
+            return null;
+        }
 
         // Check if the blob has expired.
         var expiresAt = DateTimeOffset.Parse(blob.Metadata["ExpiresAt"]);
@@ -76,7 +90,7 @@ internal class ZipManager
             // File expired. Try to delete it.
             try
             {
-                await fileCacheStorage.DeleteAsync(blob.FullPath, cancellationToken);
+                await fileCacheStorage.DeleteAsync(safeBlobPath, cancellationToken);
             }
             catch (Exception e)
             {
@@ -86,7 +100,7 @@ internal class ZipManager
             return null;
         }
 
-        var stream = await fileCacheStorage.OpenReadAsync(blob.FullPath, cancellationToken);
+        var stream = await fileCacheStorage.OpenReadAsync(safeBlobPath, cancellationToken);
         return (blob, stream);
     }
     
@@ -125,8 +139,13 @@ internal class ZipManager
     /// <param name="cancellationToken">An optional cancellation token.</param>
     private async Task CreateCachedZipBlobAsync(string localPath, string downloadCorrelationId, string? downloadAsFilename = default, string? contentType = default, CancellationToken cancellationToken = default)
     {
+        if (!TryGetCacheFilename(downloadCorrelationId, out var fileCacheFilename))
+        {
+            _logger.LogDebug("Rejected invalid zip download correlation ID");
+            return;
+        }
+
         var fileCacheStorage = _fileCacheStorageProvider.GetStorage();
-        var fileCacheFilename = $"{downloadCorrelationId}.tmp";
         var expiresAt = _clock.UtcNow.Add(_fileCacheOptions.Value.TimeToLive);
         var cachedBlob = CreateBlob(fileCacheFilename, downloadAsFilename, contentType, expiresAt);
         await fileCacheStorage.WriteFileAsync(fileCacheFilename, localPath, cancellationToken);
@@ -177,6 +196,92 @@ internal class ZipManager
         var tempFileName = Path.GetRandomFileName();
         var tempFilePath = Path.Combine(_fileCacheOptions.Value.LocalCacheDirectory, tempFileName);
         return tempFilePath;
+    }
+
+    private bool TryGetCacheFilename(string downloadCorrelationId, out string fileCacheFilename)
+    {
+        fileCacheFilename = default!;
+
+        if (!IsValidDownloadCorrelationId(downloadCorrelationId))
+            return false;
+
+        var candidateFilename = $"{downloadCorrelationId}.tmp";
+
+        if (!IsCachePathSafe(candidateFilename))
+            return false;
+
+        fileCacheFilename = candidateFilename;
+        return true;
+    }
+
+    private static bool IsValidDownloadCorrelationId(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > MaxDownloadCorrelationIdLength)
+            return false;
+
+        return value.AsSpan().IndexOfAnyExcept(DownloadCorrelationIdCharacters) < 0;
+    }
+
+    private bool TryGetSafeBlobPath(string path, string expectedFilename, out string safeBlobPath)
+    {
+        safeBlobPath = default!;
+
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        if (TryGetRootedBlobNamespacePath(path, expectedFilename, out safeBlobPath))
+            return true;
+
+        if (!Path.IsPathRooted(path))
+        {
+            if (!IsCachePathSafe(path))
+                return false;
+
+            safeBlobPath = path;
+            return true;
+        }
+
+        var fullPath = Path.GetFullPath(path);
+        var fullCacheDirectory = GetFullCacheDirectory();
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        if (!fullPath.StartsWith(fullCacheDirectory, comparison))
+            return false;
+
+        safeBlobPath = fullPath;
+        return true;
+    }
+
+    private static bool TryGetRootedBlobNamespacePath(string path, string expectedFilename, out string safeBlobPath)
+    {
+        safeBlobPath = default!;
+
+        // FluentStorage directory blobs use "/file" as a blob namespace path.
+        var blobPath = path.Replace('\\', '/');
+        if (blobPath != $"/{expectedFilename}")
+            return false;
+
+        safeBlobPath = expectedFilename;
+        return true;
+    }
+
+    private bool IsCachePathSafe(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        if (Path.IsPathRooted(path))
+            return false;
+
+        var fullCacheDirectory = GetFullCacheDirectory();
+        var fullPath = Path.GetFullPath(Path.Join(fullCacheDirectory, path));
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return fullPath.StartsWith(fullCacheDirectory, comparison);
+    }
+
+    private string GetFullCacheDirectory()
+    {
+        var cacheDirectory = Path.GetFullPath(_fileCacheOptions.Value.LocalCacheDirectory);
+        return Path.EndsInDirectorySeparator(cacheDirectory) ? cacheDirectory : cacheDirectory + Path.DirectorySeparatorChar;
     }
     
     private void Cleanup(string filePath)

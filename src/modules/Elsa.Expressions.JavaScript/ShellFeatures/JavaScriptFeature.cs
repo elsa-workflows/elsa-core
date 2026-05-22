@@ -8,6 +8,7 @@ using Elsa.Expressions.JavaScript.Providers;
 using Elsa.Expressions.JavaScript.Services;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Services;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Workflows;
@@ -104,6 +105,7 @@ public class JavaScriptFeature : IShellFeature
             options.DisableWrappers = DisableWrappers;
             options.DisableVariableCopying = DisableVariableCopying;
         });
+        services.Configure<ExpressionOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
 
         // JavaScript services.
         services

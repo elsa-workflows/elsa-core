@@ -4,6 +4,7 @@ using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
 using Elsa.Common.RecurringTasks;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -14,16 +15,21 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
+using Elsa.Workflows.Runtime.Helpers;
+using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
+using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.Runtime.UIHints;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Features;
@@ -32,6 +38,7 @@ namespace Elsa.Workflows.Runtime.Features;
 /// Installs and configures workflow runtime features.
 /// </summary>
 [DependsOn(typeof(SystemClockFeature))]
+[DependsOn(typeof(WorkflowsFeature))]
 public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
@@ -39,7 +46,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// <summary>
     /// A list of workflow builders configured during application startup.
     /// </summary>
-    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
+    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new WorkflowFactoryDictionary();
+    private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
@@ -52,7 +60,8 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp =>
     {
         var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
-        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+        var transactionalService = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(sp, decoratedService);
+        return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, transactionalService);
     };
     
     /// <summary>
@@ -66,6 +75,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IWorkflowCancellationDispatcher> WorkflowCancellationDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp);
 
     /// <summary>
+    /// A factory that instantiates an <see cref="IWorkflowDispatchOutboxStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDispatchOutboxStore> WorkflowDispatchOutboxStore { get; set; } = sp => ActivatorUtilities.CreateInstance<KeyValueWorkflowDispatchOutboxStore>(sp);
+
+    /// <summary>
     /// A factory that instantiates an <see cref="IBookmarkStore"/>.
     /// </summary>
     public Func<IServiceProvider, IBookmarkStore> BookmarkStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkStore>();
@@ -74,6 +88,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// A factory that instantiates an <see cref="IBookmarkQueueStore"/>.
     /// </summary>
     public Func<IServiceProvider, IBookmarkQueueStore> BookmarkQueueStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueStore>();
+
+    /// <summary>
+    /// A factory that instantiates an <see cref="IBookmarkQueueDeadLetterStore"/>.
+    /// </summary>
+    public Func<IServiceProvider, IBookmarkQueueDeadLetterStore> BookmarkQueueDeadLetterStore { get; set; } = sp => sp.GetRequiredService<MemoryBookmarkQueueDeadLetterStore>();
 
     /// <summary>
     /// A factory that instantiates an <see cref="ITriggerStore"/>.
@@ -174,7 +193,18 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
-        Workflows.Add<T>();
+        AddWorkflow(typeof(T));
+        return this;
+    }
+
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
+    {
+        WorkflowTypeValidator.Validate(workflowType);
+        Workflows.Add(workflowType);
+        WorkflowTypes.Add(workflowType);
         return this;
     }
 
@@ -185,11 +215,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
         var workflowTypes = assembly.GetExportedTypes()
-            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false })
             .ToList();
 
         foreach (var workflowType in workflowTypes)
-            Workflows.Add(workflowType);
+            AddWorkflow(workflowType);
 
         return this;
     }
@@ -245,6 +275,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.Configure(WorkflowInboxCleanupOptions);
         Services.Configure(WorkflowDispatcherOptions);
         Services.Configure(BookmarkQueuePurgeOptions);
+        Services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
         Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         Services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -323,6 +354,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBookmarksPersister, BookmarksPersister>()
             .AddScoped<IBookmarkResumer, BookmarkResumer>()
             .AddScoped<IBookmarkQueue, StoreBookmarkQueue>()
+            .AddScoped<IBookmarkQueueDeadLetterManager, BookmarkQueueDeadLetterManager>()
             .AddScoped(WorkflowResumer)
             .AddScoped<WorkflowResumer>()
             .AddScoped(BookmarkQueueWorker)
@@ -334,6 +366,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowStarter, DefaultWorkflowStarter>()
             .AddScoped<IWorkflowRestarter, DefaultWorkflowRestarter>()
             .AddScoped<IBookmarkQueuePurger, DefaultBookmarkQueuePurger>()
+            .AddSingleton<IWorkflowDispatchOutboxAccessor, WorkflowDispatchOutboxAccessor>()
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
@@ -347,6 +380,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             // Stores.
             .AddScoped(BookmarkStore)
             .AddScoped(BookmarkQueueStore)
+            .AddScoped(BookmarkQueueDeadLetterStore)
             .AddScoped(TriggerStore)
             .AddScoped(WorkflowExecutionLogStore)
             .AddScoped(ActivityExecutionLogStore)
@@ -363,6 +397,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddMemoryStore<StoredBookmark, MemoryBookmarkStore>()
             .AddMemoryStore<StoredTrigger, MemoryTriggerStore>()
             .AddMemoryStore<BookmarkQueueItem, MemoryBookmarkQueueStore>()
+            .AddMemoryStore<BookmarkQueueDeadLetterItem, MemoryBookmarkQueueDeadLetterStore>()
             .AddMemoryStore<WorkflowExecutionLogRecord, MemoryWorkflowExecutionLogStore>()
             .AddMemoryStore<ActivityExecutionRecord, MemoryActivityExecutionStore>()
             
@@ -371,6 +406,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddRecurringTask<TriggerBookmarkQueueRecurringTask>(TimeSpan.FromMinutes(1))
             .AddRecurringTask<PurgeBookmarkQueueRecurringTask>(TimeSpan.FromSeconds(10))
             .AddRecurringTask<RestartInterruptedWorkflowsTask>(TimeSpan.FromMinutes(5)) // Same default as the workflow liveness threshold.
+            .AddRecurringTask<ProcessWorkflowDispatchOutboxRecurringTask>(TimeSpan.FromSeconds(10))
             
             // Distributed locking.
             .AddSingleton(DistributedLockProvider)
@@ -387,6 +423,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddCommandHandler<CancelWorkflowsCommandHandler>()
             .AddNotificationHandler<ResumeDispatchWorkflowActivity>()
             .AddNotificationHandler<ResumeBulkDispatchWorkflowActivity>()
+            .AddNotificationHandler<ProcessWorkflowDispatchOutbox>()
             .AddNotificationHandler<ResumeExecuteWorkflowActivity>()
             .AddNotificationHandler<IndexTriggers>()
             .AddNotificationHandler<CancelBackgroundActivities>()
@@ -405,5 +442,18 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowActivationStrategy, CorrelatedSingletonStrategy>()
             .AddScoped<IWorkflowActivationStrategy, CorrelationStrategy>()
             ;
+
+        Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
+        Services.TryAddScoped(WorkflowDispatchOutboxStore);
+        Services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
+    }
+
+    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    {
+        var workflowTypes = Workflows is IWorkflowTypeRegistry workflowTypeRegistry
+            ? WorkflowTypes.Concat(workflowTypeRegistry.WorkflowTypes)
+            : WorkflowTypes;
+
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, workflowTypes);
     }
 }

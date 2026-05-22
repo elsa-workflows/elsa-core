@@ -76,6 +76,8 @@ Notable toggles in `Program.cs`:
 
 The sample configures identity, default authentication, workflow management/runtime with SQLite, workflow API, fluent storage, ElsaScript blob storage, scheduling, C#, JavaScript, Python, Liquid, HTTP, and optional tenants/structured logs.
 
+When running outside the explicit `Development` or `Demo` environments, configure a secure random JWT signing key with at least 32 ASCII characters. For the code-first reference server, prefer `Identity__Tokens__SigningKey` from an environment variable or secrets manager instead of committing the value to appsettings. Shell-based hosts use the shell feature path, for example `CShells__Shells__Default__Features__Identity__SigningKey`.
+
 ## Docker Quick Try
 
 The root [README](../../README.md) documents the public Docker quick start:
@@ -84,6 +86,8 @@ The root [README](../../README.md) documents the public Docker quick start:
 docker pull elsaworkflows/elsa-server-and-studio-v3:latest
 docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e HTTP__BASEURL=http://localhost:13000 -p 13000:8080 elsaworkflows/elsa-server-and-studio-v3:latest
 ```
+
+Production containers must inject a secure JWT signing key through environment variables or a secrets manager. The appsettings placeholder and known public sample keys are rejected during startup outside `Development` or `Demo`.
 
 Default development login is available only when a development configuration explicitly provisions it:
 
@@ -135,7 +139,7 @@ Console log diagnostics endpoints include (when `Elsa.Diagnostics.ConsoleLogs` i
 - `POST /elsa/api/diagnostics/console-logs/recent`
 - `GET /elsa/api/diagnostics/console-logs/sources`
 
-Health checks are mapped to `/` in the reference server.
+Health checks are mapped to `/` and `/health/live` for process liveness and `/health/ready` for Elsa runtime readiness in the reference server. See [Health Checks](health-checks.md) for Kubernetes liveness/readiness recommendations and Elsa-specific runtime readiness probes.
 
 ## Runtime Knobs
 

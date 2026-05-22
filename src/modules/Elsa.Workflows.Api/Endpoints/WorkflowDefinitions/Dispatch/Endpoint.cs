@@ -13,7 +13,7 @@ internal class Endpoint(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowDispatcher workflowDispatcher,
     IIdentityGenerator identityGenerator,
-    PythonWorkflowDefinitionAuthorizationService pythonAuthorizationService) : ElsaEndpoint<Request, Response>
+    WorkflowDefinitionScriptAuthorizationService scriptAuthorizationService) : ElsaEndpoint<Request, Response>
 {
     public override void Configure()
     {
@@ -33,10 +33,10 @@ internal class Endpoint(
             return;
         }
 
-        var pythonAuthorizationResult = await pythonAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
-        if (pythonAuthorizationResult != PythonWorkflowDefinitionAuthorizationResult.Allowed)
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+        if (!scriptAuthorizationResult.Succeeded)
         {
-            await PythonWorkflowDefinitionAuthorizationFailure.SendAsync(pythonAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
         

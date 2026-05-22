@@ -1,4 +1,3 @@
-using Elsa.Scheduling.Activities;
 using Elsa.Workflows.Activities;
 using JetBrains.Annotations;
 
@@ -16,7 +15,7 @@ public class SlowChildWorkflow : WorkflowBase
         {
             Activities =
             {
-                Delay.FromMilliseconds(10),
+                new Inline(context => new ValueTask(Task.Delay(10, context.CancellationToken))),
                 new WriteLine("Slow child workflow executed")
             }
         };

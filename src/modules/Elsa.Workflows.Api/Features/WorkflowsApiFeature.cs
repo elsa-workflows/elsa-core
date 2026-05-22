@@ -37,7 +37,7 @@ public class WorkflowsApiFeature(IModule module) : FeatureBase(module)
         Module.AddFastEndpointsFromModule();
 
         Services.AddScoped<IWorkflowDefinitionLinker, StaticWorkflowDefinitionLinker>();
-        Services.AddScoped<PythonWorkflowDefinitionAuthorizationService>();
+        Services.AddScoped<WorkflowDefinitionScriptAuthorizationService>();
         Services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         Services.Configure<AuthorizationOptions>(options =>
         {

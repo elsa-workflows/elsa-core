@@ -2,6 +2,7 @@ using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
+using Elsa.Resilience.Endpoints.SimulateResponse;
 using Elsa.Resilience.Entities;
 using Elsa.Resilience.Modifiers;
 using Elsa.Resilience.Options;
@@ -10,6 +11,7 @@ using Elsa.Resilience.Serialization;
 using Elsa.Resilience.StrategySources;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Resilience.ShellFeatures;
 
@@ -26,9 +28,12 @@ public class ResilienceFeature : IFastEndpointsShellFeature
         });
         
         services.AddOptions<ResilienceOptions>();
+        services.AddOptions<SimulateResponseOptions>();
+        services.TryAddSingleton(TimeProvider.System);
 
         services
             .AddSingleton<ResilienceStrategySerializer>()
+            .AddSingleton<SimulateResponseSessionStore>()
             .AddSingleton<IActivityDescriptorModifier, ResilientActivityDescriptorModifier>()
             .AddScoped<IResilienceStrategyCatalog, ResilienceStrategyCatalog>()
             .AddScoped<IResilienceStrategyConfigEvaluator, ResilienceStrategyConfigEvaluator>()

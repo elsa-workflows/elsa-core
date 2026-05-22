@@ -266,6 +266,8 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
         foreach (var header in headers)
             request.Headers.Add(header.Key, header.Value.AsEnumerable());
 
+        InjectTraceContext(request);
+
         var contentType = ContentType.GetOrDefault(context);
         var content = Content.GetOrDefault(context);
 
@@ -277,6 +279,23 @@ public abstract class SendHttpRequestBase(string? source = null, int? line = nul
         }
 
         return request;
+    }
+
+    private static void InjectTraceContext(HttpRequestMessage request)
+    {
+        var activity = System.Diagnostics.Activity.Current;
+
+        if (activity == null)
+            return;
+
+        System.Diagnostics.DistributedContextPropagator.Current.Inject(activity, request, static (carrier, key, value) =>
+        {
+            if (carrier is not HttpRequestMessage requestMessage)
+                return;
+
+            if (!requestMessage.Headers.Contains(key))
+                requestMessage.Headers.TryAddWithoutValidation(key, value);
+        });
     }
 
     private IHttpContentFactory SelectContentWriter(string? contentType, IEnumerable<IHttpContentFactory> factories)

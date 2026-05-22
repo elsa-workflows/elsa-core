@@ -37,7 +37,7 @@ public class WorkflowsApiFeature : IFastEndpointsShellFeature
     {
         services.AddSerializationOptionsConfigurator<SerializationConfigurator>();
         services.AddScoped<IWorkflowDefinitionLinker, StaticWorkflowDefinitionLinker>();
-        services.AddScoped<PythonWorkflowDefinitionAuthorizationService>();
+        services.AddScoped<WorkflowDefinitionScriptAuthorizationService>();
         services.AddScoped<IAuthorizationHandler, NotReadOnlyRequirementHandler>();
         services.Configure<AuthorizationOptions>(options =>
         {

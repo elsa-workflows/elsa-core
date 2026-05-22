@@ -1,4 +1,5 @@
 using Elsa.Workflows;
+using Elsa.Workflows.Runtime.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -14,12 +15,7 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add<TWorkflow>(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary) where TWorkflow : IWorkflow
     {
-        // FullName should never be null here, as we filter out generic types
-        dictionary.Add(typeof(TWorkflow).FullName!, sp =>
-        {
-            var workflow = ActivatorUtilities.GetServiceOrCreateInstance<TWorkflow>(sp);
-            return new ValueTask<IWorkflow>(workflow);
-        });
+        dictionary.Add(typeof(TWorkflow));
     }
     
     /// <summary>
@@ -27,11 +23,30 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary, Type workflowType)
     {
-        // FullName should never be null here, as we filter out generic types
-        dictionary.Add(workflowType.FullName!, sp =>
+        WorkflowTypeValidator.Validate(workflowType);
+
+        var key = workflowType.GetSimpleAssemblyQualifiedName();
+        var legacyKey = workflowType.FullName;
+        var hasFactory = dictionary.TryGetValue(key, out var factory);
+
+        if (!hasFactory && !string.IsNullOrWhiteSpace(legacyKey))
+            hasFactory = dictionary.TryGetValue(legacyKey, out factory);
+
+        if (!hasFactory)
         {
-            var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
-            return new ValueTask<IWorkflow>(workflow);
-        });
+            factory = sp =>
+            {
+                var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
+                return new ValueTask<IWorkflow>(workflow);
+            };
+        }
+
+        dictionary[key] = factory!;
+
+        if (!string.IsNullOrWhiteSpace(legacyKey) && legacyKey != key)
+            dictionary[legacyKey] = factory!;
+
+        if (dictionary is IWorkflowTypeRegistry workflowTypeRegistry)
+            workflowTypeRegistry.AddWorkflowType(workflowType);
     }
 }

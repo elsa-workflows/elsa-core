@@ -36,6 +36,8 @@ See [src/apps/Elsa.Server.Web/Program.cs](../../src/apps/Elsa.Server.Web/Program
 
 Identity JWTs include a `token_use` claim. API bearer authentication accepts only access tokens (`token_use=access`), while `/identity/refresh-token` uses a dedicated refresh-token bearer scheme and accepts only refresh tokens (`token_use=refresh`). Clients should not send refresh tokens to normal API endpoints or access tokens to the refresh endpoint.
 
+JWT signing keys must be configured with a secure random value before production startup. Missing keys, weak keys shorter than 32 ASCII characters, and known public defaults are rejected by options startup validation. Known public defaults are only tolerated in the explicit `Development` or `Demo` environments for local/demo hosts. Use environment variables or a secrets manager, such as `Identity__Tokens__SigningKey` for code-first hosts or `CShells__Shells__Default__Features__Identity__SigningKey` for shell-based hosts.
+
 ## Default Admin Bootstrap
 
 The default admin bootstrap is documented in [src/modules/Elsa.Identity/README.md](../../src/modules/Elsa.Identity/README.md) and [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
@@ -104,11 +106,21 @@ Structured logs define diagnostics permissions in [StructuredLogsPermissions](..
 
 Identity endpoints and user-management endpoints are permission-based; see [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
 
+## Ingress Rate Limiting
+
+Elsa exposes opt-in ASP.NET Core rate limiting hooks for two ingress surfaces:
+
+- Elsa management API endpoints, through `ApiEndpointOptions.RateLimitingPolicyName` and `UseWorkflowsApiRateLimiting(...)`.
+- Public HTTP workflow trigger routes, through `HttpActivityOptions.RateLimitingPolicyName` and `UseWorkflowsRateLimiting(...)`.
+
+The reference server registers disabled-by-default fixed-window policies under `IngressRateLimiting`. Enable them by setting `IngressRateLimiting:Enabled` to `true`, then tune the API and HTTP workflow permit/window values for production traffic. Set `IngressRateLimiting:RegisterReferencePolicies` to `false` when policy names and policies are supplied externally. Custom hosts should register named policies with `services.AddRateLimiter(...)`, map Elsa API endpoints with `MapWorkflowsApi(...)`, apply the Elsa metadata hooks after endpoint routing has selected endpoints and before the rate limiter middleware, and call `app.UseRateLimiter()` once in the host pipeline. The Elsa hooks only attach endpoint metadata; ASP.NET Core validates configured policy names when the rate limiter middleware handles matching requests. Leave the option disabled, omit the policy names in custom hosts, or set the reference-server policy options to empty strings to run without Elsa-provided rate limiting. The reference server only assigns its default policy names when `Enabled` is `true`.
+
 ## Security Review Checklist
 
 - Does the endpoint require authentication or a permission?
 - Does mutable API behavior honor read-only mode?
 - Does the operation need tenant scoping?
+- Are exposed API or HTTP workflow trigger routes protected by appropriate ingress rate limiting?
 - Does persistence apply tenant ID filters and saving handlers?
 - Are bootstrap credentials only for development or secret-managed environments?
 - Does any diagnostic/logging feature expose sensitive data without redaction?

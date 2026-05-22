@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <CoverageIncludeFilter>[Elsa.SasTokens]*</CoverageIncludeFilter>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.SasTokens\Elsa.SasTokens.csproj" />
+    </ItemGroup>
+
+</Project>

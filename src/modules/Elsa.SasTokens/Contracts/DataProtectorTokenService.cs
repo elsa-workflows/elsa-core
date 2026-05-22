@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -8,7 +9,10 @@ namespace Elsa.SasTokens.Contracts;
 /// </summary>
 public class DataProtectorTokenService : ITokenService
 {
+    private const string TimeLimitedTokenPrefix = "v1.tl.";
+    private const string NonExpiringTokenPrefix = "v1.ne.";
     private readonly IDataProtector _dataProtector;
+    private readonly ITimeLimitedDataProtector _timeLimitedDataProtector;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DataProtectorTokenService"/> class.
@@ -16,27 +20,28 @@ public class DataProtectorTokenService : ITokenService
     public DataProtectorTokenService(IDataProtectionProvider dataProtector)
     {
         _dataProtector = dataProtector.CreateProtector("Elsa Tokens");
+        _timeLimitedDataProtector = _dataProtector.ToTimeLimitedDataProtector();
     }
 
     /// <inheritdoc />
     public string CreateToken<T>(T payload, TimeSpan lifetime)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _dataProtector.ToTimeLimitedDataProtector().Protect(json, lifetime);
+        return TimeLimitedTokenPrefix + _timeLimitedDataProtector.Protect(json, lifetime);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload, DateTimeOffset expiresAt)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _dataProtector.ToTimeLimitedDataProtector().Protect(json, expiresAt);
+        return TimeLimitedTokenPrefix + _timeLimitedDataProtector.Protect(json, expiresAt);
     }
     
     /// <inheritdoc />
     public string CreateToken<T>(T payload)
     {
         var json = JsonSerializer.Serialize(payload);
-        return _dataProtector.Protect(json);
+        return NonExpiringTokenPrefix + _dataProtector.Protect(json);
     }
 
     /// <inheritdoc />
@@ -60,7 +65,38 @@ public class DataProtectorTokenService : ITokenService
     /// <inheritdoc />
     public T DecryptToken<T>(string token)
     {
-        var json = _dataProtector.Unprotect(token);
+        var json = Unprotect(token);
         return JsonSerializer.Deserialize<T>(json)!;
+    }
+
+    private string Unprotect(string token)
+    {
+        if (token.StartsWith(TimeLimitedTokenPrefix, StringComparison.Ordinal))
+            return _timeLimitedDataProtector.Unprotect(token[TimeLimitedTokenPrefix.Length..]);
+
+        if (token.StartsWith(NonExpiringTokenPrefix, StringComparison.Ordinal))
+            return _dataProtector.Unprotect(token[NonExpiringTokenPrefix.Length..]);
+
+        try
+        {
+            return _timeLimitedDataProtector.Unprotect(token);
+        }
+        catch (CryptographicException)
+        {
+            var json = _dataProtector.Unprotect(token);
+
+            // Expired time-limited tokens can be decrypted by the base protector,
+            // but the result includes the expiration header.
+            // Only accept fallback payloads that are standalone JSON produced by CreateToken(payload).
+            try
+            {
+                using var _ = JsonDocument.Parse(json);
+                return json;
+            }
+            catch (JsonException e)
+            {
+                throw new CryptographicException("Token payload is not a valid non-expiring token.", e);
+            }
+        }
     }
 }

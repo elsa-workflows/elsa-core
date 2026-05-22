@@ -58,6 +58,16 @@ public class SendHttpRequestTests
         Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
     }
 
+    [Fact]
+    public async Task Should_Propagate_Current_Trace_Context()
+    {
+        await SendHttpRequestTestHelpers.AssertPropagatesCurrentTraceContextAsync(async (url, responseHandler) =>
+        {
+            var sendHttpRequest = CreateSendHttpRequest(url);
+            await ExecuteActivityAsync(sendHttpRequest, responseHandler);
+        });
+    }
+
     [Theory]
     [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.NotFound, "mockActivity404")]
     [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.InternalServerError, "mockUnmatchedActivity")]
@@ -166,7 +176,7 @@ public class SendHttpRequestTests
             expectedCategory: "HTTP",
             expectedDisplayName: "HTTP Request",
             expectedDescription: "Send an HTTP request.",
-            expectedKind: ActivityKind.Task
+            expectedKind: Elsa.Workflows.ActivityKind.Task
         );
     }
 
@@ -181,6 +191,7 @@ public class SendHttpRequestTests
         {
             if (requestCapture != null)
                 requestCapture.CapturedRequest = request;
+
             return Task.FromResult(ActivityTestFixtureHttpExtensions.CreateHttpResponse(statusCode, content, additionalHeaders));
         };
     }

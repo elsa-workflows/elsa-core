@@ -2,6 +2,7 @@ using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Resilience.Endpoints.SimulateResponse;
 using Elsa.Resilience.Entities;
 using Elsa.Resilience.Modifiers;
 using Elsa.Resilience.Options;
@@ -10,6 +11,7 @@ using Elsa.Resilience.Serialization;
 using Elsa.Resilience.StrategySources;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Resilience.Features;
 
@@ -69,9 +71,12 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
     public override void Apply()
     {
         Services.AddOptions<ResilienceOptions>();
+        Services.AddOptions<SimulateResponseOptions>();
+        Services.TryAddSingleton(TimeProvider.System);
 
         Services
             .AddSingleton<ResilienceStrategySerializer>()
+            .AddSingleton<SimulateResponseSessionStore>()
             .AddSingleton<IActivityDescriptorModifier, ResilientActivityDescriptorModifier>()
             .AddScoped<IResilienceStrategyCatalog, ResilienceStrategyCatalog>()
             .AddScoped<IResilienceStrategyConfigEvaluator, ResilienceStrategyConfigEvaluator>()
