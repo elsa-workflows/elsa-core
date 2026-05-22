@@ -48,13 +48,13 @@ public class Endpoint(
         {
             await foreach (var streamEvent in orchestrator.ExecuteChatAsync(request, cancellationToken))
             {
+                disconnectedConversationId = streamEvent.ConversationId;
                 if (reconnectAccepted && !reconnectConnected)
                 {
-                    sessionManager.MarkConnected(request.ConversationId);
+                    sessionManager.MarkConnected(disconnectedConversationId);
                     reconnectConnected = true;
                 }
 
-                disconnectedConversationId = streamEvent.ConversationId;
                 await response.WriteAsync($"event: {streamEvent.Type}\n", cancellationToken);
                 await response.WriteAsync($"data: {JsonSerializer.Serialize(streamEvent)}\n\n", cancellationToken);
                 await response.Body.FlushAsync(cancellationToken);
