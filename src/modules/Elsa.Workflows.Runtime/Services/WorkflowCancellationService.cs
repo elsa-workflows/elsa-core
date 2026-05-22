@@ -1,3 +1,4 @@
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -10,6 +11,7 @@ namespace Elsa.Workflows.Runtime;
 public class WorkflowCancellationService(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowInstanceStore workflowInstanceStore,
+    ISystemClock systemClock,
     IWorkflowCancellationDispatcher dispatcher)
     : IWorkflowCancellationService
 {
@@ -67,17 +69,45 @@ public class WorkflowCancellationService(
 
     private async Task<int> CancelWorkflows(IList<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
     {
-        var tasks = workflowInstances.Where(i => i.Status != WorkflowStatus.Finished)
+        var cancellableWorkflowInstances = workflowInstances.Where(i => i.Status != WorkflowStatus.Finished).ToList();
+        var instanceIds = workflowInstances.Select(i => i.Id).ToList();
+
+        await MarkWorkflowInstancesAsCancellingAsync(cancellableWorkflowInstances, cancellationToken);
+
+        var tasks = cancellableWorkflowInstances
             .Select(i => dispatcher.DispatchAsync(new DispatchCancelWorkflowRequest
             {
                 WorkflowInstanceId = i.Id
             }, cancellationToken)).ToList();
 
-        var instanceIds = workflowInstances.Select(i => i.Id).ToList();
         await CancelChildWorkflowInstances(instanceIds, cancellationToken);
         await Task.WhenAll(tasks);
 
         return tasks.Count;
+    }
+
+    private async Task MarkWorkflowInstancesAsCancellingAsync(ICollection<WorkflowInstance> workflowInstances, CancellationToken cancellationToken)
+    {
+        if (workflowInstances.Count == 0)
+            return;
+
+        var now = systemClock.UtcNow;
+
+        foreach (var workflowInstance in workflowInstances)
+        {
+            workflowInstance.Status = WorkflowStatus.Running;
+            workflowInstance.SubStatus = WorkflowSubStatus.Cancelling;
+            workflowInstance.UpdatedAt = now;
+
+            if (workflowInstance.WorkflowState is not null)
+            {
+                workflowInstance.WorkflowState.Status = WorkflowStatus.Running;
+                workflowInstance.WorkflowState.SubStatus = WorkflowSubStatus.Cancelling;
+                workflowInstance.WorkflowState.UpdatedAt = now;
+            }
+        }
+
+        await workflowInstanceStore.SaveManyAsync(workflowInstances, cancellationToken);
     }
 
     private async Task CancelChildWorkflowInstances(IEnumerable<string> workflowInstanceIds, CancellationToken cancellationToken)
