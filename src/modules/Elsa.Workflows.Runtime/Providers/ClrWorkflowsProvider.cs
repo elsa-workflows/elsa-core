@@ -22,7 +22,7 @@ public class ClrWorkflowsProvider(
     /// <inheritdoc />
     public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)
     {
-        var buildWorkflowTasks = options.Value.Workflows.Values.Select(async x => await BuildWorkflowAsync(x, cancellationToken)).ToList();
+        var buildWorkflowTasks = options.Value.Workflows.Values.Distinct().Select(async x => await BuildWorkflowAsync(x, cancellationToken)).ToList();
         var workflowDefinitions = await Task.WhenAll(buildWorkflowTasks);
         return workflowDefinitions;
     }

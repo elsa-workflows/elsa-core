@@ -142,25 +142,24 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         return (T?)variables.FirstOrDefault(v => v.Variable.Name == variableName)?.Value;
     }
 
-    private async Task<(TestWorkflowExecutionResult Result, List<WorkflowState> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowsAsync(
+    private async Task<(TestWorkflowExecutionResult Result, List<WorkflowInstance> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowsAsync(
         string parentWorkflowDefinitionId,
         string childWorkflowDefinitionId,
         int expectedChildCount)
     {
         var result = await RunWorkflowAsync(parentWorkflowDefinitionId);
-        var completedChildWorkflows = await WaitForCompletedChildWorkflowsAsync(result.WorkflowExecutionContext.Id, childWorkflowDefinitionId, expectedChildCount);
+        var completedChildWorkflows = await WaitForCompletedChildWorkflowInstancesAsync(result.WorkflowExecutionContext.Id, childWorkflowDefinitionId, expectedChildCount);
 
         return (result, completedChildWorkflows);
     }
 
-    private async Task<List<WorkflowState>> WaitForCompletedChildWorkflowsAsync(string parentWorkflowInstanceId, string childWorkflowDefinitionId, int expectedChildCount)
+    private async Task<List<WorkflowInstance>> WaitForCompletedChildWorkflowInstancesAsync(string parentWorkflowInstanceId, string childWorkflowDefinitionId, int expectedChildCount)
     {
-        var workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
         var timeoutAt = DateTimeOffset.UtcNow.AddSeconds(ChildWorkflowTimeoutSeconds);
 
         while (DateTimeOffset.UtcNow < timeoutAt)
         {
-            var completedChildWorkflows = await FindChildWorkflowStatesAsync(workflowInstanceStore, parentWorkflowInstanceId, childWorkflowDefinitionId, WorkflowStatus.Finished);
+            var completedChildWorkflows = await FindChildWorkflowInstancesAsync(parentWorkflowInstanceId, childWorkflowDefinitionId, WorkflowStatus.Finished);
 
             if (completedChildWorkflows.Count >= expectedChildCount)
                 return completedChildWorkflows;
@@ -168,13 +167,12 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             await Task.Delay(TimeSpan.FromMilliseconds(100));
         }
 
-        var childWorkflows = await FindChildWorkflowStatesAsync(workflowInstanceStore, parentWorkflowInstanceId, childWorkflowDefinitionId);
+        var childWorkflows = await FindChildWorkflowInstancesAsync(parentWorkflowInstanceId, childWorkflowDefinitionId);
         var observedStates = string.Join(", ", childWorkflows.Select(x => $"{x.Id}:{x.Status}:{x.SubStatus}"));
         throw new TimeoutException($"Expected {expectedChildCount} completed child workflows with definition ID {childWorkflowDefinitionId}, but observed {childWorkflows.Count(x => x.Status == WorkflowStatus.Finished)}. Observed child workflow states: {observedStates}");
     }
 
-    private static async Task<List<WorkflowState>> FindChildWorkflowStatesAsync(
-        IWorkflowInstanceStore workflowInstanceStore,
+    private async Task<List<WorkflowInstance>> FindChildWorkflowInstancesAsync(
         string parentWorkflowInstanceId,
         string childWorkflowDefinitionId,
         WorkflowStatus? workflowStatus = null)
@@ -185,8 +183,8 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             ParentWorkflowInstanceIds = new[] { parentWorkflowInstanceId },
             WorkflowStatus = workflowStatus
         };
-        var instances = await workflowInstanceStore.FindManyAsync(filter);
-        return instances.Select(x => x.WorkflowState).ToList();
+        var instances = await _workflowInstanceStore.FindManyAsync(filter);
+        return instances.OrderBy(x => x.CreatedAt).ToList();
     }
 
     private async Task<IReadOnlyCollection<WorkflowInstance>> WaitForChildWorkflowInstancesAsync(
