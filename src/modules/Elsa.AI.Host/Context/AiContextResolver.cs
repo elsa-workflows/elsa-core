@@ -1,10 +1,11 @@
 using System.Text.RegularExpressions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.Context;
 
-public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
+public class AiContextResolver(IServiceScopeFactory scopeFactory)
 {
     private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "api-key", "authorization", "credential", "bearer"];
     private static readonly Regex[] SensitiveValuePatterns =
@@ -13,16 +14,17 @@ public class AiContextResolver(IEnumerable<IAiContextProvider> providers)
         new(@"\b(?:api[_-]?key|token|secret|password)\s*[:=]\s*['""]?[A-Za-z0-9._~+/\-=]{8,}['""]?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
     ];
     private const string Redacted = "[redacted]";
-    private readonly Dictionary<string, IAiContextProvider> _providers = BuildProviders(providers);
 
     public async ValueTask<IReadOnlyCollection<AiResolvedContext>> ResolveAsync(AiChatRequest request, CancellationToken cancellationToken = default)
     {
+        using var scope = scopeFactory.CreateScope();
+        var providers = BuildProviders(scope.ServiceProvider.GetServices<IAiContextProvider>());
         var resolved = new List<AiResolvedContext>();
         var attachmentsWithProviders = request.Attachments
             .Select(attachment => new
             {
                 Attachment = attachment,
-                Provider = _providers.GetValueOrDefault(attachment.Kind)
+                Provider = providers.GetValueOrDefault(attachment.Kind)
             })
             .Where(x => x.Provider != null);
 

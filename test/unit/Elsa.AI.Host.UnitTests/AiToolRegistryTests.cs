@@ -171,6 +171,22 @@ public class AiToolRegistryTests
         Assert.Equal("matching", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry disposes find scope when tool resolution throws")]
+    public async Task ToolRegistryDisposesFindScopeWhenToolResolutionThrows()
+    {
+        var tracker = new ScopeDisposalTracker();
+        var services = new ServiceCollection();
+        services.AddSingleton(tracker);
+        services.AddScoped<ScopedDependency>();
+        services.AddScoped<IAiTool, ThrowingDefinitionTool>();
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        var registry = new AiToolRegistry(provider.GetRequiredService<IServiceScopeFactory>(), new AiToolEnablementService());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await registry.FindAsync("throwing", new AiToolQuery()));
+
+        Assert.Equal(1, tracker.DisposeCount);
+    }
+
     private static AiToolRegistry CreateRegistry(IReadOnlyCollection<IAiTool> tools)
     {
         var services = new ServiceCollection();
@@ -187,5 +203,35 @@ public class AiToolRegistryTests
 
         public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AiToolResult());
+    }
+
+    private class ThrowingDefinitionTool(ScopedDependency dependency) : IAiTool
+    {
+        private readonly ScopedDependency _dependency = dependency;
+
+        public AiToolDefinition Definition
+        {
+            get
+            {
+                _ = _dependency;
+                throw new InvalidOperationException("Definition unavailable.");
+            }
+        }
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiToolResult());
+    }
+
+    private class ScopedDependency(ScopeDisposalTracker tracker) : IDisposable
+    {
+        public void Dispose()
+        {
+            tracker.DisposeCount++;
+        }
+    }
+
+    private class ScopeDisposalTracker
+    {
+        public int DisposeCount { get; set; }
     }
 }

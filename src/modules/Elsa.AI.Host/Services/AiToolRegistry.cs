@@ -21,18 +21,22 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
     public ValueTask<IAiTool?> FindAsync(string name, AiToolQuery query, CancellationToken cancellationToken = default)
     {
         var scope = scopeFactory.CreateScope();
-        var tool = scope.ServiceProvider.GetServices<IAiTool>().FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
-        if (tool == null || !IsVisible(tool.Definition, query) || !enablementService.IsEnabled(tool.Definition))
+        try
+        {
+            var tool = scope.ServiceProvider.GetServices<IAiTool>().FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (tool == null || !IsVisible(tool.Definition, query) || !enablementService.IsEnabled(tool.Definition))
+            {
+                scope.Dispose();
+                return ValueTask.FromResult<IAiTool?>(null);
+            }
+
+            return ValueTask.FromResult<IAiTool?>(new ScopedAiTool(scope, tool));
+        }
+        catch
         {
             scope.Dispose();
-            tool = null;
+            throw;
         }
-        else
-        {
-            tool = new ScopedAiTool(scope, tool);
-        }
-
-        return ValueTask.FromResult(tool);
     }
 
     private static bool IsVisible(AiToolDefinition definition, AiToolQuery query) =>

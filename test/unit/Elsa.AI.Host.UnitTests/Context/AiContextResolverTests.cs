@@ -1,6 +1,7 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Nodes;
 
 namespace Elsa.AI.Host.UnitTests.Context;
@@ -10,7 +11,8 @@ public class AiContextResolverTests
     [Fact(DisplayName = "Context resolver resolves workflow definition references server-side")]
     public async Task ContextResolverResolvesWorkflowDefinitionReferences()
     {
-        var resolver = new AiContextResolver([new WorkflowDefinitionContextProvider()]);
+        using var provider = CreateProvider(services => services.AddSingleton<IAiContextProvider, WorkflowDefinitionContextProvider>());
+        var resolver = provider.GetRequiredService<AiContextResolver>();
 
         var result = await resolver.ResolveAsync(new AiChatRequest
         {
@@ -34,7 +36,8 @@ public class AiContextResolverTests
     [Fact(DisplayName = "Context resolver redacts sensitive data and metadata keys")]
     public async Task ContextResolverRedactsSensitiveDataAndMetadataKeys()
     {
-        var resolver = new AiContextResolver([new SensitiveContextProvider()]);
+        using var provider = CreateProvider(services => services.AddSingleton<IAiContextProvider, SensitiveContextProvider>());
+        var resolver = provider.GetRequiredService<AiContextResolver>();
 
         var result = await resolver.ResolveAsync(new AiChatRequest
         {
@@ -59,7 +62,12 @@ public class AiContextResolverTests
     [Fact(DisplayName = "Context resolver uses the last provider for duplicate provider kinds")]
     public async Task ContextResolverUsesTheLastProviderForDuplicateProviderKinds()
     {
-        var resolver = new AiContextResolver([new DuplicateContextProvider("first"), new DuplicateContextProvider("second")]);
+        using var provider = CreateProvider(services =>
+        {
+            services.AddSingleton<IAiContextProvider>(new DuplicateContextProvider("first"));
+            services.AddSingleton<IAiContextProvider>(new DuplicateContextProvider("second"));
+        });
+        var resolver = provider.GetRequiredService<AiContextResolver>();
 
         var result = await resolver.ResolveAsync(new AiChatRequest
         {
@@ -74,7 +82,12 @@ public class AiContextResolverTests
     [Fact(DisplayName = "Context resolver prefers real providers over placeholders")]
     public async Task ContextResolverPrefersRealProvidersOverPlaceholders()
     {
-        var resolver = new AiContextResolver([new DuplicateContextProvider("real", "WorkflowDefinition"), new WorkflowDefinitionContextProvider()]);
+        using var provider = CreateProvider(services =>
+        {
+            services.AddSingleton<IAiContextProvider>(new DuplicateContextProvider("real", "WorkflowDefinition"));
+            services.AddSingleton<IAiContextProvider, WorkflowDefinitionContextProvider>();
+        });
+        var resolver = provider.GetRequiredService<AiContextResolver>();
 
         var result = await resolver.ResolveAsync(new AiChatRequest
         {
@@ -84,6 +97,30 @@ public class AiContextResolverTests
 
         var context = Assert.Single(result);
         Assert.Equal("real", context.Summary);
+    }
+
+    [Fact(DisplayName = "Context resolver resolves scoped providers from request scopes")]
+    public async Task ContextResolverResolvesScopedProvidersFromRequestScopes()
+    {
+        using var provider = CreateProvider(services => services.AddScoped<IAiContextProvider, ScopedContextProvider>());
+        var resolver = provider.GetRequiredService<AiContextResolver>();
+
+        var result = await resolver.ResolveAsync(new AiChatRequest
+        {
+            UserId = "user-1",
+            Attachments = [new AiContextAttachment { Kind = "Scoped" }]
+        });
+
+        var context = Assert.Single(result);
+        Assert.Equal("scoped", context.Summary);
+    }
+
+    private static ServiceProvider CreateProvider(Action<IServiceCollection> configure)
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<AiContextResolver>();
+        configure(services);
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
 
     private class SensitiveContextProvider : IAiContextProvider
@@ -120,6 +157,20 @@ public class AiContextResolverTests
             {
                 Kind = Kind,
                 Summary = summary
+            });
+        }
+    }
+
+    private class ScopedContextProvider : IAiContextProvider
+    {
+        public string Kind => "Scoped";
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = Kind,
+                Summary = "scoped"
             });
         }
     }
