@@ -117,7 +117,6 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
             return true;
 
         return !string.IsNullOrWhiteSpace(agent) &&
-               definition.Permissions.Count > 0 &&
                definition.AgentScopes.Contains(agent, StringComparer.OrdinalIgnoreCase);
     }
 

@@ -154,8 +154,8 @@ public class AiToolRegistryTests
         Assert.NotNull(allowed);
     }
 
-    [Fact(DisplayName = "Tool registry treats agent scopes as permission narrowing hints")]
-    public async Task ToolRegistryTreatsAgentScopesAsPermissionNarrowingHints()
+    [Fact(DisplayName = "Tool registry filters agent-scoped tools by agent")]
+    public async Task ToolRegistryFiltersAgentScopedToolsByAgent()
     {
         var registry = CreateRegistry(
             [
@@ -184,6 +184,13 @@ public class AiToolRegistryTests
             TenantId = "tenant-1",
             ActorId = "user-1"
         });
+        var deniedByAgent = await registry.ListAsync(new AiToolQuery
+        {
+            Agent = "workflow-editor",
+            TenantId = "tenant-1",
+            ActorId = "user-1",
+            UserPermissions = ["workflows:write"]
+        });
         var allowedWithPermission = await registry.ListAsync(new AiToolQuery
         {
             Agent = "workflow-author",
@@ -192,9 +199,13 @@ public class AiToolRegistryTests
             UserPermissions = ["workflows:write"]
         });
 
-        Assert.Empty(deniedWithoutPermission);
-        var tool = Assert.Single(allowedWithPermission);
-        Assert.Equal("agent-permission", tool.Name);
+        var tool = Assert.Single(deniedWithoutPermission);
+        Assert.Equal("agent-only", tool.Name);
+        Assert.Empty(deniedByAgent);
+        Assert.Collection(
+            allowedWithPermission.OrderBy(x => x.Name),
+            agentOnly => Assert.Equal("agent-only", agentOnly.Name),
+            agentPermission => Assert.Equal("agent-permission", agentPermission.Name));
     }
 
     [Fact(DisplayName = "Tool registry honors tenant and actor allowlists")]

@@ -2,6 +2,7 @@ using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Elsa.AI.Persistence.EFCore.Services;
@@ -41,8 +42,11 @@ public static class EFCoreAiConversationCleanup
             var table = schema == null
                 ? sqlGenerationHelper.DelimitIdentifier(tableName)
                 : sqlGenerationHelper.DelimitIdentifier(tableName, schema);
-            var retentionMode = sqlGenerationHelper.DelimitIdentifier(nameof(AiConversationRecord.RetentionMode));
-            var retentionExpiresAt = sqlGenerationHelper.DelimitIdentifier(nameof(AiConversationRecord.RetentionExpiresAt));
+            var storeObject = StoreObjectIdentifier.Table(tableName, schema);
+            var retentionModeColumnName = entityType?.FindProperty(nameof(AiConversationRecord.RetentionMode))?.GetColumnName(storeObject) ?? nameof(AiConversationRecord.RetentionMode);
+            var retentionExpiresAtColumnName = entityType?.FindProperty(nameof(AiConversationRecord.RetentionExpiresAt))?.GetColumnName(storeObject) ?? nameof(AiConversationRecord.RetentionExpiresAt);
+            var retentionMode = sqlGenerationHelper.DelimitIdentifier(retentionModeColumnName);
+            var retentionExpiresAt = sqlGenerationHelper.DelimitIdentifier(retentionExpiresAtColumnName);
             var sql = $"DELETE FROM {table} WHERE {retentionMode} = {{0}} AND {retentionExpiresAt} IS NOT NULL AND {retentionExpiresAt} <= {{1}}";
             var parameters = new object[] { configuredRetentionMode, now };
 
