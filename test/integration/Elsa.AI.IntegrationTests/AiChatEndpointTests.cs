@@ -265,6 +265,31 @@ public class AiChatEndpointTests
         Assert.Contains(events, x => x.Type == "conversation.completed");
     }
 
+    [Fact(DisplayName = "Chat orchestration skips conversation store when persistence is disabled")]
+    public async Task ChatOrchestrationSkipsConversationStoreWhenPersistenceIsDisabled()
+    {
+        var conversationStore = new TrackingConversationStore();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.ConversationPersistenceEnabled = false);
+        services.RemoveAll<IAiConversationStore>();
+        services.AddSingleton<IAiConversationStore>(conversationStore);
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        Assert.Contains(events, x => x.Type == "conversation.completed");
+        Assert.Equal(0, conversationStore.FindCount);
+        Assert.Equal(0, conversationStore.SaveCount);
+    }
+
     [Fact(DisplayName = "Chat orchestration emits terminal events when conversation lookup fails")]
     public async Task ChatOrchestrationEmitsTerminalEventsWhenConversationLookupFails()
     {
@@ -1728,5 +1753,23 @@ public class AiChatEndpointTests
 
         public ValueTask SaveAsync(AiConversation conversation, CancellationToken cancellationToken = default) =>
             ValueTask.CompletedTask;
+    }
+
+    private class TrackingConversationStore : IAiConversationStore
+    {
+        public int FindCount { get; private set; }
+        public int SaveCount { get; private set; }
+
+        public ValueTask<AiConversation?> FindAsync(string id, CancellationToken cancellationToken = default)
+        {
+            FindCount++;
+            return ValueTask.FromResult<AiConversation?>(null);
+        }
+
+        public ValueTask SaveAsync(AiConversation conversation, CancellationToken cancellationToken = default)
+        {
+            SaveCount++;
+            return ValueTask.CompletedTask;
+        }
     }
 }

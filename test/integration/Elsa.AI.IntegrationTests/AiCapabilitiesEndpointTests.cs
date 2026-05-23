@@ -74,6 +74,20 @@ public class AiCapabilitiesEndpointTests
         Assert.False(response.ConversationPersistence);
     }
 
+    [Fact(DisplayName = "Capabilities endpoint does not advertise disabled conversation persistence")]
+    public async Task CapabilitiesEndpointDoesNotAdvertiseDisabledConversationPersistence()
+    {
+        var endpoint = new Endpoint(
+            MicrosoftOptions.Create(new AiHostOptions { ConversationPersistenceEnabled = false }),
+            [new TestAiProvider()],
+            [new TestConversationStore()],
+            [new TestProposalStore()]);
+
+        var response = await endpoint.ExecuteAsync(CancellationToken.None);
+
+        Assert.False(response.ConversationPersistence);
+    }
+
     private class TestAiProvider : IAiProvider
     {
         public string Name => "test";

@@ -1,9 +1,5 @@
 using Elsa.AI.Abstractions.Models;
-using Elsa.AI.Persistence.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Elsa.AI.Persistence.EFCore.Services;
 
@@ -27,21 +23,20 @@ public static class EFCoreAiConversationCleanup
 
     private static async ValueTask<int> DeleteExpiredConfiguredAsync(AiDbContext dbContext, string configuredRetentionMode, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        var sqlGenerationHelper = dbContext.GetService<ISqlGenerationHelper>();
-        var entityType = dbContext.Model.FindEntityType(typeof(AiConversationRecord));
-        var tableName = entityType?.GetTableName() ?? "AiConversations";
-        var schema = entityType?.GetSchema();
-        var table = schema == null
-            ? sqlGenerationHelper.DelimitIdentifier(tableName)
-            : sqlGenerationHelper.DelimitIdentifier(tableName, schema);
-        var storeObject = StoreObjectIdentifier.Table(tableName, schema);
-        var retentionModeColumnName = entityType?.FindProperty(nameof(AiConversationRecord.RetentionMode))?.GetColumnName(storeObject) ?? nameof(AiConversationRecord.RetentionMode);
-        var retentionExpiresAtColumnName = entityType?.FindProperty(nameof(AiConversationRecord.RetentionExpiresAt))?.GetColumnName(storeObject) ?? nameof(AiConversationRecord.RetentionExpiresAt);
-        var retentionMode = sqlGenerationHelper.DelimitIdentifier(retentionModeColumnName);
-        var retentionExpiresAt = sqlGenerationHelper.DelimitIdentifier(retentionExpiresAtColumnName);
-        var sql = $"DELETE FROM {table} WHERE {retentionMode} = {{0}} AND {retentionExpiresAt} IS NOT NULL AND {retentionExpiresAt} <= {{1}}";
-        var parameters = new object[] { configuredRetentionMode, now };
+        // SQLite cannot translate this nullable DateTimeOffset comparison in ExecuteDeleteAsync.
+        var configuredConversations = await dbContext.Conversations
+            .Where(x => x.RetentionMode == configuredRetentionMode && x.RetentionExpiresAt != null)
+            .ToListAsync(cancellationToken);
+        var expiredConversations = configuredConversations
+            .Where(x => x.RetentionExpiresAt <= now)
+            .ToList();
 
-        return await dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
+        if (expiredConversations.Count == 0)
+            return 0;
+
+        dbContext.Conversations.RemoveRange(expiredConversations);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return expiredConversations.Count;
     }
 }

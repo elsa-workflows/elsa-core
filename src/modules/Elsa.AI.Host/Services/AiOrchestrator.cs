@@ -28,15 +28,19 @@ public class AiOrchestrator(
         var sequence = 0L;
         var providerSelection = SelectProvider(request);
         var provider = providerSelection.Provider;
+        var conversationPersistenceEnabled = options.Value.ConversationPersistenceEnabled;
         AiConversation? conversation = null;
         Exception? preparationError = null;
-        try
+        if (conversationPersistenceEnabled)
         {
-            conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
-        }
-        catch (Exception e) when (e is not OperationCanceledException)
-        {
-            preparationError = e;
+            try
+            {
+                conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                preparationError = e;
+            }
         }
 
         if (conversation != null && (!BelongsToTenant(conversation, request.TenantId) || !BelongsToUser(conversation, request.UserId)))
@@ -706,6 +710,9 @@ public class AiOrchestrator(
 
     private async ValueTask TrySaveConversationAsync(string conversationId, AiChatRequest request, AiConversationStatus status, IReadOnlyCollection<AiMessage> messages, AiConversation? conversation, string? providerSessionId, CancellationToken cancellationToken)
     {
+        if (!options.Value.ConversationPersistenceEnabled)
+            return;
+
         try
         {
             var now = DateTimeOffset.UtcNow;

@@ -3,7 +3,7 @@ namespace Elsa.AI.Host.Options;
 public class AiHostOptions
 {
     public bool StreamingEnabled { get; set; } = true;
-    public bool ConversationPersistenceEnabled { get; set; }
+    public bool ConversationPersistenceEnabled { get; set; } = true;
     public bool ProposalReviewEnabled { get; set; } = true;
     public TimeSpan ConversationRetention { get; set; } = TimeSpan.FromDays(30);
     public TimeSpan ReconnectGrace { get; set; } = TimeSpan.FromMinutes(5);
