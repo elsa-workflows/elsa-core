@@ -42,6 +42,7 @@ public class Endpoint(
 
         var completed = false;
         var reconnectAccepted = request.IsReconnect;
+        var requestedReconnectConversationId = request.ConversationId;
         var reconnectConnected = false;
         var disconnectedConversationId = request.ConversationId;
         try
@@ -51,6 +52,9 @@ public class Endpoint(
                 disconnectedConversationId = streamEvent.ConversationId;
                 if (reconnectAccepted && !reconnectConnected)
                 {
+                    if (!string.Equals(requestedReconnectConversationId, disconnectedConversationId, StringComparison.OrdinalIgnoreCase))
+                        sessionManager.ReleaseReconnect(requestedReconnectConversationId);
+
                     sessionManager.MarkConnected(disconnectedConversationId);
                     reconnectConnected = true;
                 }

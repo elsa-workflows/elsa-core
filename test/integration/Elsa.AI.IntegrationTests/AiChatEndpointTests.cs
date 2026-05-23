@@ -265,6 +265,31 @@ public class AiChatEndpointTests
         Assert.Contains(events, x => x.Type == "conversation.completed");
     }
 
+    [Fact(DisplayName = "Chat orchestration emits terminal events when conversation lookup fails")]
+    public async Task ChatOrchestrationEmitsTerminalEventsWhenConversationLookupFails()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.RemoveAll<IAiConversationStore>();
+        services.AddSingleton<IAiConversationStore, ThrowingFindConversationStore>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        Assert.Contains(events, x => x.Type == "conversation.started");
+        Assert.Contains(events, x => x.Type == "conversation.error");
+        Assert.Contains(events, x => x.Type == "conversation.completed");
+    }
+
+
     [Fact(DisplayName = "Chat orchestration emits terminal events when context resolution fails")]
     public async Task ChatOrchestrationEmitsTerminalEventsWhenContextResolutionFails()
     {
@@ -1609,5 +1634,14 @@ public class AiChatEndpointTests
 
         public ValueTask SaveAsync(AiConversation conversation, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Conversation store unavailable.");
+    }
+
+    private class ThrowingFindConversationStore : IAiConversationStore
+    {
+        public ValueTask<AiConversation?> FindAsync(string id, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Conversation store unavailable.");
+
+        public ValueTask SaveAsync(AiConversation conversation, CancellationToken cancellationToken = default) =>
+            ValueTask.CompletedTask;
     }
 }

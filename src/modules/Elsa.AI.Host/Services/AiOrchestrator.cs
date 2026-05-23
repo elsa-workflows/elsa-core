@@ -28,14 +28,23 @@ public class AiOrchestrator(
         var sequence = 0L;
         var providerSelection = SelectProvider(request);
         var provider = providerSelection.Provider;
-        var conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
+        AiConversation? conversation = null;
+        Exception? preparationError = null;
+        try
+        {
+            conversation = await conversationStore.FindAsync(conversationId, cancellationToken);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            preparationError = e;
+        }
+
         if (conversation != null && (!BelongsToTenant(conversation, request.TenantId) || !BelongsToUser(conversation, request.UserId)))
         {
             conversation = null;
             conversationId = Guid.NewGuid().ToString("N");
         }
         var messages = conversation?.Messages.ToList() ?? [];
-        Exception? preparationError = null;
 
         if (request.IsReconnect && IsCompletedReconnect(conversation, request.Message))
         {
@@ -45,7 +54,7 @@ public class AiOrchestrator(
 
         var providerSessionId = conversation?.ProviderSessionId;
 
-        if (provider != null && string.IsNullOrWhiteSpace(providerSessionId))
+        if (preparationError == null && provider != null && string.IsNullOrWhiteSpace(providerSessionId))
         {
             try
             {

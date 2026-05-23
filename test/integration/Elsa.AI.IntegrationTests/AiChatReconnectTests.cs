@@ -12,6 +12,19 @@ public class AiChatReconnectTests
         manager.MarkDisconnected("conversation-1", TimeSpan.FromMinutes(5));
 
         Assert.True(manager.CanReconnect("conversation-1"));
+        manager.ReleaseReconnect("conversation-1");
+        Assert.True(manager.CanReconnect("conversation-1"));
+    }
+
+    [Fact(DisplayName = "Reconnect eligibility is atomically reserved")]
+    public void ReconnectEligibilityIsAtomicallyReserved()
+    {
+        var manager = new AiStreamSessionManager();
+
+        manager.MarkDisconnected("conversation-1", TimeSpan.FromMinutes(5));
+
+        Assert.True(manager.CanReconnect("conversation-1"));
+        Assert.False(manager.CanReconnect("conversation-1"));
     }
 
     [Fact(DisplayName = "Reconnect deadline is removed after successful reconnect")]
