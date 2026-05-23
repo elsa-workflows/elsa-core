@@ -139,8 +139,17 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
         return json;
     }
 
-    private static string Truncate(string value, int maxCharacters) =>
-        value.Length <= maxCharacters ? value : value[..maxCharacters];
+    private static string Truncate(string value, int maxCharacters)
+    {
+        if (value.Length <= maxCharacters)
+            return value;
+
+        var cut = maxCharacters;
+        if (cut > 0 && char.IsHighSurrogate(value[cut - 1]))
+            cut--;
+
+        return value[..cut];
+    }
 
     private static bool IsExpired(AiConversation conversation)
     {

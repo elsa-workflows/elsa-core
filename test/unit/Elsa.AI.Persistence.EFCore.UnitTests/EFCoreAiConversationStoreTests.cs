@@ -161,6 +161,38 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
         Assert.Equal("message-44", reloaded.Messages.First().Id);
     }
 
+    [Fact(DisplayName = "Conversation store truncates oversized message content without splitting surrogate pairs")]
+    public async Task ConversationStoreTruncatesOversizedMessageContentWithoutSplittingSurrogatePairs()
+    {
+        var store = new EFCoreAiConversationStore(_dbContext);
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-large-emoji",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-emoji",
+                    ConversationId = "conversation-large-emoji",
+                    Role = AiMessageRole.Assistant,
+                    Content = "x" + string.Concat(Enumerable.Repeat("😀", 600_000)),
+                    CreatedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync("conversation-large-emoji");
+        var message = Assert.Single(reloaded!.Messages);
+
+        Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
+        Assert.False(char.IsHighSurrogate(message.Content[^1]));
+    }
+
     [Fact(DisplayName = "Conversation store prunes completed ephemeral conversations on read")]
     public async Task ConversationStorePrunesCompletedEphemeralConversationsOnRead()
     {
