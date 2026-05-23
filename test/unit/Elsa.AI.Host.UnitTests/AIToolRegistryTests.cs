@@ -372,20 +372,25 @@ public class AIToolRegistryTests
         Assert.Equal("matching", tool.Name);
     }
 
-    [Fact(DisplayName = "Tool registry disposes find scope when tool resolution throws")]
-    public async Task ToolRegistryDisposesFindScopeWhenToolResolutionThrows()
+    [Fact(DisplayName = "Tool registry skips tools with throwing definitions")]
+    public async Task ToolRegistrySkipsToolsWithThrowingDefinitions()
     {
         var tracker = new ScopeDisposalTracker();
         var services = new ServiceCollection();
         services.AddSingleton(tracker);
         services.AddScoped<ScopedDependency>();
         services.AddScoped<IAITool, ThrowingDefinitionTool>();
+        services.AddScoped<IAITool>(_ => new TestTool(new AIToolDefinition { Name = "healthy", DisplayName = "Healthy" }));
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var registry = new AIToolRegistry(provider.GetRequiredService<IServiceScopeFactory>(), new AIToolEnablementService());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await registry.FindAsync("throwing", new AIToolQuery()));
+        var missing = await registry.FindAsync("throwing", new AIToolQuery());
+        var tools = await registry.ListAsync(new AIToolQuery());
 
-        Assert.Equal(1, tracker.DisposeCount);
+        Assert.Null(missing);
+        var tool = Assert.Single(tools);
+        Assert.Equal("healthy", tool.Name);
+        Assert.Equal(2, tracker.DisposeCount);
     }
 
     private static AIToolRegistry CreateRegistry(IReadOnlyCollection<IAITool> tools)

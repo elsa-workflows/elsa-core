@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Nodes;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Services;
@@ -295,8 +296,10 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         _dbContext.ChangeTracker.Clear();
 
         var reloaded = await store.FindAsync("conversation-large-emoji");
+        var record = await _dbContext.Conversations.AsNoTracking().SingleAsync(x => x.Id == "conversation-large-emoji");
         var message = Assert.Single(reloaded!.Messages);
 
+        Assert.True(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024);
         Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
         Assert.False(char.IsHighSurrogate(message.Content[^1]));
     }

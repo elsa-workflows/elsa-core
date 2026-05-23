@@ -130,21 +130,45 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
             (boundedMessages, json) = ShrinkMessagesToByteLimit(boundedMessages);
 
         if (boundedMessages.Count == 1 && Encoding.UTF8.GetByteCount(json) > MaxMessagesJsonBytes)
-        {
-            var message = boundedMessages[0];
-            boundedMessages[0] = message with
-            {
-                Content = Truncate(message.Content, MaxMessagesJsonBytes / 4),
-                Metadata = new JsonObject
-                {
-                    ["truncated"] = true,
-                    ["maxBytes"] = MaxMessagesJsonBytes
-                }
-            };
-            json = JsonSerializer.Serialize(boundedMessages);
-        }
+            json = SerializeSingleTruncatedMessage(boundedMessages[0]);
 
         return json;
+    }
+
+    private static string SerializeSingleTruncatedMessage(AIMessage message)
+    {
+        var candidateLength = Math.Min(message.Content.Length, MaxMessagesJsonBytes / 4);
+
+        while (true)
+        {
+            candidateLength = NormalizeSliceLength(message.Content, candidateLength);
+            var candidateContent = message.Content[..candidateLength];
+            var candidateJson = JsonSerializer.Serialize(new[] { CreateTruncatedMessage(message, candidateContent) });
+
+            if (candidateLength == 0 || Encoding.UTF8.GetByteCount(candidateJson) <= MaxMessagesJsonBytes)
+                return candidateJson;
+
+            candidateLength -= Math.Max(1, candidateLength / 10);
+        }
+    }
+
+    private static AIMessage CreateTruncatedMessage(AIMessage message, string content) =>
+        message with
+        {
+            Content = content,
+            Metadata = new JsonObject
+            {
+                ["truncated"] = true,
+                ["maxBytes"] = MaxMessagesJsonBytes
+            }
+        };
+
+    private static int NormalizeSliceLength(string value, int length)
+    {
+        if (length > 0 && char.IsHighSurrogate(value[length - 1]))
+            length--;
+
+        return length;
     }
 
     private static (List<AIMessage> Messages, string Json) ShrinkMessagesToByteLimit(List<AIMessage> messages)

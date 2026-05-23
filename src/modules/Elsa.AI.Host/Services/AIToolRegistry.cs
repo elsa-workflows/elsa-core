@@ -10,6 +10,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
     private readonly object _definitionCacheLock = new();
     private readonly ConcurrentDictionary<string, Type> _toolTypes = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, bool> _uncacheableToolNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<Type, bool> _uncacheableToolTypes = new();
     private volatile IReadOnlyCollection<AIToolDefinition>? _definitions;
 
     public ValueTask<IReadOnlyCollection<AIToolDefinition>> ListAsync(AIToolQuery query, CancellationToken cancellationToken = default)
@@ -28,7 +29,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
         try
         {
             var tool = ResolveCachedTool(scope.ServiceProvider, name) ?? ResolveAndCacheTool(scope.ServiceProvider, name);
-            if (tool == null || !IsVisible(tool.Definition, query) || !enablementService.IsEnabled(tool.Definition))
+            if (tool == null || !TryGetDefinition(tool, out var definition) || !IsVisible(definition, query) || !enablementService.IsEnabled(definition))
             {
                 scope.Dispose();
                 return ValueTask.FromResult<IAITool?>(null);
@@ -63,14 +64,22 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
             return null;
         }
 
-        return string.Equals(tool.Definition.Name, name, StringComparison.OrdinalIgnoreCase) ? tool : null;
+        if (!TryGetDefinition(tool, out var definition))
+        {
+            _uncacheableToolNames[name] = true;
+            _toolTypes.TryRemove(name, out _);
+            return null;
+        }
+
+        return string.Equals(definition.Name, name, StringComparison.OrdinalIgnoreCase) ? tool : null;
     }
 
     private IAITool? ResolveAndCacheTool(IServiceProvider serviceProvider, string name)
     {
         var tools = serviceProvider.GetServices<IAITool>().ToList();
-        UpdateToolTypeCache(tools);
-        return tools.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+        var toolInfos = GetToolInfos(tools);
+        UpdateToolTypeCache(toolInfos);
+        return toolInfos.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase))?.Tool;
     }
 
     private IReadOnlyCollection<AIToolDefinition> GetCachedDefinitions()
@@ -85,16 +94,18 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
 
             using var scope = scopeFactory.CreateScope();
             var tools = scope.ServiceProvider.GetServices<IAITool>().ToList();
-            UpdateToolTypeCache(tools);
-            _definitions = tools.Select(x => x.Definition).ToList();
+            var toolInfos = GetToolInfos(tools);
+            UpdateToolTypeCache(toolInfos);
+            _definitions = toolInfos.Select(x => x.Definition).ToList();
             return _definitions;
         }
     }
 
-    private void UpdateToolTypeCache(IReadOnlyCollection<IAITool> tools)
+    private void UpdateToolTypeCache(IReadOnlyCollection<ToolInfo> toolInfos)
     {
-        var namesByType = tools
-            .GroupBy(x => x.GetType())
+        var namesByType = toolInfos
+            .Where(x => !_uncacheableToolTypes.ContainsKey(x.ToolType))
+            .GroupBy(x => x.ToolType)
             .ToDictionary(x => x.Key, x => x.Select(tool => tool.Definition.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
 
         foreach (var (toolType, toolNames) in namesByType)
@@ -115,6 +126,33 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
                 continue;
 
             _toolTypes[name] = toolType;
+        }
+    }
+
+    private IReadOnlyCollection<ToolInfo> GetToolInfos(IReadOnlyCollection<IAITool> tools)
+    {
+        var toolInfos = new List<ToolInfo>(tools.Count);
+        foreach (var tool in tools)
+        {
+            if (TryGetDefinition(tool, out var definition))
+                toolInfos.Add(new ToolInfo(tool.GetType(), tool, definition));
+        }
+
+        return toolInfos;
+    }
+
+    private bool TryGetDefinition(IAITool tool, out AIToolDefinition definition)
+    {
+        try
+        {
+            definition = tool.Definition;
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            _uncacheableToolTypes[tool.GetType()] = true;
+            definition = default!;
+            return false;
         }
     }
 
@@ -196,4 +234,6 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
             scope.Dispose();
         }
     }
+
+    private record ToolInfo(Type ToolType, IAITool Tool, AIToolDefinition Definition);
 }

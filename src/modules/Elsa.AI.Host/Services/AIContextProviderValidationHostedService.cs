@@ -16,7 +16,7 @@ public class AIContextProviderValidationHostedService(
 
         foreach (var group in providers.GroupBy(x => x.Kind, StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1))
             logger.LogWarning(
-                "Multiple AI context providers are registered for kind {ContextKind}. The last registered provider will be used.",
+                "Multiple AI context providers are registered for kind {ContextKind}. The last non-placeholder provider will be used when available.",
                 group.Key);
 
         return Task.CompletedTask;
