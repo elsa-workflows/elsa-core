@@ -122,11 +122,8 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
             : messages.ToList();
         var json = JsonSerializer.Serialize(boundedMessages);
 
-        while (boundedMessages.Count > 1 && Encoding.UTF8.GetByteCount(json) > MaxMessagesJsonBytes)
-        {
-            boundedMessages.RemoveAt(0);
-            json = JsonSerializer.Serialize(boundedMessages);
-        }
+        if (boundedMessages.Count > 1 && Encoding.UTF8.GetByteCount(json) > MaxMessagesJsonBytes)
+            (boundedMessages, json) = ShrinkMessagesToByteLimit(boundedMessages);
 
         if (boundedMessages.Count == 1 && Encoding.UTF8.GetByteCount(json) > MaxMessagesJsonBytes)
         {
@@ -144,6 +141,34 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
         }
 
         return json;
+    }
+
+    private static (List<AiMessage> Messages, string Json) ShrinkMessagesToByteLimit(List<AiMessage> messages)
+    {
+        var low = 1;
+        var high = messages.Count;
+        var bestMessages = messages.Skip(messages.Count - 1).ToList();
+        var bestJson = JsonSerializer.Serialize(bestMessages);
+
+        while (low < high)
+        {
+            var candidateCount = (low + high + 1) / 2;
+            var candidateMessages = messages.Skip(messages.Count - candidateCount).ToList();
+            var candidateJson = JsonSerializer.Serialize(candidateMessages);
+
+            if (Encoding.UTF8.GetByteCount(candidateJson) <= MaxMessagesJsonBytes)
+            {
+                low = candidateCount;
+                bestMessages = candidateMessages;
+                bestJson = candidateJson;
+            }
+            else
+            {
+                high = candidateCount - 1;
+            }
+        }
+
+        return (bestMessages, bestJson);
     }
 
     private static string Truncate(string value, int maxCharacters)

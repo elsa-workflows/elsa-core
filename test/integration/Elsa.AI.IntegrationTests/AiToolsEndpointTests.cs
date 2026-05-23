@@ -44,6 +44,22 @@ public class AiToolsEndpointTests
         Assert.Equal("workflow.author", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry caches definitions across list calls")]
+    public async Task ToolRegistryCachesDefinitionsAcrossListCalls()
+    {
+        CountingTool.Reset();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddTransient<IAiTool, CountingTool>();
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IAiToolRegistry>();
+
+        await registry.ListAsync(new AiToolQuery(), CancellationToken.None);
+        await registry.ListAsync(new AiToolQuery(), CancellationToken.None);
+
+        Assert.Equal(1, CountingTool.ConstructorCount);
+    }
+
     private class WorkflowAuthorTool : IAiTool
     {
         public AiToolDefinition Definition { get; } = new()
@@ -70,6 +86,32 @@ public class AiToolsEndpointTests
 
         public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AiToolResult());
+    }
+
+    private class CountingTool : IAiTool
+    {
+        private static int _constructorCount;
+
+        public static int ConstructorCount => _constructorCount;
+
+        public CountingTool()
+        {
+            Interlocked.Increment(ref _constructorCount);
+        }
+
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "counting.tool",
+            DisplayName = "Counting tool"
+        };
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiToolResult());
+
+        public static void Reset()
+        {
+            Interlocked.Exchange(ref _constructorCount, 0);
+        }
     }
 
     private static void SetHttpContext(ToolsEndpoint endpoint, params string[] permissions)

@@ -7,17 +7,14 @@ namespace Elsa.AI.Host.Services;
 
 public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementService enablementService) : IAiToolRegistry
 {
+    private readonly object _definitionCacheLock = new();
     private readonly ConcurrentDictionary<string, Type> _toolTypes = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, bool> _uncacheableToolNames = new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyCollection<AiToolDefinition>? _definitions;
 
     public ValueTask<IReadOnlyCollection<AiToolDefinition>> ListAsync(AiToolQuery query, CancellationToken cancellationToken = default)
     {
-        using var scope = scopeFactory.CreateScope();
-        var tools = scope.ServiceProvider.GetServices<IAiTool>().ToList();
-        UpdateToolTypeCache(tools);
-
-        var definitions = tools
-            .Select(x => x.Definition)
+        var definitions = GetCachedDefinitions()
             .Where(x => IsVisible(x, query))
             .Select(x => x with { IsEnabled = enablementService.IsEnabled(x) })
             .ToList();
@@ -74,6 +71,24 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
         var tools = serviceProvider.GetServices<IAiTool>().ToList();
         UpdateToolTypeCache(tools);
         return tools.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private IReadOnlyCollection<AiToolDefinition> GetCachedDefinitions()
+    {
+        if (_definitions != null)
+            return _definitions;
+
+        lock (_definitionCacheLock)
+        {
+            if (_definitions != null)
+                return _definitions;
+
+            using var scope = scopeFactory.CreateScope();
+            var tools = scope.ServiceProvider.GetServices<IAiTool>().ToList();
+            UpdateToolTypeCache(tools);
+            _definitions = tools.Select(x => x.Definition).ToList();
+            return _definitions;
+        }
     }
 
     private void UpdateToolTypeCache(IReadOnlyCollection<IAiTool> tools)
