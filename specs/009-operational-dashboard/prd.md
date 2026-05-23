@@ -193,6 +193,7 @@ Returns first-paint dashboard data.
 - Must compute counts server-side using store count APIs where possible.
 - Must cap any row sampling used for duration or diagnostics approximations and report approximation metadata if exact aggregation is not available.
 - `workflowInstances.total` must equal the sum of top-level workflow status totals. `subStatuses.pending`, `executing`, `suspended`, and `interrupted` must reconcile to `statuses.running`; `subStatuses.finished`, `faulted`, and `cancelled` must reconcile to `statuses.finished`.
+- `total`, `statuses`, `subStatuses`, and `withIncidents` are all-time counts and must not be filtered by the request `range`. `completedInRange`, `faultedInRange`, and `averageDurationMs` are scoped to the request `range`. Implementations must not apply range timestamp filters to the all-time count fields.
 - `averageDurationMs` must be scoped to the selected range. It is the average of `FinishedAt - CreatedAt` for finished workflow instances whose `FinishedAt` falls within the response range. If exact aggregation is unavailable, the implementation may use a bounded sample filtered by `FinishedAt`; `averageDurationAccuracy.accuracy` must be `Sampled` unless the sample includes the full matching population.
 
 ## Endpoint 2: Workflow Trends
@@ -304,6 +305,8 @@ Returns prioritized operational findings.
 ### Requirements
 
 - Must return deterministic priority ordering: severity, count, recency, category.
+- `severity` must be one of these values, listed from highest to lowest priority: `Critical`, `Error`, `Warning`, `Info`.
+- `category` must be one of these values, listed in tie-break order: `Runtime`, `Workflow`, `StructuredLogs`, `ConsoleLogs`.
 - Must include enough target metadata for Studio to link to the relevant page/filter.
 - `target.type` and `target.query` must follow this schema; query field names are camelCase and unknown fields are not allowed:
 
@@ -386,7 +389,11 @@ Returns top workflow definitions by recent executions, fault count, incident cou
       "executionCount": 842,
       "faultCount": 12,
       "incidentCount": 12,
-      "averageDurationMs": 1380
+      "averageDurationMs": 1380,
+      "averageDurationAccuracy": {
+        "accuracy": "Exact",
+        "sampleSize": 842
+      }
     }
   ]
 }
@@ -400,6 +407,7 @@ Returns top workflow definitions by recent executions, fault count, incident cou
 - Must not include a `version` field in the initial response because the aggregate may span several definition versions. Version-specific drill-down can be added later as a separate endpoint or filter.
 - `incidentCount` means the number of workflow instances in the selected range that have one or more incidents, not the sum of all individual incidents on those instances. If total incident occurrences are needed later, add a separate `incidentTotal` field.
 - The `Duration` metric must not rank definitions from a single shared recent-summary sample. It requires provider-level grouped aggregation, or a two-stage sampled implementation that gathers a bounded per-definition sample, for example up to 100 finished instances per candidate definition, and reports sampled accuracy metadata.
+- Hotspot items must use `averageDurationAccuracy` as the per-item accuracy metadata for `averageDurationMs`, with the same shape as the overview `averageDurationAccuracy` object.
 - Initial implementation may sample recent summaries if aggregate grouping is not available, but response must expose whether values are exact or sampled.
 - Future provider-specific optimizations should be possible without API changes.
 
