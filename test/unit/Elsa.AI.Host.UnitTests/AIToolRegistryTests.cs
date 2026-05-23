@@ -27,6 +27,34 @@ public class AIToolRegistryTests
         Assert.Equal("tenant", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry treats empty tenant ID as tenant context")]
+    public async Task ToolRegistryTreatsEmptyTenantIdAsTenantContext()
+    {
+        var registry = CreateRegistry(
+            [
+                new TestTool(new AIToolDefinition { Name = "tenant", DisplayName = "Tenant", TenantBehavior = AITenantBehavior.TenantScoped }),
+                new TestTool(new AIToolDefinition { Name = "host", DisplayName = "Host", TenantBehavior = AITenantBehavior.HostScoped }),
+                new TestTool(new AIToolDefinition
+                {
+                    Name = "default-tenant-cross",
+                    DisplayName = "Default tenant cross",
+                    TenantBehavior = AITenantBehavior.CrossTenantDenied,
+                    TenantIds = [""]
+                })
+            ]);
+
+        var tools = await registry.ListAsync(new AIToolQuery
+        {
+            TenantId = "",
+            ActorId = "user-1"
+        });
+
+        Assert.Collection(
+            tools.OrderBy(x => x.Name),
+            tool => Assert.Equal("default-tenant-cross", tool.Name),
+            tool => Assert.Equal("tenant", tool.Name));
+    }
+
     [Fact(DisplayName = "Tool registry allows cross-tenant denied tools for explicit tenant allowlists")]
     public async Task ToolRegistryAllowsCrossTenantDeniedToolsForExplicitTenantAllowlists()
     {

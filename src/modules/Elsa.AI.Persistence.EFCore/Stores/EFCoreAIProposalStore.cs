@@ -11,8 +11,9 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
 {
     public async ValueTask<AIProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default)
     {
+        var normalizedTenantId = NormalizeTenantId(tenantId);
         var record = await dbContext.Proposals.AsNoTracking().FirstOrDefaultAsync(
-            x => x.Id == id && x.TenantId == tenantId,
+            x => x.Id == id && (x.TenantId ?? "") == normalizedTenantId,
             cancellationToken);
         return record == null ? null : Map(record);
     }
@@ -28,7 +29,7 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
             dbContext.Proposals.Add(record);
             isNew = true;
         }
-        else if (!string.Equals(record.TenantId, proposal.TenantId, StringComparison.Ordinal))
+        else if (!BelongsToTenant(record.TenantId, proposal.TenantId))
         {
             throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
         }
@@ -52,7 +53,7 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
         if (record == null)
             throw new DbUpdateException($"Failed to insert AI proposal {proposal.Id}, and no existing record was found for retry.");
 
-        if (!string.Equals(record.TenantId, proposal.TenantId, StringComparison.Ordinal))
+        if (!BelongsToTenant(record.TenantId, proposal.TenantId))
             throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
 
         Map(proposal, record);
@@ -84,7 +85,7 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
 
     private static void Map(AIProposal proposal, AIProposalRecord record)
     {
-        record.TenantId = proposal.TenantId;
+        record.TenantId = NormalizeTenantId(proposal.TenantId);
         record.ConversationId = proposal.ConversationId;
         record.Kind = proposal.Kind.ToString();
         record.Status = proposal.Status.ToString();
@@ -107,6 +108,11 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
 
     private static TEnum ParseEnum<TEnum>(string value, TEnum defaultValue) where TEnum : struct =>
         Enum.TryParse<TEnum>(value, ignoreCase: true, out var result) ? result : defaultValue;
+
+    private static bool BelongsToTenant(string? storedTenantId, string? requestedTenantId) =>
+        string.Equals(NormalizeTenantId(storedTenantId), NormalizeTenantId(requestedTenantId), StringComparison.Ordinal);
+
+    private static string NormalizeTenantId(string? tenantId) => tenantId ?? "";
 
     private static void Validate(AIProposal proposal)
     {

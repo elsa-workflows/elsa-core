@@ -18,9 +18,9 @@ internal static class AIHttpContextIdentity
 
     public static string? GetTenantId(HttpContext? context)
     {
-        var tenantId = context?.RequestServices?.GetService<ITenantAccessor>()?.TenantId;
-        if (!string.IsNullOrWhiteSpace(tenantId))
-            return tenantId;
+        var tenantAccessor = context?.RequestServices?.GetService<ITenantAccessor>();
+        if (tenantAccessor != null)
+            return tenantAccessor.TenantId;
 
         return context?.User.FindFirstValue(TenantIdClaimType) ??
                context?.User.FindFirstValue("tenant_id") ??

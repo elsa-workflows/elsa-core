@@ -55,10 +55,12 @@ public class InMemoryAIConversationStore : IAITransientConversationStore
 
     private static void ValidateOwnership(AIConversation existing, AIConversation conversation)
     {
-        if (!string.Equals(existing.TenantId, conversation.TenantId, StringComparison.Ordinal))
+        if (!string.Equals(NormalizeTenantId(existing.TenantId), NormalizeTenantId(conversation.TenantId), StringComparison.Ordinal))
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
 
         if (!string.IsNullOrWhiteSpace(existing.UserId) && !string.Equals(existing.UserId, conversation.UserId, StringComparison.Ordinal))
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another user.");
     }
+
+    private static string NormalizeTenantId(string? tenantId) => tenantId ?? "";
 }

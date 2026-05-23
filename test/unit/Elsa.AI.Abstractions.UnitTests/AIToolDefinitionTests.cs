@@ -46,5 +46,6 @@ public class AIToolDefinitionTests
         Assert.False(string.IsNullOrWhiteSpace(auditEvent.Id));
         Assert.Equal("", auditEvent.ActorId);
         Assert.Equal("", auditEvent.Type);
+        Assert.NotEqual(default, auditEvent.Timestamp);
     }
 }

@@ -48,7 +48,7 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
             dbContext.Conversations.Add(record);
             isNew = true;
         }
-        else if (!string.Equals(record.TenantId, conversation.TenantId, StringComparison.Ordinal))
+        else if (!BelongsToTenant(record.TenantId, conversation.TenantId))
         {
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
         }
@@ -76,7 +76,7 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
         if (record == null)
             throw new DbUpdateException($"Failed to insert AI conversation {conversation.Id}, and no existing record was found for retry.");
 
-        if (!string.Equals(record.TenantId, conversation.TenantId, StringComparison.Ordinal))
+        if (!BelongsToTenant(record.TenantId, conversation.TenantId))
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
 
         ValidateUserOwnership(record, conversation);
@@ -103,7 +103,7 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
 
     private static void Map(AIConversation conversation, AIConversationRecord record)
     {
-        record.TenantId = conversation.TenantId;
+        record.TenantId = NormalizeTenantId(conversation.TenantId);
         record.UserId = conversation.UserId;
         record.Title = conversation.Title;
         record.Status = conversation.Status.ToString();
@@ -204,6 +204,11 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
 
     private static TEnum ParseEnum<TEnum>(string value, TEnum defaultValue) where TEnum : struct =>
         Enum.TryParse<TEnum>(value, ignoreCase: true, out var result) ? result : defaultValue;
+
+    private static bool BelongsToTenant(string? storedTenantId, string? requestedTenantId) =>
+        string.Equals(NormalizeTenantId(storedTenantId), NormalizeTenantId(requestedTenantId), StringComparison.Ordinal);
+
+    private static string NormalizeTenantId(string? tenantId) => tenantId ?? "";
 
     private static void ValidateUserOwnership(AIConversationRecord record, AIConversation conversation)
     {

@@ -164,6 +164,41 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.Equal("first", Assert.Single(original.Messages).Content);
     }
 
+    [Fact(DisplayName = "Conversation store treats null and empty tenant IDs as default tenant")]
+    public async Task ConversationStoreTreatsNullAndEmptyTenantIdsAsDefaultTenant()
+    {
+        var store = new EFCoreAIConversationStore(_dbContext);
+        var now = DateTimeOffset.UtcNow;
+
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "conversation-default-tenant",
+            TenantId = null,
+            UserId = "user-1",
+            CreatedAt = now,
+            UpdatedAt = now,
+            Messages = [CreateMessage("message-1", "first")]
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "conversation-default-tenant",
+            TenantId = "",
+            UserId = "user-1",
+            CreatedAt = now,
+            UpdatedAt = now.AddMinutes(1),
+            Messages = [CreateMessage("message-2", "second")]
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync("conversation-default-tenant");
+
+        Assert.NotNull(reloaded);
+        Assert.Equal("", reloaded.TenantId);
+        Assert.Equal("second", Assert.Single(reloaded.Messages).Content);
+    }
+
     [Fact(DisplayName = "Conversation store rejects cross-user overwrites")]
     public async Task ConversationStoreRejectsCrossUserOverwrites()
     {

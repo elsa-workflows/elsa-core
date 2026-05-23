@@ -81,6 +81,29 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         Assert.Null(host);
     }
 
+    [Fact(DisplayName = "Proposal store treats null and empty tenant IDs as default tenant")]
+    public async Task ProposalStoreTreatsNullAndEmptyTenantIdsAsDefaultTenant()
+    {
+        var store = new EFCoreAIProposalStore(_dbContext);
+        var proposal = new AIProposal
+        {
+            Id = "proposal-default-tenant",
+            TenantId = "",
+            ConversationId = "conversation-1",
+            Kind = AIProposalKind.WorkflowCreate,
+            CreatedBy = "user-1"
+        };
+
+        await store.SaveAsync(proposal);
+        _dbContext.ChangeTracker.Clear();
+
+        var reloadedWithNull = await store.FindAsync(proposal.Id, null);
+        var reloadedWithEmpty = await store.FindAsync(proposal.Id, "");
+
+        Assert.NotNull(reloadedWithNull);
+        Assert.NotNull(reloadedWithEmpty);
+    }
+
     [Fact(DisplayName = "Proposal store rejects cross-tenant overwrites")]
     public async Task ProposalStoreRejectsCrossTenantOverwrites()
     {

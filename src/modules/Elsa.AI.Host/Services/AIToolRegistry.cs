@@ -137,7 +137,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
 
     private static bool IsVisibleForTenant(AIToolDefinition definition, string? tenantId)
     {
-        if (!string.IsNullOrWhiteSpace(tenantId))
+        if (tenantId != null)
         {
             if (definition.TenantBehavior == AITenantBehavior.HostScoped)
                 return false;

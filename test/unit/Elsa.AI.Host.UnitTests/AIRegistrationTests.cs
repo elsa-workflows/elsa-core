@@ -223,6 +223,34 @@ public class AIRegistrationTests
         Assert.Equal("Cannot overwrite an AI conversation that belongs to another tenant.", exception.Message);
     }
 
+    [Fact(DisplayName = "In-memory conversation store treats null and empty tenant IDs as default tenant")]
+    public async Task InMemoryConversationStoreTreatsNullAndEmptyTenantIdsAsDefaultTenant()
+    {
+        var store = new InMemoryAIConversationStore();
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "conversation-1",
+            TenantId = null,
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "conversation-1",
+            TenantId = "",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.NotNull(conversation);
+        Assert.Equal("", conversation.TenantId);
+    }
+
     [Fact(DisplayName = "In-memory conversation store rejects cross-user overwrites")]
     public async Task InMemoryConversationStoreRejectsCrossUserOverwrites()
     {
