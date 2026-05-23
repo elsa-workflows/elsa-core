@@ -8,6 +8,8 @@ public interface IAiConversationStore
     ValueTask SaveAsync(AiConversation conversation, CancellationToken cancellationToken = default);
 }
 
+public interface IAiTransientConversationStore : IAiConversationStore;
+
 public interface IAiProposalStore
 {
     ValueTask<AiProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default);

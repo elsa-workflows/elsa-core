@@ -58,6 +58,9 @@ public class AiOrchestrator(
 
         var isDuplicateReconnectMessage = request.IsReconnect && HasReconnectUserMessage(conversation, request.Message);
         var providerHistory = messages.ToList();
+        if (request.IsReconnect && messages.Count > 0)
+            sequence = GetNextSequence(messages);
+
         yield return CreateEvent("conversation.started", conversationId, sequence++);
 
         var userMessage = isDuplicateReconnectMessage

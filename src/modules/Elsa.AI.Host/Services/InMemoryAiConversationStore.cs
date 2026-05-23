@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.AI.Host.Services;
 
-public class InMemoryAiConversationStore(IOptions<AiHostOptions> options) : IAiConversationStore
+public class InMemoryAiConversationStore(IOptions<AiHostOptions> options) : IAiTransientConversationStore
 {
     private readonly ConcurrentDictionary<string, AiConversation> _conversations = new();
 

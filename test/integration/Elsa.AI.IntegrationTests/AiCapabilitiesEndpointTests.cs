@@ -2,6 +2,7 @@ using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Endpoints.Ai.Capabilities;
 using Elsa.AI.Host.Options;
+using Elsa.AI.Host.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.AI.IntegrationTests;
@@ -12,7 +13,7 @@ public class AiCapabilitiesEndpointTests
     public async Task CapabilitiesEndpointAdvertisesWeaverMvpCapabilities()
     {
         var endpoint = new Endpoint(
-            MicrosoftOptions.Create(new AiHostOptions()),
+            MicrosoftOptions.Create(new AiHostOptions { ConversationPersistenceEnabled = true }),
             [new TestAiProvider()],
             [new TestConversationStore()],
             [new TestProposalStore()]);
@@ -33,7 +34,7 @@ public class AiCapabilitiesEndpointTests
     public async Task CapabilitiesEndpointHidesUnavailableCapabilities()
     {
         var endpoint = new Endpoint(
-            MicrosoftOptions.Create(new AiHostOptions { StreamingEnabled = false }),
+            MicrosoftOptions.Create(new AiHostOptions { StreamingEnabled = false, ConversationPersistenceEnabled = true }),
             [new TestAiProvider()],
             [new TestConversationStore()],
             []);
@@ -43,6 +44,20 @@ public class AiCapabilitiesEndpointTests
         Assert.False(response.Streaming);
         Assert.True(response.ConversationPersistence);
         Assert.False(response.ProposalReview);
+    }
+
+    [Fact(DisplayName = "Capabilities endpoint does not advertise in-memory conversation persistence")]
+    public async Task CapabilitiesEndpointDoesNotAdvertiseInMemoryConversationPersistence()
+    {
+        var endpoint = new Endpoint(
+            MicrosoftOptions.Create(new AiHostOptions { ConversationPersistenceEnabled = true }),
+            [new TestAiProvider()],
+            [new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions()))],
+            [new TestProposalStore()]);
+
+        var response = await endpoint.ExecuteAsync(CancellationToken.None);
+
+        Assert.False(response.ConversationPersistence);
     }
 
     private class TestAiProvider : IAiProvider

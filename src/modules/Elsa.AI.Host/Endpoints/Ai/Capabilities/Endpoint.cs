@@ -25,10 +25,11 @@ public class Endpoint(
         var optionsValue = options.Value;
         var providerOptions = optionsValue.Providers.ToList();
         var hasEnabledProvider = providers.Any(x => providerOptions.IsProviderEnabled(x.Name));
+        var hasDurableConversationStore = conversationStores.Any(x => x is not IAiTransientConversationStore);
 
         return Task.FromResult(new Response(
             optionsValue.StreamingEnabled && hasEnabledProvider,
-            optionsValue.ConversationPersistenceEnabled && conversationStores.Any(),
+            optionsValue.ConversationPersistenceEnabled && hasDurableConversationStore,
             optionsValue.ProposalReviewEnabled && proposalStores.Any(),
             optionsValue.SupportedAttachmentKinds.ToList(),
             optionsValue.Agents.Select(x => new AiAgentCapability(x.Name, x.DisplayName, x.Description)).ToList()));

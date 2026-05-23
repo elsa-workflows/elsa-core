@@ -578,6 +578,50 @@ public class AiChatEndpointTests
         Assert.Single(userMessages);
     }
 
+    [Fact(DisplayName = "Chat orchestration continues reconnect sequences after persisted messages")]
+    public async Task ChatOrchestrationContinuesReconnectSequencesAfterPersistedMessages()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            UserId = "user-1",
+            Status = AiConversationStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.User,
+                    Content = "Retry me",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    StreamSequence = 3
+                }
+            ]
+        });
+
+        var events = new List<AiStreamEvent>();
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Retry me",
+                           IsReconnect = true
+                       }))
+            events.Add(streamEvent);
+
+        var startedEvent = Assert.Single(events, x => x.Type == "conversation.started");
+        Assert.Equal(4, startedEvent.Sequence);
+    }
+
     [Fact(DisplayName = "Chat orchestration does not replay completed conversations on reconnect")]
     public async Task ChatOrchestrationDoesNotReplayCompletedConversationsOnReconnect()
     {
