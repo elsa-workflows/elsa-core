@@ -126,6 +126,20 @@ public class AiRegistrationTests
         await validator.StartAsync(CancellationToken.None);
     }
 
+    [Fact(DisplayName = "AI host validates scoped context providers from a startup scope")]
+    public async Task AiHostValidatesScopedContextProvidersFromStartupScope()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddScoped<ScopedContextProviderDependency>();
+        services.AddScoped<IAiContextProvider, ScopedContextProvider>();
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        var validator = provider.GetServices<IHostedService>().OfType<AiContextProviderValidationHostedService>().Single();
+
+        await validator.StartAsync(CancellationToken.None);
+    }
+
     [Fact(DisplayName = "In-memory conversation store evicts expired conversations")]
     public async Task InMemoryConversationStoreEvictsExpiredConversations()
     {
@@ -195,5 +209,20 @@ public class AiRegistrationTests
 
         public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AiResolvedContext { Kind = Kind });
+    }
+
+    private class ScopedContextProviderDependency
+    {
+    }
+
+    private class ScopedContextProvider(ScopedContextProviderDependency dependency) : IAiContextProvider
+    {
+        public string Kind => "WorkflowDefinition";
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
+        {
+            _ = dependency;
+            return ValueTask.FromResult(new AiResolvedContext { Kind = Kind });
+        }
     }
 }

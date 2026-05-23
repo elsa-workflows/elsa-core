@@ -9,6 +9,14 @@ public class AiAuditSink(IServiceScopeFactory scopeFactory, ILogger<AiAuditSink>
 {
     public async ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default)
     {
+        await RecordManyAsync([auditEvent], cancellationToken);
+    }
+
+    public async ValueTask RecordManyAsync(IReadOnlyCollection<AiAuditEvent> auditEvents, CancellationToken cancellationToken = default)
+    {
+        if (auditEvents.Count == 0)
+            return;
+
         using var scope = scopeFactory.CreateScope();
         var handlers = scope.ServiceProvider.GetServices<IAiAuditEventHandler>();
 
@@ -16,11 +24,11 @@ public class AiAuditSink(IServiceScopeFactory scopeFactory, ILogger<AiAuditSink>
         {
             try
             {
-                await handler.RecordAsync(auditEvent, cancellationToken);
+                await handler.RecordManyAsync(auditEvents, cancellationToken);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                logger.LogWarning(e, "AI audit handler {HandlerType} failed while recording event {AuditEventType}.", handler.GetType().Name, auditEvent.Type);
+                logger.LogWarning(e, "AI audit handler {HandlerType} failed while recording {AuditEventCount} event(s).", handler.GetType().Name, auditEvents.Count);
             }
         }
     }

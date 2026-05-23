@@ -46,6 +46,32 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
         Assert.False(string.IsNullOrWhiteSpace(record.Id));
     }
 
+    [Fact(DisplayName = "Audit sink batches audit records")]
+    public async Task AuditSinkBatchesAuditRecords()
+    {
+        var sink = new EFCoreAiAuditSink(_dbContext);
+
+        await sink.RecordManyAsync([
+            new AiAuditEvent
+            {
+                Id = "audit-1",
+                ActorId = "user-1",
+                Type = "tool.invoked",
+                Timestamp = DateTimeOffset.UtcNow
+            },
+            new AiAuditEvent
+            {
+                Id = "audit-2",
+                ActorId = "user-1",
+                Type = "tool.completed",
+                Timestamp = DateTimeOffset.UtcNow
+            }
+        ]);
+
+        var types = await _dbContext.AuditRecords.OrderBy(x => x.Id).Select(x => x.Type).ToListAsync();
+        Assert.Equal(["tool.invoked", "tool.completed"], types);
+    }
+
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();

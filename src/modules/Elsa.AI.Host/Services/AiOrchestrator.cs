@@ -298,14 +298,13 @@ public class AiOrchestrator(
         if (tool == null)
         {
             var result = new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = $"Tool '{toolCall.Name}' was not found." };
-            await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
+            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.failed"], cancellationToken);
             return CreateToolExecutionResult(conversationId, sequence, toolCall, result);
         }
 
         using var toolScope = tool as IDisposable;
         try
         {
-            await RecordToolAuditAsync("tool.invoked", request, conversationId, toolCall, cancellationToken);
             var result = await tool.ExecuteAsync(new AiToolExecutionContext
             {
                 ConversationId = conversationId,
@@ -314,42 +313,45 @@ public class AiOrchestrator(
                 Agent = request.Agent,
                 Arguments = toolCall.Arguments
             }, cancellationToken);
-            await RecordToolAuditAsync("tool.completed", request, conversationId, toolCall, cancellationToken);
+            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.invoked", "tool.completed"], cancellationToken);
 
             return CreateToolExecutionResult(conversationId, sequence, toolCall, LimitToolResult(result));
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "AI tool {ToolName} failed for conversation {ConversationId}.", toolCall.Name, conversationId);
-            await RecordToolAuditAsync("tool.failed", request, conversationId, toolCall, cancellationToken);
+            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.invoked", "tool.failed"], cancellationToken);
             return CreateToolExecutionResult(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = "Tool execution failed." });
         }
     }
 
-    private async ValueTask RecordToolAuditAsync(string type, AiChatRequest request, string conversationId, ToolCall toolCall, CancellationToken cancellationToken)
+    private async ValueTask RecordToolAuditEventsAsync(AiChatRequest request, string conversationId, ToolCall toolCall, IReadOnlyCollection<string> types, CancellationToken cancellationToken)
     {
         try
         {
-            await auditSink.RecordAsync(new AiAuditEvent
-            {
-                Type = type,
-                TenantId = request.TenantId,
-                ActorId = request.UserId,
-                ConversationId = conversationId,
-                ToolInvocationId = toolCall.Id,
-                Timestamp = DateTimeOffset.UtcNow,
-                Summary = $"{toolCall.Name} {type}",
-                Data = new JsonObject
-                {
-                    ["toolName"] = toolCall.Name
-                }
-            }, cancellationToken);
+            await auditSink.RecordManyAsync(types.Select(type => CreateToolAuditEvent(type, request, conversationId, toolCall)).ToList(), cancellationToken);
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
-            logger.LogWarning(e, "Failed to record AI tool audit event {AuditEventType} for tool {ToolName}.", type, toolCall.Name);
+            logger.LogWarning(e, "Failed to record AI tool audit events for tool {ToolName}.", toolCall.Name);
         }
     }
+
+    private static AiAuditEvent CreateToolAuditEvent(string type, AiChatRequest request, string conversationId, ToolCall toolCall) =>
+        new()
+        {
+            Type = type,
+            TenantId = request.TenantId,
+            ActorId = request.UserId,
+            ConversationId = conversationId,
+            ToolInvocationId = toolCall.Id,
+            Timestamp = DateTimeOffset.UtcNow,
+            Summary = $"{toolCall.Name} {type}",
+            Data = new JsonObject
+            {
+                ["toolName"] = toolCall.Name
+            }
+        };
 
     private static AiStreamEvent CreateToolResultEvent(string conversationId, long sequence, ToolCall toolCall, AiToolResult result) =>
         CreateEvent("tool.result", conversationId, sequence, new JsonObject
