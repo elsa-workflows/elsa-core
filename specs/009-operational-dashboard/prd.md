@@ -458,17 +458,16 @@ Where exact aggregation is not available, response models should include metadat
 
 ## UX Contract With Studio
 
-Studio should be able to render:
+Studio should be able to render an extensible dashboard where `Elsa.Studio.Dashboard` hosts widgets contributed by installed Studio modules. The backend API should provide dashboard-shaped data and capability metadata, but it should not assume that Studio hard-codes every panel in the dashboard module.
 
-- Metric cards for running, completed, faulted, suspended, average duration, and warnings.
-- Execution trend chart.
-- Needs-attention list.
-- Recent workflow activity table.
-- Diagnostics snapshot.
-- Runtime status chip and source status summary.
-- Quick links to workflow instances, structured logs, and console logs.
+Expected widget contributors:
 
-The backend should return link target metadata where possible, but Studio remains responsible for actual route generation.
+- Workflow modules can render metric cards, execution trends, needs-attention findings, recent activity, and workflow hotspots.
+- Diagnostics Structured Logs can render structured log health widgets when that module is installed and authorized.
+- Diagnostics Console Logs can render console log health widgets when that module is installed and authorized.
+- Future modules can contribute additional widgets through Studio dashboard abstractions without requiring backend contract changes unless they need new server data.
+
+The backend should return link target metadata where possible, but Studio remains responsible for actual route generation. Capability metadata must be explicit enough for widget providers to decide whether to render, omit, or show unavailable/unauthorized states for optional module data.
 
 ## Edge Cases
 
