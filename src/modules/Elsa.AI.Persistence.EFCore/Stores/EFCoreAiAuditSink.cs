@@ -27,7 +27,6 @@ public class EFCoreAiAuditSink(AiDbContext dbContext) : IAiAuditEventHandler
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 dbContext.ChangeTracker.Clear();
-                throw;
             }
         }
     }

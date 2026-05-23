@@ -29,7 +29,7 @@ public class Endpoint(
 
         return Task.FromResult(new Response(
             optionsValue.StreamingEnabled && hasEnabledProvider,
-            optionsValue.ConversationPersistenceEnabled && hasDurableConversationStore,
+            hasDurableConversationStore,
             optionsValue.ProposalReviewEnabled && proposalStores.Any(),
             optionsValue.SupportedAttachmentKinds.ToList(),
             optionsValue.Agents.Select(x => new AiAgentCapability(x.Name, x.DisplayName, x.Description)).ToList()));

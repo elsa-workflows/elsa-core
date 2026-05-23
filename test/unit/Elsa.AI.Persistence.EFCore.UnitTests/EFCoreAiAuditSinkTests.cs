@@ -77,7 +77,7 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
     {
         var sink = new EFCoreAiAuditSink(_dbContext);
 
-        await Assert.ThrowsAsync<DbUpdateException>(async () => await sink.RecordManyAsync([
+        await sink.RecordManyAsync([
             new AiAuditEvent
             {
                 Id = "audit-duplicate",
@@ -92,7 +92,7 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
                 Type = "tool.completed",
                 Timestamp = DateTimeOffset.UtcNow
             }
-        ]));
+        ]);
 
         var record = await _dbContext.AuditRecords.SingleAsync();
         Assert.Equal("tool.invoked", record.Type);

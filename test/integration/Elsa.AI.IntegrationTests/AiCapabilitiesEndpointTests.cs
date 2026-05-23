@@ -46,6 +46,20 @@ public class AiCapabilitiesEndpointTests
         Assert.False(response.ProposalReview);
     }
 
+    [Fact(DisplayName = "Capabilities endpoint advertises registered durable conversation persistence")]
+    public async Task CapabilitiesEndpointAdvertisesRegisteredDurableConversationPersistence()
+    {
+        var endpoint = new Endpoint(
+            MicrosoftOptions.Create(new AiHostOptions()),
+            [new TestAiProvider()],
+            [new TestConversationStore()],
+            []);
+
+        var response = await endpoint.ExecuteAsync(CancellationToken.None);
+
+        Assert.True(response.ConversationPersistence);
+    }
+
     [Fact(DisplayName = "Capabilities endpoint does not advertise in-memory conversation persistence")]
     public async Task CapabilitiesEndpointDoesNotAdvertiseInMemoryConversationPersistence()
     {
