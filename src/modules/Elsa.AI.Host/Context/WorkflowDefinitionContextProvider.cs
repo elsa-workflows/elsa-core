@@ -19,11 +19,7 @@ public class WorkflowDefinitionContextProvider : IAiContextProvider, IPlaceholde
             Kind = Kind,
             ReferenceId = attachment.ReferenceId,
             Summary = $"Workflow definition context provider is not implemented; only reference {attachment.ReferenceId} was received.",
-            Data = new JsonObject
-            {
-                ["implementationStatus"] = "placeholder",
-                ["message"] = "Replace WorkflowDefinitionContextProvider with a workflow-management-backed resolver before production use."
-            },
+            Data = [],
             Metadata = new JsonObject
             {
                 ["activityId"] = attachment.ActivityId

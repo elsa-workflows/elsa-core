@@ -4,6 +4,7 @@ namespace Elsa.AI.Persistence.EFCore;
 
 public class AiDbContext(DbContextOptions<AiDbContext> options) : DbContext(options)
 {
+    public DbSet<AiConversationRecord> Conversations => Set<AiConversationRecord>();
     public DbSet<AiProposalRecord> Proposals => Set<AiProposalRecord>();
     public DbSet<AiAuditRecord> AuditRecords => Set<AiAuditRecord>();
 
@@ -31,6 +32,19 @@ public class AiDbContext(DbContextOptions<AiDbContext> options) : DbContext(opti
             entity.HasIndex(x => x.ToolInvocationId);
             entity.Property(x => x.Type).IsRequired();
             entity.Property(x => x.Data).IsRequired();
+        });
+
+        modelBuilder.Entity<AiConversationRecord>(entity =>
+        {
+            entity.ToTable("AiConversations");
+            entity.HasKey(x => x.Id);
+            entity.HasIndex(x => new { x.TenantId, x.UserId });
+            entity.HasIndex(x => x.Status);
+            entity.HasIndex(x => x.RetentionExpiresAt);
+            entity.Property(x => x.UserId).IsRequired();
+            entity.Property(x => x.Status).IsRequired();
+            entity.Property(x => x.RetentionMode).IsRequired();
+            entity.Property(x => x.Messages).IsRequired();
         });
     }
 }

@@ -30,7 +30,7 @@ public class AiContextResolverTests
         var context = Assert.Single(result);
         Assert.Equal("WorkflowDefinition", context.Kind);
         Assert.Equal("workflow-1", context.ReferenceId);
-        Assert.Equal("placeholder", context.Data["implementationStatus"]!.GetValue<string>());
+        Assert.Empty(context.Data);
     }
 
     [Fact(DisplayName = "Context resolver redacts sensitive data and metadata keys")]

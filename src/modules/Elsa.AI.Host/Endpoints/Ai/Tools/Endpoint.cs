@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace Elsa.AI.Host.Endpoints.Ai.Tools;
 
 [PublicAPI]
-public class Endpoint(IAiToolRegistry toolRegistry) : ElsaEndpointWithoutRequest<IReadOnlyCollection<AiToolDefinition>>
+public class Endpoint(IAiToolRegistry toolRegistry) : ElsaEndpoint<Request, IReadOnlyCollection<AiToolDefinition>>
 {
     public override void Configure()
     {
@@ -16,13 +16,19 @@ public class Endpoint(IAiToolRegistry toolRegistry) : ElsaEndpointWithoutRequest
         ConfigurePermissions(AiPermissions.ViewTools);
     }
 
-    public override async Task<IReadOnlyCollection<AiToolDefinition>> ExecuteAsync(CancellationToken cancellationToken)
+    public override async Task<IReadOnlyCollection<AiToolDefinition>> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
         return await toolRegistry.ListAsync(new AiToolQuery
         {
+            Agent = request.Agent,
             ActorId = AiHttpContextIdentity.GetActorId(HttpContext),
             TenantId = AiHttpContextIdentity.GetTenantId(HttpContext),
             UserPermissions = AiHttpContextIdentity.GetPermissions(HttpContext)
         }, cancellationToken);
     }
+}
+
+public class Request
+{
+    public string? Agent { get; set; }
 }

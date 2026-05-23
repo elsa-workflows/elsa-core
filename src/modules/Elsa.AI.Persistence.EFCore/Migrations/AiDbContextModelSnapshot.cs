@@ -58,6 +58,45 @@ partial class AiDbContextModelSnapshot : ModelSnapshot
             b.ToTable("AiAuditRecords");
         });
 
+        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AiConversationRecord", b =>
+        {
+            b.Property<string>("Id");
+
+            b.Property<DateTimeOffset>("CreatedAt");
+
+            b.Property<string>("Messages")
+                .IsRequired();
+
+            b.Property<string>("ProviderSessionId");
+
+            b.Property<DateTimeOffset?>("RetentionExpiresAt");
+
+            b.Property<string>("RetentionMode")
+                .IsRequired();
+
+            b.Property<string>("Status")
+                .IsRequired();
+
+            b.Property<string>("TenantId");
+
+            b.Property<string>("Title");
+
+            b.Property<DateTimeOffset>("UpdatedAt");
+
+            b.Property<string>("UserId")
+                .IsRequired();
+
+            b.HasKey("Id");
+
+            b.HasIndex("RetentionExpiresAt");
+
+            b.HasIndex("Status");
+
+            b.HasIndex("TenantId", "UserId");
+
+            b.ToTable("AiConversations");
+        });
+
         modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AiProposalRecord", b =>
         {
             b.Property<string>("Id");

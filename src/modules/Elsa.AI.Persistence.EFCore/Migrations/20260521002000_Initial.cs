@@ -30,6 +30,27 @@ public partial class Initial : Migration
             });
 
         migrationBuilder.CreateTable(
+            name: "AiConversations",
+            columns: table => new
+            {
+                Id = table.Column<string>(nullable: false),
+                TenantId = table.Column<string>(nullable: true),
+                UserId = table.Column<string>(nullable: false),
+                Title = table.Column<string>(nullable: true),
+                Status = table.Column<string>(nullable: false),
+                CreatedAt = table.Column<DateTimeOffset>(nullable: false),
+                UpdatedAt = table.Column<DateTimeOffset>(nullable: false),
+                ProviderSessionId = table.Column<string>(nullable: true),
+                RetentionMode = table.Column<string>(nullable: false),
+                RetentionExpiresAt = table.Column<DateTimeOffset>(nullable: true),
+                Messages = table.Column<string>(nullable: false)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_AiConversations", x => x.Id);
+            });
+
+        migrationBuilder.CreateTable(
             name: "AiProposals",
             columns: table => new
             {
@@ -83,6 +104,21 @@ public partial class Initial : Migration
             column: "ToolInvocationId");
 
         migrationBuilder.CreateIndex(
+            name: "IX_AiConversations_RetentionExpiresAt",
+            table: "AiConversations",
+            column: "RetentionExpiresAt");
+
+        migrationBuilder.CreateIndex(
+            name: "IX_AiConversations_Status",
+            table: "AiConversations",
+            column: "Status");
+
+        migrationBuilder.CreateIndex(
+            name: "IX_AiConversations_TenantId_UserId",
+            table: "AiConversations",
+            columns: new[] { "TenantId", "UserId" });
+
+        migrationBuilder.CreateIndex(
             name: "IX_AiProposals_Status",
             table: "AiProposals",
             column: "Status");
@@ -96,6 +132,7 @@ public partial class Initial : Migration
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropTable(name: "AiAuditRecords");
+        migrationBuilder.DropTable(name: "AiConversations");
         migrationBuilder.DropTable(name: "AiProposals");
     }
 }

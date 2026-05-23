@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
                 services.AddDbContext<AiDbContext>(configureDbContext);
         }
 
+        services.Replace(ServiceDescriptor.Scoped<IAiConversationStore, EFCoreAiConversationStore>());
         services.TryAddScoped<IAiProposalStore, EFCoreAiProposalStore>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IAiAuditEventHandler, EFCoreAiAuditSink>());
 
