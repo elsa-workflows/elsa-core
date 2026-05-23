@@ -734,6 +734,7 @@ public class AiOrchestrator(
                 Id = conversationId,
                 TenantId = request.TenantId,
                 UserId = request.UserId,
+                Title = conversation?.Title,
                 Status = status,
                 CreatedAt = conversation is null || conversation.CreatedAt == default ? now : conversation.CreatedAt,
                 UpdatedAt = now,

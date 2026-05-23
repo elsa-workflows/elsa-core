@@ -598,6 +598,40 @@ public class AiChatEndpointTests
         Assert.Contains(conversation.Messages, x => x.Role == AiMessageRole.User && x.Content == "Explain this workflow");
     }
 
+    [Fact(DisplayName = "Chat orchestration preserves conversation title")]
+    public async Task ChatOrchestrationPreservesConversationTitle()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            UserId = "user-1",
+            Title = "Workflow assistant",
+            Status = AiConversationStatus.Active,
+            CreatedAt = now,
+            UpdatedAt = now
+        });
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.Equal("Workflow assistant", conversation!.Title);
+    }
+
     [Fact(DisplayName = "Chat orchestration creates provider sessions")]
     public async Task ChatOrchestrationCreatesProviderSessions()
     {

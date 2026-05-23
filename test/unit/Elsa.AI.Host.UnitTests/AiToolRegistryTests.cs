@@ -83,6 +83,20 @@ public class AiToolRegistryTests
         Assert.Equal("default", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry exposes default tools to tenant queries")]
+    public async Task ToolRegistryExposesDefaultToolsToTenantQueries()
+    {
+        var registry = CreateRegistry(
+            [
+                new TestTool(new AiToolDefinition { Name = "default", DisplayName = "Default" })
+            ]);
+
+        var tools = await registry.ListAsync(new AiToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
+
+        var tool = Assert.Single(tools);
+        Assert.Equal("default", tool.Name);
+    }
+
     [Fact(DisplayName = "Tool registry tolerates incomplete tool definition names")]
     public async Task ToolRegistryToleratesIncompleteToolDefinitionNames()
     {
