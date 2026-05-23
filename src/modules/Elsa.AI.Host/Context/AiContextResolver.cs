@@ -2,10 +2,11 @@ using System.Text.RegularExpressions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.AI.Host.Context;
 
-public class AiContextResolver(IServiceScopeFactory scopeFactory)
+public class AiContextResolver(IServiceScopeFactory scopeFactory, ILogger<AiContextResolver> logger)
 {
     private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "api-key", "authorization", "credential", "bearer"];
     private static readonly Regex[] SensitiveValuePatterns =
@@ -30,6 +31,12 @@ public class AiContextResolver(IServiceScopeFactory scopeFactory)
 
         foreach (var item in attachmentsWithProviders)
         {
+            if (item.Provider is IPlaceholderAiContextProvider)
+                logger.LogWarning(
+                    "AI context kind {ContextKind} is using placeholder provider {ProviderType}. Replace it before production use.",
+                    item.Attachment.Kind,
+                    item.Provider.GetType().Name);
+
             var context = await item.Provider!.ResolveAsync(new AiContextResolutionRequest
             {
                 Attachment = item.Attachment,

@@ -118,6 +118,7 @@ public class AiContextResolverTests
     private static ServiceProvider CreateProvider(Action<IServiceCollection> configure)
     {
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddSingleton<AiContextResolver>();
         configure(services);
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });

@@ -398,7 +398,7 @@ public class AiOrchestrator(
     {
         var maxBytes = options.Value.MaxResolvedContextBytes;
         if (maxBytes <= 0)
-            return [];
+            return contexts;
 
         var limited = new List<AiResolvedContext>();
         var usedBytes = 0;

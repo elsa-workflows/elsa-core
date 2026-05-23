@@ -987,6 +987,33 @@ public class AiChatEndpointTests
         Assert.Single(provider.Requests.Single().Context);
     }
 
+    [Fact(DisplayName = "Chat orchestration treats non-positive context byte limit as unlimited")]
+    public async Task ChatOrchestrationTreatsNonPositiveContextByteLimitAsUnlimited()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxResolvedContextBytes = 0);
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiContextProvider, LargeContextProvider>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain this workflow",
+                           Attachments = [new AiContextAttachment { Kind = LargeContextProvider.ContextKind, ReferenceId = "workflow-1" }]
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var context = Assert.Single(provider.Requests.Single().Context);
+
+        Assert.Equal(512, context.Summary.Length);
+        Assert.False(context.Data.ContainsKey("truncated"));
+    }
+
     [Fact(DisplayName = "Chat orchestration limits tool result payloads")]
     public async Task ChatOrchestrationLimitsToolResultPayloads()
     {
