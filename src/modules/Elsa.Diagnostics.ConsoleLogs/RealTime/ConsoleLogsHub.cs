@@ -1,5 +1,4 @@
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
-using FastEndpoints;
 using FastEndpoints.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
