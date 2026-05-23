@@ -662,6 +662,61 @@ public class AiChatEndpointTests
         Assert.Single(userMessages);
     }
 
+    [Fact(DisplayName = "Chat orchestration completes failed reconnects without duplicating user messages")]
+    public async Task ChatOrchestrationCompletesFailedReconnectsWithoutDuplicatingUserMessages()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-failed",
+            UserId = "user-1",
+            Status = AiConversationStatus.Failed,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-failed",
+                    Role = AiMessageRole.User,
+                    Content = "Retry me",
+                    CreatedAt = DateTimeOffset.UtcNow
+                },
+                new AiMessage
+                {
+                    Id = "message-2",
+                    ConversationId = "conversation-failed",
+                    Role = AiMessageRole.Assistant,
+                    Content = "Weaver could not prepare AI context or tools for this request.",
+                    CreatedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        });
+
+        var events = new List<AiStreamEvent>();
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-failed",
+                           UserId = "user-1",
+                           Message = "Retry me\r\n",
+                           IsReconnect = true
+                       }))
+            events.Add(streamEvent);
+
+        var conversation = await store.FindAsync("conversation-failed");
+        var userMessages = conversation!.Messages.Where(x => x.Role == AiMessageRole.User && x.Content == "Retry me").ToList();
+
+        Assert.Single(events);
+        Assert.Equal("conversation.completed", events[0].Type);
+        Assert.Single(userMessages);
+    }
+
     [Fact(DisplayName = "Chat orchestration continues reconnect sequences after persisted messages")]
     public async Task ChatOrchestrationContinuesReconnectSequencesAfterPersistedMessages()
     {

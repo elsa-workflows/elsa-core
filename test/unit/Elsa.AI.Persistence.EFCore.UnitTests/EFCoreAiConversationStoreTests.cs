@@ -131,6 +131,25 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
         Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired"));
     }
 
+    [Fact(DisplayName = "Conversation store treats configured conversations without expiry as retained")]
+    public async Task ConversationStoreTreatsConfiguredConversationsWithoutExpiryAsRetained()
+    {
+        var store = new EFCoreAiConversationStore(_dbContext);
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-no-expiry",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-2),
+            UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+            RetentionMode = AiRetentionMode.Configured
+        });
+
+        var reloaded = await store.FindAsync("conversation-no-expiry");
+
+        Assert.NotNull(reloaded);
+    }
+
     [Fact(DisplayName = "Conversation store validates required conversation fields")]
     public async Task ConversationStoreValidatesRequiredConversationFields()
     {

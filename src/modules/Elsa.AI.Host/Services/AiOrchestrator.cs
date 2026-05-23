@@ -533,12 +533,12 @@ public class AiOrchestrator(
 
     private static bool HasReconnectUserMessage(AiConversation? conversation, string message)
     {
-        return conversation is { Status: AiConversationStatus.Active } &&
+        return conversation is { Status: AiConversationStatus.Active or AiConversationStatus.Failed } &&
                HasUserMessage(conversation, message);
     }
 
     private static bool IsCompletedReconnect(AiConversation? conversation, string message) =>
-        conversation is { Status: AiConversationStatus.Completed } && HasUserMessage(conversation, message);
+        conversation is { Status: AiConversationStatus.Completed or AiConversationStatus.Failed } && HasUserMessage(conversation, message);
 
     private static bool HasUserMessage(AiConversation conversation, string message) =>
         conversation.Messages.Any(x => x.Role == AiMessageRole.User && string.Equals(NormalizeMessage(x.Content), NormalizeMessage(message), StringComparison.Ordinal));

@@ -75,7 +75,11 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
         if (conversation.RetentionMode == AiRetentionMode.Durable)
             return false;
 
-        return conversation.RetentionExpiresAt <= DateTimeOffset.UtcNow;
+        var expiresAt = conversation.RetentionExpiresAt;
+        if (expiresAt == null)
+            return false;
+
+        return expiresAt <= DateTimeOffset.UtcNow;
     }
 
     private static TEnum ParseEnum<TEnum>(string value, TEnum defaultValue) where TEnum : struct =>
