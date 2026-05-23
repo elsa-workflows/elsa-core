@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, AiContextProviderValidationHostedService>());
         services.TryAddSingleton<AiToolEnablementService>();
         services.TryAddSingleton<IAiToolRegistry, AiToolRegistry>();
-        services.TryAddSingleton<IAiOrchestrator, AiOrchestrator>();
+        services.TryAddScoped<IAiOrchestrator, AiOrchestrator>();
         services.TryAddSingleton<AiStreamSessionManager>();
         services.TryAddSingleton<AiStreamEventMapper>();
         services.TryAddSingleton<AiAuditSink>();
