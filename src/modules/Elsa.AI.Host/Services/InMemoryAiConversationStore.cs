@@ -23,7 +23,15 @@ public class InMemoryAiConversationStore : IAiTransientConversationStore
     public ValueTask SaveAsync(AiConversation conversation, CancellationToken cancellationToken = default)
     {
         PruneExpired();
-        _conversations[conversation.Id] = conversation;
+        _conversations.AddOrUpdate(
+            conversation.Id,
+            conversation,
+            (_, existing) =>
+            {
+                ValidateOwnership(existing, conversation);
+                return conversation;
+            });
+
         return ValueTask.CompletedTask;
     }
 
@@ -43,5 +51,14 @@ public class InMemoryAiConversationStore : IAiTransientConversationStore
 
         var expiresAt = conversation.RetentionExpiresAt;
         return expiresAt.HasValue && expiresAt <= DateTimeOffset.UtcNow;
+    }
+
+    private static void ValidateOwnership(AiConversation existing, AiConversation conversation)
+    {
+        if (!string.Equals(existing.TenantId, conversation.TenantId, StringComparison.Ordinal))
+            throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
+
+        if (!string.IsNullOrWhiteSpace(existing.UserId) && !string.Equals(existing.UserId, conversation.UserId, StringComparison.Ordinal))
+            throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another user.");
     }
 }

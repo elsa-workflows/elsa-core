@@ -198,6 +198,56 @@ public class AiRegistrationTests
         Assert.Null(result);
     }
 
+    [Fact(DisplayName = "In-memory conversation store rejects cross-tenant overwrites")]
+    public async Task InMemoryConversationStoreRejectsCrossTenantOverwrites()
+    {
+        var store = new InMemoryAiConversationStore();
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            TenantId = "tenant-1",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            TenantId = "tenant-2",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        }));
+
+        Assert.Equal("Cannot overwrite an AI conversation that belongs to another tenant.", exception.Message);
+    }
+
+    [Fact(DisplayName = "In-memory conversation store rejects cross-user overwrites")]
+    public async Task InMemoryConversationStoreRejectsCrossUserOverwrites()
+    {
+        var store = new InMemoryAiConversationStore();
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            TenantId = "tenant-1",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-1",
+            TenantId = "tenant-1",
+            UserId = "user-2",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        }));
+
+        Assert.Equal("Cannot overwrite an AI conversation that belongs to another user.", exception.Message);
+    }
+
     private class ScopedAuditHandler : IAiAuditEventHandler
     {
         public static int RecordedCount { get; set; }

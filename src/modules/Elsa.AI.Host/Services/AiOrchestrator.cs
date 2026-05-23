@@ -633,7 +633,7 @@ public class AiOrchestrator(
 
     private static bool HasReconnectUserMessage(AiConversation? conversation, string message)
     {
-        return conversation is { Status: AiConversationStatus.Active or AiConversationStatus.Failed } &&
+        return conversation is { Status: AiConversationStatus.Active } &&
                HasUserMessage(conversation, message);
     }
 
