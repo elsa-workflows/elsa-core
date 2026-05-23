@@ -293,6 +293,37 @@ public class AiChatEndpointTests
         Assert.Equal(AiConversationStatus.Failed, conversation!.Status);
     }
 
+    [Fact(DisplayName = "Chat orchestration emits terminal events when provider session creation fails")]
+    public async Task ChatOrchestrationEmitsTerminalEventsWhenProviderSessionCreationFails()
+    {
+        var auditSink = new CapturingAuditSink();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider, ThrowingSessionProvider>();
+        services.RemoveAll<IAiAuditSink>();
+        services.AddSingleton<IAiAuditSink>(auditSink);
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.Contains(events, x => x.Type == "conversation.started");
+        Assert.Contains(events, x => x.Type == "conversation.error");
+        Assert.Contains(events, x => x.Type == "conversation.completed");
+        Assert.Equal(AiConversationStatus.Failed, conversation!.Status);
+        Assert.Contains(auditSink.Events, x => x.Type == "chat.failed");
+    }
+
     [Fact(DisplayName = "Chat orchestration executes provider tool calls")]
     public async Task ChatOrchestrationExecutesProviderToolCalls()
     {
@@ -1041,6 +1072,20 @@ public class AiChatEndpointTests
                     ["content"] = "Captured"
                 }
             };
+        }
+    }
+
+    private class ThrowingSessionProvider : IAiProvider
+    {
+        public string Name => "throwing-session";
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Session creation failed.");
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            yield break;
         }
     }
 

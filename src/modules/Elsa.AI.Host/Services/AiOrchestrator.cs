@@ -35,6 +35,7 @@ public class AiOrchestrator(
             conversationId = Guid.NewGuid().ToString("N");
         }
         var messages = conversation?.Messages.ToList() ?? [];
+        Exception? preparationError = null;
 
         if (request.IsReconnect && IsCompletedReconnect(conversation, request.Message))
         {
@@ -46,14 +47,21 @@ public class AiOrchestrator(
 
         if (provider != null && string.IsNullOrWhiteSpace(providerSessionId))
         {
-            var session = await provider.CreateSessionAsync(new CreateAiSessionRequest
+            try
             {
-                ConversationId = conversationId,
-                Agent = request.Agent,
-                TenantId = request.TenantId,
-                ProviderConfiguration = providerSelection.Configuration
-            }, cancellationToken);
-            providerSessionId = session.ProviderSessionId ?? session.Id;
+                var session = await provider.CreateSessionAsync(new CreateAiSessionRequest
+                {
+                    ConversationId = conversationId,
+                    Agent = request.Agent,
+                    TenantId = request.TenantId,
+                    ProviderConfiguration = providerSelection.Configuration
+                }, cancellationToken);
+                providerSessionId = session.ProviderSessionId ?? session.Id;
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                preparationError = e;
+            }
         }
 
         var isDuplicateReconnectMessage = request.IsReconnect && HasReconnectUserMessage(conversation, request.Message);
@@ -78,22 +86,24 @@ public class AiOrchestrator(
 
         IReadOnlyCollection<AiResolvedContext> context = [];
         IReadOnlyCollection<AiToolDefinition> tools = [];
-        Exception? preparationError = null;
 
-        try
+        if (preparationError == null)
         {
-            context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
-            tools = await toolRegistry.ListAsync(new AiToolQuery
+            try
             {
-                Agent = request.Agent,
-                ActorId = request.UserId,
-                TenantId = request.TenantId,
-                UserPermissions = request.UserPermissions
-            }, cancellationToken);
-        }
-        catch (Exception e) when (e is not OperationCanceledException)
-        {
-            preparationError = e;
+                context = LimitResolvedContext(await contextResolver.ResolveAsync(request, cancellationToken));
+                tools = await toolRegistry.ListAsync(new AiToolQuery
+                {
+                    Agent = request.Agent,
+                    ActorId = request.UserId,
+                    TenantId = request.TenantId,
+                    UserPermissions = request.UserPermissions
+                }, cancellationToken);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                preparationError = e;
+            }
         }
 
         if (preparationError != null)
@@ -204,6 +214,7 @@ public class AiOrchestrator(
                         ["content"] = content
                     });
                     messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, content, sequence - 1));
+                    break;
                 }
             }
         }

@@ -38,7 +38,7 @@ public class InMemoryAiConversationStore(IOptions<AiHostOptions> options) : IAiT
     private bool IsExpired(AiConversation conversation)
     {
         if (conversation.RetentionMode == AiRetentionMode.Ephemeral)
-            return true;
+            return false;
 
         if (conversation.RetentionMode == AiRetentionMode.Durable)
             return false;

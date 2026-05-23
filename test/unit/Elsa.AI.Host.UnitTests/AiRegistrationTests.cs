@@ -161,8 +161,8 @@ public class AiRegistrationTests
         Assert.Null(result);
     }
 
-    [Fact(DisplayName = "In-memory conversation store does not retain ephemeral conversations")]
-    public async Task InMemoryConversationStoreDoesNotRetainEphemeralConversations()
+    [Fact(DisplayName = "In-memory conversation store retains ephemeral conversations in process")]
+    public async Task InMemoryConversationStoreRetainsEphemeralConversationsInProcess()
     {
         var store = new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions()));
 
@@ -177,7 +177,7 @@ public class AiRegistrationTests
 
         var result = await store.FindAsync("conversation-1");
 
-        Assert.Null(result);
+        Assert.NotNull(result);
     }
 
     private class ScopedAuditHandler : IAiAuditEventHandler
