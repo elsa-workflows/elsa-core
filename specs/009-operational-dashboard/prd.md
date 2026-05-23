@@ -124,7 +124,7 @@ Returns first-paint dashboard data.
     "workflowDefinitions": "available",
     "runtimeStatus": "available",
     "structuredLogs": "available",
-    "consoleLogs": "unavailable"
+    "consoleLogs": "available"
   },
   "workflowDefinitions": {
     "total": 128
@@ -147,7 +147,11 @@ Returns first-paint dashboard data.
     "withIncidents": 42,
     "completedInRange": 840,
     "faultedInRange": 12,
-    "averageDurationMs": 842
+    "averageDurationMs": 842,
+    "averageDurationAccuracy": {
+      "accuracy": "Exact",
+      "sampleSize": 840
+    }
   },
   "runtime": {
     "isAcceptingNewWork": true,
@@ -189,6 +193,7 @@ Returns first-paint dashboard data.
 - Must compute counts server-side using store count APIs where possible.
 - Must cap any row sampling used for duration or diagnostics approximations and report approximation metadata if exact aggregation is not available.
 - `workflowInstances.total` must equal the sum of top-level workflow status totals. `subStatuses.pending`, `executing`, `suspended`, and `interrupted` must reconcile to `statuses.running`; `subStatuses.finished`, `faulted`, and `cancelled` must reconcile to `statuses.finished`.
+- `averageDurationMs` must be scoped to the selected range. It is the average of `FinishedAt - CreatedAt` for finished workflow instances whose `FinishedAt` falls within the response range. If exact aggregation is unavailable, the implementation may use a bounded sample filtered by `FinishedAt`; `averageDurationAccuracy.accuracy` must be `Sampled` unless the sample includes the full matching population.
 
 ## Endpoint 2: Workflow Trends
 
@@ -300,6 +305,17 @@ Returns prioritized operational findings.
 
 - Must return deterministic priority ordering: severity, count, recency, category.
 - Must include enough target metadata for Studio to link to the relevant page/filter.
+- `target.type` and `target.query` must follow this schema; query field names are camelCase and unknown fields are not allowed:
+
+| `target.type` | Allowed `target.query` fields |
+| --- | --- |
+| `WorkflowInstances` | `status`, `subStatus`, `hasIncidents`, `definitionId`, `createdFrom`, `createdTo`, `updatedFrom`, `updatedTo`, `finishedFrom`, `finishedTo`, `includeSystem` |
+| `WorkflowDefinitions` | `definitionId`, `includeSystem` |
+| `RuntimeStatus` | `sourceName`, `sourceState` |
+| `StructuredLogs` | `level`, `sourceName`, `from`, `to` |
+| `ConsoleLogs` | `stream`, `sourceName`, `from`, `to` |
+
+- Workflow target query fields should map directly to the existing workflow instance and definition list filter contracts where equivalent filters exist.
 - Must not expose data from unauthorized optional capabilities.
 - Must be bounded by `take`, with a maximum such as 50.
 
