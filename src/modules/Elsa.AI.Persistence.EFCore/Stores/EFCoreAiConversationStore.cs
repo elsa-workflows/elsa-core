@@ -15,7 +15,7 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
 
     public async ValueTask<AiConversation?> FindAsync(string id, CancellationToken cancellationToken = default)
     {
-        var record = await dbContext.Conversations.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var record = await dbContext.Conversations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (record == null)
             return null;
 
@@ -25,10 +25,11 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
 
         try
         {
-            dbContext.Conversations.Remove(record);
-            await dbContext.SaveChangesAsync(cancellationToken);
+            await dbContext.Conversations
+                .Where(x => x.Id == id)
+                .ExecuteDeleteAsync(cancellationToken);
         }
-        catch
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             // Expired-record cleanup is best-effort; stale cleanup should not block starting a fresh conversation.
         }

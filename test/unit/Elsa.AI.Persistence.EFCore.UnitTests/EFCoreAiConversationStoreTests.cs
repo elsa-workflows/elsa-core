@@ -263,10 +263,12 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
             UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1),
             RetentionExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-1)
         });
+        _dbContext.ChangeTracker.Clear();
 
         var reloaded = await store.FindAsync("conversation-expired");
 
         Assert.Null(reloaded);
+        Assert.Empty(_dbContext.ChangeTracker.Entries());
         Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired"));
     }
 
