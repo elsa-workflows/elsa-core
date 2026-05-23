@@ -11,7 +11,7 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
 {
     public async ValueTask<AiProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default)
     {
-        var record = await dbContext.Proposals.FirstOrDefaultAsync(
+        var record = await dbContext.Proposals.AsNoTracking().FirstOrDefaultAsync(
             x => x.Id == id && x.TenantId == tenantId,
             cancellationToken);
         return record == null ? null : Map(record);
