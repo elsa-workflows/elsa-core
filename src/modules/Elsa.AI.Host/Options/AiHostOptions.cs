@@ -17,8 +17,8 @@ public class AiHostOptions
 
 public class AiProviderOptions
 {
-    public string Name { get; set; } = default!;
-    public string Provider { get; set; } = default!;
+    public string Name { get; set; } = "";
+    public string Provider { get; set; } = "";
     public string? Model { get; set; }
     public string? ApiKeySecretName { get; set; }
     public string? Endpoint { get; set; }

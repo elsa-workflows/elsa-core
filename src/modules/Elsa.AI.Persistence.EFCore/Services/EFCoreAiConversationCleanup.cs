@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Elsa.AI.Persistence.EFCore.Services;
 
@@ -28,17 +27,15 @@ public static class EFCoreAiConversationCleanup
     {
         if (string.Equals(dbContext.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal))
         {
-            var table = ResolveConversationTable(dbContext);
-            var retentionModeColumn = ResolveConversationColumn(table.EntityType, table.StoreObject, nameof(AiConversationRecord.RetentionMode));
-            var retentionExpiresAtColumn = ResolveConversationColumn(table.EntityType, table.StoreObject, nameof(AiConversationRecord.RetentionExpiresAt));
+            var tableName = ResolveConversationTableName(dbContext);
 
             return await dbContext.Database.ExecuteSqlInterpolatedAsync(
                 FormattableStringFactory.Create(
                     $$"""
-                     DELETE FROM {{QuoteSqliteIdentifier(table.Name)}}
-                     WHERE {{retentionModeColumn}} = {0}
-                       AND {{retentionExpiresAtColumn}} IS NOT NULL
-                       AND {{retentionExpiresAtColumn}} <= {1}
+                     DELETE FROM {{QuoteSqliteIdentifier(tableName)}}
+                     WHERE "RetentionMode" = {0}
+                       AND "RetentionExpiresAt" IS NOT NULL
+                       AND "RetentionExpiresAt" <= {1}
                      """,
                     configuredRetentionMode,
                     now),
@@ -50,19 +47,10 @@ public static class EFCoreAiConversationCleanup
             .ExecuteDeleteAsync(cancellationToken);
     }
 
-    private static (IEntityType EntityType, StoreObjectIdentifier StoreObject, string Name) ResolveConversationTable(AiDbContext dbContext)
+    private static string ResolveConversationTableName(AiDbContext dbContext)
     {
         var entityType = dbContext.Model.FindEntityType(typeof(AiConversationRecord)) ?? throw new InvalidOperationException("AI conversation entity metadata was not found.");
-        var tableName = entityType.GetTableName() ?? throw new InvalidOperationException("AI conversation table metadata was not found.");
-        var storeObject = StoreObjectIdentifier.Table(tableName, entityType.GetSchema());
-        return (entityType, storeObject, tableName);
-    }
-
-    private static string ResolveConversationColumn(IEntityType entityType, StoreObjectIdentifier storeObject, string propertyName)
-    {
-        var property = entityType.FindProperty(propertyName) ?? throw new InvalidOperationException($"AI conversation property metadata was not found for {propertyName}.");
-        var columnName = property.GetColumnName(storeObject) ?? throw new InvalidOperationException($"AI conversation column metadata was not found for {propertyName}.");
-        return QuoteSqliteIdentifier(columnName);
+        return entityType.GetTableName() ?? throw new InvalidOperationException("AI conversation table metadata was not found.");
     }
 
     private static string QuoteSqliteIdentifier(string identifier) => $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";

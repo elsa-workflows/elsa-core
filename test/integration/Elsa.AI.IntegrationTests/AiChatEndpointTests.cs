@@ -884,6 +884,30 @@ public class AiChatEndpointTests
         Assert.Equal(5, assistantEvent.Sequence);
     }
 
+    [Fact(DisplayName = "Chat orchestration starts a new conversation when reconnect history is unavailable")]
+    public async Task ChatOrchestrationStartsNewConversationWhenReconnectHistoryIsUnavailable()
+    {
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "missing-conversation",
+                           UserId = "user-1",
+                           Message = "Retry me",
+                           IsReconnect = true
+                       }))
+            events.Add(streamEvent);
+
+        var startedEvent = Assert.Single(events, x => x.Type == "conversation.started");
+
+        Assert.NotEqual("missing-conversation", startedEvent.ConversationId);
+        Assert.Equal(0, startedEvent.Sequence);
+    }
+
     [Fact(DisplayName = "Chat orchestration does not replay completed conversations on reconnect")]
     public async Task ChatOrchestrationDoesNotReplayCompletedConversationsOnReconnect()
     {

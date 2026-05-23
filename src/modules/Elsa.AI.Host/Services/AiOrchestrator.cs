@@ -49,6 +49,8 @@ public class AiOrchestrator(
             conversationId = Guid.NewGuid().ToString("N");
         }
         var messages = conversation?.Messages.ToList() ?? [];
+        if (request.IsReconnect && messages.Count == 0)
+            conversationId = Guid.NewGuid().ToString("N");
 
         if (request.IsReconnect && IsCompletedReconnect(conversation, request.Message))
         {
