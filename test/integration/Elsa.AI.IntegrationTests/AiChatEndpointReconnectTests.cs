@@ -127,6 +127,33 @@ public class AiChatEndpointReconnectTests
         Assert.Equal("workflow-author", orchestrator.Request!.Agent);
     }
 
+    [Fact(DisplayName = "Chat endpoint clears client supplied provider names")]
+    public async Task ChatEndpointClearsClientSuppliedProviderNames()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AiStreamSessionManager(),
+            MicrosoftOptions.Create(new AiHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AiChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            ProviderName = "privileged-provider",
+            Message = "Use a specific provider"
+        }, CancellationToken.None);
+
+        Assert.Null(orchestrator.Request!.ProviderName);
+    }
+
     private static void SetHttpContext(ChatEndpoint endpoint, HttpContext httpContext)
     {
         var property = typeof(ChatEndpoint)

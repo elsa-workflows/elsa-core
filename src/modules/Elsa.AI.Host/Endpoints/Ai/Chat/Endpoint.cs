@@ -35,7 +35,8 @@ public class Endpoint(
             TenantId = AiHttpContextIdentity.GetTenantId(HttpContext),
             UserId = AiHttpContextIdentity.GetActorId(HttpContext),
             UserPermissions = userPermissions,
-            Agent = AiHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, userPermissions)
+            Agent = AiHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, userPermissions),
+            ProviderName = null
         };
         var response = HttpContext.Response;
         response.ContentType = "text/event-stream";

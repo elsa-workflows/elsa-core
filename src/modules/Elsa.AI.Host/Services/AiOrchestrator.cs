@@ -500,7 +500,7 @@ public class AiOrchestrator(
             }
 
             if (limited.Count > 0)
-                break;
+                continue;
 
             limited.Add(TruncateContext(context, maxBytes));
             break;

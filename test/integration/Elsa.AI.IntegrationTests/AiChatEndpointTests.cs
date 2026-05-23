@@ -1158,6 +1158,40 @@ public class AiChatEndpointTests
         Assert.Single(provider.Requests.Single().Context);
     }
 
+    [Fact(DisplayName = "Chat orchestration keeps smaller contexts after an oversized context")]
+    public async Task ChatOrchestrationKeepsSmallerContextsAfterOversizedContext()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxResolvedContextBytes = 1024);
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiContextProvider, MixedSizeContextProvider>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain these workflows",
+                           Attachments =
+                           [
+                               new AiContextAttachment { Kind = MixedSizeContextProvider.ContextKind, ReferenceId = "small-1" },
+                               new AiContextAttachment { Kind = MixedSizeContextProvider.ContextKind, ReferenceId = "large" },
+                               new AiContextAttachment { Kind = MixedSizeContextProvider.ContextKind, ReferenceId = "small-2" }
+                           ]
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var contexts = provider.Requests.Single().Context.ToList();
+
+        Assert.Collection(
+            contexts,
+            first => Assert.Equal("small-1", first.ReferenceId),
+            second => Assert.Equal("small-2", second.ReferenceId));
+    }
+
     [Fact(DisplayName = "Chat orchestration treats non-positive context byte limit as unlimited")]
     public async Task ChatOrchestrationTreatsNonPositiveContextByteLimitAsUnlimited()
     {
@@ -1421,6 +1455,23 @@ public class AiChatEndpointTests
                 ReferenceId = request.Attachment.ReferenceId,
                 Summary = new string('漢', 512)
             });
+    }
+
+    private class MixedSizeContextProvider : IAiContextProvider
+    {
+        public const string ContextKind = "MixedSizeContext";
+        public string Kind => ContextKind;
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
+        {
+            var isLarge = request.Attachment.ReferenceId == "large";
+            return ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = ContextKind,
+                ReferenceId = request.Attachment.ReferenceId,
+                Summary = isLarge ? new string('l', 4096) : $"Context {request.Attachment.ReferenceId}"
+            });
+        }
     }
 
     private class ThrowingContextProvider : IAiContextProvider

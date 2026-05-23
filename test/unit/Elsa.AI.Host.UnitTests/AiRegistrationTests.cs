@@ -143,17 +143,15 @@ public class AiRegistrationTests
     [Fact(DisplayName = "In-memory conversation store evicts expired conversations")]
     public async Task InMemoryConversationStoreEvictsExpiredConversations()
     {
-        var store = new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions
-        {
-            ConversationRetention = TimeSpan.FromMinutes(5)
-        }));
+        var store = new InMemoryAiConversationStore();
 
         await store.SaveAsync(new AiConversation
         {
             Id = "conversation-1",
             UserId = "user-1",
             CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-10),
-            UpdatedAt = DateTimeOffset.UtcNow.AddMinutes(-10)
+            UpdatedAt = DateTimeOffset.UtcNow.AddMinutes(-10),
+            RetentionExpiresAt = DateTimeOffset.UtcNow.AddMinutes(-5)
         });
 
         var result = await store.FindAsync("conversation-1");
@@ -164,7 +162,7 @@ public class AiRegistrationTests
     [Fact(DisplayName = "In-memory conversation store retains ephemeral conversations in process")]
     public async Task InMemoryConversationStoreRetainsEphemeralConversationsInProcess()
     {
-        var store = new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions()));
+        var store = new InMemoryAiConversationStore();
 
         await store.SaveAsync(new AiConversation
         {
@@ -183,7 +181,7 @@ public class AiRegistrationTests
     [Fact(DisplayName = "In-memory conversation store prunes completed ephemeral conversations")]
     public async Task InMemoryConversationStorePrunesCompletedEphemeralConversations()
     {
-        var store = new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions()));
+        var store = new InMemoryAiConversationStore();
 
         await store.SaveAsync(new AiConversation
         {

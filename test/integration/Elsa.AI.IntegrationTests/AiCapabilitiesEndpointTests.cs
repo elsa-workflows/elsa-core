@@ -52,7 +52,7 @@ public class AiCapabilitiesEndpointTests
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AiHostOptions { ConversationPersistenceEnabled = true }),
             [new TestAiProvider()],
-            [new InMemoryAiConversationStore(MicrosoftOptions.Create(new AiHostOptions()))],
+            [new InMemoryAiConversationStore()],
             [new TestProposalStore()]);
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);

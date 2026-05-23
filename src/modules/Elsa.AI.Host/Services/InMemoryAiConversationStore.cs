@@ -1,12 +1,10 @@
 using System.Collections.Concurrent;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
-using Elsa.AI.Host.Options;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.AI.Host.Services;
 
-public class InMemoryAiConversationStore(IOptions<AiHostOptions> options) : IAiTransientConversationStore
+public class InMemoryAiConversationStore : IAiTransientConversationStore
 {
     private readonly ConcurrentDictionary<string, AiConversation> _conversations = new();
 
@@ -43,11 +41,7 @@ public class InMemoryAiConversationStore(IOptions<AiHostOptions> options) : IAiT
         if (conversation.RetentionMode == AiRetentionMode.Durable)
             return false;
 
-        var retentionStartsAt = conversation.UpdatedAt != default ? conversation.UpdatedAt : conversation.CreatedAt;
-        if (retentionStartsAt == default)
-            return false;
-
-        var expiresAt = conversation.RetentionExpiresAt ?? retentionStartsAt.Add(options.Value.ConversationRetention);
-        return expiresAt <= DateTimeOffset.UtcNow;
+        var expiresAt = conversation.RetentionExpiresAt;
+        return expiresAt.HasValue && expiresAt <= DateTimeOffset.UtcNow;
     }
 }
