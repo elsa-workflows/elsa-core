@@ -31,14 +31,9 @@ public static class EFCoreAiConversationCleanup
         }
         catch (InvalidOperationException e) when (e.Message.Contains("could not be translated", StringComparison.OrdinalIgnoreCase))
         {
-            var expiredConfigured = await dbContext.Conversations
-                .Where(x => x.RetentionMode == configuredRetentionMode && x.RetentionExpiresAt.HasValue)
-                .ToListAsync(cancellationToken);
-            expiredConfigured = expiredConfigured
-                .Where(x => x.RetentionExpiresAt <= now)
-                .ToList();
-            dbContext.Conversations.RemoveRange(expiredConfigured);
-            return expiredConfigured.Count == 0 ? 0 : await dbContext.SaveChangesAsync(cancellationToken);
+            return await dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM AiConversations WHERE RetentionMode = {configuredRetentionMode} AND RetentionExpiresAt IS NOT NULL AND RetentionExpiresAt <= {now}",
+                cancellationToken);
         }
     }
 }

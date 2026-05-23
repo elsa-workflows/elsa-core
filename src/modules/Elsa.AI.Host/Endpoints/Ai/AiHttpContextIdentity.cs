@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using Elsa.Common.Multitenancy;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.Endpoints.Ai;
 
@@ -13,10 +15,16 @@ internal static class AiHttpContextIdentity
         context?.User.Identity?.Name ??
         "anonymous";
 
-    public static string? GetTenantId(HttpContext? context) =>
-        context?.User.FindFirstValue(TenantIdClaimType) ??
-        context?.User.FindFirstValue("tenant_id") ??
-        context?.User.FindFirstValue("tenantId");
+    public static string? GetTenantId(HttpContext? context)
+    {
+        var tenantId = context?.RequestServices?.GetService<ITenantAccessor>()?.TenantId;
+        if (!string.IsNullOrWhiteSpace(tenantId))
+            return tenantId;
+
+        return context?.User.FindFirstValue(TenantIdClaimType) ??
+               context?.User.FindFirstValue("tenant_id") ??
+               context?.User.FindFirstValue("tenantId");
+    }
 
     public static ICollection<string> GetPermissions(HttpContext? context) =>
         context?.User

@@ -349,6 +349,37 @@ public class AiChatEndpointTests
         Assert.Contains(auditSink.Events, x => x.Type == "chat.failed");
     }
 
+    [Fact(DisplayName = "Chat orchestration emits terminal events when provider turn fails")]
+    public async Task ChatOrchestrationEmitsTerminalEventsWhenProviderTurnFails()
+    {
+        var auditSink = new CapturingAuditSink();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider, ThrowingTurnProvider>();
+        services.RemoveAll<IAiAuditSink>();
+        services.AddSingleton<IAiAuditSink>(auditSink);
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+        var store = provider.GetRequiredService<IAiConversationStore>();
+        var events = new List<AiStreamEvent>();
+
+        await foreach (var streamEvent in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           ConversationId = "conversation-1",
+                           UserId = "user-1",
+                           Message = "Explain this workflow"
+                       }))
+            events.Add(streamEvent);
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.Contains(events, x => x.Type == "conversation.started");
+        Assert.Contains(events, x => x.Type == "conversation.error");
+        Assert.Contains(events, x => x.Type == "conversation.completed");
+        Assert.Equal(AiConversationStatus.Failed, conversation!.Status);
+        Assert.Contains(auditSink.Events, x => x.Type == "chat.failed");
+    }
+
     [Fact(DisplayName = "Chat orchestration executes provider tool calls")]
     public async Task ChatOrchestrationExecutesProviderToolCalls()
     {
@@ -856,33 +887,64 @@ public class AiChatEndpointTests
     [Fact(DisplayName = "Chat orchestration resumes persisted tool results on reconnect")]
     public async Task ChatOrchestrationResumesPersistedToolResultsOnReconnect()
     {
-        var provider = new InterruptedToolContinuationAiProvider();
-        var tool = new EchoTool();
+        var provider = new CapturingTurnProvider();
         var services = new ServiceCollection();
         services.AddAiHostServices();
         services.AddSingleton<IAiProvider>(provider);
-        services.AddSingleton<IAiTool>(tool);
         using var serviceProvider = services.BuildServiceProvider();
         var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
         var store = serviceProvider.GetRequiredService<IAiConversationStore>();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        await store.SaveAsync(new AiConversation
         {
-            await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
-                           {
-                               ConversationId = "conversation-1",
-                               UserId = "user-1",
-                               TenantId = "tenant-1",
-                               Message = "Use a tool"
-                           }))
-            {
-                // Intentionally drain the stream until the provider interruption is observed.
-            }
+            Id = "conversation-1",
+            TenantId = "tenant-1",
+            UserId = "user-1",
+            Status = AiConversationStatus.Active,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            ProviderSessionId = "provider-session-conversation-1",
+            Messages =
+            [
+                new AiMessage
+                {
+                    Id = "message-1",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.User,
+                    Content = "Use a tool",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    StreamSequence = 0
+                },
+                new AiMessage
+                {
+                    Id = "message-2",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.Assistant,
+                    Content = "",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    StreamSequence = 1,
+                    Metadata = new JsonObject
+                    {
+                        ["toolCallIds"] = new JsonArray("tool-call-1")
+                    }
+                },
+                new AiMessage
+                {
+                    Id = "message-3",
+                    ConversationId = "conversation-1",
+                    Role = AiMessageRole.Tool,
+                    Content = "Echoed",
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    StreamSequence = 2,
+                    Metadata = new JsonObject
+                    {
+                        ["toolCallId"] = "tool-call-1",
+                        ["toolName"] = "echo",
+                        ["status"] = AiToolInvocationStatus.Completed.ToString()
+                    }
+                }
+            ]
         });
-
-        var interruptedConversation = await store.FindAsync("conversation-1");
-        Assert.Equal(AiConversationStatus.Active, interruptedConversation!.Status);
-        Assert.Single(interruptedConversation.Messages, x => x.Role == AiMessageRole.Tool);
 
         await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
                        {
@@ -896,7 +958,7 @@ public class AiChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var reconnectRequest = provider.Requests.Last();
+        var reconnectRequest = Assert.Single(provider.Requests);
         var restoredToolMessage = Assert.Single(reconnectRequest.Messages, x => x.Role == AiMessageRole.Tool);
         var completedConversation = await store.FindAsync("conversation-1");
 
@@ -908,7 +970,6 @@ public class AiChatEndpointTests
         Assert.Single(completedConversation!.Messages, x => x.Role == AiMessageRole.User && x.Content == "Use a tool");
         Assert.Single(completedConversation.Messages, x => x.Role == AiMessageRole.Tool);
         Assert.Equal(AiConversationStatus.Completed, completedConversation.Status);
-        Assert.Equal(1, tool.ExecutionCount);
     }
 
     [Fact(DisplayName = "Chat orchestration does not load foreign tenant conversation history")]
@@ -1283,6 +1344,27 @@ public class AiChatEndpointTests
         }
     }
 
+    private class ThrowingTurnProvider : IAiProvider
+    {
+        public string Name => "throwing-turn";
+
+        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiSessionHandle
+            {
+                Id = request.ConversationId,
+                ProviderSessionId = $"provider-session-{request.ConversationId}"
+            });
+
+        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            if (!cancellationToken.IsCancellationRequested)
+                throw new InvalidOperationException("Provider unavailable.");
+
+            yield break;
+        }
+    }
+
     private class DefaultSessionHandleProvider : IAiProvider
     {
         public string Name => "default-session-handle";
@@ -1454,62 +1536,6 @@ public class AiChatEndpointTests
                     {
                         ["text"] = "hello"
                     }
-                }
-            };
-        }
-    }
-
-    private class InterruptedToolContinuationAiProvider : IAiProvider
-    {
-        private bool _throwOnFirstContinuation = true;
-
-        public string Name => "interrupted-tool-continuation";
-        public List<AiTurnRequest> Requests { get; } = [];
-
-        public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default) =>
-            ValueTask.FromResult(new AiSessionHandle { Id = request.ConversationId });
-
-        public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await Task.Yield();
-            Requests.Add(request);
-            var toolResultSummary = GetToolResultSummary(request);
-
-            if (toolResultSummary == null)
-            {
-                yield return new AiProviderEvent
-                {
-                    Type = "tool.call",
-                    Sequence = 1,
-                    Timestamp = DateTimeOffset.UtcNow,
-                    Data = new JsonObject
-                    {
-                        ["id"] = "tool-call-1",
-                        ["toolName"] = "echo",
-                        ["arguments"] = new JsonObject
-                        {
-                            ["text"] = "hello"
-                        }
-                    }
-                };
-
-                yield break;
-            }
-
-            if (_throwOnFirstContinuation)
-            {
-                _throwOnFirstContinuation = false;
-                throw new InvalidOperationException("Stream interrupted.");
-            }
-
-            yield return new AiProviderEvent
-            {
-                Type = "assistant.delta",
-                Sequence = 1,
-                Timestamp = DateTimeOffset.UtcNow,
-                Data = new JsonObject
-                {
-                    ["content"] = $"Used {toolResultSummary}"
                 }
             };
         }

@@ -161,19 +161,28 @@ public class AiOrchestrator(
                 var currentTurnToolMessages = new List<AiMessage>();
                 assistantContent.Clear();
 
-                await foreach (var providerEvent in provider.ExecuteTurnAsync(new AiTurnRequest
-                               {
-                                   ConversationId = conversationId,
-                                   ProviderSessionId = providerSessionId,
-                                   Message = turn == 0 && !isDuplicateReconnectMessage ? request.Message : "",
-                                   Messages = providerHistory.ToList(),
-                                   Context = context,
-                                   Tools = tools.Where(x => x.IsEnabled).ToList(),
-                                   ToolResults = GetUnrepresentedToolResults(pendingToolResults, providerHistory),
-                                   Agent = request.Agent,
-                                   ProviderConfiguration = providerSelection.Configuration
-                               }, cancellationToken))
+                var turnRequest = new AiTurnRequest
                 {
+                    ConversationId = conversationId,
+                    ProviderSessionId = providerSessionId,
+                    Message = turn == 0 && !isDuplicateReconnectMessage ? request.Message : "",
+                    Messages = providerHistory.ToList(),
+                    Context = context,
+                    Tools = tools.Where(x => x.IsEnabled).ToList(),
+                    ToolResults = GetUnrepresentedToolResults(pendingToolResults, providerHistory),
+                    Agent = request.Agent,
+                    ProviderConfiguration = providerSelection.Configuration
+                };
+                Exception? providerTurnError = null;
+                await foreach (var providerRead in ReadProviderEventsAsync(provider.ExecuteTurnAsync(turnRequest, cancellationToken), cancellationToken))
+                {
+                    if (providerRead.Error != null)
+                    {
+                        providerTurnError = providerRead.Error;
+                        break;
+                    }
+
+                    var providerEvent = providerRead.Event!;
                     var streamEvent = streamEventMapper.Map(conversationId, providerEvent) with { Sequence = sequence++ };
                     yield return streamEvent;
 
@@ -198,6 +207,21 @@ public class AiOrchestrator(
                         ["status"] = toolExecution.TurnResult.Result.Status.ToString()
                     });
                     currentTurnToolMessages.Add(toolMessage);
+                }
+
+                if (providerTurnError != null)
+                {
+                    const string content = "Weaver could not complete the AI provider turn for this request.";
+                    logger.LogWarning(providerTurnError, "Failed to execute AI provider turn for conversation {ConversationId}.", conversationId);
+                    yield return CreateEvent("conversation.error", conversationId, sequence++, new JsonObject
+                    {
+                        ["content"] = content
+                    });
+                    messages.Add(CreateMessage(conversationId, AiMessageRole.Assistant, content, sequence - 1));
+                    await TrySaveConversationAsync(conversationId, request, AiConversationStatus.Failed, messages, conversation, providerSessionId, cancellationToken);
+                    await RecordChatAuditAsync("chat.failed", request, conversationId, provider.Name, cancellationToken);
+                    yield return CreateEvent("conversation.completed", conversationId, sequence);
+                    yield break;
                 }
 
                 if (assistantContent.Length > 0 || currentTurnToolMessages.Count > 0)
@@ -253,6 +277,48 @@ public class AiOrchestrator(
             Timestamp = DateTimeOffset.UtcNow,
             Data = data ?? []
         };
+
+    private static async IAsyncEnumerable<ProviderReadResult> ReadProviderEventsAsync(
+        IAsyncEnumerable<AiProviderEvent> providerEvents,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var enumerator = providerEvents.GetAsyncEnumerator(cancellationToken);
+        try
+        {
+            while (true)
+            {
+                AiProviderEvent? providerEvent = null;
+                Exception? error = null;
+                var hasEvent = false;
+
+                try
+                {
+                    hasEvent = await enumerator.MoveNextAsync();
+                    if (hasEvent)
+                        providerEvent = enumerator.Current;
+                }
+                catch (Exception e) when (e is not OperationCanceledException)
+                {
+                    error = e;
+                }
+
+                if (error != null)
+                {
+                    yield return new ProviderReadResult(null, error);
+                    yield break;
+                }
+
+                if (!hasEvent)
+                    yield break;
+
+                yield return new ProviderReadResult(providerEvent, null);
+            }
+        }
+        finally
+        {
+            await enumerator.DisposeAsync();
+        }
+    }
 
     private ProviderSelection SelectProvider(AiChatRequest request)
     {
@@ -668,5 +734,6 @@ public class AiOrchestrator(
 
     private readonly record struct ToolCall(string Id, string Name, JsonObject Arguments);
     private readonly record struct ToolExecutionResult(AiStreamEvent StreamEvent, AiToolTurnResult TurnResult);
+    private readonly record struct ProviderReadResult(AiProviderEvent? Event, Exception? Error);
     private readonly record struct ProviderSelection(IAiProvider? Provider, AiProviderConfiguration? Configuration);
 }
