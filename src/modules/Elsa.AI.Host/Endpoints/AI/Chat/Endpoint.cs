@@ -71,6 +71,8 @@ public class Endpoint(
         }
         catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
         {
+            // Expected when the client disconnects; the finally block records reconnect state.
+            return;
         }
         finally
         {

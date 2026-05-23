@@ -50,7 +50,7 @@ public class AIToolsEndpointTests
         CountingTool.Reset();
         var services = new ServiceCollection();
         services.AddAIHostServices();
-        services.AddTransient<IAITool, CountingTool>();
+        services.AddTransient<IAITool>(_ => CountingTool.Create());
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IAIToolRegistry>();
 
@@ -94,9 +94,14 @@ public class AIToolsEndpointTests
 
         public static int ConstructorCount => _constructorCount;
 
-        public CountingTool()
+        private CountingTool()
+        {
+        }
+
+        public static CountingTool Create()
         {
             Interlocked.Increment(ref _constructorCount);
+            return new CountingTool();
         }
 
         public AIToolDefinition Definition { get; } = new()

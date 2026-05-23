@@ -1,3 +1,5 @@
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -24,12 +26,25 @@ public class EFCoreAIConversationCleanupService(
             {
                 return;
             }
-            catch (Exception e)
+            catch (InvalidOperationException e)
             {
-                logger.LogWarning(e, "Failed to clean up expired AI conversations.");
+                LogCleanupFailure(e);
+            }
+            catch (DbUpdateException e)
+            {
+                LogCleanupFailure(e);
+            }
+            catch (DbException e)
+            {
+                LogCleanupFailure(e);
             }
 
             await Task.Delay(CleanupInterval, stoppingToken);
         }
+    }
+
+    private void LogCleanupFailure(Exception e)
+    {
+        logger.LogWarning(e, "Failed to clean up expired AI conversations.");
     }
 }
