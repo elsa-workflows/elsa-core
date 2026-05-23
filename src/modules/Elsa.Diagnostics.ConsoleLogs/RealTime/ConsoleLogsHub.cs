@@ -1,10 +1,9 @@
-using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
 
-[Authorize(Policy = ConsoleLogsPermissions.Read)]
+[Authorize]
 public class ConsoleLogsHub(ConsoleLogSubscriptionManager subscriptionManager) : Hub<IConsoleLogsClient>
 {
     public Task SubscribeAsync(ConsoleLogFilter? filter)

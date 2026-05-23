@@ -17,11 +17,11 @@ public class ConsoleLogsModuleTests
     }
 
     [Fact]
-    public void Hub_RequiresConsoleLogsPermission()
+    public void Hub_RequiresAuthenticatedUser()
     {
         var authorize = Assert.Single(typeof(ConsoleLogsHub).GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true).Cast<AuthorizeAttribute>());
 
-        Assert.Equal(ConsoleLogsPermissions.Read, authorize.Policy);
+        Assert.Null(authorize.Policy);
     }
 
     [Fact]
