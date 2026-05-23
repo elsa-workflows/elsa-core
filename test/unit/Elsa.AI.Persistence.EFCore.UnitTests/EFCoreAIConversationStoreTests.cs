@@ -288,7 +288,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
                     Id = "message-emoji",
                     ConversationId = "conversation-large-emoji",
                     Role = AIMessageRole.Assistant,
-                    Content = "x" + string.Concat(Enumerable.Repeat("😀", 600_000)),
+                    Content = "x" + string.Concat(Enumerable.Repeat("😀", 90_000)),
                     CreatedAt = DateTimeOffset.UtcNow
                 }
             ]

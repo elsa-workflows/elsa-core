@@ -53,7 +53,7 @@ Streams `AIStreamEvent` records as Server-Sent Events or an equivalent server-ow
 - `proposal.created`
 - `proposal.updated`
 - `conversation.completed`
-- `conversation.failed`
+- `conversation.error`
 
 ## GET `/ai/tools`
 
@@ -64,20 +64,18 @@ Returns available tools for the current user, tenant, and optional agent scope.
 **Response**
 
 ```json
-{
-  "items": [
-    {
-      "name": "workflow.getDefinition",
-      "displayName": "Get workflow definition",
-      "mutability": "ReadOnly",
-      "dangerLevel": "Low",
-      "permissions": ["read:workflows"],
-      "tenantBehavior": "TenantScoped",
-      "auditBehavior": "RecordInvocation",
-      "schema": {}
-    }
-  ]
-}
+[
+  {
+    "name": "workflow.getDefinition",
+    "displayName": "Get workflow definition",
+    "mutability": "ReadOnly",
+    "dangerLevel": "Low",
+    "permissions": ["read:workflows"],
+    "tenantBehavior": "TenantScoped",
+    "auditBehavior": "RecordInvocation",
+    "schema": {}
+  }
+]
 ```
 
 ## GET `/ai/capabilities`

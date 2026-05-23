@@ -23,7 +23,7 @@ public interface IAITool
 public interface IAIToolRegistry
 {
     ValueTask<IReadOnlyCollection<AIToolDefinition>> ListAsync(AIToolQuery query, CancellationToken cancellationToken = default);
-    ValueTask<IAITool?> FindAsync(string name, CancellationToken cancellationToken = default);
+    ValueTask<IAITool?> FindAsync(string name, AIToolQuery query, CancellationToken cancellationToken = default);
 }
 
 public interface IAIContextProvider
@@ -34,7 +34,7 @@ public interface IAIContextProvider
 
 public interface IAIProposalStore
 {
-    ValueTask<AIProposal?> FindAsync(string id, CancellationToken cancellationToken = default);
+    ValueTask<AIProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default);
     ValueTask SaveAsync(AIProposal proposal, CancellationToken cancellationToken = default);
 }
 
