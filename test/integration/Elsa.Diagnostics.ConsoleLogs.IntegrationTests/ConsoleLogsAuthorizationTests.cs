@@ -97,6 +97,9 @@ public class ConsoleLogsAuthorizationTests
             if (genericTypeDefinition == typeof(Elsa.Abstractions.ElsaEndpoint<,>))
                 return (genericArguments[0], genericArguments[1]);
 
+            if (genericTypeDefinition == typeof(Elsa.Abstractions.ElsaEndpoint<,,>))
+                return (genericArguments[0], genericArguments[1]);
+
             if (genericTypeDefinition == typeof(Elsa.Abstractions.ElsaEndpointWithoutRequest<>))
                 return (typeof(EmptyRequest), genericArguments[0]);
         }
