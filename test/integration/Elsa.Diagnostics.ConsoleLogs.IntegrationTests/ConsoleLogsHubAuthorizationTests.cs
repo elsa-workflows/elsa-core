@@ -5,7 +5,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 public class ConsoleLogsHubAuthorizationTests
 {
     [Fact]
-    public void Permission_AppliesToHubAndEndpointContract()
+    public void Permission_AppliesToRestEndpointContract()
     {
         Assert.Equal("read:diagnostics:console-logs", ConsoleLogsPermissions.Read);
     }
