@@ -131,14 +131,19 @@ Returns first-paint dashboard data.
   },
   "workflowInstances": {
     "total": 12482,
-    "running": 128,
-    "finished": 12032,
-    "pending": 14,
-    "executing": 23,
-    "suspended": 91,
-    "faulted": 37,
-    "cancelled": 19,
-    "interrupted": 4,
+    "statuses": {
+      "running": 450,
+      "finished": 12032
+    },
+    "subStatuses": {
+      "pending": 118,
+      "executing": 237,
+      "suspended": 91,
+      "interrupted": 4,
+      "finished": 11976,
+      "faulted": 37,
+      "cancelled": 19
+    },
     "withIncidents": 42,
     "completedInRange": 840,
     "faultedInRange": 12,
@@ -183,6 +188,7 @@ Returns first-paint dashboard data.
 - Must not fail the whole response when optional diagnostics data is unavailable; return capability state and omit/null that subsection.
 - Must compute counts server-side using store count APIs where possible.
 - Must cap any row sampling used for duration or diagnostics approximations and report approximation metadata if exact aggregation is not available.
+- `workflowInstances.total` must equal the sum of top-level workflow status totals. `subStatuses.pending`, `executing`, `suspended`, and `interrupted` must reconcile to `statuses.running`; `subStatuses.finished`, `faulted`, and `cancelled` must reconcile to `statuses.finished`.
 
 ## Endpoint 2: Workflow Trends
 
@@ -228,6 +234,18 @@ Returns bucketed workflow counts for charting.
 - Must enforce a maximum bucket count, for example 100.
 - Must validate `from <= to`.
 - Must reject unbounded requests.
+- Buckets are half-open intervals: `from` is inclusive and `to` is exclusive, except the final bucket may include the request `to` instant.
+- Bucket fields must use the following timestamp semantics:
+
+| Field | Timestamp filter | Additional filter |
+| --- | --- | --- |
+| `created` | `CreatedAt` | None |
+| `finished` | `FinishedAt` | `WorkflowStatus.Finished` and `WorkflowSubStatus.Finished` |
+| `faulted` | `FinishedAt` | `WorkflowStatus.Finished` and `WorkflowSubStatus.Faulted` |
+| `cancelled` | `FinishedAt` | `WorkflowStatus.Finished` and `WorkflowSubStatus.Cancelled` |
+| `suspended` | `UpdatedAt` | `WorkflowStatus.Running` and `WorkflowSubStatus.Suspended` |
+| `withIncidents` | `UpdatedAt` | Has one or more incidents |
+
 - Initial implementation may use repeated `IWorkflowInstanceStore.CountAsync` calls.
 - Future provider implementations may optimize with grouped SQL queries.
 
@@ -347,7 +365,6 @@ Returns top workflow definitions by recent executions, fault count, incident cou
     {
       "definitionId": "order-flow",
       "name": "Order Flow",
-      "version": 3,
       "executionCount": 842,
       "faultCount": 12,
       "incidentCount": 12,
@@ -361,6 +378,8 @@ Returns top workflow definitions by recent executions, fault count, incident cou
 
 - Must support metrics: `Executions`, `Faults`, `Incidents`, `Duration`.
 - Must cap `take`, with maximum 50.
+- Must aggregate by logical workflow definition ID across all executed versions in the selected range.
+- Must not include a `version` field in the initial response because the aggregate may span several definition versions. Version-specific drill-down can be added later as a separate endpoint or filter.
 - Initial implementation may sample recent summaries if aggregate grouping is not available, but response must expose whether values are exact or sampled.
 - Future provider-specific optimizations should be possible without API changes.
 
@@ -371,7 +390,7 @@ Use existing services first:
 - `IWorkflowInstanceStore.CountAsync` for counts.
 - `IWorkflowInstanceStore.SummarizeManyAsync` for recent rows and bounded sampling.
 - `IWorkflowDefinitionStore.CountDistinctAsync` for logical definition count.
-- `IWorkflowRuntimeAdminService.GetStatus()` for read-only runtime state.
+- A read-only `IWorkflowRuntimeStatusProvider.GetStatusAsync()` abstraction for runtime state. The provider may adapt existing runtime admin internals, but dashboard services and endpoints must not depend on `IWorkflowRuntimeAdminService` because that interface also exposes pause, resume, and drain operations.
 - Diagnostics providers for recent/source/storage summaries when installed.
 - Package/version service or existing package endpoint logic for version data.
 - Installed feature provider for capability detection.
@@ -389,7 +408,10 @@ Where exact aggregation is not available, response models should include metadat
 ## Performance Requirements
 
 - `GET /dashboard/overview` should complete within 500 ms for typical local and small production datasets when backed by indexed persistence.
-- Trend requests should reject excessive bucket counts.
+- `POST /dashboard/workflow-trends` should complete within 750 ms for accepted requests on typical indexed persistence.
+- `POST /dashboard/workflow-hotspots` should complete within 750 ms for accepted requests on typical indexed persistence.
+- Trend requests should reject excessive bucket counts and excessive fallback query fan-out. The repeated-`CountAsync` implementation must reject or require a coarser bucket size when `bucketCount * countedFields` would exceed 200 store calls; provider-optimized grouped implementations may use the endpoint bucket cap directly.
+- Hotspot requests must cap sampled rows, for example at 1,000 summaries, when exact grouped aggregation is unavailable.
 - Endpoints must avoid loading full workflow state for aggregate cards.
 - Endpoints must use cancellation tokens consistently.
 - Repeated count queries should be parallelized server-side where safe.
@@ -447,4 +469,3 @@ The backend should return link target metadata where possible, but Studio remain
 - Should average duration be exact in the initial implementation, or explicitly sampled until provider-specific grouped queries exist?
 - Should multi-tenant deployments include tenant-level filters in this first slice?
 - Should the module live as `Elsa.Dashboard.Api` or under `Elsa.Workflows.Api` as dashboard endpoints?
-
