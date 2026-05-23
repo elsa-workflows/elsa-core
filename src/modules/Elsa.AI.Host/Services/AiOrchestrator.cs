@@ -255,7 +255,14 @@ public class AiOrchestrator(
         }
 
         if (availableProviders.Count != 1)
+        {
+            if (availableProviders.Count > 1)
+                logger.LogWarning(
+                    "Multiple AI providers are available ({ProviderNames}) but no default provider name is configured. Set AiHostOptions.DefaultProviderName to select one.",
+                    string.Join(", ", availableProviders.Select(x => x.Name)));
+
             return new ProviderSelection(null, null);
+        }
 
         var selectedProvider = availableProviders[0];
         var selectedConfiguration = configuredProviders.FirstOrDefault(x => string.Equals(x.Name, selectedProvider.Name, StringComparison.OrdinalIgnoreCase) ||
@@ -319,6 +326,7 @@ public class AiOrchestrator(
         using var toolScope = tool as IDisposable;
         try
         {
+            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.invoked"], cancellationToken);
             var result = await tool.ExecuteAsync(new AiToolExecutionContext
             {
                 ConversationId = conversationId,
@@ -327,14 +335,14 @@ public class AiOrchestrator(
                 Agent = request.Agent,
                 Arguments = toolCall.Arguments
             }, cancellationToken);
-            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.invoked", "tool.completed"], cancellationToken);
+            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.completed"], cancellationToken);
 
             return CreateToolExecutionResult(conversationId, sequence, toolCall, LimitToolResult(result));
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "AI tool {ToolName} failed for conversation {ConversationId}.", toolCall.Name, conversationId);
-            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.invoked", "tool.failed"], cancellationToken);
+            await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.failed"], cancellationToken);
             return CreateToolExecutionResult(conversationId, sequence, toolCall, new AiToolResult { Status = AiToolInvocationStatus.Failed, Error = "Tool execution failed." });
         }
     }
@@ -386,19 +394,42 @@ public class AiOrchestrator(
             Result = result
         });
 
-    private IReadOnlyCollection<AiResolvedContext> LimitResolvedContext(IReadOnlyCollection<AiResolvedContext> contexts) =>
-        contexts.Select(context =>
-        {
-            if (GetUtf8Size(context) <= options.Value.MaxResolvedContextBytes)
-                return context;
+    private IReadOnlyCollection<AiResolvedContext> LimitResolvedContext(IReadOnlyCollection<AiResolvedContext> contexts)
+    {
+        var maxBytes = options.Value.MaxResolvedContextBytes;
+        if (maxBytes <= 0)
+            return [];
 
-            return context with
+        var limited = new List<AiResolvedContext>();
+        var usedBytes = 0;
+
+        foreach (var context in contexts)
+        {
+            var contextSize = GetUtf8Size(context);
+            if (usedBytes + contextSize <= maxBytes)
             {
-                Summary = Truncate(context.Summary, options.Value.MaxResolvedContextBytes),
-                Data = CreateTruncatedPayload(options.Value.MaxResolvedContextBytes),
-                Metadata = CreateTruncatedPayload(options.Value.MaxResolvedContextBytes)
-            };
-        }).ToList();
+                usedBytes += contextSize;
+                limited.Add(context);
+                continue;
+            }
+
+            if (limited.Count > 0)
+                break;
+
+            limited.Add(TruncateContext(context, maxBytes));
+            break;
+        }
+
+        return limited;
+    }
+
+    private static AiResolvedContext TruncateContext(AiResolvedContext context, int maxBytes) =>
+        context with
+        {
+            Summary = Truncate(context.Summary, maxBytes),
+            Data = CreateTruncatedPayload(maxBytes),
+            Metadata = CreateTruncatedPayload(maxBytes)
+        };
 
     private AiToolResult LimitToolResult(AiToolResult result)
     {

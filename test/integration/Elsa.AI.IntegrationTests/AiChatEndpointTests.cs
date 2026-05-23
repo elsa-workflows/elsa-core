@@ -376,6 +376,35 @@ public class AiChatEndpointTests
         Assert.Equal("echo", toolAudit.Data["toolName"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration records tool audit timestamps around execution")]
+    public async Task ChatOrchestrationRecordsToolAuditTimestampsAroundExecution()
+    {
+        var auditSink = new CapturingAuditSink();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.RemoveAll<IAiAuditSink>();
+        services.AddSingleton<IAiAuditSink>(auditSink);
+        services.AddSingleton<IAiProvider, ToolCallAiProvider>();
+        services.AddSingleton<IAiTool, DelayedEchoTool>();
+        using var provider = services.BuildServiceProvider();
+        var orchestrator = provider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use a tool"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var invoked = Assert.Single(auditSink.Events, x => x.Type == "tool.invoked");
+        var completed = Assert.Single(auditSink.Events, x => x.Type == "tool.completed");
+
+        Assert.True(invoked.Timestamp < completed.Timestamp);
+    }
+
     [Fact(DisplayName = "Chat orchestration redacts tool exception messages from stream events")]
     public async Task ChatOrchestrationRedactsToolExceptionMessagesFromStreamEvents()
     {
@@ -930,6 +959,34 @@ public class AiChatEndpointTests
         Assert.True(context.Summary.Length > 16);
     }
 
+    [Fact(DisplayName = "Chat orchestration applies one total resolved context budget")]
+    public async Task ChatOrchestrationAppliesOneTotalResolvedContextBudget()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxResolvedContextBytes = 64);
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiContextProvider, LargeContextProvider>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain this workflow",
+                           Attachments =
+                           [
+                               new AiContextAttachment { Kind = LargeContextProvider.ContextKind, ReferenceId = "workflow-1" },
+                               new AiContextAttachment { Kind = LargeContextProvider.ContextKind, ReferenceId = "workflow-2" }
+                           ]
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        Assert.Single(provider.Requests.Single().Context);
+    }
+
     [Fact(DisplayName = "Chat orchestration limits tool result payloads")]
     public async Task ChatOrchestrationLimitsToolResultPayloads()
     {
@@ -1360,6 +1417,30 @@ public class AiChatEndpointTests
 
         public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Sensitive internal tool failure.");
+    }
+
+    private class DelayedEchoTool : IAiTool
+    {
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "echo",
+            DisplayName = "Echo",
+            TenantBehavior = AiTenantBehavior.TenantScoped,
+            EnabledByDefault = true
+        };
+
+        public async ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(20, cancellationToken);
+            return new AiToolResult
+            {
+                Summary = "Echoed",
+                Data = new JsonObject
+                {
+                    ["text"] = context.Arguments["text"]?.GetValue<string>()
+                }
+            };
+        }
     }
 
     private class LargeEchoTool : IAiTool
