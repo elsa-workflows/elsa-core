@@ -127,6 +127,40 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
         Assert.Equal("first", Assert.Single(original.Messages).Content);
     }
 
+    [Fact(DisplayName = "Conversation store caps persisted message history")]
+    public async Task ConversationStoreCapsPersistedMessageHistory()
+    {
+        var store = new EFCoreAiConversationStore(_dbContext);
+        var messages = Enumerable
+            .Range(0, 300)
+            .Select(index => new AiMessage
+            {
+                Id = $"message-{index}",
+                ConversationId = "conversation-capped",
+                Role = AiMessageRole.Assistant,
+                Content = $"message {index}",
+                CreatedAt = DateTimeOffset.UtcNow,
+                StreamSequence = index
+            })
+            .ToList();
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-capped",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages = messages
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync("conversation-capped");
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(256, reloaded.Messages.Count);
+        Assert.Equal("message-44", reloaded.Messages.First().Id);
+    }
+
     [Fact(DisplayName = "Conversation store prunes completed ephemeral conversations on read")]
     public async Task ConversationStorePrunesCompletedEphemeralConversationsOnRead()
     {

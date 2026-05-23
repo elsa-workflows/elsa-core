@@ -820,7 +820,9 @@ public class AiChatEndpointTests
             events.Add(streamEvent);
 
         var startedEvent = Assert.Single(events, x => x.Type == "conversation.started");
+        var assistantEvent = Assert.Single(events, x => x.Type == "assistant.delta");
         Assert.Equal(4, startedEvent.Sequence);
+        Assert.Equal(5, assistantEvent.Sequence);
     }
 
     [Fact(DisplayName = "Chat orchestration does not replay completed conversations on reconnect")]
