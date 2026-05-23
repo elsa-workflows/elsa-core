@@ -10,7 +10,7 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
     private readonly object _definitionCacheLock = new();
     private readonly ConcurrentDictionary<string, Type> _toolTypes = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, bool> _uncacheableToolNames = new(StringComparer.OrdinalIgnoreCase);
-    private IReadOnlyCollection<AiToolDefinition>? _definitions;
+    private volatile IReadOnlyCollection<AiToolDefinition>? _definitions;
 
     public ValueTask<IReadOnlyCollection<AiToolDefinition>> ListAsync(AiToolQuery query, CancellationToken cancellationToken = default)
     {

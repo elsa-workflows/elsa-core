@@ -113,6 +113,41 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Equal("user-1", original.CreatedBy);
     }
 
+    [Fact(DisplayName = "Proposal store preserves creation timestamp on update")]
+    public async Task ProposalStorePreservesCreationTimestampOnUpdate()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        var createdAt = DateTimeOffset.UtcNow.AddMinutes(-10);
+
+        await store.SaveAsync(new AiProposal
+        {
+            Id = "proposal-timestamp",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedBy = "user-1",
+            CreatedAt = createdAt,
+            Rationale = "first"
+        });
+
+        await store.SaveAsync(new AiProposal
+        {
+            Id = "proposal-timestamp",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            Status = AiProposalStatus.Validated,
+            CreatedBy = "user-1",
+            CreatedAt = createdAt.AddMinutes(5),
+            Rationale = "second"
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync("proposal-timestamp", null);
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(createdAt, reloaded.CreatedAt);
+        Assert.Equal("second", reloaded.Rationale);
+    }
+
     [Fact(DisplayName = "Proposal store retries concurrent inserts as updates")]
     public async Task ProposalStoreRetriesConcurrentInsertsAsUpdates()
     {

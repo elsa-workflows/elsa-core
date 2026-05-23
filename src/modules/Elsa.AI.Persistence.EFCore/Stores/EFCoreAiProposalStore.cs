@@ -96,7 +96,9 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
         record.ValidationDiagnostics = JsonSerializer.Serialize(proposal.ValidationDiagnostics);
         record.GraphDiff = proposal.GraphDiff == null ? null : JsonSerializer.Serialize(proposal.GraphDiff);
         record.CreatedBy = proposal.CreatedBy;
-        record.CreatedAt = proposal.CreatedAt;
+        if (record.CreatedAt == default)
+            record.CreatedAt = proposal.CreatedAt;
+
         record.ReviewedBy = proposal.ReviewedBy;
         record.ReviewedAt = proposal.ReviewedAt;
         record.AppliedBy = proposal.AppliedBy;
