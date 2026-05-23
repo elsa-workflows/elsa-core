@@ -31,7 +31,7 @@
 
 ## Decision: Translate provider events into Elsa stream events
 
-**Rationale**: Copilot SDK emits assistant deltas, tool execution lifecycle events, permission/user-input events, session lifecycle events, and sub-agent events. Elsa should map those into stable `AiStreamEvent` contracts for Studio.
+**Rationale**: Copilot SDK emits assistant deltas, tool execution lifecycle events, permission/user-input events, session lifecycle events, and sub-agent events. Elsa should map those into stable `AIStreamEvent` contracts for Studio.
 
 **Sources**: [Streaming events in the Copilot SDK](https://docs.github.com/en/enterprise-cloud%40latest/copilot/how-tos/copilot-sdk/use-copilot-sdk/streaming-events)
 

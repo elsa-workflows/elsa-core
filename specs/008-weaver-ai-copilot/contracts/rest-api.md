@@ -26,7 +26,7 @@ Starts or continues a Weaver chat turn.
 
 **Response**
 
-Streams `AiStreamEvent` records as Server-Sent Events or an equivalent server-owned streaming transport.
+Streams `AIStreamEvent` records as Server-Sent Events or an equivalent server-owned streaming transport.
 
 ```json
 {

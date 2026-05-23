@@ -65,7 +65,7 @@ src/modules/
 │   └── Extensions/
 ├── Elsa.AI.Host/
 │   ├── Context/
-│   ├── Endpoints/Ai/
+│   ├── Endpoints/AI/
 │   ├── Extensions/
 │   ├── Features/
 │   ├── Models/

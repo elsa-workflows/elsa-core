@@ -1,12 +1,12 @@
 # Data Model: Weaver AI Copilot Platform
 
-## AiConversation
+## AIConversation
 
 Represents a Weaver chat thread visible to a user.
 
 **Fields**: `Id`, `TenantId`, `UserId`, `Title`, `Status`, `CreatedAt`, `UpdatedAt`, `ProviderSessionId`, `RetentionMode`, `RetentionExpiresAt`.
 
-**Relationships**: Has many `AiMessage`, `AiContextAttachment`, `AiToolInvocation`, and `AiAuditEvent` records.
+**Relationships**: Has many `AIMessage`, `AIContextAttachment`, `AIToolInvocation`, and `AIAuditEvent` records.
 
 **Rules**:
 
@@ -14,7 +14,7 @@ Represents a Weaver chat thread visible to a user.
 - Provider session IDs are internal server metadata and never exposed as provider objects.
 - Retention policy controls conversation history visibility, durability, and cleanup.
 
-## AiMessage
+## AIMessage
 
 Represents user, assistant, system, or tool-visible content in a conversation.
 
@@ -25,7 +25,7 @@ Represents user, assistant, system, or tool-visible content in a conversation.
 - Stored content must already be redacted.
 - Tool result details may be summarized for model context and preserved separately for display when safe.
 
-## AiContextAttachment
+## AIContextAttachment
 
 Represents a client-supplied reference to server-resolved context.
 
@@ -39,7 +39,7 @@ Represents a client-supplied reference to server-resolved context.
 - Server resolves attachments per request and validates authorization before use.
 - Context resolution applies size limits and redaction.
 
-## AiToolDefinition
+## AIToolDefinition
 
 Represents a registered Weaver tool.
 
@@ -52,7 +52,7 @@ Represents a registered Weaver tool.
 - Tool metadata is validated during registration.
 - Read-only module tools may be enabled by default; proposal, administrative, and MCP-backed tools require explicit administrator enablement.
 
-## AiToolInvocation
+## AIToolInvocation
 
 Represents a single attempted tool execution.
 
@@ -64,7 +64,7 @@ Represents a single attempted tool execution.
 - Arguments and results are redacted before audit and stream output.
 - Failed and denied invocations are audited.
 
-## AiProposal
+## AIProposal
 
 Represents a reviewable AI-generated workflow creation or update.
 
@@ -80,7 +80,7 @@ Represents a reviewable AI-generated workflow creation or update.
 - Proposals are durable governance artifacts.
 - Proposal payloads are structured workflow definitions or patches, not free-form text.
 
-## AiAuditEvent
+## AIAuditEvent
 
 Represents durable governance evidence.
 
@@ -91,7 +91,7 @@ Represents durable governance evidence.
 - Audit data is redacted.
 - Prompt, context resolution, tool call, denial, proposal, approval, rejection, and apply events are recorded.
 
-## AiAgentDefinition
+## AIAgentDefinition
 
 Represents a named Weaver agent contributed by Core or a module.
 
@@ -102,7 +102,7 @@ Represents a named Weaver agent contributed by Core or a module.
 - Agents operate with least-privilege tool and context scopes.
 - Agent instructions cannot grant permissions or bypass server enforcement.
 
-## AiMcpServerRegistration
+## AIMcpServerRegistration
 
 Represents a governed external tool server registration.
 

@@ -2,17 +2,17 @@ using Elsa.AI.Persistence.EFCore.Entities;
 
 namespace Elsa.AI.Persistence.EFCore;
 
-public class AiDbContext(DbContextOptions<AiDbContext> options) : DbContext(options)
+public class AIDbContext(DbContextOptions<AIDbContext> options) : DbContext(options)
 {
-    public DbSet<AiConversationRecord> Conversations => Set<AiConversationRecord>();
-    public DbSet<AiProposalRecord> Proposals => Set<AiProposalRecord>();
-    public DbSet<AiAuditRecord> AuditRecords => Set<AiAuditRecord>();
+    public DbSet<AIConversationRecord> Conversations => Set<AIConversationRecord>();
+    public DbSet<AIProposalRecord> Proposals => Set<AIProposalRecord>();
+    public DbSet<AIAuditRecord> AuditRecords => Set<AIAuditRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<AiProposalRecord>(entity =>
+        modelBuilder.Entity<AIProposalRecord>(entity =>
         {
-            entity.ToTable("AiProposals");
+            entity.ToTable("AIProposals");
             entity.HasKey(x => x.Id);
             entity.HasIndex(x => new { x.TenantId, x.ConversationId });
             entity.HasIndex(x => x.Status);
@@ -21,9 +21,9 @@ public class AiDbContext(DbContextOptions<AiDbContext> options) : DbContext(opti
             entity.Property(x => x.Warnings).IsRequired();
         });
 
-        modelBuilder.Entity<AiAuditRecord>(entity =>
+        modelBuilder.Entity<AIAuditRecord>(entity =>
         {
-            entity.ToTable("AiAuditRecords");
+            entity.ToTable("AIAuditRecords");
             entity.HasKey(x => x.Id);
             entity.HasIndex(x => new { x.TenantId, x.ConversationId });
             entity.HasIndex(x => x.ActorId);
@@ -34,9 +34,9 @@ public class AiDbContext(DbContextOptions<AiDbContext> options) : DbContext(opti
             entity.Property(x => x.Data).IsRequired();
         });
 
-        modelBuilder.Entity<AiConversationRecord>(entity =>
+        modelBuilder.Entity<AIConversationRecord>(entity =>
         {
-            entity.ToTable("AiConversations");
+            entity.ToTable("AIConversations");
             entity.HasKey(x => x.Id);
             entity.HasIndex(x => new { x.TenantId, x.UserId });
             entity.HasIndex(x => x.Status);

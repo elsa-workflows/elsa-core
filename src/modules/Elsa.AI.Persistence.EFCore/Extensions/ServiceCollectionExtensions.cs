@@ -10,20 +10,20 @@ namespace Elsa.AI.Persistence.EFCore.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddAiPersistenceStores(this IServiceCollection services, Action<DbContextOptionsBuilder>? configureDbContext = null)
+    public static IServiceCollection AddAIPersistenceStores(this IServiceCollection services, Action<DbContextOptionsBuilder>? configureDbContext = null)
     {
-        if (!services.Any(x => x.ServiceType == typeof(DbContextOptions<AiDbContext>)))
+        if (!services.Any(x => x.ServiceType == typeof(DbContextOptions<AIDbContext>)))
         {
             if (configureDbContext == null)
-                throw new InvalidOperationException($"Register {nameof(DbContextOptions<AiDbContext>)} before calling {nameof(AddAiPersistenceStores)}, or call {nameof(AddAiPersistenceStores)} with a database provider configuration.");
+                throw new InvalidOperationException($"Register {nameof(DbContextOptions<AIDbContext>)} before calling {nameof(AddAIPersistenceStores)}, or call {nameof(AddAIPersistenceStores)} with a database provider configuration.");
             else
-                services.AddDbContext<AiDbContext>(configureDbContext);
+                services.AddDbContext<AIDbContext>(configureDbContext);
         }
 
-        services.Replace(ServiceDescriptor.Scoped<IAiConversationStore, EFCoreAiConversationStore>());
-        services.TryAddScoped<IAiProposalStore, EFCoreAiProposalStore>();
-        services.TryAddEnumerable(ServiceDescriptor.Scoped<IAiAuditEventHandler, EFCoreAiAuditSink>());
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, EFCoreAiConversationCleanupService>());
+        services.Replace(ServiceDescriptor.Scoped<IAIConversationStore, EFCoreAIConversationStore>());
+        services.TryAddScoped<IAIProposalStore, EFCoreAIProposalStore>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IAIAuditEventHandler, EFCoreAIAuditSink>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, EFCoreAIConversationCleanupService>());
 
         return services;
     }

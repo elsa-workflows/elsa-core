@@ -5,26 +5,26 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.AI.Copilot.Adapters;
 
-public class CopilotProvider(IOptions<CopilotOptions> options) : IAiProvider
+public class CopilotProvider(IOptions<CopilotOptions> options) : IAIProvider
 {
     public string Name => options.Value.ProviderName ?? "copilot";
 
-    public ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default)
+    public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default)
     {
         var providerName = request.ProviderConfiguration?.Name ?? options.Value.ProviderName ?? "copilot";
 
-        return ValueTask.FromResult(new AiSessionHandle
+        return ValueTask.FromResult(new AISessionHandle
         {
             Id = request.ConversationId,
             ProviderSessionId = $"{providerName}:{request.ConversationId}"
         });
     }
 
-    public async IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await Task.Yield();
 
-        yield return new AiProviderEvent
+        yield return new AIProviderEvent
         {
             Type = "assistant.delta",
             Sequence = 1,

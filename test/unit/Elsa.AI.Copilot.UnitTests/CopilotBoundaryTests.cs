@@ -10,13 +10,13 @@ public class CopilotBoundaryTests
     {
         var contractTypes = new[]
         {
-            typeof(IAiProvider),
-            typeof(IAiOrchestrator),
-            typeof(IAiTool),
-            typeof(IAiContextProvider),
-            typeof(IAiProposalStore),
-            typeof(AiProviderEvent),
-            typeof(AiStreamEvent)
+            typeof(IAIProvider),
+            typeof(IAIOrchestrator),
+            typeof(IAITool),
+            typeof(IAIContextProvider),
+            typeof(IAIProposalStore),
+            typeof(AIProviderEvent),
+            typeof(AIStreamEvent)
         };
 
         Assert.All(contractTypes, type => Assert.DoesNotContain("Copilot", type.FullName, StringComparison.OrdinalIgnoreCase));

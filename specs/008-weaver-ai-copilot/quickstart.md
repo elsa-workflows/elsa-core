@@ -28,7 +28,7 @@ Run Core tasks from `/Users/sipke/Projects/Elsa/elsa-core-weaver` and Studio tas
 services
     .AddElsa(elsa =>
     {
-        elsa.UseAi(ai =>
+        elsa.UseAI(ai =>
         {
             ai.UseHost();
             ai.UseCopilot(copilot =>

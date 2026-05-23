@@ -6,15 +6,15 @@ namespace Elsa.AI.Host.Context;
 /// <summary>
 /// Placeholder workflow instance context provider. Replace this implementation with a runtime-backed resolver before using instance context for production AI reasoning.
 /// </summary>
-public class WorkflowInstanceContextProvider : IAiContextProvider, IPlaceholderAiContextProvider
+public class WorkflowInstanceContextProvider : IAIContextProvider, IPlaceholderAIContextProvider
 {
     public string Kind => "WorkflowInstance";
 
-    public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default)
+    public ValueTask<AIResolvedContext> ResolveAsync(AIContextResolutionRequest request, CancellationToken cancellationToken = default)
     {
         var attachment = request.Attachment;
 
-        return ValueTask.FromResult(new AiResolvedContext
+        return ValueTask.FromResult(new AIResolvedContext
         {
             Kind = Kind,
             ReferenceId = attachment.ReferenceId,

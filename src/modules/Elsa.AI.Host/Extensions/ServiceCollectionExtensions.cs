@@ -11,26 +11,26 @@ namespace Elsa.AI.Host.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddAiHostServices(this IServiceCollection services, Action<AiHostOptions>? configureOptions = null)
+    public static IServiceCollection AddAIHostServices(this IServiceCollection services, Action<AIHostOptions>? configureOptions = null)
     {
         if (configureOptions != null)
             services.Configure(configureOptions);
 
         services.AddLogging();
-        services.AddOptions<AiHostOptions>();
-        services.TryAddSingleton<InMemoryAiConversationStore>();
-        services.TryAddSingleton<IAiConversationStore>(sp => sp.GetRequiredService<InMemoryAiConversationStore>());
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAiContextProvider, WorkflowDefinitionContextProvider>());
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAiContextProvider, WorkflowInstanceContextProvider>());
-        services.TryAddSingleton<AiContextResolver>();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, AiContextProviderValidationHostedService>());
-        services.TryAddSingleton<AiToolEnablementService>();
-        services.TryAddSingleton<IAiToolRegistry, AiToolRegistry>();
-        services.TryAddScoped<IAiOrchestrator, AiOrchestrator>();
-        services.TryAddSingleton<AiStreamSessionManager>();
-        services.TryAddSingleton<AiStreamEventMapper>();
-        services.TryAddSingleton<AiAuditSink>();
-        services.TryAddSingleton<IAiAuditSink>(sp => sp.GetRequiredService<AiAuditSink>());
+        services.AddOptions<AIHostOptions>();
+        services.TryAddSingleton<InMemoryAIConversationStore>();
+        services.TryAddSingleton<IAIConversationStore>(sp => sp.GetRequiredService<InMemoryAIConversationStore>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAIContextProvider, WorkflowDefinitionContextProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IAIContextProvider, WorkflowInstanceContextProvider>());
+        services.TryAddSingleton<AIContextResolver>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, AIContextProviderValidationHostedService>());
+        services.TryAddSingleton<AIToolEnablementService>();
+        services.TryAddSingleton<IAIToolRegistry, AIToolRegistry>();
+        services.TryAddScoped<IAIOrchestrator, AIOrchestrator>();
+        services.TryAddSingleton<AIStreamSessionManager>();
+        services.TryAddSingleton<AIStreamEventMapper>();
+        services.TryAddSingleton<AIAuditSink>();
+        services.TryAddSingleton<IAIAuditSink>(sp => sp.GetRequiredService<AIAuditSink>());
 
         return services;
     }

@@ -31,12 +31,12 @@ Do not carry forward raw API key value display, provider-specific service JSON e
 ## Context Attachment Shape
 
 ```ts
-type AiContextAttachment =
+type AIContextAttachment =
   | { kind: "WorkflowDefinition"; referenceId: string; activityId?: string }
   | { kind: "WorkflowInstance"; referenceId: string; activityId?: string }
-  | { kind: "DiagnosticsScope"; referenceId?: string; timeRange?: AiTimeRange }
+  | { kind: "DiagnosticsScope"; referenceId?: string; timeRange?: AITimeRange }
   | { kind: "Tenant"; referenceId: string }
-  | { kind: "TimeRange"; timeRange: AiTimeRange };
+  | { kind: "TimeRange"; timeRange: AITimeRange };
 ```
 
 ## Stream Rendering Expectations

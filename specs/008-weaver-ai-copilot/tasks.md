@@ -42,33 +42,33 @@
 
 **Critical**: No user story work should begin until these shared contracts and registration surfaces exist.
 
-- [X] T017 [P] Add conversation, session, message, and stream event models in `src/modules/Elsa.AI.Abstractions/Models/AiConversation.cs`.
-- [X] T018 [P] Add context attachment and resolved context models in `src/modules/Elsa.AI.Abstractions/Models/AiContextAttachment.cs`.
-- [X] T019 [P] Add tool definition, invocation, result, and enablement models in `src/modules/Elsa.AI.Abstractions/Models/AiToolDefinition.cs`.
-- [X] T020 [P] Add proposal models with durable lifecycle fields in `src/modules/Elsa.AI.Abstractions/Models/AiProposal.cs`.
-- [X] T021 [P] Add durable audit event models in `src/modules/Elsa.AI.Abstractions/Models/AiAuditEvent.cs`.
-- [X] T022 [P] Add provider and orchestrator contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAiProvider.cs`.
-- [X] T023 [P] Add tool registry and tool contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAiTool.cs`.
-- [X] T024 [P] Add context provider contract in `src/modules/Elsa.AI.Abstractions/Contracts/IAiContextProvider.cs`.
-- [X] T025 [P] Add conversation store, proposal store, and audit sink contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAiProposalStore.cs`.
-- [X] T026 [P] Add AI host and provider options for retention, reconnect grace, result limits, and BYOK provider references in `src/modules/Elsa.AI.Host/Options/AiHostOptions.cs`.
-- [X] T027 [P] Add AI permissions in `src/modules/Elsa.AI.Host/Permissions/AiPermissions.cs`.
+- [X] T017 [P] Add conversation, session, message, and stream event models in `src/modules/Elsa.AI.Abstractions/Models/AIConversation.cs`.
+- [X] T018 [P] Add context attachment and resolved context models in `src/modules/Elsa.AI.Abstractions/Models/AIContextAttachment.cs`.
+- [X] T019 [P] Add tool definition, invocation, result, and enablement models in `src/modules/Elsa.AI.Abstractions/Models/AIToolDefinition.cs`.
+- [X] T020 [P] Add proposal models with durable lifecycle fields in `src/modules/Elsa.AI.Abstractions/Models/AIProposal.cs`.
+- [X] T021 [P] Add durable audit event models in `src/modules/Elsa.AI.Abstractions/Models/AIAuditEvent.cs`.
+- [X] T022 [P] Add provider and orchestrator contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAIProvider.cs`.
+- [X] T023 [P] Add tool registry and tool contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAITool.cs`.
+- [X] T024 [P] Add context provider contract in `src/modules/Elsa.AI.Abstractions/Contracts/IAIContextProvider.cs`.
+- [X] T025 [P] Add conversation store, proposal store, and audit sink contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAIProposalStore.cs`.
+- [X] T026 [P] Add AI host and provider options for retention, reconnect grace, result limits, and BYOK provider references in `src/modules/Elsa.AI.Host/Options/AIHostOptions.cs`.
+- [X] T027 [P] Add AI permissions in `src/modules/Elsa.AI.Host/Permissions/AIPermissions.cs`.
 - [X] T028 Add service registration extension in `src/modules/Elsa.AI.Host/Extensions/ServiceCollectionExtensions.cs`.
-- [X] T029 Add module feature registration in `src/modules/Elsa.AI.Host/Features/AiFeature.cs`.
-- [X] T030 Add shell feature registration in `src/modules/Elsa.AI.Host/ShellFeatures/AiFeature.cs`.
-- [X] T031 [P] Implement configurable in-memory conversation store in `src/modules/Elsa.AI.Host/Services/InMemoryAiConversationStore.cs`.
-- [X] T032 [P] Implement tool enablement service in `src/modules/Elsa.AI.Host/Services/AiToolEnablementService.cs`.
-- [X] T033 [P] Implement audit sink fan-out in `src/modules/Elsa.AI.Host/Services/AiAuditSink.cs`.
+- [X] T029 Add module feature registration in `src/modules/Elsa.AI.Host/Features/AIFeature.cs`.
+- [X] T030 Add shell feature registration in `src/modules/Elsa.AI.Host/ShellFeatures/AIFeature.cs`.
+- [X] T031 [P] Implement configurable in-memory conversation store in `src/modules/Elsa.AI.Host/Services/InMemoryAIConversationStore.cs`.
+- [X] T032 [P] Implement tool enablement service in `src/modules/Elsa.AI.Host/Services/AIToolEnablementService.cs`.
+- [X] T033 [P] Implement audit sink fan-out in `src/modules/Elsa.AI.Host/Services/AIAuditSink.cs`.
 - [X] T034 [P] Add EF Core AI DbContext in `src/modules/Elsa.AI.Persistence.EFCore/DbContext.cs`.
-- [X] T035 [P] Add EF Core proposal entity mapping in `src/modules/Elsa.AI.Persistence.EFCore/Entities/AiProposalRecord.cs`.
-- [X] T036 [P] Add EF Core audit entity mapping in `src/modules/Elsa.AI.Persistence.EFCore/Entities/AiAuditRecord.cs`.
-- [X] T037 Implement durable EF Core proposal store in `src/modules/Elsa.AI.Persistence.EFCore/Stores/EFCoreAiProposalStore.cs`.
-- [X] T038 Implement durable EF Core audit sink in `src/modules/Elsa.AI.Persistence.EFCore/Stores/EFCoreAiAuditSink.cs`.
-- [X] T039 Add EF Core persistence feature and shell feature registration in `src/modules/Elsa.AI.Persistence.EFCore/ShellFeatures/AiPersistenceFeature.cs`.
-- [X] T040 [P] Add registration and naming tests in `test/unit/Elsa.AI.Host.UnitTests/AiRegistrationTests.cs`.
-- [X] T041 [P] Add tool metadata and enablement validation tests in `test/unit/Elsa.AI.Abstractions.UnitTests/AiToolDefinitionTests.cs`.
-- [X] T042 [P] Add durable proposal persistence tests in `test/unit/Elsa.AI.Persistence.EFCore.UnitTests/EFCoreAiProposalStoreTests.cs`.
-- [X] T043 [P] Add durable audit persistence tests in `test/unit/Elsa.AI.Persistence.EFCore.UnitTests/EFCoreAiAuditSinkTests.cs`.
+- [X] T035 [P] Add EF Core proposal entity mapping in `src/modules/Elsa.AI.Persistence.EFCore/Entities/AIProposalRecord.cs`.
+- [X] T036 [P] Add EF Core audit entity mapping in `src/modules/Elsa.AI.Persistence.EFCore/Entities/AIAuditRecord.cs`.
+- [X] T037 Implement durable EF Core proposal store in `src/modules/Elsa.AI.Persistence.EFCore/Stores/EFCoreAIProposalStore.cs`.
+- [X] T038 Implement durable EF Core audit sink in `src/modules/Elsa.AI.Persistence.EFCore/Stores/EFCoreAIAuditSink.cs`.
+- [X] T039 Add EF Core persistence feature and shell feature registration in `src/modules/Elsa.AI.Persistence.EFCore/ShellFeatures/AIPersistenceFeature.cs`.
+- [X] T040 [P] Add registration and naming tests in `test/unit/Elsa.AI.Host.UnitTests/AIRegistrationTests.cs`.
+- [X] T041 [P] Add tool metadata and enablement validation tests in `test/unit/Elsa.AI.Abstractions.UnitTests/AIToolDefinitionTests.cs`.
+- [X] T042 [P] Add durable proposal persistence tests in `test/unit/Elsa.AI.Persistence.EFCore.UnitTests/EFCoreAIProposalStoreTests.cs`.
+- [X] T043 [P] Add durable audit persistence tests in `test/unit/Elsa.AI.Persistence.EFCore.UnitTests/EFCoreAIAuditSinkTests.cs`.
 - [X] T044 [P] Add provider isolation boundary tests in `test/unit/Elsa.AI.Copilot.UnitTests/CopilotBoundaryTests.cs`.
 
 **Checkpoint**: Shared contracts, options, permissions, features, retention controls, tool enablement, durable proposal storage, and durable audit storage are ready for story work.
@@ -83,28 +83,28 @@
 
 ### Tests for User Story 1
 
-- [X] T045 [P] [US1] Add context authorization tests in `test/unit/Elsa.AI.Host.UnitTests/Context/AiContextResolverTests.cs`.
-- [X] T046 [P] [US1] Add stream event mapping tests in `test/unit/Elsa.AI.Host.UnitTests/Streaming/AiStreamEventMapperTests.cs`.
-- [X] T047 [P] [US1] Add reconnect grace tests in `test/unit/Elsa.AI.Host.UnitTests/Streaming/AiReconnectGraceTests.cs`.
-- [X] T048 [P] [US1] Add chat endpoint streaming integration tests in `test/integration/Elsa.AI.IntegrationTests/AiChatEndpointTests.cs`.
-- [X] T049 [P] [US1] Add capabilities endpoint integration tests in `test/integration/Elsa.AI.IntegrationTests/AiCapabilitiesEndpointTests.cs`.
-- [X] T050 [P] [US1] Add tools endpoint integration tests in `test/integration/Elsa.AI.IntegrationTests/AiToolsEndpointTests.cs`.
-- [X] T051 [P] [US1] Add disconnected chat recovery integration tests in `test/integration/Elsa.AI.IntegrationTests/AiChatReconnectTests.cs`.
+- [X] T045 [P] [US1] Add context authorization tests in `test/unit/Elsa.AI.Host.UnitTests/Context/AIContextResolverTests.cs`.
+- [X] T046 [P] [US1] Add stream event mapping tests in `test/unit/Elsa.AI.Host.UnitTests/Streaming/AIStreamEventMapperTests.cs`.
+- [X] T047 [P] [US1] Add reconnect grace tests in `test/unit/Elsa.AI.Host.UnitTests/Streaming/AIReconnectGraceTests.cs`.
+- [X] T048 [P] [US1] Add chat endpoint streaming integration tests in `test/integration/Elsa.AI.IntegrationTests/AIChatEndpointTests.cs`.
+- [X] T049 [P] [US1] Add capabilities endpoint integration tests in `test/integration/Elsa.AI.IntegrationTests/AICapabilitiesEndpointTests.cs`.
+- [X] T050 [P] [US1] Add tools endpoint integration tests in `test/integration/Elsa.AI.IntegrationTests/AIToolsEndpointTests.cs`.
+- [X] T051 [P] [US1] Add disconnected chat recovery integration tests in `test/integration/Elsa.AI.IntegrationTests/AIChatReconnectTests.cs`.
 
 ### Implementation for User Story 1
 
 - [X] T052 [P] [US1] Implement workflow definition context provider in `src/modules/Elsa.AI.Host/Context/WorkflowDefinitionContextProvider.cs`.
 - [X] T053 [P] [US1] Implement workflow instance context provider in `src/modules/Elsa.AI.Host/Context/WorkflowInstanceContextProvider.cs`.
-- [X] T054 [US1] Implement context resolver with authorization and redaction in `src/modules/Elsa.AI.Host/Context/AiContextResolver.cs`.
-- [X] T055 [US1] Implement AI tool registry with enablement filtering in `src/modules/Elsa.AI.Host/Services/AiToolRegistry.cs`.
-- [X] T056 [US1] Implement orchestrator turn flow in `src/modules/Elsa.AI.Host/Services/AiOrchestrator.cs`.
-- [X] T057 [US1] Implement reconnect grace tracking in `src/modules/Elsa.AI.Host/Streaming/AiStreamSessionManager.cs`.
-- [X] T058 [US1] Implement stream event mapper in `src/modules/Elsa.AI.Host/Streaming/AiStreamEventMapper.cs`.
-- [X] T059 [US1] Implement chat endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Chat/Endpoint.cs`.
-- [X] T060 [US1] Implement tools endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Tools/Endpoint.cs`.
-- [X] T061 [US1] Implement capabilities endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Capabilities/Endpoint.cs`.
+- [X] T054 [US1] Implement context resolver with authorization and redaction in `src/modules/Elsa.AI.Host/Context/AIContextResolver.cs`.
+- [X] T055 [US1] Implement AI tool registry with enablement filtering in `src/modules/Elsa.AI.Host/Services/AIToolRegistry.cs`.
+- [X] T056 [US1] Implement orchestrator turn flow in `src/modules/Elsa.AI.Host/Services/AIOrchestrator.cs`.
+- [X] T057 [US1] Implement reconnect grace tracking in `src/modules/Elsa.AI.Host/Streaming/AIStreamSessionManager.cs`.
+- [X] T058 [US1] Implement stream event mapper in `src/modules/Elsa.AI.Host/Streaming/AIStreamEventMapper.cs`.
+- [X] T059 [US1] Implement chat endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Chat/Endpoint.cs`.
+- [X] T060 [US1] Implement tools endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Tools/Endpoint.cs`.
+- [X] T061 [US1] Implement capabilities endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Capabilities/Endpoint.cs`.
 - [X] T062 [US1] Implement Copilot provider event adapter in `src/modules/Elsa.AI.Copilot/Adapters/CopilotProvider.cs`.
-- [X] T063 [US1] Implement Copilot feature and shell feature registration in `src/modules/Elsa.AI.Copilot/ShellFeatures/CopilotAiFeature.cs`.
+- [X] T063 [US1] Implement Copilot feature and shell feature registration in `src/modules/Elsa.AI.Copilot/ShellFeatures/CopilotAIFeature.cs`.
 - [X] T064 [US1] Draft paired Studio Razor chat panel implementation, after reviewing the `elsa-extensions` `origin/feat/ai` UI prototype at commit `93f0e09d71e57f5daff1e2d593f0a51faaa80417`, in `../elsa-studio/src/modules/Elsa.Studio.AI/UI/Components/WeaverChatPanel.razor`.
 - [X] T065 [US1] Run chat MVP tests in `test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj`.
 
@@ -120,26 +120,26 @@
 
 ### Tests for User Story 2
 
-- [ ] T066 [P] [US2] Add proposal lifecycle tests in `test/unit/Elsa.AI.Host.UnitTests/Proposals/AiProposalLifecycleTests.cs`.
-- [ ] T067 [P] [US2] Add same-authorized-user approval tests in `test/unit/Elsa.AI.Host.UnitTests/Proposals/AiProposalApprovalTests.cs`.
+- [ ] T066 [P] [US2] Add proposal lifecycle tests in `test/unit/Elsa.AI.Host.UnitTests/Proposals/AIProposalLifecycleTests.cs`.
+- [ ] T067 [P] [US2] Add same-authorized-user approval tests in `test/unit/Elsa.AI.Host.UnitTests/Proposals/AIProposalApprovalTests.cs`.
 - [ ] T068 [P] [US2] Add workflow draft validation tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/WorkflowValidateDraftToolTests.cs`.
-- [ ] T069 [P] [US2] Add proposal apply endpoint tests in `test/integration/Elsa.AI.IntegrationTests/AiProposalApplyEndpointTests.cs`.
-- [ ] T070 [P] [US2] Add durable proposal restart integration tests in `test/integration/Elsa.AI.IntegrationTests/AiProposalPersistenceTests.cs`.
-- [ ] T071 [P] [US2] Add durable proposal audit integration tests in `test/integration/Elsa.AI.IntegrationTests/AiProposalAuditTests.cs`.
+- [ ] T069 [P] [US2] Add proposal apply endpoint tests in `test/integration/Elsa.AI.IntegrationTests/AIProposalApplyEndpointTests.cs`.
+- [ ] T070 [P] [US2] Add durable proposal restart integration tests in `test/integration/Elsa.AI.IntegrationTests/AIProposalPersistenceTests.cs`.
+- [ ] T071 [P] [US2] Add durable proposal audit integration tests in `test/integration/Elsa.AI.IntegrationTests/AIProposalAuditTests.cs`.
 
 ### Implementation for User Story 2
 
-- [ ] T072 [P] [US2] Implement proposal lifecycle service in `src/modules/Elsa.AI.Host/Proposals/AiProposalService.cs`.
+- [ ] T072 [P] [US2] Implement proposal lifecycle service in `src/modules/Elsa.AI.Host/Proposals/AIProposalService.cs`.
 - [ ] T073 [P] [US2] Implement workflow draft validator adapter in `src/modules/Elsa.AI.Host/Proposals/WorkflowDraftValidator.cs`.
 - [ ] T074 [US2] Implement `workflow.proposeCreate` tool in `src/modules/Elsa.AI.Host/Tools/Workflow/WorkflowProposeCreateTool.cs`.
 - [ ] T075 [US2] Implement `workflow.validateDraft` tool in `src/modules/Elsa.AI.Host/Tools/Workflow/WorkflowValidateDraftTool.cs`.
-- [ ] T076 [US2] Implement proposal details endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Proposals/Get/Endpoint.cs`.
-- [ ] T077 [US2] Implement proposal approve endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Proposals/Approve/Endpoint.cs`.
-- [ ] T078 [US2] Implement proposal reject endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Proposals/Reject/Endpoint.cs`.
-- [ ] T079 [US2] Implement proposal apply endpoint in `src/modules/Elsa.AI.Host/Endpoints/Ai/Proposals/Apply/Endpoint.cs`.
+- [ ] T076 [US2] Implement proposal details endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Proposals/Get/Endpoint.cs`.
+- [ ] T077 [US2] Implement proposal approve endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Proposals/Approve/Endpoint.cs`.
+- [ ] T078 [US2] Implement proposal reject endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Proposals/Reject/Endpoint.cs`.
+- [ ] T079 [US2] Implement proposal apply endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Proposals/Apply/Endpoint.cs`.
 - [ ] T080 [US2] Add stale baseline checks in `src/modules/Elsa.AI.Host/Proposals/WorkflowProposalApplier.cs`.
-- [ ] T081 [US2] Add durable proposal audit events in `src/modules/Elsa.AI.Host/Proposals/AiProposalAuditService.cs`.
-- [ ] T082 [US2] Add proposal stream notifications in `src/modules/Elsa.AI.Host/Streaming/AiStreamEventMapper.cs`.
+- [ ] T081 [US2] Add durable proposal audit events in `src/modules/Elsa.AI.Host/Proposals/AIProposalAuditService.cs`.
+- [ ] T082 [US2] Add proposal stream notifications in `src/modules/Elsa.AI.Host/Streaming/AIStreamEventMapper.cs`.
 - [ ] T083 [US2] Draft paired Studio Razor proposal viewer using applicable table/dialog conventions from the `elsa-extensions` AI prototype in `../elsa-studio/src/modules/Elsa.Studio.AI/UI/Components/WeaverProposalViewer.razor`.
 - [ ] T084 [US2] Run proposal tests in `test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj`.
 
@@ -158,7 +158,7 @@
 - [ ] T085 [P] [US3] Add workflow explain tool tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/WorkflowExplainToolTests.cs`.
 - [ ] T086 [P] [US3] Add workflow update proposal tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/WorkflowProposeUpdateToolTests.cs`.
 - [ ] T087 [P] [US3] Add graph diff tests in `test/unit/Elsa.AI.Host.UnitTests/Proposals/WorkflowGraphDiffTests.cs`.
-- [ ] T088 [P] [US3] Add update proposal persistence tests in `test/integration/Elsa.AI.IntegrationTests/AiWorkflowUpdateProposalPersistenceTests.cs`.
+- [ ] T088 [P] [US3] Add update proposal persistence tests in `test/integration/Elsa.AI.IntegrationTests/AIWorkflowUpdateProposalPersistenceTests.cs`.
 
 ### Implementation for User Story 3
 
@@ -189,7 +189,7 @@
 - [ ] T100 [P] [US4] Add failure aggregation tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/InstanceAggregateFailuresToolTests.cs`.
 - [ ] T101 [P] [US4] Add diagnostics redaction tests in `test/unit/Elsa.AI.Host.UnitTests/Context/DiagnosticsContextRedactionTests.cs`.
 - [ ] T102 [P] [US4] Add trend scope enforcement tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/InstanceDetectTrendsScopeTests.cs`.
-- [ ] T103 [P] [US4] Add incident summary integration tests in `test/integration/Elsa.AI.IntegrationTests/AiRuntimeDiagnosticsTests.cs`.
+- [ ] T103 [P] [US4] Add incident summary integration tests in `test/integration/Elsa.AI.IntegrationTests/AIRuntimeDiagnosticsTests.cs`.
 
 ### Implementation for User Story 4
 
@@ -216,21 +216,21 @@
 
 ### Tests for User Story 5
 
-- [ ] T114 [P] [US5] Add extension registration tests in `test/unit/Elsa.AI.Host.UnitTests/Extensions/AiFeatureExtensionsTests.cs`.
-- [ ] T115 [P] [US5] Add agent scoping tests in `test/unit/Elsa.AI.Host.UnitTests/Agents/AiAgentScopeTests.cs`.
-- [ ] T116 [P] [US5] Add MCP registration tests in `test/unit/Elsa.AI.Host.UnitTests/Mcp/AiMcpRegistrationTests.cs`.
-- [ ] T117 [P] [US5] Add explicit enablement tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/AiToolEnablementTests.cs`.
-- [ ] T118 [P] [US5] Add tool authorization denial audit tests in `test/integration/Elsa.AI.IntegrationTests/AiToolGovernanceTests.cs`.
+- [ ] T114 [P] [US5] Add extension registration tests in `test/unit/Elsa.AI.Host.UnitTests/Extensions/AIFeatureExtensionsTests.cs`.
+- [ ] T115 [P] [US5] Add agent scoping tests in `test/unit/Elsa.AI.Host.UnitTests/Agents/AIAgentScopeTests.cs`.
+- [ ] T116 [P] [US5] Add MCP registration tests in `test/unit/Elsa.AI.Host.UnitTests/Mcp/AIMcpRegistrationTests.cs`.
+- [ ] T117 [P] [US5] Add explicit enablement tests in `test/unit/Elsa.AI.Host.UnitTests/Tools/AIToolEnablementTests.cs`.
+- [ ] T118 [P] [US5] Add tool authorization denial audit tests in `test/integration/Elsa.AI.IntegrationTests/AIToolGovernanceTests.cs`.
 
 ### Implementation for User Story 5
 
-- [ ] T119 [P] [US5] Implement AI feature extension APIs in `src/modules/Elsa.AI.Host/Extensions/AiFeatureExtensions.cs`.
-- [ ] T120 [P] [US5] Add agent definition contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAiAgentDefinitionProvider.cs`.
-- [ ] T121 [US5] Implement agent registry in `src/modules/Elsa.AI.Host/Services/AiAgentRegistry.cs`.
-- [ ] T122 [US5] Implement agent-scoped tool resolver in `src/modules/Elsa.AI.Host/Services/AiAgentToolResolver.cs`.
-- [ ] T123 [US5] Implement MCP registration models in `src/modules/Elsa.AI.Abstractions/Models/AiMcpServerRegistration.cs`.
-- [ ] T124 [US5] Implement MCP registry in `src/modules/Elsa.AI.Host/Services/AiMcpServerRegistry.cs`.
-- [ ] T125 [US5] Implement explicit enablement persistence in `src/modules/Elsa.AI.Host/Services/AiToolEnablementStore.cs`.
+- [ ] T119 [P] [US5] Implement AI feature extension APIs in `src/modules/Elsa.AI.Host/Extensions/AIFeatureExtensions.cs`.
+- [ ] T120 [P] [US5] Add agent definition contracts in `src/modules/Elsa.AI.Abstractions/Contracts/IAIAgentDefinitionProvider.cs`.
+- [ ] T121 [US5] Implement agent registry in `src/modules/Elsa.AI.Host/Services/AIAgentRegistry.cs`.
+- [ ] T122 [US5] Implement agent-scoped tool resolver in `src/modules/Elsa.AI.Host/Services/AIAgentToolResolver.cs`.
+- [ ] T123 [US5] Implement MCP registration models in `src/modules/Elsa.AI.Abstractions/Models/AIMcpServerRegistration.cs`.
+- [ ] T124 [US5] Implement MCP registry in `src/modules/Elsa.AI.Host/Services/AIMcpServerRegistry.cs`.
+- [ ] T125 [US5] Implement explicit enablement persistence in `src/modules/Elsa.AI.Host/Services/AIToolEnablementStore.cs`.
 - [ ] T126 [US5] Map agent and MCP scopes to Copilot session config in `src/modules/Elsa.AI.Copilot/Adapters/CopilotSessionFactory.cs`.
 - [ ] T127 [US5] Implement built-in `workflow-author` agent provider in `src/modules/Elsa.AI.Host/Agents/WorkflowAuthorAgentProvider.cs`.
 - [ ] T128 [US5] Implement built-in `instance-diagnostics` agent provider in `src/modules/Elsa.AI.Host/Agents/InstanceDiagnosticsAgentProvider.cs`.
@@ -249,8 +249,8 @@
 - [ ] T132 [P] Add API documentation in `src/modules/Elsa.AI.Host/README.md`.
 - [ ] T133 [P] Add Copilot adapter documentation in `src/modules/Elsa.AI.Copilot/README.md`.
 - [ ] T134 [P] Add persistence provider documentation in `src/modules/Elsa.AI.Persistence.EFCore/README.md`.
-- [ ] T135 Add provider leakage boundary test in `test/integration/Elsa.AI.IntegrationTests/AiProviderIsolationTests.cs`.
-- [ ] T136 Add durable governance restart test in `test/integration/Elsa.AI.IntegrationTests/AiDurableGovernanceTests.cs`.
+- [ ] T135 Add provider leakage boundary test in `test/integration/Elsa.AI.IntegrationTests/AIProviderIsolationTests.cs`.
+- [ ] T136 Add durable governance restart test in `test/integration/Elsa.AI.IntegrationTests/AIDurableGovernanceTests.cs`.
 - [ ] T137 Run abstractions tests in `test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj`.
 - [ ] T138 Run host tests in `test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj`.
 - [ ] T139 Run Copilot adapter tests in `test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj`.
@@ -258,15 +258,15 @@
 - [ ] T141 Run integration tests in `test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj`.
 - [ ] T142 Run provider boundary search over `src/modules/Elsa.AI.Abstractions` and `src/modules/Elsa.AI.Host`.
 - [ ] T143 Compare final Studio UI plan against the `elsa-extensions` AI prototype and document carried-forward and rejected prototype patterns in `../elsa-studio/src/modules/Elsa.Studio.AI/README.md`.
-- [ ] T144 Add provider/BYOK configuration registry tests in `test/unit/Elsa.AI.Host.UnitTests/Providers/AiProviderConfigurationRegistryTests.cs`.
-- [ ] T145 Implement provider/BYOK configuration registry with secret-reference handling in `src/modules/Elsa.AI.Host/Services/AiProviderConfigurationRegistry.cs`.
-- [ ] T146 Add OpenTelemetry activity and metric definitions for chat, tools, proposals, and provider calls in `src/modules/Elsa.AI.Host/Telemetry/AiTelemetry.cs`.
-- [ ] T147 Add OpenTelemetry instrumentation tests in `test/unit/Elsa.AI.Host.UnitTests/Telemetry/AiTelemetryTests.cs`.
-- [ ] T148 Add redaction boundary tests for model context, tool results, proposal rationale, stream events, and audit records in `test/unit/Elsa.AI.Host.UnitTests/Redaction/AiRedactionBoundaryTests.cs`.
-- [ ] T149 Implement centralized AI redaction boundary service in `src/modules/Elsa.AI.Host/Services/AiRedactionService.cs`.
-- [ ] T150 Add prompt, session, model event, and tool invocation audit tests in `test/integration/Elsa.AI.IntegrationTests/AiSessionAuditTests.cs`.
-- [ ] T151 Add configurable conversation/session retention expiration tests in `test/unit/Elsa.AI.Host.UnitTests/Conversations/AiConversationRetentionTests.cs`.
-- [ ] T152 Add latency smoke tests for first stream event, capabilities, and proposal validation in `test/integration/Elsa.AI.IntegrationTests/AiLatencyTests.cs`.
+- [ ] T144 Add provider/BYOK configuration registry tests in `test/unit/Elsa.AI.Host.UnitTests/Providers/AIProviderConfigurationRegistryTests.cs`.
+- [ ] T145 Implement provider/BYOK configuration registry with secret-reference handling in `src/modules/Elsa.AI.Host/Services/AIProviderConfigurationRegistry.cs`.
+- [ ] T146 Add OpenTelemetry activity and metric definitions for chat, tools, proposals, and provider calls in `src/modules/Elsa.AI.Host/Telemetry/AITelemetry.cs`.
+- [ ] T147 Add OpenTelemetry instrumentation tests in `test/unit/Elsa.AI.Host.UnitTests/Telemetry/AITelemetryTests.cs`.
+- [ ] T148 Add redaction boundary tests for model context, tool results, proposal rationale, stream events, and audit records in `test/unit/Elsa.AI.Host.UnitTests/Redaction/AIRedactionBoundaryTests.cs`.
+- [ ] T149 Implement centralized AI redaction boundary service in `src/modules/Elsa.AI.Host/Services/AIRedactionService.cs`.
+- [ ] T150 Add prompt, session, model event, and tool invocation audit tests in `test/integration/Elsa.AI.IntegrationTests/AISessionAuditTests.cs`.
+- [ ] T151 Add configurable conversation/session retention expiration tests in `test/unit/Elsa.AI.Host.UnitTests/Conversations/AIConversationRetentionTests.cs`.
+- [ ] T152 Add latency smoke tests for first stream event, capabilities, and proposal validation in `test/integration/Elsa.AI.IntegrationTests/AILatencyTests.cs`.
 - [ ] T153 Document Core and Studio implementation worktree setup in `specs/008-weaver-ai-copilot/quickstart.md`.
 
 ---
@@ -307,19 +307,19 @@
 ## Parallel Example: User Story 1
 
 ```text
-Task: "Add context authorization tests in test/unit/Elsa.AI.Host.UnitTests/Context/AiContextResolverTests.cs"
-Task: "Add stream event mapping tests in test/unit/Elsa.AI.Host.UnitTests/Streaming/AiStreamEventMapperTests.cs"
-Task: "Add reconnect grace tests in test/unit/Elsa.AI.Host.UnitTests/Streaming/AiReconnectGraceTests.cs"
-Task: "Add chat endpoint streaming integration tests in test/integration/Elsa.AI.IntegrationTests/AiChatEndpointTests.cs"
+Task: "Add context authorization tests in test/unit/Elsa.AI.Host.UnitTests/Context/AIContextResolverTests.cs"
+Task: "Add stream event mapping tests in test/unit/Elsa.AI.Host.UnitTests/Streaming/AIStreamEventMapperTests.cs"
+Task: "Add reconnect grace tests in test/unit/Elsa.AI.Host.UnitTests/Streaming/AIReconnectGraceTests.cs"
+Task: "Add chat endpoint streaming integration tests in test/integration/Elsa.AI.IntegrationTests/AIChatEndpointTests.cs"
 ```
 
 ## Parallel Example: User Story 2
 
 ```text
-Task: "Add proposal lifecycle tests in test/unit/Elsa.AI.Host.UnitTests/Proposals/AiProposalLifecycleTests.cs"
-Task: "Add same-authorized-user approval tests in test/unit/Elsa.AI.Host.UnitTests/Proposals/AiProposalApprovalTests.cs"
-Task: "Add durable proposal restart integration tests in test/integration/Elsa.AI.IntegrationTests/AiProposalPersistenceTests.cs"
-Task: "Add durable proposal audit integration tests in test/integration/Elsa.AI.IntegrationTests/AiProposalAuditTests.cs"
+Task: "Add proposal lifecycle tests in test/unit/Elsa.AI.Host.UnitTests/Proposals/AIProposalLifecycleTests.cs"
+Task: "Add same-authorized-user approval tests in test/unit/Elsa.AI.Host.UnitTests/Proposals/AIProposalApprovalTests.cs"
+Task: "Add durable proposal restart integration tests in test/integration/Elsa.AI.IntegrationTests/AIProposalPersistenceTests.cs"
+Task: "Add durable proposal audit integration tests in test/integration/Elsa.AI.IntegrationTests/AIProposalAuditTests.cs"
 ```
 
 ## Parallel Example: User Story 4
@@ -328,7 +328,7 @@ Task: "Add durable proposal audit integration tests in test/integration/Elsa.AI.
 Task: "Add failure aggregation tests in test/unit/Elsa.AI.Host.UnitTests/Tools/InstanceAggregateFailuresToolTests.cs"
 Task: "Add diagnostics redaction tests in test/unit/Elsa.AI.Host.UnitTests/Context/DiagnosticsContextRedactionTests.cs"
 Task: "Add trend scope enforcement tests in test/unit/Elsa.AI.Host.UnitTests/Tools/InstanceDetectTrendsScopeTests.cs"
-Task: "Add incident summary integration tests in test/integration/Elsa.AI.IntegrationTests/AiRuntimeDiagnosticsTests.cs"
+Task: "Add incident summary integration tests in test/integration/Elsa.AI.IntegrationTests/AIRuntimeDiagnosticsTests.cs"
 ```
 
 ## Implementation Strategy

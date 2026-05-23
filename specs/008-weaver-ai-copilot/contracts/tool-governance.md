@@ -17,12 +17,12 @@ Every tool must declare:
 ## Registration APIs
 
 ```csharp
-public static class AiFeatureExtensions
+public static class AIFeatureExtensions
 {
-    public static AiFeature AddAiTool<TTool>(this AiFeature feature) where TTool : class, IAiTool;
-    public static AiFeature AddAiContextProvider<TProvider>(this AiFeature feature) where TProvider : class, IAiContextProvider;
-    public static AiFeature AddAiAgent<TAgent>(this AiFeature feature) where TAgent : class, IAiAgentDefinitionProvider;
-    public static AiFeature AddMcpServer(this AiFeature feature, Action<AiMcpServerOptions> configure);
+    public static AIFeature AddAITool<TTool>(this AIFeature feature) where TTool : class, IAITool;
+    public static AIFeature AddAIContextProvider<TProvider>(this AIFeature feature) where TProvider : class, IAIContextProvider;
+    public static AIFeature AddAIAgent<TAgent>(this AIFeature feature) where TAgent : class, IAIAgentDefinitionProvider;
+    public static AIFeature AddMcpServer(this AIFeature feature, Action<AIMcpServerOptions> configure);
 }
 ```
 

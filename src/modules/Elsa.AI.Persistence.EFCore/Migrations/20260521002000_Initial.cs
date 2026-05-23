@@ -9,7 +9,7 @@ public partial class Initial : Migration
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.CreateTable(
-            name: "AiAuditRecords",
+            name: "AIAuditRecords",
             columns: table => new
             {
                 Id = table.Column<string>(nullable: false),
@@ -26,11 +26,11 @@ public partial class Initial : Migration
             },
             constraints: table =>
             {
-                table.PrimaryKey("PK_AiAuditRecords", x => x.Id);
+                table.PrimaryKey("PK_AIAuditRecords", x => x.Id);
             });
 
         migrationBuilder.CreateTable(
-            name: "AiConversations",
+            name: "AIConversations",
             columns: table => new
             {
                 Id = table.Column<string>(nullable: false),
@@ -47,11 +47,11 @@ public partial class Initial : Migration
             },
             constraints: table =>
             {
-                table.PrimaryKey("PK_AiConversations", x => x.Id);
+                table.PrimaryKey("PK_AIConversations", x => x.Id);
             });
 
         migrationBuilder.CreateTable(
-            name: "AiProposals",
+            name: "AIProposals",
             columns: table => new
             {
                 Id = table.Column<string>(nullable: false),
@@ -75,64 +75,64 @@ public partial class Initial : Migration
             },
             constraints: table =>
             {
-                table.PrimaryKey("PK_AiProposals", x => x.Id);
+                table.PrimaryKey("PK_AIProposals", x => x.Id);
             });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiAuditRecords_ProposalId",
-            table: "AiAuditRecords",
+            name: "IX_AIAuditRecords_ProposalId",
+            table: "AIAuditRecords",
             column: "ProposalId");
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiAuditRecords_ActorId",
-            table: "AiAuditRecords",
+            name: "IX_AIAuditRecords_ActorId",
+            table: "AIAuditRecords",
             column: "ActorId");
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiAuditRecords_TenantId_Timestamp",
-            table: "AiAuditRecords",
+            name: "IX_AIAuditRecords_TenantId_Timestamp",
+            table: "AIAuditRecords",
             columns: new[] { "TenantId", "Timestamp" });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiAuditRecords_TenantId_ConversationId",
-            table: "AiAuditRecords",
+            name: "IX_AIAuditRecords_TenantId_ConversationId",
+            table: "AIAuditRecords",
             columns: new[] { "TenantId", "ConversationId" });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiAuditRecords_ToolInvocationId",
-            table: "AiAuditRecords",
+            name: "IX_AIAuditRecords_ToolInvocationId",
+            table: "AIAuditRecords",
             column: "ToolInvocationId");
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiConversations_RetentionExpiresAt",
-            table: "AiConversations",
+            name: "IX_AIConversations_RetentionExpiresAt",
+            table: "AIConversations",
             column: "RetentionExpiresAt");
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiConversations_Status",
-            table: "AiConversations",
+            name: "IX_AIConversations_Status",
+            table: "AIConversations",
             column: "Status");
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiConversations_TenantId_UserId",
-            table: "AiConversations",
+            name: "IX_AIConversations_TenantId_UserId",
+            table: "AIConversations",
             columns: new[] { "TenantId", "UserId" });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiProposals_Status",
-            table: "AiProposals",
+            name: "IX_AIProposals_Status",
+            table: "AIProposals",
             column: "Status");
 
         migrationBuilder.CreateIndex(
-            name: "IX_AiProposals_TenantId_ConversationId",
-            table: "AiProposals",
+            name: "IX_AIProposals_TenantId_ConversationId",
+            table: "AIProposals",
             columns: new[] { "TenantId", "ConversationId" });
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
-        migrationBuilder.DropTable(name: "AiAuditRecords");
-        migrationBuilder.DropTable(name: "AiConversations");
-        migrationBuilder.DropTable(name: "AiProposals");
+        migrationBuilder.DropTable(name: "AIAuditRecords");
+        migrationBuilder.DropTable(name: "AIConversations");
+        migrationBuilder.DropTable(name: "AIProposals");
     }
 }

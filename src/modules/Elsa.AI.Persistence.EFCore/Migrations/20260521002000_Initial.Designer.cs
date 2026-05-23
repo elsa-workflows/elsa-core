@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Elsa.AI.Persistence.EFCore.Migrations;
 
-[DbContext(typeof(AiDbContext))]
+[DbContext(typeof(AIDbContext))]
 [Migration("20260521002000_Initial")]
 partial class Initial
 {
@@ -17,7 +17,7 @@ partial class Initial
 #pragma warning disable 612, 618
         modelBuilder.HasAnnotation("ProductVersion", "9.0.16");
 
-        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AiAuditRecord", b =>
+        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AIAuditRecord", b =>
         {
             b.Property<string>("Id");
 
@@ -57,10 +57,10 @@ partial class Initial
 
             b.HasIndex("TenantId", "Timestamp");
 
-            b.ToTable("AiAuditRecords");
+            b.ToTable("AIAuditRecords");
         });
 
-        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AiConversationRecord", b =>
+        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AIConversationRecord", b =>
         {
             b.Property<string>("Id");
 
@@ -96,10 +96,10 @@ partial class Initial
 
             b.HasIndex("TenantId", "UserId");
 
-            b.ToTable("AiConversations");
+            b.ToTable("AIConversations");
         });
 
-        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AiProposalRecord", b =>
+        modelBuilder.Entity("Elsa.AI.Persistence.EFCore.Entities.AIProposalRecord", b =>
         {
             b.Property<string>("Id");
 
@@ -151,7 +151,7 @@ partial class Initial
 
             b.HasIndex("TenantId", "ConversationId");
 
-            b.ToTable("AiProposals");
+            b.ToTable("AIProposals");
         });
 #pragma warning restore 612, 618
     }

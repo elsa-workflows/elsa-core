@@ -3,52 +3,52 @@
 ## Core Abstractions
 
 ```csharp
-public interface IAiProvider
+public interface IAIProvider
 {
-    ValueTask<AiSessionHandle> CreateSessionAsync(CreateAiSessionRequest request, CancellationToken cancellationToken = default);
-    IAsyncEnumerable<AiProviderEvent> ExecuteTurnAsync(AiTurnRequest request, CancellationToken cancellationToken = default);
+    ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, CancellationToken cancellationToken = default);
 }
 
-public interface IAiOrchestrator
+public interface IAIOrchestrator
 {
-    IAsyncEnumerable<AiStreamEvent> ExecuteChatAsync(AiChatRequest request, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<AIStreamEvent> ExecuteChatAsync(AIChatRequest request, CancellationToken cancellationToken = default);
 }
 
-public interface IAiTool
+public interface IAITool
 {
-    AiToolDefinition Definition { get; }
-    ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default);
+    AIToolDefinition Definition { get; }
+    ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default);
 }
 
-public interface IAiToolRegistry
+public interface IAIToolRegistry
 {
-    ValueTask<IReadOnlyCollection<AiToolDefinition>> ListAsync(AiToolQuery query, CancellationToken cancellationToken = default);
-    ValueTask<IAiTool?> FindAsync(string name, CancellationToken cancellationToken = default);
+    ValueTask<IReadOnlyCollection<AIToolDefinition>> ListAsync(AIToolQuery query, CancellationToken cancellationToken = default);
+    ValueTask<IAITool?> FindAsync(string name, CancellationToken cancellationToken = default);
 }
 
-public interface IAiContextProvider
+public interface IAIContextProvider
 {
     string Kind { get; }
-    ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default);
+    ValueTask<AIResolvedContext> ResolveAsync(AIContextResolutionRequest request, CancellationToken cancellationToken = default);
 }
 
-public interface IAiProposalStore
+public interface IAIProposalStore
 {
-    ValueTask<AiProposal?> FindAsync(string id, CancellationToken cancellationToken = default);
-    ValueTask SaveAsync(AiProposal proposal, CancellationToken cancellationToken = default);
+    ValueTask<AIProposal?> FindAsync(string id, CancellationToken cancellationToken = default);
+    ValueTask SaveAsync(AIProposal proposal, CancellationToken cancellationToken = default);
 }
 
-public interface IAiAuditSink
+public interface IAIAuditSink
 {
-    ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default);
+    ValueTask RecordAsync(AIAuditEvent auditEvent, CancellationToken cancellationToken = default);
 }
 ```
 
-`IAiProposalStore` and `IAiAuditSink` require durable production implementations for MVP. Conversation/session retention remains configurable and may use in-memory storage for development and tests.
+`IAIProposalStore` and `IAIAuditSink` require durable production implementations for MVP. Conversation/session retention remains configurable and may use in-memory storage for development and tests.
 
 ## Provider Boundary
 
-- `Elsa.AI.Abstractions` owns `AiProviderEvent`, `AiStreamEvent`, session, tool, context, proposal, and audit models.
+- `Elsa.AI.Abstractions` owns `AIProviderEvent`, `AIStreamEvent`, session, tool, context, proposal, and audit models.
 - `Elsa.AI.Copilot` maps Copilot SDK and CLI events into Elsa-owned models.
 - No Copilot SDK type may appear in `Elsa.AI.Abstractions`, `Elsa.AI.Host`, workflow models, REST contracts, or Studio contracts.
 
@@ -71,7 +71,7 @@ public interface IAiAuditSink
 - Resolve persistence through Elsa service abstractions only.
 - Redact arguments and results before stream and audit output.
 - Clamp result size before model context inclusion.
-- Record success, failure, and denial through `IAiAuditSink`.
+- Record success, failure, and denial through `IAIAuditSink`.
 
 ## Runtime Scope Rules
 

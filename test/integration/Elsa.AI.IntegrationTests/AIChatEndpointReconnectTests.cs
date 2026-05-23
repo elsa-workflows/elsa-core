@@ -1,0 +1,206 @@
+using Elsa.AI.Abstractions.Contracts;
+using Elsa.AI.Abstractions.Models;
+using Elsa.Common.Multitenancy;
+using Elsa.AI.Host.Options;
+using Elsa.AI.Host.Streaming;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using ChatEndpoint = Elsa.AI.Host.Endpoints.AI.Chat.Endpoint;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+
+namespace Elsa.AI.IntegrationTests;
+
+public class AIChatEndpointReconnectTests
+{
+    [Fact(DisplayName = "Chat endpoint marks the actual reconnect conversation as connected")]
+    public async Task ChatEndpointMarksTheActualReconnectConversationAsConnected()
+    {
+        var sessionManager = new AIStreamSessionManager();
+        sessionManager.MarkDisconnected("foreign-conversation", TimeSpan.FromMinutes(5));
+        sessionManager.MarkDisconnected("actual-conversation", TimeSpan.FromMinutes(5));
+        var endpoint = new ChatEndpoint(
+            new ReassignedConversationOrchestrator(),
+            sessionManager,
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "foreign-conversation",
+            UserId = "user-1",
+            Message = "Reconnect"
+        }, CancellationToken.None);
+
+        Assert.True(sessionManager.CanReconnect("foreign-conversation"));
+        Assert.False(sessionManager.CanReconnect("actual-conversation"));
+    }
+
+    [Fact(DisplayName = "Chat endpoint resolves tenant from tenant accessor")]
+    public async Task ChatEndpointResolvesTenantFromTenantAccessor()
+    {
+        var tenantAccessor = new DefaultTenantAccessor();
+        using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = "tenant-1", Name = "Tenant 1" });
+        var services = new ServiceCollection();
+        services.AddSingleton<ITenantAccessor>(tenantAccessor);
+        await using var provider = services.BuildServiceProvider();
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AIStreamSessionManager(),
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            RequestServices = provider,
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Message = "Reconnect"
+        }, CancellationToken.None);
+
+        Assert.Equal("tenant-1", orchestrator.Request!.TenantId);
+    }
+
+    [Fact(DisplayName = "Chat endpoint clears unknown requested agents")]
+    public async Task ChatEndpointClearsUnknownRequestedAgents()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AIStreamSessionManager(),
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Agent = "privileged-agent",
+            Message = "Use a privileged tool"
+        }, CancellationToken.None);
+
+        Assert.Null(orchestrator.Request!.Agent);
+    }
+
+    [Fact(DisplayName = "Chat endpoint forwards known requested agents")]
+    public async Task ChatEndpointForwardsKnownRequestedAgents()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AIStreamSessionManager(),
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Agent = "workflow-author",
+            Message = "Use authoring tools"
+        }, CancellationToken.None);
+
+        Assert.Equal("workflow-author", orchestrator.Request!.Agent);
+    }
+
+    [Fact(DisplayName = "Chat endpoint clears client supplied provider names")]
+    public async Task ChatEndpointClearsClientSuppliedProviderNames()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AIStreamSessionManager(),
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            ProviderName = "privileged-provider",
+            Message = "Use a specific provider"
+        }, CancellationToken.None);
+
+        Assert.Null(orchestrator.Request!.ProviderName);
+    }
+
+    private static void SetHttpContext(ChatEndpoint endpoint, HttpContext httpContext)
+    {
+        var property = typeof(ChatEndpoint)
+            .GetProperty(nameof(ChatEndpoint.HttpContext), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+        property!.SetValue(endpoint, httpContext);
+    }
+
+    private class ReassignedConversationOrchestrator : IAIOrchestrator
+    {
+        public async IAsyncEnumerable<AIStreamEvent> ExecuteChatAsync(AIChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+
+            yield return new AIStreamEvent
+            {
+                Type = "conversation.started",
+                ConversationId = "actual-conversation",
+                Sequence = 0,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+
+            yield return new AIStreamEvent
+            {
+                Type = "conversation.completed",
+                ConversationId = "actual-conversation",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+        }
+    }
+
+    private class CapturingRequestOrchestrator : IAIOrchestrator
+    {
+        public AIChatRequest? Request { get; private set; }
+
+        public async IAsyncEnumerable<AIStreamEvent> ExecuteChatAsync(AIChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            Request = request;
+            await Task.Yield();
+
+            yield return new AIStreamEvent
+            {
+                Type = "conversation.completed",
+                ConversationId = request.ConversationId!,
+                Sequence = 0,
+                Timestamp = DateTimeOffset.UtcNow
+            };
+        }
+    }
+}
