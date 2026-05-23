@@ -33,7 +33,8 @@ public class ConsoleLogsAuthorizationTests
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
         var endpoint = Activator.CreateInstance(endpointType, new TestConsoleLogProvider())!;
-        var definition = new EndpointDefinition(endpointType, requestDtoType: null!, responseDtoType: null!);
+        var (requestDtoType, responseDtoType) = GetEndpointDtoTypes(endpointType);
+        var definition = new EndpointDefinition(endpointType, requestDtoType, responseDtoType);
 
         endpointType
             .GetProperty("Definition", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
@@ -47,6 +48,30 @@ public class ConsoleLogsAuthorizationTests
             .GetValue(definition);
 
         return Assert.IsAssignableFrom<IEnumerable<string>>(permissions).ToArray();
+    }
+
+    private static (Type RequestDtoType, Type ResponseDtoType) GetEndpointDtoTypes(Type endpointType)
+    {
+        var type = endpointType;
+
+        while (type.BaseType != null)
+        {
+            type = type.BaseType;
+
+            if (!type.IsGenericType)
+                continue;
+
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+            var genericArguments = type.GetGenericArguments();
+
+            if (genericTypeDefinition == typeof(Elsa.Abstractions.ElsaEndpoint<,>))
+                return (genericArguments[0], genericArguments[1]);
+
+            if (genericTypeDefinition == typeof(Elsa.Abstractions.ElsaEndpointWithoutRequest<>))
+                return (typeof(EmptyRequest), genericArguments[0]);
+        }
+
+        throw new InvalidOperationException($"Unsupported endpoint type '{endpointType.FullName}'.");
     }
 
     private class TestConsoleLogProvider : IConsoleLogProvider
