@@ -131,15 +131,17 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
 
     private IReadOnlyCollection<ToolInfo> GetToolInfos(IReadOnlyCollection<IAITool> tools)
     {
-        var toolInfos = new List<ToolInfo>(tools.Count);
-        foreach (var tool in tools)
-        {
-            if (TryGetDefinition(tool, out var definition))
-                toolInfos.Add(new ToolInfo(tool.GetType(), tool, definition));
-        }
-
-        return toolInfos;
+        return tools
+            .Select(CreateToolInfo)
+            .Where(x => x != null)
+            .Select(x => x!)
+            .ToList();
     }
+
+    private ToolInfo? CreateToolInfo(IAITool tool) =>
+        TryGetDefinition(tool, out var definition)
+            ? new ToolInfo(tool.GetType(), tool, definition)
+            : null;
 
     private bool TryGetDefinition(IAITool tool, out AIToolDefinition definition)
     {
