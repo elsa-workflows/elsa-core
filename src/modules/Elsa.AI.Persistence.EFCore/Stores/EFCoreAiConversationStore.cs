@@ -51,6 +51,10 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
         {
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
         }
+        else
+        {
+            ValidateUserOwnership(record, conversation);
+        }
 
         Map(conversation, record);
 
@@ -73,6 +77,8 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
 
         if (!string.Equals(record.TenantId, conversation.TenantId, StringComparison.Ordinal))
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
+
+        ValidateUserOwnership(record, conversation);
 
         Map(conversation, record);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -168,6 +174,12 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
 
     private static TEnum ParseEnum<TEnum>(string value, TEnum defaultValue) where TEnum : struct =>
         Enum.TryParse<TEnum>(value, ignoreCase: true, out var result) ? result : defaultValue;
+
+    private static void ValidateUserOwnership(AiConversationRecord record, AiConversation conversation)
+    {
+        if (!string.IsNullOrWhiteSpace(record.UserId) && !string.Equals(record.UserId, conversation.UserId, StringComparison.Ordinal))
+            throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another user.");
+    }
 
     private static void Validate(AiConversation conversation)
     {

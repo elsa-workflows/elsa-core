@@ -127,6 +127,42 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
         Assert.Equal("first", Assert.Single(original.Messages).Content);
     }
 
+    [Fact(DisplayName = "Conversation store rejects cross-user overwrites")]
+    public async Task ConversationStoreRejectsCrossUserOverwrites()
+    {
+        var store = new EFCoreAiConversationStore(_dbContext);
+        var now = DateTimeOffset.UtcNow;
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-cross-user",
+            TenantId = "tenant-1",
+            UserId = "user-1",
+            CreatedAt = now,
+            UpdatedAt = now,
+            Messages = [CreateMessage("message-1", "first")]
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-cross-user",
+            TenantId = "tenant-1",
+            UserId = "user-2",
+            CreatedAt = now,
+            UpdatedAt = now,
+            Messages = [CreateMessage("message-2", "second")]
+        }));
+        _dbContext.ChangeTracker.Clear();
+
+        var original = await store.FindAsync("conversation-cross-user");
+
+        Assert.Equal("Cannot overwrite an AI conversation that belongs to another user.", exception.Message);
+        Assert.NotNull(original);
+        Assert.Equal("user-1", original.UserId);
+        Assert.Equal("first", Assert.Single(original.Messages).Content);
+    }
+
     [Fact(DisplayName = "Conversation store caps persisted message history")]
     public async Task ConversationStoreCapsPersistedMessageHistory()
     {
