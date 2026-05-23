@@ -37,6 +37,8 @@ Current ADRs:
 | [005 structured log persistence](../../specs/005-structured-log-persistence/spec.md) | Diagnostics persistence | Adds storage abstraction, relational persistence, SQLite durability, migrations, write queue, and retention. |
 | [006 diagnostics console logs](../../specs/006-diagnostics-console-logs/spec.md) | Diagnostics | Defines capture, buffering, endpoints, SignalR hub, permissions, source identity, and redaction for raw console output. |
 | [006 state machine activity](../../specs/006-state-machine-activity/spec.md) | Workflow core | Adds a state machine activity with named states and trigger-driven transitions to the workflow engine. |
+| [007 secrets module](../../specs/007-secrets-module/spec.md) | Secrets | Revamps the secrets module with named secrets, pluggable stores, extensible secret types, secret picker UX, permissions, import/export encryption support, and migration from existing sensitive fields. |
+| [009 operational dashboard](../../specs/009-operational-dashboard/prd.md) | Dashboard API | PRD for a read-only backend dashboard API module exposing workflow activity aggregates, health signals, and operational summaries without requiring Studio to orchestrate many separate requests. |
 
 Each spec folder usually contains:
 
@@ -83,6 +85,14 @@ For runtime behavior, read in this order:
 4. structured logs core package
 5. relational and SQLite persistence packages
 6. structured logs unit/integration tests
+
+## Reading Order For Secrets Work
+
+1. [Identity, Tenancy, And Security](identity-tenancy-security.md) — Secrets section
+2. [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md)
+3. [specs/007-secrets-module/plan.md](../../specs/007-secrets-module/plan.md)
+4. `Elsa.Secrets` feature and contracts
+5. secrets unit tests
 
 ## When To Write An ADR
 

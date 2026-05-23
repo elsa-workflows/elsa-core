@@ -106,6 +106,58 @@ Structured logs define diagnostics permissions in [StructuredLogsPermissions](..
 
 Identity endpoints and user-management endpoints are permission-based; see [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
 
+## Secrets
+
+Start in [src/modules/Elsa.Secrets](../../src/modules/Elsa.Secrets).
+
+[SecretsFeature](../../src/modules/Elsa.Secrets/Features/SecretsFeature.cs) registers secrets services and FastEndpoints. It provides:
+
+- [ISecretManager](../../src/modules/Elsa.Secrets/Contracts/ISecretManager.cs): create, get, rotate, revoke, delete, and test secrets.
+- [ISecretResolver](../../src/modules/Elsa.Secrets/Contracts/ISecretResolver.cs): resolve the latest active secret value by immutable technical name.
+- [ISecretProvider](../../src/modules/Elsa.Secrets/Contracts/ISecretProvider.cs): legacy-compatible provider adapter backed by `ISecretResolver`.
+- [ISecretStore](../../src/modules/Elsa.Secrets/Contracts/ISecretStore.cs) / [ISecretStoreRegistry](../../src/modules/Elsa.Secrets/Contracts/ISecretStoreRegistry.cs): pluggable backend stores.
+- [ISecretTypeRegistry](../../src/modules/Elsa.Secrets/Contracts/ISecretTypeRegistry.cs): extensible secret types (text, RSA key, X.509 certificate reference).
+- [ISecretRepository](../../src/modules/Elsa.Secrets/Contracts/ISecretRepository.cs): durable secret and version storage.
+
+### Built-In Stores
+
+| Store | Class | Notes |
+| --- | --- | --- |
+| Elsa-managed encrypted store | [EncryptedSecretStore](../../src/modules/Elsa.Secrets/Stores/EncryptedSecretStore.cs) | Encrypts values with data protection. Default writable store. |
+| Configuration-backed read-only | [ConfigurationSecretStore](../../src/modules/Elsa.Secrets/Stores/ConfigurationSecretStore.cs) | Maps configuration keys to secret values. Read-only; cannot be written from the API. |
+
+### Secret Versioning
+
+Each logical secret has an immutable technical name. `ISecretManager.RotateAsync` creates a new active version and retires the previous active version. Runtime code always resolves the latest active version; expired or revoked secrets fail resolution with a non-secret error.
+
+### Management Endpoints
+
+Routes under `/elsa/api` (Elsa route prefix applies):
+
+| Route | Permission |
+| --- | --- |
+| `GET /secrets` | `read:secrets` |
+| `GET /secrets/{name}` | `read:secrets` |
+| `POST /secrets` | `write:secrets` |
+| `DELETE /secrets/{name}` | `delete:secrets` |
+| `POST /secrets/{name}/rotate` | `write:secrets` |
+| `POST /secrets/{name}/revoke` | `write:secrets` |
+| `POST /secrets/{name}/test` | `test:secrets` |
+| `POST /secrets/picker` | `read:secrets` |
+| `GET /secrets/descriptors` | `read:secrets` |
+
+Permission constants are in [SecretsPermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsPermissions.cs).
+
+### Using Secrets In Workflows
+
+Activities with sensitive inputs can use a `SecretReference` in place of a literal value. The runtime calls `ISecretResolver` at the point of use so workflow definitions store only the reference, not the resolved value.
+
+### Tests
+
+- [test/unit/Elsa.Secrets.UnitTests](../../test/unit/Elsa.Secrets.UnitTests)
+
+Spec: [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md).
+
 ## Ingress Rate Limiting
 
 Elsa exposes opt-in ASP.NET Core rate limiting hooks for two ingress surfaces:
