@@ -460,12 +460,12 @@ Where exact aggregation is not available, response models should include metadat
 
 Studio should be able to render an extensible dashboard where `Elsa.Studio.Dashboard` hosts widgets contributed by installed Studio modules. The backend API should provide dashboard-shaped data and capability metadata, but it should not assume that Studio hard-codes every panel in the dashboard module.
 
-Expected widget contributors:
+Expected Studio-side widget contributors:
 
-- Workflow modules can render metric cards, execution trends, needs-attention findings, recent activity, and workflow hotspots.
-- Diagnostics Structured Logs can render structured log health widgets when that module is installed and authorized.
-- Diagnostics Console Logs can render console log health widgets when that module is installed and authorized.
-- Future modules can contribute additional widgets through Studio dashboard abstractions without requiring backend contract changes unless they need new server data.
+- `Elsa.Studio.Workflows` can render metric cards, execution trends, needs-attention findings, recent activity, and workflow hotspots.
+- `Elsa.Studio.Diagnostics.StructuredLogs` can render structured log health widgets when the corresponding backend diagnostics capability is installed and authorized.
+- `Elsa.Studio.Diagnostics.ConsoleLogs` can render console log health widgets when the corresponding backend diagnostics capability is installed and authorized.
+- Future Studio modules can contribute additional widgets through Studio dashboard abstractions without requiring backend contract changes unless they need new server data.
 
 The backend should return link target metadata where possible, but Studio remains responsible for actual route generation. Capability metadata must be explicit enough for widget providers to decide whether to render, omit, or show unavailable/unauthorized states for optional module data.
 
