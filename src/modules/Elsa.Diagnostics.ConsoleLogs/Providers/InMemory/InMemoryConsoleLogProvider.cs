@@ -88,7 +88,7 @@ public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IC
             subscribers = _subscribers.Values.ToList();
 
         foreach (var subscriber in subscribers)
-            subscriber.TryWrite(summary);
+            subscriber.TryWrite(summary, _options.SubscriberChannelCapacity);
     }
 
     private IReadOnlyCollection<ConsoleLogDroppedSummary> ConsumeDroppedSummaries()
@@ -139,10 +139,13 @@ public class InMemoryConsoleLogProvider(IOptions<ConsoleLogsOptions> options, IC
             }
         }
 
-        public void TryWrite(ConsoleLogDroppedSummary summary)
+        public void TryWrite(ConsoleLogDroppedSummary summary, int capacity)
         {
             lock (_lock)
             {
+                if (_pendingItemCount >= capacity)
+                    return;
+
                 Channel.Writer.TryWrite(ConsoleLogStreamItem.FromDroppedLines(summary));
                 _pendingItemCount++;
             }

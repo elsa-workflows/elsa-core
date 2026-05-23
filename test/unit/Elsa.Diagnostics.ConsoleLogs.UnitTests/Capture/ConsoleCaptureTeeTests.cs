@@ -63,6 +63,74 @@ public class ConsoleCaptureTeeTests
         finally
         {
             await capture.StopAsync();
+            await capture.StopAsync();
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+    }
+
+    [Fact]
+    public async Task StartAsync_RedactsBeforePublishingToProvider()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        using var consoleOutput = new StringWriter();
+        var provider = new CapturingProvider();
+        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
+        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
+        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+
+        try
+        {
+            Console.SetOut(consoleOutput);
+            await capture.StartAsync();
+
+            Console.WriteLine("token=secret-value");
+            await WaitForLineAsync(provider);
+
+            Assert.Equal("[Redacted]", provider.Lines[0].Text);
+        }
+        finally
+        {
+            await capture.StopAsync();
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+        }
+    }
+
+    [Fact]
+    public async Task StopAsync_WhenStartedTwice_KeepsCaptureActiveUntilSecondStop()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        using var consoleOutput = new StringWriter();
+        var provider = new CapturingProvider();
+        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
+        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
+        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+
+        try
+        {
+            Console.SetOut(consoleOutput);
+            await capture.StartAsync();
+            await capture.StartAsync();
+
+            await capture.StopAsync();
+            Console.WriteLine("still captured");
+            await WaitForLineAsync(provider);
+
+            Assert.Single(provider.Lines);
+            Assert.Equal("still captured", provider.Lines[0].Text);
+
+            await capture.StopAsync();
+            Console.WriteLine("not captured");
+            await Task.Delay(50);
+
+            Assert.Single(provider.Lines);
+        }
+        finally
+        {
+            await capture.StopAsync();
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }

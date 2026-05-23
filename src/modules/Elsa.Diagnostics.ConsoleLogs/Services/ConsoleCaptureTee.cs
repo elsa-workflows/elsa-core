@@ -20,6 +20,7 @@ public class ConsoleCaptureTee(
     private Channel<ConsoleLogLine>? _publishChannel;
     private CancellationTokenSource? _publishCancellation;
     private Task? _publishTask;
+    private int _startCount;
     private long _sequence;
 
     public override Encoding Encoding => _originalOut?.Encoding ?? Encoding.UTF8;
@@ -28,7 +29,7 @@ public class ConsoleCaptureTee(
     {
         lock (_lock)
         {
-            if (_originalOut != null || _originalError != null)
+            if (_startCount++ > 0)
                 return ValueTask.CompletedTask;
 
             _publishCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -55,6 +56,12 @@ public class ConsoleCaptureTee(
 
         lock (_lock)
         {
+            if (_startCount == 0)
+                return ValueTask.CompletedTask;
+
+            if (--_startCount > 0)
+                return ValueTask.CompletedTask;
+
             if (_originalOut != null)
                 Console.SetOut(_originalOut);
 
@@ -135,7 +142,7 @@ public class ConsoleCaptureTee(
             Truncated = formatted.Truncated
         };
 
-        if (_publishChannel?.Writer.TryWrite(redactor.Redact(line)) != false)
+        if (_publishChannel?.Writer.TryWrite(line) != false)
             return;
 
         if (provider is IConsoleLogDroppedLineReporter reporter)
@@ -150,7 +157,7 @@ public class ConsoleCaptureTee(
             {
                 try
                 {
-                    await provider.PublishAsync(line, cancellationToken);
+                    await provider.PublishAsync(redactor.Redact(line), cancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
