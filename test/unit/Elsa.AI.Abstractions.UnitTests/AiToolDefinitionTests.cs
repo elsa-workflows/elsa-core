@@ -37,4 +37,14 @@ public class AiToolDefinitionTests
 
         Assert.Equal(AiTenantBehavior.HostScoped, definition.TenantBehavior);
     }
+
+    [Fact(DisplayName = "Audit events default string fields to non-null values")]
+    public void AuditEventsDefaultStringFieldsToNonNullValues()
+    {
+        var auditEvent = new AiAuditEvent();
+
+        Assert.False(string.IsNullOrWhiteSpace(auditEvent.Id));
+        Assert.Equal("", auditEvent.ActorId);
+        Assert.Equal("", auditEvent.Type);
+    }
 }
