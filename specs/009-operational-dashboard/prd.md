@@ -103,7 +103,7 @@ Returns first-paint dashboard data.
 - `includeSystem`: boolean, default `false`.
 - Optional future filters:
   - `definitionId`
-  - `tenantId`
+  - `tenantId` for explicitly authorized cross-tenant administration only
   - `environment`
 
 ### Response Shape
@@ -316,6 +316,8 @@ Returns prioritized operational findings.
 | `ConsoleLogs` | `stream`, `sourceName`, `from`, `to` |
 
 - Workflow target query fields should map directly to the existing workflow instance and definition list filter contracts where equivalent filters exist.
+- `range` applies only to event findings with a timestamped occurrence in the selected window: faulted workflow instances, interrupted workflow instances, workflow instances with incidents updated in range, structured log errors or critical events, console stderr bursts, and dropped-line or dropped-event summaries when the diagnostics provider can report them by timestamp.
+- Point-in-time findings ignore `range` and represent state at `generatedAt`: runtime not accepting work, runtime ingress source paused/stale/failed, suspended instances older than the configured threshold, executing instances stale beyond the configured threshold, storage dropped-write status, and stale diagnostics sources.
 - Must not expose data from unauthorized optional capabilities.
 - Must be bounded by `take`, with a maximum such as 50.
 
@@ -396,6 +398,8 @@ Returns top workflow definitions by recent executions, fault count, incident cou
 - Must cap `take`, with maximum 50.
 - Must aggregate by logical workflow definition ID across all executed versions in the selected range.
 - Must not include a `version` field in the initial response because the aggregate may span several definition versions. Version-specific drill-down can be added later as a separate endpoint or filter.
+- `incidentCount` means the number of workflow instances in the selected range that have one or more incidents, not the sum of all individual incidents on those instances. If total incident occurrences are needed later, add a separate `incidentTotal` field.
+- The `Duration` metric must not rank definitions from a single shared recent-summary sample. It requires provider-level grouped aggregation, or a two-stage sampled implementation that gathers a bounded per-definition sample, for example up to 100 finished instances per candidate definition, and reports sampled accuracy metadata.
 - Initial implementation may sample recent summaries if aggregate grouping is not available, but response must expose whether values are exact or sampled.
 - Future provider-specific optimizations should be possible without API changes.
 
@@ -410,6 +414,7 @@ Use existing services first:
 - Diagnostics providers for recent/source/storage summaries when installed.
 - Package/version service or existing package endpoint logic for version data.
 - Installed feature provider for capability detection.
+- When MultiTenancy is enabled, tenant scope must be resolved from the current request or shell context, for example through `ITenantAccessor` when registered, and applied to every workflow, runtime, and diagnostics query. Dashboard endpoints must not aggregate across tenants unless the caller is in an explicitly authorized cross-tenant administration context.
 
 Where exact aggregation is not available, response models should include metadata such as:
 
@@ -437,6 +442,7 @@ Where exact aggregation is not available, response models should include metadat
 
 - All endpoints must require authorization except explicitly documented package/version reuse.
 - Dashboard read permission must be separate from runtime management.
+- Multi-tenant deployments must preserve tenant data isolation for every aggregate and summary field.
 - Optional diagnostics subsections must obey diagnostics read permissions.
 - Do not include raw workflow variables, inputs, outputs, or full workflow state.
 - Do not include raw console lines in dashboard overview.
@@ -482,6 +488,4 @@ The backend should return link target metadata where possible, but Studio remain
 ## Open Questions
 
 - Should dashboard endpoints require only `read:dashboard`, or both `read:dashboard` and underlying read permissions for linked workflow rows?
-- Should average duration be exact in the initial implementation, or explicitly sampled until provider-specific grouped queries exist?
-- Should multi-tenant deployments include tenant-level filters in this first slice?
 - Should the module live as `Elsa.Dashboard.Api` or under `Elsa.Workflows.Api` as dashboard endpoints?
