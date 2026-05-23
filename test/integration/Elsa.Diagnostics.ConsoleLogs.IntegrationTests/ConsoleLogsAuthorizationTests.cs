@@ -42,6 +42,7 @@ public class ConsoleLogsAuthorizationTests
     [Theory]
     [InlineData(ConsoleLogsPermissions.Read)]
     [InlineData(PermissionNames.All)]
+    [InlineData("read:*")]
     public async Task HubSubscribe_WithConsoleLogsPermission_AllowsAccess(string permission)
     {
         var hub = CreateHub(permission);

@@ -1,7 +1,6 @@
 using Elsa.Diagnostics.ConsoleLogs.Providers.InMemory;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -22,7 +21,6 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IConsoleLogProvider, InMemoryConsoleLogProvider>();
         services.TryAddSingleton<ConsoleLogSubscriptionManager>();
         services.TryAddSingleton<IConsoleLogCapture, ConsoleCaptureTee>();
-        services.AddBackgroundTask<ConsoleLogCaptureBackgroundTask>();
         services.AddHostedService<ConsoleLogCaptureHostedService>();
 
         return services;

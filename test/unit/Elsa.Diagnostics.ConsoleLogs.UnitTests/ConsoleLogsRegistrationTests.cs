@@ -1,4 +1,3 @@
-using Elsa.Common;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.Providers.InMemory;
@@ -32,16 +31,5 @@ public class ConsoleLogsRegistrationTests
 
         using var serviceProvider = services.BuildServiceProvider();
         Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType() == typeof(ConsoleLogCaptureHostedService));
-    }
-
-    [Fact]
-    public void AddConsoleLogsServices_RegistersShellBackgroundCapture()
-    {
-        var services = new ServiceCollection();
-
-        services.AddConsoleLogsServices();
-
-        using var serviceProvider = services.BuildServiceProvider();
-        Assert.Contains(serviceProvider.GetServices<IBackgroundTask>(), x => x.GetType() == typeof(ConsoleLogCaptureBackgroundTask));
     }
 }

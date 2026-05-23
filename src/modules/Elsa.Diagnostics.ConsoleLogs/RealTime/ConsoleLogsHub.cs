@@ -8,7 +8,8 @@ namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
 [Authorize]
 public class ConsoleLogsHub(ConsoleLogSubscriptionManager subscriptionManager) : Hub<IConsoleLogsClient>
 {
-    private static readonly string[] ReadPermissions = [PermissionNames.All, ConsoleLogsPermissions.Read];
+    private const string ReadAllPermission = "read:*";
+    private static readonly string[] ReadPermissions = [PermissionNames.All, ReadAllPermission, ConsoleLogsPermissions.Read];
 
     public Task SubscribeAsync(ConsoleLogFilter? filter)
     {
