@@ -281,6 +281,55 @@ public class AiToolRegistryTests
         Assert.Equal("matching", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry combines tenant actor agent and permission filters")]
+    public async Task ToolRegistryCombinesTenantActorAgentAndPermissionFilters()
+    {
+        var registry = CreateRegistry(
+            [
+                new TestTool(new AiToolDefinition
+                {
+                    Name = "matching",
+                    DisplayName = "Matching",
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
+                    TenantIds = ["tenant-1"],
+                    ActorIds = ["user-1"],
+                    AgentScopes = ["workflow-author"],
+                    Permissions = ["workflows:write"]
+                }),
+                new TestTool(new AiToolDefinition
+                {
+                    Name = "wrong-agent",
+                    DisplayName = "Wrong agent",
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
+                    TenantIds = ["tenant-1"],
+                    ActorIds = ["user-1"],
+                    AgentScopes = ["workflow-editor"],
+                    Permissions = ["workflows:write"]
+                }),
+                new TestTool(new AiToolDefinition
+                {
+                    Name = "wrong-permission",
+                    DisplayName = "Wrong permission",
+                    TenantBehavior = AiTenantBehavior.TenantScoped,
+                    TenantIds = ["tenant-1"],
+                    ActorIds = ["user-1"],
+                    AgentScopes = ["workflow-author"],
+                    Permissions = ["deployments:write"]
+                })
+            ]);
+
+        var tools = await registry.ListAsync(new AiToolQuery
+        {
+            TenantId = "tenant-1",
+            ActorId = "user-1",
+            Agent = "workflow-author",
+            UserPermissions = ["workflows:write"]
+        });
+
+        var tool = Assert.Single(tools);
+        Assert.Equal("matching", tool.Name);
+    }
+
     [Fact(DisplayName = "Tool registry disposes find scope when tool resolution throws")]
     public async Task ToolRegistryDisposesFindScopeWhenToolResolutionThrows()
     {

@@ -128,6 +128,23 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Equal("proposal", exception.ParamName);
     }
 
+    [Fact(DisplayName = "Proposal store validates proposal creator before saving")]
+    public async Task ProposalStoreValidatesProposalCreatorBeforeSaving()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        var proposal = new AiProposal
+        {
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
+
+        Assert.Equal("proposal", exception.ParamName);
+        Assert.Equal("A proposal creator is required. (Parameter 'proposal')", exception.Message);
+    }
+
 
     [Fact(DisplayName = "Proposal store reads enum values case-insensitively")]
     public async Task ProposalStoreReadsEnumValuesCaseInsensitively()
