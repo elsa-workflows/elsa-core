@@ -73,6 +73,60 @@ public class AiChatEndpointReconnectTests
         Assert.Equal("tenant-1", orchestrator.Request!.TenantId);
     }
 
+    [Fact(DisplayName = "Chat endpoint clears unknown requested agents")]
+    public async Task ChatEndpointClearsUnknownRequestedAgents()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AiStreamSessionManager(),
+            MicrosoftOptions.Create(new AiHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AiChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Agent = "privileged-agent",
+            Message = "Use a privileged tool"
+        }, CancellationToken.None);
+
+        Assert.Null(orchestrator.Request!.Agent);
+    }
+
+    [Fact(DisplayName = "Chat endpoint forwards known requested agents")]
+    public async Task ChatEndpointForwardsKnownRequestedAgents()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AiStreamSessionManager(),
+            MicrosoftOptions.Create(new AiHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AiChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Agent = "workflow-author",
+            Message = "Use authoring tools"
+        }, CancellationToken.None);
+
+        Assert.Equal("workflow-author", orchestrator.Request!.Agent);
+    }
+
     private static void SetHttpContext(ChatEndpoint endpoint, HttpContext httpContext)
     {
         var property = typeof(ChatEndpoint)

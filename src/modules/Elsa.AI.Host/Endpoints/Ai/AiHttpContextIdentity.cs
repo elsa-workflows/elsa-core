@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa.AI.Host.Options;
 using Elsa.Common.Multitenancy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,4 +34,28 @@ internal static class AiHttpContextIdentity
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
+
+    public static string? GetAuthorizedAgent(string? requestedAgent, AiHostOptions options, ICollection<string> userPermissions)
+    {
+        if (string.IsNullOrWhiteSpace(requestedAgent))
+            return null;
+
+        var agent = options.Agents.FirstOrDefault(x => string.Equals(x.Name, requestedAgent, StringComparison.OrdinalIgnoreCase));
+        if (agent == null || !HasRequiredPermissions(agent.Permissions, userPermissions))
+            return null;
+
+        return agent.Name;
+    }
+
+    private static bool HasRequiredPermissions(ICollection<string> requiredPermissions, ICollection<string> userPermissions)
+    {
+        if (requiredPermissions.Count == 0)
+            return true;
+
+        var grantedPermissions = userPermissions
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return grantedPermissions.Contains(PermissionNames.All) || requiredPermissions.All(grantedPermissions.Contains);
+    }
 }

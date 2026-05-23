@@ -26,6 +26,10 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
             record = new AiProposalRecord { Id = proposal.Id };
             dbContext.Proposals.Add(record);
         }
+        else if (!string.Equals(record.TenantId, proposal.TenantId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
+        }
 
         Map(proposal, record);
         await dbContext.SaveChangesAsync(cancellationToken);

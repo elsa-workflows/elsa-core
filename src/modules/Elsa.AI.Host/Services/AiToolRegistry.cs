@@ -106,10 +106,20 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
     private static bool IsVisible(AiToolDefinition definition, AiToolQuery query) =>
         (query.Mutability == null || definition.Mutability == query.Mutability) &&
         (query.DangerLevel == null || definition.DangerLevel == query.DangerLevel) &&
-        (query.Agent == null || definition.AgentScopes.Count == 0 || definition.AgentScopes.Contains(query.Agent, StringComparer.OrdinalIgnoreCase)) &&
+        IsVisibleForAgent(definition, query.Agent) &&
         IsVisibleForTenant(definition, query.TenantId) &&
         IsVisibleForActor(definition, query.ActorId) &&
         HasRequiredPermissions(definition, query.UserPermissions);
+
+    private static bool IsVisibleForAgent(AiToolDefinition definition, string? agent)
+    {
+        if (definition.AgentScopes.Count == 0)
+            return true;
+
+        return !string.IsNullOrWhiteSpace(agent) &&
+               definition.Permissions.Count > 0 &&
+               definition.AgentScopes.Contains(agent, StringComparer.OrdinalIgnoreCase);
+    }
 
     private static bool IsVisibleForTenant(AiToolDefinition definition, string? tenantId)
     {

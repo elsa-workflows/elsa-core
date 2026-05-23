@@ -1,5 +1,8 @@
 using Elsa.AI.Abstractions.Models;
+using Elsa.AI.Persistence.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Elsa.AI.Persistence.EFCore.Services;
 
@@ -31,9 +34,19 @@ public static class EFCoreAiConversationCleanup
         }
         catch (InvalidOperationException e) when (e.Message.Contains("could not be translated", StringComparison.OrdinalIgnoreCase))
         {
-            return await dbContext.Database.ExecuteSqlInterpolatedAsync(
-                $"DELETE FROM AiConversations WHERE RetentionMode = {configuredRetentionMode} AND RetentionExpiresAt IS NOT NULL AND RetentionExpiresAt <= {now}",
-                cancellationToken);
+            var sqlGenerationHelper = dbContext.GetService<ISqlGenerationHelper>();
+            var entityType = dbContext.Model.FindEntityType(typeof(AiConversationRecord));
+            var tableName = entityType?.GetTableName() ?? "AiConversations";
+            var schema = entityType?.GetSchema();
+            var table = schema == null
+                ? sqlGenerationHelper.DelimitIdentifier(tableName)
+                : sqlGenerationHelper.DelimitIdentifier(tableName, schema);
+            var retentionMode = sqlGenerationHelper.DelimitIdentifier(nameof(AiConversationRecord.RetentionMode));
+            var retentionExpiresAt = sqlGenerationHelper.DelimitIdentifier(nameof(AiConversationRecord.RetentionExpiresAt));
+            var sql = $"DELETE FROM {table} WHERE {retentionMode} = {{0}} AND {retentionExpiresAt} IS NOT NULL AND {retentionExpiresAt} <= {{1}}";
+            var parameters = new object[] { configuredRetentionMode, now };
+
+            return await dbContext.Database.ExecuteSqlRawAsync(sql, parameters, cancellationToken);
         }
     }
 }

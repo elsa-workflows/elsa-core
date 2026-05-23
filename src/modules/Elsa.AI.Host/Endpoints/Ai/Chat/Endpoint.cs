@@ -27,13 +27,15 @@ public class Endpoint(
     public override async Task HandleAsync(AiChatRequest request, CancellationToken cancellationToken)
     {
         var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
+        var userPermissions = AiHttpContextIdentity.GetPermissions(HttpContext);
         request = request with
         {
             ConversationId = conversationId,
             IsReconnect = sessionManager.CanReconnect(conversationId),
             TenantId = AiHttpContextIdentity.GetTenantId(HttpContext),
             UserId = AiHttpContextIdentity.GetActorId(HttpContext),
-            UserPermissions = AiHttpContextIdentity.GetPermissions(HttpContext)
+            UserPermissions = userPermissions,
+            Agent = AiHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, userPermissions)
         };
         var response = HttpContext.Response;
         response.ContentType = "text/event-stream";

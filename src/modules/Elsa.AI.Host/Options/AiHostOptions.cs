@@ -31,4 +31,5 @@ public class AiAgentOptions
     public string DisplayName { get; set; } = default!;
     public string Description { get; set; } = default!;
     public string? ProviderName { get; set; }
+    public ICollection<string> Permissions { get; set; } = [];
 }

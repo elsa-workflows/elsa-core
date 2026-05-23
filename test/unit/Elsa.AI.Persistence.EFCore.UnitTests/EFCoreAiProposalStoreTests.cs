@@ -81,6 +81,38 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Null(host);
     }
 
+    [Fact(DisplayName = "Proposal store rejects cross-tenant overwrites")]
+    public async Task ProposalStoreRejectsCrossTenantOverwrites()
+    {
+        var store = new EFCoreAiProposalStore(_dbContext);
+        await store.SaveAsync(new AiProposal
+        {
+            Id = "proposal-cross-tenant",
+            TenantId = "tenant-1",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedBy = "user-1"
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AiProposal
+        {
+            Id = "proposal-cross-tenant",
+            TenantId = "tenant-2",
+            ConversationId = "conversation-2",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedBy = "user-2"
+        }));
+        _dbContext.ChangeTracker.Clear();
+
+        var original = await store.FindAsync("proposal-cross-tenant", "tenant-1");
+
+        Assert.Equal("Cannot overwrite an AI proposal that belongs to another tenant.", exception.Message);
+        Assert.NotNull(original);
+        Assert.Equal("conversation-1", original.ConversationId);
+        Assert.Equal("user-1", original.CreatedBy);
+    }
+
     [Fact(DisplayName = "Proposal store validates required proposal fields before saving")]
     public async Task ProposalStoreValidatesRequiredProposalFieldsBeforeSaving()
     {
