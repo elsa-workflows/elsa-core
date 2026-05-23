@@ -349,6 +349,30 @@ public class AiChatEndpointTests
         Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Chat orchestration sends only enabled tools to providers")]
+    public async Task ChatOrchestrationSendsOnlyEnabledToolsToProviders()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices();
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiTool, DisabledEchoTool>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           TenantId = "tenant-1",
+                           Message = "Use a tool"
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        Assert.Empty(provider.Requests.Single().Tools);
+    }
+
     [Fact(DisplayName = "Chat orchestration audits unresolved tool calls")]
     public async Task ChatOrchestrationAuditsUnresolvedToolCalls()
     {
@@ -1430,6 +1454,19 @@ public class AiChatEndpointTests
                 }
             });
         }
+    }
+
+    private class DisabledEchoTool : IAiTool
+    {
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "echo",
+            DisplayName = "Echo",
+            TenantBehavior = AiTenantBehavior.TenantScoped
+        };
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiToolResult { Summary = "Echoed" });
     }
 
     private class ThrowingTool : IAiTool

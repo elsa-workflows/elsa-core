@@ -148,7 +148,7 @@ public class AiOrchestrator(
                                    Message = turn == 0 && !isDuplicateReconnectMessage ? request.Message : "",
                                    Messages = providerHistory.ToList(),
                                    Context = context,
-                                   Tools = tools,
+                                   Tools = tools.Where(x => x.IsEnabled).ToList(),
                                    ToolResults = GetUnrepresentedToolResults(pendingToolResults, providerHistory),
                                    Agent = request.Agent,
                                    ProviderConfiguration = providerSelection.Configuration
