@@ -18,8 +18,16 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
         if (!IsExpired(conversation))
             return conversation;
 
-        dbContext.Conversations.Remove(record);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            dbContext.Conversations.Remove(record);
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch
+        {
+            // Expired-record cleanup is best-effort; stale cleanup should not block starting a fresh conversation.
+        }
+
         return null;
     }
 
