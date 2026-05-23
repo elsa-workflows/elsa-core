@@ -1,10 +1,11 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.AI.Persistence.EFCore.Stores;
 
-public class EFCoreAiAuditSink(AiDbContext dbContext) : IAiAuditEventHandler
+public class EFCoreAiAuditSink(AiDbContext dbContext, ILogger<EFCoreAiAuditSink> logger) : IAiAuditEventHandler
 {
     public async ValueTask RecordAsync(AiAuditEvent auditEvent, CancellationToken cancellationToken = default)
     {
@@ -27,6 +28,7 @@ public class EFCoreAiAuditSink(AiDbContext dbContext) : IAiAuditEventHandler
             catch (Exception e) when (e is not OperationCanceledException)
             {
                 dbContext.ChangeTracker.Clear();
+                logger.LogWarning(e, "Failed to persist AI audit event {AuditEventId} of type {AuditEventType}", auditEvent.Id, auditEvent.Type);
             }
         }
     }

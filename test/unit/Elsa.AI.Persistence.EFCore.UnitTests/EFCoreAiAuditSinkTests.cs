@@ -2,18 +2,20 @@ using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.AI.Persistence.EFCore.UnitTests;
 
 public class EFCoreAiAuditSinkTests : IAsyncLifetime
 {
+    private static readonly NullLogger<EFCoreAiAuditSink> AuditLogger = NullLogger<EFCoreAiAuditSink>.Instance;
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private AiDbContext _dbContext = default!;
 
     [Fact(DisplayName = "Audit sink persists audit records")]
     public async Task AuditSinkPersistsAuditRecords()
     {
-        var sink = new EFCoreAiAuditSink(_dbContext);
+        var sink = new EFCoreAiAuditSink(_dbContext, AuditLogger);
 
         await sink.RecordAsync(new AiAuditEvent
         {
@@ -33,7 +35,7 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
     [Fact(DisplayName = "Audit sink persists events with generated IDs")]
     public async Task AuditSinkPersistsEventsWithGeneratedIds()
     {
-        var sink = new EFCoreAiAuditSink(_dbContext);
+        var sink = new EFCoreAiAuditSink(_dbContext, AuditLogger);
 
         await sink.RecordAsync(new AiAuditEvent
         {
@@ -49,7 +51,7 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
     [Fact(DisplayName = "Audit sink batches audit records")]
     public async Task AuditSinkBatchesAuditRecords()
     {
-        var sink = new EFCoreAiAuditSink(_dbContext);
+        var sink = new EFCoreAiAuditSink(_dbContext, AuditLogger);
 
         await sink.RecordManyAsync([
             new AiAuditEvent
@@ -75,7 +77,7 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
     [Fact(DisplayName = "Audit sink keeps earlier records when a later batch record fails")]
     public async Task AuditSinkKeepsEarlierRecordsWhenLaterBatchRecordFails()
     {
-        var sink = new EFCoreAiAuditSink(_dbContext);
+        var sink = new EFCoreAiAuditSink(_dbContext, AuditLogger);
 
         await sink.RecordManyAsync([
             new AiAuditEvent
