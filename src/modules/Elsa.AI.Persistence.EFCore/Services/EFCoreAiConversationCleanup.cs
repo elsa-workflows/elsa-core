@@ -27,8 +27,8 @@ public static class EFCoreAiConversationCleanup
     {
         if (string.Equals(dbContext.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal))
         {
+            // EF Core SQLite cannot translate this DateTimeOffset predicate in ExecuteDeleteAsync for this model.
             var tableName = ResolveConversationTableName(dbContext);
-
             return await dbContext.Database.ExecuteSqlInterpolatedAsync(
                 FormattableStringFactory.Create(
                     $$"""

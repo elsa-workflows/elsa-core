@@ -107,11 +107,15 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
         record.UserId = conversation.UserId;
         record.Title = conversation.Title;
         record.Status = conversation.Status.ToString();
-        record.CreatedAt = conversation.CreatedAt;
+        if (record.CreatedAt == default)
+            record.CreatedAt = conversation.CreatedAt;
+
         record.UpdatedAt = conversation.UpdatedAt;
         record.ProviderSessionId = conversation.ProviderSessionId;
         record.RetentionMode = conversation.RetentionMode.ToString();
-        record.RetentionExpiresAt = conversation.RetentionExpiresAt;
+        if (record.RetentionExpiresAt == null)
+            record.RetentionExpiresAt = conversation.RetentionExpiresAt;
+
         record.Messages = SerializeMessages(conversation.Messages);
     }
 
