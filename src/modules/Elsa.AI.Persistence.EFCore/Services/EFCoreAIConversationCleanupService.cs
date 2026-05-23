@@ -38,6 +38,10 @@ public class EFCoreAIConversationCleanupService(
             {
                 LogCleanupFailure(e);
             }
+            catch (Exception e)
+            {
+                LogCleanupFailure(e);
+            }
 
             await Task.Delay(CleanupInterval, stoppingToken);
         }
