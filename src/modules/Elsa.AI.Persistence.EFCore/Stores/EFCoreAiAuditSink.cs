@@ -17,19 +17,18 @@ public class EFCoreAiAuditSink(AiDbContext dbContext, ILogger<EFCoreAiAuditSink>
         if (auditEvents.Count == 0)
             return;
 
-        foreach (var auditEvent in auditEvents)
+        try
         {
-            try
-            {
+            foreach (var auditEvent in auditEvents)
                 dbContext.AuditRecords.Add(ToRecord(auditEvent));
-                await dbContext.SaveChangesAsync(cancellationToken);
-                dbContext.ChangeTracker.Clear();
-            }
-            catch (Exception e) when (e is not OperationCanceledException)
-            {
-                dbContext.ChangeTracker.Clear();
-                logger.LogWarning(e, "Failed to persist AI audit event {AuditEventId} of type {AuditEventType}", auditEvent.Id, auditEvent.Type);
-            }
+
+            await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.ChangeTracker.Clear();
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            dbContext.ChangeTracker.Clear();
+            logger.LogWarning(e, "Failed to persist {AuditEventCount} AI audit event(s)", auditEvents.Count);
         }
     }
 

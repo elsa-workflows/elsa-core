@@ -4,7 +4,7 @@ public record AiProposal
 {
     public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string? TenantId { get; init; }
-    public string ConversationId { get; init; } = default!;
+    public string ConversationId { get; init; } = "";
     public AiProposalKind Kind { get; init; }
     public AiProposalStatus Status { get; init; } = AiProposalStatus.Draft;
     public string? BaselineWorkflowDefinitionId { get; init; }
@@ -14,7 +14,7 @@ public record AiProposal
     public ICollection<string> Warnings { get; init; } = [];
     public ICollection<AiValidationDiagnostic> ValidationDiagnostics { get; init; } = [];
     public AiGraphDiff? GraphDiff { get; init; }
-    public string CreatedBy { get; init; } = default!;
+    public string CreatedBy { get; init; } = "";
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
     public string? ReviewedBy { get; init; }
     public DateTimeOffset? ReviewedAt { get; init; }
