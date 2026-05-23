@@ -29,7 +29,7 @@ public static class EFCoreAiConversationCleanup
                 .Where(x => x.RetentionMode == configuredRetentionMode && x.RetentionExpiresAt.HasValue && x.RetentionExpiresAt <= now)
                 .ExecuteDeleteAsync(cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException e) when (e.Message.Contains("could not be translated", StringComparison.OrdinalIgnoreCase))
         {
             var expiredConfigured = await dbContext.Conversations
                 .Where(x => x.RetentionMode == configuredRetentionMode && x.RetentionExpiresAt.HasValue)

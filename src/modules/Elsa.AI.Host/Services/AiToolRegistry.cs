@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,10 +7,16 @@ namespace Elsa.AI.Host.Services;
 
 public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementService enablementService) : IAiToolRegistry
 {
+    private readonly ConcurrentDictionary<string, Type> _toolTypes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, bool> _uncacheableToolNames = new(StringComparer.OrdinalIgnoreCase);
+
     public ValueTask<IReadOnlyCollection<AiToolDefinition>> ListAsync(AiToolQuery query, CancellationToken cancellationToken = default)
     {
         using var scope = scopeFactory.CreateScope();
-        var definitions = scope.ServiceProvider.GetServices<IAiTool>()
+        var tools = scope.ServiceProvider.GetServices<IAiTool>().ToList();
+        UpdateToolTypeCache(tools);
+
+        var definitions = tools
             .Select(x => x.Definition)
             .Where(x => IsVisible(x, query))
             .Select(x => x with { IsEnabled = enablementService.IsEnabled(x) })
@@ -23,7 +30,7 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
         var scope = scopeFactory.CreateScope();
         try
         {
-            var tool = scope.ServiceProvider.GetServices<IAiTool>().FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+            var tool = ResolveCachedTool(scope.ServiceProvider, name) ?? ResolveAndCacheTool(scope.ServiceProvider, name);
             if (tool == null || !IsVisible(tool.Definition, query) || !enablementService.IsEnabled(tool.Definition))
             {
                 scope.Dispose();
@@ -36,6 +43,63 @@ public class AiToolRegistry(IServiceScopeFactory scopeFactory, AiToolEnablementS
         {
             scope.Dispose();
             throw;
+        }
+    }
+
+    private IAiTool? ResolveCachedTool(IServiceProvider serviceProvider, string name)
+    {
+        if (!_toolTypes.TryGetValue(name, out var toolType))
+            return null;
+
+        IAiTool tool;
+        try
+        {
+            if (ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, toolType) is not IAiTool resolvedTool)
+                return null;
+
+            tool = resolvedTool;
+        }
+        catch (InvalidOperationException)
+        {
+            _uncacheableToolNames[name] = true;
+            _toolTypes.TryRemove(name, out _);
+            return null;
+        }
+
+        return string.Equals(tool.Definition.Name, name, StringComparison.OrdinalIgnoreCase) ? tool : null;
+    }
+
+    private IAiTool? ResolveAndCacheTool(IServiceProvider serviceProvider, string name)
+    {
+        var tools = serviceProvider.GetServices<IAiTool>().ToList();
+        UpdateToolTypeCache(tools);
+        return tools.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void UpdateToolTypeCache(IReadOnlyCollection<IAiTool> tools)
+    {
+        var namesByType = tools
+            .GroupBy(x => x.GetType())
+            .ToDictionary(x => x.Key, x => x.Select(tool => tool.Definition.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+
+        foreach (var (toolType, toolNames) in namesByType)
+        {
+            if (toolNames.Count != 1)
+            {
+                foreach (var toolName in toolNames)
+                {
+                    _uncacheableToolNames[toolName] = true;
+                    _toolTypes.TryRemove(toolName, out _);
+                }
+
+                continue;
+            }
+
+            var name = toolNames[0];
+            if (_uncacheableToolNames.ContainsKey(name))
+                continue;
+
+            _toolTypes[name] = toolType;
         }
     }
 

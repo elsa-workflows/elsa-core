@@ -83,6 +83,27 @@ public class AiToolRegistryTests
         Assert.Equal("default", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry uses cached concrete type lookup after listing tools")]
+    public async Task ToolRegistryUsesCachedConcreteTypeLookupAfterListingTools()
+    {
+        CountingTool.ConstructionCount = 0;
+        OtherCountingTool.ConstructionCount = 0;
+        var services = new ServiceCollection();
+        services.AddTransient<IAiTool, CountingTool>();
+        services.AddTransient<IAiTool, OtherCountingTool>();
+        var registry = CreateRegistry(services);
+
+        await registry.ListAsync(new AiToolQuery { ActorId = "user-1" });
+        CountingTool.ConstructionCount = 0;
+        OtherCountingTool.ConstructionCount = 0;
+
+        var tool = await registry.FindAsync("counting", new AiToolQuery { ActorId = "user-1" });
+
+        Assert.NotNull(tool);
+        Assert.Equal(1, CountingTool.ConstructionCount);
+        Assert.Equal(0, OtherCountingTool.ConstructionCount);
+    }
+
     [Fact(DisplayName = "Tool registry find applies tenant and actor filters")]
     public async Task ToolRegistryFindAppliesTenantAndActorFilters()
     {
@@ -193,6 +214,11 @@ public class AiToolRegistryTests
         foreach (var tool in tools)
             services.AddScoped<IAiTool>(_ => tool);
 
+        return CreateRegistry(services);
+    }
+
+    private static AiToolRegistry CreateRegistry(IServiceCollection services)
+    {
         var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         return new AiToolRegistry(provider.GetRequiredService<IServiceScopeFactory>(), new AiToolEnablementService());
     }
@@ -200,6 +226,46 @@ public class AiToolRegistryTests
     private class TestTool(AiToolDefinition definition) : IAiTool
     {
         public AiToolDefinition Definition { get; } = definition;
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiToolResult());
+    }
+
+    private class CountingTool : IAiTool
+    {
+        public static int ConstructionCount { get; set; }
+
+        public CountingTool()
+        {
+            ConstructionCount++;
+        }
+
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "counting",
+            DisplayName = "Counting",
+            EnabledByDefault = true
+        };
+
+        public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiToolResult());
+    }
+
+    private class OtherCountingTool : IAiTool
+    {
+        public static int ConstructionCount { get; set; }
+
+        public OtherCountingTool()
+        {
+            ConstructionCount++;
+        }
+
+        public AiToolDefinition Definition { get; } = new()
+        {
+            Name = "other-counting",
+            DisplayName = "Other counting",
+            EnabledByDefault = true
+        };
 
         public ValueTask<AiToolResult> ExecuteAsync(AiToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AiToolResult());
