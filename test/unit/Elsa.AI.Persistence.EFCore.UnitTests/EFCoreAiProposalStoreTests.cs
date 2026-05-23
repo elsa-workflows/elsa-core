@@ -113,6 +113,38 @@ public class EFCoreAiProposalStoreTests : IAsyncLifetime
         Assert.Equal("user-1", original.CreatedBy);
     }
 
+    [Fact(DisplayName = "Proposal store retries concurrent inserts as updates")]
+    public async Task ProposalStoreRetriesConcurrentInsertsAsUpdates()
+    {
+        var options = new DbContextOptionsBuilder<AiDbContext>().UseSqlite(_connection).Options;
+        await using var firstContext = new AiDbContext(options);
+        await using var secondContext = new AiDbContext(options);
+        var firstStore = new EFCoreAiProposalStore(firstContext);
+        var secondStore = new EFCoreAiProposalStore(secondContext);
+        var firstProposal = new AiProposal
+        {
+            Id = "proposal-concurrent",
+            TenantId = "tenant-1",
+            ConversationId = "conversation-1",
+            Kind = AiProposalKind.WorkflowCreate,
+            CreatedBy = "user-1",
+            Rationale = "first"
+        };
+        var secondProposal = firstProposal with
+        {
+            Rationale = "second"
+        };
+
+        await firstStore.SaveAsync(firstProposal);
+        await secondStore.SaveAsync(secondProposal);
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await new EFCoreAiProposalStore(_dbContext).FindAsync("proposal-concurrent", "tenant-1");
+
+        Assert.NotNull(reloaded);
+        Assert.Equal("second", reloaded.Rationale);
+    }
+
     [Fact(DisplayName = "Proposal store validates required proposal fields before saving")]
     public async Task ProposalStoreValidatesRequiredProposalFieldsBeforeSaving()
     {

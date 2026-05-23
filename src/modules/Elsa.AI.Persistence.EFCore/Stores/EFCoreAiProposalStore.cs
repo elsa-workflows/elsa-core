@@ -20,16 +20,40 @@ public class EFCoreAiProposalStore(AiDbContext dbContext) : IAiProposalStore
     public async ValueTask SaveAsync(AiProposal proposal, CancellationToken cancellationToken = default)
     {
         Validate(proposal);
+        var isNew = false;
         var record = await dbContext.Proposals.FindAsync([proposal.Id], cancellationToken);
         if (record == null)
         {
             record = new AiProposalRecord { Id = proposal.Id };
             dbContext.Proposals.Add(record);
+            isNew = true;
         }
         else if (!string.Equals(record.TenantId, proposal.TenantId, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
         }
+
+        Map(proposal, record);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException) when (isNew)
+        {
+            await RetryAsUpdateAsync(proposal, cancellationToken);
+        }
+    }
+
+    private async ValueTask RetryAsUpdateAsync(AiProposal proposal, CancellationToken cancellationToken)
+    {
+        dbContext.ChangeTracker.Clear();
+        var record = await dbContext.Proposals.FindAsync([proposal.Id], cancellationToken);
+        if (record == null)
+            throw new DbUpdateException($"Failed to insert AI proposal {proposal.Id}, and no existing record was found for retry.");
+
+        if (!string.Equals(record.TenantId, proposal.TenantId, StringComparison.Ordinal))
+            throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
 
         Map(proposal, record);
         await dbContext.SaveChangesAsync(cancellationToken);

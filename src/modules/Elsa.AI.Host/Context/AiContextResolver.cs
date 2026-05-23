@@ -11,8 +11,8 @@ public class AiContextResolver(IServiceScopeFactory scopeFactory, ILogger<AiCont
     private static readonly string[] SensitiveKeyFragments = ["secret", "token", "password", "apikey", "api_key", "api-key", "authorization", "credential", "bearer"];
     private static readonly Regex[] SensitiveValuePatterns =
     [
-        new(@"\bBearer\s+[A-Za-z0-9._~+/\-=]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
-        new(@"\b(?:api[_-]?key|token|secret|password)\s*[:=]\s*['""]?[A-Za-z0-9._~+/\-=]{8,}['""]?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+        new(@"\bBearer\s+[A-Za-z0-9._~+/\-=]+", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled),
+        new(@"\b(?:api[_-]?key|token|secret|password)\s*[:=]\s*['""]?[A-Za-z0-9._~+/\-=]{8,}['""]?", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled)
     ];
     private const string Redacted = "[redacted]";
 
