@@ -1157,6 +1157,33 @@ public class AiChatEndpointTests
         Assert.True(context.Summary.Length > 16);
     }
 
+    [Fact(DisplayName = "Chat orchestration does not split surrogate pairs when truncating context")]
+    public async Task ChatOrchestrationDoesNotSplitSurrogatePairsWhenTruncatingContext()
+    {
+        var provider = new CapturingTurnProvider();
+        var services = new ServiceCollection();
+        services.AddAiHostServices(options => options.MaxResolvedContextBytes = 3);
+        services.AddSingleton<IAiProvider>(provider);
+        services.AddSingleton<IAiContextProvider, SurrogatePairContextProvider>();
+        using var serviceProvider = services.BuildServiceProvider();
+        var orchestrator = serviceProvider.GetRequiredService<IAiOrchestrator>();
+
+        await foreach (var _ in orchestrator.ExecuteChatAsync(new AiChatRequest
+                       {
+                           UserId = "user-1",
+                           Message = "Explain this workflow",
+                           Attachments = [new AiContextAttachment { Kind = SurrogatePairContextProvider.ContextKind, ReferenceId = "workflow-1" }]
+                       }))
+        {
+            // Intentionally drain the stream to completion.
+        }
+
+        var context = Assert.Single(provider.Requests.Single().Context);
+
+        Assert.False(context.Summary.Length > 0 && char.IsHighSurrogate(context.Summary[^1]));
+        Assert.True(Encoding.UTF8.GetByteCount(context.Summary) <= 3);
+    }
+
     [Fact(DisplayName = "Chat orchestration applies one total resolved context budget")]
     public async Task ChatOrchestrationAppliesOneTotalResolvedContextBudget()
     {
@@ -1481,6 +1508,20 @@ public class AiChatEndpointTests
                 Kind = ContextKind,
                 ReferenceId = request.Attachment.ReferenceId,
                 Summary = new string('漢', 512)
+            });
+    }
+
+    private class SurrogatePairContextProvider : IAiContextProvider
+    {
+        public const string ContextKind = "SurrogatePairContext";
+        public string Kind => ContextKind;
+
+        public ValueTask<AiResolvedContext> ResolveAsync(AiContextResolutionRequest request, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AiResolvedContext
+            {
+                Kind = ContextKind,
+                ReferenceId = request.Attachment.ReferenceId,
+                Summary = "😀x"
             });
     }
 

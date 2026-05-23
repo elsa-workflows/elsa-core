@@ -565,6 +565,9 @@ public class AiOrchestrator(
                 high = candidate - 1;
         }
 
+        if (low > 0 && char.IsHighSurrogate(value[low - 1]))
+            low--;
+
         return value[..low];
     }
 
