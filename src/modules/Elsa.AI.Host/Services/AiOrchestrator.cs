@@ -504,7 +504,14 @@ public class AiOrchestrator(
             }
 
             if (limited.Count > 0)
+            {
+                logger.LogDebug(
+                    "Dropping AI resolved context {ContextKind}/{ReferenceId} because resolved context exceeds the configured {MaxResolvedContextBytes} byte budget.",
+                    context.Kind,
+                    context.ReferenceId,
+                    maxBytes);
                 continue;
+            }
 
             limited.Add(TruncateContext(context, maxBytes));
             break;
