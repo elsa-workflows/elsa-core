@@ -6,7 +6,7 @@ namespace Elsa.AI.Host.Services;
 
 public class InMemoryAIConversationStore : IAITransientConversationStore
 {
-    private readonly ConcurrentDictionary<string, AIConversation> _conversations = new();
+    private readonly ConcurrentDictionary<string, AIConversation> _conversations = new(StringComparer.OrdinalIgnoreCase);
 
     public ValueTask<AIConversation?> FindAsync(string id, CancellationToken cancellationToken = default)
     {

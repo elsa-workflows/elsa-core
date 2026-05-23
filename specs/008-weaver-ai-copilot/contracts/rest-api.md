@@ -48,8 +48,7 @@ Streams `AIStreamEvent` records as Server-Sent Events or an equivalent server-ow
 - `assistant.completed`
 - `tool.started`
 - `tool.progress`
-- `tool.completed`
-- `tool.failed`
+- `tool.result`
 - `proposal.created`
 - `proposal.updated`
 - `conversation.completed`
@@ -59,7 +58,7 @@ Streams `AIStreamEvent` records as Server-Sent Events or an equivalent server-ow
 
 Returns available tools for the current user, tenant, and optional agent scope.
 
-**Query**: `agent`, `mutability`, `dangerLevel`
+**Query**: `agent`
 
 **Response**
 
@@ -91,10 +90,7 @@ Returns provider-neutral Weaver capabilities for Studio.
   "proposalReview": true,
   "supportedAttachmentKinds": [
     "WorkflowDefinition",
-    "WorkflowInstance",
-    "ActivitySelection",
-    "DiagnosticsScope",
-    "TimeRange"
+    "WorkflowInstance"
   ],
   "agents": [
     {

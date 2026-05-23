@@ -5,6 +5,7 @@
 ```csharp
 public interface IAIProvider
 {
+    string Name { get; }
     ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default);
     IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, CancellationToken cancellationToken = default);
 }

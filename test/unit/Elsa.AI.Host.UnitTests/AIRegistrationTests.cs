@@ -251,6 +251,24 @@ public class AIRegistrationTests
         Assert.Equal("", conversation.TenantId);
     }
 
+    [Fact(DisplayName = "In-memory conversation store treats conversation IDs case-insensitively")]
+    public async Task InMemoryConversationStoreTreatsConversationIdsCaseInsensitively()
+    {
+        var store = new InMemoryAIConversationStore();
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "Conversation-1",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+
+        var conversation = await store.FindAsync("conversation-1");
+
+        Assert.NotNull(conversation);
+        Assert.Equal("Conversation-1", conversation.Id);
+    }
+
     [Fact(DisplayName = "In-memory conversation store rejects cross-user overwrites")]
     public async Task InMemoryConversationStoreRejectsCrossUserOverwrites()
     {
