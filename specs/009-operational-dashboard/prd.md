@@ -462,6 +462,7 @@ Studio should be able to render an extensible dashboard where `Elsa.Studio.Dashb
 
 Expected Studio-side widget contributors:
 
+- `Elsa.Studio.Dashboard` can render backend/runtime status widgets from the overview response, including runtime acceptance state, active execution cycle count, and ingress source status summaries.
 - `Elsa.Studio.Workflows` can render metric cards, execution trends, needs-attention findings, recent activity, and workflow hotspots.
 - `Elsa.Studio.Diagnostics.StructuredLogs` can render structured log health widgets when the corresponding backend diagnostics capability is installed and authorized.
 - `Elsa.Studio.Diagnostics.ConsoleLogs` can render console log health widgets when the corresponding backend diagnostics capability is installed and authorized.
