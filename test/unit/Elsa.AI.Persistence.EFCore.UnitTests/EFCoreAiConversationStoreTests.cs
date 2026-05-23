@@ -91,6 +91,42 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
         Assert.Equal("second", Assert.Single(reloaded.Messages).Content);
     }
 
+    [Fact(DisplayName = "Conversation store rejects cross-tenant overwrites")]
+    public async Task ConversationStoreRejectsCrossTenantOverwrites()
+    {
+        var store = new EFCoreAiConversationStore(_dbContext);
+        var now = DateTimeOffset.UtcNow;
+
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-cross-tenant",
+            TenantId = "tenant-1",
+            UserId = "user-1",
+            CreatedAt = now,
+            UpdatedAt = now,
+            Messages = [CreateMessage("message-1", "first")]
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-cross-tenant",
+            TenantId = "tenant-2",
+            UserId = "user-2",
+            CreatedAt = now,
+            UpdatedAt = now,
+            Messages = [CreateMessage("message-2", "second")]
+        }));
+        _dbContext.ChangeTracker.Clear();
+
+        var original = await store.FindAsync("conversation-cross-tenant");
+
+        Assert.Equal("Cannot overwrite an AI conversation that belongs to another tenant.", exception.Message);
+        Assert.NotNull(original);
+        Assert.Equal("tenant-1", original.TenantId);
+        Assert.Equal("first", Assert.Single(original.Messages).Content);
+    }
+
     [Fact(DisplayName = "Conversation store prunes completed ephemeral conversations on read")]
     public async Task ConversationStorePrunesCompletedEphemeralConversationsOnRead()
     {

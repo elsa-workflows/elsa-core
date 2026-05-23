@@ -72,6 +72,32 @@ public class EFCoreAiAuditSinkTests : IAsyncLifetime
         Assert.Equal(["tool.invoked", "tool.completed"], types);
     }
 
+    [Fact(DisplayName = "Audit sink keeps earlier records when a later batch record fails")]
+    public async Task AuditSinkKeepsEarlierRecordsWhenLaterBatchRecordFails()
+    {
+        var sink = new EFCoreAiAuditSink(_dbContext);
+
+        await Assert.ThrowsAsync<DbUpdateException>(async () => await sink.RecordManyAsync([
+            new AiAuditEvent
+            {
+                Id = "audit-duplicate",
+                ActorId = "user-1",
+                Type = "tool.invoked",
+                Timestamp = DateTimeOffset.UtcNow
+            },
+            new AiAuditEvent
+            {
+                Id = "audit-duplicate",
+                ActorId = "user-1",
+                Type = "tool.completed",
+                Timestamp = DateTimeOffset.UtcNow
+            }
+        ]));
+
+        var record = await _dbContext.AuditRecords.SingleAsync();
+        Assert.Equal("tool.invoked", record.Type);
+    }
+
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();

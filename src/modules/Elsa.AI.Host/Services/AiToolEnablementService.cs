@@ -6,11 +6,12 @@ namespace Elsa.AI.Host.Services;
 public class AiToolEnablementService
 {
     private readonly ConcurrentDictionary<string, byte> _enabledToolNames = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte> _enabledAdministrativeToolNames = new(StringComparer.OrdinalIgnoreCase);
 
     public bool IsEnabled(AiToolDefinition definition)
     {
         if (definition.Mutability == AiToolMutability.Administrative)
-            return false;
+            return _enabledAdministrativeToolNames.ContainsKey(definition.Name);
 
         if (definition.EnabledByDefault)
             return true;
@@ -26,8 +27,17 @@ public class AiToolEnablementService
         _enabledToolNames.TryAdd(toolName, 0);
     }
 
+    /// <summary>
+    /// Enables an administrative tool by name. Callers must wrap this in their own governed approval and audit path.
+    /// </summary>
+    public void EnableAdministrative(string toolName)
+    {
+        _enabledAdministrativeToolNames.TryAdd(toolName, 0);
+    }
+
     public void Disable(string toolName)
     {
         _enabledToolNames.TryRemove(toolName, out _);
+        _enabledAdministrativeToolNames.TryRemove(toolName, out _);
     }
 }

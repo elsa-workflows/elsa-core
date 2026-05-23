@@ -40,6 +40,10 @@ public class EFCoreAiConversationStore(AiDbContext dbContext) : IAiConversationS
             record = new AiConversationRecord { Id = conversation.Id };
             dbContext.Conversations.Add(record);
         }
+        else if (!string.Equals(record.TenantId, conversation.TenantId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");
+        }
 
         Map(conversation, record);
         await dbContext.SaveChangesAsync(cancellationToken);

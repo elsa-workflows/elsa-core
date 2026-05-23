@@ -83,6 +83,20 @@ public class AiToolRegistryTests
         Assert.Equal("default", tool.Name);
     }
 
+    [Fact(DisplayName = "Tool registry tolerates incomplete tool definition names")]
+    public async Task ToolRegistryToleratesIncompleteToolDefinitionNames()
+    {
+        var registry = CreateRegistry(
+            [
+                new TestTool(new AiToolDefinition { DisplayName = "Incomplete" })
+            ]);
+
+        var tools = await registry.ListAsync(new AiToolQuery { ActorId = "user-1" });
+
+        var tool = Assert.Single(tools);
+        Assert.Equal("", tool.Name);
+    }
+
     [Fact(DisplayName = "Tool registry uses cached concrete type lookup after listing tools")]
     public async Task ToolRegistryUsesCachedConcreteTypeLookupAfterListingTools()
     {
@@ -152,6 +166,27 @@ public class AiToolRegistryTests
 
         Assert.Null(denied);
         Assert.NotNull(allowed);
+    }
+
+    [Fact(DisplayName = "Tool enablement requires explicit administrative enablement")]
+    public void ToolEnablementRequiresExplicitAdministrativeEnablement()
+    {
+        var enablement = new AiToolEnablementService();
+        var definition = new AiToolDefinition
+        {
+            Name = "admin",
+            DisplayName = "Admin",
+            Mutability = AiToolMutability.Administrative,
+            EnabledByDefault = true
+        };
+
+        Assert.False(enablement.IsEnabled(definition));
+
+        enablement.Enable("admin");
+        Assert.False(enablement.IsEnabled(definition));
+
+        enablement.EnableAdministrative("admin");
+        Assert.True(enablement.IsEnabled(definition));
     }
 
     [Fact(DisplayName = "Tool registry filters agent-scoped tools by agent")]

@@ -16,9 +16,20 @@ public class EFCoreAiAuditSink(AiDbContext dbContext) : IAiAuditEventHandler
         if (auditEvents.Count == 0)
             return;
 
-        dbContext.AuditRecords.AddRange(auditEvents.Select(ToRecord));
-
-        await dbContext.SaveChangesAsync(cancellationToken);
+        foreach (var auditEvent in auditEvents)
+        {
+            try
+            {
+                dbContext.AuditRecords.Add(ToRecord(auditEvent));
+                await dbContext.SaveChangesAsync(cancellationToken);
+                dbContext.ChangeTracker.Clear();
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                dbContext.ChangeTracker.Clear();
+                throw;
+            }
+        }
     }
 
     private static AiAuditRecord ToRecord(AiAuditEvent auditEvent) =>

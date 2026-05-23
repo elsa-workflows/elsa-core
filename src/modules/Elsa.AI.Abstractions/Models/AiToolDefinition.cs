@@ -2,8 +2,8 @@ namespace Elsa.AI.Abstractions.Models;
 
 public record AiToolDefinition
 {
-    public string Name { get; init; } = default!;
-    public string DisplayName { get; init; } = default!;
+    public string Name { get; init; } = "";
+    public string DisplayName { get; init; } = "";
     public string Description { get; init; } = "";
     public JsonObject Schema { get; init; } = [];
     public AiToolMutability Mutability { get; init; } = AiToolMutability.ReadOnly;
