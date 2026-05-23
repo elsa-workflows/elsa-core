@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Elsa.AI.Abstractions.Models;
+using Elsa.AI.Persistence.EFCore.Services;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -148,6 +149,47 @@ public class EFCoreAiConversationStoreTests : IAsyncLifetime
         var reloaded = await store.FindAsync("conversation-no-expiry");
 
         Assert.NotNull(reloaded);
+    }
+
+    [Fact(DisplayName = "Conversation cleanup deletes expired persisted conversations")]
+    public async Task ConversationCleanupDeletesExpiredPersistedConversations()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var store = new EFCoreAiConversationStore(_dbContext);
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-completed-ephemeral",
+            UserId = "user-1",
+            Status = AiConversationStatus.Completed,
+            CreatedAt = now,
+            UpdatedAt = now,
+            RetentionMode = AiRetentionMode.Ephemeral
+        });
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-expired-configured",
+            UserId = "user-1",
+            CreatedAt = now.AddDays(-2),
+            UpdatedAt = now.AddDays(-1),
+            RetentionMode = AiRetentionMode.Configured,
+            RetentionExpiresAt = now.AddMinutes(-1)
+        });
+        await store.SaveAsync(new AiConversation
+        {
+            Id = "conversation-active",
+            UserId = "user-1",
+            Status = AiConversationStatus.Active,
+            CreatedAt = now,
+            UpdatedAt = now,
+            RetentionMode = AiRetentionMode.Ephemeral
+        });
+
+        var deletedCount = await EFCoreAiConversationCleanup.DeleteExpiredAsync(_dbContext, now);
+
+        Assert.Equal(2, deletedCount);
+        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-completed-ephemeral"));
+        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired-configured"));
+        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-active"));
     }
 
     [Fact(DisplayName = "Conversation store validates required conversation fields")]

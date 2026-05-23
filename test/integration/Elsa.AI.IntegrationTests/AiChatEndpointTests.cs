@@ -737,8 +737,14 @@ public class AiChatEndpointTests
         var conversation = await store.FindAsync("conversation-failed");
         var userMessages = conversation!.Messages.Where(x => x.Role == AiMessageRole.User && x.Content == "Retry me").ToList();
 
-        Assert.Single(events);
-        Assert.Equal("conversation.completed", events[0].Type);
+        Assert.Collection(
+            events,
+            streamEvent =>
+            {
+                Assert.Equal("conversation.error", streamEvent.Type);
+                Assert.Equal("Weaver could not prepare AI context or tools for this request.", streamEvent.Data["content"]!.GetValue<string>());
+            },
+            streamEvent => Assert.Equal("conversation.completed", streamEvent.Type));
         Assert.Single(userMessages);
     }
 

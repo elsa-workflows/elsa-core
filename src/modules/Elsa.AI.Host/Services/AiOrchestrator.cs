@@ -48,7 +48,18 @@ public class AiOrchestrator(
 
         if (request.IsReconnect && IsCompletedReconnect(conversation, request.Message))
         {
-            yield return CreateEvent("conversation.completed", conversationId, GetNextSequence(messages));
+            var nextSequence = GetNextSequence(messages);
+            if (conversation!.Status == AiConversationStatus.Failed)
+            {
+                var lastAssistantContent = conversation.Messages.LastOrDefault(x => x.Role == AiMessageRole.Assistant)?.Content;
+                if (!string.IsNullOrEmpty(lastAssistantContent))
+                    yield return CreateEvent("conversation.error", conversationId, nextSequence++, new JsonObject
+                    {
+                        ["content"] = lastAssistantContent
+                    });
+            }
+
+            yield return CreateEvent("conversation.completed", conversationId, nextSequence);
             yield break;
         }
 

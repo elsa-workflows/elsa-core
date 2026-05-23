@@ -9,7 +9,7 @@ namespace Elsa.AI.Persistence.EFCore.ShellFeatures;
 [ShellFeature(
     "AiPersistence",
     DisplayName = "AI Persistence",
-    Description = "Registers durable EF Core stores for Weaver AI proposals and audit records")]
+    Description = "Registers durable EF Core stores for Weaver AI conversations, proposals and audit records")]
 [UsedImplicitly]
 public class AiPersistenceFeature : IShellFeature
 {

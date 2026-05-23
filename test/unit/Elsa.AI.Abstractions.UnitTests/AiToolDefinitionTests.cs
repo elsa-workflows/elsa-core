@@ -25,4 +25,16 @@ public class AiToolDefinitionTests
         Assert.Contains("read:workflows", definition.Permissions);
         Assert.True(definition.EnabledByDefault);
     }
+
+    [Fact(DisplayName = "Tool definitions default to host scoped visibility")]
+    public void ToolDefinitionsDefaultToHostScopedVisibility()
+    {
+        var definition = new AiToolDefinition
+        {
+            Name = "workflow.getDefinition",
+            DisplayName = "Get workflow definition"
+        };
+
+        Assert.Equal(AiTenantBehavior.HostScoped, definition.TenantBehavior);
+    }
 }

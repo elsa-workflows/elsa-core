@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Description>
-            Provides EF Core persistence for Elsa AI proposals and audit records.
+            Provides EF Core persistence for Elsa AI conversations, proposals and audit records.
         </Description>
         <PackageTags>elsa module ai persistence efcore</PackageTags>
     </PropertyGroup>
