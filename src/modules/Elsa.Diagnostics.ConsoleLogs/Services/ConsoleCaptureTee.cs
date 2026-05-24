@@ -28,6 +28,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
     private readonly IConsoleLogSourceRegistry _sourceRegistry;
     private readonly IConsoleLogRedactor _redactor;
     private readonly ConsoleLineFormatter _formatter;
+    private readonly ConsoleLogScopeAccessor _scopeAccessor;
     private readonly ConsoleLineBuffer _stdoutBuffer;
     private readonly ConsoleLineBuffer _stderrBuffer;
     private readonly object _bufferLock = new();
@@ -43,12 +44,14 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
         IConsoleLogSourceRegistry sourceRegistry,
         IConsoleLogRedactor redactor,
         ConsoleLineFormatter formatter,
+        ConsoleLogScopeAccessor scopeAccessor,
         IOptions<ConsoleLogsOptions> options)
     {
         _provider = provider;
         _sourceRegistry = sourceRegistry;
         _redactor = redactor;
         _formatter = formatter;
+        _scopeAccessor = scopeAccessor;
         _stdoutBuffer = new(options);
         _stderrBuffer = new(options);
 
@@ -110,16 +113,18 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
 
     private void OnChunkCaptured(CapturedChunk chunk)
     {
-        IReadOnlyCollection<string> lines;
+        IReadOnlyCollection<BufferedConsoleLine> lines;
+
+        var workflowInstanceId = _scopeAccessor.GetWorkflowInstanceId();
 
         lock (_bufferLock)
-            lines = GetBuffer(chunk.Stream).Append(chunk.Text, chunk.TimestampUtc);
+            lines = GetBuffer(chunk.Stream).Append(chunk.Text, chunk.TimestampUtc, workflowInstanceId);
 
         foreach (var line in lines)
             Publish(chunk.Stream, line, chunk.TimestampUtc);
     }
 
-    private string? FlushIfIdle(ConsoleLineBuffer buffer, DateTimeOffset now)
+    private BufferedConsoleLine? FlushIfIdle(ConsoleLineBuffer buffer, DateTimeOffset now)
     {
         lock (_bufferLock)
             return buffer.FlushIfIdle(now);
@@ -127,7 +132,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
 
     private void FlushRemaining(ConsoleLogStream stream)
     {
-        string? line;
+        BufferedConsoleLine? line;
         lock (_bufferLock)
             line = GetBuffer(stream).Flush();
 
@@ -137,11 +142,12 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
     private ConsoleLineBuffer GetBuffer(ConsoleLogStream stream) =>
         stream == ConsoleLogStream.Stdout ? _stdoutBuffer : _stderrBuffer;
 
-    private void Publish(ConsoleLogStream stream, string? text, DateTimeOffset timestamp)
+    private void Publish(ConsoleLogStream stream, BufferedConsoleLine? capturedLine, DateTimeOffset timestamp)
     {
-        if (text == null)
+        if (capturedLine == null)
             return;
 
+        var text = capturedLine.Value.Text;
         var formatted = _formatter.Format(text);
         var line = new ConsoleLogLine
         {
@@ -151,6 +157,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
             Stream = stream,
             Text = formatted.Text,
             Source = _sourceRegistry.Current,
+            WorkflowInstanceId = capturedLine.Value.WorkflowInstanceId,
             Truncated = formatted.Truncated
         };
 

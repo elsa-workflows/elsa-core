@@ -1,5 +1,6 @@
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests.Capture;
 
@@ -11,6 +12,7 @@ public class ConsoleCaptureTeeTests : IDisposable
     private readonly StringWriter _consoleOutput = new();
     private readonly CapturingProvider _provider = new();
     private readonly IOptions<ConsoleLogsOptions> _options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
+    private readonly ConsoleLogScopeAccessor _scopeAccessor = new();
 
     public ConsoleCaptureTeeTests()
     {
@@ -34,6 +36,7 @@ public class ConsoleCaptureTeeTests : IDisposable
         new ConsoleLogSourceRegistry(_options),
         new ConsoleLogRedactor(_options),
         new ConsoleLineFormatter(_options),
+        _scopeAccessor,
         _options);
 
     [Fact]
@@ -88,6 +91,7 @@ public class ConsoleCaptureTeeTests : IDisposable
             new ConsoleLogSourceRegistry(_options),
             new ConsoleLogRedactor(_options),
             new ConsoleLineFormatter(_options),
+            _scopeAccessor,
             _options);
 
         Console.WriteLine("broadcast");
@@ -107,6 +111,7 @@ public class ConsoleCaptureTeeTests : IDisposable
             new ConsoleLogSourceRegistry(_options),
             new ConsoleLogRedactor(_options),
             new ConsoleLineFormatter(_options),
+            _scopeAccessor,
             _options);
 
         Console.WriteLine("trigger");
@@ -115,6 +120,23 @@ public class ConsoleCaptureTeeTests : IDisposable
 
         Assert.Single(loggingProvider.Lines);
         Assert.Equal("trigger", loggingProvider.Lines[0].Text);
+    }
+
+    [Fact]
+    public async Task Capture_AttachesCurrentWorkflowInstanceId()
+    {
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(_scopeAccessor));
+        var logger = loggerFactory.CreateLogger("workflow");
+        await using var capture = CreateCapture();
+        using var scope = logger.BeginScope(new Dictionary<string, object>
+        {
+            ["WorkflowInstanceId"] = "workflow-instance-a"
+        });
+
+        Console.WriteLine("scoped");
+        await WaitForLinesAsync(_provider, 1);
+
+        Assert.Equal("workflow-instance-a", _provider.Lines[0].WorkflowInstanceId);
     }
 
     private static async Task WaitForLinesAsync(CapturingProvider provider, int count)

@@ -15,10 +15,11 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
     private readonly ConsoleLogsOptions _options = options.Value;
     private DateTimeOffset? _lastWriteAt;
     private bool _logicalLineHasContent;
+    private string? _workflowInstanceId;
 
-    public IReadOnlyCollection<string> Append(string value, DateTimeOffset now)
+    public IReadOnlyCollection<BufferedConsoleLine> Append(string value, DateTimeOffset now, string? workflowInstanceId = null)
     {
-        var lines = new List<string>();
+        var lines = new List<BufferedConsoleLine>();
 
         foreach (var ch in value)
         {
@@ -30,12 +31,13 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
                 if (_buffer.Length > 0)
                     lines.Add(FlushBuffer());
                 else if (!_logicalLineHasContent)
-                    lines.Add(string.Empty);
+                    lines.Add(new(string.Empty, workflowInstanceId));
 
                 _logicalLineHasContent = false;
                 continue;
             }
 
+            CaptureScope(workflowInstanceId);
             _buffer.Append(ch);
             _logicalLineHasContent = true;
 
@@ -49,7 +51,7 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
         return lines;
     }
 
-    public string? FlushIfIdle(DateTimeOffset now)
+    public BufferedConsoleLine? FlushIfIdle(DateTimeOffset now)
     {
         if (_buffer.Length == 0 || _lastWriteAt == null)
             return null;
@@ -57,15 +59,25 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
         return now - _lastWriteAt >= _options.IdleFlushTimeout ? FlushBuffer() : null;
     }
 
-    public string? Flush()
+    public BufferedConsoleLine? Flush()
     {
         return _buffer.Length == 0 ? null : FlushBuffer();
     }
 
-    private string FlushBuffer()
+    private void CaptureScope(string? workflowInstanceId)
+    {
+        if (_workflowInstanceId == null && !string.IsNullOrWhiteSpace(workflowInstanceId))
+            _workflowInstanceId = workflowInstanceId;
+    }
+
+    private BufferedConsoleLine FlushBuffer()
     {
         var line = _buffer.ToString();
+        var workflowInstanceId = _workflowInstanceId;
         _buffer.Clear();
-        return line;
+        _workflowInstanceId = null;
+        return new(line, workflowInstanceId);
     }
 }
+
+public readonly record struct BufferedConsoleLine(string Text, string? WorkflowInstanceId);

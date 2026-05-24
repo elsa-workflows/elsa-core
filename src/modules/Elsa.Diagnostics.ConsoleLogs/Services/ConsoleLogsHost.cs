@@ -52,6 +52,7 @@ public static class ConsoleLogsHost
     public static IConsoleLogSourceRegistry SourceRegistry => _state.Value.SourceRegistry;
     public static IConsoleLogRedactor Redactor => _state.Value.Redactor;
     public static ConsoleLineFormatter Formatter => _state.Value.Formatter;
+    public static ConsoleLogScopeAccessor ScopeAccessor => _state.Value.ScopeAccessor;
     public static IConsoleLogProvider Provider => _state.Value.Provider;
     public static ConsoleCaptureTee Capture => _state.Value.Capture;
 
@@ -97,10 +98,11 @@ public static class ConsoleLogsHost
         var sourceRegistry = new ConsoleLogSourceRegistry(wrappedOptions);
         var redactor = new ConsoleLogRedactor(wrappedOptions);
         var formatter = new ConsoleLineFormatter(wrappedOptions);
+        var scopeAccessor = new ConsoleLogScopeAccessor();
         var provider = new InMemoryConsoleLogProvider(wrappedOptions, sourceRegistry);
-        var capture = new ConsoleCaptureTee(provider, sourceRegistry, redactor, formatter, wrappedOptions);
+        var capture = new ConsoleCaptureTee(provider, sourceRegistry, redactor, formatter, scopeAccessor, wrappedOptions);
 
-        return new HostState(wrappedOptions, sourceRegistry, redactor, formatter, provider, capture);
+        return new HostState(wrappedOptions, sourceRegistry, redactor, formatter, scopeAccessor, provider, capture);
     }
 
     private sealed record HostState(
@@ -108,6 +110,7 @@ public static class ConsoleLogsHost
         IConsoleLogSourceRegistry SourceRegistry,
         IConsoleLogRedactor Redactor,
         ConsoleLineFormatter Formatter,
+        ConsoleLogScopeAccessor ScopeAccessor,
         IConsoleLogProvider Provider,
         ConsoleCaptureTee Capture);
 }

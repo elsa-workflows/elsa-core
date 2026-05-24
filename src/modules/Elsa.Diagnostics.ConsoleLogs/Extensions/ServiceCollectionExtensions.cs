@@ -2,6 +2,7 @@ using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
@@ -28,6 +29,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IConsoleLogSourceRegistry>(_ => ConsoleLogsHost.SourceRegistry);
         services.TryAddSingleton<IConsoleLogRedactor>(_ => ConsoleLogsHost.Redactor);
         services.TryAddSingleton(_ => ConsoleLogsHost.Formatter);
+        services.TryAddSingleton(ConsoleLogsHost.ScopeAccessor);
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider>(ConsoleLogsHost.ScopeAccessor));
         services.TryAddSingleton<IConsoleLogProvider>(_ => ConsoleLogsHost.Provider);
 
         // The subscription manager wraps a per-shell SignalR hub context, so it must be per-shell.

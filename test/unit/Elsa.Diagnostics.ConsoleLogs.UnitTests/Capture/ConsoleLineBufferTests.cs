@@ -13,7 +13,7 @@ public class ConsoleLineBufferTests
 
         var lines = _buffer.Append("lo\n", DateTimeOffset.UtcNow);
 
-        Assert.Equal(["hello"], lines);
+        Assert.Equal(["hello"], lines.Select(x => x.Text));
     }
 
     [Fact]
@@ -21,8 +21,8 @@ public class ConsoleLineBufferTests
     {
         var lines = _buffer.Append("hello!", DateTimeOffset.UtcNow);
 
-        Assert.Equal(["hello"], lines);
-        Assert.Equal("!", _buffer.Flush());
+        Assert.Equal(["hello"], lines.Select(x => x.Text));
+        Assert.Equal("!", _buffer.Flush()?.Text);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class ConsoleLineBufferTests
         _buffer.Append("tail", now);
 
         Assert.Null(_buffer.FlushIfIdle(now.AddMilliseconds(500)));
-        Assert.Equal("tail", _buffer.FlushIfIdle(now.AddSeconds(2)));
+        Assert.Equal("tail", _buffer.FlushIfIdle(now.AddSeconds(2))?.Text);
     }
 
     [Fact]
@@ -41,6 +41,17 @@ public class ConsoleLineBufferTests
     {
         var lines = _buffer.Append("a\n\nb\n", DateTimeOffset.UtcNow);
 
-        Assert.Equal(["a", "", "b"], lines);
+        Assert.Equal(["a", "", "b"], lines.Select(x => x.Text));
+    }
+
+    [Fact]
+    public void Append_PreservesWorkflowInstanceIdAcrossPartialWrites()
+    {
+        _buffer.Append("hel", DateTimeOffset.UtcNow, "workflow-instance-a");
+
+        var line = Assert.Single(_buffer.Append("lo\n", DateTimeOffset.UtcNow));
+
+        Assert.Equal("hello", line.Text);
+        Assert.Equal("workflow-instance-a", line.WorkflowInstanceId);
     }
 }

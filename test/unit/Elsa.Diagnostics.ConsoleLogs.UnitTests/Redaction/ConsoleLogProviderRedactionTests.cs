@@ -34,6 +34,7 @@ public class ConsoleLogProviderRedactionTests : IAsyncLifetime
                 new ConsoleLogSourceRegistry(options),
                 new ConsoleLogRedactor(options),
                 new ConsoleLineFormatter(options),
+                new ConsoleLogScopeAccessor(),
                 options);
 
             Console.WriteLine(string.Concat("pass", "word", "=", "sample-value"));

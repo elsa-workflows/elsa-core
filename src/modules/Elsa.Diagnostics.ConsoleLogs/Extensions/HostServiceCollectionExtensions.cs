@@ -1,6 +1,7 @@
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
 
@@ -26,6 +27,8 @@ public static class HostServiceCollectionExtensions
             ConsoleLogsHost.Configure(configure);
 
         ConsoleLogsHost.EnsureInitialized();
+        services.TryAddSingleton(ConsoleLogsHost.ScopeAccessor);
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider>(ConsoleLogsHost.ScopeAccessor));
         services.TryAddEnumerable(ServiceDescriptor.Singleton<Microsoft.Extensions.Hosting.IHostedService, ConsoleLogsHostedService>());
         return services;
     }
