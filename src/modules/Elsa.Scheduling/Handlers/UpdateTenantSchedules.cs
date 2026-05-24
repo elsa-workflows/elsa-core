@@ -28,7 +28,9 @@ public class UpdateTenantSchedules : ITenantActivatedEvent, ITenantDeletedEvent
         var bookmarks = (await GetBookmarksAsync(serviceProvider, cancellationToken)).ToList();
 
         await triggerScheduler.ScheduleAsync(triggers, args.CancellationToken);
-        await bookmarkScheduler.ScheduleAsync(bookmarks, args.CancellationToken);
+
+        // Explicitly no await to prevent the scheduling from blocking application start
+        _ = bookmarkScheduler.ScheduleAsync(bookmarks, args.CancellationToken);
     }
 
     public async Task TenantDeletedAsync(TenantDeletedEventArgs args)
