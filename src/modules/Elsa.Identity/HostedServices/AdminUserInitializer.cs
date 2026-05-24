@@ -20,7 +20,7 @@ public class AdminUserInitializer(
     ILogger<AdminUserInitializer> logger)
     : BackgroundTask
 {
-    public override async Task StartAsync(CancellationToken cancellationToken)
+    public override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         var adminUserName = options.Value.AdminUserName;
         var adminPassword = options.Value.AdminPassword;

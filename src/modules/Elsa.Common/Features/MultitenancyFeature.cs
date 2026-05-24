@@ -2,6 +2,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Common.RecurringTasks;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -50,8 +51,10 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddSingleton<TenantEventsManager>()
             .AddScoped<DefaultTenantsProvider>()
             .AddScoped<DefaultTenantResolver>()
+            .AddScoped<ITenantBackgroundWorkQueue, TenantBackgroundWorkQueue>()
             .AddScoped<ITaskExecutor, TaskExecutor>()
             .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
+            .AddBackgroundTask<TenantBackgroundWorkQueueWorker>()
             .AddScoped(_tenantsProviderFactory);
     }
 }

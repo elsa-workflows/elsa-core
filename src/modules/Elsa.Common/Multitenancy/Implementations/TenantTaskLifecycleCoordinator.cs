@@ -92,27 +92,38 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
             await taskExecutor.ExecuteTaskAsync(task, cancellationToken);
     }
 
-    private Task RunBackgroundTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
+    private async Task RunBackgroundTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
     {
-        var backgroundTasks = tenantScope.ServiceProvider.GetServices<IBackgroundTask>();
+        var backgroundTasks = tenantScope.ServiceProvider.GetServices<IBackgroundTask>().ToList();
         var backgroundTaskStarter = tenantScope.ServiceProvider.GetRequiredService<IBackgroundTaskStarter>();
         var tenantCancellationToken = state.CancellationTokenSource?.Token ?? cancellationToken;
 
         foreach (var backgroundTask in backgroundTasks)
         {
-            var task = backgroundTaskStarter
-                .StartAsync(backgroundTask, tenantCancellationToken)
-                .ContinueWith(_ => taskExecutor.ExecuteTaskAsync(backgroundTask, tenantCancellationToken),
-                    cancellationToken,
-                    TaskContinuationOptions.RunContinuationsAsynchronously,
-                    TaskScheduler.Default)
-                .Unwrap();
+            await backgroundTaskStarter.StartAsync(backgroundTask, tenantCancellationToken);
+            state.BackgroundTasks.Add(new(backgroundTask, backgroundTaskStarter));
+
+            var task = RunBackgroundTaskAsync(backgroundTask, taskExecutor, tenantCancellationToken);
 
             if (!task.IsCompleted)
                 state.RunningBackgroundTasks.Add(task);
         }
+    }
 
-        return Task.CompletedTask;
+    private async Task RunBackgroundTaskAsync(IBackgroundTask backgroundTask, ITaskExecutor taskExecutor, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await taskExecutor.ExecuteTaskAsync(backgroundTask, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            logger.LogInformation("Background task {TaskType} was cancelled", backgroundTask.GetType().Name);
+        }
+        catch (Exception e) when (!e.IsFatal())
+        {
+            logger.LogError(e, "Background task {TaskType} failed with an error", backgroundTask.GetType().Name);
+        }
     }
 
     private async Task StartRecurringTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
@@ -225,6 +236,23 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
         }
         state.ScheduledTimers.Clear();
 
+        foreach (var backgroundTask in state.BackgroundTasks)
+        {
+            try
+            {
+                await backgroundTask.Starter.StopAsync(backgroundTask.Task, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected if caller requested cancellation during tenant deactivation.
+            }
+            catch (Exception e) when (!e.IsFatal())
+            {
+                logger.LogError(e, "Failed to stop background task {TaskType}", backgroundTask.Task.GetType().Name);
+            }
+        }
+        state.BackgroundTasks.Clear();
+
         if (state.RunningBackgroundTasks.Count > 0)
         {
             try
@@ -290,8 +318,11 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
         // Since we exclusively use WaitAsync(), no kernel handle is ever created and disposal is a no-op.
         public SemaphoreSlim Gate { get; } = new(1, 1);
         public List<Task> RunningBackgroundTasks { get; } = [];
+        public List<BackgroundTaskRegistration> BackgroundTasks { get; } = [];
         public List<ScheduledTimer> ScheduledTimers { get; } = [];
         public List<IRecurringTask> RecurringTasks { get; } = [];
         public CancellationTokenSource? CancellationTokenSource { get; set; }
     }
+
+    private record BackgroundTaskRegistration(IBackgroundTask Task, IBackgroundTaskStarter Starter);
 }

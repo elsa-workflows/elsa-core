@@ -1,6 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
@@ -17,6 +18,40 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         _serviceProvider = BuildTenantServiceProvider(recurringTasks: [_recurringTask]);
 
     public ValueTask DisposeAsync() => _coordinator.DisposeAsync();
+
+    [Fact]
+    public async Task ActivateAsync_WithQueuedWork_ReturnsBeforeWorkItemCompletes()
+    {
+        QueueBlockingWorkStartupTask? startupTask = null;
+        var serviceProvider = BuildTenantServiceProvider(
+            startupTasks: [sp => startupTask = ActivatorUtilities.CreateInstance<QueueBlockingWorkStartupTask>(sp)],
+            backgroundTasks: [sp => ActivatorUtilities.CreateInstance<TenantBackgroundWorkQueueWorker>(sp)]);
+        var activationTask = _coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(_tenant, CreateTenantScope(_tenant, serviceProvider), CancellationToken.None));
+
+        var completedTask = await Task.WhenAny(activationTask, Task.Delay(TimeSpan.FromSeconds(1)));
+
+        Assert.Same(activationTask, completedTask);
+        await activationTask;
+        await startupTask!.WorkStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        Assert.False(startupTask.WorkCompleted.Task.IsCompleted);
+
+        startupTask.ReleaseWork();
+        await startupTask.WorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+    }
+
+    [Fact]
+    public async Task DeactivateAsync_WithRunningBackgroundTask_StopsTask()
+    {
+        var backgroundTask = new TrackingBackgroundTask();
+        var serviceProvider = BuildTenantServiceProvider(backgroundTasks: [_ => backgroundTask]);
+
+        await _coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(_tenant, CreateTenantScope(_tenant, serviceProvider), CancellationToken.None));
+        await backgroundTask.Started.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await _coordinator.DeactivateTenantAsync(DeactivationArgs(serviceProvider));
+
+        Assert.True(backgroundTask.WasStopCalled);
+        Assert.True(backgroundTask.WasCancelled);
+    }
 
     /// <summary>
     /// Regression test: before the fix, <c>TryRemove</c> was called before <c>WaitAsync</c>,
@@ -80,6 +115,9 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
     private TenantDeactivatedEventArgs DeactivationArgs(CancellationToken cancellationToken = default) =>
         DeactivationArgs(_tenant, cancellationToken);
 
+    private TenantDeactivatedEventArgs DeactivationArgs(IServiceProvider serviceProvider, CancellationToken cancellationToken = default) =>
+        new(_tenant, CreateTenantScope(_tenant, serviceProvider), cancellationToken);
+
     private TenantDeactivatedEventArgs DeactivationArgs(Tenant tenant, CancellationToken cancellationToken = default) =>
         new(tenant, CreateTenantScope(tenant, _serviceProvider), cancellationToken);
 
@@ -91,13 +129,22 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         return new TenantTaskLifecycleCoordinator(scheduleManager, NullLogger<TenantTaskLifecycleCoordinator>.Instance);
     }
 
-    private static IServiceProvider BuildTenantServiceProvider(IEnumerable<IRecurringTask>? recurringTasks = null)
+    private static IServiceProvider BuildTenantServiceProvider(
+        IEnumerable<IRecurringTask>? recurringTasks = null,
+        IEnumerable<Func<IServiceProvider, IStartupTask>>? startupTasks = null,
+        IEnumerable<Func<IServiceProvider, IBackgroundTask>>? backgroundTasks = null)
     {
         var services = new ServiceCollection();
-        services.AddSingleton<ITaskExecutor>(new InstantTaskExecutor());
-        services.AddSingleton(Substitute.For<IBackgroundTaskStarter>());
+        services.AddSingleton<ITaskExecutor>(new DirectTaskExecutor());
+        services.AddSingleton<IBackgroundTaskStarter, DirectBackgroundTaskStarter>();
+        services.AddSingleton<ITenantBackgroundWorkQueue, TenantBackgroundWorkQueue>();
+        services.AddSingleton<ILogger<TenantBackgroundWorkQueueWorker>>(NullLogger<TenantBackgroundWorkQueueWorker>.Instance);
+        foreach (var taskFactory in startupTasks ?? [])
+            services.AddSingleton<IStartupTask>(taskFactory);
         foreach (var task in recurringTasks ?? [])
             services.AddSingleton<IRecurringTask>(task);
+        foreach (var taskFactory in backgroundTasks ?? [])
+            services.AddSingleton<IBackgroundTask>(taskFactory);
         return services.BuildServiceProvider();
     }
 
@@ -126,8 +173,61 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         }
     }
 
-    private class InstantTaskExecutor : ITaskExecutor
+    private class QueueBlockingWorkStartupTask(ITenantBackgroundWorkQueue workQueue) : IStartupTask
     {
-        public Task ExecuteTaskAsync(ITask task, CancellationToken cancellationToken) => Task.CompletedTask;
+        private readonly TaskCompletionSource _releaseWork = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource WorkStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource WorkCompleted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            await workQueue.EnqueueAsync(async (_, ct) =>
+            {
+                WorkStarted.SetResult();
+                await _releaseWork.Task.WaitAsync(ct);
+                WorkCompleted.SetResult();
+            }, cancellationToken);
+        }
+
+        public void ReleaseWork() => _releaseWork.SetResult();
+    }
+
+    private class TrackingBackgroundTask : BackgroundTask
+    {
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool WasCancelled { get; private set; }
+        public bool WasStopCalled { get; private set; }
+
+        public override async Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            Started.SetResult();
+
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                WasCancelled = true;
+            }
+        }
+
+        public override Task StopAsync(CancellationToken cancellationToken)
+        {
+            WasStopCalled = true;
+            return Task.CompletedTask;
+        }
+    }
+
+    private class DirectTaskExecutor : ITaskExecutor
+    {
+        public Task ExecuteTaskAsync(ITask task, CancellationToken cancellationToken) => task.ExecuteAsync(cancellationToken);
+    }
+
+    private class DirectBackgroundTaskStarter : IBackgroundTaskStarter
+    {
+        public Task StartAsync(IBackgroundTask task, CancellationToken cancellationToken) => task.StartAsync(cancellationToken);
+        public Task StopAsync(IBackgroundTask task, CancellationToken cancellationToken) => task.StopAsync(cancellationToken);
     }
 }
