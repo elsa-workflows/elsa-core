@@ -16,6 +16,7 @@ public class ConsoleLogProviderRedactionTests
 
         try
         {
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(TextWriter.Null);
             await capture.StartAsync();
             Console.WriteLine(string.Concat("pass", "word", "=", "sample-value"));
@@ -25,6 +26,7 @@ public class ConsoleLogProviderRedactionTests
         finally
         {
             await capture.StopAsync();
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(originalOut);
         }
     }

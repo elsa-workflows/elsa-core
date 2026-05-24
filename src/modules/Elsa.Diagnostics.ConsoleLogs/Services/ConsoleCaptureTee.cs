@@ -1,4 +1,3 @@
-using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
@@ -9,21 +8,18 @@ public class ConsoleCaptureTee(
     IConsoleLogSourceRegistry sourceRegistry,
     IConsoleLogRedactor redactor,
     ConsoleLineFormatter formatter,
-    IOptions<ConsoleLogsOptions> options) : TextWriter, IConsoleLogCapture
+    IOptions<ConsoleLogsOptions> options) : IConsoleLogCapture, IDisposable
 {
     private readonly object _lock = new();
     private readonly ConsoleLogsOptions _options = options.Value;
     private readonly ConsoleLineBuffer _stdoutBuffer = new(options);
     private readonly ConsoleLineBuffer _stderrBuffer = new(options);
-    private TextWriter? _originalOut;
-    private TextWriter? _originalError;
     private Channel<ConsoleLogLine>? _publishChannel;
     private CancellationTokenSource? _publishCancellation;
     private Task? _publishTask;
     private int _startCount;
     private long _sequence;
-
-    public override Encoding Encoding => _originalOut?.Encoding ?? Encoding.UTF8;
+    private Action<ConsoleLogStream, string>? _hookHandler;
 
     public ValueTask StartAsync(CancellationToken cancellationToken = default)
     {
@@ -40,10 +36,11 @@ public class ConsoleCaptureTee(
                 SingleWriter = false
             });
             _publishTask = PublishQueuedLinesAsync(_publishChannel.Reader, _publishCancellation.Token);
-            _originalOut = Console.Out;
-            _originalError = Console.Error;
-            Console.SetOut(new TeeWriter(_originalOut, this, ConsoleLogStream.Stdout));
-            Console.SetError(new TeeWriter(_originalError, this, ConsoleLogStream.Stderr));
+
+            // Ensure the tee is installed (idempotent), then subscribe this capture instance.
+            ConsoleStreamHook.Install();
+            _hookHandler = Capture;
+            ConsoleStreamHook.OnCapture = _hookHandler;
         }
 
         return ValueTask.CompletedTask;
@@ -62,19 +59,15 @@ public class ConsoleCaptureTee(
             if (--_startCount > 0)
                 return ValueTask.CompletedTask;
 
-            if (_originalOut != null)
-                Console.SetOut(_originalOut);
-
-            if (_originalError != null)
-                Console.SetError(_originalError);
+            if (ReferenceEquals(ConsoleStreamHook.OnCapture, _hookHandler))
+                ConsoleStreamHook.OnCapture = null;
+            _hookHandler = null;
 
             FlushRemaining(ConsoleLogStream.Stdout);
             FlushRemaining(ConsoleLogStream.Stderr);
             _publishChannel?.Writer.TryComplete();
             publishTask = _publishTask;
             publishCancellation = _publishCancellation;
-            _originalOut = null;
-            _originalError = null;
             _publishChannel = null;
             _publishCancellation = null;
             _publishTask = null;
@@ -83,12 +76,12 @@ public class ConsoleCaptureTee(
         return AwaitPublisherAsync(publishTask, publishCancellation, cancellationToken);
     }
 
-    public override void Write(char value)
+    public void Dispose()
     {
-        Capture(ConsoleLogStream.Stdout, value.ToString());
+        StopAsync().GetAwaiter().GetResult();
     }
 
-    public override ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         return StopAsync();
     }
@@ -192,27 +185,5 @@ public class ConsoleCaptureTee(
             throw;
         }
     }
-
-    private sealed class TeeWriter(TextWriter original, ConsoleCaptureTee capture, ConsoleLogStream stream) : TextWriter
-    {
-        public override Encoding Encoding => original.Encoding;
-
-        public override void Write(char value)
-        {
-            original.Write(value);
-            capture.Capture(stream, value.ToString());
-        }
-
-        public override void Write(string? value)
-        {
-            original.Write(value);
-            if (value != null)
-                capture.Capture(stream, value);
-        }
-
-        public override void Flush()
-        {
-            original.Flush();
-        }
-    }
 }
+

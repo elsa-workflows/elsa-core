@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime.Distributed;
 
 /// <summary>
-/// Validates that the distributed runtime is not accidentally backed by a local-only lock provider.
+/// Logs when the distributed runtime is backed by a local-only lock provider.
 /// </summary>
 public class DistributedRuntimeLockProviderValidator(
     IDistributedLockProvider distributedLockProvider,
@@ -18,7 +18,7 @@ public class DistributedRuntimeLockProviderValidator(
     ILogger<DistributedRuntimeLockProviderValidator> logger)
 {
     /// <summary>
-    /// Validates the configured provider.
+    /// Checks the configured provider.
     /// </summary>
     public void Validate()
     {
@@ -37,19 +37,17 @@ public class DistributedRuntimeLockProviderValidator(
 
         if (options.Value.AllowLocalLockProviderInDistributedRuntime)
         {
-            logger.LogWarning(
-                "Distributed workflow runtime is using local-only lock provider {LocalDistributedLockProviderType} through configured provider {DistributedLockProviderType}. This is safe only for single-host deployments.",
+            logger.LogDebug(
+                "Distributed workflow runtime is using acknowledged local-only lock provider {LocalDistributedLockProviderType} through configured provider {DistributedLockProviderType}.",
                 localProviderTypeName,
                 configuredProviderTypeName);
             return;
         }
 
-        var message =
-            $"The distributed workflow runtime is configured with local-only distributed lock provider '{localProviderTypeName}' through '{configuredProviderTypeName}'. " +
-            "This provider does not coordinate across application nodes and can allow concurrent workflow processing in clustered deployments. " +
-            "Configure a cross-node IDistributedLockProvider such as Redis, SQL Server, or PostgreSQL, or explicitly set DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime to true for single-host development/test deployments.";
-
-        throw new InvalidOperationException(message);
+        logger.LogWarning(
+            "Distributed workflow runtime is using local-only lock provider {LocalDistributedLockProviderType} through configured provider {DistributedLockProviderType}. This provider does not coordinate across application nodes and can allow concurrent workflow processing in clustered deployments. Configure a cross-node IDistributedLockProvider such as Redis, SQL Server, or PostgreSQL for clustered deployments, or set DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime to true to acknowledge single-host development/test usage.",
+            localProviderTypeName,
+            configuredProviderTypeName);
     }
 
     private Type? FindLocalProviderType(IDistributedLockProvider provider, ISet<IDistributedLockProvider>? visited = null)

@@ -18,6 +18,7 @@ public class ConsoleCaptureTeeTests
 
         try
         {
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(consoleOutput);
             await capture.StartAsync();
 
@@ -32,6 +33,7 @@ public class ConsoleCaptureTeeTests
         finally
         {
             await capture.StopAsync();
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
@@ -50,6 +52,7 @@ public class ConsoleCaptureTeeTests
 
         try
         {
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(consoleOutput);
             await capture.StartAsync();
             await capture.StartAsync();
@@ -64,6 +67,7 @@ public class ConsoleCaptureTeeTests
         {
             await capture.StopAsync();
             await capture.StopAsync();
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
@@ -82,6 +86,7 @@ public class ConsoleCaptureTeeTests
 
         try
         {
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(consoleOutput);
             await capture.StartAsync();
 
@@ -93,6 +98,7 @@ public class ConsoleCaptureTeeTests
         finally
         {
             await capture.StopAsync();
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }
@@ -111,6 +117,7 @@ public class ConsoleCaptureTeeTests
 
         try
         {
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(consoleOutput);
             await capture.StartAsync();
             await capture.StartAsync();
@@ -131,6 +138,7 @@ public class ConsoleCaptureTeeTests
         finally
         {
             await capture.StopAsync();
+            ConsoleStreamHook.Uninstall();
             Console.SetOut(originalOut);
             Console.SetError(originalError);
         }

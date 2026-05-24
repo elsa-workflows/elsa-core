@@ -11,6 +11,11 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogsOptions>? configureOptions = null)
     {
+        // Install the stdout/stderr tee as early as possible so that downstream logger providers
+        // (e.g. Microsoft.Extensions.Logging.Console) that capture Console.Out/Console.Error at
+        // construction time end up holding the tee, not the original writer.
+        ConsoleStreamHook.Install();
+
         if (configureOptions != null)
             services.Configure(configureOptions);
 

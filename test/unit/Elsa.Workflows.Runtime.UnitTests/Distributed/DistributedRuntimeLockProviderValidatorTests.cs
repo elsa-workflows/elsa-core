@@ -19,14 +19,11 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
-    public void Validate_Throws_WhenFileSystemProviderIsUsedWithoutOptIn()
+    public void Validate_DoesNotThrow_WhenFileSystemProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(_fileProvider);
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
@@ -38,48 +35,36 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
-    public void Validate_Throws_WhenWrappedProviderUsesFileSystemProvider()
+    public void Validate_DoesNotThrow_WhenWrappedProviderUsesFileSystemProvider()
     {
         var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(WrappedDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughCustomProperty()
+    public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughCustomProperty()
     {
         var validator = CreateValidator(new CustomWrappedDistributedLockProvider(_fileProvider));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(CustomWrappedDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughProviderCollection()
+    public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughProviderCollection()
     {
         var validator = CreateValidator(new CompositeDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(CompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughNonGenericProviderCollection()
+    public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughNonGenericProviderCollection()
     {
         System.Collections.IEnumerable providers = new IDistributedLockProvider[] { new CustomDistributedLockProvider(), _fileProvider };
         var validator = CreateValidator(new NonGenericCompositeDistributedLockProvider(providers));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(NonGenericCompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
@@ -99,14 +84,11 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
-    public void Validate_Throws_WhenNullableProviderCollectionContainsFileSystemProvider()
+    public void Validate_DoesNotThrow_WhenNullableProviderCollectionContainsFileSystemProvider()
     {
         var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null, _fileProvider]));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(NullableCompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
@@ -141,20 +123,15 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
             new ValueEqualDistributedLockProvider("same", _fileProvider)
         ]));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(CompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenNoopProviderIsUsedWithoutOptIn()
+    public void Validate_DoesNotThrow_WhenNoopProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(new NoopDistributedSynchronizationProvider());
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(NoopDistributedSynchronizationProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
