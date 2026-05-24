@@ -1,34 +1,40 @@
-using Elsa.Diagnostics.ConsoleLogs.Providers.InMemory;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers shell-level console-log consumers (SignalR, subscription manager) and exposes the
+    /// process-wide capture pipeline owned by <see cref="ConsoleLogsHost"/> through DI. Configuration
+    /// supplied here applies only if the host has not yet been initialised (first-wins). Prefer calling
+    /// <c>AddConsoleLogsHost</c> from <c>Program.cs</c> for deterministic host-level configuration.
+    /// </summary>
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogsOptions>? configureOptions = null)
     {
-        // Install the stdout/stderr tee as early as possible so that downstream logger providers
-        // (e.g. Microsoft.Extensions.Logging.Console) that capture Console.Out/Console.Error at
-        // construction time end up holding the tee, not the original writer.
         ConsoleStreamHook.Install();
 
         if (configureOptions != null)
-            services.Configure(configureOptions);
+            ConsoleLogsHost.Configure(configureOptions);
 
         services.AddSignalR();
-        services.AddOptions<ConsoleLogsOptions>();
-        services.TryAddSingleton<IConsoleLogSourceRegistry, ConsoleLogSourceRegistry>();
-        services.TryAddSingleton<IConsoleLogRedactor, ConsoleLogRedactor>();
-        services.TryAddSingleton<ConsoleLineFormatter>();
-        services.TryAddSingleton<IConsoleLogProvider, InMemoryConsoleLogProvider>();
+
+        // Every shell resolves the same process-wide singletons — console output is a shared OS resource.
+        services.TryAddSingleton<IOptions<ConsoleLogsOptions>>(_ => ConsoleLogsHost.Options);
+        services.TryAddSingleton<IConsoleLogSourceRegistry>(_ => ConsoleLogsHost.SourceRegistry);
+        services.TryAddSingleton<IConsoleLogRedactor>(_ => ConsoleLogsHost.Redactor);
+        services.TryAddSingleton(_ => ConsoleLogsHost.Formatter);
+        services.TryAddSingleton<IConsoleLogProvider>(_ => ConsoleLogsHost.Provider);
+
+        // The subscription manager wraps a per-shell SignalR hub context, so it must be per-shell.
         services.TryAddSingleton<ConsoleLogSubscriptionManager>();
-        services.TryAddSingleton<IConsoleLogCapture, ConsoleCaptureTee>();
-        services.AddBackgroundTask<ConsoleLogCaptureBackgroundTask>();
-        services.AddHostedService<ConsoleLogCaptureHostedService>();
+
+        // Ensure the host is initialised even if AddConsoleLogsHost was not called from Program.cs.
+        ConsoleLogsHost.EnsureInitialized();
 
         return services;
     }

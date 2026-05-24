@@ -35,4 +35,12 @@ public class ConsoleLineBufferTests
         Assert.Null(_buffer.FlushIfIdle(now.AddMilliseconds(500)));
         Assert.Equal("tail", _buffer.FlushIfIdle(now.AddSeconds(2)));
     }
+
+    [Fact]
+    public void Append_PreservesEmptyLinesBetweenWrites()
+    {
+        var lines = _buffer.Append("a\n\nb\n", DateTimeOffset.UtcNow);
+
+        Assert.Equal(["a", "", "b"], lines);
+    }
 }

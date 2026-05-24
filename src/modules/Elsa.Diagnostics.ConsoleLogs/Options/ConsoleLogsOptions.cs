@@ -8,7 +8,13 @@ public class ConsoleLogsOptions
     public int MaxRecentQuerySize { get; set; } = 1_000;
     public int MaxLineLength { get; set; } = 16_384;
     public TimeSpan IdleFlushTimeout { get; set; } = TimeSpan.FromSeconds(1);
-    public bool StripAnsiEscapeSequences { get; set; } = true;
+
+    /// <summary>
+    /// When true, ANSI escape sequences (colours, cursor commands, etc.) are removed before the captured
+    /// line is published. The default is <c>false</c> so the wire payload preserves the original bytes the
+    /// process wrote; consumers (e.g., the Studio) decide whether to render or strip them client-side.
+    /// </summary>
+    public bool StripAnsiEscapeSequences { get; set; } = false;
     public TimeSpan SourceHeartbeatTimeout { get; set; } = TimeSpan.FromSeconds(30);
     public bool IncludeConsoleLogsInternalLogs { get; set; }
     public string RedactionReplacement { get; set; } = "[Redacted]";

@@ -3,168 +3,141 @@ using Elsa.Diagnostics.ConsoleLogs.Services;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests.Capture;
 
-public class ConsoleCaptureTeeTests
+[Collection(ConsoleHostStateCollection.Name)]
+public class ConsoleCaptureTeeTests : IDisposable
 {
-    [Fact]
-    public async Task StartAsync_PreservesOriginalConsoleOutputAndPublishesLine()
+    private readonly TextWriter _originalOut = Console.Out;
+    private readonly TextWriter _originalError = Console.Error;
+    private readonly StringWriter _consoleOutput = new();
+    private readonly CapturingProvider _provider = new();
+    private readonly IOptions<ConsoleLogsOptions> _options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
+
+    public ConsoleCaptureTeeTests()
     {
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
-        using var consoleOutput = new StringWriter();
-        var provider = new CapturingProvider();
-        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
-        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
-        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+        // Tear down any process-wide host instance so its hook subscription doesn't double-publish.
+        ConsoleLogsHost.ShutdownAsync().AsTask().GetAwaiter().GetResult();
+        ConsoleStreamHook.Uninstall();
+        Console.SetOut(_consoleOutput);
+    }
 
-        try
-        {
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(consoleOutput);
-            await capture.StartAsync();
+    public void Dispose()
+    {
+        ConsoleStreamHook.Uninstall();
+        ConsoleLogsHost.ShutdownAsync().AsTask().GetAwaiter().GetResult();
+        Console.SetOut(_originalOut);
+        Console.SetError(_originalError);
+        _consoleOutput.Dispose();
+    }
 
-            Console.WriteLine("hello");
-            await WaitForLineAsync(provider);
+    private ConsoleCaptureTee CreateCapture() => new(
+        _provider,
+        new ConsoleLogSourceRegistry(_options),
+        new ConsoleLogRedactor(_options),
+        new ConsoleLineFormatter(_options),
+        _options);
 
-            Assert.Equal($"hello{Environment.NewLine}", consoleOutput.ToString());
-            Assert.Single(provider.Lines);
-            Assert.Equal("hello", provider.Lines[0].Text);
-            Assert.Equal(ConsoleLogStream.Stdout, provider.Lines[0].Stream);
-        }
-        finally
-        {
-            await capture.StopAsync();
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-        }
+    [Fact]
+    public async Task Capture_PreservesOriginalConsoleOutputAndPublishesLine()
+    {
+        await using var capture = CreateCapture();
+
+        Console.WriteLine("hello");
+        await WaitForLinesAsync(_provider, 1);
+
+        Assert.Equal($"hello{Environment.NewLine}", _consoleOutput.ToString());
+        var line = Assert.Single(_provider.Lines);
+        Assert.Equal("hello", line.Text);
+        Assert.Equal(ConsoleLogStream.Stdout, line.Stream);
     }
 
     [Fact]
-    public async Task StartAsync_WhenAlreadyStarted_DoesNotWrapConsoleTwice()
+    public async Task Capture_RedactsBeforePublishingToProvider()
     {
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
-        using var consoleOutput = new StringWriter();
-        var provider = new CapturingProvider();
-        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
-        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
-        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+        await using var capture = CreateCapture();
 
-        try
-        {
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(consoleOutput);
-            await capture.StartAsync();
-            await capture.StartAsync();
+        Console.WriteLine("token=secret-value");
+        await WaitForLinesAsync(_provider, 1);
 
-            Console.WriteLine("hello");
-            await WaitForLineAsync(provider);
-
-            Assert.Equal($"hello{Environment.NewLine}", consoleOutput.ToString());
-            Assert.Single(provider.Lines);
-        }
-        finally
-        {
-            await capture.StopAsync();
-            await capture.StopAsync();
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-        }
+        Assert.Equal("[Redacted]", _provider.Lines[0].Text);
     }
 
     [Fact]
-    public async Task StartAsync_RedactsBeforePublishingToProvider()
+    public async Task Capture_AfterDispose_StopsPublishing()
     {
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
-        using var consoleOutput = new StringWriter();
-        var provider = new CapturingProvider();
-        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
-        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
-        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+        var capture = CreateCapture();
 
-        try
-        {
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(consoleOutput);
-            await capture.StartAsync();
+        Console.WriteLine("first");
+        await WaitForLinesAsync(_provider, 1);
 
-            Console.WriteLine("token=secret-value");
-            await WaitForLineAsync(provider);
+        await capture.DisposeAsync();
 
-            Assert.Equal("[Redacted]", provider.Lines[0].Text);
-        }
-        finally
-        {
-            await capture.StopAsync();
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-        }
+        Console.WriteLine("second");
+        await Task.Delay(50);
+
+        Assert.Single(_provider.Lines);
+        Assert.Equal("first", _provider.Lines[0].Text);
     }
 
     [Fact]
-    public async Task StopAsync_WhenStartedTwice_KeepsCaptureActiveUntilSecondStop()
+    public async Task Capture_FansOutToMultipleConcurrentSubscribers()
     {
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
-        using var consoleOutput = new StringWriter();
-        var provider = new CapturingProvider();
-        var registry = new ConsoleLogSourceRegistry(Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions()));
-        var options = Microsoft.Extensions.Options.Options.Create(new ConsoleLogsOptions());
-        var capture = new ConsoleCaptureTee(provider, registry, new ConsoleLogRedactor(options), new ConsoleLineFormatter(options), options);
+        var secondProvider = new CapturingProvider();
+        await using var first = CreateCapture();
+        await using var second = new ConsoleCaptureTee(
+            secondProvider,
+            new ConsoleLogSourceRegistry(_options),
+            new ConsoleLogRedactor(_options),
+            new ConsoleLineFormatter(_options),
+            _options);
 
-        try
-        {
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(consoleOutput);
-            await capture.StartAsync();
-            await capture.StartAsync();
+        Console.WriteLine("broadcast");
+        await WaitForLinesAsync(_provider, 1);
+        await WaitForLinesAsync(secondProvider, 1);
 
-            await capture.StopAsync();
-            Console.WriteLine("still captured");
-            await WaitForLineAsync(provider);
-
-            Assert.Single(provider.Lines);
-            Assert.Equal("still captured", provider.Lines[0].Text);
-
-            await capture.StopAsync();
-            Console.WriteLine("not captured");
-            await Task.Delay(50);
-
-            Assert.Single(provider.Lines);
-        }
-        finally
-        {
-            await capture.StopAsync();
-            ConsoleStreamHook.Uninstall();
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
-        }
+        Assert.Equal("broadcast", _provider.Lines[^1].Text);
+        Assert.Equal("broadcast", secondProvider.Lines[^1].Text);
     }
 
-    private static async Task WaitForLineAsync(CapturingProvider provider)
+    [Fact]
+    public async Task Capture_SuppressesPublishPathReentrancy()
     {
-        var timeout = DateTimeOffset.UtcNow.AddSeconds(2);
-        while (provider.Lines.Count == 0 && DateTimeOffset.UtcNow < timeout)
+        var loggingProvider = new ReentrantProvider();
+        await using var capture = new ConsoleCaptureTee(
+            loggingProvider,
+            new ConsoleLogSourceRegistry(_options),
+            new ConsoleLogRedactor(_options),
+            new ConsoleLineFormatter(_options),
+            _options);
+
+        Console.WriteLine("trigger");
+        await WaitForLinesAsync(loggingProvider, 1);
+        await Task.Delay(50); // Give any reentrant publish a chance to misbehave.
+
+        Assert.Single(loggingProvider.Lines);
+        Assert.Equal("trigger", loggingProvider.Lines[0].Text);
+    }
+
+    private static async Task WaitForLinesAsync(CapturingProvider provider, int count)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(2);
+        while (provider.Lines.Count < count && DateTimeOffset.UtcNow < deadline)
             await Task.Delay(10);
     }
 
-    private sealed class CapturingProvider : IConsoleLogProvider
+    private class CapturingProvider : IConsoleLogProvider
     {
         public List<ConsoleLogLine> Lines { get; } = [];
 
-        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        public virtual ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
-            Lines.Add(line);
+            lock (Lines)
+                Lines.Add(line);
+
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
-        {
-            return ValueTask.FromResult(new RecentConsoleLogsResult(Lines));
-        }
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new RecentConsoleLogsResult(Lines));
 
         public async IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
@@ -173,9 +146,18 @@ public class ConsoleCaptureTeeTests
                 yield return ConsoleLogStreamItem.FromLine(line);
         }
 
-        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+    }
+
+    private sealed class ReentrantProvider : CapturingProvider
+    {
+        public override ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+            // Simulate a provider whose internals write to the console (e.g., SignalR diagnostics).
+            // With SuppressCapture set on this async context, this MUST NOT recurse.
+            Console.WriteLine("[provider-internal-log]");
+            return base.PublishAsync(line, cancellationToken);
         }
     }
 }
