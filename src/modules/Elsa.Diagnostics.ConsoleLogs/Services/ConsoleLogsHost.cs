@@ -89,16 +89,27 @@ public static class ConsoleLogsHost
 
     public static void AddReference()
     {
-        Interlocked.Increment(ref _leases);
+        lock (Lock)
+            _leases++;
     }
 
     public static ValueTask ReleaseReferenceAsync(CancellationToken cancellationToken = default)
     {
-        if (Interlocked.Decrement(ref _leases) > 0)
-            return ValueTask.CompletedTask;
+        Lazy<HostState> state;
 
-        Interlocked.Exchange(ref _leases, 0);
-        return ShutdownAsync(cancellationToken);
+        lock (Lock)
+        {
+            if (_leases <= 0)
+                return ValueTask.CompletedTask;
+
+            _leases--;
+            if (_leases > 0)
+                return ValueTask.CompletedTask;
+
+            state = ResetState();
+        }
+
+        return DisposeStateAsync(state, cancellationToken);
     }
 
     /// <summary>
@@ -110,18 +121,29 @@ public static class ConsoleLogsHost
 
         lock (Lock)
         {
-            state = _state;
-            _state = CreateLazy();
-            _pendingConfigure = null;
-            _providerFactory = null;
-            Interlocked.Exchange(ref _leases, 0);
+            state = ResetState();
+            _leases = 0;
         }
 
-        if (state.IsValueCreated)
-            await state.Value.Capture.DisposeAsync(cancellationToken).ConfigureAwait(false);
+        await DisposeStateAsync(state, cancellationToken).ConfigureAwait(false);
     }
 
     private static Lazy<HostState> CreateLazy() => new(BuildState, LazyThreadSafetyMode.ExecutionAndPublication);
+
+    private static Lazy<HostState> ResetState()
+    {
+        var state = _state;
+        _state = CreateLazy();
+        _pendingConfigure = null;
+        _providerFactory = null;
+        return state;
+    }
+
+    private static async ValueTask DisposeStateAsync(Lazy<HostState> state, CancellationToken cancellationToken)
+    {
+        if (state.IsValueCreated)
+            await state.Value.Capture.DisposeAsync(cancellationToken).ConfigureAwait(false);
+    }
 
     private static HostState BuildState()
     {
