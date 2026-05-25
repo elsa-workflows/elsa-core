@@ -5,6 +5,7 @@ using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 
@@ -93,6 +94,26 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AddConsoleLogsServices_CreatesCustomProviderWithHostOwnedDependencies()
+    {
+        var services = new ServiceCollection();
+        services.AddConsoleLogsServices();
+        services.AddSingleton<IConsoleLogProvider, ProviderWithHostDependencies>();
+
+        await using var serviceProvider = services.BuildServiceProvider();
+
+        foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
+            await hostedService.StartAsync(CancellationToken.None);
+
+        var provider = Assert.IsType<ProviderWithHostDependencies>(ConsoleLogsHost.Provider);
+        Assert.Same(ConsoleLogsHost.Options, provider.Options);
+        Assert.Same(ConsoleLogsHost.SourceRegistry, provider.SourceRegistry);
+
+        foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
+            await hostedService.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task ShutdownAsync_ResetsReferenceLeases()
     {
         ConsoleLogsHost.AddReference();
@@ -130,8 +151,38 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Equal(17, ConsoleLogsHost.Options.Value.RecentLogCapacity);
     }
 
+    [Fact]
+    public void AddConsoleLogsHost_DoesNotInitializeHostDuringRegistration()
+    {
+        var services = new ServiceCollection();
+        services.AddConsoleLogsHost();
+
+        Assert.True(ConsoleLogsHost.Configure(options => options.RecentLogCapacity = 23));
+        Assert.Equal(23, ConsoleLogsHost.Options.Value.RecentLogCapacity);
+    }
+
     private sealed class CustomProvider : IConsoleLogProvider
     {
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new RecentConsoleLogsResult([]));
+
+        public async IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+    }
+
+    private sealed class ProviderWithHostDependencies(IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry) : IConsoleLogProvider
+    {
+        public IOptions<ConsoleLogsOptions> Options { get; } = options;
+        public IConsoleLogSourceRegistry SourceRegistry { get; } = sourceRegistry;
+
         public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) =>

@@ -27,9 +27,8 @@ public static class HostServiceCollectionExtensions
         if (configure != null)
             ConsoleLogsHost.Configure(configure);
 
-        ConsoleLogsHost.EnsureInitialized();
-        services.TryAddSingleton(ConsoleLogsHost.ScopeAccessor);
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider>(ConsoleLogsHost.ScopeAccessor));
+        services.TryAddSingleton(_ => ConsoleLogsHost.ScopeAccessor);
+        services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<ConsoleLogScopeAccessor>());
 #pragma warning disable CS0618
         services.TryAddSingleton<IConsoleLogCapture, ConsoleLogCaptureAdapter>();
 #pragma warning restore CS0618
