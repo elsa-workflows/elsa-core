@@ -5,6 +5,7 @@ using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.ShellHandlers;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
@@ -35,8 +36,10 @@ public class MultitenancyFeature : IShellFeature
             .AddSingleton<TenantEventsManager>()
             .AddScoped<DefaultTenantsProvider>()
             .AddScoped<DefaultTenantResolver>()
+            .AddScoped<ITenantBackgroundWorkQueue, TenantBackgroundWorkQueue>()
             .AddScoped<ITaskExecutor, TaskExecutor>()
             .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
+            .AddBackgroundTask<TenantBackgroundWorkQueueWorker>()
             .AddScoped(_tenantsProviderFactory)
             
             // Transient per CShells 0.0.15 convention — the registry resolves IEnumerable<IShellInitializer> and

@@ -13,6 +13,9 @@ public static class ConsoleLogFilterEvaluator
         if (!ContainsText(line, filter.Query))
             return false;
 
+        if (!EqualsFilter(line.WorkflowInstanceId, filter.WorkflowInstanceId))
+            return false;
+
         if (filter.From is { } from && line.ReceivedAt < from)
             return false;
 

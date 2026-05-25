@@ -9,6 +9,7 @@ public record ConsoleLogLine
     public ConsoleLogStream Stream { get; init; }
     public string Text { get; init; } = string.Empty;
     public ConsoleLogSource Source { get; init; } = default!;
+    public string? WorkflowInstanceId { get; init; }
     public bool Truncated { get; init; }
     public ConsoleLogDroppedSummary? Dropped { get; init; }
 }

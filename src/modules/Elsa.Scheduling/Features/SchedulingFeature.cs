@@ -7,8 +7,8 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
-using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
+using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Features;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,7 +41,6 @@ public class SchedulingFeature : FeatureBase
     {
         Services
             .AddSingleton<UpdateTenantSchedules>()
-            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<ITenantDeletedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<IScheduler, LocalScheduler>()
             .AddSingleton<CronosCronParser>()
@@ -50,7 +49,7 @@ public class SchedulingFeature : FeatureBase
             .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddScoped<DefaultWorkflowScheduler>()
             .AddScoped(WorkflowScheduler)
-            .AddBackgroundTask<CreateSchedulesBackgroundTask>()
+            .AddStartupTask<CreateSchedulesStartupTask>()
             .AddHandlersFrom<ScheduleWorkflows>()
 
             //Trigger payload validators.

@@ -9,6 +9,7 @@ public class ConsoleLogFilterTests
         Text = "workflow started",
         Stream = ConsoleLogStream.Stdout,
         Source = new ConsoleLogSource { Id = "source-a", DisplayName = "Source A", MachineName = "machine" },
+        WorkflowInstanceId = "workflow-instance-a",
         ReceivedAt = DateTimeOffset.Parse("2026-05-18T10:00:00Z")
     };
 
@@ -32,5 +33,12 @@ public class ConsoleLogFilterTests
         Assert.True(ConsoleLogFilterEvaluator.Matches(_line, new ConsoleLogFilter { Query = "started", From = _line.ReceivedAt.AddSeconds(-1), To = _line.ReceivedAt.AddSeconds(1) }));
         Assert.False(ConsoleLogFilterEvaluator.Matches(_line, new ConsoleLogFilter { Query = "missing" }));
         Assert.False(ConsoleLogFilterEvaluator.Matches(_line, new ConsoleLogFilter { From = _line.ReceivedAt.AddSeconds(1) }));
+    }
+
+    [Fact]
+    public void Matches_FiltersByWorkflowInstanceId()
+    {
+        Assert.True(ConsoleLogFilterEvaluator.Matches(_line, new ConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" }));
+        Assert.False(ConsoleLogFilterEvaluator.Matches(_line, new ConsoleLogFilter { WorkflowInstanceId = "workflow-instance-b" }));
     }
 }

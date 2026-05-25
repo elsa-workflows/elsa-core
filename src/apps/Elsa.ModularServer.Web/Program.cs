@@ -1,6 +1,8 @@
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
+using Elsa.Diagnostics.ConsoleLogs.Extensions;
+using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.ShellFeatures;
@@ -13,9 +15,18 @@ using Nuplane;
 using Nuplane.Loading.Hosting.Builder;
 using Nuplane.Sources.Directory.Configuration;
 
+// Install the console stream tee as early as possible — before WebApplication.CreateBuilder and
+// any logger provider construction — so that downstream loggers (Microsoft.Extensions.Logging.Console,
+// Kestrel/Hosting loggers, etc.) capture our tee writer instead of the raw Console.Out / Console.Error.
+ConsoleStreamHook.Install();
+
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+
+// Console output is a single process-wide resource; the capture pipeline is owned by the root host so
+// every shell's diagnostics endpoints (REST + SignalR) read from the same in-memory ring buffer.
+services.AddConsoleLogsHost();
 
 var nuplaneConfiguration = configuration.GetSection("Nuplane");
 

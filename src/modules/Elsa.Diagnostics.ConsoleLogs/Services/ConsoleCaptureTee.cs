@@ -1,151 +1,179 @@
-using System.Text;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
-public class ConsoleCaptureTee(
-    IConsoleLogProvider provider,
-    IConsoleLogSourceRegistry sourceRegistry,
-    IConsoleLogRedactor redactor,
-    ConsoleLineFormatter formatter,
-    IOptions<ConsoleLogsOptions> options) : TextWriter, IConsoleLogCapture
+/// <summary>
+/// Process-wide adapter that turns raw stdout/stderr writes captured by <see cref="ConsoleStreamHook"/>
+/// into fully formed <see cref="ConsoleLogLine"/> records, then publishes them to the configured
+/// <see cref="IConsoleLogProvider"/> on a single background task.
+///
+/// <para>
+/// Owned by <see cref="ConsoleLogsHost"/> — there is one instance per process. Capture is wired up in the
+/// constructor so that lines emitted during host startup — before any hosted service has run — are not
+/// lost. The capture pipeline can never block the caller of <c>Console.Write*</c>: when the publish
+/// channel is full, the current line is reported as dropped to the provider.
+/// </para>
+///
+/// <para>
+/// To prevent the publish path itself from feeding new lines back into capture (e.g. when the in-memory
+/// provider's SignalR fan-out logs internally), <see cref="ConsoleStreamHook.SuppressCapture"/> is set on
+/// the publisher's async context for the lifetime of each <see cref="IConsoleLogProvider.PublishAsync"/>
+/// invocation.
+/// </para>
+/// </summary>
+public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
 {
-    private readonly object _lock = new();
-    private readonly ConsoleLogsOptions _options = options.Value;
-    private readonly ConsoleLineBuffer _stdoutBuffer = new(options);
-    private readonly ConsoleLineBuffer _stderrBuffer = new(options);
-    private TextWriter? _originalOut;
-    private TextWriter? _originalError;
-    private Channel<ConsoleLogLine>? _publishChannel;
-    private CancellationTokenSource? _publishCancellation;
-    private Task? _publishTask;
-    private int _startCount;
+    private readonly IConsoleLogProvider _provider;
+    private readonly IConsoleLogSourceRegistry _sourceRegistry;
+    private readonly IConsoleLogRedactor _redactor;
+    private readonly ConsoleLineFormatter _formatter;
+    private readonly ConsoleLogScopeAccessor _scopeAccessor;
+    private readonly ConsoleLineBuffer _stdoutBuffer;
+    private readonly ConsoleLineBuffer _stderrBuffer;
+    private readonly object _bufferLock = new();
+    private readonly Channel<ConsoleLogLine> _publishChannel;
+    private readonly CancellationTokenSource _shutdownCts = new();
+    private readonly Task _publishTask;
+    private readonly IDisposable _subscription;
     private long _sequence;
+    private int _disposed;
 
-    public override Encoding Encoding => _originalOut?.Encoding ?? Encoding.UTF8;
-
-    public ValueTask StartAsync(CancellationToken cancellationToken = default)
+    public ConsoleCaptureTee(
+        IConsoleLogProvider provider,
+        IConsoleLogSourceRegistry sourceRegistry,
+        IConsoleLogRedactor redactor,
+        ConsoleLineFormatter formatter,
+        ConsoleLogScopeAccessor scopeAccessor,
+        IOptions<ConsoleLogsOptions> options)
     {
-        lock (_lock)
+        _provider = provider;
+        _sourceRegistry = sourceRegistry;
+        _redactor = redactor;
+        _formatter = formatter;
+        _scopeAccessor = scopeAccessor;
+        _stdoutBuffer = new(options);
+        _stderrBuffer = new(options);
+
+        _publishChannel = Channel.CreateBounded<ConsoleLogLine>(new BoundedChannelOptions(Math.Max(1, options.Value.CaptureChannelCapacity))
         {
-            if (_startCount++ > 0)
-                return ValueTask.CompletedTask;
+            FullMode = BoundedChannelFullMode.Wait,
+            SingleReader = true,
+            SingleWriter = false
+        });
 
-            _publishCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _publishChannel = Channel.CreateBounded<ConsoleLogLine>(new BoundedChannelOptions(Math.Max(1, _options.CaptureChannelCapacity))
-            {
-                FullMode = BoundedChannelFullMode.Wait,
-                SingleReader = true,
-                SingleWriter = false
-            });
-            _publishTask = PublishQueuedLinesAsync(_publishChannel.Reader, _publishCancellation.Token);
-            _originalOut = Console.Out;
-            _originalError = Console.Error;
-            Console.SetOut(new TeeWriter(_originalOut, this, ConsoleLogStream.Stdout));
-            Console.SetError(new TeeWriter(_originalError, this, ConsoleLogStream.Stderr));
-        }
+        _publishTask = Task.Run(() => PublishQueuedLinesAsync(_publishChannel.Reader, _shutdownCts.Token));
 
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask StopAsync(CancellationToken cancellationToken = default)
-    {
-        Task? publishTask;
-        CancellationTokenSource? publishCancellation;
-
-        lock (_lock)
-        {
-            if (_startCount == 0)
-                return ValueTask.CompletedTask;
-
-            if (--_startCount > 0)
-                return ValueTask.CompletedTask;
-
-            if (_originalOut != null)
-                Console.SetOut(_originalOut);
-
-            if (_originalError != null)
-                Console.SetError(_originalError);
-
-            FlushRemaining(ConsoleLogStream.Stdout);
-            FlushRemaining(ConsoleLogStream.Stderr);
-            _publishChannel?.Writer.TryComplete();
-            publishTask = _publishTask;
-            publishCancellation = _publishCancellation;
-            _originalOut = null;
-            _originalError = null;
-            _publishChannel = null;
-            _publishCancellation = null;
-            _publishTask = null;
-        }
-
-        return AwaitPublisherAsync(publishTask, publishCancellation, cancellationToken);
-    }
-
-    public override void Write(char value)
-    {
-        Capture(ConsoleLogStream.Stdout, value.ToString());
-    }
-
-    public override ValueTask DisposeAsync()
-    {
-        return StopAsync();
+        // Subscribe eagerly so that any output produced between this constructor and StartAsync is captured
+        // (the hosted service starts the flush loop, not the capture itself).
+        _subscription = ConsoleStreamHook.Subscribe(OnChunkCaptured);
     }
 
     public ValueTask FlushIdleAsync(CancellationToken cancellationToken = default)
     {
-        foreach (var stream in new[] { ConsoleLogStream.Stdout, ConsoleLogStream.Stderr })
-        {
-            string? line;
-            lock (_lock)
-                line = GetBuffer(stream).FlushIfIdle(DateTimeOffset.UtcNow);
+        var now = DateTimeOffset.UtcNow;
 
-            if (line != null)
-                Publish(stream, line);
-        }
+        Publish(ConsoleLogStream.Stdout, FlushIfIdle(_stdoutBuffer, now), now);
+        Publish(ConsoleLogStream.Stderr, FlushIfIdle(_stderrBuffer, now), now);
 
         return ValueTask.CompletedTask;
     }
 
-    private void Capture(ConsoleLogStream stream, string value)
+    public async ValueTask DisposeAsync()
     {
-        IReadOnlyCollection<string> lines;
-        lock (_lock)
-            lines = GetBuffer(stream).Append(value, DateTimeOffset.UtcNow);
+        await DisposeAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    public async ValueTask DisposeAsync(CancellationToken cancellationToken)
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+
+        _subscription.Dispose();
+
+        // Drain any pending buffered text before completing the channel.
+        FlushRemaining(ConsoleLogStream.Stdout);
+        FlushRemaining(ConsoleLogStream.Stderr);
+
+        _publishChannel.Writer.TryComplete();
+
+        try
+        {
+            await _publishTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _shutdownCts.Cancel();
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown.
+        }
+
+        _shutdownCts.Dispose();
+    }
+
+    void IDisposable.Dispose()
+    {
+        // MS DI requires IDisposable on registered singletons even when the service exposes IAsyncDisposable.
+        // Bridge to DisposeAsync so the publish task is drained instead of orphaned.
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+    }
+
+    private void OnChunkCaptured(CapturedChunk chunk)
+    {
+        IReadOnlyCollection<BufferedConsoleLine> lines;
+
+        var workflowInstanceId = _scopeAccessor.GetWorkflowInstanceId();
+
+        lock (_bufferLock)
+            lines = GetBuffer(chunk.Stream).Append(chunk.Text, chunk.TimestampUtc, workflowInstanceId);
 
         foreach (var line in lines)
-            Publish(stream, line);
+            Publish(chunk.Stream, line, chunk.TimestampUtc);
+    }
+
+    private BufferedConsoleLine? FlushIfIdle(ConsoleLineBuffer buffer, DateTimeOffset now)
+    {
+        lock (_bufferLock)
+            return buffer.FlushIfIdle(now);
     }
 
     private void FlushRemaining(ConsoleLogStream stream)
     {
-        var line = GetBuffer(stream).Flush();
-        if (line != null)
-            Publish(stream, line);
+        BufferedConsoleLine? line;
+        lock (_bufferLock)
+            line = GetBuffer(stream).Flush();
+
+        Publish(stream, line, DateTimeOffset.UtcNow);
     }
 
-    private ConsoleLineBuffer GetBuffer(ConsoleLogStream stream) => stream == ConsoleLogStream.Stdout ? _stdoutBuffer : _stderrBuffer;
+    private ConsoleLineBuffer GetBuffer(ConsoleLogStream stream) =>
+        stream == ConsoleLogStream.Stdout ? _stdoutBuffer : _stderrBuffer;
 
-    private void Publish(ConsoleLogStream stream, string text)
+    private void Publish(ConsoleLogStream stream, BufferedConsoleLine? capturedLine, DateTimeOffset timestamp)
     {
-        var formatted = formatter.Format(text);
-        var now = DateTimeOffset.UtcNow;
+        if (capturedLine == null)
+            return;
+
+        var text = capturedLine.Value.Text;
+        var workflowInstanceId = capturedLine.Value.WorkflowInstanceId ?? _scopeAccessor.TakeLoggedWorkflowInstanceId(text, timestamp);
+        var formatted = _formatter.Format(text);
         var line = new ConsoleLogLine
         {
-            Timestamp = now,
-            ReceivedAt = now,
+            Timestamp = timestamp,
+            ReceivedAt = timestamp,
             Sequence = Interlocked.Increment(ref _sequence),
             Stream = stream,
             Text = formatted.Text,
-            Source = sourceRegistry.Current,
+            Source = _sourceRegistry.Current,
+            WorkflowInstanceId = workflowInstanceId,
             Truncated = formatted.Truncated
         };
 
-        if (_publishChannel?.Writer.TryWrite(line) != false)
-            return;
-
-        if (provider is IConsoleLogDroppedLineReporter reporter)
+        // The capture path must not block console writers. When the bounded channel is full, drop this line
+        // and surface a summary so the UI can warn the operator.
+        if (!_publishChannel.Writer.TryWrite(line) && _provider is IConsoleLogDroppedLineReporter reporter)
             reporter.ReportDropped(new ConsoleLogDroppedSummary(line.Source.Id, stream, "CaptureChannelFull", 1));
     }
 
@@ -153,11 +181,14 @@ public class ConsoleCaptureTee(
     {
         try
         {
-            await foreach (var line in reader.ReadAllAsync(cancellationToken))
+            await foreach (var line in reader.ReadAllAsync(cancellationToken).ConfigureAwait(false))
             {
+                // Suppress capture on this async context so that any writes the provider performs
+                // (directly or via SignalR fan-out it invokes synchronously) do not loop back into us.
+                ConsoleStreamHook.SuppressCapture = true;
                 try
                 {
-                    await provider.PublishAsync(redactor.Redact(line), cancellationToken);
+                    await _provider.PublishAsync(_redactor.Redact(line), cancellationToken).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -165,54 +196,17 @@ public class ConsoleCaptureTee(
                 }
                 catch (Exception)
                 {
-                    // Avoid logging from the console capture path; doing so would recurse through the same tee.
+                    // Never log from the publish path — that would route right back through the same tee.
+                }
+                finally
+                {
+                    ConsoleStreamHook.SuppressCapture = false;
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            // Normal shutdown completes or cancels the publish pump.
-        }
-    }
-
-    private static async ValueTask AwaitPublisherAsync(Task? publishTask, CancellationTokenSource? publishCancellation, CancellationToken cancellationToken)
-    {
-        if (publishTask == null)
-            return;
-
-        using var cancellation = publishCancellation;
-
-        try
-        {
-            await publishTask.WaitAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            cancellation?.Cancel();
-            throw;
-        }
-    }
-
-    private sealed class TeeWriter(TextWriter original, ConsoleCaptureTee capture, ConsoleLogStream stream) : TextWriter
-    {
-        public override Encoding Encoding => original.Encoding;
-
-        public override void Write(char value)
-        {
-            original.Write(value);
-            capture.Capture(stream, value.ToString());
-        }
-
-        public override void Write(string? value)
-        {
-            original.Write(value);
-            if (value != null)
-                capture.Capture(stream, value);
-        }
-
-        public override void Flush()
-        {
-            original.Flush();
+            // Normal shutdown.
         }
     }
 }

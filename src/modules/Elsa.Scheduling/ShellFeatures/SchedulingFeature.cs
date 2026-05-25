@@ -4,8 +4,8 @@ using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
-using Elsa.Scheduling.HostedServices;
 using Elsa.Scheduling.Services;
+using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Extensions;
 using JetBrains.Annotations;
@@ -37,7 +37,6 @@ public class SchedulingFeature : IShellFeature
     {
         services
             .AddSingleton<UpdateTenantSchedules>()
-            .AddSingleton<ITenantActivatedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<ITenantDeletedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<IScheduler, LocalScheduler>()
             .AddSingleton<CronosCronParser>()
@@ -46,10 +45,9 @@ public class SchedulingFeature : IShellFeature
             .AddScoped<IBookmarkScheduler, DefaultBookmarkScheduler>()
             .AddScoped<DefaultWorkflowScheduler>()
             .AddScoped(WorkflowScheduler)
-            .AddBackgroundTask<CreateSchedulesBackgroundTask>()
+            .AddStartupTask<CreateSchedulesStartupTask>()
             .AddHandlersFrom<ScheduleWorkflows>()
             .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>()
             .AddActivitiesFrom<SchedulingFeature>();
     }
 }
-

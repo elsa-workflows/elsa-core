@@ -22,7 +22,7 @@ services.AddElsa(elsa =>
         options.SubscriberChannelCapacity = 1_000;
         options.MaxRecentQuerySize = 1_000;
         options.MaxLineLength = 16_384;
-        options.StripAnsiEscapeSequences = true;
+        options.StripAnsiEscapeSequences = false; // pass colors through to consumers
     });
 });
 ```
@@ -32,6 +32,31 @@ Map the live hub:
 ```csharp
 app.UseConsoleLogs();
 ```
+
+## Capturing Colors
+
+The capture passes raw stdout/stderr bytes through to consumers. ANSI escape sequences (colors, cursor
+moves) are preserved by default; consumers (e.g. the Studio's `Raw ANSI` toggle) decide whether to render
+them or strip them on display.
+
+Whether colors actually arrive at the capture depends on whether the .NET console logger emits them.
+`Microsoft.Extensions.Logging.Console`'s `SimpleConsoleFormatter` defaults to `LoggerColorBehavior.Default`,
+which suppresses colors whenever `Console.IsOutputRedirected` is `true` — that includes most Docker/Kubernetes
+deployments, IDE-hosted runs (JetBrains Rider, VS Code), and any piped stdout. To force colors regardless,
+add the following to `appsettings.json` (no module dependency required):
+
+```json
+"Logging": {
+  "Console": {
+    "FormatterOptions": {
+      "ColorBehavior": "Enabled"
+    }
+  }
+}
+```
+
+With `ColorBehavior = Enabled`, the logger writes ANSI sequences such as `\x1b[32m` and `\x1b[0m` into the
+tee, the capture publishes them verbatim, and the Studio renders them.
 
 ## Contracts
 
@@ -45,7 +70,7 @@ Recent, source, and hub access all require the same permission.
 ## Safety Boundaries
 
 - Redaction runs before recent buffering, live streaming, endpoint responses, and provider storage.
-- ANSI escape sequences are stripped by default.
+- ANSI escape sequences are preserved by default; set `StripAnsiEscapeSequences = true` to strip them server-side.
 - Partial writes are buffered until newline, max line length, or idle flush.
 - Oversized lines are truncated to one event and marked as truncated.
 - Providers receive only redacted line text and redacted source metadata.

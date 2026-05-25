@@ -91,7 +91,7 @@ services
                 runtime.UseEntityFrameworkCore(ef => ef.UseSqlite());
                 runtime.UseCache();
                 runtime.UseDistributedRuntime();
-                // This sample host uses single-host file-system locks only for development or explicit single-host opt-in.
+                // This sample host acknowledges single-host file-system locks in development or explicit single-host opt-in.
                 runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = allowLocalDistributedRuntimeLockProvider;
             })
             .UseWorkflowsApi()

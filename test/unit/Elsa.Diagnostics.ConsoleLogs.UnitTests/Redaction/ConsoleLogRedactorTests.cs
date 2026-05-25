@@ -17,6 +17,26 @@ public class ConsoleLogRedactorTests
     }
 
     [Fact]
+    public void Redact_MasksSensitiveLineTextSplitByAnsi()
+    {
+        var line = CreateLine("to\u001b[31mken=sample-token");
+
+        var redacted = _redactor.Redact(line);
+
+        Assert.Equal("[Redacted]", redacted.Text);
+    }
+
+    [Fact]
+    public void Redact_PreservesAnsiWhenLineTextIsNotSensitive()
+    {
+        var line = CreateLine("\u001b[31mhello\u001b[0m");
+
+        var redacted = _redactor.Redact(line);
+
+        Assert.Equal("\u001b[31mhello\u001b[0m", redacted.Text);
+    }
+
+    [Fact]
     public void Redact_MasksSensitiveSourceMetadata()
     {
         var line = CreateLine("hello") with
