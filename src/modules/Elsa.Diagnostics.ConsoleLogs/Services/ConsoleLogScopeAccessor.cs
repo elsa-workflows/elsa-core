@@ -1,15 +1,17 @@
 using System.Collections;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
 public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalScope
 {
     private const string WorkflowInstanceIdKey = "WorkflowInstanceId";
+    private const int PendingWorkflowInstanceIdsCapacity = 1024;
     private readonly IExternalScopeProvider _defaultScopeProvider = new LoggerExternalScopeProvider();
     private readonly object _lock = new();
+    private readonly object _pendingWorkflowInstanceIdsLock = new();
+    private readonly Queue<string?> _pendingWorkflowInstanceIds = new();
     private WeakReference<IExternalScopeProvider>[] _scopeProviders;
 
     public ConsoleLogScopeAccessor()
@@ -17,7 +19,7 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         _scopeProviders = [new(_defaultScopeProvider)];
     }
 
-    public ILogger CreateLogger(string categoryName) => NullLogger.Instance;
+    public ILogger CreateLogger(string categoryName) => new ScopeCapturingLogger(this);
     public void Dispose()
     {
     }
@@ -48,6 +50,12 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         }
 
         return value;
+    }
+
+    internal string? DequeueLoggedWorkflowInstanceId()
+    {
+        lock (_pendingWorkflowInstanceIdsLock)
+            return _pendingWorkflowInstanceIds.TryDequeue(out var workflowInstanceId) ? workflowInstanceId : null;
     }
 
     private IExternalScopeProvider[] GetLiveScopeProviders()
@@ -108,5 +116,45 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         }
 
         return null;
+    }
+
+    private void CaptureLoggedWorkflowInstanceId()
+    {
+        var workflowInstanceId = GetWorkflowInstanceId();
+
+        lock (_pendingWorkflowInstanceIdsLock)
+        {
+            while (_pendingWorkflowInstanceIds.Count >= PendingWorkflowInstanceIdsCapacity)
+                _pendingWorkflowInstanceIds.Dequeue();
+
+            _pendingWorkflowInstanceIds.Enqueue(string.IsNullOrWhiteSpace(workflowInstanceId) ? null : workflowInstanceId);
+        }
+    }
+
+    private sealed class ScopeCapturingLogger(ConsoleLogScopeAccessor accessor) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (IsEnabled(logLevel))
+                accessor.CaptureLoggedWorkflowInstanceId();
+        }
+    }
+
+    private sealed class NullScope : IDisposable
+    {
+        public static NullScope Instance { get; } = new();
+
+        public void Dispose()
+        {
+        }
     }
 }

@@ -106,6 +106,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
             await hostedService.StartAsync(CancellationToken.None);
 
         var provider = Assert.IsType<ProviderWithHostDependencies>(ConsoleLogsHost.Provider);
+        Assert.Same(serviceProvider.GetRequiredService<IConsoleLogProvider>(), provider);
         Assert.Same(ConsoleLogsHost.Options, provider.Options);
         Assert.Same(ConsoleLogsHost.SourceRegistry, provider.SourceRegistry);
 

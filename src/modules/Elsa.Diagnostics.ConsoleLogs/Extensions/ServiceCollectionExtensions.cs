@@ -28,19 +28,28 @@ public static class ServiceCollectionExtensions
         services.TryAdd(defaultProviderDescriptor);
         services.TryAddSingleton(new ConsoleLogsProviderRegistration(services, defaultProviderDescriptor));
 
+        ConsoleLogsProviderRegistration GetRegistration(IServiceProvider serviceProvider) =>
+            serviceProvider.GetRequiredService<ConsoleLogsProviderRegistration>();
+
         void ConfigureCustomProvider(IServiceProvider serviceProvider) =>
-            serviceProvider.GetRequiredService<ConsoleLogsProviderRegistration>().ConfigureProvider(serviceProvider);
+            GetRegistration(serviceProvider).ConfigureProvider(serviceProvider);
 
         services.AddSignalR();
 
         // Every shell resolves the same process-wide singletons — console output is a shared OS resource.
         services.TryAddSingleton<IOptions<ConsoleLogsOptions>>(sp =>
         {
+            if (GetRegistration(sp).TryGetHostOptions(out var options))
+                return options;
+
             ConfigureCustomProvider(sp);
             return ConsoleLogsHost.Options;
         });
         services.TryAddSingleton<IConsoleLogSourceRegistry>(sp =>
         {
+            if (GetRegistration(sp).TryGetHostSourceRegistry(out var sourceRegistry))
+                return sourceRegistry;
+
             ConfigureCustomProvider(sp);
             return ConsoleLogsHost.SourceRegistry;
         });

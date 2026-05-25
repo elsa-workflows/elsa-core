@@ -18,7 +18,10 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
     private bool _workflowInstanceIdCaptured;
     private string? _workflowInstanceId;
 
-    public IReadOnlyCollection<BufferedConsoleLine> Append(string value, DateTimeOffset now, string? workflowInstanceId = null)
+    public IReadOnlyCollection<BufferedConsoleLine> Append(string value, DateTimeOffset now, string? workflowInstanceId = null) =>
+        Append(value, now, () => workflowInstanceId);
+
+    public IReadOnlyCollection<BufferedConsoleLine> Append(string value, DateTimeOffset now, Func<string?> workflowInstanceIdAccessor)
     {
         var lines = new List<BufferedConsoleLine>();
 
@@ -32,13 +35,13 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
                 if (_buffer.Length > 0)
                     lines.Add(FlushBuffer());
                 else if (!_logicalLineHasContent)
-                    lines.Add(new(string.Empty, workflowInstanceId));
+                    lines.Add(new(string.Empty, NormalizeWorkflowInstanceId(workflowInstanceIdAccessor())));
 
                 _logicalLineHasContent = false;
                 continue;
             }
 
-            CaptureScope(workflowInstanceId);
+            CaptureScope(workflowInstanceIdAccessor);
             _buffer.Append(ch);
             _logicalLineHasContent = true;
 
@@ -65,14 +68,17 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
         return _buffer.Length == 0 ? null : FlushBuffer();
     }
 
-    private void CaptureScope(string? workflowInstanceId)
+    private void CaptureScope(Func<string?> workflowInstanceIdAccessor)
     {
         if (_workflowInstanceIdCaptured)
             return;
 
         _workflowInstanceIdCaptured = true;
-        _workflowInstanceId = string.IsNullOrWhiteSpace(workflowInstanceId) ? null : workflowInstanceId;
+        _workflowInstanceId = NormalizeWorkflowInstanceId(workflowInstanceIdAccessor());
     }
+
+    private static string? NormalizeWorkflowInstanceId(string? workflowInstanceId) =>
+        string.IsNullOrWhiteSpace(workflowInstanceId) ? null : workflowInstanceId;
 
     private BufferedConsoleLine FlushBuffer()
     {

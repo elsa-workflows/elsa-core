@@ -222,6 +222,27 @@ public class ConsoleCaptureTeeTests : IDisposable
         Assert.Equal("workflow-instance-a", _provider.Lines[0].WorkflowInstanceId);
     }
 
+    [Fact]
+    public async Task Capture_AttachesWorkflowInstanceIdCapturedBeforeAsyncConsoleWrite()
+    {
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(_scopeAccessor));
+        var logger = loggerFactory.CreateLogger("workflow");
+        await using var capture = CreateCapture();
+
+        using (logger.BeginScope(new Dictionary<string, object>
+        {
+            ["WorkflowInstanceId"] = "workflow-instance-a"
+        }))
+        {
+            logger.LogInformation("scoped");
+        }
+
+        await Task.Run(() => Console.WriteLine("scoped"));
+        await WaitForLinesAsync(_provider, 1);
+
+        Assert.Equal("workflow-instance-a", _provider.Lines[0].WorkflowInstanceId);
+    }
+
     private static async Task WaitForLinesAsync(CapturingProvider provider, int count)
     {
         var deadline = DateTimeOffset.UtcNow.AddSeconds(2);

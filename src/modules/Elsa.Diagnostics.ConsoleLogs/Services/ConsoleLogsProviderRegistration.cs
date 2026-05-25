@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -6,48 +7,59 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
 internal sealed class ConsoleLogsProviderRegistration(IServiceCollection services, ServiceDescriptor defaultProviderDescriptor)
 {
+    private readonly object _lock = new();
+    private IOptions<ConsoleLogsOptions>? _hostOptions;
+    private IConsoleLogSourceRegistry? _hostSourceRegistry;
+
     public void ConfigureProvider(IServiceProvider serviceProvider)
     {
         var descriptor = GetCustomProviderDescriptor();
         if (descriptor == null)
             return;
 
-        ConsoleLogsHost.ConfigureProvider((options, sourceRegistry) => CreateProvider(serviceProvider, descriptor, options, sourceRegistry));
+        ConsoleLogsHost.ConfigureProvider((options, sourceRegistry) => ResolveProvider(serviceProvider, options, sourceRegistry));
+    }
+
+    public bool TryGetHostOptions([NotNullWhen(true)] out IOptions<ConsoleLogsOptions>? options)
+    {
+        lock (_lock)
+        {
+            options = _hostOptions;
+            return options != null;
+        }
+    }
+
+    public bool TryGetHostSourceRegistry([NotNullWhen(true)] out IConsoleLogSourceRegistry? sourceRegistry)
+    {
+        lock (_lock)
+        {
+            sourceRegistry = _hostSourceRegistry;
+            return sourceRegistry != null;
+        }
     }
 
     private ServiceDescriptor? GetCustomProviderDescriptor() =>
         services.LastOrDefault(x => x.ServiceType == typeof(IConsoleLogProvider) && !ReferenceEquals(x, defaultProviderDescriptor));
 
-    private static IConsoleLogProvider CreateProvider(IServiceProvider serviceProvider, ServiceDescriptor descriptor, IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry)
+    private IConsoleLogProvider ResolveProvider(IServiceProvider serviceProvider, IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry)
     {
-        var provider = new ConsoleLogsProviderServiceProvider(serviceProvider, options, sourceRegistry);
-
-        if (descriptor.ImplementationInstance is IConsoleLogProvider instance)
-            return instance;
-
-        if (descriptor.ImplementationFactory != null)
-            return (IConsoleLogProvider)descriptor.ImplementationFactory(provider);
-
-        if (descriptor.ImplementationType != null)
-            return (IConsoleLogProvider)ActivatorUtilities.CreateInstance(provider, descriptor.ImplementationType);
-
-        throw new InvalidOperationException("The custom console log provider registration is not supported.");
-    }
-
-    private sealed class ConsoleLogsProviderServiceProvider(
-        IServiceProvider inner,
-        IOptions<ConsoleLogsOptions> options,
-        IConsoleLogSourceRegistry sourceRegistry) : IServiceProvider
-    {
-        public object? GetService(Type serviceType)
+        lock (_lock)
         {
-            if (serviceType == typeof(IOptions<ConsoleLogsOptions>))
-                return options;
+            _hostOptions = options;
+            _hostSourceRegistry = sourceRegistry;
+        }
 
-            if (serviceType == typeof(IConsoleLogSourceRegistry))
-                return sourceRegistry;
-
-            return inner.GetService(serviceType);
+        try
+        {
+            return serviceProvider.GetRequiredService<IConsoleLogProvider>();
+        }
+        finally
+        {
+            lock (_lock)
+            {
+                _hostOptions = null;
+                _hostSourceRegistry = null;
+            }
         }
     }
 }

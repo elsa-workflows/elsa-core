@@ -127,7 +127,10 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
         var workflowInstanceId = _scopeAccessor.GetWorkflowInstanceId();
 
         lock (_bufferLock)
-            lines = GetBuffer(chunk.Stream).Append(chunk.Text, chunk.TimestampUtc, workflowInstanceId);
+            lines = GetBuffer(chunk.Stream).Append(
+                chunk.Text,
+                chunk.TimestampUtc,
+                () => workflowInstanceId ?? _scopeAccessor.DequeueLoggedWorkflowInstanceId());
 
         foreach (var line in lines)
             Publish(chunk.Stream, line, chunk.TimestampUtc);
