@@ -200,4 +200,3 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
         }
     }
 }
-
