@@ -49,8 +49,22 @@ public class ConsoleLogRedactor(IOptions<ConsoleLogsOptions> options) : IConsole
         if (IsSensitiveName(name))
             return _options.RedactionReplacement;
 
-        return _sensitiveTextPatterns.Aggregate(value, (current, pattern) => pattern.Replace(current, _options.RedactionReplacement));
+        return RedactSensitiveText(value);
     }
+
+    private string RedactSensitiveText(string value)
+    {
+        var redacted = ApplySensitiveTextPatterns(value);
+        var normalized = ConsoleAnsiEscapeSequences.Strip(value);
+        if (normalized == value)
+            return redacted;
+
+        var normalizedRedacted = ApplySensitiveTextPatterns(normalized);
+        return normalizedRedacted == normalized ? redacted : normalizedRedacted;
+    }
+
+    private string ApplySensitiveTextPatterns(string value) =>
+        _sensitiveTextPatterns.Aggregate(value, (current, pattern) => pattern.Replace(current, _options.RedactionReplacement));
 
     private bool IsSensitiveName(string name) => _sensitiveNames.Any(sensitiveName => name.Contains(sensitiveName, StringComparison.OrdinalIgnoreCase));
 }
