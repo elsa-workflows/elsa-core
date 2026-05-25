@@ -146,6 +146,26 @@ public class ConsoleCaptureTeeTests : IDisposable
     }
 
     [Fact]
+    public async Task Capture_ContinuesAfterProviderOperationCanceledException()
+    {
+        var provider = new OperationCanceledOnceProvider();
+        await using var capture = new ConsoleCaptureTee(
+            provider,
+            new ConsoleLogSourceRegistry(_options),
+            new ConsoleLogRedactor(_options),
+            new ConsoleLineFormatter(_options),
+            _scopeAccessor,
+            _options);
+
+        Console.WriteLine("first");
+        Console.WriteLine("second");
+        await WaitForLinesAsync(provider, 1);
+
+        var line = Assert.Single(provider.Lines);
+        Assert.Equal("second", line.Text);
+    }
+
+    [Fact]
     public async Task Capture_AttachesCurrentWorkflowInstanceId()
     {
         using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(_scopeAccessor));
@@ -242,6 +262,19 @@ public class ConsoleCaptureTeeTests : IDisposable
             // Simulate a provider whose internals write to the console (e.g., SignalR diagnostics).
             // With SuppressCapture set on this async context, this MUST NOT recurse.
             Console.WriteLine("[provider-internal-log]");
+            return base.PublishAsync(line, cancellationToken);
+        }
+    }
+
+    private sealed class OperationCanceledOnceProvider : CapturingProvider
+    {
+        private int _throwCount;
+
+        public override ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Increment(ref _throwCount) == 1)
+                throw new OperationCanceledException();
+
             return base.PublishAsync(line, cancellationToken);
         }
     }

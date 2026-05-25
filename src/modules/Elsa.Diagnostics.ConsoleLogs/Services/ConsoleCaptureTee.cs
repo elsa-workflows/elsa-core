@@ -193,7 +193,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
                 {
                     throw;
                 }
-                catch (Exception e) when (e is not OperationCanceledException)
+                catch (Exception)
                 {
                     // Never log from the publish path — that would route right back through the same tee.
                 }
