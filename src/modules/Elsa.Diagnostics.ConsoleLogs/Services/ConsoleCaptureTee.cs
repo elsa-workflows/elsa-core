@@ -12,7 +12,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 /// Owned by <see cref="ConsoleLogsHost"/> — there is one instance per process. Capture is wired up in the
 /// constructor so that lines emitted during host startup — before any hosted service has run — are not
 /// lost. The capture pipeline can never block the caller of <c>Console.Write*</c>: when the publish
-/// channel is full, oldest pending lines are evicted and reported as drops to the provider.
+/// channel is full, the current line is reported as dropped to the provider.
 /// </para>
 ///
 /// <para>

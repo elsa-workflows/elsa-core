@@ -54,22 +54,15 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
     {
         lock (_lock)
         {
-            var liveProviders = new List<IExternalScopeProvider>(_scopeProviders.Length);
-            var liveReferences = new List<WeakReference<IExternalScopeProvider>>(_scopeProviders.Length);
+            var liveScopeProviders = _scopeProviders
+                .Select(reference => (Reference: reference, Provider: reference.TryGetTarget(out var provider) ? provider : null))
+                .Where(x => x.Provider != null)
+                .ToArray();
 
-            foreach (var scopeProviderReference in _scopeProviders.Where(x => x.TryGetTarget(out _)))
-            {
-                if (!scopeProviderReference.TryGetTarget(out var scopeProvider))
-                    continue;
+            if (liveScopeProviders.Length != _scopeProviders.Length)
+                _scopeProviders = [.. liveScopeProviders.Select(x => x.Reference)];
 
-                liveProviders.Add(scopeProvider);
-                liveReferences.Add(scopeProviderReference);
-            }
-
-            if (liveReferences.Count != _scopeProviders.Length)
-                _scopeProviders = [.. liveReferences];
-
-            return [.. liveProviders];
+            return [.. liveScopeProviders.Select(x => x.Provider!)];
         }
     }
 

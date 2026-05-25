@@ -114,6 +114,7 @@ public static class ConsoleLogsHost
             _state = CreateLazy();
             _pendingConfigure = null;
             _providerFactory = null;
+            Interlocked.Exchange(ref _leases, 0);
         }
 
         if (state.IsValueCreated)

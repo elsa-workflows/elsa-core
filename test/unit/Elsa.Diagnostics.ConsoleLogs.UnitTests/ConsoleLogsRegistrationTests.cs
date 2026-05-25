@@ -73,6 +73,43 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AddConsoleLogsServices_UsesCustomProviderRegisteredAfterConsoleLogsServices()
+    {
+        var provider = new CustomProvider();
+        var services = new ServiceCollection();
+        services.AddConsoleLogsServices();
+        services.AddSingleton<IConsoleLogProvider>(provider);
+
+        await using var serviceProvider = services.BuildServiceProvider();
+
+        foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
+            await hostedService.StartAsync(CancellationToken.None);
+
+        Assert.Same(provider, serviceProvider.GetRequiredService<IConsoleLogProvider>());
+        Assert.Same(provider, ConsoleLogsHost.Provider);
+
+        foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
+            await hostedService.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ShutdownAsync_ResetsReferenceLeases()
+    {
+        ConsoleLogsHost.AddReference();
+        ConsoleLogsHost.EnsureInitialized();
+
+        await ConsoleLogsHost.ShutdownAsync();
+
+        ConsoleLogsHost.AddReference();
+        ConsoleLogsHost.EnsureInitialized();
+        await ConsoleLogsHost.ReleaseReferenceAsync();
+
+        var provider = new CustomProvider();
+        Assert.True(ConsoleLogsHost.ConfigureProvider((_, _) => provider));
+        Assert.Same(provider, ConsoleLogsHost.Provider);
+    }
+
+    [Fact]
     public async Task AddConsoleLogsHost_RegistersHostedFlushService()
     {
         var services = new ServiceCollection();

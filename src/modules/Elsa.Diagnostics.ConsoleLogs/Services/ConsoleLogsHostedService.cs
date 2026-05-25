@@ -10,7 +10,15 @@ public sealed class ConsoleLogsHostedService : BackgroundService
 {
     private readonly Action? _configureHost;
 
-    public ConsoleLogsHostedService() : this(null)
+    public ConsoleLogsHostedService() : this((Action?)null)
+    {
+    }
+
+    public ConsoleLogsHostedService(IServiceProvider serviceProvider) : this(() =>
+    {
+        if (serviceProvider.GetService(typeof(ConsoleLogsProviderRegistration)) is ConsoleLogsProviderRegistration registration)
+            registration.ConfigureProvider(serviceProvider);
+    })
     {
     }
 
