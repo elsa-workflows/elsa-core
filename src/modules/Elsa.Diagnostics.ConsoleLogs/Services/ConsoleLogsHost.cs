@@ -26,7 +26,7 @@ public static class ConsoleLogsHost
 {
     private static readonly object Lock = new();
     private static Action<ConsoleLogsOptions>? _pendingConfigure;
-    private static Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider>? _providerFactory;
+    private static Func<ConsoleLogsProviderContext, IConsoleLogProvider>? _providerFactory;
     private static Lazy<HostState> _state = CreateLazy();
     private static int _leases;
 
@@ -55,6 +55,12 @@ public static class ConsoleLogsHost
     /// before the host is initialized.
     /// </summary>
     public static bool ConfigureProvider(Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider> providerFactory)
+    {
+        ArgumentNullException.ThrowIfNull(providerFactory);
+        return ConfigureProvider(context => providerFactory(context.Options, context.SourceRegistry));
+    }
+
+    internal static bool ConfigureProvider(Func<ConsoleLogsProviderContext, IConsoleLogProvider> providerFactory)
     {
         ArgumentNullException.ThrowIfNull(providerFactory);
 
@@ -149,7 +155,7 @@ public static class ConsoleLogsHost
     {
         var options = new ConsoleLogsOptions();
 
-        Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider>? providerFactory;
+        Func<ConsoleLogsProviderContext, IConsoleLogProvider>? providerFactory;
 
         lock (Lock)
         {
@@ -162,7 +168,8 @@ public static class ConsoleLogsHost
         var redactor = new ConsoleLogRedactor(wrappedOptions);
         var formatter = new ConsoleLineFormatter(wrappedOptions);
         var scopeAccessor = new ConsoleLogScopeAccessor();
-        var provider = providerFactory?.Invoke(wrappedOptions, sourceRegistry) ?? new InMemoryConsoleLogProvider(wrappedOptions, sourceRegistry);
+        var providerContext = new ConsoleLogsProviderContext(wrappedOptions, sourceRegistry, redactor, formatter, scopeAccessor);
+        var provider = providerFactory?.Invoke(providerContext) ?? new InMemoryConsoleLogProvider(wrappedOptions, sourceRegistry);
         var capture = new ConsoleCaptureTee(provider, sourceRegistry, redactor, formatter, scopeAccessor, wrappedOptions);
 
         return new HostState(wrappedOptions, sourceRegistry, redactor, formatter, scopeAccessor, provider, capture);
@@ -177,4 +184,11 @@ public static class ConsoleLogsHost
         IConsoleLogProvider Provider,
         ConsoleCaptureTee Capture);
 }
+
+internal sealed record ConsoleLogsProviderContext(
+    IOptions<ConsoleLogsOptions> Options,
+    IConsoleLogSourceRegistry SourceRegistry,
+    IConsoleLogRedactor Redactor,
+    ConsoleLineFormatter Formatter,
+    ConsoleLogScopeAccessor ScopeAccessor);
 

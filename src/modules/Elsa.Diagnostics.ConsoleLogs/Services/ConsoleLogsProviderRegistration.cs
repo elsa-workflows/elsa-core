@@ -8,8 +8,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 internal sealed class ConsoleLogsProviderRegistration(IServiceCollection services, ServiceDescriptor defaultProviderDescriptor)
 {
     private readonly object _lock = new();
-    private IOptions<ConsoleLogsOptions>? _hostOptions;
-    private IConsoleLogSourceRegistry? _hostSourceRegistry;
+    private ConsoleLogsProviderContext? _hostContext;
 
     public void ConfigureProvider(IServiceProvider serviceProvider)
     {
@@ -17,14 +16,14 @@ internal sealed class ConsoleLogsProviderRegistration(IServiceCollection service
         if (descriptor == null)
             return;
 
-        ConsoleLogsHost.ConfigureProvider((options, sourceRegistry) => ResolveProvider(serviceProvider, options, sourceRegistry));
+        ConsoleLogsHost.ConfigureProvider(context => ResolveProvider(serviceProvider, context));
     }
 
     public bool TryGetHostOptions([NotNullWhen(true)] out IOptions<ConsoleLogsOptions>? options)
     {
         lock (_lock)
         {
-            options = _hostOptions;
+            options = _hostContext?.Options;
             return options != null;
         }
     }
@@ -33,21 +32,45 @@ internal sealed class ConsoleLogsProviderRegistration(IServiceCollection service
     {
         lock (_lock)
         {
-            sourceRegistry = _hostSourceRegistry;
+            sourceRegistry = _hostContext?.SourceRegistry;
             return sourceRegistry != null;
+        }
+    }
+
+    public bool TryGetHostRedactor([NotNullWhen(true)] out IConsoleLogRedactor? redactor)
+    {
+        lock (_lock)
+        {
+            redactor = _hostContext?.Redactor;
+            return redactor != null;
+        }
+    }
+
+    public bool TryGetHostFormatter([NotNullWhen(true)] out ConsoleLineFormatter? formatter)
+    {
+        lock (_lock)
+        {
+            formatter = _hostContext?.Formatter;
+            return formatter != null;
+        }
+    }
+
+    public bool TryGetHostScopeAccessor([NotNullWhen(true)] out ConsoleLogScopeAccessor? scopeAccessor)
+    {
+        lock (_lock)
+        {
+            scopeAccessor = _hostContext?.ScopeAccessor;
+            return scopeAccessor != null;
         }
     }
 
     private ServiceDescriptor? GetCustomProviderDescriptor() =>
         services.LastOrDefault(x => x.ServiceType == typeof(IConsoleLogProvider) && !ReferenceEquals(x, defaultProviderDescriptor));
 
-    private IConsoleLogProvider ResolveProvider(IServiceProvider serviceProvider, IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry)
+    private IConsoleLogProvider ResolveProvider(IServiceProvider serviceProvider, ConsoleLogsProviderContext context)
     {
         lock (_lock)
-        {
-            _hostOptions = options;
-            _hostSourceRegistry = sourceRegistry;
-        }
+            _hostContext = context;
 
         try
         {
@@ -56,10 +79,7 @@ internal sealed class ConsoleLogsProviderRegistration(IServiceCollection service
         finally
         {
             lock (_lock)
-            {
-                _hostOptions = null;
-                _hostSourceRegistry = null;
-            }
+                _hostContext = null;
         }
     }
 }

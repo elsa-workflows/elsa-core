@@ -55,16 +55,25 @@ public static class ServiceCollectionExtensions
         });
         services.TryAddSingleton<IConsoleLogRedactor>(sp =>
         {
+            if (GetRegistration(sp).TryGetHostRedactor(out var redactor))
+                return redactor;
+
             ConfigureCustomProvider(sp);
             return ConsoleLogsHost.Redactor;
         });
         services.TryAddSingleton(sp =>
         {
+            if (GetRegistration(sp).TryGetHostFormatter(out var formatter))
+                return formatter;
+
             ConfigureCustomProvider(sp);
             return ConsoleLogsHost.Formatter;
         });
         services.TryAddSingleton(sp =>
         {
+            if (GetRegistration(sp).TryGetHostScopeAccessor(out var scopeAccessor))
+                return scopeAccessor;
+
             ConfigureCustomProvider(sp);
             return ConsoleLogsHost.ScopeAccessor;
         });

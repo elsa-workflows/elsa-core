@@ -109,6 +109,9 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(serviceProvider.GetRequiredService<IConsoleLogProvider>(), provider);
         Assert.Same(ConsoleLogsHost.Options, provider.Options);
         Assert.Same(ConsoleLogsHost.SourceRegistry, provider.SourceRegistry);
+        Assert.Same(ConsoleLogsHost.Redactor, provider.Redactor);
+        Assert.Same(ConsoleLogsHost.Formatter, provider.Formatter);
+        Assert.Same(ConsoleLogsHost.ScopeAccessor, provider.ScopeAccessor);
 
         foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
             await hostedService.StopAsync(CancellationToken.None);
@@ -179,10 +182,18 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
             ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
     }
 
-    private sealed class ProviderWithHostDependencies(IOptions<ConsoleLogsOptions> options, IConsoleLogSourceRegistry sourceRegistry) : IConsoleLogProvider
+    private sealed class ProviderWithHostDependencies(
+        IOptions<ConsoleLogsOptions> options,
+        IConsoleLogSourceRegistry sourceRegistry,
+        IConsoleLogRedactor redactor,
+        ConsoleLineFormatter formatter,
+        ConsoleLogScopeAccessor scopeAccessor) : IConsoleLogProvider
     {
         public IOptions<ConsoleLogsOptions> Options { get; } = options;
         public IConsoleLogSourceRegistry SourceRegistry { get; } = sourceRegistry;
+        public IConsoleLogRedactor Redactor { get; } = redactor;
+        public ConsoleLineFormatter Formatter { get; } = formatter;
+        public ConsoleLogScopeAccessor ScopeAccessor { get; } = scopeAccessor;
 
         public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
