@@ -258,7 +258,7 @@ public class ConsoleCaptureTeeTests : IDisposable
             logger.LogInformation("scoped");
         }
 
-        await Task.Run(() => Console.WriteLine("unrelated"));
+        await Task.Run(() => Console.WriteLine("not scoped"));
         await Task.Run(() => Console.WriteLine("scoped"));
         await WaitForLinesAsync(_provider, 2);
 

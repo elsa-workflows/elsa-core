@@ -146,7 +146,7 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         {
             message = formatter(state, exception);
         }
-        catch
+        catch (Exception)
         {
             return;
         }
@@ -183,8 +183,7 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         var trimmedLine = capturedLine.Trim();
         var trimmedMessage = loggedMessage.Trim();
 
-        return trimmedLine.Contains(trimmedMessage, StringComparison.Ordinal) ||
-               trimmedMessage.Contains(trimmedLine, StringComparison.Ordinal);
+        return trimmedLine.Equals(trimmedMessage, StringComparison.Ordinal);
     }
 
     private sealed class ScopeCapturingLogger(ConsoleLogScopeAccessor accessor) : ILogger
