@@ -57,6 +57,8 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
 
         await using var serviceProvider = services.BuildServiceProvider();
 
+        _ = serviceProvider.GetRequiredService<ConsoleLogScopeAccessor>();
+
         foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
             await hostedService.StartAsync(CancellationToken.None);
 

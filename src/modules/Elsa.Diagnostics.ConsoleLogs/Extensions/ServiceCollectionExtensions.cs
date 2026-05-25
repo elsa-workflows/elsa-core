@@ -24,15 +24,47 @@ namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
         if (configureOptions != null)
             ConsoleLogsHost.Configure(configureOptions);
 
+        void ConfigureCustomProvider(IServiceProvider serviceProvider)
+        {
+            if (!hasCustomProvider)
+                return;
+
+            ConsoleLogsHost.ConfigureProvider((_, _) => serviceProvider.GetRequiredService<IConsoleLogProvider>());
+        }
+
         services.AddSignalR();
 
         // Every shell resolves the same process-wide singletons — console output is a shared OS resource.
-        services.TryAddSingleton<IOptions<ConsoleLogsOptions>>(_ => ConsoleLogsHost.Options);
-        services.TryAddSingleton<IConsoleLogSourceRegistry>(_ => ConsoleLogsHost.SourceRegistry);
-        services.TryAddSingleton<IConsoleLogRedactor>(_ => ConsoleLogsHost.Redactor);
-        services.TryAddSingleton(_ => ConsoleLogsHost.Formatter);
-        services.TryAddSingleton(_ => ConsoleLogsHost.ScopeAccessor);
-        services.AddSingleton<ILoggerProvider>(_ => ConsoleLogsHost.ScopeAccessor);
+        services.TryAddSingleton<IOptions<ConsoleLogsOptions>>(sp =>
+        {
+            ConfigureCustomProvider(sp);
+            return ConsoleLogsHost.Options;
+        });
+        services.TryAddSingleton<IConsoleLogSourceRegistry>(sp =>
+        {
+            ConfigureCustomProvider(sp);
+            return ConsoleLogsHost.SourceRegistry;
+        });
+        services.TryAddSingleton<IConsoleLogRedactor>(sp =>
+        {
+            ConfigureCustomProvider(sp);
+            return ConsoleLogsHost.Redactor;
+        });
+        services.TryAddSingleton(sp =>
+        {
+            ConfigureCustomProvider(sp);
+            return ConsoleLogsHost.Formatter;
+        });
+        services.TryAddSingleton(sp =>
+        {
+            ConfigureCustomProvider(sp);
+            return ConsoleLogsHost.ScopeAccessor;
+        });
+        services.AddSingleton<ILoggerProvider>(sp =>
+        {
+            ConfigureCustomProvider(sp);
+            return ConsoleLogsHost.ScopeAccessor;
+        });
         services.TryAddSingleton<IConsoleLogProvider>(_ => ConsoleLogsHost.Provider);
 
         // The subscription manager wraps a per-shell SignalR hub context, so it must be per-shell.

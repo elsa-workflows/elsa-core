@@ -110,6 +110,8 @@ public static class ConsoleStreamHook
             {
                 foreach (var chunk in Replay.Snapshot())
                     InvokeSafely(subscription, chunk);
+
+                Replay.Clear();
             }
         }
 

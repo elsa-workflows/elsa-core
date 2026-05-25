@@ -103,6 +103,29 @@ public class ConsoleCaptureTeeTests : IDisposable
     }
 
     [Fact]
+    public async Task Capture_ReplaysStartupWritesOnlyOnce()
+    {
+        ConsoleStreamHook.Install();
+        Console.WriteLine("startup");
+
+        var secondProvider = new CapturingProvider();
+        await using var first = CreateCapture();
+        await WaitForLinesAsync(_provider, 1);
+
+        await using var second = new ConsoleCaptureTee(
+            secondProvider,
+            new ConsoleLogSourceRegistry(_options),
+            new ConsoleLogRedactor(_options),
+            new ConsoleLineFormatter(_options),
+            _scopeAccessor,
+            _options);
+        await Task.Delay(50);
+
+        Assert.Equal("startup", _provider.Lines[0].Text);
+        Assert.Empty(secondProvider.Lines);
+    }
+
+    [Fact]
     public async Task Capture_SuppressesPublishPathReentrancy()
     {
         var loggingProvider = new ReentrantProvider();

@@ -28,6 +28,7 @@ public static class ConsoleLogsHost
     private static Action<ConsoleLogsOptions>? _pendingConfigure;
     private static Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider>? _providerFactory;
     private static Lazy<HostState> _state = CreateLazy();
+    private static int _leases;
 
     /// <summary>
     /// Applies a configuration delegate to the host options if the host has not yet been initialized.
@@ -84,6 +85,20 @@ public static class ConsoleLogsHost
         var wasCreated = _state.IsValueCreated;
         _ = _state.Value;
         return !wasCreated;
+    }
+
+    public static void AddReference()
+    {
+        Interlocked.Increment(ref _leases);
+    }
+
+    public static async ValueTask ReleaseReferenceAsync()
+    {
+        if (Interlocked.Decrement(ref _leases) > 0)
+            return;
+
+        Interlocked.Exchange(ref _leases, 0);
+        await ShutdownAsync().ConfigureAwait(false);
     }
 
     /// <summary>

@@ -24,6 +24,7 @@ public sealed class ConsoleLogsHostedService : BackgroundService
         _configureHost?.Invoke();
 
         // Touch the host so initialization happens before the first request, not lazily on first capture.
+        ConsoleLogsHost.AddReference();
         ConsoleLogsHost.EnsureInitialized();
         return base.StartAsync(cancellationToken);
     }
@@ -31,7 +32,7 @@ public sealed class ConsoleLogsHostedService : BackgroundService
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         await base.StopAsync(cancellationToken).ConfigureAwait(false);
-        await ConsoleLogsHost.ShutdownAsync().ConfigureAwait(false);
+        await ConsoleLogsHost.ReleaseReferenceAsync().ConfigureAwait(false);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
