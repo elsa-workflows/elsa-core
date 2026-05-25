@@ -127,10 +127,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
         var workflowInstanceId = _scopeAccessor.GetWorkflowInstanceId();
 
         lock (_bufferLock)
-            lines = GetBuffer(chunk.Stream).Append(
-                chunk.Text,
-                chunk.TimestampUtc,
-                () => workflowInstanceId ?? _scopeAccessor.DequeueLoggedWorkflowInstanceId());
+            lines = GetBuffer(chunk.Stream).Append(chunk.Text, chunk.TimestampUtc, workflowInstanceId);
 
         foreach (var line in lines)
             Publish(chunk.Stream, line, chunk.TimestampUtc);
@@ -160,6 +157,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
             return;
 
         var text = capturedLine.Value.Text;
+        var workflowInstanceId = capturedLine.Value.WorkflowInstanceId ?? _scopeAccessor.TakeLoggedWorkflowInstanceId(text, timestamp);
         var formatted = _formatter.Format(text);
         var line = new ConsoleLogLine
         {
@@ -169,7 +167,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
             Stream = stream,
             Text = formatted.Text,
             Source = _sourceRegistry.Current,
-            WorkflowInstanceId = capturedLine.Value.WorkflowInstanceId,
+            WorkflowInstanceId = workflowInstanceId,
             Truncated = formatted.Truncated
         };
 

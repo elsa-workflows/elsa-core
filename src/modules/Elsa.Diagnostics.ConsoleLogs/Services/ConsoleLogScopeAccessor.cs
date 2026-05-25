@@ -7,11 +7,12 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalScope
 {
     private const string WorkflowInstanceIdKey = "WorkflowInstanceId";
-    private const int PendingWorkflowInstanceIdsCapacity = 1024;
+    private const int PendingWorkflowLogsCapacity = 1024;
+    private static readonly TimeSpan PendingWorkflowLogTtl = TimeSpan.FromSeconds(30);
     private readonly IExternalScopeProvider _defaultScopeProvider = new LoggerExternalScopeProvider();
     private readonly object _lock = new();
-    private readonly object _pendingWorkflowInstanceIdsLock = new();
-    private readonly Queue<string?> _pendingWorkflowInstanceIds = new();
+    private readonly object _pendingWorkflowLogsLock = new();
+    private readonly List<PendingWorkflowLog> _pendingWorkflowLogs = [];
     private WeakReference<IExternalScopeProvider>[] _scopeProviders;
 
     public ConsoleLogScopeAccessor()
@@ -52,10 +53,23 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         return value;
     }
 
-    internal string? DequeueLoggedWorkflowInstanceId()
+    internal string? TakeLoggedWorkflowInstanceId(string text, DateTimeOffset capturedAt)
     {
-        lock (_pendingWorkflowInstanceIdsLock)
-            return _pendingWorkflowInstanceIds.TryDequeue(out var workflowInstanceId) ? workflowInstanceId : null;
+        if (string.IsNullOrWhiteSpace(text))
+            return null;
+
+        lock (_pendingWorkflowLogsLock)
+        {
+            PruneExpiredPendingWorkflowLogs(capturedAt);
+
+            var index = _pendingWorkflowLogs.FindIndex(x => IsCorrelated(text, x.Message));
+            if (index < 0)
+                return null;
+
+            var workflowInstanceId = _pendingWorkflowLogs[index].WorkflowInstanceId;
+            _pendingWorkflowLogs.RemoveAt(index);
+            return workflowInstanceId;
+        }
     }
 
     private IExternalScopeProvider[] GetLiveScopeProviders()
@@ -118,17 +132,59 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         return null;
     }
 
-    private void CaptureLoggedWorkflowInstanceId()
+    private void CaptureLoggedWorkflowInstanceId<TState>(
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
     {
         var workflowInstanceId = GetWorkflowInstanceId();
+        if (string.IsNullOrWhiteSpace(workflowInstanceId))
+            return;
 
-        lock (_pendingWorkflowInstanceIdsLock)
+        string message;
+        try
         {
-            while (_pendingWorkflowInstanceIds.Count >= PendingWorkflowInstanceIdsCapacity)
-                _pendingWorkflowInstanceIds.Dequeue();
-
-            _pendingWorkflowInstanceIds.Enqueue(string.IsNullOrWhiteSpace(workflowInstanceId) ? null : workflowInstanceId);
+            message = formatter(state, exception);
         }
+        catch
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+
+        lock (_pendingWorkflowLogsLock)
+        {
+            PruneExpiredPendingWorkflowLogs(now);
+
+            while (_pendingWorkflowLogs.Count >= PendingWorkflowLogsCapacity)
+                _pendingWorkflowLogs.RemoveAt(0);
+
+            _pendingWorkflowLogs.Add(new PendingWorkflowLog(message, workflowInstanceId, now));
+        }
+    }
+
+    private void PruneExpiredPendingWorkflowLogs(DateTimeOffset now)
+    {
+        for (var i = _pendingWorkflowLogs.Count - 1; i >= 0; i--)
+        {
+            if (now - _pendingWorkflowLogs[i].CapturedAt <= PendingWorkflowLogTtl)
+                continue;
+
+            _pendingWorkflowLogs.RemoveAt(i);
+        }
+    }
+
+    private static bool IsCorrelated(string capturedLine, string loggedMessage)
+    {
+        var trimmedLine = capturedLine.Trim();
+        var trimmedMessage = loggedMessage.Trim();
+
+        return trimmedLine.Contains(trimmedMessage, StringComparison.Ordinal) ||
+               trimmedMessage.Contains(trimmedLine, StringComparison.Ordinal);
     }
 
     private sealed class ScopeCapturingLogger(ConsoleLogScopeAccessor accessor) : ILogger
@@ -145,9 +201,11 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
             Func<TState, Exception?, string> formatter)
         {
             if (IsEnabled(logLevel))
-                accessor.CaptureLoggedWorkflowInstanceId();
+                accessor.CaptureLoggedWorkflowInstanceId(state, exception, formatter);
         }
     }
+
+    private sealed record PendingWorkflowLog(string Message, string WorkflowInstanceId, DateTimeOffset CapturedAt);
 
     private sealed class NullScope : IDisposable
     {
