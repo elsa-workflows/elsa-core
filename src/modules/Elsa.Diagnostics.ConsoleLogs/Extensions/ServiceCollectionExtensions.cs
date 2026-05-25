@@ -1,5 +1,6 @@
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
+using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -66,6 +67,9 @@ namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
             return ConsoleLogsHost.ScopeAccessor;
         });
         services.TryAddSingleton<IConsoleLogProvider>(_ => ConsoleLogsHost.Provider);
+#pragma warning disable CS0618
+        services.TryAddSingleton<IConsoleLogCapture, ConsoleLogCaptureAdapter>();
+#pragma warning restore CS0618
 
         // The subscription manager wraps a per-shell SignalR hub context, so it must be per-shell.
         services.TryAddSingleton<ConsoleLogSubscriptionManager>();

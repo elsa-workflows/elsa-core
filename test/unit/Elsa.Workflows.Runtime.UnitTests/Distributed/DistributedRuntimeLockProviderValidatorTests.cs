@@ -3,6 +3,7 @@ using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Workflows.Runtime.Distributed;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Distributed;
@@ -27,6 +28,19 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
+    public void Validate_LogsWarning_WhenFileSystemProviderIsUsedWithoutOptIn()
+    {
+        var logger = new CapturingLogger<DistributedRuntimeLockProviderValidator>();
+        var validator = CreateValidator(_fileProvider, logger: logger);
+
+        validator.Validate();
+
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning &&
+            entry.Message.Contains("local-only lock provider", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void Validate_DoesNotThrow_WhenFileSystemProviderIsExplicitlyAllowed()
     {
         var validator = CreateValidator(_fileProvider, options => options.AllowLocalLockProviderInDistributedRuntime = true);
@@ -40,6 +54,19 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider));
 
         validator.Validate();
+    }
+
+    [Fact]
+    public void Validate_LogsWarning_WhenWrappedProviderUsesFileSystemProvider()
+    {
+        var logger = new CapturingLogger<DistributedRuntimeLockProviderValidator>();
+        var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider), logger: logger);
+
+        validator.Validate();
+
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning &&
+            entry.Message.Contains(nameof(WrappedDistributedLockProvider), StringComparison.Ordinal));
     }
 
     [Fact]
@@ -150,12 +177,15 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    private static DistributedRuntimeLockProviderValidator CreateValidator(IDistributedLockProvider provider, Action<DistributedLockingOptions>? configure = null)
+    private static DistributedRuntimeLockProviderValidator CreateValidator(
+        IDistributedLockProvider provider,
+        Action<DistributedLockingOptions>? configure = null,
+        ILogger<DistributedRuntimeLockProviderValidator>? logger = null)
     {
         var options = new DistributedLockingOptions();
         configure?.Invoke(options);
 
-        return new(provider, Microsoft.Extensions.Options.Options.Create(options), NullLogger<DistributedRuntimeLockProviderValidator>.Instance);
+        return new(provider, Microsoft.Extensions.Options.Options.Create(options), logger ?? NullLogger<DistributedRuntimeLockProviderValidator>.Instance);
     }
 
     public void Dispose()
@@ -274,5 +304,33 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Add(new(logLevel, formatter(state, exception)));
+        }
+    }
+
+    private sealed record LogEntry(LogLevel Level, string Message);
+
+    private sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+        public void Dispose()
+        {
+        }
     }
 }

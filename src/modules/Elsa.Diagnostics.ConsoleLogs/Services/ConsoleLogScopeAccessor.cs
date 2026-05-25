@@ -7,8 +7,14 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalScope
 {
     private const string WorkflowInstanceIdKey = "WorkflowInstanceId";
+    private readonly IExternalScopeProvider _defaultScopeProvider = new LoggerExternalScopeProvider();
     private readonly object _lock = new();
-    private IExternalScopeProvider[] _scopeProviders = [new LoggerExternalScopeProvider()];
+    private WeakReference<IExternalScopeProvider>[] _scopeProviders;
+
+    public ConsoleLogScopeAccessor()
+    {
+        _scopeProviders = [new(_defaultScopeProvider)];
+    }
 
     public ILogger CreateLogger(string categoryName) => NullLogger.Instance;
     public void Dispose()
@@ -19,16 +25,17 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
     {
         lock (_lock)
         {
-            if (_scopeProviders.Any(x => ReferenceEquals(x, scopeProvider)))
+            var scopeProviders = GetLiveScopeProviders();
+            if (scopeProviders.Any(x => ReferenceEquals(x, scopeProvider)))
                 return;
 
-            _scopeProviders = [.. _scopeProviders, scopeProvider];
+            _scopeProviders = [.. _scopeProviders, new WeakReference<IExternalScopeProvider>(scopeProvider)];
         }
     }
 
     public string? GetWorkflowInstanceId()
     {
-        var scopeProviders = _scopeProviders;
+        var scopeProviders = GetLiveScopeProviders();
         string? value = null;
 
         foreach (var scopeProvider in scopeProviders)
@@ -40,6 +47,29 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         }
 
         return value;
+    }
+
+    private IExternalScopeProvider[] GetLiveScopeProviders()
+    {
+        lock (_lock)
+        {
+            var liveProviders = new List<IExternalScopeProvider>(_scopeProviders.Length);
+            var liveReferences = new List<WeakReference<IExternalScopeProvider>>(_scopeProviders.Length);
+
+            foreach (var scopeProviderReference in _scopeProviders)
+            {
+                if (!scopeProviderReference.TryGetTarget(out var scopeProvider))
+                    continue;
+
+                liveProviders.Add(scopeProvider);
+                liveReferences.Add(scopeProviderReference);
+            }
+
+            if (liveReferences.Count != _scopeProviders.Length)
+                _scopeProviders = [.. liveReferences];
+
+            return [.. liveProviders];
+        }
     }
 
     private sealed class ScopeSearchState(string key)

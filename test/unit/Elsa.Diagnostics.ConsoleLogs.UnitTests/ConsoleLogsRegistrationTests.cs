@@ -37,6 +37,9 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(ConsoleLogsHost.ScopeAccessor, serviceProvider.GetRequiredService<ConsoleLogScopeAccessor>());
         Assert.Contains(serviceProvider.GetServices<ILoggerProvider>(), x => ReferenceEquals(x, ConsoleLogsHost.ScopeAccessor));
         Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType() == typeof(ConsoleLogsHostedService));
+#pragma warning disable CS0618
+        Assert.IsType<ConsoleLogCaptureAdapter>(serviceProvider.GetRequiredService<IConsoleLogCapture>());
+#pragma warning restore CS0618
 
         // Same instance must be visible across separate shell containers — console output is process-wide.
         var services2 = new ServiceCollection();

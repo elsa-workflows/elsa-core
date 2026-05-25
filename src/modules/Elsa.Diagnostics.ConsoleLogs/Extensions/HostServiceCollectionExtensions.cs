@@ -1,3 +1,4 @@
+using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -29,6 +30,9 @@ public static class HostServiceCollectionExtensions
         ConsoleLogsHost.EnsureInitialized();
         services.TryAddSingleton(ConsoleLogsHost.ScopeAccessor);
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider>(ConsoleLogsHost.ScopeAccessor));
+#pragma warning disable CS0618
+        services.TryAddSingleton<IConsoleLogCapture, ConsoleLogCaptureAdapter>();
+#pragma warning restore CS0618
         services.TryAddEnumerable(ServiceDescriptor.Singleton<Microsoft.Extensions.Hosting.IHostedService, ConsoleLogsHostedService>());
         return services;
     }
