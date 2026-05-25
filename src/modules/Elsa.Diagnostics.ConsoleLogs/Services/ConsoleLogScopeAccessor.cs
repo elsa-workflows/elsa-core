@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -56,7 +57,7 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
             var liveProviders = new List<IExternalScopeProvider>(_scopeProviders.Length);
             var liveReferences = new List<WeakReference<IExternalScopeProvider>>(_scopeProviders.Length);
 
-            foreach (var scopeProviderReference in _scopeProviders)
+            foreach (var scopeProviderReference in _scopeProviders.Where(x => x.TryGetTarget(out _)))
             {
                 if (!scopeProviderReference.TryGetTarget(out var scopeProvider))
                     continue;

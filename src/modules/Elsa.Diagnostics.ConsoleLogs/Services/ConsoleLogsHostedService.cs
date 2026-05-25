@@ -32,7 +32,7 @@ public sealed class ConsoleLogsHostedService : BackgroundService
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         await base.StopAsync(cancellationToken).ConfigureAwait(false);
-        await ConsoleLogsHost.ReleaseReferenceAsync().ConfigureAwait(false);
+        await ConsoleLogsHost.ReleaseReferenceAsync(cancellationToken).ConfigureAwait(false);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

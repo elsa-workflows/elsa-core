@@ -60,7 +60,7 @@ public static class ConsoleLogsHost
 
         lock (Lock)
         {
-            if (_state.IsValueCreated)
+            if (_state.IsValueCreated || _providerFactory != null)
                 return false;
 
             _providerFactory = providerFactory;
@@ -92,19 +92,19 @@ public static class ConsoleLogsHost
         Interlocked.Increment(ref _leases);
     }
 
-    public static async ValueTask ReleaseReferenceAsync()
+    public static ValueTask ReleaseReferenceAsync(CancellationToken cancellationToken = default)
     {
         if (Interlocked.Decrement(ref _leases) > 0)
-            return;
+            return ValueTask.CompletedTask;
 
         Interlocked.Exchange(ref _leases, 0);
-        await ShutdownAsync().ConfigureAwait(false);
+        return ShutdownAsync(cancellationToken);
     }
 
     /// <summary>
     /// Tears down the host pipeline. Intended for tests and for orderly host shutdown.
     /// </summary>
-    public static async ValueTask ShutdownAsync()
+    public static async ValueTask ShutdownAsync(CancellationToken cancellationToken = default)
     {
         Lazy<HostState> state;
 
@@ -117,7 +117,7 @@ public static class ConsoleLogsHost
         }
 
         if (state.IsValueCreated)
-            await state.Value.Capture.DisposeAsync().ConfigureAwait(false);
+            await state.Value.Capture.DisposeAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static Lazy<HostState> CreateLazy() => new(BuildState, LazyThreadSafetyMode.ExecutionAndPublication);

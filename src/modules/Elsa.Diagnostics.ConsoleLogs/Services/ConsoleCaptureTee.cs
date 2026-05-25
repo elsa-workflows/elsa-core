@@ -81,6 +81,11 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
 
     public async ValueTask DisposeAsync()
     {
+        await DisposeAsync(CancellationToken.None).ConfigureAwait(false);
+    }
+
+    public async ValueTask DisposeAsync(CancellationToken cancellationToken)
+    {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
             return;
 
@@ -94,7 +99,11 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
 
         try
         {
-            await _publishTask.ConfigureAwait(false);
+            await _publishTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _shutdownCts.Cancel();
         }
         catch (OperationCanceledException)
         {
