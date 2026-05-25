@@ -32,10 +32,9 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
 
         public void Capture(object? scope)
         {
-            if (Value != null)
-                return;
-
-            Value = TryGetScopeValue(scope, key);
+            var value = TryGetScopeValue(scope, key);
+            if (value != null)
+                Value = value;
         }
     }
 
@@ -48,6 +47,14 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
         {
             if (value == null)
                 continue;
+
+            if (value is KeyValuePair<string, object?> kvp)
+            {
+                if (string.Equals(kvp.Key, key, StringComparison.OrdinalIgnoreCase))
+                    return kvp.Value?.ToString();
+
+                continue;
+            }
 
             var type = value.GetType();
             if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(KeyValuePair<,>))

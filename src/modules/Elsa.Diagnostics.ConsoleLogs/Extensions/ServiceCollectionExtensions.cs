@@ -2,6 +2,7 @@ using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -12,7 +13,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers shell-level console-log consumers (SignalR, subscription manager) and exposes the
     /// process-wide capture pipeline owned by <see cref="ConsoleLogsHost"/> through DI. Configuration
-    /// supplied here applies only if the host has not yet been initialised (first-wins). Prefer calling
+        /// supplied here applies only if the host has not yet been initialized (first-wins). Prefer calling
     /// <c>AddConsoleLogsHost</c> from <c>Program.cs</c> for deterministic host-level configuration.
     /// </summary>
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogsOptions>? configureOptions = null)
@@ -35,8 +36,9 @@ public static class ServiceCollectionExtensions
 
         // The subscription manager wraps a per-shell SignalR hub context, so it must be per-shell.
         services.TryAddSingleton<ConsoleLogSubscriptionManager>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ConsoleLogsHostedService>());
 
-        // Ensure the host is initialised even if AddConsoleLogsHost was not called from Program.cs.
+        // Ensure the host is initialized even if AddConsoleLogsHost was not called from Program.cs.
         ConsoleLogsHost.EnsureInitialized();
 
         return services;

@@ -9,11 +9,16 @@ namespace Elsa.Scheduling.StartupTasks;
 /// <summary>
 /// Enqueues schedule creation when using the default scheduler, which doesn't have its own persistence layer like Quartz or Hangfire.
 /// </summary>
-public class CreateSchedulesStartupTask(ITenantBackgroundWorkQueue workQueue) : IStartupTask
+public class CreateSchedulesStartupTask(IServiceProvider serviceProvider) : IStartupTask
 {
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await workQueue.EnqueueAsync(CreateSchedulesAsync, cancellationToken);
+        var workQueue = serviceProvider.GetService<ITenantBackgroundWorkQueue>();
+
+        if (workQueue != null)
+            await workQueue.EnqueueAsync(CreateSchedulesAsync, cancellationToken);
+        else
+            await CreateSchedulesAsync(serviceProvider, cancellationToken);
     }
 
     private static async Task CreateSchedulesAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken)

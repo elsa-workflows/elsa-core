@@ -10,7 +10,7 @@ public class ConsoleLogsOptions
     public TimeSpan IdleFlushTimeout { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <summary>
-    /// When true, ANSI escape sequences (colours, cursor commands, etc.) are removed before the captured
+    /// When true, ANSI escape sequences (colors, cursor commands, etc.) are removed before the captured
     /// line is published. The default is <c>false</c> so the wire payload preserves the original bytes the
     /// process wrote; consumers (e.g., the Studio) decide whether to render or strip them client-side.
     /// </summary>

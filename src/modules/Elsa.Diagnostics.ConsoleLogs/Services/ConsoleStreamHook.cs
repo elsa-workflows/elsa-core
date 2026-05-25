@@ -30,7 +30,7 @@ public static class ConsoleStreamHook
     private static readonly AsyncLocal<bool> SuppressFlag = new();
     private static volatile Subscription[] _subscriptions = [];
     private static readonly ReplayBuffer Replay = new(capacity: 4096);
-    private static bool _installed;
+    private static volatile bool _installed;
     private static TextWriter? _originalOut;
     private static TextWriter? _originalError;
 

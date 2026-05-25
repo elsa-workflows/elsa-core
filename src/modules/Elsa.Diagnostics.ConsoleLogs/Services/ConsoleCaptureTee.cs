@@ -57,7 +57,7 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
 
         _publishChannel = Channel.CreateBounded<ConsoleLogLine>(new BoundedChannelOptions(Math.Max(1, options.Value.CaptureChannelCapacity))
         {
-            FullMode = BoundedChannelFullMode.DropOldest,
+            FullMode = BoundedChannelFullMode.Wait,
             SingleReader = true,
             SingleWriter = false
         });
@@ -161,8 +161,8 @@ public sealed class ConsoleCaptureTee : IAsyncDisposable, IDisposable
             Truncated = formatted.Truncated
         };
 
-        // BoundedChannelFullMode.DropOldest guarantees TryWrite always succeeds; the displaced line — not the
-        // new one — is the casualty. Surface that as a drop summary so the UI can warn the operator.
+        // The capture path must not block console writers. When the bounded channel is full, drop this line
+        // and surface a summary so the UI can warn the operator.
         if (!_publishChannel.Writer.TryWrite(line) && _provider is IConsoleLogDroppedLineReporter reporter)
             reporter.ReportDropped(new ConsoleLogDroppedSummary(line.Source.Id, stream, "CaptureChannelFull", 1));
     }

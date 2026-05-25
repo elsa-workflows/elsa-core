@@ -35,7 +35,7 @@ app.UseConsoleLogs();
 
 ## Capturing Colors
 
-The capture passes raw stdout/stderr bytes through to consumers. ANSI escape sequences (colours, cursor
+The capture passes raw stdout/stderr bytes through to consumers. ANSI escape sequences (colors, cursor
 moves) are preserved by default; consumers (e.g. the Studio's `Raw ANSI` toggle) decide whether to render
 them or strip them on display.
 

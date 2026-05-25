@@ -29,10 +29,10 @@ public static class ConsoleLogsHost
     private static Lazy<HostState> _state = CreateLazy();
 
     /// <summary>
-    /// Applies a configuration delegate to the host options if the host has not yet been initialised.
-    /// Calls after initialisation are ignored to preserve consistency between configuration and captured
+    /// Applies a configuration delegate to the host options if the host has not yet been initialized.
+    /// Calls after initialization are ignored to preserve consistency between configuration and captured
     /// data. Returns <c>true</c> when the delegate was accepted, <c>false</c> when the host had already
-    /// initialised.
+    /// initialized.
     /// </summary>
     public static bool Configure(Action<ConsoleLogsOptions> configure)
     {
