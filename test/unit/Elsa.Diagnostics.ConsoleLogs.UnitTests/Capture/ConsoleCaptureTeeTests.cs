@@ -160,6 +160,25 @@ public class ConsoleCaptureTeeTests : IDisposable
         Assert.Equal("workflow-instance-b", _provider.Lines[0].WorkflowInstanceId);
     }
 
+    [Fact]
+    public async Task Capture_PreservesScopeAcrossMultipleLoggerFactories()
+    {
+        using var firstLoggerFactory = LoggerFactory.Create(builder => builder.AddProvider(_scopeAccessor));
+        using var secondLoggerFactory = LoggerFactory.Create(builder => builder.AddProvider(_scopeAccessor));
+        var logger = firstLoggerFactory.CreateLogger("workflow");
+        await using var capture = CreateCapture();
+        using var scope = logger.BeginScope(new Dictionary<string, object>
+        {
+            ["WorkflowInstanceId"] = "workflow-instance-a"
+        });
+
+        _ = secondLoggerFactory.CreateLogger("other");
+        Console.WriteLine("scoped");
+        await WaitForLinesAsync(_provider, 1);
+
+        Assert.Equal("workflow-instance-a", _provider.Lines[0].WorkflowInstanceId);
+    }
+
     private static async Task WaitForLinesAsync(CapturingProvider provider, int count)
     {
         var deadline = DateTimeOffset.UtcNow.AddSeconds(2);

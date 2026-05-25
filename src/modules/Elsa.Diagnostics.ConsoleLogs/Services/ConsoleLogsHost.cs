@@ -26,6 +26,7 @@ public static class ConsoleLogsHost
 {
     private static readonly object Lock = new();
     private static Action<ConsoleLogsOptions>? _pendingConfigure;
+    private static Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider>? _providerFactory;
     private static Lazy<HostState> _state = CreateLazy();
 
     /// <summary>
@@ -44,6 +45,24 @@ public static class ConsoleLogsHost
                 return false;
 
             _pendingConfigure = (Action<ConsoleLogsOptions>?)Delegate.Combine(_pendingConfigure, configure);
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Configures the provider used by the process-wide capture pipeline. The factory must be registered
+    /// before the host is initialized.
+    /// </summary>
+    public static bool ConfigureProvider(Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider> providerFactory)
+    {
+        ArgumentNullException.ThrowIfNull(providerFactory);
+
+        lock (Lock)
+        {
+            if (_state.IsValueCreated)
+                return false;
+
+            _providerFactory = providerFactory;
             return true;
         }
     }
@@ -79,6 +98,7 @@ public static class ConsoleLogsHost
             state = _state;
             _state = CreateLazy();
             _pendingConfigure = null;
+            _providerFactory = null;
         }
 
         if (state.IsValueCreated)
@@ -91,15 +111,20 @@ public static class ConsoleLogsHost
     {
         var options = new ConsoleLogsOptions();
 
+        Func<IOptions<ConsoleLogsOptions>, IConsoleLogSourceRegistry, IConsoleLogProvider>? providerFactory;
+
         lock (Lock)
+        {
             _pendingConfigure?.Invoke(options);
+            providerFactory = _providerFactory;
+        }
 
         var wrappedOptions = Microsoft.Extensions.Options.Options.Create(options);
         var sourceRegistry = new ConsoleLogSourceRegistry(wrappedOptions);
         var redactor = new ConsoleLogRedactor(wrappedOptions);
         var formatter = new ConsoleLineFormatter(wrappedOptions);
         var scopeAccessor = new ConsoleLogScopeAccessor();
-        var provider = new InMemoryConsoleLogProvider(wrappedOptions, sourceRegistry);
+        var provider = providerFactory?.Invoke(wrappedOptions, sourceRegistry) ?? new InMemoryConsoleLogProvider(wrappedOptions, sourceRegistry);
         var capture = new ConsoleCaptureTee(provider, sourceRegistry, redactor, formatter, scopeAccessor, wrappedOptions);
 
         return new HostState(wrappedOptions, sourceRegistry, redactor, formatter, scopeAccessor, provider, capture);

@@ -7,7 +7,8 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalScope
 {
     private const string WorkflowInstanceIdKey = "WorkflowInstanceId";
-    private IExternalScopeProvider _scopeProvider = new LoggerExternalScopeProvider();
+    private readonly object _lock = new();
+    private IExternalScopeProvider[] _scopeProviders = [new LoggerExternalScopeProvider()];
 
     public ILogger CreateLogger(string categoryName) => NullLogger.Instance;
     public void Dispose()
@@ -16,14 +17,29 @@ public sealed class ConsoleLogScopeAccessor : ILoggerProvider, ISupportExternalS
 
     public void SetScopeProvider(IExternalScopeProvider scopeProvider)
     {
-        _scopeProvider = scopeProvider;
+        lock (_lock)
+        {
+            if (_scopeProviders.Any(x => ReferenceEquals(x, scopeProvider)))
+                return;
+
+            _scopeProviders = [.. _scopeProviders, scopeProvider];
+        }
     }
 
     public string? GetWorkflowInstanceId()
     {
-        var state = new ScopeSearchState(WorkflowInstanceIdKey);
-        _scopeProvider.ForEachScope((scope, searchState) => searchState.Capture(scope), state);
-        return state.Value;
+        var scopeProviders = _scopeProviders;
+        string? value = null;
+
+        foreach (var scopeProvider in scopeProviders)
+        {
+            var state = new ScopeSearchState(WorkflowInstanceIdKey);
+            scopeProvider.ForEachScope((scope, searchState) => searchState.Capture(scope), state);
+            if (state.Value != null)
+                value = state.Value;
+        }
+
+        return value;
     }
 
     private sealed class ScopeSearchState(string key)

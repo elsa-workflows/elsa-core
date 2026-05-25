@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
 
-public static class ServiceCollectionExtensions
-{
+    public static class ServiceCollectionExtensions
+    {
     /// <summary>
     /// Registers shell-level console-log consumers (SignalR, subscription manager) and exposes the
     /// process-wide capture pipeline owned by <see cref="ConsoleLogsHost"/> through DI. Configuration
@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogsOptions>? configureOptions = null)
     {
         ConsoleStreamHook.Install();
+        var hasCustomProvider = services.Any(x => x.ServiceType == typeof(IConsoleLogProvider));
 
         if (configureOptions != null)
             ConsoleLogsHost.Configure(configureOptions);
@@ -30,16 +31,24 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IConsoleLogSourceRegistry>(_ => ConsoleLogsHost.SourceRegistry);
         services.TryAddSingleton<IConsoleLogRedactor>(_ => ConsoleLogsHost.Redactor);
         services.TryAddSingleton(_ => ConsoleLogsHost.Formatter);
-        services.TryAddSingleton(ConsoleLogsHost.ScopeAccessor);
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider>(ConsoleLogsHost.ScopeAccessor));
+        services.TryAddSingleton(_ => ConsoleLogsHost.ScopeAccessor);
+        services.AddSingleton<ILoggerProvider>(_ => ConsoleLogsHost.ScopeAccessor);
         services.TryAddSingleton<IConsoleLogProvider>(_ => ConsoleLogsHost.Provider);
 
         // The subscription manager wraps a per-shell SignalR hub context, so it must be per-shell.
         services.TryAddSingleton<ConsoleLogSubscriptionManager>();
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ConsoleLogsHostedService>());
-
-        // Ensure the host is initialized even if AddConsoleLogsHost was not called from Program.cs.
-        ConsoleLogsHost.EnsureInitialized();
+        if (hasCustomProvider)
+        {
+            services.AddSingleton<IHostedService>(sp => new ConsoleLogsHostedService(() =>
+            {
+                var provider = sp.GetRequiredService<IConsoleLogProvider>();
+                ConsoleLogsHost.ConfigureProvider((_, _) => provider);
+            }));
+        }
+        else
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ConsoleLogsHostedService>());
+        }
 
         return services;
     }

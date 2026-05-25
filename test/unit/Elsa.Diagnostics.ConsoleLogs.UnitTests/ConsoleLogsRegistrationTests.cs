@@ -48,6 +48,26 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AddConsoleLogsServices_UsesCustomProviderForCapturePipeline()
+    {
+        var provider = new CustomProvider();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConsoleLogProvider>(provider);
+        services.AddConsoleLogsServices();
+
+        await using var serviceProvider = services.BuildServiceProvider();
+
+        foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
+            await hostedService.StartAsync(CancellationToken.None);
+
+        Assert.Same(provider, serviceProvider.GetRequiredService<IConsoleLogProvider>());
+        Assert.Same(provider, ConsoleLogsHost.Provider);
+
+        foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
+            await hostedService.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task AddConsoleLogsHost_RegistersHostedFlushService()
     {
         var services = new ServiceCollection();
@@ -66,5 +86,22 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         services.AddConsoleLogsHost(options => options.RecentLogCapacity = 17);
 
         Assert.Equal(17, ConsoleLogsHost.Options.Value.RecentLogCapacity);
+    }
+
+    private sealed class CustomProvider : IConsoleLogProvider
+    {
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new RecentConsoleLogsResult([]));
+
+        public async IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.CompletedTask;
+            yield break;
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
     }
 }

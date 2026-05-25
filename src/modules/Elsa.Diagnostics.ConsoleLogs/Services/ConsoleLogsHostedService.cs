@@ -8,8 +8,21 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 /// </summary>
 public sealed class ConsoleLogsHostedService : BackgroundService
 {
+    private readonly Action? _configureHost;
+
+    public ConsoleLogsHostedService() : this(null)
+    {
+    }
+
+    public ConsoleLogsHostedService(Action? configureHost)
+    {
+        _configureHost = configureHost;
+    }
+
     public override Task StartAsync(CancellationToken cancellationToken)
     {
+        _configureHost?.Invoke();
+
         // Touch the host so initialization happens before the first request, not lazily on first capture.
         ConsoleLogsHost.EnsureInitialized();
         return base.StartAsync(cancellationToken);
