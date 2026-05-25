@@ -2,6 +2,7 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scheduling.StartupTasks;
@@ -9,6 +10,7 @@ namespace Elsa.Scheduling.StartupTasks;
 /// <summary>
 /// Enqueues schedule creation when using the default scheduler, which doesn't have its own persistence layer like Quartz or Hangfire.
 /// </summary>
+[TaskDependency(typeof(PopulateRegistriesStartupTask))]
 public class CreateSchedulesStartupTask(IServiceProvider serviceProvider) : IStartupTask
 {
     public async Task ExecuteAsync(CancellationToken cancellationToken)

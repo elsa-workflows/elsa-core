@@ -54,4 +54,15 @@ public class ConsoleLineBufferTests
         Assert.Equal("hello", line.Text);
         Assert.Equal("workflow-instance-a", line.WorkflowInstanceId);
     }
+
+    [Fact]
+    public void Append_DoesNotAssignWorkflowInstanceIdAfterUnscopedPartialWrite()
+    {
+        _buffer.Append("hel", DateTimeOffset.UtcNow);
+
+        var line = Assert.Single(_buffer.Append("lo\n", DateTimeOffset.UtcNow, "workflow-instance-a"));
+
+        Assert.Equal("hello", line.Text);
+        Assert.Null(line.WorkflowInstanceId);
+    }
 }

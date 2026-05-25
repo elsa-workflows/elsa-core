@@ -15,6 +15,7 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
     private readonly ConsoleLogsOptions _options = options.Value;
     private DateTimeOffset? _lastWriteAt;
     private bool _logicalLineHasContent;
+    private bool _workflowInstanceIdCaptured;
     private string? _workflowInstanceId;
 
     public IReadOnlyCollection<BufferedConsoleLine> Append(string value, DateTimeOffset now, string? workflowInstanceId = null)
@@ -66,8 +67,11 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
 
     private void CaptureScope(string? workflowInstanceId)
     {
-        if (_workflowInstanceId == null && !string.IsNullOrWhiteSpace(workflowInstanceId))
-            _workflowInstanceId = workflowInstanceId;
+        if (_workflowInstanceIdCaptured)
+            return;
+
+        _workflowInstanceIdCaptured = true;
+        _workflowInstanceId = string.IsNullOrWhiteSpace(workflowInstanceId) ? null : workflowInstanceId;
     }
 
     private BufferedConsoleLine FlushBuffer()
@@ -75,6 +79,7 @@ public class ConsoleLineBuffer(IOptions<ConsoleLogsOptions> options)
         var line = _buffer.ToString();
         var workflowInstanceId = _workflowInstanceId;
         _buffer.Clear();
+        _workflowInstanceIdCaptured = false;
         _workflowInstanceId = null;
         return new(line, workflowInstanceId);
     }
