@@ -149,11 +149,19 @@ public static class ConsoleStreamHook
         {
             subscription.Handler(chunk);
         }
-        catch
+        catch (Exception e) when (!IsCriticalException(e))
         {
             // Never let a subscriber take down the writer. Subscribers are responsible for their own resilience.
         }
     }
+
+    private static bool IsCriticalException(Exception exception) =>
+        exception is OutOfMemoryException
+            or StackOverflowException
+            or AccessViolationException
+            or AppDomainUnloadedException
+            or BadImageFormatException
+            or CannotUnloadAppDomainException;
 
     internal sealed class Subscription(Action<CapturedChunk> handler) : IDisposable
     {

@@ -103,7 +103,7 @@ internal sealed class ConsoleStreamTeeWriter(TextWriter original, ConsoleLogStre
     public override void WriteLine(ReadOnlySpan<char> buffer)
     {
         original.WriteLine(buffer);
-        capture(stream, buffer.ToString() + "\n");
+        capture(stream, string.Concat(buffer, "\n"));
     }
 
     public override void WriteLine(bool value) { original.WriteLine(value); capture(stream, (value ? "True" : "False") + "\n"); }
@@ -193,7 +193,7 @@ internal sealed class ConsoleStreamTeeWriter(TextWriter original, ConsoleLogStre
     public override async Task WriteLineAsync(ReadOnlyMemory<char> buffer, CancellationToken cancellationToken = default)
     {
         await original.WriteLineAsync(buffer, cancellationToken);
-        capture(stream, buffer.ToString() + "\n");
+        capture(stream, string.Concat(buffer.Span, "\n"));
     }
 
     public override async Task WriteLineAsync(StringBuilder? value, CancellationToken cancellationToken = default)

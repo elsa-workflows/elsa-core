@@ -12,11 +12,12 @@ public class TenantBackgroundWorkQueueWorker(
     {
         try
         {
-            await foreach (var workItem in workQueue.DequeueAllAsync(cancellationToken))
+            await using var enumerator = workQueue.DequeueAllAsync(cancellationToken).GetAsyncEnumerator(cancellationToken);
+            while (await enumerator.MoveNextAsync())
             {
                 try
                 {
-                    await workItem(serviceProvider, cancellationToken);
+                    await enumerator.Current(serviceProvider, cancellationToken);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
@@ -30,6 +31,7 @@ public class TenantBackgroundWorkQueueWorker(
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            logger.LogDebug("Tenant background work queue worker stopped because cancellation was requested.");
         }
     }
 }
