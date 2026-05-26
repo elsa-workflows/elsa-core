@@ -1,12 +1,15 @@
 using System.Reflection;
 using System.Security.Claims;
+using System.Text.Json;
+using ConsoleLogStreaming.Contracts;
+using ConsoleLogStreaming.Core;
+using ConsoleLogStreaming.SignalR;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Features;
-using Elsa.Diagnostics.ConsoleLogs.Models;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
+using Elsa.Diagnostics.ConsoleLogs.Services;
 using FastEndpoints;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,14 +18,6 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
 public class ConsoleLogsAuthorizationTests
 {
-    [Fact]
-    public void HubAuthorization_RequiresAuthenticatedUser()
-    {
-        var authorize = Assert.Single(typeof(ConsoleLogsHub).GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true).Cast<AuthorizeAttribute>());
-
-        Assert.Null(authorize.Policy);
-    }
-
     [Fact]
     public async Task HubSubscribe_WithoutConsoleLogsPermission_DeniesAccess()
     {
@@ -60,10 +55,125 @@ public class ConsoleLogsAuthorizationTests
         Assert.Contains(ConsoleLogsPermissions.Read, permissions);
     }
 
+    [Fact]
+    public async Task RecentEndpoint_MapsWorkflowInstanceIdToMetadataFilter()
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider, new ConsoleLogStreamingApiMapper())!;
+        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
+        var request = JsonSerializer.Deserialize(
+            """
+            {
+                "workflowInstanceId": "workflow-instance-a"
+            }
+            """,
+            requestDtoType,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        var metadata = provider.LastFilter.Metadata;
+        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
+        Assert.Equal("workflow-instance-a", workflowInstanceId);
+    }
+
+    [Fact]
+    public async Task RecentEndpoint_MapsActivityFiltersToMetadataFilter()
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider, new ConsoleLogStreamingApiMapper())!;
+        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
+        var request = JsonSerializer.Deserialize(
+            """
+            {
+                "workflowInstanceId": "workflow-instance-a",
+                "activityInstanceId": "activity-instance-a",
+                "activityId": "activity-a",
+                "activityNodeId": "node-a"
+            }
+            """,
+            requestDtoType,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        AssertActivityMetadata(provider.LastFilter.Metadata);
+    }
+
+    [Fact]
+    public async Task HubStream_MapsWorkflowInstanceIdToMetadataFilter()
+    {
+        var provider = new TestConsoleLogProvider();
+        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+
+        await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" }, CancellationToken.None))
+        {
+            // Intentionally consume the stream to trigger provider subscription/filter mapping side effects.
+        }
+
+        Assert.NotNull(provider.LastSubscriptionFilter);
+        var metadata = provider.LastSubscriptionFilter.Metadata;
+        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
+        Assert.Equal("workflow-instance-a", workflowInstanceId);
+    }
+
+    [Fact]
+    public async Task HubStream_MapsActivityFiltersToMetadataFilter()
+    {
+        var provider = new TestConsoleLogProvider();
+        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+
+        await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter
+                       {
+                           WorkflowInstanceId = "workflow-instance-a",
+                           ActivityInstanceId = "activity-instance-a",
+                           ActivityId = "activity-a",
+                           ActivityNodeId = "node-a"
+                       }, CancellationToken.None))
+        {
+        }
+
+        Assert.NotNull(provider.LastSubscriptionFilter);
+        AssertActivityMetadata(provider.LastSubscriptionFilter.Metadata);
+    }
+
+    [Fact]
+    public async Task HubSubscribe_MapsWorkflowInstanceIdToMetadataFilter()
+    {
+        var provider = new TestConsoleLogProvider();
+        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+
+        await hub.SubscribeAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" });
+        var filter = await provider.WaitForSubscriptionFilterAsync();
+
+        var metadata = filter.Metadata;
+        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
+        Assert.Equal("workflow-instance-a", workflowInstanceId);
+
+        await hub.UnsubscribeAsync();
+    }
+
+    private static void AssertActivityMetadata(IReadOnlyDictionary<string, string> metadata)
+    {
+        Assert.Equal("workflow-instance-a", metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+        Assert.Equal("activity-instance-a", metadata[ConsoleLogMetadataKeys.ActivityInstanceId]);
+        Assert.Equal("activity-a", metadata[ConsoleLogMetadataKeys.ActivityId]);
+        Assert.Equal("node-a", metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
+    }
+
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
-        var endpoint = Activator.CreateInstance(endpointType, new TestConsoleLogProvider())!;
+        var mapper = new ConsoleLogStreamingApiMapper();
+        var endpoint = endpointTypeName.EndsWith(".Recent.Endpoint", StringComparison.Ordinal)
+            ? Activator.CreateInstance(endpointType, new TestConsoleLogProvider(), mapper)!
+            : Activator.CreateInstance(endpointType, new TestConsoleLogProvider(), mapper)!;
         var (requestDtoType, responseDtoType) = GetEndpointDtoTypes(endpointType);
         var definition = new EndpointDefinition(endpointType, requestDtoType, responseDtoType);
 
@@ -108,14 +218,20 @@ public class ConsoleLogsAuthorizationTests
         throw new InvalidOperationException($"Unsupported endpoint type '{endpointType.FullName}'.");
     }
 
-    private static ConsoleLogsHub CreateHub(params string[] permissions)
+    private static ElsaConsoleLogsHub CreateHub(params string[] permissions)
     {
-        var provider = new TestConsoleLogProvider();
-        var sourceRegistry = new TestConsoleLogSourceRegistry();
-        var hubContext = new TestHubContext();
-        var subscriptionManager = new ConsoleLogSubscriptionManager(provider, sourceRegistry, hubContext, NullLogger<ConsoleLogSubscriptionManager>.Instance);
+        return CreateHub(new TestConsoleLogProvider(), permissions);
+    }
 
-        return new ConsoleLogsHub(subscriptionManager)
+    private static ElsaConsoleLogsHub CreateHub(TestConsoleLogProvider provider, params string[] permissions)
+    {
+        var sourceRegistry = new TestConsoleLogSourceRegistry();
+        var mapper = new ConsoleLogStreamingApiMapper();
+        var hubContext = new TestHubContext();
+        var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, sourceRegistry, mapper, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
+        var authorizer = new ElsaConsoleLogStreamingHubAuthorizer();
+
+        return new ElsaConsoleLogsHub(provider, mapper, authorizer, subscriptionManager)
         {
             Context = new TestHubCallerContext(CreateUser(permissions))
         };
@@ -134,52 +250,66 @@ public class ConsoleLogsAuthorizationTests
 
     private class TestConsoleLogProvider : IConsoleLogProvider
     {
-        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        private readonly TaskCompletionSource<ConsoleLogStreaming.Core.Models.ConsoleLogFilter> _subscriptionFilterSet = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastFilter { get; private set; }
+        public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastSubscriptionFilter { get; private set; }
+
+        public Task<ConsoleLogStreaming.Core.Models.ConsoleLogFilter> WaitForSubscriptionFilterAsync() =>
+            _subscriptionFilterSet.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        public ValueTask PublishAsync(ConsoleLogStreaming.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        public ValueTask<ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult> GetRecentAsync(ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult(new RecentConsoleLogsResult([], []));
+            LastFilter = filter;
+            return ValueTask.FromResult(new ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult());
         }
 
-        public IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<ConsoleLogStreaming.Core.Models.ConsoleLogStreamingItem> SubscribeAsync(
+            ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter,
+            CancellationToken cancellationToken = default)
         {
-            return AsyncEnumerable.Empty<ConsoleLogStreamItem>();
+            LastSubscriptionFilter = filter;
+            _subscriptionFilterSet.TrySetResult(filter);
+            return AsyncEnumerable.Empty<ConsoleLogStreaming.Core.Models.ConsoleLogStreamingItem>();
         }
 
-        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        public ValueTask<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>>([]);
         }
     }
 
     private class TestConsoleLogSourceRegistry : IConsoleLogSourceRegistry
     {
-        public event Action<ConsoleLogSource>? SourceChanged
+        public event Action<ConsoleLogStreaming.Core.Models.ConsoleLogSource>? SourceChanged
         {
             add { }
             remove { }
         }
 
-        public ConsoleLogSource Current { get; } = new()
+        public ConsoleLogStreaming.Core.Models.ConsoleLogSource Current { get; } = new()
         {
             Id = "test",
             DisplayName = "Test"
         };
 
-        public void MarkSeen(string sourceId, DateTimeOffset timestamp)
+        public ConsoleLogStreaming.Core.Models.ConsoleLogSource MarkSeen(ConsoleLogStreaming.Core.Models.ConsoleLogSource source, DateTimeOffset timestamp)
         {
+            return source with { LastSeen = timestamp };
         }
 
-        public IReadOnlyCollection<ConsoleLogSource> List()
+        public IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource> List()
         {
             return [Current];
         }
     }
 
-    private class TestHubContext : IHubContext<ConsoleLogsHub, IConsoleLogsClient>
+    private class TestHubContext : IHubContext<ElsaConsoleLogsHub, IConsoleLogsClient>
     {
         public IHubClients<IConsoleLogsClient> Clients { get; } = new TestHubClients();
 

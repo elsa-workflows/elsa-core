@@ -1,3 +1,4 @@
+using ConsoleLogStreaming.Core.Capture;
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
