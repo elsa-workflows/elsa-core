@@ -2,7 +2,6 @@ using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.Capture;
 using ConsoleLogStreaming.Core.DependencyInjection;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
-using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
@@ -135,21 +134,7 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task WorkflowExecutionPipeline_PushesWorkflowInstanceMetadata()
-    {
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
-        var context = activityExecutionContext.WorkflowExecutionContext;
-        var inner = new CapturingWorkflowExecutionPipeline(_accessor);
-        var pipeline = new ConsoleLogWorkflowExecutionPipeline(inner, _accessor);
-
-        await pipeline.ExecuteAsync(context);
-
-        Assert.Equal(context.Id, inner.WorkflowInstanceId);
-        Assert.Empty(_accessor.GetMetadata());
-    }
-
-    [Fact]
-    public async Task WorkflowPipelineBuilderMiddleware_PushesWorkflowInstanceMetadata()
+    public async Task WorkflowExecutionMiddleware_PushesWorkflowInstanceMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
             .AddSingleton<IConsoleLogContextAccessor>(_accessor)
@@ -158,7 +143,7 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
         var context = activityExecutionContext.WorkflowExecutionContext;
         string? workflowInstanceId = null;
         var pipeline = new WorkflowExecutionPipeline(serviceProvider, builder => builder
-            .UseConsoleLogContext()
+            .UseMiddleware<ConsoleLogWorkflowExecutionMiddleware>()
             .Use(_ => executionContext =>
             {
                 workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
@@ -172,20 +157,59 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ActivityExecutionPipeline_PushesWorkflowInstanceMetadata()
+    public async Task WorkflowExecutionContributor_PushesWorkflowInstanceMetadata()
     {
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
-        var inner = new CapturingActivityExecutionPipeline(_accessor);
-        var pipeline = new ConsoleLogActivityExecutionPipeline(inner, _accessor);
+        await using var serviceProvider = new ServiceCollection()
+            .AddSingleton<IConsoleLogContextAccessor>(_accessor)
+            .BuildServiceProvider();
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        string? workflowInstanceId = null;
+        var pipeline = new WorkflowExecutionPipeline(serviceProvider, builder =>
+        {
+            new ConsoleLogWorkflowExecutionPipelineContributor().Configure(builder);
+            builder.Use(_ => executionContext =>
+            {
+                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                return ValueTask.CompletedTask;
+            });
+        });
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.WorkflowExecutionContext.Id, inner.WorkflowInstanceId);
+        Assert.Equal(context.Id, workflowInstanceId);
         Assert.Empty(_accessor.GetMetadata());
     }
 
     [Fact]
-    public async Task ActivityPipelineBuilderMiddleware_PushesWorkflowInstanceMetadata()
+    public async Task WorkflowFeature_AppliesWorkflowExecutionContributors()
+    {
+        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = activityExecutionContext.WorkflowExecutionContext;
+        string? workflowInstanceId = null;
+        var feature = new Elsa.Workflows.ShellFeatures.WorkflowsFeature
+        {
+            WorkflowExecutionPipeline = builder => builder.Use(_ => executionContext =>
+            {
+                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                return ValueTask.CompletedTask;
+            })
+        };
+        var services = new ServiceCollection()
+            .AddSingleton<IConsoleLogContextAccessor>(_accessor)
+            .AddScoped<IWorkflowExecutionPipelineContributor, ConsoleLogWorkflowExecutionPipelineContributor>();
+        feature.ConfigureServices(services);
+        await using var serviceProvider = services.BuildServiceProvider();
+        var pipeline = serviceProvider.GetRequiredService<IWorkflowExecutionPipeline>();
+
+        await pipeline.ExecuteAsync(context);
+
+        Assert.Equal(context.Id, workflowInstanceId);
+        Assert.Empty(_accessor.GetMetadata());
+    }
+
+    [Fact]
+    public async Task ActivityExecutionMiddleware_PushesWorkflowInstanceMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
             .AddSingleton<IConsoleLogContextAccessor>(_accessor)
@@ -193,12 +217,62 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
         var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         string? workflowInstanceId = null;
         var pipeline = new ActivityExecutionPipeline(serviceProvider, builder => builder
-            .UseConsoleLogContext()
+            .UseMiddleware<ConsoleLogActivityExecutionMiddleware>()
             .Use(_ => executionContext =>
             {
                 workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
                 return ValueTask.CompletedTask;
             }));
+
+        await pipeline.ExecuteAsync(context);
+
+        Assert.Equal(context.WorkflowExecutionContext.Id, workflowInstanceId);
+        Assert.Empty(_accessor.GetMetadata());
+    }
+
+    [Fact]
+    public async Task ActivityExecutionContributor_PushesWorkflowInstanceMetadata()
+    {
+        await using var serviceProvider = new ServiceCollection()
+            .AddSingleton<IConsoleLogContextAccessor>(_accessor)
+            .BuildServiceProvider();
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        string? workflowInstanceId = null;
+        var pipeline = new ActivityExecutionPipeline(serviceProvider, builder =>
+        {
+            new ConsoleLogActivityExecutionPipelineContributor().Configure(builder);
+            builder.Use(_ => executionContext =>
+            {
+                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                return ValueTask.CompletedTask;
+            });
+        });
+
+        await pipeline.ExecuteAsync(context);
+
+        Assert.Equal(context.WorkflowExecutionContext.Id, workflowInstanceId);
+        Assert.Empty(_accessor.GetMetadata());
+    }
+
+    [Fact]
+    public async Task WorkflowFeature_AppliesActivityExecutionContributors()
+    {
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        string? workflowInstanceId = null;
+        var feature = new Elsa.Workflows.ShellFeatures.WorkflowsFeature
+        {
+            ActivityExecutionPipeline = builder => builder.Use(_ => executionContext =>
+            {
+                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                return ValueTask.CompletedTask;
+            })
+        };
+        var services = new ServiceCollection()
+            .AddSingleton<IConsoleLogContextAccessor>(_accessor)
+            .AddScoped<IActivityExecutionPipelineContributor, ConsoleLogActivityExecutionPipelineContributor>();
+        feature.ConfigureServices(services);
+        await using var serviceProvider = services.BuildServiceProvider();
+        var pipeline = serviceProvider.GetRequiredService<IActivityExecutionPipeline>();
 
         await pipeline.ExecuteAsync(context);
 
@@ -217,33 +291,6 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
             [ConsoleLogMetadataKeys.WorkflowInstanceId] = workflowInstanceId
         }
     };
-
-    private sealed class CapturingWorkflowExecutionPipeline(IConsoleLogContextAccessor accessor) : IWorkflowExecutionPipeline
-    {
-        public string? WorkflowInstanceId { get; private set; }
-        public Action<IWorkflowExecutionPipelineBuilder> ConfigurePipelineBuilder => _ => { };
-        public WorkflowMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
-        public WorkflowMiddlewareDelegate Setup(Action<IWorkflowExecutionPipelineBuilder> setup) => Pipeline;
-
-        public Task ExecuteAsync(WorkflowExecutionContext context)
-        {
-            WorkflowInstanceId = accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
-            return Task.CompletedTask;
-        }
-    }
-
-    private sealed class CapturingActivityExecutionPipeline(IConsoleLogContextAccessor accessor) : IActivityExecutionPipeline
-    {
-        public string? WorkflowInstanceId { get; private set; }
-        public ActivityMiddlewareDelegate Pipeline => _ => ValueTask.CompletedTask;
-        public ActivityMiddlewareDelegate Setup(Action<IActivityExecutionPipelineBuilder> setup) => Pipeline;
-
-        public Task ExecuteAsync(ActivityExecutionContext context)
-        {
-            WorkflowInstanceId = accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
-            return Task.CompletedTask;
-        }
-    }
 
     private class TestActivity : CodeActivity
     {

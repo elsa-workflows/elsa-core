@@ -5,6 +5,7 @@ using ConsoleLogStreaming.Core.Providers;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.Services;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -40,6 +41,8 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(ConsoleLogStreamingHost.RedactionPipeline, serviceProvider.GetRequiredService<IConsoleLogRedactionPipeline>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
+        Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
+        Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
         Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType() == typeof(ConsoleLogStreamingHostedService));
         Assert.Same(ConsoleLogStreamingHost.Capture, serviceProvider.GetRequiredService<IConsoleLogCapture>());
 
@@ -72,6 +75,8 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(ConsoleLogStreamingHost.Formatter, serviceProvider.GetRequiredService<ConsoleLineFormatter>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
+        Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
+        Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
 
         foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
             await hostedService.StopAsync(CancellationToken.None);

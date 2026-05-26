@@ -21,6 +21,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(_ => ConsoleLogContextAccessor.Instance);
         services.AddSingleton<IConsoleLogContextAccessor>(sp => sp.GetRequiredService<ConsoleLogContextAccessor>());
         services.AddSingleton<IConsoleLogMetadataAccessor>(sp => sp.GetRequiredService<ConsoleLogContextAccessor>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowExecutionPipelineContributor, ConsoleLogWorkflowExecutionPipelineContributor>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IActivityExecutionPipelineContributor, ConsoleLogActivityExecutionPipelineContributor>());
         services.AddConsoleLogStreamingHost(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);

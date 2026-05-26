@@ -115,8 +115,16 @@ public class WorkflowsFeature : IShellFeature
             .AddTransient<IIncidentStrategy, ContinueWithIncidentsStrategy>()
 
             // Pipelines.
-            .AddScoped<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, ActivityExecutionPipeline))
-            .AddScoped<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, WorkflowExecutionPipeline))
+            .AddScoped<IActivityExecutionPipeline>(sp => new ActivityExecutionPipeline(sp, builder =>
+            {
+                builder.UseActivityExecutionPipelineContributors(sp);
+                ActivityExecutionPipeline(builder);
+            }))
+            .AddScoped<IWorkflowExecutionPipeline>(sp => new WorkflowExecutionPipeline(sp, builder =>
+            {
+                builder.UseWorkflowExecutionPipelineContributors(sp);
+                WorkflowExecutionPipeline(builder);
+            }))
 
             // Built-in activity services.
             .AddScoped<IActivityResolver, PropertyBasedActivityResolver>()

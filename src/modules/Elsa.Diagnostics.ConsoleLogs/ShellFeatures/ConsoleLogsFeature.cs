@@ -37,7 +37,6 @@ public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddConsoleLogsServices(ConfigureOptions);
-        services.AddConsoleLogContextPipelines();
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints, IHostEnvironment? environment)
