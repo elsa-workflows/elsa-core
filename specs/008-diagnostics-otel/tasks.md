@@ -105,7 +105,7 @@
 - [X] T050 [P] Verify no production code references historical producer middleware by running `rg "Elsa.OpenTelemetry|UseWorkflowExecutionTracing|UseActivityExecutionTracing" src test`
 - [X] T051 Run `dotnet test test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj`
 - [X] T052 Run `dotnet test test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj`
-- [ ] T053 Run `dotnet build Elsa.sln`
+- [X] T053 Run `dotnet build Elsa.sln`
 
 ## Dependencies
 
