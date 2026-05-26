@@ -90,7 +90,7 @@
 **Independent Test**: Query configuration and verify API key enforcement.
 
 - [X] T042 [P] [US4] Add collector configuration tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Services/CollectorConfigurationTests.cs`
-- [ ] T043 [P] [US4] Add ingestion security tests for loopback-only no-key development, non-loopback request rejection without API key, and non-secret collector metadata in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OtlpIngestionSecurityTests.cs`
+- [X] T043 [P] [US4] Add ingestion security tests for loopback-only no-key development, non-loopback request rejection without API key, and non-secret collector metadata in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OtlpIngestionSecurityTests.cs`
 - [X] T044 [US4] Implement collector configuration provider in `src/modules/Elsa.Diagnostics.OpenTelemetry/Services/CollectorConfigurationProvider.cs`
 - [X] T045 [US4] Implement collector configuration endpoint in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/CollectorConfiguration/Endpoint.cs`
 - [X] T046 [US4] Implement API key header validation in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
