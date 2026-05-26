@@ -1,3 +1,4 @@
+using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -7,7 +8,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Features;
 
 public class ConsoleLogsFeature(IModule module) : FeatureBase(module)
 {
-    public Action<ConsoleLogsOptions>? ConfigureOptions { get; set; }
+    public Action<ConsoleLogOptions>? ConfigureOptions { get; set; }
 
     public override void Configure()
     {
