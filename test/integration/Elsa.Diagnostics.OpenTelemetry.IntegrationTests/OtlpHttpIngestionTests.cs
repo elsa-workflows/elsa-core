@@ -15,6 +15,7 @@ public class OtlpHttpIngestionTests : IAsyncLifetime
 {
     private static readonly byte[] TraceId = Convert.FromHexString("00112233445566778899aabbccddeeff");
     private static readonly byte[] SpanId = Convert.FromHexString("0011223344556677");
+    private static readonly byte[] ChildSpanId = Convert.FromHexString("8899aabbccddeeff");
     private static readonly DateTimeOffset Timestamp = new(2026, 5, 26, 10, 0, 0, TimeSpan.Zero);
 
     private WebApplication? _app;
@@ -64,6 +65,20 @@ public class OtlpHttpIngestionTests : IAsyncLifetime
 
         Assert.Equal("Workflow/Approve", trace.Name);
         Assert.Equal("wf-1", Assert.Single(trace.WorkflowInstanceIds));
+
+        var detail = await provider.GetTraceAsync(trace.TraceId);
+
+        Assert.NotNull(detail);
+        Assert.Equal(2, detail.Spans.Count);
+
+        var rootSpan = Assert.Single(detail.Spans, x => x.SpanId == "0011223344556677");
+        Assert.Equal("order-workflow", rootSpan.Attributes["workflow.definition.id"]);
+        Assert.Equal("wf-1", rootSpan.Attributes["workflow.instance.id"]);
+
+        var activitySpan = Assert.Single(detail.Spans, x => x.SpanId == "8899aabbccddeeff");
+        Assert.Equal("0011223344556677", activitySpan.ParentSpanId);
+        Assert.Equal("approve-task", activitySpan.Attributes["activity.id"]);
+        Assert.Equal("node-approve", activitySpan.Attributes["activity.node.id"]);
     }
 
     private static byte[] CreateTracePayload()
@@ -71,16 +86,32 @@ public class OtlpHttpIngestionTests : IAsyncLifetime
         return Message(1,
             Join(
                 Message(1, Resource()),
-                Message(2, Message(2,
+                Message(2,
                     Join(
-                        Bytes(1, TraceId),
-                        Bytes(2, SpanId),
-                        String(5, "Workflow/Approve"),
-                        Varint(6, 1),
-                        Varint(7, UnixNanos(Timestamp)),
-                        Varint(8, UnixNanos(Timestamp.AddMilliseconds(25))),
-                        Message(9, KeyValue("workflow.instance.id", "wf-1")),
-                        Message(15, Varint(3, 1)))))));
+                        Message(2,
+                            Join(
+                                Bytes(1, TraceId),
+                                Bytes(2, SpanId),
+                                String(5, "Workflow/Approve"),
+                                Varint(6, 1),
+                                Varint(7, UnixNanos(Timestamp)),
+                                Varint(8, UnixNanos(Timestamp.AddMilliseconds(25))),
+                                Message(9, KeyValue("workflow.instance.id", "wf-1")),
+                                Message(9, KeyValue("workflow.definition.id", "order-workflow")),
+                                Message(15, Varint(3, 1)))),
+                        Message(2,
+                            Join(
+                                Bytes(1, TraceId),
+                                Bytes(2, ChildSpanId),
+                                Bytes(4, SpanId),
+                                String(5, "Activity/ApproveTask"),
+                                Varint(6, 1),
+                                Varint(7, UnixNanos(Timestamp.AddMilliseconds(5))),
+                                Varint(8, UnixNanos(Timestamp.AddMilliseconds(20))),
+                                Message(9, KeyValue("workflow.instance.id", "wf-1")),
+                                Message(9, KeyValue("activity.id", "approve-task")),
+                                Message(9, KeyValue("activity.node.id", "node-approve")),
+                                Message(15, Varint(3, 1))))))));
     }
 
     private static byte[] Resource()

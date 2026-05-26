@@ -39,7 +39,7 @@
 - [X] T016 [P] [US1] Add OTLP log normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpLogNormalizerTests.cs`
 - [X] T017 [P] [US1] Add redaction tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Services/OpenTelemetryRedactorTests.cs`
 - [X] T018 [P] [US1] Add bounded store/drop-count tests for default capacities, drop-oldest overflow, and deterministic query limits in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Providers/InMemoryOpenTelemetryStoreTests.cs`
-- [ ] T019 [P] [US1] Add HTTP/protobuf ingestion and workflow export-to-collector timing tests that assert existing `Elsa.Workflows` tags are preserved in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OtlpHttpIngestionTests.cs`
+- [X] T019 [P] [US1] Add HTTP/protobuf ingestion and workflow export-to-collector timing tests that assert existing `Elsa.Workflows` tags are preserved in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OtlpHttpIngestionTests.cs`
 - [X] T020 [US1] Implement HTTP/protobuf request parsing in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion/HttpProtobuf`
 - [X] T021 [US1] Implement shared OTLP normalization services in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
 - [X] T022 [US1] Implement redactor in `src/modules/Elsa.Diagnostics.OpenTelemetry/Services/OpenTelemetryRedactor.cs`
