@@ -63,7 +63,7 @@
 - [X] T031 [US2] Implement resource search endpoint in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Resources/Endpoint.cs`
 - [X] T032 [US2] Implement trace search and detail endpoints in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Traces/Endpoint.cs` and `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Trace/Endpoint.cs`
 - [X] T033 [US2] Implement live feed in `src/modules/Elsa.Diagnostics.OpenTelemetry/Providers/InMemory/InMemoryOpenTelemetryLiveFeed.cs`
-- [ ] T034 [US2] Implement SignalR hub in `src/modules/Elsa.Diagnostics.OpenTelemetry/RealTime/OpenTelemetryHub.cs`
+- [X] T034 [US2] Implement SignalR hub in `src/modules/Elsa.Diagnostics.OpenTelemetry/RealTime/OpenTelemetryHub.cs`
 
 ---
 
