@@ -95,14 +95,14 @@
 - [X] T045 [US4] Implement collector configuration endpoint in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/CollectorConfiguration/Endpoint.cs`
 - [X] T046 [US4] Implement API key header validation in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
 - [ ] T047 [US4] Add option-gated gRPC wrappers and disabled metadata handling in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion/Grpc`
-- [ ] T048 [US4] Update workflow OpenTelemetry docs in `doc/wiki/opentelemetry-workflows.md`
+- [X] T048 [US4] Update workflow OpenTelemetry docs in `doc/wiki/opentelemetry-workflows.md`
 
 ---
 
 ## Phase 7: Polish and Verification
 
-- [ ] T049 [P] Update module README with routes, permissions, security, scope boundaries, and historical extension decision in `src/modules/Elsa.Diagnostics.OpenTelemetry/README.md`
-- [ ] T050 [P] Verify no production code references historical producer middleware by running `rg "Elsa.OpenTelemetry|UseWorkflowExecutionTracing|UseActivityExecutionTracing" src test`
+- [X] T049 [P] Update module README with routes, permissions, security, scope boundaries, and historical extension decision in `src/modules/Elsa.Diagnostics.OpenTelemetry/README.md`
+- [X] T050 [P] Verify no production code references historical producer middleware by running `rg "Elsa.OpenTelemetry|UseWorkflowExecutionTracing|UseActivityExecutionTracing" src test`
 - [X] T051 Run `dotnet test test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj`
 - [ ] T052 Run `dotnet test test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj`
 - [ ] T053 Run `dotnet build Elsa.sln`
