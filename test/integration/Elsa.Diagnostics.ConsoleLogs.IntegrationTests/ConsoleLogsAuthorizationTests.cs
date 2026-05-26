@@ -114,6 +114,7 @@ public class ConsoleLogsAuthorizationTests
 
         await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" }, CancellationToken.None))
         {
+            // Intentionally consume the stream to trigger provider subscription/filter mapping side effects.
         }
 
         Assert.NotNull(provider.LastSubscriptionFilter);
