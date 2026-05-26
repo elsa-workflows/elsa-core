@@ -6,9 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\..\ValenceWorks\console-log-stream\src\ConsoleLogStreaming.Contracts\ConsoleLogStreaming.Contracts.csproj" />
-        <ProjectReference Include="..\..\..\..\..\ValenceWorks\console-log-stream\src\ConsoleLogStreaming.Core\ConsoleLogStreaming.Core.csproj" />
-        <ProjectReference Include="..\..\..\..\..\ValenceWorks\console-log-stream\src\ConsoleLogStreaming.SignalR\ConsoleLogStreaming.SignalR.csproj" />
+        <PackageReference Include="ConsoleLogStream.Core" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />

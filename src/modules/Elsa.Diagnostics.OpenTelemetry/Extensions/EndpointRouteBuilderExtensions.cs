@@ -1,7 +1,9 @@
+using System.Buffers;
 using Elsa.Diagnostics.OpenTelemetry.Options;
 using Elsa.Diagnostics.OpenTelemetry.Contracts;
 using Elsa.Diagnostics.OpenTelemetry.Ingestion;
 using Elsa.Diagnostics.OpenTelemetry.Ingestion.HttpProtobuf;
+using Elsa.Diagnostics.OpenTelemetry.Models;
 using Elsa.Diagnostics.OpenTelemetry.RealTime;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Builder;
@@ -28,32 +30,17 @@ public static class EndpointRouteBuilderExtensions
 
         endpoints.MapPost($"{basePath}/traces", static async (HttpContext httpContext, IOpenTelemetryIngestor ingestor, IOptions<OpenTelemetryDiagnosticsOptions> options, CancellationToken cancellationToken) =>
         {
-            if (!OtlpIngestionSecurity.IsAuthorized(httpContext, options.Value))
-                return Results.Unauthorized();
-
-            var payload = await ReadBodyAsync(httpContext, cancellationToken);
-            await ingestor.IngestAsync(OtlpHttpProtobufParser.ParseTraces(payload.Span), cancellationToken);
-            return Results.Ok();
+            return await IngestAsync(httpContext, ingestor, options, payload => OtlpHttpProtobufParser.ParseTraces(payload.Span), cancellationToken);
         });
 
         endpoints.MapPost($"{basePath}/metrics", static async (HttpContext httpContext, IOpenTelemetryIngestor ingestor, IOptions<OpenTelemetryDiagnosticsOptions> options, CancellationToken cancellationToken) =>
         {
-            if (!OtlpIngestionSecurity.IsAuthorized(httpContext, options.Value))
-                return Results.Unauthorized();
-
-            var payload = await ReadBodyAsync(httpContext, cancellationToken);
-            await ingestor.IngestAsync(OtlpHttpProtobufParser.ParseMetrics(payload.Span), cancellationToken);
-            return Results.Ok();
+            return await IngestAsync(httpContext, ingestor, options, payload => OtlpHttpProtobufParser.ParseMetrics(payload.Span), cancellationToken);
         });
 
         endpoints.MapPost($"{basePath}/logs", static async (HttpContext httpContext, IOpenTelemetryIngestor ingestor, IOptions<OpenTelemetryDiagnosticsOptions> options, CancellationToken cancellationToken) =>
         {
-            if (!OtlpIngestionSecurity.IsAuthorized(httpContext, options.Value))
-                return Results.Unauthorized();
-
-            var payload = await ReadBodyAsync(httpContext, cancellationToken);
-            await ingestor.IngestAsync(OtlpHttpProtobufParser.ParseLogs(payload.Span), cancellationToken);
-            return Results.Ok();
+            return await IngestAsync(httpContext, ingestor, options, payload => OtlpHttpProtobufParser.ParseLogs(payload.Span), cancellationToken);
         });
     }
 
@@ -71,11 +58,57 @@ public static class EndpointRouteBuilderExtensions
         // contracts and accurate collector metadata without forcing every host to reference gRPC.
     }
 
-    private static async Task<ReadOnlyMemory<byte>> ReadBodyAsync(HttpContext httpContext, CancellationToken cancellationToken)
+    private static async Task<IResult> IngestAsync(
+        HttpContext httpContext,
+        IOpenTelemetryIngestor ingestor,
+        IOptions<OpenTelemetryDiagnosticsOptions> options,
+        Func<ReadOnlyMemory<byte>, OpenTelemetryBatch> parse,
+        CancellationToken cancellationToken)
+    {
+        if (!OtlpIngestionSecurity.IsAuthorized(httpContext, options.Value))
+            return Results.Unauthorized();
+
+        try
+        {
+            var payload = await ReadBodyAsync(httpContext, options.Value.MaxHttpRequestBodySize, cancellationToken);
+            await ingestor.IngestAsync(parse(payload), cancellationToken);
+            return Results.Ok();
+        }
+        catch (RequestBodyTooLargeException)
+        {
+            return Results.StatusCode(StatusCodes.Status413PayloadTooLarge);
+        }
+        catch (InvalidDataException)
+        {
+            return Results.BadRequest();
+        }
+    }
+
+    private static async Task<ReadOnlyMemory<byte>> ReadBodyAsync(HttpContext httpContext, long maxBodySize, CancellationToken cancellationToken)
     {
         using var stream = new MemoryStream();
-        await httpContext.Request.Body.CopyToAsync(stream, cancellationToken);
+        var buffer = ArrayPool<byte>.Shared.Rent(81920);
+        var totalBytes = 0L;
+
+        try
+        {
+            int read;
+            while ((read = await httpContext.Request.Body.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+            {
+                totalBytes += read;
+                if (totalBytes > maxBodySize)
+                    throw new RequestBodyTooLargeException();
+
+                stream.Write(buffer, 0, read);
+            }
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+
         return stream.ToArray();
     }
 
+    private sealed class RequestBodyTooLargeException : Exception;
 }

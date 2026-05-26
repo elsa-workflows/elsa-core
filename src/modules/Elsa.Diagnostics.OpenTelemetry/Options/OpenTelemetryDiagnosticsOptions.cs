@@ -6,8 +6,10 @@ public class OpenTelemetryDiagnosticsOptions
     public int SpanCapacity { get; set; } = 25_000;
     public int MetricPointCapacity { get; set; } = 25_000;
     public int LogRecordCapacity { get; set; } = 10_000;
+    public int ResourceCapacity { get; set; } = 500;
     public int SubscriberChannelCapacity { get; set; } = 1_000;
     public int MaxQuerySize { get; set; } = 1_000;
+    public long MaxHttpRequestBodySize { get; set; } = 10 * 1024 * 1024;
     public string HttpEndpointPath { get; set; } = "/elsa/otlp/v1";
     public string? GrpcEndpointPath { get; set; }
     public string GrpcDisabledReason { get; set; } = "gRPC ingestion is not enabled for this host.";
@@ -36,4 +38,6 @@ public class OpenTelemetryDiagnosticsOptions
         "(?i)(password|secret|token|api[-_]?key)\\s*[=:]\\s*[^\\s,;]+",
         "(?i)(AccountKey|SharedAccessKey)=([^;\\s]+)"
     ];
+
+    public TimeSpan SensitiveTextPatternTimeout { get; set; } = TimeSpan.FromMilliseconds(100);
 }

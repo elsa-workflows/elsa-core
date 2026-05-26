@@ -1,4 +1,3 @@
-using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.Workflows;
@@ -13,7 +12,6 @@ internal static class ConsoleLogContextServiceCollectionExtensions
     {
         services.TryAddSingleton(_ => ConsoleLogContextAccessor.Instance);
         services.TryAddSingleton<IConsoleLogContextAccessor>(sp => sp.GetRequiredService<ConsoleLogContextAccessor>());
-        services.TryAddSingleton<IConsoleLogMetadataAccessor>(sp => sp.GetRequiredService<ConsoleLogContextAccessor>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IWorkflowExecutionPipelineContributor, ConsoleLogWorkflowExecutionPipelineContributor>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IActivityExecutionPipelineContributor, ConsoleLogActivityExecutionPipelineContributor>());
         return services;

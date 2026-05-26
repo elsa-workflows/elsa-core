@@ -17,6 +17,6 @@ public static class OtlpIngestionSecurity
     private static bool IsLoopback(HttpContext httpContext)
     {
         var remoteAddress = httpContext.Connection.RemoteIpAddress;
-        return remoteAddress == null || IPAddress.IsLoopback(remoteAddress);
+        return remoteAddress != null && IPAddress.IsLoopback(remoteAddress);
     }
 }

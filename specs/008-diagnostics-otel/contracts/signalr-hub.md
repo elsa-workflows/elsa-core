@@ -11,34 +11,29 @@ The hub requires the OpenTelemetry diagnostics view permission.
 ## Client-to-Server Methods
 
 ```text
-Subscribe(OpenTelemetryLiveFilter filter)
-UpdateSubscription(OpenTelemetryLiveFilter filter)
-Unsubscribe()
+SubscribeAsync(OpenTelemetryTraceFilter filter)
 ```
 
-Filters support resource key, service name, trace ID, workflow instance ID, workflow definition ID, severity/status, and signal types.
+Filters support resource ID, service name, trace ID, workflow instance ID, workflow definition ID, status, text, and time range. Metric clients subscribe through the trace-filter-compatible live stream and apply metric-specific filtering client-side.
 
 ## Server-to-Client Events
 
 ```text
-TelemetryReceived(OpenTelemetryStreamItem item)
-ResourceChanged(TelemetryResource resource)
-DroppedTelemetry(OpenTelemetryDroppedSummary summary)
-StorageDiagnosticsChanged(OpenTelemetryStorageDiagnostics diagnostics)
-SubscriptionRejected(string reason)
+ReceiveAsync(OpenTelemetryStreamItem item)
 ```
 
 `OpenTelemetryStreamItem` variants:
 
-- `TraceUpdated`
-- `SpanReceived`
-- `MetricPointReceived`
-- `LogRecordReceived`
+- `Resource`
+- `Trace`
+- `MetricPoint`
+- `Log`
+- `DroppedItems`
 
 ## Lifecycle
 
 - Subscriptions are bounded by server-side per-connection subscriber capacity.
-- Filter changes update subscription state without creating duplicate subscriptions.
+- Filter changes are represented by starting a new subscription.
 - Disconnected clients release subscriber resources.
-- When a subscriber queue is full, the oldest queued update is dropped, `DroppedLiveUpdateCount` is incremented, and dropped live updates are reported through storage diagnostics or dropped summaries.
+- When a subscriber queue is full, live updates are dropped and reported through `DroppedItems` summaries.
 - Subscriber overflow must not disconnect the client unless the connection itself is unhealthy or unauthorized.

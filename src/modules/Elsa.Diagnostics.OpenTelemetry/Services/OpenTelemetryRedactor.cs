@@ -11,7 +11,7 @@ public class OpenTelemetryRedactor(IOptions<OpenTelemetryDiagnosticsOptions> opt
     private const string Redacted = "[Redacted]";
     private readonly HashSet<string> _sensitiveNames = options.Value.SensitiveNames.ToHashSet(StringComparer.OrdinalIgnoreCase);
     private readonly IReadOnlyCollection<Regex> _sensitiveTextPatterns = options.Value.SensitiveTextPatterns
-        .Select(pattern => new Regex(pattern, RegexOptions.Compiled | RegexOptions.CultureInvariant))
+        .Select(pattern => new Regex(pattern, RegexOptions.Compiled | RegexOptions.CultureInvariant, options.Value.SensitiveTextPatternTimeout))
         .ToList();
 
     public OpenTelemetryBatch Redact(OpenTelemetryBatch batch)
@@ -62,6 +62,18 @@ public class OpenTelemetryRedactor(IOptions<OpenTelemetryDiagnosticsOptions> opt
         if (_sensitiveNames.Any(sensitiveName => name.Contains(sensitiveName, StringComparison.OrdinalIgnoreCase)))
             return Redacted;
 
-        return _sensitiveTextPatterns.Aggregate(value, (current, pattern) => pattern.Replace(current, Redacted));
+        return _sensitiveTextPatterns.Aggregate(value, RedactPattern);
+    }
+
+    private static string RedactPattern(string value, Regex pattern)
+    {
+        try
+        {
+            return pattern.Replace(value, Redacted);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return value;
+        }
     }
 }

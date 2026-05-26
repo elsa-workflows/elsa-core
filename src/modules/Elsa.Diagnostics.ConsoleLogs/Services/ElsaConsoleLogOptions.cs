@@ -1,4 +1,4 @@
-using ConsoleLogStreaming.Core.Options;
+using ConsoleLogStream.Core.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
@@ -14,11 +14,11 @@ internal static class ElsaConsoleLogOptions
         options.ServiceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? AppDomain.CurrentDomain.FriendlyName;
         options.PreserveAnsi = true;
 
-        SetMetadata(options, ConsoleLogStreamingApiMetadataKeys.KubernetesPodName, podName);
-        SetMetadata(options, ConsoleLogStreamingApiMetadataKeys.KubernetesNamespace, Environment.GetEnvironmentVariable("POD_NAMESPACE"));
-        SetMetadata(options, ConsoleLogStreamingApiMetadataKeys.ContainerName, Environment.GetEnvironmentVariable("CONTAINER_NAME"));
-        SetMetadata(options, ConsoleLogStreamingApiMetadataKeys.KubernetesNodeName, Environment.GetEnvironmentVariable("NODE_NAME"));
-        SetMetadata(options, ConsoleLogStreamingApiMetadataKeys.ProcessStartedAt, DateTimeOffset.UtcNow.ToString("O"));
+        SetMetadata(options, "kubernetes.pod.name", podName);
+        SetMetadata(options, "kubernetes.namespace.name", Environment.GetEnvironmentVariable("POD_NAMESPACE"));
+        SetMetadata(options, "container.name", Environment.GetEnvironmentVariable("CONTAINER_NAME"));
+        SetMetadata(options, "kubernetes.node.name", Environment.GetEnvironmentVariable("NODE_NAME"));
+        SetMetadata(options, "process.started_at", DateTimeOffset.UtcNow.ToString("O"));
     }
 
     private static void SetMetadata(ConsoleLogOptions options, string key, string? value)

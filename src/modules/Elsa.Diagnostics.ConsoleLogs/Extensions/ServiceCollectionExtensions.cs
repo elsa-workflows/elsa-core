@@ -1,9 +1,7 @@
-using ConsoleLogStreaming.Contracts;
-using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.Core.DependencyInjection;
-using ConsoleLogStreaming.Core.Options;
-using ConsoleLogStreaming.SignalR;
-using ConsoleLogStreaming.SignalR.DependencyInjection;
+using ConsoleLogStream.Core;
+using ConsoleLogStream.Core.DependencyInjection;
+using ConsoleLogStream.Core.Options;
+using ConsoleLogStream.Core.Providers;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,15 +17,25 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogOptions>? configureOptions = null)
     {
         services.AddConsoleLogContextServices();
-        services.AddConsoleLogStreamingHost(options =>
+        services.AddConsoleLogStream(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);
             configureOptions?.Invoke(options);
         });
-        services.AddConsoleLogStreamingSignalR(options => options.HubPath = EndpointRouteBuilderExtensions.HubRoute);
-        services.TryAddSingleton<IConsoleLogStreamingHubAuthorizer, ElsaConsoleLogStreamingHubAuthorizer>();
+        services.AddSignalR();
+        services.DecorateConsoleLogProvider();
+        services.TryAddSingleton<IElsaConsoleLogHubAuthorizer, ElsaConsoleLogStreamHubAuthorizer>();
         services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
 
         return services;
+    }
+
+    private static void DecorateConsoleLogProvider(this IServiceCollection services)
+    {
+        services.RemoveAll<IConsoleLogProvider>();
+        services.TryAddSingleton<InMemoryConsoleLogProvider>();
+        services.TryAddSingleton<IConsoleLogProvider>(sp => new ElsaConsoleLogProvider(
+            sp.GetRequiredService<InMemoryConsoleLogProvider>(),
+            sp.GetRequiredService<IConsoleLogContextAccessor>()));
     }
 }

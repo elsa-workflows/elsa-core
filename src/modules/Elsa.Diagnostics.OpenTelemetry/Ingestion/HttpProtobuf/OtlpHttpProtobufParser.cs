@@ -640,17 +640,20 @@ internal static class OtlpHttpProtobufParser
                     field = new ProtobufField(number, wireType, ReadVarint(), default, default);
                     return true;
                 case ProtobufWireType.Fixed64:
+                    EnsureAvailable(8);
                     var fixed64 = BinaryPrimitives.ReadUInt64LittleEndian(_remaining[..8]);
                     _remaining = _remaining[8..];
                     field = new ProtobufField(number, wireType, fixed64, default, BitConverter.Int64BitsToDouble((long)fixed64));
                     return true;
                 case ProtobufWireType.LengthDelimited:
                     var length = checked((int)ReadVarint());
+                    EnsureAvailable(length);
                     var bytes = _remaining[..length];
                     _remaining = _remaining[length..];
                     field = new ProtobufField(number, wireType, default, bytes, default);
                     return true;
                 case ProtobufWireType.Fixed32:
+                    EnsureAvailable(4);
                     _remaining = _remaining[4..];
                     field = new ProtobufField(number, wireType, default, default, default);
                     return true;
@@ -680,6 +683,12 @@ internal static class OtlpHttpProtobufParser
             }
 
             throw new InvalidDataException("Invalid protobuf varint.");
+        }
+
+        private readonly void EnsureAvailable(int byteCount)
+        {
+            if (_remaining.Length < byteCount)
+                throw new InvalidDataException("Unexpected end of protobuf payload.");
         }
     }
 }

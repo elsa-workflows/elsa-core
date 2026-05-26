@@ -1,4 +1,4 @@
-using ConsoleLogStreaming.Core.Options;
+using ConsoleLogStream.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Features;
 using Elsa.Features.Services;
 

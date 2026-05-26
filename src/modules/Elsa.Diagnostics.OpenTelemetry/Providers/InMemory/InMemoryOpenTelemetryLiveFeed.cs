@@ -36,7 +36,7 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
         {
             await foreach (var item in subscriber.Channel.Reader.ReadAllAsync(cancellationToken))
             {
-                subscriber.MarkRead();
+                subscriber.MarkRead(item);
                 yield return item;
             }
         }
@@ -51,7 +51,7 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
     {
         private readonly object _lock = new();
         private int _pendingItemCount;
-        private long _droppedSinceLastSummary;
+        private readonly Dictionary<OpenTelemetrySignalType, long> _droppedSinceLastSummary = [];
 
         public Channel<OpenTelemetryStreamItem> Channel { get; } = System.Threading.Channels.Channel.CreateBounded<OpenTelemetryStreamItem>(new BoundedChannelOptions(Math.Max(1, channelCapacity))
         {
@@ -77,33 +77,72 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
 
         private void TryWrite(OpenTelemetryStreamItem item, int capacity)
         {
+            capacity = Math.Max(1, capacity);
+
             lock (_lock)
             {
                 if (_pendingItemCount >= capacity)
                 {
-                    _droppedSinceLastSummary++;
-                    Channel.Writer.TryWrite(item);
-                    Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(OpenTelemetrySignalType.Trace, _droppedSinceLastSummary, "SubscriberQueueFull") });
-                    _droppedSinceLastSummary = 0;
+                    TrackDrop(item);
                     return;
                 }
 
-                if (_droppedSinceLastSummary > 0)
-                {
-                    Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(OpenTelemetrySignalType.Trace, _droppedSinceLastSummary, "SubscriberQueueFull") });
-                    _pendingItemCount++;
-                    _droppedSinceLastSummary = 0;
-                }
+                TryWriteDroppedSummary(capacity);
 
-                Channel.Writer.TryWrite(item);
-                _pendingItemCount++;
+                if (_pendingItemCount >= capacity)
+                    TrackDrop(item);
+                else if (Channel.Writer.TryWrite(item))
+                    _pendingItemCount++;
             }
         }
 
-        public void MarkRead()
+        public void MarkRead(OpenTelemetryStreamItem item)
         {
             lock (_lock)
+            {
                 _pendingItemCount = Math.Max(0, _pendingItemCount - 1);
+
+                if (item.DroppedItems != null)
+                    _droppedSinceLastSummary.Remove(item.DroppedItems.SignalType);
+            }
+        }
+
+        private void TrackDrop(OpenTelemetryStreamItem item)
+        {
+            var signalType = GetSignalType(item);
+            if (signalType == null)
+                return;
+
+            _droppedSinceLastSummary.TryGetValue(signalType.Value, out var count);
+            _droppedSinceLastSummary[signalType.Value] = count + 1;
+            TryWriteDroppedSummary(capacity: 0);
+        }
+
+        private void TryWriteDroppedSummary(int capacity)
+        {
+            if (_droppedSinceLastSummary.Count == 0)
+                return;
+
+            if (capacity > 0 && _pendingItemCount >= capacity)
+                return;
+
+            var dropped = _droppedSinceLastSummary.OrderBy(x => x.Key).First();
+            if (Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(dropped.Key, dropped.Value, "SubscriberQueueFull") }) && capacity > 0)
+                _pendingItemCount++;
+        }
+
+        private static OpenTelemetrySignalType? GetSignalType(OpenTelemetryStreamItem item)
+        {
+            if (item.Trace != null)
+                return OpenTelemetrySignalType.Trace;
+
+            if (item.MetricPoint != null)
+                return OpenTelemetrySignalType.Metric;
+
+            if (item.Log != null)
+                return OpenTelemetrySignalType.Log;
+
+            return item.DroppedItems?.SignalType;
         }
 
         private bool Matches(TelemetryTrace trace)

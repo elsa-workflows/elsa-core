@@ -1,7 +1,7 @@
 using CShells.AspNetCore.Features;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
-using ConsoleLogStreaming.Core.Options;
+using ConsoleLogStream.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;
@@ -24,14 +24,11 @@ public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 
     public int RecentLogCapacity { get; set; } = DefaultOptions.RecentCapacity;
     public int SubscriberChannelCapacity { get; set; } = DefaultOptions.SubscriberCapacity;
-    public int CaptureChannelCapacity { get; set; } = DefaultOptions.CaptureChannelCapacity;
     public int MaxRecentQuerySize { get; set; } = DefaultOptions.MaxRecentQuerySize;
     public int MaxLineLength { get; set; } = DefaultOptions.MaxLineLength;
     public TimeSpan IdleFlushTimeout { get; set; } = DefaultOptions.IdleFlushTimeout;
     public bool StripAnsiEscapeSequences { get; set; } = !DefaultOptions.PreserveAnsi;
-    public TimeSpan SourceHeartbeatTimeout { get; set; } = DefaultOptions.SourceHeartbeatTimeout;
-    public string RedactionReplacement { get; set; } = DefaultOptions.RedactionReplacement;
-    public ICollection<string> SensitiveNames { get; set; } = [..DefaultOptions.SensitiveNames];
+    public string RedactionReplacement { get; set; } = "[Redacted]";
     public ICollection<string> SensitiveTextPatterns { get; set; } = [..DefaultOptions.RedactionRules.Select(x => x.Pattern)];
 
     public void ConfigureServices(IServiceCollection services)
@@ -48,14 +45,10 @@ public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
     {
         options.RecentCapacity = RecentLogCapacity;
         options.SubscriberCapacity = SubscriberChannelCapacity;
-        options.CaptureChannelCapacity = CaptureChannelCapacity;
         options.MaxRecentQuerySize = MaxRecentQuerySize;
         options.MaxLineLength = MaxLineLength;
         options.IdleFlushTimeout = IdleFlushTimeout;
         options.PreserveAnsi = !StripAnsiEscapeSequences;
-        options.SourceHeartbeatTimeout = SourceHeartbeatTimeout;
-        options.RedactionReplacement = RedactionReplacement;
-        options.SensitiveNames = [..SensitiveNames];
         options.RedactionRules.Clear();
         foreach (var pattern in SensitiveTextPatterns)
         {

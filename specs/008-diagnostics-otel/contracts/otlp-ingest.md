@@ -5,7 +5,7 @@
 Default base path:
 
 ```text
-/elsa/otlp
+/elsa/otlp/v1
 ```
 
 Supported paths:
@@ -16,7 +16,7 @@ POST /elsa/otlp/v1/metrics
 POST /elsa/otlp/v1/logs
 ```
 
-Requests use OTLP protobuf bodies. Responses follow OTLP export response semantics and include partial success details when supported.
+Requests use OTLP protobuf bodies. Accepted payloads return `200 OK`; unauthorized requests return `401 Unauthorized`; malformed protobuf payloads return `400 Bad Request`; payloads over the configured request body limit return `413 Payload Too Large`. The current collector does not emit OTLP partial-success response bodies.
 
 ## gRPC
 
@@ -43,9 +43,7 @@ When gRPC is disabled, collector configuration must return `GrpcEnabled = false`
 ```csharp
 public interface IOpenTelemetryIngestor
 {
-    ValueTask<OpenTelemetryIngestResult> IngestTracesAsync(OtlpTraceBatch batch, CancellationToken cancellationToken = default);
-    ValueTask<OpenTelemetryIngestResult> IngestMetricsAsync(OtlpMetricBatch batch, CancellationToken cancellationToken = default);
-    ValueTask<OpenTelemetryIngestResult> IngestLogsAsync(OtlpLogBatch batch, CancellationToken cancellationToken = default);
+    ValueTask IngestAsync(OpenTelemetryBatch batch, CancellationToken cancellationToken = default);
 }
 ```
 

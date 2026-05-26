@@ -11,7 +11,7 @@ public class OpenTelemetryStoreTestContext
     public OpenTelemetryStoreTestContext(OpenTelemetryDiagnosticsOptions? options = null)
     {
         Options = options ?? new OpenTelemetryDiagnosticsOptions();
-        SourceRegistry = new OpenTelemetrySourceRegistry();
+        SourceRegistry = new OpenTelemetrySourceRegistry(OptionsFactory.Create(Options));
         Store = new InMemoryOpenTelemetryStore(OptionsFactory.Create(Options), SourceRegistry);
     }
 

@@ -53,12 +53,28 @@ public class OpenTelemetryFeature : IFastEndpointsShellFeature, IWebShellFeature
     public int LogRecordCapacity { get; set; } = DefaultOptions.LogRecordCapacity;
 
     [ManifestSetting(
+        DisplayName = "Resource Capacity",
+        Description = "Maximum number of recent telemetry resources retained in memory.",
+        Category = "Diagnostics",
+        DefaultValue = "500",
+        RestartRequired = true)]
+    public int ResourceCapacity { get; set; } = DefaultOptions.ResourceCapacity;
+
+    [ManifestSetting(
         DisplayName = "Subscriber Channel Capacity",
         Description = "Maximum queued live updates per subscriber before updates are dropped.",
         Category = "Diagnostics",
         DefaultValue = "1000",
         RestartRequired = true)]
     public int SubscriberChannelCapacity { get; set; } = DefaultOptions.SubscriberChannelCapacity;
+
+    [ManifestSetting(
+        DisplayName = "Max HTTP Request Body Size",
+        Description = "Maximum OTLP HTTP/protobuf request body size in bytes.",
+        Category = "Diagnostics",
+        DefaultValue = "10485760",
+        RestartRequired = true)]
+    public long MaxHttpRequestBodySize { get; set; } = DefaultOptions.MaxHttpRequestBodySize;
 
     public void ConfigureServices(IServiceCollection services)
     {
@@ -78,6 +94,8 @@ public class OpenTelemetryFeature : IFastEndpointsShellFeature, IWebShellFeature
         options.SpanCapacity = SpanCapacity;
         options.MetricPointCapacity = MetricPointCapacity;
         options.LogRecordCapacity = LogRecordCapacity;
+        options.ResourceCapacity = ResourceCapacity;
         options.SubscriberChannelCapacity = SubscriberChannelCapacity;
+        options.MaxHttpRequestBodySize = MaxHttpRequestBodySize;
     }
 }

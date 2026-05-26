@@ -32,6 +32,11 @@ public class OtlpHttpIngestionTests : IAsyncLifetime
         });
 
         _app = builder.Build();
+        _app.Use((context, next) =>
+        {
+            context.Connection.RemoteIpAddress = IPAddress.Loopback;
+            return next();
+        });
         _app.MapOpenTelemetryHttpProtobufCollector();
 
         await _app.StartAsync();
@@ -79,6 +84,29 @@ public class OtlpHttpIngestionTests : IAsyncLifetime
         Assert.Equal("0011223344556677", activitySpan.ParentSpanId);
         Assert.Equal("approve-task", activitySpan.Attributes["activity.id"]);
         Assert.Equal("node-approve", activitySpan.Attributes["activity.node.id"]);
+    }
+
+    [Fact]
+    public async Task PostTraces_WhenPayloadExceedsConfiguredLimit_ReturnsPayloadTooLarge()
+    {
+        _app!.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenTelemetryDiagnosticsOptions>>().Value.MaxHttpRequestBodySize = 1;
+        using var content = new ByteArrayContent(CreateTracePayload());
+        content.Headers.ContentType = new("application/x-protobuf");
+
+        var response = await _httpClient.PostAsync("/elsa/otlp/v1/traces", content);
+
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PostTraces_WhenPayloadIsTruncated_ReturnsBadRequest()
+    {
+        using var content = new ByteArrayContent([0x0a, 0x04, 0x08]);
+        content.Headers.ContentType = new("application/x-protobuf");
+
+        var response = await _httpClient.PostAsync("/elsa/otlp/v1/traces", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private static byte[] CreateTracePayload()

@@ -7,13 +7,15 @@ services.AddElsa(elsa =>
 {
     elsa.UseOpenTelemetryDiagnostics(options =>
     {
-        options.HttpCollectorPath = "/elsa/otlp";
-        options.RequireApiKeyForNonLoopback = true;
-        options.MaxTraces = 2_000;
-        options.MaxSpans = 10_000;
-        options.MaxMetricPoints = 20_000;
-        options.MaxLogRecords = 10_000;
-        options.MaxLiveUpdatesPerSubscriber = 1_000;
+        options.HttpEndpointPath = "/elsa/otlp/v1";
+        options.ApiKey = builder.Configuration["Diagnostics:OpenTelemetry:ApiKey"];
+        options.TraceCapacity = 2_000;
+        options.SpanCapacity = 10_000;
+        options.MetricPointCapacity = 20_000;
+        options.LogRecordCapacity = 10_000;
+        options.ResourceCapacity = 500;
+        options.SubscriberChannelCapacity = 1_000;
+        options.MaxHttpRequestBodySize = 10 * 1024 * 1024;
     });
 });
 ```
@@ -33,7 +35,7 @@ services.AddOpenTelemetry()
 Development HTTP/protobuf environment:
 
 ```text
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:5000/elsa/otlp
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:5000/elsa/otlp/v1
 OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
 OTEL_SERVICE_NAME=elsa-api
 OTEL_RESOURCE_ATTRIBUTES=service.instance.id=local-elsa-api,deployment.environment=development

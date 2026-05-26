@@ -27,6 +27,16 @@ public class OtlpIngestionSecurityTests
         Assert.False(authorized);
     }
 
+    [Fact(DisplayName = "Missing remote address is rejected without API key")]
+    public void RejectsMissingRemoteAddressWithoutApiKey()
+    {
+        var context = CreateContext(null);
+
+        var authorized = OtlpIngestionSecurity.IsAuthorized(context, new OpenTelemetryDiagnosticsOptions());
+
+        Assert.False(authorized);
+    }
+
     [Fact(DisplayName = "Configured API key header authorizes ingestion")]
     public void AllowsConfiguredApiKey()
     {
@@ -38,7 +48,7 @@ public class OtlpIngestionSecurityTests
         Assert.True(authorized);
     }
 
-    private static DefaultHttpContext CreateContext(IPAddress remoteAddress)
+    private static DefaultHttpContext CreateContext(IPAddress? remoteAddress)
     {
         var context = new DefaultHttpContext();
         context.Connection.RemoteIpAddress = remoteAddress;

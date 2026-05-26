@@ -8,7 +8,7 @@ Base path:
 
 All endpoints require the OpenTelemetry diagnostics view permission.
 
-Search endpoints accept a caller-provided limit capped by server options. Search results are ordered by newest receive time first unless a more specific sort is later added. Trace detail spans are returned in parent/child order with chronological ordering inside each sibling set.
+Search endpoints accept a caller-provided limit capped by server options. Trace, metric, and log search results return the latest matching window in ascending chronological order. Resource search results are ordered by most recently seen first. Trace detail spans are returned in parent/child order with chronological ordering inside each sibling set.
 
 ## Resources
 

@@ -1,4 +1,3 @@
-using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
@@ -6,7 +5,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 /// <summary>
 /// Ambient console log context backed by the current async execution context.
 /// </summary>
-public sealed class ConsoleLogContextAccessor : IConsoleLogContextAccessor, IConsoleLogMetadataAccessor
+public sealed class ConsoleLogContextAccessor : IConsoleLogContextAccessor
 {
     private static readonly AsyncLocal<MetadataFrame?> CurrentFrame = new();
     private static readonly IReadOnlyDictionary<string, string> Empty = new Dictionary<string, string>();

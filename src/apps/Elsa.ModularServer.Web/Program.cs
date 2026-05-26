@@ -1,4 +1,3 @@
-using ConsoleLogStreaming.Core.Capture;
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
@@ -15,11 +14,6 @@ using Elsa.Workflows.ShellFeatures;
 using Nuplane;
 using Nuplane.Loading.Hosting.Builder;
 using Nuplane.Sources.Directory.Configuration;
-
-// Install the console stream tee as early as possible — before WebApplication.CreateBuilder and
-// any logger provider construction — so that downstream loggers (Microsoft.Extensions.Logging.Console,
-// Kestrel/Hosting loggers, etc.) capture our tee writer instead of the raw Console.Out / Console.Error.
-ConsoleStreamHook.Install();
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

@@ -83,6 +83,8 @@ public class OtlpIngestionSecurityTests
         {
             if (context.Request.Headers.TryGetValue("x-test-remote-ip", out var value) && IPAddress.TryParse(value.ToString(), out var remoteIpAddress))
                 context.Connection.RemoteIpAddress = remoteIpAddress;
+            else
+                context.Connection.RemoteIpAddress = IPAddress.Loopback;
 
             await next();
         });

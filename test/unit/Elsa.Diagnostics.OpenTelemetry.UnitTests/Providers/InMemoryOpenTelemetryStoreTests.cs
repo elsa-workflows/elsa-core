@@ -41,4 +41,22 @@ public class InMemoryOpenTelemetryStoreTests
 
         Assert.Single(result.Items);
     }
+
+    [Fact]
+    public async Task WriteAsync_WhenResourceCapacityIsExceeded_DropsOldestResource()
+    {
+        var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions { ResourceCapacity = 2 });
+
+        await context.WriteAsync(new OpenTelemetryBatch(
+            [
+                context.Resource("resource-a", "api", context.Now.AddSeconds(1)),
+                context.Resource("resource-b", "worker", context.Now.AddSeconds(2)),
+                context.Resource("resource-c", "jobs", context.Now.AddSeconds(3))
+            ],
+            [], [], [], [], []));
+
+        var result = await context.Store.QueryResourcesAsync(new OpenTelemetryResourceFilter { Take = 10 });
+
+        Assert.Equal(["resource-c", "resource-b"], result.Items.Select(x => x.Id));
+    }
 }
