@@ -104,7 +104,7 @@
 - [X] T049 [P] Update module README with routes, permissions, security, scope boundaries, and historical extension decision in `src/modules/Elsa.Diagnostics.OpenTelemetry/README.md`
 - [X] T050 [P] Verify no production code references historical producer middleware by running `rg "Elsa.OpenTelemetry|UseWorkflowExecutionTracing|UseActivityExecutionTracing" src test`
 - [X] T051 Run `dotnet test test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj`
-- [ ] T052 Run `dotnet test test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj`
+- [X] T052 Run `dotnet test test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj`
 - [ ] T053 Run `dotnet build Elsa.sln`
 
 ## Dependencies
