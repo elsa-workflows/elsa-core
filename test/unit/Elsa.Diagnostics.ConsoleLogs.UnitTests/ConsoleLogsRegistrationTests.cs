@@ -41,12 +41,10 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(ConsoleLogStreamingHost.RedactionPipeline, serviceProvider.GetRequiredService<IConsoleLogRedactionPipeline>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
-        Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
-        Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
+        AssertConsoleLogPipelineContributors(serviceProvider);
         Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType() == typeof(ConsoleLogStreamingHostedService));
         Assert.Same(ConsoleLogStreamingHost.Capture, serviceProvider.GetRequiredService<IConsoleLogCapture>());
 
-        // Same instance must be visible across separate shell containers — console output is process-wide.
         var services2 = new ServiceCollection();
         services2.AddConsoleLogsServices();
         await using var serviceProvider2 = services2.BuildServiceProvider();
@@ -75,8 +73,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(ConsoleLogStreamingHost.Formatter, serviceProvider.GetRequiredService<ConsoleLineFormatter>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
-        Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
-        Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
+        AssertConsoleLogPipelineContributors(serviceProvider);
 
         foreach (var hostedService in serviceProvider.GetServices<IHostedService>())
             await hostedService.StopAsync(CancellationToken.None);
@@ -111,6 +108,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType() == typeof(ConsoleLogStreamingHostedService));
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
+        AssertConsoleLogPipelineContributors(serviceProvider);
     }
 
     [Fact]
@@ -137,6 +135,12 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Equal(23, serviceProvider.GetRequiredService<IOptions<ConsoleLogStreaming.Core.Options.ConsoleLogOptions>>().Value.RecentCapacity);
     }
 
+    private static void AssertConsoleLogPipelineContributors(IServiceProvider serviceProvider)
+    {
+        Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
+        Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
+    }
+
     private sealed class CustomProvider : IConsoleLogProvider
     {
         public ValueTask PublishAsync(ConsoleLogStreaming.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
@@ -155,5 +159,4 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         public ValueTask<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>>([]);
     }
-
 }

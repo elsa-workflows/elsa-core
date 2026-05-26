@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Security.Claims;
+using System.Text.Json;
 using ConsoleLogStreaming.Contracts;
 using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.SignalR;
@@ -50,6 +51,31 @@ public class ConsoleLogsAuthorizationTests
         var permissions = GetConfiguredPermissions(endpointTypeName);
 
         Assert.Contains(ConsoleLogsPermissions.Read, permissions);
+    }
+
+    [Fact]
+    public async Task RecentEndpoint_MapsWorkflowInstanceIdToMetadataFilter()
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider, new ConsoleLogStreamingApiMapper())!;
+        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
+        var request = JsonSerializer.Deserialize(
+            """
+            {
+                "workflowInstanceId": "workflow-instance-a"
+            }
+            """,
+            requestDtoType,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        var metadata = provider.LastFilter.Metadata;
+        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
+        Assert.Equal("workflow-instance-a", workflowInstanceId);
     }
 
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
@@ -131,6 +157,8 @@ public class ConsoleLogsAuthorizationTests
 
     private class TestConsoleLogProvider : IConsoleLogProvider
     {
+        public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastFilter { get; private set; }
+
         public ValueTask PublishAsync(ConsoleLogStreaming.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;
@@ -138,6 +166,7 @@ public class ConsoleLogsAuthorizationTests
 
         public ValueTask<ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult> GetRecentAsync(ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
+            LastFilter = filter;
             return ValueTask.FromResult(new ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult());
         }
 

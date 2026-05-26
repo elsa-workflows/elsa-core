@@ -12,4 +12,3 @@ public sealed class ConsoleHostStateCollection
 {
     public const string Name = "ConsoleHostState";
 }
-

@@ -4,7 +4,6 @@ using ConsoleLogStreaming.Core.DependencyInjection;
 using ConsoleLogStreaming.Core.Options;
 using ConsoleLogStreaming.SignalR;
 using ConsoleLogStreaming.SignalR.DependencyInjection;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -18,9 +17,7 @@ public static class HostServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddConsoleLogsHost(this IServiceCollection services, Action<ConsoleLogOptions>? configure = null)
     {
-        services.TryAddSingleton(_ => ConsoleLogContextAccessor.Instance);
-        services.AddSingleton<IConsoleLogContextAccessor>(sp => sp.GetRequiredService<ConsoleLogContextAccessor>());
-        services.AddSingleton<IConsoleLogMetadataAccessor>(sp => sp.GetRequiredService<ConsoleLogContextAccessor>());
+        services.AddConsoleLogContextServices();
         services.AddConsoleLogStreamingHost(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);
