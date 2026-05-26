@@ -1,6 +1,6 @@
 # Elsa Diagnostics Console Logs
 
-`Elsa.Diagnostics.ConsoleLogs` is an opt-in Core module for operational diagnostics. It captures raw backend `stdout` and `stderr` lines, preserves the host's original console destinations, redacts data before provider boundaries, and exposes recent plus live console output to authorized callers.
+`Elsa.Diagnostics.ConsoleLogs` is an opt-in Core module for operational diagnostics. It hosts `ConsoleLogStreaming.Core`, adds Elsa workflow metadata, and exposes recent plus live console output to authorized callers.
 
 ## What It Captures
 
@@ -11,6 +11,8 @@
 
 The module is separate from `Elsa.Diagnostics.StructuredLogs`. It does not parse `ILogger` records, provide durable audit storage, call orchestrator log APIs, or implement trace/metric exploration.
 
+Capture, redaction, buffering, source tracking, provider contracts, and live subscriptions come from `ConsoleLogStreaming.Core`. Elsa keeps only the module wiring, workflow metadata accessor, authorization, REST endpoints, SignalR hub, and DTO mapping.
+
 ## Configure
 
 ```csharp
@@ -18,11 +20,11 @@ services.AddElsa(elsa =>
 {
     elsa.UseConsoleLogs(options =>
     {
-        options.RecentLogCapacity = 5_000;
-        options.SubscriberChannelCapacity = 1_000;
+        options.RecentCapacity = 5_000;
+        options.SubscriberCapacity = 1_000;
         options.MaxRecentQuerySize = 1_000;
         options.MaxLineLength = 16_384;
-        options.StripAnsiEscapeSequences = false; // pass colors through to consumers
+        options.PreserveAnsi = true; // pass colors through to consumers
     });
 });
 ```
@@ -67,10 +69,12 @@ tee, the capture publishes them verbatim, and the Studio renders them.
 
 Recent, source, and hub access all require the same permission.
 
+Custom storage providers should implement `ConsoleLogStreaming.Core.IConsoleLogProvider` and use the core models. Elsa-specific values such as workflow instance IDs are represented as metadata internally and projected onto shared `ConsoleLogStreaming.Contracts` DTOs at the REST and SignalR boundaries.
+
 ## Safety Boundaries
 
 - Redaction runs before recent buffering, live streaming, endpoint responses, and provider storage.
-- ANSI escape sequences are preserved by default; set `StripAnsiEscapeSequences = true` to strip them server-side.
+- ANSI escape sequences are preserved by default; set `PreserveAnsi = false` to strip them server-side.
 - Partial writes are buffered until newline, max line length, or idle flush.
 - Oversized lines are truncated to one event and marked as truncated.
-- Providers receive only redacted line text and redacted source metadata.
+- Core providers receive only redacted line text and redacted source metadata.

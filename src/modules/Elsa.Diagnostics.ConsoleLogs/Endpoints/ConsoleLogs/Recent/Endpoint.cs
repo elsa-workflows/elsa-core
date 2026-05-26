@@ -1,3 +1,4 @@
+using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using JetBrains.Annotations;
@@ -5,7 +6,7 @@ using JetBrains.Annotations;
 namespace Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent;
 
 [PublicAPI]
-internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpoint<ConsoleLogFilter, RecentConsoleLogsResult>
+internal class Endpoint(IConsoleLogProvider provider, IConsoleLogStreamingApiMapper mapper) : ElsaEndpoint<ConsoleLogFilter, RecentConsoleLogsResult>
 {
     public override void Configure()
     {
@@ -16,6 +17,7 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpoint<ConsoleLogF
 
     public override async Task<RecentConsoleLogsResult> ExecuteAsync(ConsoleLogFilter request, CancellationToken cancellationToken)
     {
-        return await provider.GetRecentAsync(request, cancellationToken);
+        var result = await provider.GetRecentAsync(mapper.ToCore(request), cancellationToken);
+        return mapper.ToApi(result);
     }
 }

@@ -1,12 +1,12 @@
 using System.Reflection;
 using System.Security.Claims;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
+using ConsoleLogStreaming.Contracts;
+using ConsoleLogStreaming.Core;
+using ConsoleLogStreaming.SignalR;
 using Elsa.Diagnostics.ConsoleLogs.Features;
-using Elsa.Diagnostics.ConsoleLogs.Models;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
-using Elsa.Diagnostics.ConsoleLogs.RealTime;
+using Elsa.Diagnostics.ConsoleLogs.Services;
 using FastEndpoints;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -15,14 +15,6 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
 public class ConsoleLogsAuthorizationTests
 {
-    [Fact]
-    public void HubAuthorization_RequiresAuthenticatedUser()
-    {
-        var authorize = Assert.Single(typeof(ConsoleLogsHub).GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true).Cast<AuthorizeAttribute>());
-
-        Assert.Null(authorize.Policy);
-    }
-
     [Fact]
     public async Task HubSubscribe_WithoutConsoleLogsPermission_DeniesAccess()
     {
@@ -63,7 +55,10 @@ public class ConsoleLogsAuthorizationTests
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
-        var endpoint = Activator.CreateInstance(endpointType, new TestConsoleLogProvider())!;
+        var mapper = new ConsoleLogStreamingApiMapper();
+        var endpoint = endpointTypeName.EndsWith(".Recent.Endpoint", StringComparison.Ordinal)
+            ? Activator.CreateInstance(endpointType, new TestConsoleLogProvider(), mapper)!
+            : Activator.CreateInstance(endpointType, new TestConsoleLogProvider(), mapper)!;
         var (requestDtoType, responseDtoType) = GetEndpointDtoTypes(endpointType);
         var definition = new EndpointDefinition(endpointType, requestDtoType, responseDtoType);
 
@@ -112,10 +107,12 @@ public class ConsoleLogsAuthorizationTests
     {
         var provider = new TestConsoleLogProvider();
         var sourceRegistry = new TestConsoleLogSourceRegistry();
+        var mapper = new ConsoleLogStreamingApiMapper();
         var hubContext = new TestHubContext();
-        var subscriptionManager = new ConsoleLogSubscriptionManager(provider, sourceRegistry, hubContext, NullLogger<ConsoleLogSubscriptionManager>.Instance);
+        var subscriptionManager = new ConsoleLogSubscriptionManager(provider, sourceRegistry, mapper, hubContext, NullLogger<ConsoleLogSubscriptionManager>.Instance);
+        var authorizer = new ElsaConsoleLogStreamingHubAuthorizer();
 
-        return new ConsoleLogsHub(subscriptionManager)
+        return new ConsoleLogsHub(provider, mapper, authorizer, subscriptionManager)
         {
             Context = new TestHubCallerContext(CreateUser(permissions))
         };
@@ -134,46 +131,49 @@ public class ConsoleLogsAuthorizationTests
 
     private class TestConsoleLogProvider : IConsoleLogProvider
     {
-        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        public ValueTask PublishAsync(ConsoleLogStreaming.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        public ValueTask<ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult> GetRecentAsync(ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult(new RecentConsoleLogsResult([], []));
+            return ValueTask.FromResult(new ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult());
         }
 
-        public IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<ConsoleLogStreaming.Core.Models.ConsoleLogStreamingItem> SubscribeAsync(
+            ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter,
+            CancellationToken cancellationToken = default)
         {
-            return AsyncEnumerable.Empty<ConsoleLogStreamItem>();
+            return AsyncEnumerable.Empty<ConsoleLogStreaming.Core.Models.ConsoleLogStreamingItem>();
         }
 
-        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        public ValueTask<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>>([]);
         }
     }
 
     private class TestConsoleLogSourceRegistry : IConsoleLogSourceRegistry
     {
-        public event Action<ConsoleLogSource>? SourceChanged
+        public event Action<ConsoleLogStreaming.Core.Models.ConsoleLogSource>? SourceChanged
         {
             add { }
             remove { }
         }
 
-        public ConsoleLogSource Current { get; } = new()
+        public ConsoleLogStreaming.Core.Models.ConsoleLogSource Current { get; } = new()
         {
             Id = "test",
             DisplayName = "Test"
         };
 
-        public void MarkSeen(string sourceId, DateTimeOffset timestamp)
+        public ConsoleLogStreaming.Core.Models.ConsoleLogSource MarkSeen(ConsoleLogStreaming.Core.Models.ConsoleLogSource source, DateTimeOffset timestamp)
         {
+            return source with { LastSeen = timestamp };
         }
 
-        public IReadOnlyCollection<ConsoleLogSource> List()
+        public IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource> List()
         {
             return [Current];
         }

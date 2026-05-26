@@ -1,6 +1,7 @@
 using CShells.AspNetCore.Features;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
+using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;
@@ -15,28 +16,28 @@ namespace Elsa.Diagnostics.ConsoleLogs.ShellFeatures;
 [ShellFeature(
     DisplayName = "Console Logs",
     Description = "Provides live raw console log streaming over REST and SignalR",
-    DependsOn = ["ElsaFastEndpoints"])]
+    DependsOn = ["ElsaFastEndpoints", "Workflows"])]
 [UsedImplicitly]
 public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 {
-    private static readonly ConsoleLogsOptions DefaultOptions = new();
+    private static readonly ConsoleLogOptions DefaultOptions = new();
 
-    public int RecentLogCapacity { get; set; } = DefaultOptions.RecentLogCapacity;
-    public int SubscriberChannelCapacity { get; set; } = DefaultOptions.SubscriberChannelCapacity;
+    public int RecentLogCapacity { get; set; } = DefaultOptions.RecentCapacity;
+    public int SubscriberChannelCapacity { get; set; } = DefaultOptions.SubscriberCapacity;
     public int CaptureChannelCapacity { get; set; } = DefaultOptions.CaptureChannelCapacity;
     public int MaxRecentQuerySize { get; set; } = DefaultOptions.MaxRecentQuerySize;
     public int MaxLineLength { get; set; } = DefaultOptions.MaxLineLength;
     public TimeSpan IdleFlushTimeout { get; set; } = DefaultOptions.IdleFlushTimeout;
-    public bool StripAnsiEscapeSequences { get; set; } = DefaultOptions.StripAnsiEscapeSequences;
+    public bool StripAnsiEscapeSequences { get; set; } = !DefaultOptions.PreserveAnsi;
     public TimeSpan SourceHeartbeatTimeout { get; set; } = DefaultOptions.SourceHeartbeatTimeout;
-    public bool IncludeConsoleLogsInternalLogs { get; set; } = DefaultOptions.IncludeConsoleLogsInternalLogs;
     public string RedactionReplacement { get; set; } = DefaultOptions.RedactionReplacement;
     public ICollection<string> SensitiveNames { get; set; } = [..DefaultOptions.SensitiveNames];
-    public ICollection<string> SensitiveTextPatterns { get; set; } = [..DefaultOptions.SensitiveTextPatterns];
+    public ICollection<string> SensitiveTextPatterns { get; set; } = [..DefaultOptions.RedactionRules.Select(x => x.Pattern)];
 
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddConsoleLogsServices(ConfigureOptions);
+        services.AddConsoleLogContextPipelines();
     }
 
     public void MapEndpoints(IEndpointRouteBuilder endpoints, IHostEnvironment? environment)
@@ -44,19 +45,27 @@ public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
         endpoints.MapConsoleLogsHub();
     }
 
-    private void ConfigureOptions(ConsoleLogsOptions options)
+    private void ConfigureOptions(ConsoleLogOptions options)
     {
-        options.RecentLogCapacity = RecentLogCapacity;
-        options.SubscriberChannelCapacity = SubscriberChannelCapacity;
+        options.RecentCapacity = RecentLogCapacity;
+        options.SubscriberCapacity = SubscriberChannelCapacity;
         options.CaptureChannelCapacity = CaptureChannelCapacity;
         options.MaxRecentQuerySize = MaxRecentQuerySize;
         options.MaxLineLength = MaxLineLength;
         options.IdleFlushTimeout = IdleFlushTimeout;
-        options.StripAnsiEscapeSequences = StripAnsiEscapeSequences;
+        options.PreserveAnsi = !StripAnsiEscapeSequences;
         options.SourceHeartbeatTimeout = SourceHeartbeatTimeout;
-        options.IncludeConsoleLogsInternalLogs = IncludeConsoleLogsInternalLogs;
         options.RedactionReplacement = RedactionReplacement;
         options.SensitiveNames = [..SensitiveNames];
-        options.SensitiveTextPatterns = [..SensitiveTextPatterns];
+        options.RedactionRules.Clear();
+        foreach (var pattern in SensitiveTextPatterns)
+        {
+            options.RedactionRules.Add(new()
+            {
+                Name = "Sensitive text",
+                Pattern = pattern,
+                Replacement = RedactionReplacement
+            });
+        }
     }
 }

@@ -1,4 +1,4 @@
-using Elsa.Diagnostics.ConsoleLogs.RealTime;
+using ConsoleLogStreaming.SignalR;
 
 namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 

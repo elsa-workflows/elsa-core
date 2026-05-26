@@ -1,4 +1,4 @@
-using Elsa.Diagnostics.ConsoleLogs.RealTime;
+using ConsoleLogStreaming.SignalR.DependencyInjection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 
@@ -10,6 +10,6 @@ public static class EndpointRouteBuilderExtensions
 
     public static void MapConsoleLogsHub(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapHub<ConsoleLogsHub>(HubRoute);
+        endpoints.MapConsoleLogStreamingSignalR();
     }
 }
