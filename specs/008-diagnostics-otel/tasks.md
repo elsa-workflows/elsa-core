@@ -34,19 +34,19 @@
 
 **Independent Test**: Ingest OTLP traces/metrics/logs and run an Elsa workflow export-to-collector integration test.
 
-- [ ] T014 [P] [US1] Add OTLP trace normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpTraceNormalizerTests.cs`
-- [ ] T015 [P] [US1] Add OTLP metric normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpMetricNormalizerTests.cs`
-- [ ] T016 [P] [US1] Add OTLP log normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpLogNormalizerTests.cs`
+- [X] T014 [P] [US1] Add OTLP trace normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpTraceNormalizerTests.cs`
+- [X] T015 [P] [US1] Add OTLP metric normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpMetricNormalizerTests.cs`
+- [X] T016 [P] [US1] Add OTLP log normalization tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Ingestion/OtlpLogNormalizerTests.cs`
 - [X] T017 [P] [US1] Add redaction tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Services/OpenTelemetryRedactorTests.cs`
 - [X] T018 [P] [US1] Add bounded store/drop-count tests for default capacities, drop-oldest overflow, and deterministic query limits in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Providers/InMemoryOpenTelemetryStoreTests.cs`
 - [ ] T019 [P] [US1] Add HTTP/protobuf ingestion and workflow export-to-collector timing tests that assert existing `Elsa.Workflows` tags are preserved in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OtlpHttpIngestionTests.cs`
-- [ ] T020 [US1] Implement HTTP/protobuf request parsing in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion/HttpProtobuf`
-- [ ] T021 [US1] Implement shared OTLP normalization services in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
+- [X] T020 [US1] Implement HTTP/protobuf request parsing in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion/HttpProtobuf`
+- [X] T021 [US1] Implement shared OTLP normalization services in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
 - [X] T022 [US1] Implement redactor in `src/modules/Elsa.Diagnostics.OpenTelemetry/Services/OpenTelemetryRedactor.cs`
 - [X] T023 [US1] Implement source registry in `src/modules/Elsa.Diagnostics.OpenTelemetry/Services/OpenTelemetrySourceRegistry.cs`
 - [X] T024 [US1] Implement bounded in-memory store in `src/modules/Elsa.Diagnostics.OpenTelemetry/Providers/InMemory/InMemoryOpenTelemetryStore.cs`
 - [X] T025 [US1] Implement provider facade in `src/modules/Elsa.Diagnostics.OpenTelemetry/Services/DefaultOpenTelemetryProvider.cs`
-- [ ] T026 [US1] Implement HTTP/protobuf endpoint mapping in `src/modules/Elsa.Diagnostics.OpenTelemetry/Extensions/EndpointRouteBuilderExtensions.cs`
+- [X] T026 [US1] Implement HTTP/protobuf endpoint mapping in `src/modules/Elsa.Diagnostics.OpenTelemetry/Extensions/EndpointRouteBuilderExtensions.cs`
 
 ---
 
@@ -62,7 +62,7 @@
 - [X] T030 [US2] Implement trace search and trace detail query logic in `src/modules/Elsa.Diagnostics.OpenTelemetry/Providers/InMemory/InMemoryOpenTelemetryStore.cs`
 - [X] T031 [US2] Implement resource search endpoint in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Resources/Endpoint.cs`
 - [X] T032 [US2] Implement trace search and detail endpoints in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Traces/Endpoint.cs` and `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Trace/Endpoint.cs`
-- [ ] T033 [US2] Implement live feed in `src/modules/Elsa.Diagnostics.OpenTelemetry/Providers/InMemory/InMemoryOpenTelemetryLiveFeed.cs`
+- [X] T033 [US2] Implement live feed in `src/modules/Elsa.Diagnostics.OpenTelemetry/Providers/InMemory/InMemoryOpenTelemetryLiveFeed.cs`
 - [ ] T034 [US2] Implement SignalR hub in `src/modules/Elsa.Diagnostics.OpenTelemetry/RealTime/OpenTelemetryHub.cs`
 
 ---
@@ -93,7 +93,7 @@
 - [ ] T043 [P] [US4] Add ingestion security tests for loopback-only no-key development, non-loopback request rejection without API key, and non-secret collector metadata in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OtlpIngestionSecurityTests.cs`
 - [X] T044 [US4] Implement collector configuration provider in `src/modules/Elsa.Diagnostics.OpenTelemetry/Services/CollectorConfigurationProvider.cs`
 - [X] T045 [US4] Implement collector configuration endpoint in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/CollectorConfiguration/Endpoint.cs`
-- [ ] T046 [US4] Implement API key header validation in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
+- [X] T046 [US4] Implement API key header validation in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion`
 - [ ] T047 [US4] Add option-gated gRPC wrappers and disabled metadata handling in `src/modules/Elsa.Diagnostics.OpenTelemetry/Ingestion/Grpc`
 - [ ] T048 [US4] Update workflow OpenTelemetry docs in `doc/wiki/opentelemetry-workflows.md`
 

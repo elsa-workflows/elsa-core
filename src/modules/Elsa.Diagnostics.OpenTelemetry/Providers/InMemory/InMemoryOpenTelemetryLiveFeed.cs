@@ -27,7 +27,7 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
 
     public async IAsyncEnumerable<OpenTelemetryStreamItem> SubscribeAsync(OpenTelemetryTraceFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var subscriber = new OpenTelemetrySubscriber(filter);
+        var subscriber = new OpenTelemetrySubscriber(filter, _options.SubscriberChannelCapacity);
 
         lock (_subscribersLock)
             _subscribers.Add(subscriber);
@@ -35,7 +35,10 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
         try
         {
             await foreach (var item in subscriber.Channel.Reader.ReadAllAsync(cancellationToken))
+            {
+                subscriber.MarkRead();
                 yield return item;
+            }
         }
         finally
         {
@@ -44,20 +47,24 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
         }
     }
 
-    private sealed class OpenTelemetrySubscriber(OpenTelemetryTraceFilter filter)
+    private sealed class OpenTelemetrySubscriber(OpenTelemetryTraceFilter filter, int channelCapacity)
     {
         private readonly object _lock = new();
         private int _pendingItemCount;
         private long _droppedSinceLastSummary;
 
-        public Channel<OpenTelemetryStreamItem> Channel { get; } = System.Threading.Channels.Channel.CreateUnbounded<OpenTelemetryStreamItem>(new UnboundedChannelOptions
+        public Channel<OpenTelemetryStreamItem> Channel { get; } = System.Threading.Channels.Channel.CreateBounded<OpenTelemetryStreamItem>(new BoundedChannelOptions(Math.Max(1, channelCapacity))
         {
             SingleReader = true,
-            SingleWriter = false
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.DropOldest
         });
 
         public void TryWrite(OpenTelemetryBatch batch, int capacity)
         {
+            foreach (var resource in batch.Resources)
+                TryWrite(new OpenTelemetryStreamItem { Resource = resource }, capacity);
+
             foreach (var trace in batch.Traces.Where(Matches))
                 TryWrite(new OpenTelemetryStreamItem { Trace = trace }, capacity);
 
@@ -75,14 +82,28 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
                 if (_pendingItemCount >= capacity)
                 {
                     _droppedSinceLastSummary++;
+                    Channel.Writer.TryWrite(item);
                     Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(OpenTelemetrySignalType.Trace, _droppedSinceLastSummary, "SubscriberQueueFull") });
                     _droppedSinceLastSummary = 0;
                     return;
                 }
 
+                if (_droppedSinceLastSummary > 0)
+                {
+                    Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(OpenTelemetrySignalType.Trace, _droppedSinceLastSummary, "SubscriberQueueFull") });
+                    _pendingItemCount++;
+                    _droppedSinceLastSummary = 0;
+                }
+
                 Channel.Writer.TryWrite(item);
                 _pendingItemCount++;
             }
+        }
+
+        public void MarkRead()
+        {
+            lock (_lock)
+                _pendingItemCount = Math.Max(0, _pendingItemCount - 1);
         }
 
         private bool Matches(TelemetryTrace trace)
