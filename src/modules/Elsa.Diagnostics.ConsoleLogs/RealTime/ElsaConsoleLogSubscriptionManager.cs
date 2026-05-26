@@ -5,8 +5,6 @@ using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using CoreConsoleLogSource = ConsoleLogStream.Core.Models.ConsoleLogSource;
-
 namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
 
 /// <summary>
@@ -82,7 +80,10 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
             await foreach (var item in _provider.SubscribeAsync(ConsoleLogFilterMapper.ToStreamingFilter(filter), cancellationToken).ConfigureAwait(false))
             {
                 if (item.Line != null)
+                {
                     await _hubContext.Clients.Client(connectionId).ReceiveConsoleLogLineAsync(item.Line, cancellationToken).ConfigureAwait(false);
+                    await _hubContext.Clients.Client(connectionId).ReceiveSourceChangedAsync(item.Line.Source, cancellationToken).ConfigureAwait(false);
+                }
 
                 if (item.Dropped != null)
                     await _hubContext.Clients.Client(connectionId).ReceiveDroppedLinesAsync(item.Dropped, cancellationToken).ConfigureAwait(false);

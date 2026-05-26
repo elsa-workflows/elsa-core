@@ -6,8 +6,12 @@ To collect workflow traces, configure OpenTelemetry to listen to the `Elsa.Workf
 
 ```csharp
 services.AddOpenTelemetry()
-    .WithTracing(builder => builder.AddSource("Elsa.Workflows"))
-    .WithMetrics(builder => builder.AddMeter("Elsa.Workflows"));
+    .WithTracing(builder => builder
+        .AddSource("Elsa.Workflows")
+        .AddOtlpExporter())
+    .WithMetrics(builder => builder
+        .AddMeter("Elsa.Workflows")
+        .AddOtlpExporter());
 ```
 
 If you previously enabled workflow tracing through the `Elsa.OpenTelemetry` extension package, avoid enabling both the extension tracing middleware and the first-party workflow spans for the same host unless duplicate workflow and activity spans are acceptable. Both integrations publish to the `Elsa.Workflows` activity source so existing collectors can keep the same source configuration.
