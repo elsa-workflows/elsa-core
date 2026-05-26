@@ -214,19 +214,19 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
         await using var serviceProvider = new ServiceCollection()
             .AddSingleton<IConsoleLogContextAccessor>(_accessor)
             .BuildServiceProvider();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
-        string? workflowInstanceId = null;
+        var context = await CreateActivityContextAsync();
+        IReadOnlyDictionary<string, string>? metadata = null;
         var pipeline = new ActivityExecutionPipeline(serviceProvider, builder => builder
             .UseMiddleware<ConsoleLogActivityExecutionMiddleware>()
             .Use(_ => executionContext =>
             {
-                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                metadata = _accessor.GetMetadata();
                 return ValueTask.CompletedTask;
             }));
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.WorkflowExecutionContext.Id, workflowInstanceId);
+        AssertActivityMetadata(context, metadata);
         Assert.Empty(_accessor.GetMetadata());
     }
 
@@ -236,34 +236,34 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
         await using var serviceProvider = new ServiceCollection()
             .AddSingleton<IConsoleLogContextAccessor>(_accessor)
             .BuildServiceProvider();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
-        string? workflowInstanceId = null;
+        var context = await CreateActivityContextAsync();
+        IReadOnlyDictionary<string, string>? metadata = null;
         var pipeline = new ActivityExecutionPipeline(serviceProvider, builder =>
         {
             new ConsoleLogActivityExecutionPipelineContributor().Configure(builder);
             builder.Use(_ => executionContext =>
             {
-                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                metadata = _accessor.GetMetadata();
                 return ValueTask.CompletedTask;
             });
         });
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.WorkflowExecutionContext.Id, workflowInstanceId);
+        AssertActivityMetadata(context, metadata);
         Assert.Empty(_accessor.GetMetadata());
     }
 
     [Fact]
     public async Task WorkflowFeature_AppliesActivityExecutionContributors()
     {
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
-        string? workflowInstanceId = null;
+        var context = await CreateActivityContextAsync();
+        IReadOnlyDictionary<string, string>? metadata = null;
         var feature = new Elsa.Workflows.ShellFeatures.WorkflowsFeature
         {
             ActivityExecutionPipeline = builder => builder.Use(_ => executionContext =>
             {
-                workflowInstanceId = _accessor.GetMetadata()[ConsoleLogMetadataKeys.WorkflowInstanceId];
+                metadata = _accessor.GetMetadata();
                 return ValueTask.CompletedTask;
             })
         };
@@ -276,8 +276,24 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.WorkflowExecutionContext.Id, workflowInstanceId);
+        AssertActivityMetadata(context, metadata);
         Assert.Empty(_accessor.GetMetadata());
+    }
+
+    private static void AssertActivityMetadata(ActivityExecutionContext context, IReadOnlyDictionary<string, string>? metadata)
+    {
+        Assert.NotNull(metadata);
+        Assert.Equal(context.WorkflowExecutionContext.Id, metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+        Assert.Equal(context.Id, metadata[ConsoleLogMetadataKeys.ActivityInstanceId]);
+        Assert.Equal(context.Activity.Id, metadata[ConsoleLogMetadataKeys.ActivityId]);
+        Assert.Equal(context.NodeId, metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
+    }
+
+    private static async Task<ActivityExecutionContext> CreateActivityContextAsync()
+    {
+        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        context.Id = "activity-instance-a";
+        return context;
     }
 
     private static ConsoleLogStreaming.Core.Models.ConsoleLogLine CreateLine(string text, string workflowInstanceId, long sequence) => new()
@@ -294,6 +310,12 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
 
     private class TestActivity : CodeActivity
     {
+        public TestActivity()
+        {
+            Id = "activity-a";
+            NodeId = "node-a";
+        }
+
         protected override void Execute(ActivityExecutionContext context)
         {
         }

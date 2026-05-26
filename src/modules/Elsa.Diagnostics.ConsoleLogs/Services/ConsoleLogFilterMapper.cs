@@ -11,8 +11,12 @@ internal static class ConsoleLogFilterMapper
             ? new Dictionary<string, string>(filter.Metadata, StringComparer.OrdinalIgnoreCase)
             : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        if (!string.IsNullOrWhiteSpace(filter.WorkflowInstanceId))
-            metadata[ConsoleLogMetadataKeys.WorkflowInstanceId] = filter.WorkflowInstanceId;
+        AddMetadata(metadata, ConsoleLogMetadataKeys.WorkflowInstanceId, filter.WorkflowInstanceId);
+        AddMetadata(metadata, ConsoleLogMetadataKeys.WorkflowDefinitionId, filter.WorkflowDefinitionId);
+        AddMetadata(metadata, ConsoleLogMetadataKeys.WorkflowDefinitionVersionId, filter.WorkflowDefinitionVersionId);
+        AddMetadata(metadata, ConsoleLogMetadataKeys.ActivityInstanceId, filter.ActivityInstanceId);
+        AddMetadata(metadata, ConsoleLogMetadataKeys.ActivityId, filter.ActivityId);
+        AddMetadata(metadata, ConsoleLogMetadataKeys.ActivityNodeId, filter.ActivityNodeId);
 
         return new()
         {
@@ -24,5 +28,11 @@ internal static class ConsoleLogFilterMapper
             To = filter.To,
             Limit = filter.Limit
         };
+    }
+
+    private static void AddMetadata(IDictionary<string, string> metadata, string key, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+            metadata[key] = value;
     }
 }

@@ -9,7 +9,7 @@ public sealed class ConsoleLogWorkflowExecutionMiddleware(
 {
     public async ValueTask InvokeAsync(WorkflowExecutionContext context)
     {
-        using var scope = consoleLogContextAccessor.PushWorkflowInstanceId(context.Id);
+        using var scope = consoleLogContextAccessor.PushWorkflowExecution(context);
         await next(context);
     }
 }

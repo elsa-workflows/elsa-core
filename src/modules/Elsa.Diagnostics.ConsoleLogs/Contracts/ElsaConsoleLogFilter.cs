@@ -9,6 +9,11 @@ public sealed record ElsaConsoleLogFilter
     public global::ConsoleLogStreaming.Contracts.ConsoleLogStreaming? Stream { get; init; }
     public string? Query { get; init; }
     public string? WorkflowInstanceId { get; init; }
+    public string? WorkflowDefinitionId { get; init; }
+    public string? WorkflowDefinitionVersionId { get; init; }
+    public string? ActivityInstanceId { get; init; }
+    public string? ActivityId { get; init; }
+    public string? ActivityNodeId { get; init; }
     public IReadOnlyDictionary<string, string>? Metadata { get; init; }
     public DateTimeOffset? From { get; init; }
     public DateTimeOffset? To { get; init; }

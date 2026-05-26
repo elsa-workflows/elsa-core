@@ -81,6 +81,32 @@ public class ConsoleLogsAuthorizationTests
     }
 
     [Fact]
+    public async Task RecentEndpoint_MapsActivityFiltersToMetadataFilter()
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider, new ConsoleLogStreamingApiMapper())!;
+        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
+        var request = JsonSerializer.Deserialize(
+            """
+            {
+                "workflowInstanceId": "workflow-instance-a",
+                "activityInstanceId": "activity-instance-a",
+                "activityId": "activity-a",
+                "activityNodeId": "node-a"
+            }
+            """,
+            requestDtoType,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        AssertActivityMetadata(provider.LastFilter.Metadata);
+    }
+
+    [Fact]
     public async Task HubStream_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
@@ -97,6 +123,26 @@ public class ConsoleLogsAuthorizationTests
     }
 
     [Fact]
+    public async Task HubStream_MapsActivityFiltersToMetadataFilter()
+    {
+        var provider = new TestConsoleLogProvider();
+        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+
+        await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter
+                       {
+                           WorkflowInstanceId = "workflow-instance-a",
+                           ActivityInstanceId = "activity-instance-a",
+                           ActivityId = "activity-a",
+                           ActivityNodeId = "node-a"
+                       }, CancellationToken.None))
+        {
+        }
+
+        Assert.NotNull(provider.LastSubscriptionFilter);
+        AssertActivityMetadata(provider.LastSubscriptionFilter.Metadata);
+    }
+
+    [Fact]
     public async Task HubSubscribe_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
@@ -110,6 +156,14 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("workflow-instance-a", workflowInstanceId);
 
         await hub.UnsubscribeAsync();
+    }
+
+    private static void AssertActivityMetadata(IReadOnlyDictionary<string, string> metadata)
+    {
+        Assert.Equal("workflow-instance-a", metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+        Assert.Equal("activity-instance-a", metadata[ConsoleLogMetadataKeys.ActivityInstanceId]);
+        Assert.Equal("activity-a", metadata[ConsoleLogMetadataKeys.ActivityId]);
+        Assert.Equal("node-a", metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
     }
 
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
