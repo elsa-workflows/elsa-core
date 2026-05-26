@@ -1,6 +1,9 @@
-namespace Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent;
+namespace Elsa.Diagnostics.ConsoleLogs.Contracts;
 
-internal sealed record ConsoleLogFilter
+/// <summary>
+/// Console log filter accepted by Elsa REST and SignalR endpoints.
+/// </summary>
+public sealed record ElsaConsoleLogFilter
 {
     public string? SourceId { get; init; }
     public global::ConsoleLogStreaming.Contracts.ConsoleLogStreaming? Stream { get; init; }

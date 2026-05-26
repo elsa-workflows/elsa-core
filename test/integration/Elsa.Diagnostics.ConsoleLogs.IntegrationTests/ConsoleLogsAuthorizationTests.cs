@@ -4,8 +4,10 @@ using System.Text.Json;
 using ConsoleLogStreaming.Contracts;
 using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.SignalR;
+using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Features;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
+using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http.Features;
@@ -78,6 +80,38 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("workflow-instance-a", workflowInstanceId);
     }
 
+    [Fact]
+    public async Task HubStream_MapsWorkflowInstanceIdToMetadataFilter()
+    {
+        var provider = new TestConsoleLogProvider();
+        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+
+        await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" }, CancellationToken.None))
+        {
+        }
+
+        Assert.NotNull(provider.LastSubscriptionFilter);
+        var metadata = provider.LastSubscriptionFilter.Metadata;
+        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
+        Assert.Equal("workflow-instance-a", workflowInstanceId);
+    }
+
+    [Fact]
+    public async Task HubSubscribe_MapsWorkflowInstanceIdToMetadataFilter()
+    {
+        var provider = new TestConsoleLogProvider();
+        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+
+        await hub.SubscribeAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" });
+        var filter = await provider.WaitForSubscriptionFilterAsync();
+
+        var metadata = filter.Metadata;
+        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
+        Assert.Equal("workflow-instance-a", workflowInstanceId);
+
+        await hub.UnsubscribeAsync();
+    }
+
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
@@ -129,16 +163,20 @@ public class ConsoleLogsAuthorizationTests
         throw new InvalidOperationException($"Unsupported endpoint type '{endpointType.FullName}'.");
     }
 
-    private static ConsoleLogsHub CreateHub(params string[] permissions)
+    private static ElsaConsoleLogsHub CreateHub(params string[] permissions)
     {
-        var provider = new TestConsoleLogProvider();
+        return CreateHub(new TestConsoleLogProvider(), permissions);
+    }
+
+    private static ElsaConsoleLogsHub CreateHub(TestConsoleLogProvider provider, params string[] permissions)
+    {
         var sourceRegistry = new TestConsoleLogSourceRegistry();
         var mapper = new ConsoleLogStreamingApiMapper();
         var hubContext = new TestHubContext();
-        var subscriptionManager = new ConsoleLogSubscriptionManager(provider, sourceRegistry, mapper, hubContext, NullLogger<ConsoleLogSubscriptionManager>.Instance);
+        var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, sourceRegistry, mapper, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
         var authorizer = new ElsaConsoleLogStreamingHubAuthorizer();
 
-        return new ConsoleLogsHub(provider, mapper, authorizer, subscriptionManager)
+        return new ElsaConsoleLogsHub(provider, mapper, authorizer, subscriptionManager)
         {
             Context = new TestHubCallerContext(CreateUser(permissions))
         };
@@ -157,7 +195,13 @@ public class ConsoleLogsAuthorizationTests
 
     private class TestConsoleLogProvider : IConsoleLogProvider
     {
+        private readonly TaskCompletionSource<ConsoleLogStreaming.Core.Models.ConsoleLogFilter> _subscriptionFilterSet = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastFilter { get; private set; }
+        public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastSubscriptionFilter { get; private set; }
+
+        public Task<ConsoleLogStreaming.Core.Models.ConsoleLogFilter> WaitForSubscriptionFilterAsync() =>
+            _subscriptionFilterSet.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         public ValueTask PublishAsync(ConsoleLogStreaming.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
@@ -174,6 +218,8 @@ public class ConsoleLogsAuthorizationTests
             ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter,
             CancellationToken cancellationToken = default)
         {
+            LastSubscriptionFilter = filter;
+            _subscriptionFilterSet.TrySetResult(filter);
             return AsyncEnumerable.Empty<ConsoleLogStreaming.Core.Models.ConsoleLogStreamingItem>();
         }
 
@@ -208,7 +254,7 @@ public class ConsoleLogsAuthorizationTests
         }
     }
 
-    private class TestHubContext : IHubContext<ConsoleLogsHub, IConsoleLogsClient>
+    private class TestHubContext : IHubContext<ElsaConsoleLogsHub, IConsoleLogsClient>
     {
         public IHubClients<IConsoleLogsClient> Clients { get; } = new TestHubClients();
 
