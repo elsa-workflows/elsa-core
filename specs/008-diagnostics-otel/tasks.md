@@ -58,7 +58,7 @@
 
 - [X] T027 [P] [US2] Add trace search/detail provider tests in `test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Providers/OpenTelemetryTraceQueryTests.cs`
 - [X] T028 [P] [US2] Add API authorization tests in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OpenTelemetryAuthorizationTests.cs`
-- [ ] T029 [P] [US2] Add SignalR hub tests for authorization, filter updates, per-subscriber queue overflow, drop-oldest behavior, and dropped-update diagnostics in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OpenTelemetryHubTests.cs`
+- [X] T029 [P] [US2] Add SignalR hub tests for authorization, filter updates, per-subscriber queue overflow, drop-oldest behavior, and dropped-update diagnostics in `test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/OpenTelemetryHubTests.cs`
 - [X] T030 [US2] Implement trace search and trace detail query logic in `src/modules/Elsa.Diagnostics.OpenTelemetry/Providers/InMemory/InMemoryOpenTelemetryStore.cs`
 - [X] T031 [US2] Implement resource search endpoint in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Resources/Endpoint.cs`
 - [X] T032 [US2] Implement trace search and detail endpoints in `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Traces/Endpoint.cs` and `src/modules/Elsa.Diagnostics.OpenTelemetry/Endpoints/OpenTelemetry/Trace/Endpoint.cs`
