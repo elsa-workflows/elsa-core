@@ -17,7 +17,7 @@ public class CollectorConfigurationProvider(IOptions<OpenTelemetryDiagnosticsOpt
 
         var configuration = new CollectorConfiguration(
             new CollectorEndpointInfo("http/protobuf", _options.HttpEndpointPath, true, null),
-            new CollectorEndpointInfo("grpc", null, _options.EnableGrpc, _options.EnableGrpc ? null : "gRPC ingestion is not enabled for this host."),
+            new CollectorEndpointInfo("grpc", _options.EnableGrpc ? _options.GrpcEndpointPath : null, _options.EnableGrpc, _options.EnableGrpc ? null : _options.GrpcDisabledReason),
             "OTEL_SERVICE_NAME",
             "OTEL_EXPORTER_OTLP_ENDPOINT",
             "OTEL_EXPORTER_OTLP_PROTOCOL",

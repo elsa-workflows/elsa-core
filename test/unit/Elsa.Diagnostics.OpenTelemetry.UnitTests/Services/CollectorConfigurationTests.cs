@@ -22,4 +22,20 @@ public class CollectorConfigurationTests
         Assert.Null(configuration.Grpc.Endpoint);
         Assert.Equal("<configured>", configuration.RequiredHeaders["x-otlp-api-key"]);
     }
+
+    [Fact]
+    public async Task GetAsync_WhenGrpcIsEnabled_ReturnsConfiguredGrpcEndpoint()
+    {
+        var provider = new CollectorConfigurationProvider(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions
+        {
+            EnableGrpc = true,
+            GrpcEndpointPath = "https://localhost:4317"
+        }));
+
+        var configuration = await provider.GetAsync();
+
+        Assert.True(configuration.Grpc.Enabled);
+        Assert.Equal("https://localhost:4317", configuration.Grpc.Endpoint);
+        Assert.Null(configuration.Grpc.DisabledReason);
+    }
 }

@@ -57,6 +57,20 @@ public static class EndpointRouteBuilderExtensions
         });
     }
 
+    public static void MapOpenTelemetryGrpcCollector(this IEndpointRouteBuilder endpoints)
+    {
+        var options = endpoints.ServiceProvider.GetRequiredService<IOptions<OpenTelemetryDiagnosticsOptions>>().Value;
+
+        if (!options.EnableGrpc)
+            return;
+
+        if (string.IsNullOrWhiteSpace(options.GrpcEndpointPath))
+            throw new InvalidOperationException("OpenTelemetry gRPC ingestion is enabled, but no gRPC endpoint path was configured.");
+
+        // The actual gRPC service binding is host-specific. This module exposes shared ingestion
+        // contracts and accurate collector metadata without forcing every host to reference gRPC.
+    }
+
     private static async Task<ReadOnlyMemory<byte>> ReadBodyAsync(HttpContext httpContext, CancellationToken cancellationToken)
     {
         using var stream = new MemoryStream();

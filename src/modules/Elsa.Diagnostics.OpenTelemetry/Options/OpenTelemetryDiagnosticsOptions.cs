@@ -9,6 +9,8 @@ public class OpenTelemetryDiagnosticsOptions
     public int SubscriberChannelCapacity { get; set; } = 1_000;
     public int MaxQuerySize { get; set; } = 1_000;
     public string HttpEndpointPath { get; set; } = "/elsa/otlp/v1";
+    public string? GrpcEndpointPath { get; set; }
+    public string GrpcDisabledReason { get; set; } = "gRPC ingestion is not enabled for this host.";
     public string HubRoute { get; set; } = "/elsa/hubs/diagnostics/opentelemetry";
     public bool EnableGrpc { get; set; }
     public string? ApiKey { get; set; }

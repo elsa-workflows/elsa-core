@@ -68,6 +68,7 @@ public class OpenTelemetryFeature : IFastEndpointsShellFeature, IWebShellFeature
     public void MapEndpoints(IEndpointRouteBuilder endpoints, IHostEnvironment? environment)
     {
         endpoints.MapOpenTelemetryHttpProtobufCollector();
+        endpoints.MapOpenTelemetryGrpcCollector();
         endpoints.MapOpenTelemetryHub();
     }
 
