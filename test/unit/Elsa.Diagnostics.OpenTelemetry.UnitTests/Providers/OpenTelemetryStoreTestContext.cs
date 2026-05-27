@@ -49,7 +49,7 @@ public class OpenTelemetryStoreTestContext
 
     public MetricPoint Point(string id, string instrumentId, string resourceId, DateTimeOffset? timestamp = null)
     {
-        return new(id, instrumentId, resourceId, timestamp ?? Now, 42, null, null, new Dictionary<string, string?>(), null, null);
+        return new(id, instrumentId, instrumentId, resourceId, timestamp ?? Now, 42, null, null, new Dictionary<string, string?>(), null, null);
     }
 
     public OtlpLogRecord Log(string id, string resourceId, string traceId, string severity = "Information", string body = "message")

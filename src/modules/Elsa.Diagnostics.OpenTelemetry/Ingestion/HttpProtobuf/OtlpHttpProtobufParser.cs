@@ -304,7 +304,7 @@ internal static class OtlpHttpProtobufParser
 
         var instrumentId = $"{resourceId}:{name}:{kind.ToString().ToLowerInvariant()}";
         var instrument = new MetricInstrument(instrumentId, resourceId, name, unit, description, kind, new Dictionary<string, string?>());
-        points = points.Select(x => x with { InstrumentId = instrumentId }).ToList();
+        points = points.Select(x => x with { InstrumentId = instrumentId, InstrumentName = name }).ToList();
         return (instrument, points);
     }
 
@@ -341,7 +341,7 @@ internal static class OtlpHttpProtobufParser
                 AddAttribute(attributes, field.Bytes);
         }
 
-        return new MetricPoint(Guid.NewGuid().ToString("N"), instrumentId, resourceId, timestamp, value, null, null, attributes, null, null);
+        return new MetricPoint(Guid.NewGuid().ToString("N"), instrumentId, "", resourceId, timestamp, value, null, null, attributes, null, null);
     }
 
     private static List<MetricPoint> ParseHistogramDataPoints(ReadOnlySpan<byte> payload, string resourceId, Func<string> instrumentIdFactory)
@@ -378,7 +378,7 @@ internal static class OtlpHttpProtobufParser
                 AddAttribute(attributes, field.Bytes);
         }
 
-        return new MetricPoint(Guid.NewGuid().ToString("N"), instrumentId, resourceId, timestamp, null, sum, count, attributes, null, null);
+        return new MetricPoint(Guid.NewGuid().ToString("N"), instrumentId, "", resourceId, timestamp, null, sum, count, attributes, null, null);
     }
 
     private static (TelemetryResource Resource, List<OtlpLogRecord> Logs) ParseResourceLogs(ReadOnlySpan<byte> payload)
