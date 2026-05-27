@@ -22,7 +22,7 @@ public class ActivityRegistryTests
         var activityDescriber = Substitute.For<IActivityDescriber>();
         _logger = Substitute.For<ILogger<ActivityRegistry>>();
         _registry = new(activityDescriber, [], tenantAccessor, _logger);
-        
+
         // Set default tenant for all tests
         tenantAccessor.TenantId.Returns(CurrentTenant);
     }
@@ -115,6 +115,88 @@ public class ActivityRegistryTests
     }
 
     [Fact]
+    public void Find_ReturnsNextLatestVersion_WhenLatestDescriptorRemoved()
+    {
+        // Arrange
+        var v1 = CreateDescriptor(TestActivityType, 1, CurrentTenant);
+        var v2 = CreateDescriptor(TestActivityType, 2, CurrentTenant);
+        var v3 = CreateDescriptor(TestActivityType, 3, CurrentTenant);
+        RegisterDescriptors(v1, v2, v3);
+
+        // Act
+        _registry.Remove(typeof(ActivityRegistry), v3);
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, CurrentTenant, 2);
+    }
+
+    [Fact]
+    public void Find_KeepsLatestVersion_WhenNonLatestDescriptorRemoved()
+    {
+        // Arrange
+        var v1 = CreateDescriptor(TestActivityType, 1, CurrentTenant);
+        var v2 = CreateDescriptor(TestActivityType, 2, CurrentTenant);
+        var v3 = CreateDescriptor(TestActivityType, 3, CurrentTenant);
+        RegisterDescriptors(v1, v2, v3);
+
+        // Act
+        _registry.Remove(typeof(ActivityRegistry), v1);
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, CurrentTenant, 3);
+    }
+
+    [Fact]
+    public void Find_ReturnsNull_WhenProviderWithLatestDescriptorClearedAndNoDescriptorsRemain()
+    {
+        // Arrange
+        var descriptor = CreateDescriptor(TestActivityType, 1, CurrentTenant);
+        _registry.Add(typeof(Provider1), descriptor);
+
+        // Act
+        _registry.ClearProvider(typeof(Provider1));
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void Find_RecomputesLatestVersion_WhenProviderWithLatestDescriptorCleared()
+    {
+        // Arrange
+        var provider1V1 = CreateDescriptor(TestActivityType, 1, CurrentTenant);
+        var provider1V3 = CreateDescriptor(TestActivityType, 3, CurrentTenant);
+        var provider2V2 = CreateDescriptor(TestActivityType, 2, CurrentTenant);
+        _registry.Add(typeof(Provider1), provider1V1);
+        _registry.Add(typeof(Provider1), provider1V3);
+        _registry.Add(typeof(Provider2), provider2V2);
+
+        // Act
+        _registry.ClearProvider(typeof(Provider1));
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, CurrentTenant, 2);
+    }
+
+    [Fact]
+    public void Find_ReturnsNull_WhenRegistryCleared()
+    {
+        // Arrange
+        RegisterDescriptors(CreateDescriptor(TestActivityType, 2, CurrentTenant));
+
+        // Act
+        _registry.Clear();
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
     public void Find_IgnoresOtherTenantDescriptors_OnlyReturnsCurrentTenantOrAgnostic()
     {
         // Arrange
@@ -147,7 +229,7 @@ public class ActivityRegistryTests
             Description = "Test Activity 1",
             IsBrowsable = true
         };
-        
+
         var descriptor2 = new ActivityDescriptor
         {
             TypeName = "TestActivity2",
@@ -157,18 +239,18 @@ public class ActivityRegistryTests
             Description = "Test Activity 2",
             IsBrowsable = true
         };
-        
+
         mockProvider.GetDescriptorsAsync(Arg.Any<CancellationToken>())
             .Returns(new ValueTask<IEnumerable<ActivityDescriptor>>([descriptor1, descriptor2]));
 
         var providers = new[] { mockProvider };
-        
+
         // Act - First refresh
         await _registry.RefreshDescriptorsAsync(providers);
-        
+
         // Act - Second refresh (simulates the intentional repopulation in DefaultRegistriesPopulator)
         await _registry.RefreshDescriptorsAsync(providers);
-        
+
         // Assert - Verify no warning logs were made
         _logger.DidNotReceive().Log(
             LogLevel.Warning,
@@ -176,14 +258,14 @@ public class ActivityRegistryTests
             Arg.Is<object>(v => v.ToString()!.Contains("was already registered")),
             Arg.Any<Exception>(),
             Arg.Any<Func<object, Exception?, string>>());
-        
+
         // Verify descriptors are still registered
         var allDescriptors = _registry.ListAll().ToList();
         Assert.Equal(2, allDescriptors.Count);
         Assert.Contains(allDescriptors, d => d.TypeName == "TestActivity1");
         Assert.Contains(allDescriptors, d => d.TypeName == "TestActivity2");
     }
-    
+
     [Fact]
     public async Task RefreshDescriptorsAsync_PreservesManualDescriptors()
     {
@@ -198,9 +280,9 @@ public class ActivityRegistryTests
             Description = "Manually registered activity",
             IsBrowsable = true
         };
-        
+
         _registry.Register(manualDescriptor);
-        
+
         // Create a provider descriptor
         var mockProvider = Substitute.For<IActivityProvider>();
         var providerDescriptor = new ActivityDescriptor
@@ -212,21 +294,21 @@ public class ActivityRegistryTests
             Description = "Provider activity",
             IsBrowsable = true
         };
-        
+
         mockProvider.GetDescriptorsAsync(Arg.Any<CancellationToken>())
             .Returns(new ValueTask<IEnumerable<ActivityDescriptor>>([providerDescriptor]));
 
         var providers = new[] { mockProvider };
-        
+
         // Act - Refresh with provider
         await _registry.RefreshDescriptorsAsync(providers);
-        
+
         // Assert - Both manual and provider descriptors should be present
         var allDescriptors = _registry.ListAll().ToList();
         Assert.Equal(2, allDescriptors.Count);
         Assert.Contains(allDescriptors, d => d.TypeName == "ManualActivity");
         Assert.Contains(allDescriptors, d => d.TypeName == "ProviderActivity");
-        
+
         // Verify no warnings about manual descriptor being replaced
         _logger.DidNotReceive().Log(
             LogLevel.Warning,
@@ -235,7 +317,7 @@ public class ActivityRegistryTests
             Arg.Any<Exception>(),
             Arg.Any<Func<object, Exception?, string>>());
     }
-    
+
     [Fact]
     public async Task RefreshDescriptorsAsync_LogsWarning_WhenDifferentProvidersRegisterSameActivity()
     {
@@ -277,7 +359,32 @@ public class ActivityRegistryTests
             Arg.Any<Func<object, Exception?, string>>());
     }
 
-    
+    [Fact]
+    public async Task RefreshDescriptorsAsync_RecomputesLatestDescriptor_WhenProviderDropsLatestVersion()
+    {
+        // Arrange
+        var provider = new MutableProvider(
+        [
+            CreateDescriptor(TestActivityType, 1, CurrentTenant),
+            CreateDescriptor(TestActivityType, 3, CurrentTenant)
+        ]);
+
+        await _registry.RefreshDescriptorsAsync(provider);
+
+        provider.Descriptors =
+        [
+            CreateDescriptor(TestActivityType, 1, CurrentTenant)
+        ];
+
+        // Act
+        await _registry.RefreshDescriptorsAsync(provider);
+        var result = _registry.Find(TestActivityType);
+
+        // Assert
+        AssertDescriptor(result, CurrentTenant, 1);
+    }
+
+
     private ActivityDescriptor CreateDescriptor(string typeName, int version, string? tenantId) =>
         new()
         {
@@ -308,5 +415,12 @@ public class ActivityRegistryTests
     {
         public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(descriptors);
     }
-    
+
+    private sealed class MutableProvider(IEnumerable<ActivityDescriptor> descriptors) : IActivityProvider
+    {
+        public IEnumerable<ActivityDescriptor> Descriptors { get; set; } = descriptors;
+
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(Descriptors);
+    }
+
 }

@@ -24,7 +24,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         var registry = GetOrCreateRegistry(descriptor.TenantId);
         var providerDescriptors = GetOrCreateProviderDescriptors(registry, providerType);
-        Add(descriptor, registry.ActivityDescriptors, providerDescriptors);
+        Add(descriptor, registry, providerDescriptors);
     }
 
     /// <inheritdoc />
@@ -34,7 +34,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         if (registry.ProvidedActivityDescriptors.TryGetValue(providerType, out var providerDescriptors))
         {
             providerDescriptors.Remove(descriptor);
-            registry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
+            RemoveDescriptor(registry, descriptor);
         }
     }
 
@@ -82,18 +82,14 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         // Get highest version from current tenant's registry
         if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry))
         {
-            var tenantDescriptor = tenantRegistry.ActivityDescriptors.Values
-                .Where(x => x.TypeName == type)
-                .MaxBy(x => x.Version);
-
-            if (tenantDescriptor != null)
+            if (tenantRegistry.LatestActivityDescriptors.TryGetValue(type, out var tenantDescriptor))
                 return tenantDescriptor;
         }
 
         // Fall back to agnostic registry only if no tenant-specific descriptor exists
-        return _agnosticRegistry.ActivityDescriptors.Values
-            .Where(x => x.TypeName == type)
-            .MaxBy(x => x.Version);
+        return _agnosticRegistry.LatestActivityDescriptors.TryGetValue(type, out var agnosticDescriptor)
+            ? agnosticDescriptor
+            : null;
     }
 
     /// <inheritdoc />
@@ -151,7 +147,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         var registry = GetOrCreateRegistry(descriptor.TenantId);
         var providerDescriptors = GetOrCreateProviderDescriptors(registry, GetType());
-        Add(descriptor, registry.ActivityDescriptors, providerDescriptors);
+        Add(descriptor, registry, providerDescriptors);
     }
 
     /// <inheritdoc />
@@ -166,7 +162,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         var activityDescriptor = await activityDescriber.DescribeActivityAsync(activityType, cancellationToken);
 
         var registry = GetOrCreateRegistry(activityDescriptor.TenantId);
-        Add(activityDescriptor, registry.ActivityDescriptors, _manualActivityDescriptors);
+        Add(activityDescriptor, registry, _manualActivityDescriptors);
         _manualActivityDescriptors.Add(activityDescriptor);
     }
 
@@ -208,7 +204,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             {
                 foreach (var oldDescriptor in oldDescriptors.ToList())
                 {
-                    registry.ActivityDescriptors.TryRemove((oldDescriptor.TypeName, oldDescriptor.Version), out _);
+                    RemoveDescriptor(registry, oldDescriptor);
                 }
             }
 
@@ -216,7 +212,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             var providerDescriptors = new List<ActivityDescriptor>();
             foreach (var descriptor in group)
             {
-                Add(descriptor, registry.ActivityDescriptors, providerDescriptors);
+                Add(descriptor, registry, providerDescriptors);
             }
 
             // Update the provider's descriptor list in this registry
@@ -224,7 +220,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         }
     }
 
-    private void Add(ActivityDescriptor? descriptor, ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> activityDescriptors, ICollection<ActivityDescriptor> providerDescriptors)
+    private void Add(ActivityDescriptor? descriptor, TenantRegistryData registry, ICollection<ActivityDescriptor> providerDescriptors)
     {
         if (descriptor is null)
         {
@@ -235,8 +231,11 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         foreach (var modifier in modifiers)
             modifier.Modify(descriptor);
 
+        var activityDescriptors = registry.ActivityDescriptors;
+        var descriptorKey = (descriptor.TypeName, descriptor.Version);
+
         // If the descriptor already exists, replace it. But log a warning.
-        if (activityDescriptors.TryGetValue((descriptor.TypeName, descriptor.Version), out var existingDescriptor))
+        if (activityDescriptors.TryGetValue(descriptorKey, out var existingDescriptor))
         {
             // Remove the existing descriptor from the providerDescriptors collection.
             providerDescriptors.Remove(existingDescriptor);
@@ -245,7 +244,8 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             logger.LogWarning("Activity descriptor {ActivityType} v{ActivityVersion} was already registered for tenant {TenantId}. Replacing with new descriptor", descriptor.TypeName, descriptor.Version, descriptor.TenantId);
         }
 
-        activityDescriptors[(descriptor.TypeName, descriptor.Version)] = descriptor;
+        activityDescriptors[descriptorKey] = descriptor;
+        UpdateLatestDescriptor(registry, descriptor);
         providerDescriptors.Add(descriptor);
     }
 
@@ -254,6 +254,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     {
         _tenantRegistries.Clear();
         _agnosticRegistry.ActivityDescriptors.Clear();
+        _agnosticRegistry.LatestActivityDescriptors.Clear();
         _agnosticRegistry.ProvidedActivityDescriptors.Clear();
     }
 
@@ -267,7 +268,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             && tenantRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var descriptors))
         {
             foreach (var descriptor in descriptors.ToList()) 
-                tenantRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
+                RemoveDescriptor(tenantRegistry, descriptor);
 
             tenantRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
         }
@@ -276,7 +277,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         if (_agnosticRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var agnosticDescriptors))
         {
             foreach (var descriptor in agnosticDescriptors.ToList()) 
-                _agnosticRegistry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out _);
+                RemoveDescriptor(_agnosticRegistry, descriptor);
 
             _agnosticRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
         }
@@ -303,6 +304,35 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     private ICollection<ActivityDescriptor> GetOrCreateProviderDescriptors(TenantRegistryData registry, Type providerType)
     {
         return registry.ProvidedActivityDescriptors.GetOrAdd(providerType, _ => new List<ActivityDescriptor>());
+    }
+
+    private static void UpdateLatestDescriptor(TenantRegistryData registry, ActivityDescriptor descriptor)
+    {
+        registry.LatestActivityDescriptors.AddOrUpdate(
+            descriptor.TypeName,
+            descriptor,
+            (_, latestDescriptor) => descriptor.Version >= latestDescriptor.Version ? descriptor : latestDescriptor);
+    }
+
+    private static void RemoveDescriptor(TenantRegistryData registry, ActivityDescriptor descriptor)
+    {
+        if (!registry.ActivityDescriptors.TryRemove((descriptor.TypeName, descriptor.Version), out var removedDescriptor))
+            return;
+
+        if (registry.LatestActivityDescriptors.TryGetValue(removedDescriptor.TypeName, out var latestDescriptor) && latestDescriptor.Version == removedDescriptor.Version)
+            RecomputeLatestDescriptor(registry, removedDescriptor.TypeName);
+    }
+
+    private static void RecomputeLatestDescriptor(TenantRegistryData registry, string typeName)
+    {
+        var latestDescriptor = registry.ActivityDescriptors.Values
+            .Where(x => x.TypeName == typeName)
+            .MaxBy(x => x.Version);
+
+        if (latestDescriptor == null)
+            registry.LatestActivityDescriptors.TryRemove(typeName, out _);
+        else
+            registry.LatestActivityDescriptors[typeName] = latestDescriptor;
     }
 
     /// <summary>
