@@ -20,7 +20,7 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
             subscribers = _subscribers.ToList();
 
         foreach (var subscriber in subscribers)
-            subscriber.TryWrite(batch, _options.SubscriberChannelCapacity);
+            subscriber.TryWrite(batch);
 
         return ValueTask.CompletedTask;
     }
@@ -50,6 +50,7 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
     private sealed class OpenTelemetrySubscriber(OpenTelemetryTraceFilter filter, int channelCapacity)
     {
         private readonly object _lock = new();
+        private readonly int _capacity = Math.Max(1, channelCapacity);
         private int _pendingItemCount;
         private readonly Dictionary<OpenTelemetrySignalType, long> _droppedSinceLastSummary = [];
 
@@ -57,42 +58,35 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
         {
             SingleReader = true,
             SingleWriter = false,
-            FullMode = BoundedChannelFullMode.DropOldest
+            FullMode = BoundedChannelFullMode.Wait
         });
 
-        public void TryWrite(OpenTelemetryBatch batch, int capacity)
+        public void TryWrite(OpenTelemetryBatch batch)
         {
             foreach (var resource in batch.Resources)
-                TryWrite(new OpenTelemetryStreamItem { Resource = resource }, capacity);
+                TryWrite(new OpenTelemetryStreamItem { Resource = resource });
 
             foreach (var trace in batch.Traces.Where(Matches))
-                TryWrite(new OpenTelemetryStreamItem { Trace = trace }, capacity);
+                TryWrite(new OpenTelemetryStreamItem { Trace = trace });
 
             foreach (var log in batch.Logs.Where(x => string.IsNullOrWhiteSpace(filter.TraceId) || string.Equals(x.TraceId, filter.TraceId, StringComparison.OrdinalIgnoreCase)))
-                TryWrite(new OpenTelemetryStreamItem { Log = log }, capacity);
+                TryWrite(new OpenTelemetryStreamItem { Log = log });
 
             foreach (var point in batch.MetricPoints)
-                TryWrite(new OpenTelemetryStreamItem { MetricPoint = point }, capacity);
+                TryWrite(new OpenTelemetryStreamItem { MetricPoint = point });
         }
 
-        private void TryWrite(OpenTelemetryStreamItem item, int capacity)
+        private void TryWrite(OpenTelemetryStreamItem item)
         {
-            capacity = Math.Max(1, capacity);
-
             lock (_lock)
             {
-                if (_pendingItemCount >= capacity)
-                {
-                    TrackDrop(item);
-                    return;
-                }
-
-                TryWriteDroppedSummary(capacity);
-
-                if (_pendingItemCount >= capacity)
-                    TrackDrop(item);
-                else if (Channel.Writer.TryWrite(item))
+                EnsureCapacityForWrite();
+                if (Channel.Writer.TryWrite(item))
                     _pendingItemCount++;
+                else
+                    TrackDrop(item);
+
+                TryWriteDroppedSummary();
             }
         }
 
@@ -104,7 +98,21 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
 
                 if (item.DroppedItems != null)
                     _droppedSinceLastSummary.Remove(item.DroppedItems.SignalType);
+
+                TryWriteDroppedSummary();
             }
+        }
+
+        private void EnsureCapacityForWrite()
+        {
+            if (_pendingItemCount < _capacity)
+                return;
+
+            if (!Channel.Reader.TryRead(out var dropped))
+                return;
+
+            _pendingItemCount = Math.Max(0, _pendingItemCount - 1);
+            TrackDrop(dropped);
         }
 
         private void TrackDrop(OpenTelemetryStreamItem item)
@@ -114,20 +122,19 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
                 return;
 
             _droppedSinceLastSummary.TryGetValue(signalType.Value, out var count);
-            _droppedSinceLastSummary[signalType.Value] = count + 1;
-            TryWriteDroppedSummary(capacity: 0);
+            _droppedSinceLastSummary[signalType.Value] = count + (item.DroppedItems?.Count ?? 1);
         }
 
-        private void TryWriteDroppedSummary(int capacity)
+        private void TryWriteDroppedSummary()
         {
             if (_droppedSinceLastSummary.Count == 0)
                 return;
 
-            if (capacity > 0 && _pendingItemCount >= capacity)
+            if (_pendingItemCount >= _capacity)
                 return;
 
             var dropped = _droppedSinceLastSummary.OrderBy(x => x.Key).First();
-            if (Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(dropped.Key, dropped.Value, "SubscriberQueueFull") }) && capacity > 0)
+            if (Channel.Writer.TryWrite(new OpenTelemetryStreamItem { DroppedItems = new(dropped.Key, dropped.Value, "SubscriberQueueFull") }))
                 _pendingItemCount++;
         }
 
