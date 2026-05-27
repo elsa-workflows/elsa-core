@@ -43,6 +43,21 @@ public class InMemoryOpenTelemetryStoreTests
     }
 
     [Fact]
+    public async Task QueryTracesAsync_WhenTraceIdAppearsInMultipleBatches_ReturnsLatestTrace()
+    {
+        var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions { TraceCapacity = 10 });
+        var resource = context.Resource("resource-a", "api");
+
+        await context.WriteAsync(new OpenTelemetryBatch([resource], [context.Trace("trace-1", resource.Id, context.Now.AddSeconds(1))], [], [], [], []));
+        await context.WriteAsync(new OpenTelemetryBatch([], [context.Trace("trace-1", resource.Id, context.Now.AddSeconds(2))], [], [], [], []));
+
+        var result = await context.Store.QueryTracesAsync(new OpenTelemetryTraceFilter { Take = 10 });
+
+        var trace = Assert.Single(result.Items);
+        Assert.Equal(context.Now.AddSeconds(2), trace.StartTime);
+    }
+
+    [Fact]
     public async Task WriteAsync_WhenResourceCapacityIsExceeded_DropsOldestResource()
     {
         var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions { ResourceCapacity = 2 });
@@ -87,5 +102,9 @@ public class InMemoryOpenTelemetryStoreTests
         Assert.Equal(1, diagnostics.SpanCount);
         Assert.Equal(1, diagnostics.MetricPointCount);
         Assert.Equal(1, diagnostics.LogRecordCount);
+        Assert.Equal(1, diagnostics.TraceCapacity);
+        Assert.Equal(1, diagnostics.SpanCapacity);
+        Assert.Equal(1, diagnostics.MetricPointCapacity);
+        Assert.Equal(1, diagnostics.LogRecordCapacity);
     }
 }

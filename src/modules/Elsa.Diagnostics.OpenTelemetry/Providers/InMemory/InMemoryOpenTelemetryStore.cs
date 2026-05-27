@@ -9,6 +9,10 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
 {
     private readonly IOpenTelemetrySourceRegistry _sourceRegistry;
     private readonly OpenTelemetryDiagnosticsOptions _options;
+    private readonly int _traceCapacity;
+    private readonly int _spanCapacity;
+    private readonly int _metricPointCapacity;
+    private readonly int _logRecordCapacity;
     private readonly RingBuffer<TelemetryTrace> _traces;
     private readonly RingBuffer<TelemetrySpan> _spans;
     private readonly RingBuffer<MetricPoint> _metricPoints;
@@ -20,10 +24,14 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
     {
         _options = options.Value;
         _sourceRegistry = sourceRegistry;
-        _traces = new(ClampCapacity(_options.TraceCapacity));
-        _spans = new(ClampCapacity(_options.SpanCapacity));
-        _metricPoints = new(ClampCapacity(_options.MetricPointCapacity));
-        _logs = new(ClampCapacity(_options.LogRecordCapacity));
+        _traceCapacity = ClampCapacity(_options.TraceCapacity);
+        _spanCapacity = ClampCapacity(_options.SpanCapacity);
+        _metricPointCapacity = ClampCapacity(_options.MetricPointCapacity);
+        _logRecordCapacity = ClampCapacity(_options.LogRecordCapacity);
+        _traces = new(_traceCapacity);
+        _spans = new(_spanCapacity);
+        _metricPoints = new(_metricPointCapacity);
+        _logs = new(_logRecordCapacity);
     }
 
     public ValueTask WriteAsync(OpenTelemetryBatch batch, CancellationToken cancellationToken = default)
@@ -81,6 +89,8 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
             .Where(x => serviceResourceIds == null || x.ResourceIds.Any(serviceResourceIds.Contains))
             .Where(x => string.IsNullOrWhiteSpace(filter.Search) || Matches(x.TraceId, filter.Search) || Matches(x.Name, filter.Search))
             .OrderBy(x => x.StartTime)
+            .GroupBy(x => x.TraceId, StringComparer.OrdinalIgnoreCase)
+            .Select(x => x.Last())
             .TakeLast(take)
             .ToList();
 
@@ -178,10 +188,10 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
         var metricPointSnapshot = _metricPoints.Snapshot();
         var logSnapshot = _logs.Snapshot();
         var diagnostics = new OpenTelemetryStorageDiagnostics(
-            _options.TraceCapacity,
-            _options.SpanCapacity,
-            _options.MetricPointCapacity,
-            _options.LogRecordCapacity,
+            _traceCapacity,
+            _spanCapacity,
+            _metricPointCapacity,
+            _logRecordCapacity,
             _sourceRegistry.List().Count,
             traceSnapshot.Count,
             spanSnapshot.Count,
