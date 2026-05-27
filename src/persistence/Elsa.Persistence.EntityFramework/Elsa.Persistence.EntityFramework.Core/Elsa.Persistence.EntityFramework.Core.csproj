@@ -14,6 +14,7 @@
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1'">
         <PackageReference Include="EFCore.BulkExtensions" Version="5.4.0" />
+        <PackageReference Include="Microsoft.Data.SqlClient" Version="2.1.7" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.10" />
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.34.0" />
     </ItemGroup>
