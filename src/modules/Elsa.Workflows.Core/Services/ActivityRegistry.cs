@@ -193,11 +193,13 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         // Group descriptors by normalized tenant ID
         // Normalize null to "*" so both map to the same agnostic group, avoiding redundant processing
         var descriptorsByTenant = descriptors.GroupBy(d => NormalizeTenantIdForGrouping(d.TenantId));
+        var refreshedRegistries = new HashSet<TenantRegistryData>();
 
         foreach (var group in descriptorsByTenant)
         {
             var tenantId = group.Key;
             var registry = GetOrCreateRegistry(tenantId);
+            refreshedRegistries.Add(registry);
 
             // Remove old descriptors for this provider from this tenant's registry
             if (registry.ProvidedActivityDescriptors.TryGetValue(providerType, out var oldDescriptors))
@@ -217,6 +219,17 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
             // Update the provider's descriptor list in this registry
             registry.ProvidedActivityDescriptors[providerType] = providerDescriptors;
+        }
+
+        foreach (var registry in GetRegistriesWithProvider(providerType).Where(x => !refreshedRegistries.Contains(x)))
+        {
+            if (!registry.ProvidedActivityDescriptors.TryRemove(providerType, out var oldDescriptors))
+                continue;
+
+            foreach (var oldDescriptor in oldDescriptors.ToList())
+            {
+                RemoveDescriptor(registry, oldDescriptor);
+            }
         }
     }
 
@@ -267,7 +280,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         if (_tenantRegistries.TryGetValue(currentTenantId, out var tenantRegistry)
             && tenantRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var descriptors))
         {
-            foreach (var descriptor in descriptors.ToList()) 
+            foreach (var descriptor in descriptors.ToList())
                 RemoveDescriptor(tenantRegistry, descriptor);
 
             tenantRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
@@ -276,7 +289,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         // Clear from agnostic registry
         if (_agnosticRegistry.ProvidedActivityDescriptors.TryGetValue(providerType, out var agnosticDescriptors))
         {
-            foreach (var descriptor in agnosticDescriptors.ToList()) 
+            foreach (var descriptor in agnosticDescriptors.ToList())
                 RemoveDescriptor(_agnosticRegistry, descriptor);
 
             _agnosticRegistry.ProvidedActivityDescriptors.TryRemove(providerType, out _);
@@ -304,6 +317,18 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     private ICollection<ActivityDescriptor> GetOrCreateProviderDescriptors(TenantRegistryData registry, Type providerType)
     {
         return registry.ProvidedActivityDescriptors.GetOrAdd(providerType, _ => new List<ActivityDescriptor>());
+    }
+
+    private IEnumerable<TenantRegistryData> GetRegistriesWithProvider(Type providerType)
+    {
+        if (_agnosticRegistry.ProvidedActivityDescriptors.ContainsKey(providerType))
+            yield return _agnosticRegistry;
+
+        foreach (var registry in _tenantRegistries.Values)
+        {
+            if (registry.ProvidedActivityDescriptors.ContainsKey(providerType))
+                yield return registry;
+        }
     }
 
     private static void UpdateLatestDescriptor(TenantRegistryData registry, ActivityDescriptor descriptor)
