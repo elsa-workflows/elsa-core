@@ -556,8 +556,15 @@ internal static class OtlpHttpProtobufParser
 
     private static DateTimeOffset FromUnixNanos(ulong value)
     {
-        var ticks = checked((long)(value / 100));
-        return DateTimeOffset.UnixEpoch.AddTicks(ticks);
+        try
+        {
+            var ticks = checked((long)(value / 100));
+            return DateTimeOffset.UnixEpoch.AddTicks(ticks);
+        }
+        catch (Exception e) when (e is OverflowException or ArgumentOutOfRangeException)
+        {
+            throw new InvalidDataException("The OTLP timestamp is outside the supported range.", e);
+        }
     }
 
     private static string ToHex(ReadOnlySpan<byte> bytes)

@@ -67,9 +67,54 @@ public class ConsoleLogsRegistrationTests
         Assert.Equal("workflow-console", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
     }
 
+    [Fact]
+    public async Task AddConsoleLogsServices_DecoratesExistingProvider()
+    {
+        var innerProvider = new RecordingConsoleLogProvider();
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<IConsoleLogProvider>(innerProvider)
+            .AddConsoleLogsServices()
+            .BuildServiceProvider();
+        var contextAccessor = serviceProvider.GetRequiredService<IConsoleLogContextAccessor>();
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        using (contextAccessor.PushWorkflowInstanceId("workflow-console"))
+            await provider.PublishAsync(new ConsoleLogLine { Text = "message", Source = new ConsoleLogSource { Id = "test-source" } });
+
+        Assert.NotNull(innerProvider.PublishedLine);
+        Assert.Equal("workflow-console", innerProvider.PublishedLine.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+    }
+
     private static void AssertConsoleLogPipelineContributors(IServiceProvider serviceProvider)
     {
         Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
         Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
+    }
+
+    private sealed class RecordingConsoleLogProvider : IConsoleLogProvider
+    {
+        public ConsoleLogLine? PublishedLine { get; private set; }
+
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        {
+            PublishedLine = line;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RecentConsoleLogsResult());
+        }
+
+        public IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return AsyncEnumerable.Empty<ConsoleLogStreamItem>();
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+        }
     }
 }

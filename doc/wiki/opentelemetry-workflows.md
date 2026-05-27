@@ -51,8 +51,12 @@ Configure the .NET OpenTelemetry SDK to collect Elsa workflow instrumentation an
 
 ```csharp
 services.AddOpenTelemetry()
-    .WithTracing(builder => builder.AddSource("Elsa.Workflows"))
-    .WithMetrics(builder => builder.AddMeter("Elsa.Workflows"));
+    .WithTracing(builder => builder
+        .AddSource("Elsa.Workflows")
+        .AddOtlpExporter())
+    .WithMetrics(builder => builder
+        .AddMeter("Elsa.Workflows")
+        .AddOtlpExporter());
 ```
 
 Then configure standard OTEL environment variables for the process:

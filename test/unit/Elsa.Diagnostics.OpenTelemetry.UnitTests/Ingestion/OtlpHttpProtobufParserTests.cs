@@ -56,6 +56,7 @@ public class OtlpHttpProtobufParserTests
         var metricPoint = Assert.Single(batch.MetricPoints);
 
         Assert.Equal("workflow.duration", instrument.Name);
+        Assert.Equal("workflow.duration", metricPoint.InstrumentName);
         Assert.Equal(MetricKind.Gauge, instrument.Kind);
         Assert.Equal(42.5, metricPoint.Value);
         Assert.Equal("orders", metricPoint.Attributes["workflow.definition.id"]);

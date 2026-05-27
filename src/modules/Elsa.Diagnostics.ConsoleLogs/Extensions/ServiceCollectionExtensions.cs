@@ -1,7 +1,6 @@
 using ConsoleLogStream.Core;
 using ConsoleLogStream.Core.DependencyInjection;
 using ConsoleLogStream.Core.Options;
-using ConsoleLogStream.Core.Providers;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,14 +27,5 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
 
         return services;
-    }
-
-    private static void DecorateConsoleLogProvider(this IServiceCollection services)
-    {
-        services.RemoveAll<IConsoleLogProvider>();
-        services.TryAddSingleton<InMemoryConsoleLogProvider>();
-        services.TryAddSingleton<IConsoleLogProvider>(sp => new ElsaConsoleLogProvider(
-            sp.GetRequiredService<InMemoryConsoleLogProvider>(),
-            sp.GetRequiredService<IConsoleLogContextAccessor>()));
     }
 }
