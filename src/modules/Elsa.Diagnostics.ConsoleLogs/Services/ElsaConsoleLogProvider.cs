@@ -1,5 +1,4 @@
-using ConsoleLogStream.Core;
-using ConsoleLogStream.Core.Models;
+using ConsoleLogStreaming.Core;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
@@ -15,7 +14,7 @@ internal sealed class ElsaConsoleLogProvider(IConsoleLogProvider inner, IConsole
         return inner.GetRecentAsync(filter, cancellationToken);
     }
 
-    public IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
     {
         return inner.SubscribeAsync(filter, cancellationToken);
     }

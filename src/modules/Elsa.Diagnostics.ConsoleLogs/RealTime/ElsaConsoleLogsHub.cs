@@ -1,7 +1,4 @@
-using System.Runtime.CompilerServices;
-using ConsoleLogStream.Core.Models;
-using ConsoleLogStream.Core;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
+using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -20,7 +17,7 @@ public sealed class ElsaConsoleLogsHub(
     /// <summary>
     /// Streams matching console log items as a SignalR streaming method.
     /// </summary>
-    public async IAsyncEnumerable<ConsoleLogStreamItem> StreamAsync(
+    public async IAsyncEnumerable<ConsoleLogStreamingItem> StreamAsync(
         ElsaConsoleLogFilter? filter,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {

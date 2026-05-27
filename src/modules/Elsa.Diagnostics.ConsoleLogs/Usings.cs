@@ -1,5 +1,5 @@
 global using System.Runtime.CompilerServices;
-global using ConsoleLogStream.Core.Models;
+global using ConsoleLogStreaming.Core.Models;
 global using Elsa.Diagnostics.ConsoleLogs.Contracts;
 global using Elsa.Workflows;
 global using Elsa.Workflows.Pipelines.ActivityExecution;

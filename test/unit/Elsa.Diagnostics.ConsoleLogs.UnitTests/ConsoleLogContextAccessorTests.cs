@@ -1,5 +1,5 @@
-using ConsoleLogStream.Core;
-using ConsoleLogStream.Core.DependencyInjection;
+using ConsoleLogStreaming.Core;
+using ConsoleLogStreaming.Core.DependencyInjection;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.Testing.Shared;
@@ -64,7 +64,7 @@ public class ConsoleLogContextAccessorTests
         await provider.PublishAsync(CreateLine("duplicate", "workflow-a", 1));
         await provider.PublishAsync(CreateLine("duplicate", "workflow-b", 2));
 
-        var result = await provider.GetRecentAsync(new ConsoleLogStream.Core.Models.ConsoleLogFilter
+        var result = await provider.GetRecentAsync(new ConsoleLogStreaming.Core.Models.ConsoleLogFilter
         {
             Metadata = new Dictionary<string, string>
             {
@@ -240,12 +240,12 @@ public class ConsoleLogContextAccessorTests
         return context;
     }
 
-    private static ConsoleLogStream.Core.Models.ConsoleLogLine CreateLine(string text, string workflowInstanceId, long sequence) => new()
+    private static ConsoleLogStreaming.Core.Models.ConsoleLogLine CreateLine(string text, string workflowInstanceId, long sequence) => new()
     {
         Text = text,
         Sequence = sequence,
-        Stream = ConsoleLogStream.Core.Models.ConsoleStream.Stdout,
-        Source = new ConsoleLogStream.Core.Models.ConsoleLogSource { Id = "test-source" },
+        Stream = ConsoleLogStreaming.Core.Models.ConsoleStream.Stdout,
+        Source = new ConsoleLogStreaming.Core.Models.ConsoleLogSource { Id = "test-source" },
         Metadata = new Dictionary<string, string>
         {
             [ConsoleLogMetadataKeys.WorkflowInstanceId] = workflowInstanceId

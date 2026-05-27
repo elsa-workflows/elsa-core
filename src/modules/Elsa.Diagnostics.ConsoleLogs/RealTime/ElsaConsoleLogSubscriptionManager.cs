@@ -1,7 +1,5 @@
 using System.Collections.Concurrent;
-using ConsoleLogStream.Core.Models;
-using ConsoleLogStream.Core;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
+using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;

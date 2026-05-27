@@ -1,5 +1,3 @@
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
-
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
 /// <summary>

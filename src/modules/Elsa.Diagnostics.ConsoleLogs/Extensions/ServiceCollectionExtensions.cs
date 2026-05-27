@@ -1,6 +1,5 @@
-using ConsoleLogStream.Core;
-using ConsoleLogStream.Core.DependencyInjection;
-using ConsoleLogStream.Core.Options;
+using ConsoleLogStreaming.Core.DependencyInjection;
+using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +15,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogOptions>? configureOptions = null)
     {
         services.AddConsoleLogContextServices();
-        services.AddConsoleLogStream(options =>
+        services.AddConsoleLogStreaming(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);
             configureOptions?.Invoke(options);

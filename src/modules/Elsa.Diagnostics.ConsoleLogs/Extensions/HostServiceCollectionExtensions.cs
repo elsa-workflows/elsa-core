@@ -1,6 +1,4 @@
-using ConsoleLogStream.Core;
-using ConsoleLogStream.Core.DependencyInjection;
-using ConsoleLogStream.Core.Options;
+using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;

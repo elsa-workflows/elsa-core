@@ -1,6 +1,5 @@
-using ConsoleLogStream.Core;
+using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using JetBrains.Annotations;

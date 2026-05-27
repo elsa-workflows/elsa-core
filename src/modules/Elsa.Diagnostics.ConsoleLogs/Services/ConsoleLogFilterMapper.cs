@@ -1,6 +1,3 @@
-using ConsoleLogStream.Core.Models;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
-
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
 internal static class ConsoleLogFilterMapper

@@ -1,8 +1,8 @@
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
-using ConsoleLogStream.Core.Models;
-using ConsoleLogStream.Core;
+using ConsoleLogStreaming.Core.Models;
+using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Features;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
@@ -244,37 +244,37 @@ public class ConsoleLogsAuthorizationTests
 
     private class TestConsoleLogProvider : IConsoleLogProvider
     {
-        private readonly TaskCompletionSource<ConsoleLogStream.Core.Models.ConsoleLogFilter> _subscriptionFilterSet = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<ConsoleLogStreaming.Core.Models.ConsoleLogFilter> _subscriptionFilterSet = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        public ConsoleLogStream.Core.Models.ConsoleLogFilter? LastFilter { get; private set; }
-        public ConsoleLogStream.Core.Models.ConsoleLogFilter? LastSubscriptionFilter { get; private set; }
+        public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastFilter { get; private set; }
+        public ConsoleLogStreaming.Core.Models.ConsoleLogFilter? LastSubscriptionFilter { get; private set; }
 
-        public Task<ConsoleLogStream.Core.Models.ConsoleLogFilter> WaitForSubscriptionFilterAsync() =>
+        public Task<ConsoleLogStreaming.Core.Models.ConsoleLogFilter> WaitForSubscriptionFilterAsync() =>
             _subscriptionFilterSet.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        public ValueTask PublishAsync(ConsoleLogStream.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default)
+        public ValueTask PublishAsync(ConsoleLogStreaming.Core.Models.ConsoleLogLine line, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask<ConsoleLogStream.Core.Models.RecentConsoleLogsResult> GetRecentAsync(ConsoleLogStream.Core.Models.ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        public ValueTask<ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult> GetRecentAsync(ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
             LastFilter = filter;
-            return ValueTask.FromResult(new ConsoleLogStream.Core.Models.RecentConsoleLogsResult());
+            return ValueTask.FromResult(new ConsoleLogStreaming.Core.Models.RecentConsoleLogsResult());
         }
 
-        public IAsyncEnumerable<ConsoleLogStream.Core.Models.ConsoleLogStreamItem> SubscribeAsync(
-            ConsoleLogStream.Core.Models.ConsoleLogFilter filter,
+        public IAsyncEnumerable<ConsoleLogStreaming.Core.Models.ConsoleLogStreamItem> SubscribeAsync(
+            ConsoleLogStreaming.Core.Models.ConsoleLogFilter filter,
             CancellationToken cancellationToken = default)
         {
             LastSubscriptionFilter = filter;
             _subscriptionFilterSet.TrySetResult(filter);
-            return AsyncEnumerable.Empty<ConsoleLogStream.Core.Models.ConsoleLogStreamItem>();
+            return AsyncEnumerable.Empty<ConsoleLogStreaming.Core.Models.ConsoleLogStreamItem>();
         }
 
-        public ValueTask<IReadOnlyCollection<ConsoleLogStream.Core.Models.ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        public ValueTask<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
         {
-            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogStream.Core.Models.ConsoleLogSource>>([]);
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogStreaming.Core.Models.ConsoleLogSource>>([]);
         }
     }
 

@@ -1,7 +1,7 @@
 using CShells.AspNetCore.Features;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
-using ConsoleLogStream.Core.Options;
+using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;

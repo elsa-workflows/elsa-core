@@ -1,4 +1,4 @@
-using ConsoleLogStream.Core;
+using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 

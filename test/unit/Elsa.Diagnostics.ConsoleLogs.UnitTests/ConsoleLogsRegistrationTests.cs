@@ -1,6 +1,6 @@
-using ConsoleLogStream.Core;
-using ConsoleLogStream.Core.Capture;
-using ConsoleLogStream.Core.Models;
+using ConsoleLogStreaming.Core;
+using ConsoleLogStreaming.Core.Capture;
+using ConsoleLogStreaming.Core.Models;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
@@ -39,7 +39,7 @@ public class ConsoleLogsRegistrationTests
 
         using var serviceProvider = services.BuildServiceProvider();
 
-        Assert.Equal(17, serviceProvider.GetRequiredService<IOptions<ConsoleLogStream.Core.Options.ConsoleLogOptions>>().Value.RecentCapacity);
+        Assert.Equal(17, serviceProvider.GetRequiredService<IOptions<ConsoleLogStreaming.Core.Options.ConsoleLogOptions>>().Value.RecentCapacity);
     }
 
     [Fact]

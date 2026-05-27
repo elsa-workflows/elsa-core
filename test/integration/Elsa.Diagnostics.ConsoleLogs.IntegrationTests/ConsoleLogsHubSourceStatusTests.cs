@@ -1,5 +1,5 @@
-using ConsoleLogStream.Core;
-using ConsoleLogStream.Core.Models;
+using ConsoleLogStreaming.Core;
+using ConsoleLogStreaming.Core.Models;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Microsoft.AspNetCore.SignalR;
@@ -41,9 +41,9 @@ public class ConsoleLogsHubSourceStatusTests
             return ValueTask.FromResult(new RecentConsoleLogsResult());
         }
 
-        public async IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            yield return ConsoleLogStreamItem.FromLine(line);
+            yield return ConsoleLogStreamingItem.FromLine(line);
             await Task.Yield();
         }
 

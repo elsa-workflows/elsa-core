@@ -1,8 +1,8 @@
+using ConsoleLogStreaming.Core.Capture;
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
-using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.ShellFeatures;
@@ -19,6 +19,8 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+
+ConsoleStreamHook.Install();
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

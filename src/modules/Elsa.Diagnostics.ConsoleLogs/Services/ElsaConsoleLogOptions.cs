@@ -1,4 +1,4 @@
-using ConsoleLogStream.Core.Options;
+using ConsoleLogStreaming.Core.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
