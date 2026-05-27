@@ -5,9 +5,14 @@
         <PackageReference Include="Nuplane" />
         <PackageReference Include="Nuplane.Loading" />
         <PackageReference Include="Nuplane.Sources.Directory" />
+        <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+        <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+        <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Diagnostics.OpenTelemetry\Elsa.Diagnostics.OpenTelemetry.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
