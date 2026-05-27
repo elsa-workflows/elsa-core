@@ -15,11 +15,11 @@ namespace Elsa.Core.IntegrationTests.Extensions
         public async Task AddCommonTemporalActivitiesThrowsDuringStartupIfNoTemporalImplementationPresent([WithCommonTemporalActivities] ElsaHostBuilderBuilder hostBuilderBuilder)
         {
             var hostBuilder = hostBuilderBuilder.GetHostBuilder();
-
+            
             var cancellationSource = new CancellationTokenSource();
             try
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(() => StartAppAndAllowToRun(hostBuilder, cancellationToken: cancellationSource.Token));
+                await Assert.ThrowsAsync<AggregateException>(() => StartAppAndAllowToRun(hostBuilder, cancellationToken: cancellationSource.Token));
             }
             finally
             {
