@@ -7,10 +7,12 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.6" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa\Elsa.csproj" />
     </ItemGroup>
 </Project>
+
+

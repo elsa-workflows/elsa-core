@@ -5,6 +5,7 @@ using Elsa.Server.Api.Mapping;
 using Elsa.Services;
 using Elsa.Server.Api.Endpoints.WorkflowDefinitions;
 using Elsa.Server.Api.Test.Mock;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Elsa.Models;
 
@@ -64,7 +65,7 @@ namespace Elsa.Server.Api.Test
 
             // Setup mapper
             var myProfile = new AutoMapperProfile();
-            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(myProfile));
+            var configuration = new MapperConfiguration(cfg => cfg.AddProfile(myProfile), NullLoggerFactory.Instance);
             Mapper = new AutoMapper.Mapper(configuration);
         }
 

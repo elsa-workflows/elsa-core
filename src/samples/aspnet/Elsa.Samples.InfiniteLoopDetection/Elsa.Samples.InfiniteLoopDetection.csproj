@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -14,3 +14,5 @@
     </ItemGroup>
 
 </Project>
+
+

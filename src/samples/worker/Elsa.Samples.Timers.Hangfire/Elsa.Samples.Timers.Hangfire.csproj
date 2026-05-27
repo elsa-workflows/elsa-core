@@ -10,7 +10,7 @@
     <ItemGroup>
         <PackageReference Include="Hangfire.SqlServer" Version="1.8.5" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -19,3 +19,5 @@
     </ItemGroup>
 
 </Project>
+
+

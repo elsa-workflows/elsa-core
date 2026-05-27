@@ -8,7 +8,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.SqlClient" Version="3.1.7" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -17,3 +17,5 @@
         <ProjectReference Include="..\..\..\persistence\Elsa.Persistence.YesSql\Elsa.Persistence.YesSql.csproj" />
     </ItemGroup>
 </Project>
+
+

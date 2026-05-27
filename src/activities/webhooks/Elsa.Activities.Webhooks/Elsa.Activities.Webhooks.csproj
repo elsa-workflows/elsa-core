@@ -13,8 +13,8 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.6" />
     </ItemGroup>
 
     <ItemGroup>
@@ -25,3 +25,5 @@
     </ItemGroup>
 
 </Project>
+
+
