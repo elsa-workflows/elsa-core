@@ -20,10 +20,10 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
     {
         _options = options.Value;
         _sourceRegistry = sourceRegistry;
-        _traces = new(_options.TraceCapacity);
-        _spans = new(_options.SpanCapacity);
-        _metricPoints = new(_options.MetricPointCapacity);
-        _logs = new(_options.LogRecordCapacity);
+        _traces = new(ClampCapacity(_options.TraceCapacity));
+        _spans = new(ClampCapacity(_options.SpanCapacity));
+        _metricPoints = new(ClampCapacity(_options.MetricPointCapacity));
+        _logs = new(ClampCapacity(_options.LogRecordCapacity));
     }
 
     public ValueTask WriteAsync(OpenTelemetryBatch batch, CancellationToken cancellationToken = default)
@@ -64,7 +64,7 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
             .Take(take)
             .ToList();
 
-        return ValueTask.FromResult(new OpenTelemetryResourceResult(items, 0));
+        return ValueTask.FromResult(new OpenTelemetryResourceResult(items, _sourceRegistry.DroppedCount));
     }
 
     public ValueTask<OpenTelemetryTraceResult> QueryTracesAsync(OpenTelemetryTraceFilter filter, CancellationToken cancellationToken = default)
@@ -197,6 +197,8 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
     }
 
     private int ClampTake(int? take) => Math.Clamp(take ?? _options.MaxQuerySize, 0, _options.MaxQuerySize);
+
+    private static int ClampCapacity(int capacity) => Math.Max(1, capacity);
 
     private HashSet<string>? ResolveResourceIds(string? serviceName)
     {

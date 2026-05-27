@@ -58,5 +58,34 @@ public class InMemoryOpenTelemetryStoreTests
         var result = await context.Store.QueryResourcesAsync(new OpenTelemetryResourceFilter { Take = 10 });
 
         Assert.Equal(["resource-c", "resource-b"], result.Items.Select(x => x.Id));
+        Assert.Equal(1, result.DroppedCount);
+    }
+
+    [Fact]
+    public async Task Constructor_WhenCapacitiesAreMisconfigured_ClampsToMinimumCapacity()
+    {
+        var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions
+        {
+            TraceCapacity = 0,
+            SpanCapacity = 0,
+            MetricPointCapacity = 0,
+            LogRecordCapacity = 0
+        });
+        var resource = context.Resource("resource-a", "api");
+
+        await context.WriteAsync(new OpenTelemetryBatch(
+            [resource],
+            [context.Trace("trace-1", resource.Id)],
+            [context.Span("span-1", "trace-1", "span-1", resource.Id)],
+            [context.Instrument("instrument-1", resource.Id, "metric")],
+            [context.Point("point-1", "instrument-1", resource.Id)],
+            [context.Log("log-1", resource.Id, "trace-1")]));
+
+        var diagnostics = await context.Store.GetDiagnosticsAsync();
+
+        Assert.Equal(1, diagnostics.TraceCount);
+        Assert.Equal(1, diagnostics.SpanCount);
+        Assert.Equal(1, diagnostics.MetricPointCount);
+        Assert.Equal(1, diagnostics.LogRecordCount);
     }
 }

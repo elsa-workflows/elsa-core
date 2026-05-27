@@ -3,6 +3,7 @@ using ConsoleLogStream.Core.Models;
 using ConsoleLogStream.Core;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
@@ -10,6 +11,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
 /// <summary>
 /// SignalR hub for live Elsa console log streaming.
 /// </summary>
+[Authorize]
 public sealed class ElsaConsoleLogsHub(
     IConsoleLogProvider provider,
     IElsaConsoleLogHubAuthorizer authorizer,

@@ -32,7 +32,7 @@ Live updates are exposed through SignalR at `OpenTelemetryDiagnosticsOptions.Hub
 
 ## Security
 
-All diagnostics read APIs require the OpenTelemetry diagnostics read permission. OTLP ingestion allows unauthenticated loopback traffic by default for local development. Non-loopback senders must provide the configured API key header when `OpenTelemetryDiagnosticsOptions.ApiKey` is set; requests without a configured key are rejected unless they are loopback requests and loopback development mode is enabled.
+All diagnostics read APIs require the OpenTelemetry diagnostics read permission. OTLP ingestion allows unauthenticated loopback traffic by default for local development only when no API key is configured. When `OpenTelemetryDiagnosticsOptions.ApiKey` is set, every sender must provide the configured API key header, including loopback senders.
 
 Collector configuration returns endpoint and required-header names only. It never returns secret header values.
 

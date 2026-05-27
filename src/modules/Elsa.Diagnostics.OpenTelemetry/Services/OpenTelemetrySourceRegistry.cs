@@ -10,6 +10,7 @@ public class OpenTelemetrySourceRegistry : IOpenTelemetrySourceRegistry
     private readonly object _lock = new();
     private readonly Dictionary<string, TelemetryResource> _resources = new(StringComparer.OrdinalIgnoreCase);
     private readonly int _capacity;
+    private long _droppedCount;
 
     public OpenTelemetrySourceRegistry(IOptions<OpenTelemetryDiagnosticsOptions> options)
     {
@@ -18,6 +19,15 @@ public class OpenTelemetrySourceRegistry : IOpenTelemetrySourceRegistry
 
     public OpenTelemetrySourceRegistry() : this(Microsoft.Extensions.Options.Options.Create(new OpenTelemetryDiagnosticsOptions()))
     {
+    }
+
+    public long DroppedCount
+    {
+        get
+        {
+            lock (_lock)
+                return _droppedCount;
+        }
     }
 
     public void MarkSeen(TelemetryResource resource)
@@ -40,7 +50,10 @@ public class OpenTelemetrySourceRegistry : IOpenTelemetrySourceRegistry
     private void RemoveOldestResource()
     {
         var oldest = _resources.Values.OrderBy(x => x.LastSeen).ThenBy(x => x.Id, StringComparer.OrdinalIgnoreCase).FirstOrDefault();
-        if (oldest != null)
-            _resources.Remove(oldest.Id);
+        if (oldest == null)
+            return;
+
+        _resources.Remove(oldest.Id);
+        _droppedCount++;
     }
 }
