@@ -6,7 +6,7 @@ using JetBrains.Annotations;
 namespace Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Sources;
 
 [PublicAPI]
-internal class Endpoint(IConsoleLogProvider provider, IConsoleLogStreamingApiMapper mapper) : ElsaEndpointWithoutRequest<IReadOnlyCollection<ConsoleLogSource>>
+internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutRequest<IReadOnlyCollection<ConsoleLogSource>>
 {
     public override void Configure()
     {
@@ -16,7 +16,6 @@ internal class Endpoint(IConsoleLogProvider provider, IConsoleLogStreamingApiMap
 
     public override async Task<IReadOnlyCollection<ConsoleLogSource>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var sources = await provider.ListSourcesAsync(cancellationToken);
-        return sources.Select(mapper.ToApi).ToList();
+        return await provider.ListSourcesAsync(cancellationToken);
     }
 }

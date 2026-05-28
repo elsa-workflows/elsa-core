@@ -75,6 +75,16 @@ services:
       - ASPNETCORE_URLS=http://+:80
       - Logging__LogLevel__Default=Information
 
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    container_name: aspire-dashboard
+    ports:
+      - "18888:18888" # Dashboard UI
+      - "4317:18889"  # OTLP/gRPC
+      - "4318:18890"  # OTLP/HTTP
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+
 volumes:
   sqlserver_data:
   postgres-data:

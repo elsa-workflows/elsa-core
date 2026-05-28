@@ -4,10 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
 
@@ -24,23 +21,6 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
-    /// </summary>
-    public PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
-    {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
-    /// </summary>
-    public PolymorphicObjectConverter()
-    {
-        _wellKnownTypeRegistry = WellKnownTypeRegistry.CreateDefault();
-    }
 
     /// <inheritdoc />
     public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -53,8 +33,6 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         var targetType = ReadType(reader, options);
         if (targetType == null)
             return ReadObject(ref reader, newOptions);
-
-        targetType = GetInstantiableTargetType(targetType);
 
         // If the target type is not an IEnumerable, or is a dictionary, deserialize the object directly.
         var isEnumerable = typeof(IEnumerable).IsAssignableFrom(targetType);
@@ -221,7 +199,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         {
             writer.WriteStartObject();
             writer.WriteString(IslandPropertyName, value.ToString());
-            WriteTypeMetadata(writer, type);
+            writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
             writer.WriteEndObject();
             return;
         }
@@ -292,7 +270,17 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (type != typeof(ExpandoObject))
         {
             if (shouldWriteTypeField)
-                WriteTypeMetadata(writer, type);
+            {
+                if (newOptions.Converters.OfType<TypeJsonConverter>().FirstOrDefault() is { } typeJsonConverter)
+                {
+                    writer.WritePropertyName(TypePropertyName);
+                    typeJsonConverter.Write(writer, type, newOptions);
+                }
+                else
+                {
+                    writer.WriteString(TypePropertyName, type.GetSimpleAssemblyQualifiedName());
+                }
+            }
         }
 
         writer.WriteEndObject();
@@ -350,30 +338,8 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
         // If we found the _type property, attempt to resolve the type.
-        return typeName != null ? WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeName) : default;
-    }
-
-    private void WriteTypeMetadata(Utf8JsonWriter writer, Type type)
-    {
-        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, type, out var typeAlias))
-            return;
-
-        writer.WritePropertyName(TypePropertyName);
-        writer.WriteStringValue(typeAlias);
-    }
-
-    private static Type GetInstantiableTargetType(Type targetType)
-    {
-        if (targetType.ContainsGenericParameters)
-            throw new JsonException($"Workflow JSON type alias resolved to open generic type '{targetType}'.");
-
-        if (!targetType.IsInterface && !targetType.IsAbstract)
-            return targetType;
-
-        if (WorkflowJsonTypeResolver.TryGetInstantiableCollectionType(targetType, out var instantiableCollectionType))
-            return instantiableCollectionType;
-
-        throw new JsonException($"Workflow JSON type alias resolved to non-instantiable type '{targetType}'.");
+        var targetType = typeName != null ? Type.GetType(typeName) : default;
+        return targetType;
     }
 
     private static object ReadPrimitive(ref Utf8JsonReader reader, JsonSerializerOptions options)

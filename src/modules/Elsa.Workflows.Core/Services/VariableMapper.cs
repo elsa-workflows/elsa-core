@@ -5,7 +5,6 @@ using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Serialization.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -41,7 +40,13 @@ public class VariableMapper
     /// </summary>
     public Variable Map(VariableModel source)
     {
-        var type = ResolveVariableType(source.TypeName);
+        var typeName = source.TypeName;
+        
+        if (string.IsNullOrWhiteSpace(source.TypeName))
+            typeName = _wellKnownTypeRegistry.GetAliasOrDefault(typeof(object));
+
+        if (!_wellKnownTypeRegistry.TryGetTypeOrDefault(typeName, out var type))
+            type = typeof(object);
         var variableGenericType = typeof(Variable<>).MakeGenericType(type);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
@@ -53,7 +58,7 @@ public class VariableMapper
             .OnSuccess(value => variable.Value = value)
             .OnFailure(e => _logger.LogWarning("Failed to convert {SourceValue} to {TargetType}", source.Value, type.Name));
 
-        variable.StorageDriverType = ResolveStorageDriverType(source.StorageDriverTypeName);
+        variable.StorageDriverType = !string.IsNullOrEmpty(source.StorageDriverTypeName) ? Type.GetType(source.StorageDriverTypeName) : null;
 
         return variable;
     }
@@ -71,34 +76,5 @@ public class VariableMapper
         var serializedValue = value.Format();
 
         return new(source.Id, source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);
-    }
-
-    private Type ResolveVariableType(string? typeAlias)
-    {
-        if (string.IsNullOrWhiteSpace(typeAlias))
-            return typeof(object);
-
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type))
-            return type;
-
-        _logger.LogWarning("Failed to resolve variable type alias {VariableTypeName}", typeAlias);
-        return typeof(object);
-    }
-
-    private Type? ResolveStorageDriverType(string? typeAlias)
-    {
-        if (string.IsNullOrWhiteSpace(typeAlias))
-            return null;
-
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type) && IsStorageDriverType(type))
-            return type;
-
-        _logger.LogWarning("Failed to resolve storage driver type alias {StorageDriverTypeName}", typeAlias);
-        return null;
-    }
-
-    private static bool IsStorageDriverType(Type type)
-    {
-        return typeof(IStorageDriver).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false };
     }
 }

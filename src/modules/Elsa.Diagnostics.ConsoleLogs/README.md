@@ -1,6 +1,6 @@
 # Elsa Diagnostics Console Logs
 
-`Elsa.Diagnostics.ConsoleLogs` is an opt-in Core module for operational diagnostics. It hosts `ConsoleLogStreaming.Core`, adds Elsa workflow metadata, and exposes recent plus live console output to authorized callers.
+`Elsa.Diagnostics.ConsoleLogs` is an opt-in Core module for operational diagnostics. It hosts `ConsoleLogStream.Core`, adds Elsa workflow metadata, and exposes recent plus live console output to authorized callers.
 
 ## What It Captures
 
@@ -11,7 +11,7 @@
 
 The module is separate from `Elsa.Diagnostics.StructuredLogs`. It does not parse `ILogger` records, provide durable audit storage, call orchestrator log APIs, or implement trace/metric exploration.
 
-Capture, redaction, buffering, source tracking, provider contracts, and live subscriptions come from `ConsoleLogStreaming.Core`. Elsa keeps only the module wiring, workflow metadata accessor, authorization, REST endpoints, SignalR hub, and DTO mapping.
+Capture, redaction, buffering, source tracking, provider contracts, and live subscriptions come from `ConsoleLogStream.Core`. Elsa keeps only the module wiring, workflow metadata accessor, authorization, REST endpoints, SignalR hub, and DTO mapping.
 
 ## Configure
 
@@ -69,7 +69,7 @@ tee, the capture publishes them verbatim, and the Studio renders them.
 
 Recent, source, and hub access all require the same permission.
 
-Custom storage providers should implement `ConsoleLogStreaming.Core.IConsoleLogProvider` and use the core models. Elsa-specific values such as workflow instance IDs are represented as metadata internally and projected onto shared `ConsoleLogStreaming.Contracts` DTOs at the REST and SignalR boundaries.
+Custom storage providers should implement `ConsoleLogStream.Core.IConsoleLogProvider` and use the core models. Elsa-specific values such as workflow instance IDs are represented as metadata internally and projected onto shared `ConsoleLogStream.Core.Models` DTOs at the REST and SignalR boundaries.
 
 ## Safety Boundaries
 

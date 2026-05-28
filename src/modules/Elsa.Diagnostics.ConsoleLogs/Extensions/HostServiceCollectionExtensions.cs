@@ -1,9 +1,6 @@
-using ConsoleLogStreaming.Contracts;
-using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.DependencyInjection;
 using ConsoleLogStreaming.Core.Options;
-using ConsoleLogStreaming.SignalR;
-using ConsoleLogStreaming.SignalR.DependencyInjection;
+using ConsoleLogStreaming.Persistence.Sqlite.DependencyInjection;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,13 +16,20 @@ public static class HostServiceCollectionExtensions
     public static IServiceCollection AddConsoleLogsHost(this IServiceCollection services, Action<ConsoleLogOptions>? configure = null)
     {
         services.AddConsoleLogContextServices();
-        services.AddConsoleLogStreamingHost(options =>
+        services.AddConsoleLogStreaming(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);
             configure?.Invoke(options);
         });
-        services.AddConsoleLogStreamingSignalR(options => options.HubPath = EndpointRouteBuilderExtensions.HubRoute);
-        services.TryAddSingleton<IConsoleLogStreamingHubAuthorizer, ElsaConsoleLogStreamingHubAuthorizer>();
+        services.AddConsoleLogStreamingSqlite(options =>
+        {
+            options.ConnectionString = "Data Source=console-log-streaming-vanilla-sample.db";
+            options.MaxAge = TimeSpan.FromHours(12);
+            options.MaxRows = 10_000;
+        });
+        services.AddSignalR();
+        services.DecorateConsoleLogProvider();
+        services.TryAddSingleton<IElsaConsoleLogHubAuthorizer, ElsaConsoleLogStreamHubAuthorizer>();
         services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
         return services;
     }
