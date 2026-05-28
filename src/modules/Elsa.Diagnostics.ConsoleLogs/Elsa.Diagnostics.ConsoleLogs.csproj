@@ -11,6 +11,7 @@
         <PackageReference Include="CShells" />
         <PackageReference Include="ConsoleLogStreaming.Contracts" />
         <PackageReference Include="ConsoleLogStreaming.Core" />
+        <PackageReference Include="ConsoleLogStreaming.Persistence.Sqlite" />
         <PackageReference Include="ConsoleLogStreaming.SignalR" />
         <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>

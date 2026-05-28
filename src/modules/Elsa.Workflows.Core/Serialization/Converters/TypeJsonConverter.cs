@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
+using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Serialization.Converters;
@@ -33,53 +34,19 @@ public class TypeJsonConverter : JsonConverter<Type>
     /// <inheritdoc />
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var typeAlias = reader.GetString()!;
+        var typeAlias = reader.GetString();
+        if (typeAlias?.StartsWith(UnregisteredTypeAliasPrefix, StringComparison.Ordinal) == true)
+            return typeof(Exception);
 
-        // Handle array types.
-        if (typeAlias.EndsWith("[]"))
-        {
-            var elementTypeAlias = typeAlias[..^2];
-            var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
-            return elementType.MakeArrayType();
-        }
-        
-        // Handle collection types.
-        if (typeAlias.StartsWith("List<") && typeAlias.EndsWith(">"))
-        {
-            var elementTypeAlias = typeAlias[5..^1];
-            var elementType = _wellKnownTypeRegistry.TryGetType(elementTypeAlias, out var t) ? t : Type.GetType(elementTypeAlias)!;
-            return typeof(List<>).MakeGenericType(elementType);
-        }
-
-        return _wellKnownTypeRegistry.TryGetType(typeAlias, out var type) ? type : Type.GetType(typeAlias);
+        return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias);
     }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
-        // Handle array types.
-        if (value.IsArray)
-        {
-            var elementType = value.GetElementType()!;
-            var elementTypeAlias = _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementTypeAliasValue) ? elementTypeAliasValue : elementType.GetSimpleAssemblyQualifiedName();
-            writer.WriteStringValue($"{elementTypeAlias}[]");
-            return;
-        }
-        
-        // Handle collection types.
-        if (value is { IsGenericType: true, GenericTypeArguments.Length: 1 })
-        {
-            var elementType = value.GenericTypeArguments.First();
-            var typedEnumerable = typeof(IEnumerable<>).MakeGenericType(elementType);
+        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var typeAlias))
+            typeAlias = $"{UnregisteredTypeAliasPrefix}{value.GetSimpleAssemblyQualifiedName()}";
 
-            if (typedEnumerable.IsAssignableFrom(value) && _wellKnownTypeRegistry.TryGetAlias(elementType, out var elementTypeAlias))
-            {
-                writer.WriteStringValue($"List<{elementTypeAlias}>");
-                return;
-            }
-        }
-
-        var typeAlias = _wellKnownTypeRegistry.TryGetAlias(value, out var alias) ? alias : value.GetSimpleAssemblyQualifiedName();
         writer.WriteStringValue(typeAlias);
     }
 }
