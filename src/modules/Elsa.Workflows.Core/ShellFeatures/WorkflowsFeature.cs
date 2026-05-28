@@ -54,7 +54,12 @@ public class WorkflowsFeature : IShellFeature
     /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     /// </summary>
-    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
+    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder
+        .UseLogging()
+        .UseExceptionHandling()
+        .UseExecutionLogging()
+        .UseNotifications()
+        .UseDefaultActivityInvoker();
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IStandardInStreamProvider"/>.
