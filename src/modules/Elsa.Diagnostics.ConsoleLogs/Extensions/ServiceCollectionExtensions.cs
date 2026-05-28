@@ -4,6 +4,7 @@ using ConsoleLogStreaming.Core.DependencyInjection;
 using ConsoleLogStreaming.Core.Options;
 using ConsoleLogStreaming.SignalR;
 using ConsoleLogStreaming.SignalR.DependencyInjection;
+using CShells.Lifecycle;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,9 @@ public static class ServiceCollectionExtensions
         services.AddConsoleLogStreamingSignalR(options => options.HubPath = EndpointRouteBuilderExtensions.HubRoute);
         services.TryAddSingleton<IConsoleLogStreamingHubAuthorizer, ElsaConsoleLogStreamingHubAuthorizer>();
         services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
+        services.TryAddScoped<ConsoleLogCaptureShellLease>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IShellInitializer, ConsoleLogCaptureShellInitializer>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IDrainHandler, ConsoleLogCaptureShellDrainHandler>());
 
         return services;
     }

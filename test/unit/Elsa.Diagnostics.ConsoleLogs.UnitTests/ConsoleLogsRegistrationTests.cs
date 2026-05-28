@@ -2,6 +2,7 @@ using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.Capture;
 using ConsoleLogStreaming.Core.Hosting;
 using ConsoleLogStreaming.Core.Providers;
+using CShells.Lifecycle;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.Services;
@@ -43,6 +44,8 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(contextAccessor, serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
         AssertConsoleLogPipelineContributors(serviceProvider);
         Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType() == typeof(ConsoleLogStreamingHostedService));
+        Assert.Contains(serviceProvider.GetServices<IShellInitializer>(), x => x.GetType() == typeof(ConsoleLogCaptureShellInitializer));
+        Assert.Contains(serviceProvider.GetServices<IDrainHandler>(), x => x.GetType() == typeof(ConsoleLogCaptureShellDrainHandler));
         Assert.Same(ConsoleLogStreamingHost.Capture, serviceProvider.GetRequiredService<IConsoleLogCapture>());
 
         var services2 = new ServiceCollection();
@@ -53,6 +56,34 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Same(serviceProvider.GetRequiredService<IConsoleLogSourceRegistry>(), serviceProvider2.GetRequiredService<IConsoleLogSourceRegistry>());
         Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider2.GetRequiredService<ConsoleLogContextAccessor>());
         Assert.Same(contextAccessor, ConsoleLogStreamingHost.MetadataAccessor);
+    }
+
+    [Fact]
+    public async Task AddConsoleLogsServices_ShellInitializerStartsCapture()
+    {
+        var services = new ServiceCollection();
+        services.AddConsoleLogsServices();
+
+        await using var serviceProvider = services.BuildServiceProvider();
+        var initializer = serviceProvider.GetServices<IShellInitializer>().OfType<ConsoleLogCaptureShellInitializer>().Single();
+
+        await initializer.InitializeAsync(CancellationToken.None);
+
+        var line = $"console-shell-capture-{Guid.NewGuid():N}";
+        Console.WriteLine(line);
+
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        await AssertEventuallyAsync(async () =>
+        {
+            var result = await provider.GetRecentAsync(new()
+            {
+                Query = line,
+                Limit = 10
+            });
+
+            Assert.Contains(result.Items, x => x.Text.Contains(line, StringComparison.Ordinal));
+        });
     }
 
     [Fact]
@@ -112,6 +143,43 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AddConsoleLogsHost_CapturesConsoleOutput()
+    {
+        var services = new ServiceCollection();
+        services.AddConsoleLogsHost();
+
+        await using var serviceProvider = services.BuildServiceProvider();
+        var hostedServices = serviceProvider.GetServices<IHostedService>().ToList();
+
+        foreach (var hostedService in hostedServices)
+            await hostedService.StartAsync(CancellationToken.None);
+
+        try
+        {
+            var line = $"console-capture-{Guid.NewGuid():N}";
+            Console.WriteLine(line);
+
+            var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+            await AssertEventuallyAsync(async () =>
+            {
+                var result = await provider.GetRecentAsync(new()
+                {
+                    Query = line,
+                    Limit = 10
+                });
+
+                Assert.Contains(result.Items, x => x.Text.Contains(line, StringComparison.Ordinal));
+            });
+        }
+        finally
+        {
+            foreach (var hostedService in hostedServices)
+                await hostedService.StopAsync(CancellationToken.None);
+        }
+    }
+
+    [Fact]
     public void AddConsoleLogsHost_AppliesConfigurationWhenCalledBeforeFirstAccess()
     {
         var services = new ServiceCollection();
@@ -139,6 +207,29 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
     {
         Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
         Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
+    }
+
+    private static async Task AssertEventuallyAsync(Func<Task> assertion)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
+        Exception? lastException = null;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            try
+            {
+                await assertion();
+                return;
+            }
+            catch (Exception e)
+            {
+                lastException = e;
+                await Task.Delay(25);
+            }
+        }
+
+        if (lastException != null)
+            throw lastException;
     }
 
     private sealed class CustomProvider : IConsoleLogProvider

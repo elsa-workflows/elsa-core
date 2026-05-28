@@ -12,9 +12,14 @@ using Elsa.Workflows.Management.ShellFeatures;
 using Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 using Elsa.Workflows.Runtime.ShellFeatures;
 using Elsa.Workflows.ShellFeatures;
+using Elsa.Workflows.Telemetry;
 using Nuplane;
 using Nuplane.Loading.Hosting.Builder;
 using Nuplane.Sources.Directory.Configuration;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 // Install the console stream tee as early as possible — before WebApplication.CreateBuilder and
 // any logger provider construction — so that downstream loggers (Microsoft.Extensions.Logging.Console,
@@ -24,10 +29,33 @@ ConsoleStreamHook.Install();
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString();
 
 // Console output is a single process-wide resource; the capture pipeline is owned by the root host so
 // every shell's diagnostics endpoints (REST + SignalR) read from the same in-memory ring buffer.
 services.AddConsoleLogsHost();
+
+builder.Logging.AddOpenTelemetry(logging =>
+{
+    logging.IncludeFormattedMessage = true;
+    logging.IncludeScopes = true;
+    logging.ParseStateValues = true;
+    logging.SetResourceBuilder(CreateOpenTelemetryResource(builder.Environment.ApplicationName, serviceVersion));
+    logging.AddOtlpExporter();
+});
+
+services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName, serviceVersion: serviceVersion))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddSource(WorkflowInstrumentation.ActivitySourceName)
+        .AddOtlpExporter())
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddMeter(WorkflowInstrumentation.MeterName)
+        .AddOtlpExporter());
 
 var nuplaneConfiguration = configuration.GetSection("Nuplane");
 
@@ -71,3 +99,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapSampleCatalog();
 app.Run();
+
+static ResourceBuilder CreateOpenTelemetryResource(string serviceName, string? serviceVersion)
+{
+    return ResourceBuilder.CreateDefault().AddService(serviceName, serviceVersion: serviceVersion);
+}

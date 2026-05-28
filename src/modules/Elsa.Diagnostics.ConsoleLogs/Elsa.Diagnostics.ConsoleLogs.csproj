@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells" />
         <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 
