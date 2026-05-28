@@ -3,19 +3,19 @@ namespace Elsa.Diagnostics.ConsoleLogs.Contracts;
 /// <summary>
 /// Console log filter accepted by Elsa REST and SignalR endpoints.
 /// </summary>
-public sealed record ElsaConsoleLogFilter
+public sealed class ElsaConsoleLogFilter
 {
-    public string? SourceId { get; init; }
-    public global::ConsoleLogStreaming.Core.Models.ConsoleStream? Stream { get; init; }
-    public string? Query { get; init; }
-    public string? WorkflowInstanceId { get; init; }
-    public string? WorkflowDefinitionId { get; init; }
-    public string? WorkflowDefinitionVersionId { get; init; }
-    public string? ActivityInstanceId { get; init; }
-    public string? ActivityId { get; init; }
-    public string? ActivityNodeId { get; init; }
-    public IReadOnlyDictionary<string, string>? Metadata { get; init; }
-    public DateTimeOffset? From { get; init; }
-    public DateTimeOffset? To { get; init; }
-    public int? Limit { get; init; }
+    public string? SourceId { get; set; }
+    public global::ConsoleLogStreaming.Core.Models.ConsoleStream? Stream { get; set; }
+    public string? Query { get; set; }
+    public string? WorkflowInstanceId { get; set; }
+    public string? WorkflowDefinitionId { get; set; }
+    public string? WorkflowDefinitionVersionId { get; set; }
+    public string? ActivityInstanceId { get; set; }
+    public string? ActivityId { get; set; }
+    public string? ActivityNodeId { get; set; }
+    public IDictionary<string, string>? Metadata { get; set; }
+    public DateTimeOffset? From { get; set; }
+    public DateTimeOffset? To { get; set; }
+    public int? Limit { get; set; }
 }

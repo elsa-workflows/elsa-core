@@ -41,6 +41,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.NotNull(serviceProvider.GetRequiredService<IElsaConsoleLogHubAuthorizer>());
         Assert.NotNull(serviceProvider.GetRequiredService<ElsaConsoleLogSubscriptionManager>());
         Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
+        Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
         Assert.Contains(serviceProvider.GetServices<IShellInitializer>(), x => x.GetType() == typeof(ConsoleLogCaptureShellInitializer));
         Assert.Contains(serviceProvider.GetServices<IDrainHandler>(), x => x.GetType() == typeof(ConsoleLogCaptureShellDrainHandler));
         AssertConsoleLogPipelineContributors(serviceProvider);
@@ -94,6 +95,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogCapture>());
         Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogProvider>());
         Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
+        Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
         AssertConsoleLogPipelineContributors(serviceProvider);
     }
 
@@ -132,6 +134,49 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
 
         var line = Assert.Single(result.Items);
         Assert.Equal("workflow-console", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+    }
+
+    [Fact]
+    public async Task ConsoleCapture_AttachesAmbientElsaMetadataAtWriteTime()
+    {
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddConsoleLogsServices(options => options.SourceId = "test-source")
+            .BuildServiceProvider();
+        var contextAccessor = serviceProvider.GetRequiredService<IConsoleLogContextAccessor>();
+        var initializer = serviceProvider.GetServices<IShellInitializer>().OfType<ConsoleLogCaptureShellInitializer>().Single();
+
+        await initializer.InitializeAsync(CancellationToken.None);
+
+        try
+        {
+            var line = $"console-workflow-capture-{Guid.NewGuid():N}";
+            using (contextAccessor.PushWorkflowInstanceId("workflow-captured"))
+                Console.WriteLine(line);
+
+            var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+            await AssertEventuallyAsync(async () =>
+            {
+                var result = await provider.GetRecentAsync(new()
+                {
+                    Metadata = new Dictionary<string, string>
+                    {
+                        [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-captured"
+                    },
+                    Query = line,
+                    Limit = 10
+                });
+
+                var capturedLine = Assert.Single(result.Items);
+                Assert.Equal("workflow-captured", capturedLine.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+            });
+        }
+        finally
+        {
+            var drainHandler = serviceProvider.GetServices<IDrainHandler>().OfType<ConsoleLogCaptureShellDrainHandler>().Single();
+            await drainHandler.DrainAsync(new NoopDrainExtensionHandle(), CancellationToken.None);
+        }
     }
 
     [Fact]

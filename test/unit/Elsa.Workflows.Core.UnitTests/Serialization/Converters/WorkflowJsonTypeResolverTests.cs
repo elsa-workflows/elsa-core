@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
@@ -28,22 +29,37 @@ public class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
-    public void TypeJsonConverter_DoesNotLoadUnknownAssemblyQualifiedType()
+    public void TypeJsonConverter_ResolvesClrAssemblyQualifiedType()
     {
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options));
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options);
+
+        Assert.Equal(typeof(System.Text.StringBuilder), result);
     }
 
     [Fact]
-    public void PolymorphicObjectConverter_DoesNotLoadUnknownAssemblyQualifiedType()
+    public void TypeJsonConverter_ResolvesIncidentStrategyClrType()
+    {
+        var typeAlias = typeof(ContinueWithIncidentsStrategy).GetSimpleAssemblyQualifiedName();
+
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _options);
+
+        Assert.Equal(typeof(ContinueWithIncidentsStrategy), result);
+    }
+
+    [Fact]
+    public void PolymorphicObjectConverter_ResolvesClrAssemblyQualifiedType()
     {
         var json = $$"""
         {
-          "capacity": 16,
-          "_type": {{JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias)}}
+          "name": "Alice",
+          "_type": {{JsonSerializer.Serialize(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName())}}
         }
         """;
 
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<object>(json, _options));
+        var result = JsonSerializer.Deserialize<object>(json, _options);
+
+        var payload = Assert.IsType<UnregisteredPayload>(result);
+        Assert.Equal("Alice", payload.Name);
     }
 
     [Fact]
@@ -63,22 +79,25 @@ public class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
-    public void PolymorphicObjectConverter_OmitsTypeMetadataForUnregisteredTypes()
+    public void PolymorphicObjectConverter_WritesClrTypeMetadataForUnregisteredTypes()
     {
         var json = JsonSerializer.Serialize<object>(new UnregisteredPayload { Name = "Alice" }, _options);
+        var result = JsonSerializer.Deserialize<object>(json, _options);
 
-        Assert.DoesNotContain("\"_type\"", json);
+        Assert.Contains("\"_type\"", json);
+        var payload = Assert.IsType<UnregisteredPayload>(result);
+        Assert.Equal("Alice", payload.Name);
     }
 
     [Fact]
-    public void TypeJsonConverter_WritesUnregisteredTypesAsMetadataOnly()
+    public void TypeJsonConverter_WritesUnregisteredTypesAsClrTypeNames()
     {
         var json = JsonSerializer.Serialize(typeof(System.Text.StringBuilder), _options);
         var alias = JsonSerializer.Deserialize<string>(json);
         var result = JsonSerializer.Deserialize<Type>(json, _options);
 
-        Assert.StartsWith("UnregisteredClrType:", alias);
-        Assert.Equal(typeof(Exception), result);
+        Assert.Equal(typeof(System.Text.StringBuilder).GetSimpleAssemblyQualifiedName(), alias);
+        Assert.Equal(typeof(System.Text.StringBuilder), result);
     }
 
     [Fact]

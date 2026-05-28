@@ -8,7 +8,7 @@ using Elsa.Extensions;
 namespace Elsa.Workflows.Serialization.Helpers;
 
 /// <summary>
-/// Resolves workflow JSON type aliases without loading arbitrary CLR type names.
+/// Resolves workflow JSON type aliases and CLR type names.
 /// </summary>
 public static class WorkflowJsonTypeResolver
 {
@@ -60,7 +60,7 @@ public static class WorkflowJsonTypeResolver
         if (TryResolveType(wellKnownTypeRegistry, typeAlias, out var type))
             return type;
 
-        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Only registered aliases and supported compound aliases can be deserialized.");
+        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Registered aliases, supported compound aliases, and CLR type names can be deserialized.");
     }
 
     public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
@@ -128,6 +128,9 @@ public static class WorkflowJsonTypeResolver
         if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
             return true;
 
+        if (TryResolveClrTypeName(typeAlias, out type))
+            return true;
+
         type = null!;
         return false;
     }
@@ -174,6 +177,20 @@ public static class WorkflowJsonTypeResolver
 
         alias = null!;
         return false;
+    }
+
+    private static bool TryResolveClrTypeName(string typeAlias, out Type type)
+    {
+        try
+        {
+            type = Type.GetType(typeAlias, false)!;
+            return type != null;
+        }
+        catch (Exception e) when (e is ArgumentException or FileLoadException or FileNotFoundException or TypeLoadException or BadImageFormatException)
+        {
+            type = null!;
+            return false;
+        }
     }
 
     private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)

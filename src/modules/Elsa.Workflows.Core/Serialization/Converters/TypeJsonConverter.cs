@@ -13,10 +13,6 @@ namespace Elsa.Workflows.Serialization.Converters;
 [UsedImplicitly]
 public class TypeJsonConverter : JsonConverter<Type>
 {
-    /// <summary>
-    /// Prefix for unregistered type metadata that is not used for CLR type loading during deserialization.
-    /// </summary>
-    private const string UnregisteredTypeAliasPrefix = "UnregisteredClrType:";
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
 
     /// <inheritdoc />
@@ -35,8 +31,6 @@ public class TypeJsonConverter : JsonConverter<Type>
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var typeAlias = reader.GetString();
-        if (typeAlias?.StartsWith(UnregisteredTypeAliasPrefix, StringComparison.Ordinal) == true)
-            return typeof(Exception);
 
         return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias);
     }
@@ -45,7 +39,7 @@ public class TypeJsonConverter : JsonConverter<Type>
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
         if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var typeAlias))
-            typeAlias = $"{UnregisteredTypeAliasPrefix}{value.GetSimpleAssemblyQualifiedName()}";
+            typeAlias = value.GetSimpleAssemblyQualifiedName();
 
         writer.WriteStringValue(typeAlias);
     }
