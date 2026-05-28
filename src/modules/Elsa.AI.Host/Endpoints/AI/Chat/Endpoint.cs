@@ -31,6 +31,8 @@ public class Endpoint(
         request = request with
         {
             ConversationId = conversationId,
+            Message = request.Message ?? "",
+            Attachments = request.Attachments ?? [],
             IsReconnect = sessionManager.CanReconnect(conversationId),
             TenantId = AIHttpContextIdentity.GetTenantId(HttpContext),
             UserId = AIHttpContextIdentity.GetActorId(HttpContext),

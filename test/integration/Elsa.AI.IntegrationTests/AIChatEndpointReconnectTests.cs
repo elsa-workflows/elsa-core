@@ -154,6 +154,34 @@ public class AIChatEndpointReconnectTests
         Assert.Null(orchestrator.Request!.ProviderName);
     }
 
+    [Fact(DisplayName = "Chat endpoint normalizes explicit null request values")]
+    public async Task ChatEndpointNormalizesExplicitNullRequestValues()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AIStreamSessionManager(),
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Message = null!,
+            Attachments = null!
+        }, CancellationToken.None);
+
+        Assert.Equal("", orchestrator.Request!.Message);
+        Assert.Empty(orchestrator.Request.Attachments);
+    }
+
     private static void SetHttpContext(ChatEndpoint endpoint, HttpContext httpContext)
     {
         var property = typeof(ChatEndpoint)

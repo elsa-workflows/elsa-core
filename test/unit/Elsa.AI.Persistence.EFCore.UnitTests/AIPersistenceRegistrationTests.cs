@@ -32,6 +32,7 @@ public class AIPersistenceRegistrationTests
         using var connection = new SqliteConnection("DataSource=:memory:");
         var services = new ServiceCollection();
         services.AddSingleton<IAIConversationStore, StubConversationStore>();
+        services.AddSingleton<IAIProposalStore, StubProposalStore>();
 
         services.AddAIPersistenceStores(options => options.UseSqlite(connection));
 
@@ -39,6 +40,7 @@ public class AIPersistenceRegistrationTests
         using var scope = provider.CreateScope();
 
         Assert.IsType<EFCoreAIConversationStore>(scope.ServiceProvider.GetRequiredService<IAIConversationStore>());
+        Assert.IsType<EFCoreAIProposalStore>(scope.ServiceProvider.GetRequiredService<IAIProposalStore>());
     }
 
     [Fact(DisplayName = "AI persistence store registration requires a DbContext provider")]
@@ -71,6 +73,15 @@ public class AIPersistenceRegistrationTests
             ValueTask.FromResult<AIConversation?>(null);
 
         public ValueTask SaveAsync(AIConversation conversation, CancellationToken cancellationToken = default) =>
+            ValueTask.CompletedTask;
+    }
+
+    private class StubProposalStore : IAIProposalStore
+    {
+        public ValueTask<AIProposal?> FindAsync(string id, string? tenantId, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult<AIProposal?>(null);
+
+        public ValueTask SaveAsync(AIProposal proposal, CancellationToken cancellationToken = default) =>
             ValueTask.CompletedTask;
     }
 }
