@@ -1,6 +1,6 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
-using Elsa.AI.Persistence.EFCore.Extensions;
+using Elsa.Extensions;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;

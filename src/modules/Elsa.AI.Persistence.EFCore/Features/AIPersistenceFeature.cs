@@ -1,4 +1,4 @@
-using Elsa.AI.Persistence.EFCore.Extensions;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Microsoft.EntityFrameworkCore;

@@ -1,4 +1,5 @@
 using Elsa.AI.Abstractions.Contracts;
+using Elsa.AI.Persistence.EFCore;
 using Elsa.AI.Persistence.EFCore.Services;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
-namespace Elsa.AI.Persistence.EFCore.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ServiceCollectionExtensions
 {

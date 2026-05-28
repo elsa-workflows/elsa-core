@@ -96,7 +96,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
             var tools = scope.ServiceProvider.GetServices<IAITool>().ToList();
             var toolInfos = GetToolInfos(tools);
             UpdateToolTypeCache(toolInfos);
-            _definitions = toolInfos.Select(x => x.Definition).ToList();
+            _definitions = toolInfos.Select(x => x.Definition).ToList().AsReadOnly();
             return _definitions;
         }
     }

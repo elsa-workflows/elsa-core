@@ -1,5 +1,5 @@
 using CShells.Features;
-using Elsa.AI.Persistence.EFCore.Extensions;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

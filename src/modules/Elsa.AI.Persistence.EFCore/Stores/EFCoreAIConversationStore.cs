@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Entities;
+using Elsa.AI.Persistence.EFCore.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.AI.Persistence.EFCore.Stores;
@@ -29,7 +30,7 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
                 .Where(x => x.Id == id)
                 .ExecuteDeleteAsync(cancellationToken);
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e) when (ExceptionFilters.IsNonFatal(e))
         {
             // Expired-record cleanup is best-effort; stale cleanup should not block starting a fresh conversation.
         }

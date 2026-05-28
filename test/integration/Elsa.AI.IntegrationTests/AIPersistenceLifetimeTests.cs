@@ -1,6 +1,5 @@
 using Elsa.AI.Abstractions.Contracts;
-using Elsa.AI.Host.Extensions;
-using Elsa.AI.Persistence.EFCore.Extensions;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.IntegrationTests;

@@ -1,4 +1,3 @@
-using Elsa.AI.Host.Extensions;
 using Elsa.AI.Host.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;

@@ -4,7 +4,8 @@ using Elsa.AI.Copilot.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Elsa.AI.Copilot.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
 public static class ServiceCollectionExtensions
 {

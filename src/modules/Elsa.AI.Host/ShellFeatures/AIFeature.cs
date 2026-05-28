@@ -1,7 +1,7 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
-using Elsa.AI.Host.Extensions;
 using Elsa.AI.Host.Options;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

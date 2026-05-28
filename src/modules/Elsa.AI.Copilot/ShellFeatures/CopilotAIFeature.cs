@@ -1,6 +1,6 @@
 using CShells.Features;
-using Elsa.AI.Copilot.Extensions;
 using Elsa.AI.Copilot.Options;
+using Elsa.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

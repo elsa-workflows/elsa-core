@@ -1,7 +1,7 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
-using Elsa.AI.Host.Extensions;
 using Elsa.AI.Host.Options;
+using Elsa.Extensions;
 using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

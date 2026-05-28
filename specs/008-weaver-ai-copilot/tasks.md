@@ -59,7 +59,7 @@
 - [X] T031 [P] Implement configurable in-memory conversation store in `src/modules/Elsa.AI.Host/Services/InMemoryAIConversationStore.cs`.
 - [X] T032 [P] Implement tool enablement service in `src/modules/Elsa.AI.Host/Services/AIToolEnablementService.cs`.
 - [X] T033 [P] Implement audit sink fan-out in `src/modules/Elsa.AI.Host/Services/AIAuditSink.cs`.
-- [X] T034 [P] Add EF Core AI DbContext in `src/modules/Elsa.AI.Persistence.EFCore/DbContext.cs`.
+- [X] T034 [P] Add EF Core AI DbContext in `src/modules/Elsa.AI.Persistence.EFCore/AIDbContext.cs`.
 - [X] T035 [P] Add EF Core proposal entity mapping in `src/modules/Elsa.AI.Persistence.EFCore/Entities/AIProposalRecord.cs`.
 - [X] T036 [P] Add EF Core audit entity mapping in `src/modules/Elsa.AI.Persistence.EFCore/Entities/AIAuditRecord.cs`.
 - [X] T037 Implement durable EF Core proposal store in `src/modules/Elsa.AI.Persistence.EFCore/Stores/EFCoreAIProposalStore.cs`.

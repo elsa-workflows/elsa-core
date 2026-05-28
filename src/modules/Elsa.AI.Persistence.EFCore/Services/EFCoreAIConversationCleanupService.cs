@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Elsa.AI.Persistence.EFCore.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,7 +39,7 @@ public class EFCoreAIConversationCleanupService(
             {
                 LogCleanupFailure(e);
             }
-            catch (Exception e)
+            catch (Exception e) when (ExceptionFilters.IsNonFatal(e))
             {
                 LogCleanupFailure(e);
             }
