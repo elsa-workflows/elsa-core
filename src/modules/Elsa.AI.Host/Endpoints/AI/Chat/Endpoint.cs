@@ -79,7 +79,13 @@ public class Endpoint(
         finally
         {
             if (!completed)
+            {
                 sessionManager.MarkDisconnected(disconnectedConversationId, options.Value.ReconnectGrace);
+            }
+            else if (reconnectAccepted && !reconnectConnected)
+            {
+                sessionManager.ReleaseReconnect(requestedReconnectConversationId);
+            }
         }
     }
 }

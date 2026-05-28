@@ -41,6 +41,33 @@ public class AIChatEndpointReconnectTests
         Assert.False(sessionManager.CanReconnect("actual-conversation"));
     }
 
+    [Fact(DisplayName = "Chat endpoint releases reconnect reservation when no stream starts")]
+    public async Task ChatEndpointReleasesReconnectReservationWhenNoStreamStarts()
+    {
+        var sessionManager = new AIStreamSessionManager();
+        sessionManager.MarkDisconnected("conversation-1", TimeSpan.FromMinutes(5));
+        var endpoint = new ChatEndpoint(
+            new EmptyOrchestrator(),
+            sessionManager,
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = "conversation-1",
+            UserId = "user-1",
+            Message = "Reconnect"
+        }, CancellationToken.None);
+
+        Assert.True(sessionManager.CanReconnect("conversation-1"));
+    }
+
     [Fact(DisplayName = "Chat endpoint resolves tenant from tenant accessor")]
     public async Task ChatEndpointResolvesTenantFromTenantAccessor()
     {
@@ -214,6 +241,15 @@ public class AIChatEndpointReconnectTests
         var property = typeof(ChatEndpoint)
             .GetProperty(nameof(ChatEndpoint.HttpContext), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
         property!.SetValue(endpoint, httpContext);
+    }
+
+    private class EmptyOrchestrator : IAIOrchestrator
+    {
+        public async IAsyncEnumerable<AIStreamEvent> ExecuteChatAsync(AIChatRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            yield break;
+        }
     }
 
     private class ReassignedConversationOrchestrator : IAIOrchestrator
