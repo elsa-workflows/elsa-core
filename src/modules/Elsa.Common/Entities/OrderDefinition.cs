@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Text.Json.Serialization;
 
 namespace Elsa.Common.Entities;
 
@@ -32,12 +31,5 @@ public class OrderDefinition<T, TProp>
     /// <summary>
     /// The key selector to use to order the results.
     /// </summary>
-    [JsonIgnore]
     public Expression<Func<T, TProp>> KeySelector { get; set; } = null!;
-
-    /// <summary>
-    /// A best-effort textual representation of the key selector for cache-key generation.
-    /// </summary>
-    [JsonIgnore]
-    public string? KeySelectorText => KeySelector?.ToString();
 }

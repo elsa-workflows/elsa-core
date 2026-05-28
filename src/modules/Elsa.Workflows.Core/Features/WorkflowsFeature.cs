@@ -2,16 +2,13 @@ using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
-using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
-using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
@@ -24,14 +21,12 @@ using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
-using Elsa.Workflows.State;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dictionary;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Features;
 
@@ -169,36 +164,6 @@ public class WorkflowsFeature : FeatureBase
 
     private void AddElsaCore(IServiceCollection services)
     {
-        services.Configure<ExpressionOptions>(options =>
-        {
-            options.RegisterTypeAlias(typeof(ExceptionState), nameof(ExceptionState));
-            options.RegisterTypeAlias(typeof(FaultException), nameof(FaultException));
-            options.RegisterTypeAlias(typeof(VariablesDictionary), nameof(VariablesDictionary));
-            options.RegisterTypeAlias(typeof(Token), nameof(Token));
-            options.RegisterTypeAlias(typeof(FlowJoinMode), "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core");
-            options.RegisterTypeAlias(typeof(FlowJoinMode), typeof(FlowJoinMode).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(FlowJoinMode), nameof(FlowJoinMode));
-            options.RegisterTypeAlias(typeof(WorkflowStorageDriver), typeof(WorkflowStorageDriver).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
-            options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), typeof(WorkflowInstanceStorageDriver).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), nameof(WorkflowInstanceStorageDriver));
-            options.RegisterTypeAlias(typeof(MemoryStorageDriver), typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(MemoryStorageDriver), nameof(MemoryStorageDriver));
-            options.RegisterTypeAlias(typeof(FaultStrategy), typeof(FaultStrategy).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(FaultStrategy), nameof(FaultStrategy));
-            options.RegisterTypeAlias(typeof(Exception), nameof(Exception));
-            options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
-            options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));
-            options.RegisterTypeAlias(typeof(InvalidOperationException), nameof(InvalidOperationException));
-            options.RegisterTypeAlias(typeof(NullReferenceException), nameof(NullReferenceException));
-            options.RegisterTypeAlias(typeof(OperationCanceledException), nameof(OperationCanceledException));
-            options.RegisterTypeAlias(typeof(TaskCanceledException), nameof(TaskCanceledException));
-            options.RegisterTypeAlias(typeof(TimeoutException), nameof(TimeoutException));
-            options.RegisterTypeAlias(typeof(NotSupportedException), nameof(NotSupportedException));
-            options.RegisterTypeAlias(typeof(JObject), nameof(JObject));
-            options.RegisterTypeAlias(typeof(JArray), nameof(JArray));
-        });
-
         services
 
             // Core.

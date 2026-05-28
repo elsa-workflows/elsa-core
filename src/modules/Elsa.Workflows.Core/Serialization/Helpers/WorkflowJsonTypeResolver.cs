@@ -63,8 +63,7 @@ public static class WorkflowJsonTypeResolver
         if (TryResolveType(wellKnownTypeRegistry, typeAlias, out var type))
             return type;
 
-        throw new JsonException(
-            $"Unknown workflow JSON type alias '{typeAlias}'. Only registered aliases and supported compound aliases can be deserialized.");
+        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Only registered aliases and supported compound aliases can be deserialized.");
     }
 
     /// <summary>
@@ -277,10 +276,7 @@ public static class WorkflowJsonTypeResolver
             if (!TryResolveType(wellKnownTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
                 return false;
 
-            // The resolver only closes known collection definitions over registered element types.
-#pragma warning disable IL2055
             type = genericTypeDefinition.MakeGenericType(elementType);
-#pragma warning restore IL2055
             return true;
         }
 
