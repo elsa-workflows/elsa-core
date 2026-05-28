@@ -15,10 +15,12 @@ public static class ServiceCollectionExtensions
         if (!services.Any(x => x.ServiceType == typeof(DbContextOptions<AIDbContext>)))
         {
             if (configureDbContext == null)
-                throw new InvalidOperationException($"Register {nameof(DbContextOptions<AIDbContext>)} before calling {nameof(AddAIPersistenceStores)}, or call {nameof(AddAIPersistenceStores)} with a database provider configuration.");
+                throw new InvalidOperationException($"Register {nameof(AIDbContext)} with configured {nameof(DbContextOptions<AIDbContext>)} before calling {nameof(AddAIPersistenceStores)}, or call {nameof(AddAIPersistenceStores)} with a database provider configuration.");
             else
                 services.AddDbContext<AIDbContext>(configureDbContext);
         }
+
+        services.TryAddScoped<AIDbContext>();
 
         services.Replace(ServiceDescriptor.Scoped<IAIConversationStore, EFCoreAIConversationStore>());
         services.TryAddScoped<IAIProposalStore, EFCoreAIProposalStore>();

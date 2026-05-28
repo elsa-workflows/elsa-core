@@ -218,6 +218,25 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         Assert.Equal("proposal", exception.ParamName);
     }
 
+    [Fact(DisplayName = "Proposal store validates proposal ID before saving")]
+    public async Task ProposalStoreValidatesProposalIdBeforeSaving()
+    {
+        var store = new EFCoreAIProposalStore(_dbContext);
+        var proposal = new AIProposal
+        {
+            Id = " ",
+            ConversationId = "conversation-1",
+            Kind = AIProposalKind.WorkflowCreate,
+            CreatedBy = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
+
+        Assert.Equal("proposal", exception.ParamName);
+        Assert.Equal("A proposal ID is required. (Parameter 'proposal')", exception.Message);
+    }
+
     [Fact(DisplayName = "Proposal store validates proposal creator before saving")]
     public async Task ProposalStoreValidatesProposalCreatorBeforeSaving()
     {

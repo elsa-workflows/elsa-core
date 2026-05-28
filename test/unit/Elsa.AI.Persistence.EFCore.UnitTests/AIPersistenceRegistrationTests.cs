@@ -49,6 +49,22 @@ public class AIPersistenceRegistrationTests
         Assert.Throws<InvalidOperationException>(() => services.AddAIPersistenceStores());
     }
 
+    [Fact(DisplayName = "AI persistence store registration uses preconfigured DbContext options")]
+    public void AIPersistenceStoreRegistrationUsesPreconfiguredDbContextOptions()
+    {
+        using var connection = new SqliteConnection("DataSource=:memory:");
+        var services = new ServiceCollection();
+        services.AddSingleton(new DbContextOptionsBuilder<AIDbContext>().UseSqlite(connection).Options);
+
+        services.AddAIPersistenceStores();
+
+        using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using var scope = provider.CreateScope();
+
+        Assert.NotNull(scope.ServiceProvider.GetRequiredService<AIDbContext>());
+        Assert.IsType<EFCoreAIConversationStore>(scope.ServiceProvider.GetRequiredService<IAIConversationStore>());
+    }
+
     private class StubConversationStore : IAIConversationStore
     {
         public ValueTask<AIConversation?> FindAsync(string id, CancellationToken cancellationToken = default) =>

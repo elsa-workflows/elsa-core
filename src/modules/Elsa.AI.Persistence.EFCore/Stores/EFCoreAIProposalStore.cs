@@ -116,6 +116,9 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
 
     private static void Validate(AIProposal proposal)
     {
+        if (string.IsNullOrWhiteSpace(proposal.Id))
+            throw new ArgumentException("A proposal ID is required.", nameof(proposal));
+
         if (string.IsNullOrWhiteSpace(proposal.ConversationId))
             throw new ArgumentException("A proposal conversation ID is required.", nameof(proposal));
 
