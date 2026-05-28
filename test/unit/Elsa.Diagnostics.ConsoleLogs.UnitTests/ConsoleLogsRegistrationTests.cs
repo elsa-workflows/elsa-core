@@ -216,7 +216,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
                 await assertion();
                 return;
             }
-            catch (Exception e)
+            catch (Xunit.Sdk.XunitException e)
             {
                 lastException = e;
                 await Task.Delay(25);

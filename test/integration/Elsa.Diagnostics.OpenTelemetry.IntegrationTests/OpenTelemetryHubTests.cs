@@ -10,6 +10,7 @@ using FastEndpoints.Security;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
+using Xunit.Sdk;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.OpenTelemetry.IntegrationTests;
@@ -91,9 +92,10 @@ public class OpenTelemetryHubTests
         }
 
         Assert.NotNull(summary);
-        Assert.Equal(OpenTelemetrySignalType.Trace, summary.DroppedItems!.SignalType);
-        Assert.Equal("SubscriberQueueFull", summary.DroppedItems.Reason);
-        Assert.True(summary.DroppedItems.Count > 0);
+        var nonNullSummary = summary!;
+        Assert.Equal(OpenTelemetrySignalType.Trace, nonNullSummary.DroppedItems!.SignalType);
+        Assert.Equal("SubscriberQueueFull", nonNullSummary.DroppedItems.Reason);
+        Assert.True(nonNullSummary.DroppedItems.Count > 0);
     }
 
     private OpenTelemetryHub CreateHub(IOpenTelemetryLiveFeed liveFeed, string permission, IOpenTelemetryClient? caller = null)
@@ -209,7 +211,7 @@ public class OpenTelemetryHubTests
                 assertion();
                 return;
             }
-            catch (Exception e)
+            catch (XunitException e)
             {
                 lastException = e;
                 await Task.Delay(25);
