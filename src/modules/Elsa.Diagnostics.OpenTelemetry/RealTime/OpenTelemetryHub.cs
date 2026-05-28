@@ -8,17 +8,26 @@ using Microsoft.AspNetCore.SignalR;
 namespace Elsa.Diagnostics.OpenTelemetry.RealTime;
 
 [Authorize]
-public class OpenTelemetryHub(IOpenTelemetryLiveFeed liveFeed) : Hub<IOpenTelemetryClient>
+public class OpenTelemetryHub(OpenTelemetrySubscriptionManager subscriptionManager) : Hub<IOpenTelemetryClient>
 {
     private const string ReadAllPermission = "read:*";
     private static readonly string[] ReadPermissions = [PermissionNames.All, ReadAllPermission, OpenTelemetryPermissions.Read];
 
-    public async Task SubscribeAsync(OpenTelemetryTraceFilter? filter)
+    public Task SubscribeAsync(OpenTelemetryTraceFilter? filter)
     {
         EnsureCanReadOpenTelemetry();
+        return subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted);
+    }
 
-        await foreach (var item in liveFeed.SubscribeAsync(ValidateFilter(filter), Context.ConnectionAborted))
-            await Clients.Caller.ReceiveAsync(item);
+    public Task UnsubscribeAsync()
+    {
+        return subscriptionManager.UnsubscribeAsync(Context.ConnectionId);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        await UnsubscribeAsync().ConfigureAwait(false);
+        await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
     }
 
     private static OpenTelemetryTraceFilter ValidateFilter(OpenTelemetryTraceFilter? filter)
