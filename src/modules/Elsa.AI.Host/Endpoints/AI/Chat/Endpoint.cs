@@ -26,7 +26,7 @@ public class Endpoint(
 
     public override async Task HandleAsync(AIChatRequest request, CancellationToken cancellationToken)
     {
-        var conversationId = request.ConversationId ?? Guid.NewGuid().ToString("N");
+        var conversationId = string.IsNullOrWhiteSpace(request.ConversationId) ? Guid.NewGuid().ToString("N") : request.ConversationId;
         var userPermissions = AIHttpContextIdentity.GetPermissions(HttpContext);
         request = request with
         {

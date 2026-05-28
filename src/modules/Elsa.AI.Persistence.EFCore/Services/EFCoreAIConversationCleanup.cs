@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Persistence.EFCore.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -29,16 +28,13 @@ public static class EFCoreAIConversationCleanup
         {
             // EF Core SQLite cannot translate this DateTimeOffset predicate in ExecuteDeleteAsync for this model.
             var tableName = ResolveConversationTableName(dbContext);
-            return await dbContext.Database.ExecuteSqlInterpolatedAsync(
-                FormattableStringFactory.Create(
-                    $$"""
-                     DELETE FROM {{QuoteSqliteIdentifier(tableName)}}
-                     WHERE "RetentionMode" = {0}
-                       AND "RetentionExpiresAt" IS NOT NULL
-                       AND "RetentionExpiresAt" <= {1}
-                     """,
-                    configuredRetentionMode,
-                    now),
+            var sql = $@"DELETE FROM {QuoteSqliteIdentifier(tableName)}
+WHERE ""RetentionMode"" = {{0}}
+  AND ""RetentionExpiresAt"" IS NOT NULL
+  AND ""RetentionExpiresAt"" <= {{1}}";
+            return await dbContext.Database.ExecuteSqlRawAsync(
+                sql,
+                [configuredRetentionMode, now],
                 cancellationToken);
         }
 

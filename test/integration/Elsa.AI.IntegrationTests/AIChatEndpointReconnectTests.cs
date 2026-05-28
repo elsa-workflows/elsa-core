@@ -182,6 +182,33 @@ public class AIChatEndpointReconnectTests
         Assert.Empty(orchestrator.Request.Attachments);
     }
 
+    [Fact(DisplayName = "Chat endpoint generates conversation ID for blank values")]
+    public async Task ChatEndpointGeneratesConversationIdForBlankValues()
+    {
+        var orchestrator = new CapturingRequestOrchestrator();
+        var endpoint = new ChatEndpoint(
+            orchestrator,
+            new AIStreamSessionManager(),
+            MicrosoftOptions.Create(new AIHostOptions()));
+        SetHttpContext(endpoint, new DefaultHttpContext
+        {
+            Response =
+            {
+                Body = new MemoryStream()
+            }
+        });
+
+        await endpoint.HandleAsync(new AIChatRequest
+        {
+            ConversationId = " ",
+            UserId = "user-1",
+            Message = "Start a conversation"
+        }, CancellationToken.None);
+
+        Assert.False(string.IsNullOrWhiteSpace(orchestrator.Request!.ConversationId));
+        Assert.NotEqual(" ", orchestrator.Request.ConversationId);
+    }
+
     private static void SetHttpContext(ChatEndpoint endpoint, HttpContext httpContext)
     {
         var property = typeof(ChatEndpoint)
