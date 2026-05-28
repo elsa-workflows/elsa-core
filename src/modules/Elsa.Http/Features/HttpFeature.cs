@@ -1,4 +1,3 @@
-using System.Net;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -260,9 +259,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
             options.AddTypeAlias<HttpFile[]>("HttpFile[]");
             options.AddTypeAlias<Downloadable>("Downloadable");
             options.AddTypeAlias<Downloadable[]>("Downloadable[]");
-            options.AddTypeAlias<HttpStatusCode>();
-            options.AddTypeAlias<HttpRequestException>();
-            options.AddTypeAlias<HttpEndpointBookmarkPayload>();
         });
     }
 }

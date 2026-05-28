@@ -40,7 +40,6 @@ public class ExpressionOptions
         this.AddTypeAlias<JsonElement>();
         this.AddTypeAlias<JsonNode>();
         this.AddTypeAlias<JsonObject>();
-        this.AddTypeAlias<JsonArray>();
         this.AddTypeAlias<IDictionary<string, string>>("StringDictionary");
         this.AddTypeAlias<IDictionary<string, object>>("ObjectDictionary");
         this.AddTypeAlias<Dictionary<string, string>>("StringMap");

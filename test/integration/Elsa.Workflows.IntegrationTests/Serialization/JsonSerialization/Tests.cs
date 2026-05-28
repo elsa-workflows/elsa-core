@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Elsa.Expressions.Options;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
@@ -10,9 +9,7 @@ namespace Elsa.Workflows.IntegrationTests.Serialization.JsonSerialization;
 
 public class SerializationTests(ITestOutputHelper testOutputHelper)
 {
-    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper)
-        .ConfigureServices(services => services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(typeof(TestObject), nameof(TestObject))))
-        .Build();
+    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper).Build();
 
     [Theory(DisplayName = "write")]
     [InlineData(typeof(JsonObject), "JsonObjectIsland")]

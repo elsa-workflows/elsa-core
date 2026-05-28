@@ -14,7 +14,7 @@ public class Tests
     public void Test1()
     {
         var model = CreateModel();
-        var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json").TrimEnd();
+        var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json");
         var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions());
         Assert.Equal(expectedJson, actualJson);
     }
@@ -74,10 +74,6 @@ public class Tests
     private JsonSerializerOptions GetSerializerOptions()
     {
         var referenceHandler = new CrossScopedReferenceHandler();
-        var wellKnownTypeRegistry = new WellKnownTypeRegistry();
-        wellKnownTypeRegistry.RegisterType(typeof(Model), nameof(Model));
-        wellKnownTypeRegistry.RegisterType(typeof(CustomDictionary), nameof(CustomDictionary));
-
         var options = new JsonSerializerOptions
         {
             ReferenceHandler = referenceHandler,
@@ -88,7 +84,7 @@ public class Tests
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(new PolymorphicObjectConverterFactory(wellKnownTypeRegistry));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(new WellKnownTypeRegistry()));
         return options;
     }
 
