@@ -121,9 +121,13 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
 
     private static string SerializeMessages(IReadOnlyCollection<AIMessage> messages)
     {
-        var boundedMessages = messages.Count > MaxStoredMessages
-            ? messages.Skip(messages.Count - MaxStoredMessages).ToList()
-            : messages.ToList();
+        var orderedMessages = messages
+            .OrderBy(x => x.CreatedAt)
+            .ThenBy(x => x.StreamSequence)
+            .ToList();
+        var boundedMessages = orderedMessages.Count > MaxStoredMessages
+            ? orderedMessages.Skip(orderedMessages.Count - MaxStoredMessages).ToList()
+            : orderedMessages;
         var json = JsonSerializer.Serialize(boundedMessages);
 
         if (boundedMessages.Count > 1 && Encoding.UTF8.GetByteCount(json) > MaxMessagesJsonBytes)

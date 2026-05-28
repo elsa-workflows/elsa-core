@@ -240,6 +240,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
     public async Task ConversationStoreCapsPersistedMessageHistory()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
+        var now = DateTimeOffset.UtcNow;
         var messages = Enumerable
             .Range(0, 300)
             .Select(index => new AIMessage
@@ -248,7 +249,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
                 ConversationId = "conversation-capped",
                 Role = AIMessageRole.Assistant,
                 Content = $"message {index}",
-                CreatedAt = DateTimeOffset.UtcNow,
+                CreatedAt = now.AddSeconds(index),
                 StreamSequence = index
             })
             .ToList();
@@ -268,6 +269,43 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.NotNull(reloaded);
         Assert.Equal(256, reloaded.Messages.Count);
         Assert.Equal("message-44", reloaded.Messages.First().Id);
+    }
+
+    [Fact(DisplayName = "Conversation store caps message history by message chronology")]
+    public async Task ConversationStoreCapsMessageHistoryByMessageChronology()
+    {
+        var store = new EFCoreAIConversationStore(_dbContext);
+        var now = DateTimeOffset.UtcNow;
+        var messages = Enumerable
+            .Range(0, 300)
+            .Select(index => new AIMessage
+            {
+                Id = $"message-{index}",
+                ConversationId = "conversation-chronology",
+                Role = AIMessageRole.Assistant,
+                Content = $"message {index}",
+                CreatedAt = now.AddSeconds(index),
+                StreamSequence = index
+            })
+            .OrderByDescending(x => x.CreatedAt)
+            .ToList();
+
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "conversation-chronology",
+            UserId = "user-1",
+            CreatedAt = now,
+            UpdatedAt = now,
+            Messages = messages
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync("conversation-chronology");
+
+        Assert.NotNull(reloaded);
+        Assert.Equal(256, reloaded.Messages.Count);
+        Assert.Equal("message-44", reloaded.Messages.First().Id);
+        Assert.Equal("message-299", reloaded.Messages.Last().Id);
     }
 
     [Fact(DisplayName = "Conversation store truncates oversized message content without splitting surrogate pairs")]
