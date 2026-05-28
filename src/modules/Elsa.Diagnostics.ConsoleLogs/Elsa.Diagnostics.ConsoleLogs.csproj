@@ -8,8 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells" />
         <PackageReference Include="Microsoft.Extensions.Options" />
         <PackageReference Include="ConsoleLogStreaming.Core" />
+        <PackageReference Include="ConsoleLogStreaming.Persistence.Sqlite" />
     </ItemGroup>
 
     <ItemGroup>

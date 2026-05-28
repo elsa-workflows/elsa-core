@@ -1,8 +1,9 @@
 using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.Capture;
 using ConsoleLogStreaming.Core.Models;
-using Elsa.Diagnostics.ConsoleLogs.Extensions;
+using CShells.Lifecycle;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
+using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.Workflows;
@@ -11,8 +12,21 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 
-public class ConsoleLogsRegistrationTests
+[Collection(ConsoleHostStateCollection.Name)]
+public class ConsoleLogsRegistrationTests : IAsyncLifetime
 {
+    public async Task InitializeAsync()
+    {
+        await ConsoleLogStreamingHost.ShutdownAsync();
+        ConsoleStreamHook.Uninstall();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await ConsoleLogStreamingHost.ShutdownAsync();
+        ConsoleStreamHook.Uninstall();
+    }
+
     [Fact]
     public async Task AddConsoleLogsServices_RegistersConsoleLogPipeline()
     {
@@ -26,6 +40,59 @@ public class ConsoleLogsRegistrationTests
         Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogCapture>());
         Assert.NotNull(serviceProvider.GetRequiredService<IElsaConsoleLogHubAuthorizer>());
         Assert.NotNull(serviceProvider.GetRequiredService<ElsaConsoleLogSubscriptionManager>());
+        Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
+        Assert.Contains(serviceProvider.GetServices<IShellInitializer>(), x => x.GetType() == typeof(ConsoleLogCaptureShellInitializer));
+        Assert.Contains(serviceProvider.GetServices<IDrainHandler>(), x => x.GetType() == typeof(ConsoleLogCaptureShellDrainHandler));
+        AssertConsoleLogPipelineContributors(serviceProvider);
+    }
+
+    [Fact]
+    public async Task AddConsoleLogsServices_ShellInitializerStartsCapture()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddConsoleLogsServices();
+
+        await using var serviceProvider = services.BuildServiceProvider();
+        var initializer = serviceProvider.GetServices<IShellInitializer>().OfType<ConsoleLogCaptureShellInitializer>().Single();
+
+        await initializer.InitializeAsync(CancellationToken.None);
+
+        try
+        {
+            var line = $"console-shell-capture-{Guid.NewGuid():N}";
+            Console.WriteLine(line);
+
+            var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+            await AssertEventuallyAsync(async () =>
+            {
+                var result = await provider.GetRecentAsync(new()
+                {
+                    Query = line,
+                    Limit = 10
+                });
+
+                Assert.Contains(result.Items, x => x.Text.Contains(line, StringComparison.Ordinal));
+            });
+        }
+        finally
+        {
+            var drainHandler = serviceProvider.GetServices<IDrainHandler>().OfType<ConsoleLogCaptureShellDrainHandler>().Single();
+            await drainHandler.DrainAsync(new NoopDrainExtensionHandle(), CancellationToken.None);
+        }
+    }
+
+    [Fact]
+    public async Task AddConsoleLogsHost_RegistersHostedServicesAndCaptureDependencies()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddConsoleLogsHost();
+
+        await using var serviceProvider = services.BuildServiceProvider();
+        Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogCapture>());
+        Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogProvider>());
         Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
         AssertConsoleLogPipelineContributors(serviceProvider);
     }
@@ -92,6 +159,29 @@ public class ConsoleLogsRegistrationTests
         Assert.Contains(serviceProvider.GetServices<IActivityExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogActivityExecutionPipelineContributor));
     }
 
+    private static async Task AssertEventuallyAsync(Func<Task> assertion)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
+        Exception? lastException = null;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            try
+            {
+                await assertion();
+                return;
+            }
+            catch (Exception e)
+            {
+                lastException = e;
+                await Task.Delay(25);
+            }
+        }
+
+        if (lastException != null)
+            throw lastException;
+    }
+
     private sealed class RecordingConsoleLogProvider : IConsoleLogProvider
     {
         public ConsoleLogLine? PublishedLine { get; private set; }
@@ -107,14 +197,23 @@ public class ConsoleLogsRegistrationTests
             return ValueTask.FromResult(new RecentConsoleLogsResult());
         }
 
-        public IAsyncEnumerable<ConsoleLogStreamItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        public IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
-            return AsyncEnumerable.Empty<ConsoleLogStreamItem>();
+            return AsyncEnumerable.Empty<ConsoleLogStreamingItem>();
         }
 
         public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+        }
+    }
+
+    private sealed class NoopDrainExtensionHandle : IDrainExtensionHandle
+    {
+        public bool TryExtend(TimeSpan requestedExtension, out TimeSpan grantedExtension)
+        {
+            grantedExtension = TimeSpan.Zero;
+            return false;
         }
     }
 }

@@ -57,7 +57,7 @@ public class ConsoleLogContextAccessorTests
     public async Task RecentQuery_FiltersDuplicateConsoleLinesByWorkflowMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
-            .AddConsoleLogStream(options => options.SourceId = "test-source")
+            .AddConsoleLogStreaming(options => options.SourceId = "test-source")
             .BuildServiceProvider();
 
         var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();

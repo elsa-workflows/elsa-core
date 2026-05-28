@@ -13,6 +13,8 @@ internal static class ElsaConsoleLogOptions
         options.SourceDisplayName = !string.IsNullOrWhiteSpace(podName) ? podName : sourceId;
         options.ServiceName = Environment.GetEnvironmentVariable("OTEL_SERVICE_NAME") ?? AppDomain.CurrentDomain.FriendlyName;
         options.PreserveAnsi = true;
+        options.RecentCapacity = 2_000;
+        options.MaxRecentQuerySize = 250;
 
         SetMetadata(options, "kubernetes.pod.name", podName);
         SetMetadata(options, "kubernetes.namespace.name", Environment.GetEnvironmentVariable("POD_NAMESPACE"));
