@@ -234,7 +234,6 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
                 return;
 
             _disposed = true;
-            inner.Dispose();
             scope.Dispose();
         }
     }

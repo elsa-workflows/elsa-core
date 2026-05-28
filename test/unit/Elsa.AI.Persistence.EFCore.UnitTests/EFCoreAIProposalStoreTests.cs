@@ -1,7 +1,9 @@
 using Elsa.AI.Abstractions.Models;
+using Elsa.AI.Persistence.EFCore.Entities;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Elsa.AI.Persistence.EFCore.UnitTests;
 
@@ -174,27 +176,23 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
     [Fact(DisplayName = "Proposal store retries concurrent inserts as updates")]
     public async Task ProposalStoreRetriesConcurrentInsertsAsUpdates()
     {
-        var options = new DbContextOptionsBuilder<AIDbContext>().UseSqlite(_connection).Options;
-        await using var firstContext = new AIDbContext(options);
-        await using var secondContext = new AIDbContext(options);
-        var firstStore = new EFCoreAIProposalStore(firstContext);
-        var secondStore = new EFCoreAIProposalStore(secondContext);
-        var firstProposal = new AIProposal
+        var options = new DbContextOptionsBuilder<AIDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new ConcurrentProposalInsertInterceptor(_connection))
+            .Options;
+        await using var context = new AIDbContext(options);
+        var store = new EFCoreAIProposalStore(context);
+        var proposal = new AIProposal
         {
             Id = "proposal-concurrent",
             TenantId = "tenant-1",
             ConversationId = "conversation-1",
             Kind = AIProposalKind.WorkflowCreate,
             CreatedBy = "user-1",
-            Rationale = "first"
-        };
-        var secondProposal = firstProposal with
-        {
             Rationale = "second"
         };
 
-        await firstStore.SaveAsync(firstProposal);
-        await secondStore.SaveAsync(secondProposal);
+        await store.SaveAsync(proposal);
         _dbContext.ChangeTracker.Clear();
 
         var reloaded = await new EFCoreAIProposalStore(_dbContext).FindAsync("proposal-concurrent", "tenant-1");
@@ -322,5 +320,41 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
     {
         await _dbContext.DisposeAsync();
         await _connection.DisposeAsync();
+    }
+
+    private class ConcurrentProposalInsertInterceptor(SqliteConnection connection) : SaveChangesInterceptor
+    {
+        private bool _inserted;
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            var proposal = eventData.Context?.ChangeTracker
+                .Entries<AIProposalRecord>()
+                .FirstOrDefault(x => x.State == EntityState.Added)
+                ?.Entity;
+            if (_inserted || proposal == null)
+                return result;
+
+            _inserted = true;
+            var options = new DbContextOptionsBuilder<AIDbContext>().UseSqlite(connection).Options;
+            await using var competingContext = new AIDbContext(options);
+            competingContext.Proposals.Add(new AIProposalRecord
+            {
+                Id = proposal.Id,
+                TenantId = proposal.TenantId,
+                ConversationId = proposal.ConversationId,
+                Kind = proposal.Kind,
+                Status = proposal.Status,
+                WorkflowPayload = proposal.WorkflowPayload,
+                Rationale = "first",
+                Warnings = proposal.Warnings,
+                ValidationDiagnostics = proposal.ValidationDiagnostics,
+                CreatedBy = proposal.CreatedBy,
+                CreatedAt = proposal.CreatedAt
+            });
+            await competingContext.SaveChangesAsync(cancellationToken);
+
+            return result;
+        }
     }
 }

@@ -153,7 +153,7 @@ public class AIToolRegistryTests
         CountingTool.ConstructionCount = 0;
         OtherCountingTool.ConstructionCount = 0;
 
-        var tool = await registry.FindAsync("counting", new AIToolQuery { ActorId = "user-1" });
+        using var tool = await registry.FindAsync("counting", new AIToolQuery { ActorId = "user-1" });
 
         Assert.NotNull(tool);
         Assert.Equal(1, CountingTool.ConstructionCount);
@@ -176,7 +176,7 @@ public class AIToolRegistryTests
                 })
             ]);
 
-        var allowed = await registry.FindAsync("restricted", new AIToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
+        using var allowed = await registry.FindAsync("restricted", new AIToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
         var denied = await registry.FindAsync("restricted", new AIToolQuery { TenantId = "tenant-2", ActorId = "user-1" });
 
         Assert.NotNull(allowed);
@@ -199,7 +199,7 @@ public class AIToolRegistryTests
             ]);
 
         var denied = await registry.FindAsync("restricted", new AIToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
-        var allowed = await registry.FindAsync("restricted", new AIToolQuery
+        using var allowed = await registry.FindAsync("restricted", new AIToolQuery
         {
             TenantId = "tenant-1",
             ActorId = "user-1",
