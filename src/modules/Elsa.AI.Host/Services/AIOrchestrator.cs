@@ -415,7 +415,7 @@ public class AIOrchestrator(
             return CreateToolExecutionResult(conversationId, sequence, toolCall, result);
         }
 
-        using var toolScope = tool as IDisposable;
+        using var toolScope = tool;
         try
         {
             await RecordToolAuditEventsAsync(request, conversationId, toolCall, ["tool.invoked"], cancellationToken);

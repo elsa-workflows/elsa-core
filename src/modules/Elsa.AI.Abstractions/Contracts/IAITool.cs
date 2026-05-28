@@ -2,10 +2,13 @@ using Elsa.AI.Abstractions.Models;
 
 namespace Elsa.AI.Abstractions.Contracts;
 
-public interface IAITool
+public interface IAITool : IDisposable
 {
     AIToolDefinition Definition { get; }
     ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default);
+    void IDisposable.Dispose()
+    {
+    }
 }
 
 public interface IAIToolRegistry

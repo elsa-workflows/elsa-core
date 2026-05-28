@@ -360,11 +360,11 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         var reloaded = await store.FindAsync("conversation-ephemeral");
 
         Assert.Null(reloaded);
-        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-ephemeral"));
+        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-ephemeral"));
     }
 
-    [Fact(DisplayName = "Conversation store prunes expired configured conversations on read")]
-    public async Task ConversationStorePrunesExpiredConfiguredConversationsOnRead()
+    [Fact(DisplayName = "Conversation store hides expired configured conversations on read")]
+    public async Task ConversationStoreHidesExpiredConfiguredConversationsOnRead()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
 
@@ -382,7 +382,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         Assert.Null(reloaded);
         Assert.Empty(_dbContext.ChangeTracker.Entries());
-        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired"));
+        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired"));
     }
 
     [Fact(DisplayName = "Conversation store treats configured conversations without expiry as retained")]

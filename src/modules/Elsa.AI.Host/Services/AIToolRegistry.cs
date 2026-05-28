@@ -209,7 +209,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
         return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
     }
 
-    private class ScopedAITool(IServiceScope scope, IAITool inner) : IAITool, IDisposable
+    private class ScopedAITool(IServiceScope scope, IAITool inner) : IAITool
     {
         private bool _disposed;
 
@@ -233,6 +233,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
                 return;
 
             _disposed = true;
+            inner.Dispose();
             scope.Dispose();
         }
     }
