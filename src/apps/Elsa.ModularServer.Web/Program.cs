@@ -15,6 +15,7 @@ using Elsa.Workflows.Telemetry;
 using Nuplane;
 using Nuplane.Loading.Hosting.Builder;
 using Nuplane.Sources.Directory.Configuration;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -37,7 +38,7 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.IncludeScopes = true;
     logging.ParseStateValues = true;
     logging.SetResourceBuilder(CreateOpenTelemetryResource(builder.Environment.ApplicationName, serviceVersion));
-    logging.AddOtlpExporter();
+    logging.AddOtlpExporter(options => ConfigureDiagnosticsOtlpExporter(options, configuration, "logs"));
 });
 
 services.AddOpenTelemetry()
@@ -46,12 +47,12 @@ services.AddOpenTelemetry()
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddSource(WorkflowInstrumentation.ActivitySourceName)
-        .AddOtlpExporter())
+        .AddOtlpExporter(options => ConfigureDiagnosticsOtlpExporter(options, configuration, "traces")))
     .WithMetrics(metrics => metrics
         .AddAspNetCoreInstrumentation()
         .AddHttpClientInstrumentation()
         .AddMeter(WorkflowInstrumentation.MeterName)
-        .AddOtlpExporter());
+        .AddOtlpExporter(options => ConfigureDiagnosticsOtlpExporter(options, configuration, "metrics")));
 
 var nuplaneConfiguration = configuration.GetSection("Nuplane");
 
@@ -99,4 +100,35 @@ app.Run();
 static ResourceBuilder CreateOpenTelemetryResource(string serviceName, string? serviceVersion)
 {
     return ResourceBuilder.CreateDefault().AddService(serviceName, serviceVersion: serviceVersion);
+}
+
+static void ConfigureDiagnosticsOtlpExporter(OtlpExporterOptions options, IConfiguration configuration, string signal)
+{
+    var protocol = configuration["Diagnostics:OpenTelemetry:Exporter:Protocol"];
+    options.Protocol = protocol?.Trim().ToLowerInvariant() switch
+    {
+        "grpc" => OtlpExportProtocol.Grpc,
+        "http/protobuf" or "httpprotobuf" => OtlpExportProtocol.HttpProtobuf,
+        _ => options.Protocol
+    };
+
+    var endpoint = configuration["Diagnostics:OpenTelemetry:Exporter:Endpoint"];
+    if (!string.IsNullOrWhiteSpace(endpoint))
+        options.Endpoint = new Uri(GetSignalEndpoint(endpoint, signal, options.Protocol), UriKind.Absolute);
+}
+
+static string GetSignalEndpoint(string endpoint, string signal, OtlpExportProtocol protocol)
+{
+    if (protocol != OtlpExportProtocol.HttpProtobuf)
+        return endpoint;
+
+    var trimmed = endpoint.TrimEnd('/');
+
+    if (trimmed.EndsWith($"/v1/{signal}", StringComparison.OrdinalIgnoreCase))
+        return trimmed;
+
+    if (trimmed.EndsWith("/v1", StringComparison.OrdinalIgnoreCase))
+        return $"{trimmed}/{signal}";
+
+    return $"{trimmed}/v1/{signal}";
 }
