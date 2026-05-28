@@ -99,8 +99,8 @@ public class AIRegistrationTests
         Assert.True(service.IsEnabled(definition));
     }
 
-    [Fact(DisplayName = "Tool enablement honors proposal tools enabled by default")]
-    public void ToolEnablementHonorsProposalToolsEnabledByDefault()
+    [Fact(DisplayName = "Tool enablement requires explicit proposal tool enablement")]
+    public void ToolEnablementRequiresExplicitProposalToolEnablement()
     {
         var service = new AIToolEnablementService();
         var definition = new AIToolDefinition
@@ -109,6 +109,10 @@ public class AIRegistrationTests
             Mutability = AIToolMutability.Proposal,
             EnabledByDefault = true
         };
+
+        Assert.False(service.IsEnabled(definition));
+
+        service.Enable(definition.Name);
 
         Assert.True(service.IsEnabled(definition));
     }

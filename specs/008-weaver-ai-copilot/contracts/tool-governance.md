@@ -12,7 +12,7 @@ Every tool must declare:
 - `Permissions`: required Elsa permissions.
 - `TenantBehavior`: `TenantScoped`, `HostScoped`, or `CrossTenantDenied`.
 - `AuditBehavior`: `None`, `RecordInvocation`, or `RecordInvocationAndResult`.
-- `AllowedAgents`: optional agent allowlist.
+- `AgentScopes`: optional agent allowlist.
 
 ## Registration APIs
 

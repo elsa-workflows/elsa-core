@@ -13,6 +13,9 @@ public class AIToolEnablementService
         if (definition.Mutability == AIToolMutability.Administrative)
             return _enabledAdministrativeToolNames.ContainsKey(definition.Name);
 
+        if (definition.Mutability == AIToolMutability.Proposal)
+            return _enabledToolNames.ContainsKey(definition.Name);
+
         if (definition.EnabledByDefault)
             return true;
 

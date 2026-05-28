@@ -105,6 +105,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
     {
         var namesByType = toolInfos
             .Where(x => !_uncacheableToolTypes.ContainsKey(x.ToolType))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Definition.Name))
             .GroupBy(x => x.ToolType)
             .ToDictionary(x => x.Key, x => x.Select(tool => tool.Definition.Name).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
 

@@ -44,7 +44,14 @@ public class EFCoreAIConversationCleanupService(
                 LogCleanupFailure(e);
             }
 
-            await Task.Delay(CleanupInterval, stoppingToken);
+            try
+            {
+                await Task.Delay(CleanupInterval, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
         }
     }
 

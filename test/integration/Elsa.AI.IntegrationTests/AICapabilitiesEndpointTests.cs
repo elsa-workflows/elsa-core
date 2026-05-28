@@ -46,6 +46,34 @@ public class AICapabilitiesEndpointTests
         Assert.False(response.ProposalReview);
     }
 
+    [Fact(DisplayName = "Capabilities endpoint hides streaming when multiple providers need a default")]
+    public async Task CapabilitiesEndpointHidesStreamingWhenMultipleProvidersNeedADefault()
+    {
+        var endpoint = new Endpoint(
+            MicrosoftOptions.Create(new AIHostOptions()),
+            [new TestAIProvider("provider-1"), new TestAIProvider("provider-2")],
+            [new TestConversationStore()],
+            []);
+
+        var response = await endpoint.ExecuteAsync(CancellationToken.None);
+
+        Assert.False(response.Streaming);
+    }
+
+    [Fact(DisplayName = "Capabilities endpoint advertises streaming when configured default provider resolves")]
+    public async Task CapabilitiesEndpointAdvertisesStreamingWhenConfiguredDefaultProviderResolves()
+    {
+        var endpoint = new Endpoint(
+            MicrosoftOptions.Create(new AIHostOptions { DefaultProviderName = "provider-2" }),
+            [new TestAIProvider("provider-1"), new TestAIProvider("provider-2")],
+            [new TestConversationStore()],
+            []);
+
+        var response = await endpoint.ExecuteAsync(CancellationToken.None);
+
+        Assert.True(response.Streaming);
+    }
+
     [Fact(DisplayName = "Capabilities endpoint advertises registered durable conversation persistence")]
     public async Task CapabilitiesEndpointAdvertisesRegisteredDurableConversationPersistence()
     {
@@ -88,9 +116,9 @@ public class AICapabilitiesEndpointTests
         Assert.False(response.ConversationPersistence);
     }
 
-    private class TestAIProvider : IAIProvider
+    private class TestAIProvider(string name = "test") : IAIProvider
     {
-        public string Name => "test";
+        public string Name => name;
 
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
