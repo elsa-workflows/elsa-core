@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Options;
 using Elsa.Workflows.Serialization.Converters;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Serialization.Serializers;
 
@@ -13,6 +15,14 @@ public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
     /// Initializes a new instance of the <see cref="BookmarkPayloadSerializer"/> class.
     /// </summary>
     public BookmarkPayloadSerializer(IWellKnownTypeRegistry wellKnownTypeRegistry)
+        : this(wellKnownTypeRegistry, Microsoft.Extensions.Options.Options.Create(new ExpressionOptions()))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BookmarkPayloadSerializer"/> class.
+    /// </summary>
+    public BookmarkPayloadSerializer(IWellKnownTypeRegistry wellKnownTypeRegistry, IOptions<ExpressionOptions> expressionOptions)
     {
         _settings = new JsonSerializerOptions
         {
@@ -21,7 +31,7 @@ public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
             PropertyNameCaseInsensitive = true,
         };
 
-        _settings.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry));
+        _settings.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry, expressionOptions));
         _settings.Converters.Add(new FuncExpressionValueConverter());
     }
 

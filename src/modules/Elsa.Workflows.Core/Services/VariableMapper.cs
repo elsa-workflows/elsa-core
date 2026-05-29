@@ -1,6 +1,7 @@
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
@@ -8,6 +9,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows;
 
@@ -18,6 +20,7 @@ public class VariableMapper
 {
     private readonly ILogger<VariableMapper> _logger;
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly bool _allowLegacyClrTypeNames;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VariableMapper"/> class.
@@ -25,9 +28,32 @@ public class VariableMapper
     /// <param name="wellKnownTypeRegistry">The well-known type registry.</param>
     /// <param name="logger">The logger.</param>
     public VariableMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableMapper> logger)
+        : this(wellKnownTypeRegistry, logger, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VariableMapper"/> class.
+    /// </summary>
+    /// <param name="wellKnownTypeRegistry">The well-known type registry.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="expressionOptions">The expression options.</param>
+    public VariableMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableMapper> logger, IOptions<ExpressionOptions> expressionOptions)
+        : this(wellKnownTypeRegistry, logger, expressionOptions.Value.AllowLegacyClrTypeNames)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VariableMapper"/> class.
+    /// </summary>
+    /// <param name="wellKnownTypeRegistry">The well-known type registry.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="allowLegacyClrTypeNames">Whether unrestricted CLR type names can be resolved for backwards compatibility.</param>
+    public VariableMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableMapper> logger, bool allowLegacyClrTypeNames)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
         _logger = logger;
+        _allowLegacyClrTypeNames = allowLegacyClrTypeNames;
     }
 
     /// <inheritdoc />
@@ -78,7 +104,7 @@ public class VariableMapper
         if (string.IsNullOrWhiteSpace(typeAlias))
             return typeof(object);
 
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type))
+        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, _allowLegacyClrTypeNames, out var type))
             return type;
 
         _logger.LogWarning("Failed to resolve variable type alias {VariableTypeName}", typeAlias);
@@ -90,7 +116,7 @@ public class VariableMapper
         if (string.IsNullOrWhiteSpace(typeAlias))
             return null;
 
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type) && IsStorageDriverType(type))
+        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, _allowLegacyClrTypeNames, out var type) && IsStorageDriverType(type))
             return type;
 
         _logger.LogWarning("Failed to resolve storage driver type alias {StorageDriverTypeName}", typeAlias);

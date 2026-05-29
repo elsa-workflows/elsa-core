@@ -37,6 +37,14 @@ public class VariableMapperTests
     }
 
     [Fact]
+    public void Map_ResolvesRegisteredStorageDriverAssemblyQualifiedName()
+    {
+        var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName()));
+
+        Assert.Equal(typeof(MemoryStorageDriver), variable.StorageDriverType);
+    }
+
+    [Fact]
     public void Map_DoesNotLoadUnregisteredStorageDriverAssemblyQualifiedName()
     {
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(VariableMapperTests).AssemblyQualifiedName));

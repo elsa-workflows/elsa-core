@@ -5,10 +5,12 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Serialization.Converters;
@@ -25,21 +27,39 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly bool _allowLegacyClrTypeNames;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
     /// </summary>
     public PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+        : this(wellKnownTypeRegistry, true)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
+    /// </summary>
+    public PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry, IOptions<ExpressionOptions> expressionOptions)
+        : this(wellKnownTypeRegistry, expressionOptions.Value.AllowLegacyClrTypeNames)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
+    /// </summary>
+    public PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry, bool allowLegacyClrTypeNames)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _allowLegacyClrTypeNames = allowLegacyClrTypeNames;
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
     /// </summary>
     public PolymorphicObjectConverter()
+        : this(WellKnownTypeRegistry.CreateDefault(), true)
     {
-        _wellKnownTypeRegistry = WellKnownTypeRegistry.CreateDefault();
     }
 
     /// <inheritdoc />
@@ -350,7 +370,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
         // If we found the _type property, attempt to resolve the type.
-        return typeName != null ? WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeName) : default;
+        return typeName != null ? WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeName, _allowLegacyClrTypeNames) : default;
     }
 
     private void WriteTypeMetadata(Utf8JsonWriter writer, Type type)

@@ -33,7 +33,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly DistributedLockingOptions _lockingOptions;
     private readonly ILogger _logger;
-    private readonly WorkflowTriggerEqualityComparer _triggerEqualityComparer = new();
+    private readonly WorkflowTriggerEqualityComparer _triggerEqualityComparer;
 
     /// <summary>
     /// Constructor.
@@ -50,6 +50,7 @@ public class TriggerIndexer : ITriggerIndexer
         IStimulusHasher hasher,
         IDistributedLockProvider distributedLockProvider,
         IOptions<DistributedLockingOptions> lockingOptions,
+        WorkflowTriggerEqualityComparer triggerEqualityComparer,
         ILogger<TriggerIndexer> logger)
     {
         _activityVisitor = activityVisitor;
@@ -62,6 +63,7 @@ public class TriggerIndexer : ITriggerIndexer
         _hasher = hasher;
         _distributedLockProvider = distributedLockProvider;
         _lockingOptions = lockingOptions.Value;
+        _triggerEqualityComparer = triggerEqualityComparer;
         _logger = logger;
         _workflowDefinitionService = workflowDefinitionService;
     }

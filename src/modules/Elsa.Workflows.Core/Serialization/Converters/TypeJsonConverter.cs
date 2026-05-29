@@ -1,9 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -14,11 +16,25 @@ namespace Elsa.Workflows.Serialization.Converters;
 public class TypeJsonConverter : JsonConverter<Type>
 {
     private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly bool _allowLegacyClrTypeNames;
 
     /// <inheritdoc />
     public TypeJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+        : this(wellKnownTypeRegistry, true)
+    {
+    }
+
+    /// <inheritdoc />
+    public TypeJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry, IOptions<ExpressionOptions> expressionOptions)
+        : this(wellKnownTypeRegistry, expressionOptions.Value.AllowLegacyClrTypeNames)
+    {
+    }
+
+    /// <inheritdoc />
+    public TypeJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry, bool allowLegacyClrTypeNames)
     {
         _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _allowLegacyClrTypeNames = allowLegacyClrTypeNames;
     }
 
     /// <inheritdoc />
@@ -32,7 +48,7 @@ public class TypeJsonConverter : JsonConverter<Type>
     {
         var typeAlias = reader.GetString();
 
-        return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias);
+        return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias, _allowLegacyClrTypeNames);
     }
 
     /// <inheritdoc />

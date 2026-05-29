@@ -15,6 +15,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Discovery;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
@@ -304,6 +305,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
         Services
             // Core.
+            .AddSingleton<WorkflowTriggerEqualityComparer>()
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()

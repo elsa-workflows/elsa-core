@@ -8,6 +8,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Options;
@@ -191,6 +192,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>()
             
             // Core.
+            .AddSingleton<WorkflowTriggerEqualityComparer>()
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()

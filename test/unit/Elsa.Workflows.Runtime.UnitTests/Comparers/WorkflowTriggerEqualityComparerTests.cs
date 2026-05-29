@@ -1,8 +1,11 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Services;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Serialization.Converters;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Comparers;
 
@@ -25,6 +28,8 @@ public class WorkflowTriggerEqualityComparerTests
     /// A simple payload class that mimics real trigger payloads like HttpEndpointBookmarkPayload.
     /// </summary>
     private record TestPayload(string Path, string Method);
+
+    private record TypePayload(Type TargetType);
     
     [Fact(DisplayName = "Fresh and round-tripped triggers with identical logical content should be considered equal")]
     public void FreshAndRoundTrippedTriggers_ShouldBeEqual()
@@ -76,6 +81,22 @@ public class WorkflowTriggerEqualityComparerTests
         Assert.Empty(diff.Added);
         Assert.Empty(diff.Removed);
         Assert.Single(diff.Unchanged);
+    }
+
+    [Fact(DisplayName = "Comparer should use configured type aliases when normalizing trigger payloads")]
+    public void FreshAndRoundTrippedTriggers_WithRegisteredTypeAlias_ShouldBeEqual()
+    {
+        var registry = new WellKnownTypeRegistry();
+        registry.RegisterType(typeof(CustomAliasTarget), "CustomAlias");
+        var payload = new TypePayload(typeof(CustomAliasTarget));
+        var roundTrippedPayload = SimulatePayloadRoundTrip(payload, registry);
+        var freshTrigger = CreateTrigger("trigger-1", payload);
+        var loadedTrigger = CreateTrigger("trigger-1", roundTrippedPayload);
+        var comparer = new WorkflowTriggerEqualityComparer(registry);
+
+        var areEqual = comparer.Equals(freshTrigger, loadedTrigger);
+
+        Assert.True(areEqual);
     }
 
     [Fact(DisplayName = "Documents the underlying System.Text.Json casing behavior that necessitated the fix")]
@@ -142,6 +163,22 @@ public class WorkflowTriggerEqualityComparerTests
         return deserialized!;
     }
 
+    private static object SimulatePayloadRoundTrip(object payload, IWellKnownTypeRegistry registry)
+    {
+        var options = CreatePayloadSerializerOptions(registry);
+        var json = JsonSerializer.Serialize(payload, options);
+        return JsonSerializer.Deserialize<object>(json, options)!;
+    }
+
+    private static JsonSerializerOptions CreatePayloadSerializerOptions(IWellKnownTypeRegistry registry)
+    {
+        var options = new JsonSerializerOptions(PayloadSerializerOptions);
+        options.Converters.Add(new JsonStringEnumConverter());
+        options.Converters.Add(new PolymorphicObjectConverterFactory(registry));
+        options.Converters.Add(new TypeJsonConverter(registry));
+        return options;
+    }
+
     /// <summary>
     /// Creates a StoredTrigger with default values that can be overridden.
     /// </summary>
@@ -162,5 +199,6 @@ public class WorkflowTriggerEqualityComparerTests
         Hash = hash,
         Payload = payload
     };
-}
 
+    private sealed class CustomAliasTarget;
+}

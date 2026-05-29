@@ -14,21 +14,14 @@ public class WorkflowJsonTypeResolverTests
     private static readonly string TrustedAssemblyQualifiedTypeAlias = typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName();
     private readonly WellKnownTypeRegistry _registry = new(Microsoft.Extensions.Options.Options.Create(new ExpressionOptions()));
     private readonly JsonSerializerOptions _options;
+    private readonly JsonSerializerOptions _strictOptions;
 
     public WorkflowJsonTypeResolverTests()
     {
         _registry.RegisterType(typeof(RegisteredPayload), "RegisteredPayload");
         _registry.RegisterType(typeof(FaultStrategy), nameof(FaultStrategy));
-        _options = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-            Converters =
-            {
-                new PolymorphicObjectConverterFactory(_registry),
-                new TypeJsonConverter(_registry)
-            }
-        };
+        _options = CreateOptions();
+        _strictOptions = CreateOptions(false);
     }
 
     [Fact]
@@ -37,6 +30,12 @@ public class WorkflowJsonTypeResolverTests
         var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options);
 
         Assert.Equal(typeof(System.Text.StringBuilder), result);
+    }
+
+    [Fact]
+    public void TypeJsonConverter_RejectsUnregisteredClrAssemblyQualifiedType_WhenLegacyClrTypeNamesDisabled()
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _strictOptions));
     }
 
     [Fact]
@@ -84,6 +83,19 @@ public class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
+    public void PolymorphicObjectConverter_RejectsUnregisteredClrAssemblyQualifiedType_WhenLegacyClrTypeNamesDisabled()
+    {
+        var json = $$"""
+        {
+          "name": "Alice",
+          "_type": {{JsonSerializer.Serialize(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName())}}
+        }
+        """;
+
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<object>(json, _strictOptions));
+    }
+
+    [Fact]
     public void PolymorphicObjectConverter_ResolvesRegisteredTypeAlias()
     {
         var json = """
@@ -126,10 +138,21 @@ public class WorkflowJsonTypeResolverTests
     {
         var typeAlias = typeof(RegisteredPayload).GetSimpleAssemblyQualifiedName();
 
-        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _options);
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _strictOptions);
 
         Assert.Equal(typeof(RegisteredPayload), result);
     }
+
+    private JsonSerializerOptions CreateOptions(bool allowLegacyClrTypeNames = true) => new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        Converters =
+        {
+            new PolymorphicObjectConverterFactory(_registry, allowLegacyClrTypeNames),
+            new TypeJsonConverter(_registry, allowLegacyClrTypeNames)
+        }
+    };
 
     public sealed class RegisteredPayload
     {

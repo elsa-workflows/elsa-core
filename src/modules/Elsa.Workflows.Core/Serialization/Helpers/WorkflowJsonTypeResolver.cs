@@ -52,21 +52,29 @@ public static class WorkflowJsonTypeResolver
         [typeof(IDictionary)] = typeof(Dictionary<string, object>)
     };
 
-    public static Type ResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string? typeAlias)
+    public static Type ResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string? typeAlias, bool allowLegacyClrTypeNames = true)
     {
         if (string.IsNullOrWhiteSpace(typeAlias))
             throw new JsonException("The workflow JSON type alias is missing.");
 
-        if (TryResolveType(wellKnownTypeRegistry, typeAlias, out var type))
+        if (TryResolveType(wellKnownTypeRegistry, typeAlias, allowLegacyClrTypeNames, out var type))
             return type;
 
-        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Registered aliases, supported compound aliases, and CLR type names can be deserialized.");
+        var supportedTypeNames = allowLegacyClrTypeNames
+            ? "Registered aliases, supported compound aliases, and CLR type names"
+            : "Registered aliases, supported compound aliases, and registered legacy CLR type names";
+        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. {supportedTypeNames} can be deserialized.");
     }
 
     public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
     {
+        return TryResolveType(wellKnownTypeRegistry, typeAlias, true, out type);
+    }
+
+    public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, bool allowLegacyClrTypeNames, out Type type)
+    {
         IReadOnlyList<Type>? registeredTypes = null;
-        return TryResolveType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type);
+        return TryResolveType(wellKnownTypeRegistry, typeAlias, allowLegacyClrTypeNames, ref registeredTypes, out type);
     }
 
     public static bool TryGetAlias(IWellKnownTypeRegistry wellKnownTypeRegistry, Type type, out string alias)
@@ -114,41 +122,41 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
-    private static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, bool allowLegacyClrTypeNames, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         if (wellKnownTypeRegistry.TryGetType(typeAlias, out type!))
             return true;
 
-        if (TryResolveArrayType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
+        if (TryResolveArrayType(wellKnownTypeRegistry, typeAlias, allowLegacyClrTypeNames, ref registeredTypes, out type))
             return true;
 
-        if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
+        if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, allowLegacyClrTypeNames, ref registeredTypes, out type))
             return true;
 
-        if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
+        if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, allowLegacyClrTypeNames, ref registeredTypes, out type))
             return true;
 
-        if (TryResolveClrTypeName(typeAlias, out type))
+        if (allowLegacyClrTypeNames && TryResolveClrTypeName(typeAlias, out type))
             return true;
 
         type = null!;
         return false;
     }
 
-    private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, bool allowLegacyClrTypeNames, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
         if (!typeAlias.EndsWith("[]", StringComparison.Ordinal))
             return false;
 
-        if (!TryResolveType(wellKnownTypeRegistry, typeAlias[..^2], ref registeredTypes, out var elementType))
+        if (!TryResolveType(wellKnownTypeRegistry, typeAlias[..^2], allowLegacyClrTypeNames, ref registeredTypes, out var elementType))
             return false;
 
         type = elementType.MakeArrayType();
         return true;
     }
 
-    private static bool TryResolveGenericCollectionType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveGenericCollectionType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, bool allowLegacyClrTypeNames, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
         var genericStart = typeAlias.IndexOf('<', StringComparison.Ordinal);
@@ -159,7 +167,7 @@ public static class WorkflowJsonTypeResolver
         if (!GenericCollectionTypes.TryGetValue(typeAlias[..genericStart], out var genericTypeDefinition))
             return false;
 
-        if (!TryResolveType(wellKnownTypeRegistry, typeAlias[(genericStart + 1)..^1], ref registeredTypes, out var elementType))
+        if (!TryResolveType(wellKnownTypeRegistry, typeAlias[(genericStart + 1)..^1], allowLegacyClrTypeNames, ref registeredTypes, out var elementType))
             return false;
 
         type = genericTypeDefinition.MakeGenericType(elementType);
@@ -193,7 +201,7 @@ public static class WorkflowJsonTypeResolver
         }
     }
 
-    private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, bool allowLegacyClrTypeNames, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         registeredTypes ??= wellKnownTypeRegistry.ListTypes().ToArray();
         var registeredTypeSnapshot = registeredTypes;
@@ -205,7 +213,7 @@ public static class WorkflowJsonTypeResolver
         if (type != null)
             return true;
 
-        if (TryResolveLegacyGenericCollectionTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
+        if (TryResolveLegacyGenericCollectionTypeName(wellKnownTypeRegistry, typeAlias, allowLegacyClrTypeNames, ref registeredTypes, out type))
             return true;
 
         try
@@ -226,7 +234,7 @@ public static class WorkflowJsonTypeResolver
         }
     }
 
-    private static bool TryResolveLegacyGenericCollectionTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveLegacyGenericCollectionTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, bool allowLegacyClrTypeNames, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
 
@@ -242,7 +250,7 @@ public static class WorkflowJsonTypeResolver
             if (!string.Equals(assemblyName, genericTypeDefinition.Assembly.GetName().Name, StringComparison.Ordinal))
                 continue;
 
-            if (!TryResolveType(wellKnownTypeRegistry, typeAlias[prefix.Length..separatorIndex], ref registeredTypes, out var elementType))
+            if (!TryResolveType(wellKnownTypeRegistry, typeAlias[prefix.Length..separatorIndex], allowLegacyClrTypeNames, ref registeredTypes, out var elementType))
                 return false;
 
 #pragma warning disable IL2055
