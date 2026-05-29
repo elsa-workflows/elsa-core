@@ -1,6 +1,7 @@
 using CShells.Features;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.ShellFeatures;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
@@ -49,5 +50,15 @@ public class SchedulingFeature : IShellFeature
             .AddHandlersFrom<ScheduleWorkflows>()
             .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>()
             .AddActivitiesFrom<SchedulingFeature>();
+
+        services.Configure<ExpressionOptions>(options =>
+        {
+            options.AddTypeAlias<CronBookmarkPayload>();
+            options.AddTypeAlias<CronTriggerPayload>();
+            options.AddTypeAlias<DelayPayload>();
+            options.AddTypeAlias<StartAtPayload>();
+            options.AddTypeAlias<TimerBookmarkPayload>();
+            options.AddTypeAlias<TimerTriggerPayload>();
+        });
     }
 }

@@ -14,7 +14,7 @@ public class Tests
     public void Test1()
     {
         var model = CreateModel();
-        var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json");
+        var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json").Trim();
         var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions());
         Assert.Equal(expectedJson, actualJson);
     }

@@ -1,5 +1,6 @@
 using Elsa.Common.Features;
 using Elsa.Common.Multitenancy;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -56,6 +57,16 @@ public class SchedulingFeature : FeatureBase
 
             // Graceful shutdown: register scheduled-trigger ingress for diagnostic visibility (FR-006).
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Scheduling.IngressSources.ScheduledTriggerIngressSource>();
+
+        Services.Configure<ExpressionOptions>(options =>
+        {
+            options.AddTypeAlias<CronBookmarkPayload>();
+            options.AddTypeAlias<CronTriggerPayload>();
+            options.AddTypeAlias<DelayPayload>();
+            options.AddTypeAlias<StartAtPayload>();
+            options.AddTypeAlias<TimerBookmarkPayload>();
+            options.AddTypeAlias<TimerTriggerPayload>();
+        });
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());
     }

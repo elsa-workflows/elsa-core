@@ -5,7 +5,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Services;
 internal sealed class ElsaConsoleLogProvider(
     IConsoleLogProvider inner,
     IConsoleLogContextAccessor contextAccessor,
-    ElsaConsoleLogRecentBuffer recentBuffer) : IConsoleLogProvider
+    ElsaConsoleLogRecentBuffer recentBuffer) : IConsoleLogProvider, IDisposable, IAsyncDisposable
 {
     private static readonly IReadOnlyDictionary<string, string> EmptyMetadataFilter = new Dictionary<string, string>();
 
@@ -54,6 +54,32 @@ internal sealed class ElsaConsoleLogProvider(
     public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
     {
         return inner.ListSourcesAsync(cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        switch (inner)
+        {
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
+            case IAsyncDisposable asyncDisposable:
+                asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                break;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        switch (inner)
+        {
+            case IAsyncDisposable asyncDisposable:
+                await asyncDisposable.DisposeAsync();
+                break;
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
+        }
     }
 
     private ConsoleLogLine Enrich(ConsoleLogLine line)
