@@ -1,3 +1,4 @@
+using ConsoleLogStreaming.Core.Capture;
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
@@ -18,6 +19,8 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+
+ConsoleStreamHook.Install();
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;

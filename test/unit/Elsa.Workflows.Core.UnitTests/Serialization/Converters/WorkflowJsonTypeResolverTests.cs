@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Expressions.Options;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Serialization.Converters;
 
@@ -31,9 +32,11 @@ public class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
-    public void TypeJsonConverter_DoesNotResolveUntrustedClrAssemblyQualifiedType()
+    public void TypeJsonConverter_ResolvesClrAssemblyQualifiedType()
     {
-        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options));
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options);
+
+        Assert.Equal(typeof(System.Text.StringBuilder), result);
     }
 
     [Fact]
@@ -52,6 +55,16 @@ public class WorkflowJsonTypeResolverTests
         var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _options);
 
         Assert.Equal(typeof(ContinueWithIncidentsStrategy), result);
+    }
+
+    [Fact]
+    public void TypeJsonConverter_ResolvesFaultExceptionClrType()
+    {
+        var typeAlias = typeof(FaultException).GetSimpleAssemblyQualifiedName();
+
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(typeAlias), _options);
+
+        Assert.Equal(typeof(FaultException), result);
     }
 
     [Fact]
