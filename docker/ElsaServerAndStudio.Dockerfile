@@ -23,18 +23,19 @@ COPY --from=build /app/publish ./
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
-        libpython3.11 \
-        python3.11 \
-        python3.11-dev \
+        libpython3-dev \
+        python3 \
+        python3-dev \
         python3-pip \
     && update-ca-certificates \
+    && ln -s "$(find /usr/lib -name 'libpython3*.so' -print -quit)" /usr/local/lib/libpython3.so \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Set PYTHONNET_PYDLL environment variable
-ENV PYTHONNET_PYDLL=/usr/lib/aarch64-linux-gnu/libpython3.11.so
+ENV PYTHONNET_PYDLL=/usr/local/lib/libpython3.so
 
 EXPOSE 8080/tcp
 EXPOSE 443/tcp

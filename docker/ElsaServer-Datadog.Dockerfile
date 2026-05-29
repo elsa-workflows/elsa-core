@@ -27,20 +27,21 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
-        libpython3.11 \
-        python3.11 \
-        python3.11-dev \
+        libpython3-dev \
+        python3 \
+        python3-dev \
         python3-pip \
         unzip \
         wget \
     && update-ca-certificates \
+    && ln -s "$(find /usr/lib -name 'libpython3*.so' -print -quit)" /usr/local/lib/libpython3.so \
     && rm -rf /var/lib/apt/lists/*
 
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Set PYTHONNET_PYDLL environment variable
-ENV PYTHONNET_PYDLL=/usr/lib/aarch64-linux-gnu/libpython3.11.so
+ENV PYTHONNET_PYDLL=/usr/local/lib/libpython3.so
 
 # Set environment variables for OpenTelemetry Auto-Instrumentation
 ENV OTEL_DOTNET_AUTO_HOME=/otel \
