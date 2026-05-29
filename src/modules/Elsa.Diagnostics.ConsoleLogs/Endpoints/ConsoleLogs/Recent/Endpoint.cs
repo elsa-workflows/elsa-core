@@ -20,18 +20,6 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
         ConfigurePermissions(ConsoleLogsPermissions.Read);
     }
 
-    public override async Task HandleAsync(CancellationToken cancellationToken)
-    {
-        var result = await ExecuteAsync(cancellationToken);
-        if (ValidationFailed)
-        {
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
-            return;
-        }
-
-        await Send.OkAsync(result, cancellationToken);
-    }
-
     public override async Task<RecentConsoleLogsResult> ExecuteAsync(CancellationToken cancellationToken)
     {
         var request = await ReadJsonBodyAsync(cancellationToken);
