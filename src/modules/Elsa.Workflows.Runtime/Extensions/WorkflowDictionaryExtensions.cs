@@ -24,15 +24,29 @@ public static class WorkflowDictionaryExtensions
     {
         ValidateWorkflowType(workflowType);
 
-        var key = workflowType.FullName;
-        if (string.IsNullOrWhiteSpace(key))
+        if (string.IsNullOrWhiteSpace(workflowType.FullName))
             throw new ArgumentException($"Workflow type '{workflowType.Name}' must have a full name.", nameof(workflowType));
 
-        dictionary[key] = sp =>
+        var key = workflowType.GetSimpleAssemblyQualifiedName();
+        var legacyKey = workflowType.FullName;
+        var hasFactory = dictionary.TryGetValue(key, out var factory);
+
+        if (!hasFactory && !string.IsNullOrWhiteSpace(legacyKey))
+            hasFactory = dictionary.TryGetValue(legacyKey, out factory);
+
+        if (!hasFactory)
         {
-            var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
-            return new ValueTask<IWorkflow>(workflow);
-        };
+            factory = sp =>
+            {
+                var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
+                return new ValueTask<IWorkflow>(workflow);
+            };
+        }
+
+        dictionary[key] = factory!;
+
+        if (!string.IsNullOrWhiteSpace(legacyKey) && legacyKey != key)
+            dictionary[legacyKey] = factory!;
     }
 
     private static void ValidateWorkflowType(Type workflowType)
