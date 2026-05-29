@@ -123,6 +123,12 @@ public class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
+    public void PolymorphicObjectConverter_RejectsUnregisteredClrTypeMetadata_WhenLegacyClrTypeNamesDisabled()
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize<object>(new UnregisteredPayload { Name = "Alice" }, _strictOptions));
+    }
+
+    [Fact]
     public void TypeJsonConverter_WritesUnregisteredTypesAsClrTypeNames()
     {
         var json = JsonSerializer.Serialize(typeof(UnregisteredPayload), _options);
@@ -131,6 +137,12 @@ public class WorkflowJsonTypeResolverTests
 
         Assert.Equal(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), alias);
         Assert.Equal(typeof(UnregisteredPayload), result);
+    }
+
+    [Fact]
+    public void TypeJsonConverter_RejectsUnregisteredClrTypeMetadata_WhenLegacyClrTypeNamesDisabled()
+    {
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(typeof(UnregisteredPayload), _strictOptions));
     }
 
     [Fact]

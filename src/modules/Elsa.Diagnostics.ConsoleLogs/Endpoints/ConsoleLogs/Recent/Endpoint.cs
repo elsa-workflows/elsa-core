@@ -20,10 +20,17 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
         ConfigurePermissions(ConsoleLogsPermissions.Read);
     }
 
-    public override async Task<RecentConsoleLogsResult> ExecuteAsync(CancellationToken cancellationToken)
+    public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var request = await ReadJsonBodyAsync(cancellationToken) ?? new();
-        return await provider.GetRecentAsync(ConsoleLogFilterMapper.ToStreamingFilter(request), cancellationToken);
+        var request = await ReadJsonBodyAsync(cancellationToken);
+        if (ValidationFailed)
+        {
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            return;
+        }
+
+        var result = await provider.GetRecentAsync(ConsoleLogFilterMapper.ToStreamingFilter(request ?? new()), cancellationToken);
+        await Send.OkAsync(result, cancellationToken);
     }
 
     private async Task<ElsaConsoleLogFilter?> ReadJsonBodyAsync(CancellationToken cancellationToken)
@@ -41,6 +48,19 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
             return null;
 
         body.Position = 0;
+        try
+        {
+            return await DeserializeJsonBodyAsync(body, cancellationToken);
+        }
+        catch (JsonException)
+        {
+            AddError("Invalid console log filter JSON.");
+            return null;
+        }
+    }
+
+    internal static async ValueTask<ElsaConsoleLogFilter?> DeserializeJsonBodyAsync(Stream body, CancellationToken cancellationToken)
+    {
         return await JsonSerializer.DeserializeAsync<ElsaConsoleLogFilter>(body, JsonSerializerOptions, cancellationToken);
     }
 }

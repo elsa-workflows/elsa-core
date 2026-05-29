@@ -55,7 +55,12 @@ public class TypeJsonConverter : JsonConverter<Type>
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
         if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var typeAlias))
+        {
+            if (!_allowLegacyClrTypeNames)
+                throw new JsonException($"Type '{value}' is not registered as a workflow JSON type alias.");
+
             typeAlias = value.GetSimpleAssemblyQualifiedName();
+        }
 
         writer.WriteStringValue(typeAlias);
     }
