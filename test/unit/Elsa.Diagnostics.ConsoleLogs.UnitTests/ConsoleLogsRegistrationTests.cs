@@ -198,6 +198,58 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.Equal("workflow-console", innerProvider.PublishedLine.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
     }
 
+    [Fact]
+    public async Task DecoratedProvider_FiltersRecentRowsByMetadataWhenInnerProviderDoesNot()
+    {
+        var innerProvider = new MetadataIgnoringConsoleLogProvider();
+        innerProvider.RecentItems.Add(CreateLine("workflow-a", "a"));
+        innerProvider.RecentItems.Add(CreateLine("workflow-b", "b"));
+
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<IConsoleLogProvider>(innerProvider)
+            .AddConsoleLogsServices()
+            .BuildServiceProvider();
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        var result = await provider.GetRecentAsync(new()
+        {
+            Metadata = new Dictionary<string, string>
+            {
+                [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-b"
+            }
+        });
+
+        var line = Assert.Single(result.Items);
+        Assert.Equal("b", line.Text);
+    }
+
+    [Fact]
+    public async Task DecoratedProvider_FiltersLiveRowsByMetadataWhenInnerProviderDoesNot()
+    {
+        var innerProvider = new MetadataIgnoringConsoleLogProvider();
+        innerProvider.LiveItems.Add(CreateLine("workflow-a", "a"));
+        innerProvider.LiveItems.Add(CreateLine("workflow-b", "b"));
+
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<IConsoleLogProvider>(innerProvider)
+            .AddConsoleLogsServices()
+            .BuildServiceProvider();
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        var lines = await provider.SubscribeAsync(new()
+        {
+            Metadata = new Dictionary<string, string>
+            {
+                [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-b"
+            }
+        }).Where(x => x.Line != null).Select(x => x.Line!).ToListAsync();
+
+        var line = Assert.Single(lines);
+        Assert.Equal("b", line.Text);
+    }
+
     private static void AssertConsoleLogPipelineContributors(IServiceProvider serviceProvider)
     {
         Assert.Contains(serviceProvider.GetServices<IWorkflowExecutionPipelineContributor>(), x => x.GetType() == typeof(ConsoleLogWorkflowExecutionPipelineContributor));
@@ -227,6 +279,16 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
             throw lastException;
     }
 
+    private static ConsoleLogLine CreateLine(string workflowInstanceId, string text) => new()
+    {
+        Text = text,
+        Source = new ConsoleLogSource { Id = "test-source" },
+        Metadata = new Dictionary<string, string>
+        {
+            [ConsoleLogMetadataKeys.WorkflowInstanceId] = workflowInstanceId
+        }
+    };
+
     private sealed class RecordingConsoleLogProvider : IConsoleLogProvider
     {
         public ConsoleLogLine? PublishedLine { get; private set; }
@@ -245,6 +307,39 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         public IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
             return AsyncEnumerable.Empty<ConsoleLogStreamingItem>();
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+        }
+    }
+
+    private sealed class MetadataIgnoringConsoleLogProvider : IConsoleLogProvider
+    {
+        public List<ConsoleLogLine> RecentItems { get; } = [];
+        public List<ConsoleLogLine> LiveItems { get; } = [];
+
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RecentConsoleLogsResult { Items = RecentItems });
+        }
+
+        public async IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(
+            ConsoleLogFilter filter,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            foreach (var line in LiveItems)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return ConsoleLogStreamingItem.FromLine(line);
+                await Task.Yield();
+            }
         }
 
         public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)

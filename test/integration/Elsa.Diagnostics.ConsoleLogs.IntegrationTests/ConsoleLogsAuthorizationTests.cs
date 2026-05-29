@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Security.Claims;
-using System.Text.Json;
+using System.Text;
 using ConsoleLogStreaming.Core.Models;
 using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
@@ -9,6 +9,7 @@ using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using FastEndpoints;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -60,17 +61,14 @@ public class ConsoleLogsAuthorizationTests
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
         var provider = new TestConsoleLogProvider();
         var endpoint = Activator.CreateInstance(endpointType, provider)!;
-        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
-        var request = JsonSerializer.Deserialize(
+        SetJsonRequest(endpointType, endpoint,
             """
             {
                 "workflowInstanceId": "workflow-instance-a"
             }
-            """,
-            requestDtoType,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            """);
 
-        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
         await Assert.IsAssignableFrom<Task>(result);
 
         Assert.NotNull(provider.LastFilter);
@@ -85,8 +83,7 @@ public class ConsoleLogsAuthorizationTests
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
         var provider = new TestConsoleLogProvider();
         var endpoint = Activator.CreateInstance(endpointType, provider)!;
-        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
-        var request = JsonSerializer.Deserialize(
+        SetJsonRequest(endpointType, endpoint,
             """
             {
                 "workflowInstanceId": "workflow-instance-a",
@@ -94,11 +91,9 @@ public class ConsoleLogsAuthorizationTests
                 "activityId": "activity-a",
                 "activityNodeId": "node-a"
             }
-            """,
-            requestDtoType,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            """);
 
-        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
         await Assert.IsAssignableFrom<Task>(result);
 
         Assert.NotNull(provider.LastFilter);
@@ -164,6 +159,19 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("activity-instance-a", metadata[ConsoleLogMetadataKeys.ActivityInstanceId]);
         Assert.Equal("activity-a", metadata[ConsoleLogMetadataKeys.ActivityId]);
         Assert.Equal("node-a", metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
+    }
+
+    private static void SetJsonRequest(Type endpointType, object endpoint, string json)
+    {
+        var bytes = Encoding.UTF8.GetBytes(json);
+        var context = new DefaultHttpContext();
+        context.Request.Body = new MemoryStream(bytes);
+        context.Request.ContentLength = bytes.Length;
+        context.Request.ContentType = "application/json";
+
+        endpointType
+            .GetProperty("HttpContext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .SetValue(endpoint, context);
     }
 
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)

@@ -10,12 +10,14 @@ namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 public class WorkflowJsonTypeResolverTests
 {
     private static readonly string UnsafeAssemblyQualifiedTypeAlias = typeof(System.Text.StringBuilder).AssemblyQualifiedName!;
+    private static readonly string TrustedAssemblyQualifiedTypeAlias = typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName();
     private readonly WellKnownTypeRegistry _registry = new(Microsoft.Extensions.Options.Options.Create(new ExpressionOptions()));
     private readonly JsonSerializerOptions _options;
 
     public WorkflowJsonTypeResolverTests()
     {
         _registry.RegisterType(typeof(RegisteredPayload), "RegisteredPayload");
+        _registry.RegisterType(typeof(FaultStrategy), nameof(FaultStrategy));
         _options = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -29,11 +31,17 @@ public class WorkflowJsonTypeResolverTests
     }
 
     [Fact]
-    public void TypeJsonConverter_ResolvesClrAssemblyQualifiedType()
+    public void TypeJsonConverter_DoesNotResolveUntrustedClrAssemblyQualifiedType()
     {
-        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options);
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(UnsafeAssemblyQualifiedTypeAlias), _options));
+    }
 
-        Assert.Equal(typeof(System.Text.StringBuilder), result);
+    [Fact]
+    public void TypeJsonConverter_ResolvesTrustedClrAssemblyQualifiedType()
+    {
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize(TrustedAssemblyQualifiedTypeAlias), _options);
+
+        Assert.Equal(typeof(UnregisteredPayload), result);
     }
 
     [Fact]
@@ -92,12 +100,12 @@ public class WorkflowJsonTypeResolverTests
     [Fact]
     public void TypeJsonConverter_WritesUnregisteredTypesAsClrTypeNames()
     {
-        var json = JsonSerializer.Serialize(typeof(System.Text.StringBuilder), _options);
+        var json = JsonSerializer.Serialize(typeof(UnregisteredPayload), _options);
         var alias = JsonSerializer.Deserialize<string>(json);
         var result = JsonSerializer.Deserialize<Type>(json, _options);
 
-        Assert.Equal(typeof(System.Text.StringBuilder).GetSimpleAssemblyQualifiedName(), alias);
-        Assert.Equal(typeof(System.Text.StringBuilder), result);
+        Assert.Equal(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), alias);
+        Assert.Equal(typeof(UnregisteredPayload), result);
     }
 
     [Fact]

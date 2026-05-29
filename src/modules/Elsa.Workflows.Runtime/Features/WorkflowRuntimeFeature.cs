@@ -4,6 +4,7 @@ using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
 using Elsa.Common.RecurringTasks;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -186,7 +187,17 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
-        Workflows.Add<T>();
+        AddWorkflow(typeof(T));
+        return this;
+    }
+
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
+    {
+        Workflows.Add(workflowType);
+        Services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName()));
         return this;
     }
 
@@ -197,11 +208,11 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
         var workflowTypes = assembly.GetExportedTypes()
-            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, IsGenericType: false })
+            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false })
             .ToList();
 
         foreach (var workflowType in workflowTypes)
-            Workflows.Add(workflowType);
+            AddWorkflow(workflowType);
 
         return this;
     }

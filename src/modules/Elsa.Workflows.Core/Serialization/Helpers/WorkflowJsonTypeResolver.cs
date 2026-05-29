@@ -60,7 +60,7 @@ public static class WorkflowJsonTypeResolver
         if (TryResolveType(wellKnownTypeRegistry, typeAlias, out var type))
             return type;
 
-        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Registered aliases, supported compound aliases, and CLR type names can be deserialized.");
+        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Registered aliases, supported compound aliases, and trusted CLR type names can be deserialized.");
     }
 
     public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
@@ -128,7 +128,7 @@ public static class WorkflowJsonTypeResolver
         if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
             return true;
 
-        if (TryResolveClrTypeName(typeAlias, out type))
+        if (TryResolveTrustedClrTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
             return true;
 
         type = null!;
@@ -179,11 +179,29 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
-    private static bool TryResolveClrTypeName(string typeAlias, out Type type)
+    private static bool TryResolveTrustedClrTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
+        registeredTypes ??= wellKnownTypeRegistry.ListTypes().ToArray();
+        var trustedAssemblies = registeredTypes
+            .Select(x => x.Assembly)
+            .Distinct()
+            .Where(IsTrustedClrAssembly)
+            .ToArray();
+
+        if (trustedAssemblies.Length == 0)
+        {
+            type = null!;
+            return false;
+        }
+
         try
         {
-            type = Type.GetType(typeAlias, false)!;
+            type = Type.GetType(
+                typeAlias,
+                assemblyName => ResolveTrustedAssembly(trustedAssemblies, assemblyName),
+                ResolveTrustedType,
+                false)!;
+
             return type != null;
         }
         catch (Exception e) when (e is ArgumentException or FileLoadException or FileNotFoundException or TypeLoadException or BadImageFormatException)
@@ -191,6 +209,25 @@ public static class WorkflowJsonTypeResolver
             type = null!;
             return false;
         }
+    }
+
+    private static bool IsTrustedClrAssembly(Assembly assembly)
+    {
+        var assemblyName = assembly.GetName().Name;
+        return assemblyName != null &&
+               assembly != typeof(object).Assembly &&
+               !assemblyName.StartsWith("System.", StringComparison.Ordinal) &&
+               !assemblyName.StartsWith("Microsoft.", StringComparison.Ordinal);
+    }
+
+    private static Assembly? ResolveTrustedAssembly(IEnumerable<Assembly> trustedAssemblies, AssemblyName assemblyName)
+    {
+        return trustedAssemblies.FirstOrDefault(x => AssemblyName.ReferenceMatchesDefinition(x.GetName(), assemblyName));
+    }
+
+    private static Type? ResolveTrustedType(Assembly? assembly, string typeName, bool ignoreCase)
+    {
+        return assembly?.GetType(typeName, false, ignoreCase);
     }
 
     private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)

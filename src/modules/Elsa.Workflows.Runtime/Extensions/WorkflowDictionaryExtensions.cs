@@ -14,12 +14,7 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add<TWorkflow>(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary) where TWorkflow : IWorkflow
     {
-        // FullName should never be null here, as we filter out generic types
-        dictionary.Add(typeof(TWorkflow).FullName!, sp =>
-        {
-            var workflow = ActivatorUtilities.GetServiceOrCreateInstance<TWorkflow>(sp);
-            return new ValueTask<IWorkflow>(workflow);
-        });
+        dictionary.Add(typeof(TWorkflow));
     }
     
     /// <summary>
@@ -27,11 +22,27 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary, Type workflowType)
     {
-        // FullName should never be null here, as we filter out generic types
-        dictionary.Add(workflowType.FullName!, sp =>
+        ValidateWorkflowType(workflowType);
+
+        var key = workflowType.FullName;
+        if (string.IsNullOrWhiteSpace(key))
+            throw new ArgumentException($"Workflow type '{workflowType.Name}' must have a full name.", nameof(workflowType));
+
+        dictionary[key] = sp =>
         {
             var workflow = (IWorkflow)ActivatorUtilities.GetServiceOrCreateInstance(sp, workflowType);
             return new ValueTask<IWorkflow>(workflow);
-        });
+        };
     }
+
+    private static void ValidateWorkflowType(Type workflowType)
+    {
+        if (!typeof(IWorkflow).IsAssignableFrom(workflowType))
+            throw new ArgumentException($"Workflow type '{GetDisplayName(workflowType)}' must implement {nameof(IWorkflow)}.", nameof(workflowType));
+
+        if (workflowType.IsAbstract || workflowType.IsInterface || workflowType.ContainsGenericParameters)
+            throw new ArgumentException($"Workflow type '{GetDisplayName(workflowType)}' must be a concrete, closed type.", nameof(workflowType));
+    }
+
+    private static string GetDisplayName(Type type) => type.FullName ?? type.Name;
 }

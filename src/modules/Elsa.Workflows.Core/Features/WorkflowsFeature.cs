@@ -2,6 +2,7 @@ using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
+using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -9,6 +10,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Extensions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
@@ -164,6 +166,8 @@ public class WorkflowsFeature : FeatureBase
 
     private void AddElsaCore(IServiceCollection services)
     {
+        services.Configure<ExpressionOptions>(options => options.RegisterWorkflowTypeAliases());
+
         services
 
             // Core.

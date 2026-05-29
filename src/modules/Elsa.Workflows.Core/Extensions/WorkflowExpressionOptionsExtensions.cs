@@ -28,6 +28,8 @@ internal static class WorkflowExpressionOptionsExtensions
         options.RegisterTypeAlias(typeof(MemoryStorageDriver), nameof(MemoryStorageDriver));
         options.RegisterTypeAlias(typeof(FaultStrategy), typeof(FaultStrategy).GetSimpleAssemblyQualifiedName());
         options.RegisterTypeAlias(typeof(FaultStrategy), nameof(FaultStrategy));
+        options.RegisterTypeAlias(typeof(ContinueWithIncidentsStrategy), typeof(ContinueWithIncidentsStrategy).GetSimpleAssemblyQualifiedName());
+        options.RegisterTypeAlias(typeof(ContinueWithIncidentsStrategy), nameof(ContinueWithIncidentsStrategy));
         options.RegisterTypeAlias(typeof(Exception), nameof(Exception));
         options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
         options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));

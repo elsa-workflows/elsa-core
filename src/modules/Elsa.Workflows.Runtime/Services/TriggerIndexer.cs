@@ -33,6 +33,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IDistributedLockProvider _distributedLockProvider;
     private readonly DistributedLockingOptions _lockingOptions;
     private readonly ILogger _logger;
+    private readonly WorkflowTriggerEqualityComparer _triggerEqualityComparer = new();
 
     /// <summary>
     /// Constructor.
@@ -118,7 +119,7 @@ public class TriggerIndexer : ITriggerIndexer
             : new(0);
 
         // Diff triggers.
-        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer());
+        var diff = Diff.For(currentTriggers, newTriggers, _triggerEqualityComparer);
 
         // Replace triggers for the specified workflow.
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
@@ -140,7 +141,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         var emptyTriggerList = new List<StoredTrigger>(0);
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
-        var diff = Diff.For(currentTriggers, emptyTriggerList, new WorkflowTriggerEqualityComparer());
+        var diff = Diff.For(currentTriggers, emptyTriggerList, _triggerEqualityComparer);
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, emptyTriggerList, currentTriggers, emptyTriggerList);
         await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);
