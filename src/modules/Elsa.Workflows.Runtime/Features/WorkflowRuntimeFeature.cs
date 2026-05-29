@@ -15,6 +15,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Discovery;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Options;
@@ -208,11 +209,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     [RequiresUnreferencedCode("The assembly is required to be referenced.")]
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
-        var workflowTypes = assembly.GetExportedTypes()
-            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false })
-            .ToList();
-
-        foreach (var workflowType in workflowTypes)
+        foreach (var workflowType in WorkflowTypeScanner.GetWorkflowTypes(assembly))
             AddWorkflow(workflowType);
 
         return this;

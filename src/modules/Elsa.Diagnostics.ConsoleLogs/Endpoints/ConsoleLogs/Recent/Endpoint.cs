@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
@@ -10,6 +11,8 @@ namespace Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent;
 [PublicAPI]
 internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutRequest<RecentConsoleLogsResult>
 {
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
+
     public override void Configure()
     {
         Verbs(FastEndpoints.Http.POST);
@@ -31,6 +34,13 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
         if (!HttpContext.Request.HasJsonContentType())
             return null;
 
-        return await HttpContext.Request.ReadFromJsonAsync<ElsaConsoleLogFilter>(cancellationToken);
+        using var body = new MemoryStream();
+        await HttpContext.Request.Body.CopyToAsync(body, cancellationToken);
+
+        if (body.Length == 0)
+            return null;
+
+        body.Position = 0;
+        return await JsonSerializer.DeserializeAsync<ElsaConsoleLogFilter>(body, JsonSerializerOptions, cancellationToken);
     }
 }

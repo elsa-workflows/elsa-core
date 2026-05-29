@@ -127,32 +127,34 @@ public class InMemoryOpenTelemetryStore : IOpenTelemetryStore
     {
         var take = ClampTake(filter.Take);
         var serviceResourceIds = ResolveResourceIds(filter.ServiceName);
+
+        Dictionary<string, MetricInstrument> instruments;
+        lock (_instrumentLock)
+            instruments = new(_instruments, StringComparer.OrdinalIgnoreCase);
+
+        var instrumentFilterIds = string.IsNullOrWhiteSpace(filter.InstrumentName)
+            ? null
+            : instruments.Values
+                .Where(x => Matches(x.Name, filter.InstrumentName))
+                .Select(x => x.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var points = _metricPoints.Snapshot()
             .Where(x => string.IsNullOrWhiteSpace(filter.ResourceId) || string.Equals(x.ResourceId, filter.ResourceId, StringComparison.OrdinalIgnoreCase))
             .Where(x => serviceResourceIds == null || serviceResourceIds.Contains(x.ResourceId))
             .Where(x => filter.From == null || x.Timestamp >= filter.From)
             .Where(x => filter.To == null || x.Timestamp <= filter.To)
+            .Where(x => instrumentFilterIds == null || instrumentFilterIds.Contains(x.InstrumentId))
             .OrderBy(x => x.Timestamp)
             .TakeLast(take)
             .ToList();
-
-        Dictionary<string, MetricInstrument> instruments;
-        lock (_instrumentLock)
-            instruments = new(_instruments, StringComparer.OrdinalIgnoreCase);
 
         var selectedInstruments = points
             .Select(x => x.InstrumentId)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(instruments.ContainsKey)
             .Select(x => instruments[x])
-            .Where(x => string.IsNullOrWhiteSpace(filter.InstrumentName) || Matches(x.Name, filter.InstrumentName))
             .ToList();
-
-        if (!string.IsNullOrWhiteSpace(filter.InstrumentName))
-        {
-            var instrumentIds = selectedInstruments.Select(x => x.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            points = points.Where(x => instrumentIds.Contains(x.InstrumentId)).ToList();
-        }
 
         return ValueTask.FromResult(new OpenTelemetryMetricResult(selectedInstruments, points, _metricPoints.DroppedCount));
     }

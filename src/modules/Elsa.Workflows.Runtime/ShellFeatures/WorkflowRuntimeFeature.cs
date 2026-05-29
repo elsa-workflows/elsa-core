@@ -200,6 +200,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
+            .AddScoped(DispatchWorkflowCommandHandler)
             .AddScoped(ActivityExecutionLogSink)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)

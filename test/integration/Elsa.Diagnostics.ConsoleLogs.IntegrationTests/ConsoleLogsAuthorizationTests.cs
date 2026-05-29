@@ -147,6 +147,21 @@ public class ConsoleLogsAuthorizationTests
     }
 
     [Fact]
+    public async Task RecentEndpoint_WhenJsonRequestHasUnknownEmptyBody_UsesEmptyFilter()
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider)!;
+        SetJsonRequest(endpointType, endpoint, "", includeContentLength: false);
+
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        Assert.Empty(provider.LastFilter.Metadata);
+    }
+
+    [Fact]
     public async Task HubStream_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
@@ -207,12 +222,13 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("node-a", metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
     }
 
-    private static void SetJsonRequest(Type endpointType, object endpoint, string json)
+    private static void SetJsonRequest(Type endpointType, object endpoint, string json, bool includeContentLength = true)
     {
         var bytes = Encoding.UTF8.GetBytes(json);
         var context = new DefaultHttpContext();
         context.Request.Body = new MemoryStream(bytes);
-        context.Request.ContentLength = bytes.Length;
+        if (includeContentLength)
+            context.Request.ContentLength = bytes.Length;
         context.Request.ContentType = "application/json";
 
         endpointType
