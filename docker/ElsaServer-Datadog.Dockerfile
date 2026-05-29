@@ -13,7 +13,7 @@ COPY *.props ./
 RUN dotnet restore "./src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj"
 
 # Build and publish (UseAppHost=false creates platform independent binaries).
-WORKDIR /source/src/bundles/Elsa.Server.Web
+WORKDIR /source/src/apps/Elsa.Server.Web
 RUN dotnet build "Elsa.Server.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0
 
