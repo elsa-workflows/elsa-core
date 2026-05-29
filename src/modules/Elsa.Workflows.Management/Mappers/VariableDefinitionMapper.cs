@@ -1,25 +1,28 @@
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Management.Mappers;
 
 /// <summary>
 /// Maps <see cref="Variable"/>s to <see cref="VariableDefinition"/>s and vice versa.
 /// </summary>
-public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
+public class VariableDefinitionMapper(IOptions<WorkflowJsonOptions> workflowJsonOptions, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
 {
+    private readonly WorkflowJsonOptions _workflowJsonOptions = workflowJsonOptions.Value;
+
     /// <summary>
     /// Maps a <see cref="VariableDefinition"/> to a <see cref="Variable"/>.
     /// </summary>
     public Variable? Map(VariableDefinition source)
     {
-        var aliasedType = wellKnownTypeRegistry.TryGetType(source.TypeName, out var aliasedTypeValue) ? aliasedTypeValue : null;
+        var aliasedType = WorkflowJsonTypeResolver.TryResolveType(_workflowJsonOptions, source.TypeName, _workflowJsonOptions.AllowLegacyClrTypeNames, out var aliasedTypeValue) ? aliasedTypeValue : null;
         var type = aliasedType ?? Type.GetType(source.TypeName);
 
         if (type == null)
@@ -70,7 +73,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var valueTypeAlias = wellKnownTypeRegistry.TryGetAlias(valueType, out var alias) ? alias : null;
+        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonOptions, valueType, out var alias) ? alias : null;
         var value = source.Value;
         var serializedValue = value.Format();
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
@@ -82,7 +85,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
         var isArray = valueType.IsArray;
         var isCollection = valueType.IsCollectionType();
         var elementValueType = isArray ? valueType.GetElementType()! : isCollection ? valueType.GenericTypeArguments[0] : valueType;
-        var elementTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
+        var elementTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonOptions, elementValueType, out alias) ? alias : elementValueType.GetSimpleAssemblyQualifiedName();
 
         return new(source.Id, source.Name, elementTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }

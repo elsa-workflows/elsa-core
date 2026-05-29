@@ -1,10 +1,13 @@
 using System.Text.Json;
-using Elsa.Expressions.Options;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Serialization.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 
@@ -12,14 +15,11 @@ public class WorkflowJsonTypeResolverTests
 {
     private static readonly string UnsafeAssemblyQualifiedTypeAlias = typeof(System.Text.StringBuilder).AssemblyQualifiedName!;
     private static readonly string TrustedAssemblyQualifiedTypeAlias = typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName();
-    private readonly WellKnownTypeRegistry _registry = new(Microsoft.Extensions.Options.Options.Create(new ExpressionOptions()));
     private readonly JsonSerializerOptions _options;
     private readonly JsonSerializerOptions _strictOptions;
 
     public WorkflowJsonTypeResolverTests()
     {
-        _registry.RegisterType(typeof(RegisteredPayload), "RegisteredPayload");
-        _registry.RegisterType(typeof(FaultStrategy), nameof(FaultStrategy));
         _options = CreateOptions();
         _strictOptions = CreateOptions(false);
     }
@@ -155,16 +155,77 @@ public class WorkflowJsonTypeResolverTests
         Assert.Equal(typeof(RegisteredPayload), result);
     }
 
-    private JsonSerializerOptions CreateOptions(bool allowLegacyClrTypeNames = true) => new()
+    [Fact]
+    public void TypeJsonConverter_ResolvesRegisteredAliasesCaseInsensitively()
+    {
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize("registeredpayload"), _strictOptions);
+
+        Assert.Equal(typeof(RegisteredPayload), result);
+    }
+
+    [Fact]
+    public void TypeJsonConverter_WritesPreferredAlias_WhenTypeHasMultipleAliases()
+    {
+        var json = JsonSerializer.Serialize(typeof(FlowJoinMode), _strictOptions);
+
+        Assert.Equal("\"FlowJoinMode\"", json);
+    }
+
+    [Fact]
+    public void TypeJsonConverter_RoundTripsNullableValueTypeAliases_WhenLegacyClrTypeNamesDisabled()
+    {
+        var json = JsonSerializer.Serialize(typeof(int?), _strictOptions);
+        var result = JsonSerializer.Deserialize<Type>(JsonSerializer.Serialize("int32?"), _strictOptions);
+
+        Assert.Equal("\"Int32?\"", json);
+        Assert.Equal(typeof(int?), result);
+    }
+
+    [Fact]
+    public void ShellWorkflowsFeature_RegistersWorkflowJsonTypeAliases()
+    {
+        var services = new ServiceCollection();
+        new Elsa.Workflows.ShellFeatures.WorkflowsFeature().ConfigureServices(services);
+        var workflowJsonOptions = services.BuildServiceProvider().GetRequiredService<IOptions<WorkflowJsonOptions>>().Value;
+
+        var faultStrategy = WorkflowJsonTypeResolver.ResolveType(workflowJsonOptions, nameof(FaultStrategy), false);
+
+        Assert.Equal(typeof(FaultStrategy), faultStrategy);
+    }
+
+    [Fact]
+    public void ShellFlowchartFeature_RegistersFlowScopeTypeAlias()
+    {
+        var services = new ServiceCollection();
+        new Elsa.Workflows.ShellFeatures.FlowchartFeature().ConfigureServices(services);
+        var workflowJsonOptions = services.BuildServiceProvider().GetRequiredService<IOptions<WorkflowJsonOptions>>().Value;
+
+        var flowScope = WorkflowJsonTypeResolver.ResolveType(workflowJsonOptions, "FlowScope", false);
+
+        Assert.Equal(typeof(FlowScope), flowScope);
+    }
+
+    private JsonSerializerOptions CreateOptions(bool allowLegacyClrTypeNames = true)
+    {
+        var workflowJsonOptions = new WorkflowJsonOptions
+        {
+            AllowLegacyClrTypeNames = allowLegacyClrTypeNames
+        };
+        workflowJsonOptions.RegisterWorkflowTypeAliases();
+        workflowJsonOptions.RegisterTypeAlias(typeof(RegisteredPayload), "RegisteredPayload");
+        workflowJsonOptions.RegisterTypeAlias(typeof(FaultStrategy), nameof(FaultStrategy));
+
+        return new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         Converters =
         {
-            new PolymorphicObjectConverterFactory(_registry, allowLegacyClrTypeNames),
-            new TypeJsonConverter(_registry, allowLegacyClrTypeNames)
+            new PolymorphicObjectConverterFactory(workflowJsonOptions),
+            new TypeJsonConverter(workflowJsonOptions)
         }
     };
+    }
 
     public sealed class RegisteredPayload
     {

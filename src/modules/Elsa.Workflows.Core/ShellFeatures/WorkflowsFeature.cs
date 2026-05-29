@@ -19,6 +19,7 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.PortResolvers;
 using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.UIHints.CheckList;
@@ -83,6 +84,8 @@ public class WorkflowsFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.Configure<WorkflowJsonOptions>(options => options.RegisterWorkflowTypeAliases());
+
         services
             // Core.
             .AddScoped<IActivityInvoker, ActivityInvoker>()
@@ -189,7 +192,7 @@ public class WorkflowsFeature : IShellFeature
 
             // Logging
             .AddLogging();
-        
+
         // Overridable services
         services.AddScoped<ICommitStateHandler, NoopCommitStateHandler>();
     }

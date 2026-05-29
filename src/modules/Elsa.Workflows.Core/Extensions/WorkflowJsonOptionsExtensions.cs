@@ -1,17 +1,38 @@
-using Elsa.Expressions.Options;
+using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Newtonsoft.Json.Linq;
 
-namespace Elsa.Workflows.Extensions;
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
 
-internal static class WorkflowExpressionOptionsExtensions
+/// <summary>
+/// Extends <see cref="WorkflowJsonOptions"/>.
+/// </summary>
+public static class WorkflowJsonOptionsExtensions
 {
-    public static void RegisterWorkflowTypeAliases(this ExpressionOptions options)
+    /// <summary>
+    /// Registers <typeparamref name="T"/> using its CLR type name.
+    /// </summary>
+    public static void AddTypeAlias<T>(this WorkflowJsonOptions options) => options.RegisterTypeAlias(typeof(T), typeof(T).Name);
+
+    /// <summary>
+    /// Registers <typeparamref name="T"/> using the specified alias.
+    /// </summary>
+    public static void AddTypeAlias<T>(this WorkflowJsonOptions options, string alias) => options.RegisterTypeAlias(typeof(T), alias);
+
+    /// <summary>
+    /// Registers the built-in workflow JSON aliases.
+    /// </summary>
+    public static void RegisterWorkflowTypeAliases(this WorkflowJsonOptions options)
     {
         options.RegisterTypeAlias(typeof(ExceptionState), nameof(ExceptionState));
         options.RegisterTypeAlias(typeof(FaultException), nameof(FaultException));

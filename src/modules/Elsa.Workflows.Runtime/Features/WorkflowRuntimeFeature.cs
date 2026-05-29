@@ -4,7 +4,7 @@ using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
 using Elsa.Common.RecurringTasks;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -200,7 +200,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
         Workflows.Add(workflowType);
-        Services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName()));
+        Services.Configure<WorkflowJsonOptions>(options => options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName()));
         return this;
     }
 

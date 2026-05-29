@@ -1,11 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Options;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Comparers;
 
@@ -86,13 +85,13 @@ public class WorkflowTriggerEqualityComparerTests
     [Fact(DisplayName = "Comparer should use configured type aliases when normalizing trigger payloads")]
     public void FreshAndRoundTrippedTriggers_WithRegisteredTypeAlias_ShouldBeEqual()
     {
-        var registry = new WellKnownTypeRegistry();
-        registry.RegisterType(typeof(CustomAliasTarget), "CustomAlias");
+        var workflowJsonOptions = new WorkflowJsonOptions();
+        workflowJsonOptions.RegisterTypeAlias(typeof(CustomAliasTarget), "CustomAlias");
         var payload = new TypePayload(typeof(CustomAliasTarget));
-        var roundTrippedPayload = SimulatePayloadRoundTrip(payload, registry);
+        var roundTrippedPayload = SimulatePayloadRoundTrip(payload, workflowJsonOptions);
         var freshTrigger = CreateTrigger("trigger-1", payload);
         var loadedTrigger = CreateTrigger("trigger-1", roundTrippedPayload);
-        var comparer = new WorkflowTriggerEqualityComparer(registry);
+        var comparer = new WorkflowTriggerEqualityComparer(workflowJsonOptions);
 
         var areEqual = comparer.Equals(freshTrigger, loadedTrigger);
 
@@ -163,19 +162,19 @@ public class WorkflowTriggerEqualityComparerTests
         return deserialized!;
     }
 
-    private static object SimulatePayloadRoundTrip(object payload, IWellKnownTypeRegistry registry)
+    private static object SimulatePayloadRoundTrip(object payload, WorkflowJsonOptions workflowJsonOptions)
     {
-        var options = CreatePayloadSerializerOptions(registry);
+        var options = CreatePayloadSerializerOptions(workflowJsonOptions);
         var json = JsonSerializer.Serialize(payload, options);
         return JsonSerializer.Deserialize<object>(json, options)!;
     }
 
-    private static JsonSerializerOptions CreatePayloadSerializerOptions(IWellKnownTypeRegistry registry)
+    private static JsonSerializerOptions CreatePayloadSerializerOptions(WorkflowJsonOptions workflowJsonOptions)
     {
         var options = new JsonSerializerOptions(PayloadSerializerOptions);
         options.Converters.Add(new JsonStringEnumConverter());
-        options.Converters.Add(new PolymorphicObjectConverterFactory(registry));
-        options.Converters.Add(new TypeJsonConverter(registry));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(workflowJsonOptions));
+        options.Converters.Add(new TypeJsonConverter(workflowJsonOptions));
         return options;
     }
 

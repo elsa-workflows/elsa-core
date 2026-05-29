@@ -2,8 +2,8 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
@@ -84,7 +84,7 @@ public class Tests
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(new PolymorphicObjectConverterFactory(new WellKnownTypeRegistry()));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(new WorkflowJsonOptions()));
         return options;
     }
 

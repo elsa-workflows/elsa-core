@@ -8,7 +8,7 @@ using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
 using Elsa.Alterations.Workflows;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,7 +42,7 @@ public class AlterationsFeature : IFastEndpointsShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.Configure<ExpressionOptions>(options =>
+        services.Configure<WorkflowJsonOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(AlterationPlanParams), typeof(AlterationPlanParams).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));

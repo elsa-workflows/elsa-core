@@ -1,9 +1,7 @@
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Options;
-using Elsa.Expressions.Services;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Serialization.Converters;
@@ -13,39 +11,29 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class PolymorphicObjectConverterFactory : JsonConverterFactory
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
-    private readonly bool _allowLegacyClrTypeNames;
+    private readonly WorkflowJsonOptions _workflowJsonOptions;
 
     /// <summary>
     /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
     /// </summary>
-    public PolymorphicObjectConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry)
-        : this(wellKnownTypeRegistry, true)
+    public PolymorphicObjectConverterFactory(IOptions<WorkflowJsonOptions> workflowJsonOptions)
+        : this(workflowJsonOptions.Value)
     {
     }
 
     /// <summary>
     /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
     /// </summary>
-    public PolymorphicObjectConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry, IOptions<ExpressionOptions> expressionOptions)
-        : this(wellKnownTypeRegistry, expressionOptions.Value.AllowLegacyClrTypeNames)
+    public PolymorphicObjectConverterFactory(WorkflowJsonOptions workflowJsonOptions)
     {
-    }
-
-    /// <summary>
-    /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
-    /// </summary>
-    public PolymorphicObjectConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry, bool allowLegacyClrTypeNames)
-    {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
-        _allowLegacyClrTypeNames = allowLegacyClrTypeNames;
+        _workflowJsonOptions = workflowJsonOptions;
     }
 
     /// <summary>
     /// Default constructor for use with attributes.
     /// </summary>
     public PolymorphicObjectConverterFactory()
-        : this(WellKnownTypeRegistry.CreateDefault(), true)
+        : this(new WorkflowJsonOptions())
     {
     }
 
@@ -69,8 +57,8 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         if (typeof(IDictionary<string, object>).IsAssignableFrom(typeToConvert))
-            return new PolymorphicDictionaryConverter(options, _wellKnownTypeRegistry);
+            return new PolymorphicDictionaryConverter(options, _workflowJsonOptions);
 
-        return new PolymorphicObjectConverter(_wellKnownTypeRegistry, _allowLegacyClrTypeNames);
+        return new PolymorphicObjectConverter(_workflowJsonOptions);
     }
 }

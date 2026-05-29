@@ -1,5 +1,5 @@
 using System.Net;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -247,7 +247,7 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             Services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
 
-        Services.Configure<ExpressionOptions>(options =>
+        Services.Configure<WorkflowJsonOptions>(options =>
         {
             options.AddTypeAlias<HttpRequest>("HttpRequest");
             options.AddTypeAlias<HttpResponse>("HttpResponse");

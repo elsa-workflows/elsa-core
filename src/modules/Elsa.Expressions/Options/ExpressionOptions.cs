@@ -53,12 +53,6 @@ public class ExpressionOptions
     public IDictionary<string, Type> AliasTypeDictionary { get; set; }
 
     /// <summary>
-    /// Gets or sets whether workflow JSON type resolution may fall back to unrestricted CLR type names.
-    /// Enabled by default for backwards compatibility with persisted workflow JSON that stores CLR-qualified type names.
-    /// </summary>
-    public bool AllowLegacyClrTypeNames { get; set; } = true;
-    
-    /// <summary>
     /// Registers a well-known type alias.
     /// </summary>
     public ExpressionOptions RegisterTypeAlias(Type type, string alias)

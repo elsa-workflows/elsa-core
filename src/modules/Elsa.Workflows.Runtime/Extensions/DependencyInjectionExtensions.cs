@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
@@ -93,6 +93,6 @@ public static class DependencyInjectionExtensions
     private static void AddWorkflowRegistration(IServiceCollection services, Type workflowType)
     {
         services.PostConfigure<RuntimeOptions>(options => options.Workflows.Add(workflowType));
-        services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName()));
+        services.Configure<WorkflowJsonOptions>(options => options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName()));
     }
 }

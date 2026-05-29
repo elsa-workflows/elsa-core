@@ -1,11 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Options;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Comparers;
@@ -21,30 +19,22 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
     public WorkflowTriggerEqualityComparer()
-        : this(WellKnownTypeRegistry.CreateDefault(), true)
+        : this(new WorkflowJsonOptions())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
-    public WorkflowTriggerEqualityComparer(IWellKnownTypeRegistry wellKnownTypeRegistry)
-        : this(wellKnownTypeRegistry, true)
+    public WorkflowTriggerEqualityComparer(IOptions<WorkflowJsonOptions> workflowJsonOptions)
+        : this(workflowJsonOptions.Value)
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
-    public WorkflowTriggerEqualityComparer(IWellKnownTypeRegistry wellKnownTypeRegistry, IOptions<ExpressionOptions> expressionOptions)
-        : this(wellKnownTypeRegistry, expressionOptions.Value.AllowLegacyClrTypeNames)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
-    /// </summary>
-    public WorkflowTriggerEqualityComparer(IWellKnownTypeRegistry wellKnownTypeRegistry, bool allowLegacyClrTypeNames)
+    public WorkflowTriggerEqualityComparer(WorkflowJsonOptions workflowJsonOptions)
     {
         _settings = new()
         {
@@ -63,8 +53,8 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
         // polymorphic object properties serialize identically to their stored representation.
         _settings.Converters.Add(new JsonStringEnumConverter());
         _settings.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        _settings.Converters.Add(new PolymorphicObjectConverterFactory(wellKnownTypeRegistry, allowLegacyClrTypeNames));
-        _settings.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry, allowLegacyClrTypeNames));
+        _settings.Converters.Add(new PolymorphicObjectConverterFactory(workflowJsonOptions));
+        _settings.Converters.Add(new TypeJsonConverter(workflowJsonOptions));
     }
 
     /// <inheritdoc />
