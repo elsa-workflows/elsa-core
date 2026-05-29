@@ -1,8 +1,6 @@
-using ConsoleLogStreaming.Core.Capture;
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
-using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.ShellFeatures;
@@ -21,16 +19,10 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-ConsoleStreamHook.Install();
-
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString();
-
-// Console output is a single process-wide resource; the capture pipeline is owned by the root host so
-// every shell's diagnostics endpoints (REST + SignalR) read from the same in-memory ring buffer.
-services.AddConsoleLogsHost();
 
 builder.Logging.AddOpenTelemetry(logging =>
 {

@@ -1,6 +1,7 @@
 using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
 
@@ -12,12 +13,14 @@ internal static class ConsoleLogProviderServiceCollectionExtensions
         if (descriptor == null)
             return;
 
+        services.TryAddSingleton<ElsaConsoleLogRecentBuffer>();
         services.Remove(descriptor);
         services.Add(ServiceDescriptor.Describe(
             typeof(IConsoleLogProvider),
             sp => new ElsaConsoleLogProvider(
                 CreateProvider(sp, descriptor),
-                sp.GetRequiredService<IConsoleLogContextAccessor>()),
+                sp.GetRequiredService<IConsoleLogContextAccessor>(),
+                sp.GetRequiredService<ElsaConsoleLogRecentBuffer>()),
             descriptor.Lifetime));
     }
 

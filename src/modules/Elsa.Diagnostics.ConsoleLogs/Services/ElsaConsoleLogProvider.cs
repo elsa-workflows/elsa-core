@@ -2,13 +2,18 @@ using ConsoleLogStreaming.Core;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;
 
-internal sealed class ElsaConsoleLogProvider(IConsoleLogProvider inner, IConsoleLogContextAccessor contextAccessor) : IConsoleLogProvider
+internal sealed class ElsaConsoleLogProvider(
+    IConsoleLogProvider inner,
+    IConsoleLogContextAccessor contextAccessor,
+    ElsaConsoleLogRecentBuffer recentBuffer) : IConsoleLogProvider
 {
     private static readonly IReadOnlyDictionary<string, string> EmptyMetadataFilter = new Dictionary<string, string>();
 
     public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
     {
-        return inner.PublishAsync(Enrich(line), cancellationToken);
+        var enrichedLine = Enrich(line);
+        recentBuffer.Add(enrichedLine);
+        return inner.PublishAsync(enrichedLine, cancellationToken);
     }
 
     public async ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
@@ -16,16 +21,11 @@ internal sealed class ElsaConsoleLogProvider(IConsoleLogProvider inner, IConsole
         if (!HasMetadataFilter(filter))
             return await inner.GetRecentAsync(filter, cancellationToken);
 
-        var requestedLimit = filter.Limit;
         var result = await inner.GetRecentAsync(filter with
         {
-            Metadata = EmptyMetadataFilter,
-            Limit = null
+            Metadata = EmptyMetadataFilter
         }, cancellationToken);
-        var items = result.Items.Where(x => MatchesMetadata(x, filter.Metadata)).ToArray();
-
-        if (requestedLimit is > 0)
-            items = items.TakeLast(requestedLimit.Value).ToArray();
+        var items = recentBuffer.Query(filter);
 
         return result with { Items = items };
     }

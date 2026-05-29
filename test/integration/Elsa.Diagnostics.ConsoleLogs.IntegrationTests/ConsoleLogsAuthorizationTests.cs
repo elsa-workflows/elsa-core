@@ -77,6 +77,52 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("workflow-instance-a", workflowInstanceId);
     }
 
+    [Theory]
+    [InlineData("stdout", ConsoleStream.Stdout)]
+    [InlineData("stderr", ConsoleStream.Stderr)]
+    public async Task RecentEndpoint_MapsLowercaseStreamFilter(string stream, ConsoleStream expected)
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider)!;
+        SetJsonRequest(endpointType, endpoint,
+            $$"""
+            {
+                "stream": "{{stream}}"
+            }
+            """);
+
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        Assert.Equal(expected, provider.LastFilter.Stream);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("all")]
+    public async Task RecentEndpoint_MapsAllStreamFilterToNull(string? stream)
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider)!;
+        var streamJson = stream == null ? "null" : $"\"{stream}\"";
+        SetJsonRequest(endpointType, endpoint,
+            $$"""
+            {
+                "stream": {{streamJson}}
+            }
+            """);
+
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        Assert.Null(provider.LastFilter.Stream);
+    }
+
     [Fact]
     public async Task RecentEndpoint_MapsActivityFiltersToMetadataFilter()
     {
