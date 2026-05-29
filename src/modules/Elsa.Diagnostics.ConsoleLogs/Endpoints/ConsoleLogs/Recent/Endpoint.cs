@@ -22,15 +22,24 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var request = await ReadJsonBodyAsync(cancellationToken);
+        var result = await ExecuteAsync(cancellationToken);
         if (ValidationFailed)
         {
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
             return;
         }
 
-        var result = await provider.GetRecentAsync(ConsoleLogFilterMapper.ToStreamingFilter(request ?? new()), cancellationToken);
         await Send.OkAsync(result, cancellationToken);
+    }
+
+    public override async Task<RecentConsoleLogsResult> ExecuteAsync(CancellationToken cancellationToken)
+    {
+        var request = await ReadJsonBodyAsync(cancellationToken);
+        if (ValidationFailed)
+            return new();
+
+        var result = await provider.GetRecentAsync(ConsoleLogFilterMapper.ToStreamingFilter(request ?? new()), cancellationToken);
+        return result;
     }
 
     private async Task<ElsaConsoleLogFilter?> ReadJsonBodyAsync(CancellationToken cancellationToken)
