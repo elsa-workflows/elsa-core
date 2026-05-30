@@ -24,7 +24,10 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
     {
         var request = await ReadJsonBodyAsync(cancellationToken);
         if (ValidationFailed)
+        {
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
             return new();
+        }
 
         var result = await provider.GetRecentAsync(ConsoleLogFilterMapper.ToStreamingFilter(request ?? new()), cancellationToken);
         return result;
