@@ -38,14 +38,11 @@ public class BackgroundNotificationProcessor
         var outputs = new List<Channel<NotificationContext>>(_workerCount);
         var workers = new List<Task>(_workerCount);
 
-        using var scope = _scopeFactory.CreateScope();
-        var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
-
         for (var i = 0; i < _workerCount; i++)
         {
             var output = Channel.CreateUnbounded<NotificationContext>();
             outputs.Add(output);
-            workers.Add(ReadOutputAsync(output, notificationSender, cancellationToken));
+            workers.Add(ReadOutputAsync(output, cancellationToken));
         }
 
         try
@@ -68,10 +65,13 @@ public class BackgroundNotificationProcessor
         await Task.WhenAll(workers);
     }
 
-    private async Task ReadOutputAsync(Channel<NotificationContext> output, INotificationSender notificationSender, CancellationToken cancellationToken)
+    private async Task ReadOutputAsync(Channel<NotificationContext> output, CancellationToken cancellationToken)
     {
         try
         {
+            using var scope = _scopeFactory.CreateScope();
+            var notificationSender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
+
             await foreach (var notificationContext in output.Reader.ReadAllAsync(cancellationToken))
             {
                 try
