@@ -3,7 +3,7 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Common.RecurringTasks;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
@@ -11,9 +11,10 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Comparers;
+using Elsa.Workflows.Runtime.Discovery;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
-using Elsa.Workflows.Runtime.Helpers;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -42,7 +43,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// A list of workflow builders configured during application startup.
     /// </summary>
-    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new WorkflowFactoryDictionary();
+    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
     private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
@@ -164,7 +165,6 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
-        WorkflowTypeValidator.Validate(workflowType);
         Workflows.Add(workflowType);
         WorkflowTypes.Add(workflowType);
         return this;
@@ -176,11 +176,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     [RequiresUnreferencedCode("The assembly is required to be referenced.")]
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
-        var workflowTypes = assembly.GetExportedTypes()
-            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false })
-            .ToList();
-
-        foreach (var workflowType in workflowTypes)
+        foreach (var workflowType in WorkflowTypeScanner.GetWorkflowTypes(assembly))
             AddWorkflow(workflowType);
 
         return this;
@@ -189,7 +185,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
-        services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
+        services.Configure<WorkflowJsonOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -231,6 +227,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>()
             
             // Core.
+            .AddSingleton<WorkflowTriggerEqualityComparer>()
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()
@@ -240,6 +237,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
+            .AddScoped(DispatchWorkflowCommandHandler)
             .AddScoped(ActivityExecutionLogSink)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
@@ -366,12 +364,9 @@ public class WorkflowRuntimeFeature : IShellFeature
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    private void RegisterWorkflowTypeAliases(WorkflowJsonOptions options)
     {
-        var workflowTypes = Workflows is IWorkflowTypeRegistry workflowTypeRegistry
-            ? WorkflowTypes.Concat(workflowTypeRegistry.WorkflowTypes)
-            : WorkflowTypes;
-
-        WorkflowRuntimeTypeAliasRegistrar.Register(options, workflowTypes);
+        foreach (var workflowType in WorkflowTypes)
+            options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
     }
 }

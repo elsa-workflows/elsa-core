@@ -1,8 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -11,20 +12,31 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class VariableConverterFactory : JsonConverterFactory
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IOptions<WorkflowJsonOptions>? _workflowJsonOptions;
 
     /// <inheritdoc />
     // ReSharper disable once ContextualLoggerProblem
-    public VariableConverterFactory(IWellKnownTypeRegistry wellKnownTypeRegistry, ILoggerFactory loggerFactory)
+    public VariableConverterFactory(ILoggerFactory loggerFactory)
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
         _loggerFactory = loggerFactory;
+    }
+
+    /// <inheritdoc />
+    // ReSharper disable once ContextualLoggerProblem
+    public VariableConverterFactory(ILoggerFactory loggerFactory, IOptions<WorkflowJsonOptions> workflowJsonOptions)
+    {
+        _loggerFactory = loggerFactory;
+        _workflowJsonOptions = workflowJsonOptions;
     }
 
     /// <inheritdoc />
     public override bool CanConvert(Type typeToConvert) => typeof(Variable).IsAssignableFrom(typeToConvert);
 
     /// <inheritdoc />
-    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options) => new VariableConverter(_wellKnownTypeRegistry, _loggerFactory.CreateLogger<VariableMapper>());
+    public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        var logger = _loggerFactory.CreateLogger<VariableMapper>();
+        return _workflowJsonOptions != null ? new VariableConverter(logger, _workflowJsonOptions) : new VariableConverter(logger);
+    }
 }

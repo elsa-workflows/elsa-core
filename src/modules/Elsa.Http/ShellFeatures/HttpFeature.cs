@@ -1,7 +1,7 @@
 using System.Net;
 using CShells.AspNetCore.Features;
 using CShells.Features;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
@@ -218,7 +218,7 @@ public class HttpFeature : IMiddlewareShellFeature
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
 
-        services.Configure<ExpressionOptions>(options =>
+        services.Configure<WorkflowJsonOptions>(options =>
         {
             options.AddTypeAlias<HttpRequest>("HttpRequest");
             options.AddTypeAlias<HttpResponse>("HttpResponse");

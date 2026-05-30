@@ -1,26 +1,28 @@
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Management.Mappers;
 
 /// <summary>
 /// Maps <see cref="Variable"/>s to <see cref="VariableDefinition"/>s and vice versa.
 /// </summary>
-public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
+public class VariableDefinitionMapper(IOptions<WorkflowJsonOptions> workflowJsonOptions, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
 {
+    private readonly WorkflowJsonOptions _workflowJsonOptions = workflowJsonOptions.Value;
+
     /// <summary>
     /// Maps a <see cref="VariableDefinition"/> to a <see cref="Variable"/>.
     /// </summary>
     public Variable? Map(VariableDefinition source)
     {
-        var aliasedType = wellKnownTypeRegistry.TryGetType(source.TypeName, out var aliasedTypeValue) ? aliasedTypeValue : null;
-        var type = aliasedType ?? Type.GetType(source.TypeName);
+        var type = WorkflowJsonTypeResolver.TryResolveType(_workflowJsonOptions, source.TypeName, _workflowJsonOptions.AllowLegacyClrTypeNames, out var resolvedType) ? resolvedType : null;
 
         if (type == null)
         {
@@ -28,7 +30,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
             return null;
         }
 
-        var valueType = aliasedType is { IsArray: true } ? source.IsArray ? aliasedType.MakeArrayType() : aliasedType : source.IsArray ? type.MakeArrayType() : type;
+        var valueType = type.IsArray ? source.IsArray ? type.MakeArrayType() : type : source.IsArray ? type.MakeArrayType() : type;
         var variableGenericType = typeof(Variable<>).MakeGenericType(valueType);
         var variable = (Variable)Activator.CreateInstance(variableGenericType)!;
 
@@ -70,10 +72,10 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var valueTypeAlias = wellKnownTypeRegistry.TryGetAlias(valueType, out var alias) ? alias : null;
+        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonOptions, valueType, out var alias) ? alias : null;
         var value = source.Value;
         var serializedValue = value.Format();
-        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
+        var storageDriverTypeName = source.StorageDriverType != null ? WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, source.StorageDriverType) : null;
 
         // Handles the case where an alias exists for an array or collection type. E.g. byte[] -> ByteArray.
         if (valueTypeAlias != null && (valueType.IsArray || valueType.IsCollectionType()))
@@ -82,7 +84,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
         var isArray = valueType.IsArray;
         var isCollection = valueType.IsCollectionType();
         var elementValueType = isArray ? valueType.GetElementType()! : isCollection ? valueType.GenericTypeArguments[0] : valueType;
-        var elementTypeAlias = wellKnownTypeRegistry.GetAliasOrDefault(elementValueType);
+        var elementTypeAlias = WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, elementValueType);
 
         return new(source.Id, source.Name, elementTypeAlias, isArray, serializedValue, storageDriverTypeName);
     }
@@ -97,9 +99,7 @@ public class VariableDefinitionMapper(IWellKnownTypeRegistry wellKnownTypeRegist
         if (string.IsNullOrEmpty(storageDriverTypeName))
             return null;
 
-        var type = Type.GetType(storageDriverTypeName);
-
-        if (type != null)
+        if (WorkflowJsonTypeResolver.TryResolveType(_workflowJsonOptions, storageDriverTypeName, _workflowJsonOptions.AllowLegacyClrTypeNames, out var type) && typeof(IStorageDriver).IsAssignableFrom(type))
             return type;
 
         // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.

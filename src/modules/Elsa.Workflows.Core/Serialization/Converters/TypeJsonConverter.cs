@@ -1,29 +1,36 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Extensions;
 using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Serialization.Options;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
 /// <summary>
 /// Serializes <see cref="Type"/> objects to a simple alias representing the type.
-/// Unregistered types are written as metadata-only aliases and intentionally deserialize to <see cref="Exception"/> instead of loading the original CLR type.
 /// </summary>
 [UsedImplicitly]
 public class TypeJsonConverter : JsonConverter<Type>
 {
-    /// <summary>
-    /// Prefix for unregistered type metadata that is not used for CLR type loading during deserialization.
-    /// </summary>
-    private const string UnregisteredTypeAliasPrefix = "UnregisteredClrType:";
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly WorkflowJsonOptions _workflowJsonOptions;
 
     /// <inheritdoc />
-    public TypeJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public TypeJsonConverter()
+        : this(new WorkflowJsonOptions())
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+    }
+
+    /// <inheritdoc />
+    public TypeJsonConverter(IOptions<WorkflowJsonOptions> workflowJsonOptions)
+        : this(workflowJsonOptions.Value)
+    {
+    }
+
+    /// <inheritdoc />
+    public TypeJsonConverter(WorkflowJsonOptions workflowJsonOptions)
+    {
+        _workflowJsonOptions = workflowJsonOptions;
     }
 
     /// <inheritdoc />
@@ -36,18 +43,14 @@ public class TypeJsonConverter : JsonConverter<Type>
     public override Type? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var typeAlias = reader.GetString();
-        if (typeAlias?.StartsWith(UnregisteredTypeAliasPrefix, StringComparison.Ordinal) == true)
-            return typeof(Exception);
 
-        return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias);
+        return WorkflowJsonTypeResolver.ResolveType(_workflowJsonOptions, typeAlias, _workflowJsonOptions.AllowLegacyClrTypeNames);
     }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
-        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var typeAlias))
-            typeAlias = $"{UnregisteredTypeAliasPrefix}{value.GetSimpleAssemblyQualifiedName()}";
-
+        var typeAlias = WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, value);
         writer.WriteStringValue(typeAlias);
     }
 }

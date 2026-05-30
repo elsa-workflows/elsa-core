@@ -50,13 +50,26 @@ public static class DependencyInjectionExtensions
     public static IServiceCollection AddMediatorHostedServices(this IServiceCollection services)
     {
         return services
+            .AddMediatorBackgroundChannels()
+            .AddHostedService<JobRunnerHostedService>()
+            .AddHostedService<BackgroundCommandSenderHostedService>()
+            .AddHostedService<BackgroundEventPublisherHostedService>();
+    }
+
+    /// <summary>
+    /// Adds mediator background processing channels to the <see cref="IServiceCollection"/>.
+    /// </summary>
+    public static IServiceCollection AddMediatorBackgroundChannels(this IServiceCollection services)
+    {
+        return services
             .AddSingleton<INotificationsChannel, NotificationsChannel>()
             .AddSingleton<ICommandsChannel, CommandsChannel>()
             .AddSingleton<IJobsChannel, JobsChannel>()
             .AddSingleton<IJobQueue, JobQueue>()
-            .AddHostedService<JobRunnerHostedService>()
-            .AddHostedService<BackgroundCommandSenderHostedService>()
-            .AddHostedService<BackgroundEventPublisherHostedService>();
+            .AddSingleton<BackgroundCommandProcessor>()
+            .AddSingleton<BackgroundNotificationProcessor>()
+            .AddSingleton<BackgroundJobProcessor>()
+            ;
     }
 
     /// <summary>

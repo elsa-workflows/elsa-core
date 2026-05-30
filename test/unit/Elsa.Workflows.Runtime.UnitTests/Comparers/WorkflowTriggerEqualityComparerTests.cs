@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Serialization.Options;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Comparers;
 
@@ -27,8 +27,8 @@ public class WorkflowTriggerEqualityComparerTests
     /// A simple payload class that mimics real trigger payloads like HttpEndpointBookmarkPayload.
     /// </summary>
     private record TestPayload(string Path, string Method);
-    private record TypedPayload(Type PayloadType, object Value);
-    private record NestedPayload(string Name);
+
+    private record TypePayload(Type TargetType);
     
     [Fact(DisplayName = "Fresh and round-tripped triggers with identical logical content should be considered equal")]
     public void FreshAndRoundTrippedTriggers_ShouldBeEqual()
@@ -41,7 +41,7 @@ public class WorkflowTriggerEqualityComparerTests
         var roundTrippedPayload = SimulatePayloadRoundTrip(freshPayload);
         var loadedTrigger = CreateTrigger("trigger-1", roundTrippedPayload);
 
-        var comparer = new WorkflowTriggerEqualityComparer(CreateTypeRegistry());
+        var comparer = new WorkflowTriggerEqualityComparer();
 
         // Act
         var areEqual = comparer.Equals(freshTrigger, loadedTrigger);
@@ -72,7 +72,7 @@ public class WorkflowTriggerEqualityComparerTests
         var newTriggers = new List<StoredTrigger> { freshTrigger };
 
         // Act: this is exactly what TriggerIndexer.IndexTriggersInternalAsync does
-        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer(CreateTypeRegistry()));
+        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer());
 
         // Assert: the diff should find no changes.
         // Before the fix, it reported Removed=[existingTrigger] and Added=[freshTrigger]
@@ -80,6 +80,22 @@ public class WorkflowTriggerEqualityComparerTests
         Assert.Empty(diff.Added);
         Assert.Empty(diff.Removed);
         Assert.Single(diff.Unchanged);
+    }
+
+    [Fact(DisplayName = "Comparer should use configured type aliases when normalizing trigger payloads")]
+    public void FreshAndRoundTrippedTriggers_WithRegisteredTypeAlias_ShouldBeEqual()
+    {
+        var workflowJsonOptions = new WorkflowJsonOptions();
+        workflowJsonOptions.RegisterTypeAlias(typeof(CustomAliasTarget), "CustomAlias");
+        var payload = new TypePayload(typeof(CustomAliasTarget));
+        var roundTrippedPayload = SimulatePayloadRoundTrip(payload, workflowJsonOptions);
+        var freshTrigger = CreateTrigger("trigger-1", payload);
+        var loadedTrigger = CreateTrigger("trigger-1", roundTrippedPayload);
+        var comparer = new WorkflowTriggerEqualityComparer(workflowJsonOptions);
+
+        var areEqual = comparer.Equals(freshTrigger, loadedTrigger);
+
+        Assert.True(areEqual);
     }
 
     [Fact(DisplayName = "Documents the underlying System.Text.Json casing behavior that necessitated the fix")]
@@ -109,50 +125,6 @@ public class WorkflowTriggerEqualityComparerTests
         Assert.NotEqual(freshJson, roundTrippedJson); // This proves the bug exists
         Assert.Equal("{\"Path\":\"/api/test\",\"Method\":\"GET\"}", freshJson);
         Assert.Equal("{\"path\":\"/api/test\",\"method\":\"GET\"}", roundTrippedJson);
-    }
-
-    [Fact(DisplayName = "Comparer serializes typed payload properties using the registered type aliases")]
-    public void TypedPayloadProperties_ShouldSerializeWithRegisteredAliases()
-    {
-        var payload = new TypedPayload(typeof(NestedPayload), new NestedPayload("orders"));
-        var comparer = new WorkflowTriggerEqualityComparer(CreateTypeRegistry());
-        var trigger = CreateTrigger("trigger-1", payload);
-        var expectedAliasPayload = JsonSerializer.Deserialize<object>(
-            """
-            {
-              "payloadType": "NestedPayload",
-              "value": {
-                "name": "orders",
-                "_type": "NestedPayload"
-              }
-            }
-            """,
-            PayloadSerializerOptions);
-        var assemblyQualifiedPayload = JsonSerializer.Deserialize<object>(
-            $$"""
-            {
-              "payloadType": "{{typeof(NestedPayload).AssemblyQualifiedName}}",
-              "value": {
-                "name": "orders",
-                "_type": "{{typeof(NestedPayload).AssemblyQualifiedName}}"
-              }
-            }
-            """,
-            PayloadSerializerOptions);
-        var missingTypePayload = JsonSerializer.Deserialize<object>(
-            """
-            {
-              "payloadType": "NestedPayload",
-              "value": {
-                "name": "orders"
-              }
-            }
-            """,
-            PayloadSerializerOptions);
-
-        Assert.True(comparer.Equals(trigger, CreateTrigger("trigger-2", expectedAliasPayload!)));
-        Assert.False(comparer.Equals(trigger, CreateTrigger("trigger-3", assemblyQualifiedPayload!)));
-        Assert.False(comparer.Equals(trigger, CreateTrigger("trigger-4", missingTypePayload!)));
     }
     
     /// <summary>
@@ -190,13 +162,20 @@ public class WorkflowTriggerEqualityComparerTests
         return deserialized!;
     }
 
-    private static IWellKnownTypeRegistry CreateTypeRegistry()
+    private static object SimulatePayloadRoundTrip(object payload, WorkflowJsonOptions workflowJsonOptions)
     {
-        var registry = WellKnownTypeRegistry.CreateDefault();
-        registry.RegisterType(typeof(TestPayload), nameof(TestPayload));
-        registry.RegisterType(typeof(TypedPayload), nameof(TypedPayload));
-        registry.RegisterType(typeof(NestedPayload), nameof(NestedPayload));
-        return registry;
+        var options = CreatePayloadSerializerOptions(workflowJsonOptions);
+        var json = JsonSerializer.Serialize(payload, options);
+        return JsonSerializer.Deserialize<object>(json, options)!;
+    }
+
+    private static JsonSerializerOptions CreatePayloadSerializerOptions(WorkflowJsonOptions workflowJsonOptions)
+    {
+        var options = new JsonSerializerOptions(PayloadSerializerOptions);
+        options.Converters.Add(new JsonStringEnumConverter());
+        options.Converters.Add(new PolymorphicObjectConverterFactory(workflowJsonOptions));
+        options.Converters.Add(new TypeJsonConverter(workflowJsonOptions));
+        return options;
     }
 
     /// <summary>
@@ -219,4 +198,6 @@ public class WorkflowTriggerEqualityComparerTests
         Hash = hash,
         Payload = payload
     };
+
+    private sealed class CustomAliasTarget;
 }

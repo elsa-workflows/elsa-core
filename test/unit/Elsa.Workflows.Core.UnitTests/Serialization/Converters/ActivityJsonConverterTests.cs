@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using Elsa.Common.Serialization;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
@@ -9,6 +8,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -162,7 +162,7 @@ public sealed class ActivityJsonConverterTests
         Converters =
         {
             sut,
-            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()),
+            new TypeJsonConverter(new WorkflowJsonOptions()),
             new PolymorphicObjectConverterFactory()
         },
         TypeInfoResolver = new ModifiableJsonTypeInfoResolver(new CustomConstructorConfigurator().GetModifiers())

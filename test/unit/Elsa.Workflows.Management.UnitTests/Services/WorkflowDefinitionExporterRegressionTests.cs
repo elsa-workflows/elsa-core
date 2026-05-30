@@ -1,12 +1,12 @@
 using System.IO.Compression;
 using System.Text.Json;
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -60,9 +60,8 @@ public class WorkflowDefinitionExporterRegressionTests
     private WorkflowDefinitionExporter CreateExporter()
     {
         var activitySerializer = Substitute.For<IActivitySerializer>();
-        var wellKnownTypeRegistry = Substitute.For<IWellKnownTypeRegistry>();
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
-        var variableDefinitionMapper = new VariableDefinitionMapper(wellKnownTypeRegistry, scopeFactory, NullLogger<VariableDefinitionMapper>.Instance);
+        var variableDefinitionMapper = new VariableDefinitionMapper(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonOptions()), scopeFactory, NullLogger<VariableDefinitionMapper>.Instance);
         var workflowDefinitionMapper = new WorkflowDefinitionMapper(activitySerializer, _workflowDefinitionService, variableDefinitionMapper);
         var fileNameSanitizer = new DefaultFileNameSanitizer();
 

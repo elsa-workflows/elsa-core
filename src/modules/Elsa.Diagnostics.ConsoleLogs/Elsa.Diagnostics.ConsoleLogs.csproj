@@ -8,13 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells" />
+        <PackageReference Include="ConsoleLogStreaming.Core" />
+        <PackageReference Include="ConsoleLogStreaming.SignalR" />
         <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\..\ValenceWorks\console-log-stream\src\ConsoleLogStreaming.Contracts\ConsoleLogStreaming.Contracts.csproj" />
-        <ProjectReference Include="..\..\..\..\..\ValenceWorks\console-log-stream\src\ConsoleLogStreaming.Core\ConsoleLogStreaming.Core.csproj" />
-        <ProjectReference Include="..\..\..\..\..\ValenceWorks\console-log-stream\src\ConsoleLogStreaming.SignalR\ConsoleLogStreaming.SignalR.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>

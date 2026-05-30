@@ -35,7 +35,9 @@ public class ExcludeFromHashConverter : JsonConverter<object>
             var propertyValue = property.GetValue(value);
 
             if (ShouldIgnoreProperty(metadata.JsonIgnoreCondition, property.PropertyType, propertyValue))
+            {
                 continue;
+            }
 
             writer.WritePropertyName(property.Name);
             JsonSerializer.Serialize(writer, propertyValue, newOptions);

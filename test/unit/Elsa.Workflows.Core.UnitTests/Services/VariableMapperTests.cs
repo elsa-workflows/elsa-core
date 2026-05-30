@@ -1,7 +1,8 @@
-using Elsa.Expressions.Services;
+using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -9,15 +10,15 @@ namespace Elsa.Workflows.Core.UnitTests.Services;
 
 public class VariableMapperTests
 {
-    private readonly WellKnownTypeRegistry _registry = new();
+    private readonly WorkflowJsonOptions _workflowJsonOptions = new();
     private readonly VariableMapper _mapper;
 
     public VariableMapperTests()
     {
-        _registry.RegisterType(typeof(string), "String");
-        _registry.RegisterType(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
-        _registry.RegisterType(typeof(MemoryStorageDriver), typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName());
-        _mapper = new(_registry, NullLogger<VariableMapper>.Instance);
+        _workflowJsonOptions.RegisterTypeAlias(typeof(string), "String");
+        _workflowJsonOptions.RegisterTypeAlias(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
+        _workflowJsonOptions.RegisterTypeAlias(typeof(MemoryStorageDriver), typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName());
+        _mapper = new(NullLogger<VariableMapper>.Instance, _workflowJsonOptions);
     }
 
     [Fact]
@@ -37,7 +38,7 @@ public class VariableMapperTests
     }
 
     [Fact]
-    public void Map_ResolvesRegisteredMemoryStorageDriverAssemblyQualifiedName()
+    public void Map_ResolvesRegisteredStorageDriverAssemblyQualifiedName()
     {
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName()));
 
@@ -55,10 +56,37 @@ public class VariableMapperTests
     [Fact]
     public void Map_DoesNotUseRegisteredNonStorageDriverAliasAsStorageDriver()
     {
-        _registry.RegisterType(typeof(string), "NotAStorageDriver");
+        _workflowJsonOptions.RegisterTypeAlias(typeof(string), "NotAStorageDriver");
 
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", "NotAStorageDriver"));
 
         Assert.Null(variable.StorageDriverType);
+    }
+
+    [Fact]
+    public void Map_WritesUnregisteredVariableTypeAsClrTypeName()
+    {
+        var variable = new Variable<UnregisteredPayload>("payload", new());
+
+        var model = _mapper.Map(variable);
+
+        Assert.Equal(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), model.TypeName);
+    }
+
+    [Fact]
+    public void Map_RejectsUnregisteredVariableType_WhenLegacyClrTypeNamesDisabled()
+    {
+        var workflowJsonOptions = new WorkflowJsonOptions
+        {
+            AllowLegacyClrTypeNames = false
+        };
+        var mapper = new VariableMapper(NullLogger<VariableMapper>.Instance, workflowJsonOptions);
+        var variable = new Variable<UnregisteredPayload>("payload", new());
+
+        Assert.Throws<JsonException>(() => mapper.Map(variable));
+    }
+
+    private sealed class UnregisteredPayload
+    {
     }
 }

@@ -1,10 +1,14 @@
+using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
+using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
+using Elsa.Alterations.Workflows;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,9 +20,10 @@ namespace Elsa.Alterations.ShellFeatures;
 /// </summary>
 [ShellFeature(
     DisplayName = "Alterations",
-    Description = "Provides workflow alteration capabilities for modifying running workflow instances")]
+    Description = "Provides workflow alteration capabilities for modifying running workflow instances",
+    DependsOn = ["ElsaFastEndpoints", "WorkflowRuntime"])]
 [UsedImplicitly]
-public class AlterationsFeature : IShellFeature
+public class AlterationsFeature : IFastEndpointsShellFeature
 {
     /// <summary>
     /// Gets or sets the factory for the alteration plan store.
@@ -37,6 +42,12 @@ public class AlterationsFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.Configure<WorkflowJsonOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(AlterationPlanParams), typeof(AlterationPlanParams).GetSimpleAssemblyQualifiedName());
+            options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
+        });
+
         services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();
         services.AddAlterations();
         services.AddAlterationsCore();
@@ -51,6 +62,7 @@ public class AlterationsFeature : IShellFeature
         services.AddScoped(AlterationPlanStoreFactory);
         services.AddScoped(AlterationJobStoreFactory);
         services.AddScoped(AlterationJobDispatcherFactory);
+
+        services.AddWorkflow<ExecuteAlterationPlanWorkflow>();
     }
 }
-

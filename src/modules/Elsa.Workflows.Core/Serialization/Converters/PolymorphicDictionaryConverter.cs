@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
+using Elsa.Workflows.Serialization.Options;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -12,9 +12,9 @@ public class PolymorphicDictionaryConverter : JsonConverter<IDictionary<string, 
     private readonly JsonConverter<object> _objectConverter;
 
     /// <inheritdoc />
-    public PolymorphicDictionaryConverter(JsonSerializerOptions options, IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public PolymorphicDictionaryConverter(JsonSerializerOptions options, WorkflowJsonOptions workflowJsonOptions)
     {
-        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory(wellKnownTypeRegistry));
+        var factory = (JsonConverterFactory)(options.Converters.FirstOrDefault(x => x is PolymorphicObjectConverterFactory) ?? new PolymorphicObjectConverterFactory(workflowJsonOptions));
         _objectConverter = (JsonConverter<object>)factory.CreateConverter(typeof(object), options)!;
     }
 

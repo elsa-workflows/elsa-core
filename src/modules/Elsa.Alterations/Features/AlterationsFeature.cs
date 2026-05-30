@@ -6,7 +6,7 @@ using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
 using Elsa.Alterations.Workflows;
-using Elsa.Expressions.Options;
+using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
@@ -60,7 +60,7 @@ public class AlterationsFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure<ExpressionOptions>(options =>
+        Services.Configure<WorkflowJsonOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(AlterationPlanParams), typeof(AlterationPlanParams).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));

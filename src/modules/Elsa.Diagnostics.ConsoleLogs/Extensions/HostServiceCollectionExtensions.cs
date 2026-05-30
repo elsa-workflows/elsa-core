@@ -1,13 +1,10 @@
-using ConsoleLogStreaming.Contracts;
-using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.DependencyInjection;
 using ConsoleLogStreaming.Core.Options;
-using ConsoleLogStreaming.SignalR;
-using ConsoleLogStreaming.SignalR.DependencyInjection;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
 
@@ -19,14 +16,16 @@ public static class HostServiceCollectionExtensions
     public static IServiceCollection AddConsoleLogsHost(this IServiceCollection services, Action<ConsoleLogOptions>? configure = null)
     {
         services.AddConsoleLogContextServices();
-        services.AddConsoleLogStreamingHost(options =>
+        services.AddConsoleLogStreaming(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);
             configure?.Invoke(options);
         });
-        services.AddConsoleLogStreamingSignalR(options => options.HubPath = EndpointRouteBuilderExtensions.HubRoute);
-        services.TryAddSingleton<IConsoleLogStreamingHubAuthorizer, ElsaConsoleLogStreamingHubAuthorizer>();
+        services.AddSignalR();
+        services.DecorateConsoleLogProvider();
+        services.TryAddSingleton<IElsaConsoleLogHubAuthorizer, ElsaConsoleLogStreamHubAuthorizer>();
         services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, ConsoleLogCaptureHostedService>());
         return services;
     }
 }
