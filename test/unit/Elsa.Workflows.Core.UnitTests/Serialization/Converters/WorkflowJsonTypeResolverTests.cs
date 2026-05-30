@@ -1,8 +1,10 @@
 using System.Text.Json;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Options;
@@ -143,6 +145,33 @@ public class WorkflowJsonTypeResolverTests
     public void TypeJsonConverter_RejectsUnregisteredClrTypeMetadata_WhenLegacyClrTypeNamesDisabled()
     {
         Assert.Throws<JsonException>(() => JsonSerializer.Serialize(typeof(UnregisteredPayload), _strictOptions));
+    }
+
+    [Fact]
+    public void OutputJsonConverter_WritesUnregisteredTypesAsClrTypeNames()
+    {
+        var options = CreateOptions();
+        options.Converters.Add(new OutputJsonConverter<UnregisteredPayload>(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonOptions())));
+        var output = new Output<UnregisteredPayload>(new MemoryBlockReference("result"));
+
+        var json = JsonSerializer.Serialize(output, options);
+
+        using var doc = JsonDocument.Parse(json);
+        Assert.Equal(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), doc.RootElement.GetProperty("typeName").GetString());
+    }
+
+    [Fact]
+    public void OutputJsonConverter_RejectsUnregisteredClrTypeMetadata_WhenLegacyClrTypeNamesDisabled()
+    {
+        var workflowJsonOptions = new WorkflowJsonOptions
+        {
+            AllowLegacyClrTypeNames = false
+        };
+        var options = CreateOptions();
+        options.Converters.Add(new OutputJsonConverter<UnregisteredPayload>(Microsoft.Extensions.Options.Options.Create(workflowJsonOptions)));
+        var output = new Output<UnregisteredPayload>(new MemoryBlockReference("result"));
+
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(output, options));
     }
 
     [Fact]

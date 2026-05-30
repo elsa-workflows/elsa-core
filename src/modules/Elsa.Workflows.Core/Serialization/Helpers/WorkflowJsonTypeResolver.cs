@@ -103,6 +103,17 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
+    public static string GetAliasOrLegacyClrTypeName(WorkflowJsonOptions workflowJsonOptions, Type type)
+    {
+        if (TryGetAlias(workflowJsonOptions, type, out var alias))
+            return alias;
+
+        if (!workflowJsonOptions.AllowLegacyClrTypeNames)
+            throw new JsonException($"Type '{type}' is not registered as a workflow JSON type alias.");
+
+        return type.GetSimpleAssemblyQualifiedName();
+    }
+
     public static bool TryGetInstantiableCollectionType(Type type, out Type instantiableType)
     {
         if (type.IsGenericType)

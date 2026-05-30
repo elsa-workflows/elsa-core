@@ -84,8 +84,8 @@ public class VariableMapper
         var variableType = source.GetType();
         var value = source.Value;
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonOptions, valueType, out var alias) ? alias : valueType.GetSimpleAssemblyQualifiedName();
-        var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
+        var valueTypeAlias = WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, valueType);
+        var storageDriverTypeName = source.StorageDriverType != null ? WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, source.StorageDriverType) : null;
         var serializedValue = value.Format();
 
         return new(source.Id, source.Name, valueTypeAlias, serializedValue, storageDriverTypeName);

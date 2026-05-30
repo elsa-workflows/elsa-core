@@ -363,14 +363,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
 
     private void WriteTypeMetadata(Utf8JsonWriter writer, Type type)
     {
-        if (!WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonOptions, type, out var typeAlias))
-        {
-            if (!_workflowJsonOptions.AllowLegacyClrTypeNames)
-                throw new JsonException($"Type '{type}' is not registered as a workflow JSON type alias.");
-
-            typeAlias = type.GetSimpleAssemblyQualifiedName();
-        }
-
+        var typeAlias = WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, type);
         writer.WritePropertyName(TypePropertyName);
         writer.WriteStringValue(typeAlias);
     }

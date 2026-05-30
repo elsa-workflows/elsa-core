@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -60,5 +61,32 @@ public class VariableMapperTests
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", "NotAStorageDriver"));
 
         Assert.Null(variable.StorageDriverType);
+    }
+
+    [Fact]
+    public void Map_WritesUnregisteredVariableTypeAsClrTypeName()
+    {
+        var variable = new Variable<UnregisteredPayload>("payload", new());
+
+        var model = _mapper.Map(variable);
+
+        Assert.Equal(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), model.TypeName);
+    }
+
+    [Fact]
+    public void Map_RejectsUnregisteredVariableType_WhenLegacyClrTypeNamesDisabled()
+    {
+        var workflowJsonOptions = new WorkflowJsonOptions
+        {
+            AllowLegacyClrTypeNames = false
+        };
+        var mapper = new VariableMapper(NullLogger<VariableMapper>.Instance, workflowJsonOptions);
+        var variable = new Variable<UnregisteredPayload>("payload", new());
+
+        Assert.Throws<JsonException>(() => mapper.Map(variable));
+    }
+
+    private sealed class UnregisteredPayload
+    {
     }
 }

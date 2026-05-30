@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Helpers;
@@ -52,7 +51,7 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
     public override void Write(Utf8JsonWriter writer, Output<T>? value, JsonSerializerOptions options)
     {
         var valueType = typeof(T);
-        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonOptions, valueType, out var alias) ? alias : valueType.GetSimpleAssemblyQualifiedName();
+        var valueTypeAlias = WorkflowJsonTypeResolver.GetAliasOrLegacyClrTypeName(_workflowJsonOptions, valueType);
 
         var model = new
         {
