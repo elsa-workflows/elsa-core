@@ -1,5 +1,6 @@
 using Elsa.Mediator.Contexts;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Middleware.Notification;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Mediator.PublishingStrategies;
@@ -13,7 +14,13 @@ public class BackgroundProcessingStrategy : IEventPublishingStrategy
     public async Task PublishAsync(NotificationStrategyContext context)
     {
         var notificationsChannel = context.ServiceProvider.GetRequiredService<INotificationsChannel>();
+        var notificationContext = context.NotificationContext;
+        var queuedContext = new NotificationContext(
+            notificationContext.Notification,
+            NotificationStrategy.Sequential,
+            notificationContext.ServiceProvider,
+            notificationContext.CancellationToken);
 
-        await notificationsChannel.Writer.WriteAsync(context.NotificationContext, context.CancellationToken);
+        await notificationsChannel.Writer.WriteAsync(queuedContext, context.CancellationToken);
     }
 }

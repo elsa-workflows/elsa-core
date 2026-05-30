@@ -78,7 +78,7 @@ public class BackgroundNotificationProcessor
                 {
                     var notification = notificationContext.Notification;
                     using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, notificationContext.CancellationToken);
-                    await notificationSender.SendAsync(notification, NotificationStrategy.Sequential, linkedTokenSource.Token);
+                    await notificationSender.SendAsync(notification, notificationContext.NotificationStrategy, linkedTokenSource.Token);
                 }
                 catch (OperationCanceledException e)
                 {

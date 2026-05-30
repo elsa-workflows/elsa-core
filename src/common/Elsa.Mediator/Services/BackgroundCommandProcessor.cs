@@ -75,12 +75,17 @@ public class BackgroundCommandProcessor
                 {
                     using var scope = _scopeFactory.CreateScope();
                     var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
+                    using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, commandContext.CancellationToken);
 
                     await commandSender.SendAsync(
                         commandContext.Command,
-                        CommandStrategy.Default,
+                        commandContext.CommandStrategy,
                         commandContext.Headers,
-                        cancellationToken);
+                        linkedTokenSource.Token);
+                }
+                catch (OperationCanceledException e)
+                {
+                    _logger.LogDebug(e, "An operation was cancelled while processing the command queue");
                 }
                 catch (Exception e)
                 {
