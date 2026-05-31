@@ -41,6 +41,51 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task ConfigurationStore_FallsBackToRootConfigurationKey()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["SmtpPassword"] = "root-configured-secret" })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        var secret = await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = " SmtpPassword "
+        });
+        var value = await fixture.Resolver.ResolveAsync("smtp:password");
+
+        Assert.Equal("root-configured-secret", value);
+        Assert.Null(secret.Versions.Single().Payload.Value);
+        Assert.Equal("SmtpPassword", secret.Versions.Single().Payload.Metadata["configurationKey"]);
+    }
+
+    [Fact]
+    public async Task ConfigurationStore_RotateAsync_UsesReplacementConfigurationKey()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Elsa:Secrets:OldPassword"] = "old-configured-secret",
+                ["Elsa:Secrets:NewPassword"] = "new-configured-secret"
+            })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "OldPassword"
+        });
+        await fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest { ConfigurationKey = "NewPassword" });
+        var value = await fixture.Resolver.ResolveAsync("smtp:password");
+
+        Assert.Equal("new-configured-secret", value);
+    }
+
+    [Fact]
     public async Task ConfigurationStore_TestAsync_ReturnsFalseWhenConfiguredValueIsMissing()
     {
         var fixture = new SecretTestFixture();
@@ -55,6 +100,18 @@ public class SecretStoreTests
 
         Assert.False(result.Succeeded);
         Assert.Equal("Secret value is unavailable.", result.Error);
+    }
+
+    [Fact]
+    public void Registries_Throw_WhenTypeOrStoreIsMissing()
+    {
+        var fixture = new SecretTestFixture();
+
+        var missingType = Assert.Throws<InvalidOperationException>(() => fixture.TypeRegistry.Get("missing-type"));
+        var missingStore = Assert.Throws<InvalidOperationException>(() => fixture.StoreRegistry.Get("missing-store"));
+
+        Assert.Contains("missing-type", missingType.Message);
+        Assert.Contains("missing-store", missingStore.Message);
     }
 
     [Fact]

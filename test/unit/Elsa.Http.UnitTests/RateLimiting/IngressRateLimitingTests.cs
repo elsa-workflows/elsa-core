@@ -314,11 +314,15 @@ public class IngressRateLimitingTests
             app => app.UseWorkflowsApiRateLimiting("elsa/api", PolicyName),
             options => AddFixedWindowLimiter(options, "other"));
 
-        app.Configure();
-        await app.StartAsync();
-        var client = app.GetTestClient();
+        var exception = await Record.ExceptionAsync(async () =>
+        {
+            app.Configure();
+            await app.StartAsync();
+            var client = app.GetTestClient();
+            await client.GetAsync("/elsa/api/ping");
+        });
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => client.GetAsync("/elsa/api/ping"));
+        Assert.IsType<InvalidOperationException>(exception);
     }
 
     [Fact]

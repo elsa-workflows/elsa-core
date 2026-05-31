@@ -1,5 +1,4 @@
 using Elsa.Workflows;
-using Elsa.Workflows.Runtime.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -23,7 +22,10 @@ public static class WorkflowDictionaryExtensions
     /// </summary>
     public static void Add(this IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> dictionary, Type workflowType)
     {
-        WorkflowTypeValidator.Validate(workflowType);
+        ValidateWorkflowType(workflowType);
+
+        if (string.IsNullOrWhiteSpace(workflowType.FullName))
+            throw new ArgumentException($"Workflow type '{workflowType.Name}' must have a full name.", nameof(workflowType));
 
         var key = workflowType.GetSimpleAssemblyQualifiedName();
         var legacyKey = workflowType.FullName;
@@ -45,8 +47,16 @@ public static class WorkflowDictionaryExtensions
 
         if (!string.IsNullOrWhiteSpace(legacyKey) && legacyKey != key)
             dictionary[legacyKey] = factory!;
-
-        if (dictionary is IWorkflowTypeRegistry workflowTypeRegistry)
-            workflowTypeRegistry.AddWorkflowType(workflowType);
     }
+
+    private static void ValidateWorkflowType(Type workflowType)
+    {
+        if (!typeof(IWorkflow).IsAssignableFrom(workflowType))
+            throw new ArgumentException($"Workflow type '{GetDisplayName(workflowType)}' must implement {nameof(IWorkflow)}.", nameof(workflowType));
+
+        if (workflowType.IsAbstract || workflowType.IsInterface || workflowType.ContainsGenericParameters)
+            throw new ArgumentException($"Workflow type '{GetDisplayName(workflowType)}' must be a concrete, closed type.", nameof(workflowType));
+    }
+
+    private static string GetDisplayName(Type type) => type.FullName ?? type.Name;
 }

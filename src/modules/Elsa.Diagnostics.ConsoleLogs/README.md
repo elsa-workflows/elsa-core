@@ -69,7 +69,7 @@ tee, the capture publishes them verbatim, and the Studio renders them.
 
 Recent, source, and hub access all require the same permission.
 
-Custom storage providers should implement `ConsoleLogStreaming.Core.IConsoleLogProvider` and use the core models. Elsa-specific values such as workflow instance IDs are represented as metadata internally and projected onto shared `ConsoleLogStreaming.Contracts` DTOs at the REST and SignalR boundaries.
+Custom storage providers should implement `ConsoleLogStreaming.Core.IConsoleLogProvider` and use the core models. Elsa-specific values such as workflow instance IDs are represented as metadata internally and projected onto shared `ConsoleLogStreaming.Core.Models` DTOs at the REST and SignalR boundaries.
 
 ## Safety Boundaries
 

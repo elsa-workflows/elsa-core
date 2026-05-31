@@ -2,9 +2,11 @@ using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Elsa.Expressions.Services;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
+using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
 
@@ -74,9 +76,9 @@ public class Tests
     private JsonSerializerOptions GetSerializerOptions()
     {
         var referenceHandler = new CrossScopedReferenceHandler();
-        var wellKnownTypeRegistry = new WellKnownTypeRegistry();
-        wellKnownTypeRegistry.RegisterType(typeof(Model), nameof(Model));
-        wellKnownTypeRegistry.RegisterType(typeof(CustomDictionary), nameof(CustomDictionary));
+        var workflowJsonTypeRegistry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(new SerializationTypeOptions()));
+        workflowJsonTypeRegistry.RegisterType(typeof(Model), nameof(Model));
+        workflowJsonTypeRegistry.RegisterType(typeof(CustomDictionary), nameof(CustomDictionary));
 
         var options = new JsonSerializerOptions
         {
@@ -88,7 +90,7 @@ public class Tests
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(new PolymorphicObjectConverterFactory(wellKnownTypeRegistry));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(workflowJsonTypeRegistry));
         return options;
     }
 

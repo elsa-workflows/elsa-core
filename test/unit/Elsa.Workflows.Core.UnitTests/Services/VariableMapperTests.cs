@@ -1,15 +1,16 @@
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
 public class VariableMapperTests
 {
-    private readonly WellKnownTypeRegistry _registry = new();
+    private readonly SerializationTypeRegistry _registry = new(Microsoft.Extensions.Options.Options.Create(new SerializationTypeOptions()));
     private readonly VariableMapper _mapper;
 
     public VariableMapperTests()
@@ -42,6 +43,14 @@ public class VariableMapperTests
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName()));
 
         Assert.Equal(typeof(MemoryStorageDriver), variable.StorageDriverType);
+    }
+
+    [Fact]
+    public void Map_WritesRegisteredStorageDriverAlias()
+    {
+        var model = _mapper.Map(new Variable<string>("name", "") { StorageDriverType = typeof(WorkflowStorageDriver) });
+
+        Assert.Equal(nameof(WorkflowStorageDriver), model.StorageDriverTypeName);
     }
 
     [Fact]

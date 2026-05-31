@@ -34,10 +34,4 @@ public class OrderDefinition<T, TProp>
     /// </summary>
     [JsonIgnore]
     public Expression<Func<T, TProp>> KeySelector { get; set; } = null!;
-
-    /// <summary>
-    /// A best-effort textual representation of the key selector for cache-key generation.
-    /// </summary>
-    [JsonIgnore]
-    public string? KeySelectorText => KeySelector?.ToString();
 }

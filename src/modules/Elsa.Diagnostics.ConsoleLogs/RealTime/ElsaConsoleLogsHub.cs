@@ -1,9 +1,6 @@
-using System.Runtime.CompilerServices;
-using ConsoleLogStreaming.Contracts;
 using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.SignalR;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
@@ -11,11 +8,11 @@ namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
 /// <summary>
 /// SignalR hub for live Elsa console log streaming.
 /// </summary>
+[Authorize]
 public sealed class ElsaConsoleLogsHub(
     IConsoleLogProvider provider,
-    IConsoleLogStreamingApiMapper mapper,
-    IConsoleLogStreamingHubAuthorizer authorizer,
-    ElsaConsoleLogSubscriptionManager subscriptionManager) : Hub<IConsoleLogsClient>
+    IElsaConsoleLogHubAuthorizer authorizer,
+    ElsaConsoleLogSubscriptionManager subscriptionManager) : Hub<IElsaConsoleLogsClient>
 {
     /// <summary>
     /// Streams matching console log items as a SignalR streaming method.
@@ -27,8 +24,8 @@ public sealed class ElsaConsoleLogsHub(
         await EnsureCanReadAsync(cancellationToken).ConfigureAwait(false);
         filter = ValidateFilter(filter);
 
-        await foreach (var item in provider.SubscribeAsync(mapper.ToCore(ConsoleLogFilterMapper.ToStreamingFilter(filter)), cancellationToken).ConfigureAwait(false))
-            yield return mapper.ToApi(item);
+        await foreach (var item in provider.SubscribeAsync(ConsoleLogFilterMapper.ToStreamingFilter(filter), cancellationToken).ConfigureAwait(false))
+            yield return item;
     }
 
     /// <summary>
@@ -79,4 +76,11 @@ public sealed class ElsaConsoleLogsHub(
         if (!await authorizer.CanReadAsync(Context, cancellationToken).ConfigureAwait(false))
             throw new HubException("Access denied.");
     }
+}
+
+public interface IElsaConsoleLogsClient
+{
+    Task ReceiveConsoleLogLineAsync(ConsoleLogLine line, CancellationToken cancellationToken = default);
+    Task ReceiveDroppedLinesAsync(ConsoleLogDroppedSummary summary, CancellationToken cancellationToken = default);
+    Task ReceiveSourceChangedAsync(ConsoleLogSource source, CancellationToken cancellationToken = default);
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Elsa.Expressions.Options;
+using Elsa.Common.Serialization;
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
@@ -11,7 +12,7 @@ namespace Elsa.Workflows.IntegrationTests.Serialization.JsonSerialization;
 public class SerializationTests(ITestOutputHelper testOutputHelper)
 {
     private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper)
-        .ConfigureServices(services => services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(typeof(TestObject), nameof(TestObject))))
+        .ConfigureServices(services => services.Configure<SerializationTypeOptions>(options => options.AddTypeAlias<TestObject>()))
         .Build();
 
     [Theory(DisplayName = "write")]

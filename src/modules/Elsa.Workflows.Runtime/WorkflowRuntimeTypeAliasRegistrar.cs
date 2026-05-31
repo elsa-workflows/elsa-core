@@ -1,28 +1,29 @@
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime;
 
 internal static class WorkflowRuntimeTypeAliasRegistrar
 {
-    public static void Register(ExpressionOptions options, IEnumerable<Type> workflowTypes)
+    public static void Register(SerializationTypeOptions options, IEnumerable<Type> workflowTypes)
     {
-        options.RegisterTypeAlias(typeof(EventBookmarkPayload), nameof(EventBookmarkPayload));
-        options.RegisterTypeAlias(typeof(ExecuteWorkflowPayload), nameof(ExecuteWorkflowPayload));
-        options.RegisterTypeAlias(typeof(RunTaskBookmarkPayload), nameof(RunTaskBookmarkPayload));
-        options.RegisterTypeAlias(typeof(BookmarkTokenPayload), nameof(BookmarkTokenPayload));
-        options.RegisterTypeAlias(typeof(EventTokenPayload), nameof(EventTokenPayload));
-        options.RegisterTypeAlias(typeof(ExecuteWorkflowResult), nameof(ExecuteWorkflowResult));
-        options.RegisterTypeAlias(typeof(WorkflowInterruptedPayload), nameof(WorkflowInterruptedPayload));
-        options.RegisterTypeAlias(typeof(BackgroundActivityStimulus), nameof(BackgroundActivityStimulus));
-        options.RegisterTypeAlias(typeof(BulkDispatchWorkflowsStimulus), nameof(BulkDispatchWorkflowsStimulus));
-        options.RegisterTypeAlias(typeof(DispatchWorkflowStimulus), nameof(DispatchWorkflowStimulus));
-        options.RegisterTypeAlias(typeof(EventStimulus), nameof(EventStimulus));
-        options.RegisterTypeAlias(typeof(ExecuteWorkflowStimulus), nameof(ExecuteWorkflowStimulus));
-        options.RegisterTypeAlias(typeof(RunTaskStimulus), nameof(RunTaskStimulus));
+        options.AddTypeAlias<EventBookmarkPayload>();
+        options.AddTypeAlias<ExecuteWorkflowPayload>();
+        options.AddTypeAlias<RunTaskBookmarkPayload>();
+        options.AddTypeAlias<BookmarkTokenPayload>();
+        options.AddTypeAlias<EventTokenPayload>();
+        options.AddTypeAlias<ExecuteWorkflowResult>();
+        options.AddTypeAlias<WorkflowInterruptedPayload>();
+        options.AddTypeAlias<BackgroundActivityStimulus>();
+        options.AddTypeAlias<BulkDispatchWorkflowsStimulus>();
+        options.AddTypeAlias<DispatchWorkflowStimulus>();
+        options.AddTypeAlias<EventStimulus>();
+        options.AddTypeAlias<ExecuteWorkflowStimulus>();
+        options.AddTypeAlias<RunTaskStimulus>();
 
         foreach (var workflowType in workflowTypes.Where(IsConcreteWorkflowType).Distinct())
             options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());

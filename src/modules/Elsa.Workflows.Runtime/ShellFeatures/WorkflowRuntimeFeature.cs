@@ -3,17 +3,17 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Common.RecurringTasks;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Discovery;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
-using Elsa.Workflows.Runtime.Helpers;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Runtime.Services;
@@ -25,6 +25,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
@@ -42,7 +43,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// A list of workflow builders configured during application startup.
     /// </summary>
-    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new WorkflowFactoryDictionary();
+    public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
     private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
@@ -164,7 +165,6 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
-        WorkflowTypeValidator.Validate(workflowType);
         Workflows.Add(workflowType);
         WorkflowTypes.Add(workflowType);
         return this;
@@ -176,11 +176,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     [RequiresUnreferencedCode("The assembly is required to be referenced.")]
     public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
     {
-        var workflowTypes = assembly.GetExportedTypes()
-            .Where(x => typeof(IWorkflow).IsAssignableFrom(x) && x is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false })
-            .ToList();
-
-        foreach (var workflowType in workflowTypes)
+        foreach (var workflowType in WorkflowTypeScanner.GetWorkflowTypes(assembly))
             AddWorkflow(workflowType);
 
         return this;
@@ -189,7 +185,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
-        services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
+        services.Configure<SerializationTypeOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -366,12 +362,33 @@ public class WorkflowRuntimeFeature : IShellFeature
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    private void RegisterWorkflowTypeAliases(SerializationTypeOptions options)
     {
-        var workflowTypes = Workflows is IWorkflowTypeRegistry workflowTypeRegistry
-            ? WorkflowTypes.Concat(workflowTypeRegistry.WorkflowTypes)
-            : WorkflowTypes;
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, GetRegisteredWorkflowTypes());
+    }
 
-        WorkflowRuntimeTypeAliasRegistrar.Register(options, workflowTypes);
+    private IEnumerable<Type> GetRegisteredWorkflowTypes()
+    {
+        return WorkflowTypes
+            .Concat(Workflows.Keys.Select(TryResolveWorkflowType).Where(type => type != null).Select(type => type!))
+            .Distinct();
+    }
+
+    private static Type? TryResolveWorkflowType(string typeName)
+    {
+        Type? type;
+
+        try
+        {
+            type = Type.GetType(typeName, false);
+        }
+        catch (Exception e) when (e is ArgumentException or FileLoadException or FileNotFoundException or TypeLoadException or BadImageFormatException)
+        {
+            return null;
+        }
+
+        return type != null && typeof(IWorkflow).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false }
+            ? type
+            : null;
     }
 }

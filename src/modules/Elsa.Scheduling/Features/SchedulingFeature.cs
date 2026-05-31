@@ -1,6 +1,5 @@
 using Elsa.Common.Features;
 using Elsa.Common.Multitenancy;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -11,7 +10,9 @@ using Elsa.Scheduling.Services;
 using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Features;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Scheduling.Features;
 
@@ -58,14 +59,14 @@ public class SchedulingFeature : FeatureBase
             // Graceful shutdown: register scheduled-trigger ingress for diagnostic visibility (FR-006).
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Scheduling.IngressSources.ScheduledTriggerIngressSource>();
 
-        Services.Configure<ExpressionOptions>(options =>
+        Services.Configure<SerializationTypeOptions>(options =>
         {
-            options.AddTypeAlias<CronBookmarkPayload>();
-            options.AddTypeAlias<CronTriggerPayload>();
-            options.AddTypeAlias<DelayPayload>();
-            options.AddTypeAlias<StartAtPayload>();
-            options.AddTypeAlias<TimerBookmarkPayload>();
-            options.AddTypeAlias<TimerTriggerPayload>();
+            options.RegisterTypeAlias(typeof(CronBookmarkPayload), nameof(CronBookmarkPayload));
+            options.RegisterTypeAlias(typeof(CronTriggerPayload), nameof(CronTriggerPayload));
+            options.RegisterTypeAlias(typeof(DelayPayload), nameof(DelayPayload));
+            options.RegisterTypeAlias(typeof(StartAtPayload), nameof(StartAtPayload));
+            options.RegisterTypeAlias(typeof(TimerBookmarkPayload), nameof(TimerBookmarkPayload));
+            options.RegisterTypeAlias(typeof(TimerTriggerPayload), nameof(TimerTriggerPayload));
         });
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

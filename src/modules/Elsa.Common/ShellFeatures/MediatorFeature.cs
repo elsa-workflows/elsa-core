@@ -1,5 +1,8 @@
 using CShells.Features;
+using Elsa.Common.ShellHandlers;
+using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Common.ShellFeatures;
 
@@ -9,13 +12,17 @@ namespace Elsa.Common.ShellFeatures;
 [ShellFeature(
     "Mediator",
     DisplayName = "Mediator",
-    Description = "Registers mediator services for in-process notifications and requests")]
+    Description = "Registers mediator services for in-process notifications and requests",
+    DependsOn = [typeof(MultitenancyFeature)])]
 public class MediatorFeature : IShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
     {
         services
             .AddMediator()
-            .AddMediatorHostedServices();
+            .AddMediatorBackgroundChannels();
+
+        services.TryAddSingleton<MediatorBackgroundProcessingCoordinator>();
+        services.AddBackgroundTask<MediatorBackgroundTask>();
     }
 }

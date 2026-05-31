@@ -2,6 +2,9 @@ using Elsa.Features.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Features;
+using Elsa.Workflows.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -72,6 +75,8 @@ public static class ModuleExtensions
     /// </summary>
     public static IModule AddVariableTypeAndAlias<T>(this IModule module, string alias, string category)
     {
+        module.Services.Configure<SerializationTypeOptions>(options => options.RegisterTypeAlias(typeof(T), alias));
+
         return module
             .UseWorkflowManagement(management => management.AddVariableType<T>(category))
             .AddTypeAlias<T>(alias);

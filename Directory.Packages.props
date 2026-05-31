@@ -99,8 +99,10 @@
         <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
         <PackageVersion Include="Bogus" Version="35.6.5"/>
         <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All"/>
-        <PackageVersion Include="ConsoleLogStreaming.Core" Version="1.0.0"/>
-        <PackageVersion Include="ConsoleLogStreaming.SignalR" Version="1.0.0"/>
+        <PackageVersion Include="ConsoleLogStreaming.Contracts" Version="1.0.0-preview.13"/>
+        <PackageVersion Include="ConsoleLogStreaming.Core" Version="1.0.0-preview.13"/>
+        <PackageVersion Include="ConsoleLogStreaming.Persistence.Sqlite" Version="1.0.0-preview.13"/>
+        <PackageVersion Include="ConsoleLogStreaming.SignalR" Version="1.0.0-preview.13"/>
         <PackageVersion Include="coverlet.collector" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="coverlet.msbuild" Version="6.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Cronos" Version="0.11.1"/>
@@ -153,13 +155,13 @@
         <PackageVersion Include="Nuplane.Sources.Directory" Version="0.0.8"/>
         <PackageVersion Include="Nuke.Components" Version="10.1.0"/>
         <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
-        <PackageVersion Include="OpenTelemetry" Version="1.14.0"/>
+        <PackageVersion Include="OpenTelemetry" Version="1.15.3"/>
         <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.13.0"/>
-        <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3"/>
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.14.0-beta.1"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.14.0-beta.1"/>
         <PackageVersion Include="Parlot" Version="1.5.7"/>

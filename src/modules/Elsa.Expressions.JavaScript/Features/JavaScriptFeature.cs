@@ -16,7 +16,9 @@ using Elsa.Expressions.JavaScript.Services;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Services;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Expressions.JavaScript.Features;
 
@@ -61,6 +63,7 @@ public class JavaScriptFeature : FeatureBase
     {
         Services.Configure(JintOptions);
         Services.Configure<ExpressionOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
+        Services.Configure<SerializationTypeOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
 
         // JavaScript services.
         Services
@@ -74,7 +77,7 @@ public class JavaScriptFeature : FeatureBase
             .AddScoped<ITypeDefinitionService, TypeDefinitionService>()
             .AddScoped<ITypeDescriber, TypeDescriber>()
             .AddScoped<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
-            .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
+            .AddSingleton<ITypeAliasRegistry, Services.TypeAliasRegistry>()
             .AddFunctionDefinitionProvider<CommonFunctionsDefinitionProvider>()
             .AddFunctionDefinitionProvider<ActivityOutputFunctionsDefinitionProvider>()
             .AddFunctionDefinitionProvider<RunJavaScriptFunctionsDefinitionProvider>()

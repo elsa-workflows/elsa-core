@@ -1,13 +1,8 @@
 using System.Collections.Concurrent;
-using ConsoleLogStreaming.Contracts;
 using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.SignalR;
-using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using CoreConsoleLogSource = ConsoleLogStreaming.Core.Models.ConsoleLogSource;
-
 namespace Elsa.Diagnostics.ConsoleLogs.RealTime;
 
 /// <summary>
@@ -18,8 +13,7 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
     private readonly ConcurrentDictionary<string, ConsoleLogSubscription> _subscriptions = new(StringComparer.Ordinal);
     private readonly IConsoleLogProvider _provider;
     private readonly IConsoleLogSourceRegistry _sourceRegistry;
-    private readonly IConsoleLogStreamingApiMapper _mapper;
-    private readonly IHubContext<ElsaConsoleLogsHub, IConsoleLogsClient> _hubContext;
+    private readonly IHubContext<ElsaConsoleLogsHub, IElsaConsoleLogsClient> _hubContext;
     private readonly ILogger<ElsaConsoleLogSubscriptionManager> _logger;
 
     /// <summary>
@@ -28,13 +22,11 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
     public ElsaConsoleLogSubscriptionManager(
         IConsoleLogProvider provider,
         IConsoleLogSourceRegistry sourceRegistry,
-        IConsoleLogStreamingApiMapper mapper,
-        IHubContext<ElsaConsoleLogsHub, IConsoleLogsClient> hubContext,
+        IHubContext<ElsaConsoleLogsHub, IElsaConsoleLogsClient> hubContext,
         ILogger<ElsaConsoleLogSubscriptionManager> logger)
     {
         _provider = provider;
         _sourceRegistry = sourceRegistry;
-        _mapper = mapper;
         _hubContext = hubContext;
         _logger = logger;
         _sourceRegistry.SourceChanged += OnSourceChanged;
@@ -89,13 +81,24 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
     {
         try
         {
-            await foreach (var item in _provider.SubscribeAsync(_mapper.ToCore(ConsoleLogFilterMapper.ToStreamingFilter(filter)), cancellationToken).ConfigureAwait(false))
+            string? lastSourceSignature = null;
+
+            await foreach (var item in _provider.SubscribeAsync(ConsoleLogFilterMapper.ToStreamingFilter(filter), cancellationToken).ConfigureAwait(false))
             {
                 if (item.Line != null)
-                    await _hubContext.Clients.Client(connectionId).ReceiveConsoleLogLineAsync(_mapper.ToApi(item.Line), cancellationToken).ConfigureAwait(false);
+                {
+                    await _hubContext.Clients.Client(connectionId).ReceiveConsoleLogLineAsync(item.Line, cancellationToken).ConfigureAwait(false);
+
+                    var sourceSignature = GetSourceSignature(item.Line.Source);
+                    if (!string.Equals(sourceSignature, lastSourceSignature, StringComparison.Ordinal))
+                    {
+                        lastSourceSignature = sourceSignature;
+                        await _hubContext.Clients.Client(connectionId).ReceiveSourceChangedAsync(item.Line.Source, cancellationToken).ConfigureAwait(false);
+                    }
+                }
 
                 if (item.Dropped != null)
-                    await _hubContext.Clients.Client(connectionId).ReceiveDroppedLinesAsync(_mapper.ToApi(item.Dropped), cancellationToken).ConfigureAwait(false);
+                    await _hubContext.Clients.Client(connectionId).ReceiveDroppedLinesAsync(item.Dropped, cancellationToken).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException e)
@@ -128,12 +131,12 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
             subscription.CancellationTokenSource.Dispose();
     }
 
-    private void OnSourceChanged(CoreConsoleLogSource source)
+    private void OnSourceChanged(ConsoleLogSource source)
     {
         _ = BroadcastSourceChangedAsync(source, _subscriptions.ToArray());
     }
 
-    private async Task BroadcastSourceChangedAsync(CoreConsoleLogSource source, IReadOnlyCollection<KeyValuePair<string, ConsoleLogSubscription>> subscriptions)
+    private async Task BroadcastSourceChangedAsync(ConsoleLogSource source, IReadOnlyCollection<KeyValuePair<string, ConsoleLogSubscription>> subscriptions)
     {
         try
         {
@@ -142,7 +145,7 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
                 if (!MatchesSource(source, subscription.Filter))
                     continue;
 
-                await _hubContext.Clients.Client(connectionId).ReceiveSourceChangedAsync(_mapper.ToApi(source), subscription.CancellationTokenSource.Token).ConfigureAwait(false);
+                await _hubContext.Clients.Client(connectionId).ReceiveSourceChangedAsync(source, subscription.CancellationTokenSource.Token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException e)
@@ -155,9 +158,26 @@ public sealed class ElsaConsoleLogSubscriptionManager : IDisposable
         }
     }
 
-    private static bool MatchesSource(CoreConsoleLogSource source, ElsaConsoleLogFilter filter)
+    private static bool MatchesSource(ConsoleLogSource source, ElsaConsoleLogFilter filter)
     {
         return string.IsNullOrWhiteSpace(filter.SourceId) || string.Equals(source.Id, filter.SourceId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetSourceSignature(ConsoleLogSource source)
+    {
+        var metadata = source.Metadata
+            .OrderBy(x => x.Key, StringComparer.Ordinal)
+            .ThenBy(x => x.Value, StringComparer.Ordinal)
+            .Select(x => $"{x.Key}={x.Value}");
+
+        return string.Join('\u001f',
+            source.Id,
+            source.DisplayName,
+            source.ServiceName,
+            source.ProcessId?.ToString(),
+            source.MachineName,
+            source.Health.ToString(),
+            string.Join('\u001e', metadata));
     }
 
     private sealed record ConsoleLogSubscription(ElsaConsoleLogFilter Filter, CancellationTokenSource CancellationTokenSource);

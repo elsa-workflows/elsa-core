@@ -1,5 +1,4 @@
 using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.Core.Capture;
 using ConsoleLogStreaming.Core.DependencyInjection;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
 using Elsa.Diagnostics.ConsoleLogs.Services;
@@ -13,21 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 
 [Collection(ConsoleHostStateCollection.Name)]
-public class ConsoleLogContextAccessorTests : IAsyncLifetime
+public class ConsoleLogContextAccessorTests
 {
     private readonly ConsoleLogContextAccessor _accessor = ConsoleLogContextAccessor.Instance;
-
-    public Task InitializeAsync()
-    {
-        ConsoleStreamHook.Uninstall();
-        return Task.CompletedTask;
-    }
-
-    public Task DisposeAsync()
-    {
-        ConsoleStreamHook.Uninstall();
-        return Task.CompletedTask;
-    }
 
     [Fact]
     public void PushMetadata_RestoresNestedCaseInsensitiveMetadata()
@@ -88,49 +75,6 @@ public class ConsoleLogContextAccessorTests : IAsyncLifetime
         var line = Assert.Single(result.Items);
         Assert.Equal("duplicate", line.Text);
         Assert.Equal("workflow-b", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
-    }
-
-    [Fact]
-    public void ConsoleLineBuffer_PreservesWorkflowMetadataForMultilineOutput()
-    {
-        var buffer = new ConsoleLineBuffer(Microsoft.Extensions.Options.Options.Create(new ConsoleLogStreaming.Core.Options.ConsoleLogOptions()));
-        IReadOnlyCollection<BufferedConsoleLine> lines;
-
-        using (_accessor.PushWorkflowInstanceId("workflow-multiline"))
-            lines = buffer.Append("first line\nsecond line\n", DateTimeOffset.UtcNow, _accessor.GetMetadata());
-
-        Assert.Collection(
-            lines,
-            line => Assert.Equal("workflow-multiline", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]),
-            line => Assert.Equal("workflow-multiline", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]));
-    }
-
-    [Fact]
-    public async Task ConsoleCapture_AttachesWorkflowMetadataToNonLoggerConsoleWrites()
-    {
-        await using var serviceProvider = new ServiceCollection()
-            .AddSingleton<IConsoleLogMetadataAccessor>(_accessor)
-            .AddConsoleLogStreaming(options => options.SourceId = "test-source")
-            .BuildServiceProvider();
-
-        var capture = serviceProvider.GetRequiredService<IConsoleLogCapture>();
-        await capture.StartAsync();
-
-        using (_accessor.PushWorkflowInstanceId("workflow-console"))
-            Console.WriteLine("plain console output");
-
-        await capture.StopAsync();
-
-        var result = await serviceProvider.GetRequiredService<IConsoleLogProvider>().GetRecentAsync(new ConsoleLogStreaming.Core.Models.ConsoleLogFilter
-        {
-            Metadata = new Dictionary<string, string>
-            {
-                [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-console"
-            }
-        });
-
-        var line = Assert.Single(result.Items, x => x.Text == "plain console output");
-        Assert.Equal("workflow-console", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
 
@@ -6,6 +8,17 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class TypeExtensions
 {
+    private static readonly ConcurrentDictionary<Type, string> SimpleAssemblyQualifiedTypeNameCache = new();
+
+    /// <summary>
+    /// Gets the assembly-qualified name of the type, without version, culture, and public key token information.
+    /// </summary>
+    public static string GetSimpleAssemblyQualifiedName(this Type type)
+    {
+        if (type is null) throw new ArgumentNullException(nameof(type));
+        return SimpleAssemblyQualifiedTypeNameCache.GetOrAdd(type, BuildSimplifiedName);
+    }
+
     /// <summary>
     /// Returns true of the type is generic, false otherwise.
     /// </summary>
@@ -54,4 +67,22 @@ public static class TypeExtensions
     {
         return type.IsPrimitive || type == typeof(decimal) || type == typeof(float) || type == typeof(double) || type == typeof(int) || type == typeof(long) || type == typeof(short) || type == typeof(byte) || type == typeof(uint) || type == typeof(ulong) || type == typeof(ushort) || type == typeof(sbyte);
     } 
+
+    private static string BuildSimplifiedName(Type type)
+    {
+        var assemblyName = type.Assembly.GetName().Name;
+
+        if (type.IsGenericType)
+        {
+            var genericTypeName = type.GetGenericTypeDefinition().FullName!;
+            var backtickIndex = genericTypeName.IndexOf('`');
+            var typeNameWithoutArity = genericTypeName[..backtickIndex];
+            var arity = genericTypeName[backtickIndex..];
+            var simplifiedGenericArguments = type.GetGenericArguments().Select(BuildSimplifiedName);
+
+            return $"{typeNameWithoutArity}{arity}[[{string.Join("],[", simplifiedGenericArguments)}]], {assemblyName}";
+        }
+
+        return $"{type.FullName}, {assemblyName}";
+    }
 }

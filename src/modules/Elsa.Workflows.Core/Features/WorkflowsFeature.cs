@@ -2,7 +2,6 @@ using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Features;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -17,6 +16,7 @@ using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.PortResolvers;
@@ -91,7 +91,12 @@ public class WorkflowsFeature : FeatureBase
     /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     /// </summary>
-    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
+    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder
+        .UseLogging()
+        .UseExceptionHandling()
+        .UseExecutionLogging()
+        .UseNotifications()
+        .UseDefaultActivityInvoker();
 
     /// <summary>
     /// Fluent method to set <see cref="StandardInStreamProvider"/>.
@@ -164,34 +169,30 @@ public class WorkflowsFeature : FeatureBase
 
     private void AddElsaCore(IServiceCollection services)
     {
-        services.Configure<ExpressionOptions>(options =>
+        services.Configure<SerializationTypeOptions>(options =>
         {
-            options.RegisterTypeAlias(typeof(ExceptionState), nameof(ExceptionState));
-            options.RegisterTypeAlias(typeof(FaultException), nameof(FaultException));
-            options.RegisterTypeAlias(typeof(VariablesDictionary), nameof(VariablesDictionary));
-            options.RegisterTypeAlias(typeof(Token), nameof(Token));
-            options.RegisterTypeAlias(typeof(FlowJoinMode), "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core");
-            options.RegisterTypeAlias(typeof(FlowJoinMode), typeof(FlowJoinMode).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(FlowJoinMode), nameof(FlowJoinMode));
-            options.RegisterTypeAlias(typeof(WorkflowStorageDriver), typeof(WorkflowStorageDriver).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(WorkflowStorageDriver), nameof(WorkflowStorageDriver));
-            options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), typeof(WorkflowInstanceStorageDriver).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(WorkflowInstanceStorageDriver), nameof(WorkflowInstanceStorageDriver));
-            options.RegisterTypeAlias(typeof(MemoryStorageDriver), typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(MemoryStorageDriver), nameof(MemoryStorageDriver));
-            options.RegisterTypeAlias(typeof(FaultStrategy), typeof(FaultStrategy).GetSimpleAssemblyQualifiedName());
-            options.RegisterTypeAlias(typeof(FaultStrategy), nameof(FaultStrategy));
-            options.RegisterTypeAlias(typeof(Exception), nameof(Exception));
-            options.RegisterTypeAlias(typeof(ArgumentException), nameof(ArgumentException));
-            options.RegisterTypeAlias(typeof(ArgumentNullException), nameof(ArgumentNullException));
-            options.RegisterTypeAlias(typeof(InvalidOperationException), nameof(InvalidOperationException));
-            options.RegisterTypeAlias(typeof(NullReferenceException), nameof(NullReferenceException));
-            options.RegisterTypeAlias(typeof(OperationCanceledException), nameof(OperationCanceledException));
-            options.RegisterTypeAlias(typeof(TaskCanceledException), nameof(TaskCanceledException));
-            options.RegisterTypeAlias(typeof(TimeoutException), nameof(TimeoutException));
-            options.RegisterTypeAlias(typeof(NotSupportedException), nameof(NotSupportedException));
-            options.RegisterTypeAlias(typeof(JObject), nameof(JObject));
-            options.RegisterTypeAlias(typeof(JArray), nameof(JArray));
+            options.AddTypeAlias<ExceptionState>(nameof(ExceptionState));
+            options.AddTypeAlias<FaultException>(nameof(FaultException));
+            options.AddTypeAlias<VariablesDictionary>(nameof(VariablesDictionary));
+            options.AddTypeAlias<Token>(nameof(Token));
+            options.RegisterLegacyTypeName(typeof(FlowJoinMode), "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core");
+            options.AddTypeAliasWithLegacyName<FlowJoinMode>(nameof(FlowJoinMode));
+            options.AddTypeAliasWithLegacyName<WorkflowStorageDriver>(nameof(WorkflowStorageDriver));
+            options.AddTypeAliasWithLegacyName<WorkflowInstanceStorageDriver>(nameof(WorkflowInstanceStorageDriver));
+            options.AddTypeAliasWithLegacyName<MemoryStorageDriver>(nameof(MemoryStorageDriver));
+            options.AddTypeAliasWithLegacyName<FaultStrategy>(nameof(FaultStrategy));
+            options.AddTypeAliasWithLegacyName<ContinueWithIncidentsStrategy>(nameof(ContinueWithIncidentsStrategy));
+            options.AddTypeAlias<Exception>(nameof(Exception));
+            options.AddTypeAlias<ArgumentException>(nameof(ArgumentException));
+            options.AddTypeAlias<ArgumentNullException>(nameof(ArgumentNullException));
+            options.AddTypeAlias<InvalidOperationException>(nameof(InvalidOperationException));
+            options.AddTypeAlias<NullReferenceException>(nameof(NullReferenceException));
+            options.AddTypeAlias<OperationCanceledException>(nameof(OperationCanceledException));
+            options.AddTypeAlias<TaskCanceledException>(nameof(TaskCanceledException));
+            options.AddTypeAlias<TimeoutException>(nameof(TimeoutException));
+            options.AddTypeAlias<NotSupportedException>(nameof(NotSupportedException));
+            options.AddTypeAlias<JObject>(nameof(JObject));
+            options.AddTypeAlias<JArray>(nameof(JArray));
         });
 
         services
@@ -264,6 +265,7 @@ public class WorkflowsFeature : FeatureBase
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.
+            .AddSingleton<ISerializationTypeRegistry, SerializationTypeRegistry>()
             .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
             .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
             .AddSingleton<IActivitySerializer, JsonActivitySerializer>()
