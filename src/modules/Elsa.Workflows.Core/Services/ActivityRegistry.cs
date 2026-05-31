@@ -163,7 +163,6 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
         var registry = GetOrCreateRegistry(activityDescriptor.TenantId);
         Add(activityDescriptor, registry, _manualActivityDescriptors);
-        _manualActivityDescriptors.Add(activityDescriptor);
     }
 
     /// <inheritdoc />
@@ -221,8 +220,11 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
             registry.ProvidedActivityDescriptors[providerType] = providerDescriptors;
         }
 
-        foreach (var registry in GetRegistriesWithProvider(providerType).Where(x => !refreshedRegistries.Contains(x)))
+        foreach (var registry in GetRegistriesWithProvider(providerType))
         {
+            if (refreshedRegistries.Contains(registry))
+                continue;
+
             if (!registry.ProvidedActivityDescriptors.TryRemove(providerType, out var oldDescriptors))
                 continue;
 
