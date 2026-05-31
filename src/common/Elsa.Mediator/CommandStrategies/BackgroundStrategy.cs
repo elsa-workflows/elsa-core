@@ -21,7 +21,7 @@ public class BackgroundStrategy : ICommandStrategy
             commandContext.ResultType,
             commandContext.Headers,
             commandContext.ServiceProvider,
-            commandContext.CancellationToken);
+            CancellationToken.None);
         await commandsChannel.Writer.WriteAsync(queuedContext, context.CancellationToken);
         return default!;
     }

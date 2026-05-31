@@ -292,7 +292,7 @@ public class ConsoleLogsAuthorizationTests
     private static ElsaConsoleLogsHub CreateHub(TestConsoleLogProvider provider, params string[] permissions)
     {
         var hubContext = new TestHubContext();
-        var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
+        var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, new TestConsoleLogSourceRegistry(), hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
         var authorizer = new ElsaConsoleLogStreamHubAuthorizer();
 
         return new ElsaConsoleLogsHub(provider, authorizer, subscriptionManager)

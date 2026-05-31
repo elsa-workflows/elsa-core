@@ -24,7 +24,7 @@ public class ElsaConsoleLogSubscriptionManagerTests
             ConsoleLogStreamingItem.FromLine(CreateLine(source, "second")));
         var client = new RecordingConsoleLogsClient();
         var hubContext = new TestHubContext(client);
-        using var manager = new ElsaConsoleLogSubscriptionManager(provider, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
+        using var manager = new ElsaConsoleLogSubscriptionManager(provider, new TestConsoleLogSourceRegistry(), hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
 
         await manager.SubscribeAsync("connection-1", new(), CancellationToken.None);
 
@@ -88,6 +88,25 @@ public class ElsaConsoleLogSubscriptionManagerTests
         public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+        }
+    }
+
+    private sealed class TestConsoleLogSourceRegistry : IConsoleLogSourceRegistry
+    {
+        public event Action<ConsoleLogSource>? SourceChanged;
+
+        public ConsoleLogSource Current { get; private set; } = new() { Id = "test-source" };
+
+        public ConsoleLogSource MarkSeen(ConsoleLogSource source, DateTimeOffset timestamp)
+        {
+            Current = source;
+            SourceChanged?.Invoke(source);
+            return source;
+        }
+
+        public IReadOnlyCollection<ConsoleLogSource> List()
+        {
+            return [Current];
         }
     }
 
