@@ -1,8 +1,9 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Features;
-using Elsa.Workflows.Serialization.Options;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management;
 
@@ -17,7 +18,8 @@ public static class WorkflowManagementFeatureExtensions
     public static WorkflowManagementFeature AddVariableTypeAndAlias<T>(this WorkflowManagementFeature management, string alias, string category)
     {
         management.AddVariableType<T>(category);
-        management.Module.Services.Configure<WorkflowJsonOptions>(options => options.AddTypeAlias<T>(alias));
+        management.Module.AddTypeAlias<T>(alias);
+        management.Module.Services.Configure<SerializationTypeOptions>(options => options.RegisterTypeAlias(typeof(T), alias));
         return management;
     }
 }

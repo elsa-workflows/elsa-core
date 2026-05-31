@@ -2,11 +2,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Elsa.Common.Serialization;
 using Elsa.Workflows.Serialization.Converters;
-using Elsa.Workflows.Serialization.Options;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Serialization.Serializers;
 
@@ -14,26 +12,18 @@ namespace Elsa.Workflows.Serialization.Serializers;
 /// Serializes and deserializes workflow states from and to JSON.
 /// </summary>
 public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStateSerializer
-    {
-        private readonly ILoggerFactory _loggerFactory;
-        private readonly IOptions<WorkflowJsonOptions> _workflowJsonOptions;
+{
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonWorkflowStateSerializer"/> class.
     /// </summary>
-    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, ILoggerFactory loggerFactory)
-        : this(serviceProvider, loggerFactory, Microsoft.Extensions.Options.Options.Create(new WorkflowJsonOptions()))
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="JsonWorkflowStateSerializer"/> class.
-    /// </summary>
-    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, ILoggerFactory loggerFactory, IOptions<WorkflowJsonOptions> workflowJsonOptions)
+    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, ISerializationTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory)
         : base(serviceProvider)
     {
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
         _loggerFactory = loggerFactory;
-        _workflowJsonOptions = workflowJsonOptions;
     }
 
     /// <inheritdoc />
@@ -144,9 +134,9 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     /// <inheritdoc />
     protected override void AddConverters(JsonSerializerOptions options)
     {
-        options.Converters.Add(new TypeJsonConverter(_workflowJsonOptions));
-        options.Converters.Add(new PolymorphicObjectConverterFactory(_workflowJsonOptions));
-        options.Converters.Add(new VariableConverterFactory(_loggerFactory, _workflowJsonOptions));
+        options.Converters.Add(new TypeJsonConverter(_workflowJsonTypeRegistry));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(_workflowJsonTypeRegistry));
+        options.Converters.Add(new VariableConverterFactory(_workflowJsonTypeRegistry, _loggerFactory));
         options.Converters.Add(new FuncExpressionValueConverter());
     }
 }

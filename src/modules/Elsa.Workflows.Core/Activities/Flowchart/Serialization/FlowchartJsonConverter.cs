@@ -4,10 +4,9 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
-using Elsa.Workflows.Serialization.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
@@ -15,7 +14,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 /// A JSON converter for <see cref="Activities.Flowchart"/>.
 /// </summary>
 [UsedImplicitly]
-public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IOptions<WorkflowJsonOptions> workflowJsonOptions, ILoggerFactory loggerFactory) : JsonConverter<Activities.Flowchart>
+public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, ISerializationTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory) : JsonConverter<Activities.Flowchart>
 {
     private const string AllActivitiesKey = "allActivities";
     private const string AllConnectionsKey = "allConnections";
@@ -48,7 +47,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IOptio
         var variables = variablesElement.ValueKind != JsonValueKind.Undefined ? variablesElement.Deserialize<ICollection<Variable>>(options) ?? new List<Variable>() : new List<Variable>();
 
         var polymorphicOptions = options.Clone();
-        polymorphicOptions.Converters.Add(new PolymorphicDictionaryConverter(options, workflowJsonOptions.Value));
+        polymorphicOptions.Converters.Add(new PolymorphicDictionaryConverter(options, workflowJsonTypeRegistry));
 
         var metadataElement = doc.RootElement.TryGetProperty("metadata", out var metadataEl) ? metadataEl : default;
         var metadata = metadataElement.ValueKind != JsonValueKind.Undefined ? metadataElement.Deserialize<IDictionary<string, object>>(polymorphicOptions) ?? new Dictionary<string, object>() : new Dictionary<string, object>();
@@ -106,7 +105,7 @@ public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IOptio
 
         var flowchartSerializerOptions = new JsonSerializerOptions(options);
         flowchartSerializerOptions.Converters.Add(new ConnectionJsonConverter(activityDictionary, loggerFactory));
-        flowchartSerializerOptions.Converters.Add(new PolymorphicDictionaryConverter(options, workflowJsonOptions.Value));
+        flowchartSerializerOptions.Converters.Add(new PolymorphicDictionaryConverter(options, workflowJsonTypeRegistry));
 
         JsonSerializer.Serialize(writer, model, flowchartSerializerOptions);
     }

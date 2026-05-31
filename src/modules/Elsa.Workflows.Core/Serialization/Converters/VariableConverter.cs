@@ -2,9 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Serialization.Options;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -18,16 +17,9 @@ public class VariableConverter : JsonConverter<Variable>
 
     /// <inheritdoc />
     // ReSharper disable once ContextualLoggerProblem
-    public VariableConverter(ILogger<VariableMapper> logger)
+    public VariableConverter(ISerializationTypeRegistry workflowJsonTypeRegistry, ILogger<VariableMapper> logger)
     {
-        _mapper = new VariableMapper(logger);
-    }
-
-    /// <inheritdoc />
-    // ReSharper disable once ContextualLoggerProblem
-    public VariableConverter(ILogger<VariableMapper> logger, IOptions<WorkflowJsonOptions> workflowJsonOptions)
-    {
-        _mapper = new VariableMapper(logger, workflowJsonOptions);
+        _mapper = new VariableMapper(workflowJsonTypeRegistry, logger);
     }
 
     /// <inheritdoc />

@@ -8,10 +8,11 @@ using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
 using Elsa.Alterations.Workflows;
-using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Alterations.ShellFeatures;
 
@@ -42,10 +43,10 @@ public class AlterationsFeature : IFastEndpointsShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.Configure<WorkflowJsonOptions>(options =>
+        services.Configure<SerializationTypeOptions>(options =>
         {
-            options.RegisterTypeAlias(typeof(AlterationPlanParams), typeof(AlterationPlanParams).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
+            options.RegisterLegacySimpleAssemblyQualifiedName(typeof(AlterationPlanParams));
         });
 
         services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();

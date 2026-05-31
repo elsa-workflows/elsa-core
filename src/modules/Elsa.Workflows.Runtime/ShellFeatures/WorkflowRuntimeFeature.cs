@@ -3,15 +3,14 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Common.RecurringTasks;
-using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
-using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Discovery;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
@@ -26,6 +25,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
@@ -185,7 +185,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
-        services.Configure<WorkflowJsonOptions>(RegisterWorkflowTypeAliases);
+        services.Configure<SerializationTypeOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -227,7 +227,6 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>()
             
             // Core.
-            .AddSingleton<WorkflowTriggerEqualityComparer>()
             .AddScoped<ITriggerIndexer, TriggerIndexer>()
             .AddScoped<IWorkflowInstanceFactory, WorkflowInstanceFactory>()
             .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()
@@ -237,7 +236,6 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)
             .AddScoped(RunTaskDispatcher)
-            .AddScoped(DispatchWorkflowCommandHandler)
             .AddScoped(ActivityExecutionLogSink)
             .AddScoped(WorkflowExecutionLogSink)
             .AddSingleton(BackgroundActivityScheduler)
@@ -364,9 +362,33 @@ public class WorkflowRuntimeFeature : IShellFeature
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(WorkflowJsonOptions options)
+    private void RegisterWorkflowTypeAliases(SerializationTypeOptions options)
     {
-        foreach (var workflowType in WorkflowTypes)
-            options.RegisterTypeAlias(workflowType, workflowType.GetSimpleAssemblyQualifiedName());
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, GetRegisteredWorkflowTypes());
+    }
+
+    private IEnumerable<Type> GetRegisteredWorkflowTypes()
+    {
+        return WorkflowTypes
+            .Concat(Workflows.Keys.Select(TryResolveWorkflowType).Where(type => type != null).Select(type => type!))
+            .Distinct();
+    }
+
+    private static Type? TryResolveWorkflowType(string typeName)
+    {
+        Type? type;
+
+        try
+        {
+            type = Type.GetType(typeName, false);
+        }
+        catch (Exception e) when (e is ArgumentException or FileLoadException or FileNotFoundException or TypeLoadException or BadImageFormatException)
+        {
+            return null;
+        }
+
+        return type != null && typeof(IWorkflow).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false }
+            ? type
+            : null;
     }
 }

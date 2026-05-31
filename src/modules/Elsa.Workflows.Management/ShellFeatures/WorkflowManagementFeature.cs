@@ -5,9 +5,9 @@ using CShells.Features;
 using Elsa.Caching.Features;
 using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
-using Elsa.Workflows.Serialization.Options;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
@@ -25,6 +25,7 @@ using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management.ShellFeatures;
 
@@ -133,6 +134,6 @@ public class WorkflowManagementFeature : IShellFeature
         // Register the default variable descriptors declared on this feature.
         services.AddVariableDescriptors(VariableDescriptors);
 
-        services.Configure<WorkflowJsonOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));
+        services.Configure<SerializationTypeOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));
     }
 }

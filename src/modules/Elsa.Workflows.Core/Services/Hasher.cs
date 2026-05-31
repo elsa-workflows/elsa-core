@@ -3,8 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Serialization.Converters;
-using Elsa.Workflows.Serialization.Options;
-using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows;
 
@@ -13,12 +12,7 @@ public class Hasher : IHasher
 {
     private readonly JsonSerializerOptions _serializerOptions;
     
-    public Hasher()
-        : this(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonOptions()))
-    {
-    }
-
-    public Hasher(IOptions<WorkflowJsonOptions> workflowJsonOptions)
+    public Hasher(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _serializerOptions = new JsonSerializerOptions
         {
@@ -27,7 +21,7 @@ public class Hasher : IHasher
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
         
-        _serializerOptions.Converters.Add(new TypeJsonConverter(workflowJsonOptions));
+        _serializerOptions.Converters.Add(new TypeJsonConverter(workflowJsonTypeRegistry));
         _serializerOptions.Converters.Add(new ExcludeFromHashConverterFactory());
     }
     

@@ -1,8 +1,7 @@
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Serialization.Options;
-using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -11,30 +10,22 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class PolymorphicObjectConverterFactory : JsonConverterFactory
 {
-    private readonly WorkflowJsonOptions _workflowJsonOptions;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
 
     /// <summary>
     /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
     /// </summary>
-    public PolymorphicObjectConverterFactory(IOptions<WorkflowJsonOptions> workflowJsonOptions)
-        : this(workflowJsonOptions.Value)
+    public PolymorphicObjectConverterFactory(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
-    }
-
-    /// <summary>
-    /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
-    /// </summary>
-    public PolymorphicObjectConverterFactory(WorkflowJsonOptions workflowJsonOptions)
-    {
-        _workflowJsonOptions = workflowJsonOptions;
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
     }
 
     /// <summary>
     /// Default constructor for use with attributes.
     /// </summary>
     public PolymorphicObjectConverterFactory()
-        : this(new WorkflowJsonOptions())
     {
+        _workflowJsonTypeRegistry = SerializationTypeRegistry.CreateDefault();
     }
 
     /// <inheritdoc />
@@ -57,8 +48,8 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         if (typeof(IDictionary<string, object>).IsAssignableFrom(typeToConvert))
-            return new PolymorphicDictionaryConverter(options, _workflowJsonOptions);
+            return new PolymorphicDictionaryConverter(options, _workflowJsonTypeRegistry);
 
-        return new PolymorphicObjectConverter(_workflowJsonOptions);
+        return new PolymorphicObjectConverter(_workflowJsonTypeRegistry);
     }
 }

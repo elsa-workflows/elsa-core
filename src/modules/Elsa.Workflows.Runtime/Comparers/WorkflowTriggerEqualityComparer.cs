@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Serialization.Converters;
-using Elsa.Workflows.Serialization.Options;
-using Microsoft.Extensions.Options;
+using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.Comparers;
 
@@ -18,23 +18,14 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
-    public WorkflowTriggerEqualityComparer()
-        : this(new WorkflowJsonOptions())
+    public WorkflowTriggerEqualityComparer() : this(SerializationTypeRegistry.CreateDefault())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
-    public WorkflowTriggerEqualityComparer(IOptions<WorkflowJsonOptions> workflowJsonOptions)
-        : this(workflowJsonOptions.Value)
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
-    /// </summary>
-    public WorkflowTriggerEqualityComparer(WorkflowJsonOptions workflowJsonOptions)
+    public WorkflowTriggerEqualityComparer(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _settings = new()
         {
@@ -53,8 +44,8 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
         // polymorphic object properties serialize identically to their stored representation.
         _settings.Converters.Add(new JsonStringEnumConverter());
         _settings.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        _settings.Converters.Add(new PolymorphicObjectConverterFactory(workflowJsonOptions));
-        _settings.Converters.Add(new TypeJsonConverter(workflowJsonOptions));
+        _settings.Converters.Add(new PolymorphicObjectConverterFactory(workflowJsonTypeRegistry));
+        _settings.Converters.Add(new TypeJsonConverter(workflowJsonTypeRegistry));
     }
 
     /// <inheritdoc />

@@ -15,6 +15,7 @@ using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -31,9 +32,9 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IServiceProvider _serviceProvider;
     private readonly IStimulusHasher _hasher;
     private readonly IDistributedLockProvider _distributedLockProvider;
+    private readonly WorkflowTriggerEqualityComparer _triggerEqualityComparer;
     private readonly DistributedLockingOptions _lockingOptions;
     private readonly ILogger _logger;
-    private readonly WorkflowTriggerEqualityComparer _triggerEqualityComparer;
 
     /// <summary>
     /// Constructor.
@@ -49,8 +50,8 @@ public class TriggerIndexer : ITriggerIndexer
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
         IDistributedLockProvider distributedLockProvider,
+        ISerializationTypeRegistry workflowJsonTypeRegistry,
         IOptions<DistributedLockingOptions> lockingOptions,
-        WorkflowTriggerEqualityComparer triggerEqualityComparer,
         ILogger<TriggerIndexer> logger)
     {
         _activityVisitor = activityVisitor;
@@ -62,8 +63,8 @@ public class TriggerIndexer : ITriggerIndexer
         _serviceProvider = serviceProvider;
         _hasher = hasher;
         _distributedLockProvider = distributedLockProvider;
+        _triggerEqualityComparer = new WorkflowTriggerEqualityComparer(workflowJsonTypeRegistry);
         _lockingOptions = lockingOptions.Value;
-        _triggerEqualityComparer = triggerEqualityComparer;
         _logger = logger;
         _workflowDefinitionService = workflowDefinitionService;
     }

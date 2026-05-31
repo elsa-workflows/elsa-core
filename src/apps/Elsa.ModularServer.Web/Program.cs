@@ -48,7 +48,6 @@ services.AddOpenTelemetry()
         .AddHttpClientInstrumentation()
         .AddMeter(WorkflowInstrumentation.MeterName)
         .AddOtlpExporter(options => ConfigureDiagnosticsOtlpExporter(options, configuration, "metrics")));
-
 var nuplaneConfiguration = configuration.GetSection("Nuplane");
 
 services.AddNuplane(nuplaneConfiguration, nuplane =>
