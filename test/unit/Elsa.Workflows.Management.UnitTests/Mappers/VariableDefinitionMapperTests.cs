@@ -7,13 +7,14 @@ using Elsa.Workflows.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management.UnitTests.Mappers;
 
 public class VariableDefinitionMapperTests
 {
     private readonly IServiceScopeFactory _scopeFactory = Substitute.For<IServiceScopeFactory>();
-    private readonly WorkflowJsonTypeOptions _workflowJsonTypeOptions = new();
+    private readonly SerializationTypeOptions _workflowJsonTypeOptions = new();
     private readonly VariableDefinitionMapper _mapper;
 
     public VariableDefinitionMapperTests()
@@ -36,7 +37,7 @@ public class VariableDefinitionMapperTests
     [Fact]
     public void Map_ResolvesRegisteredLegacyClrTypeName()
     {
-        var workflowJsonTypeOptions = new WorkflowJsonTypeOptions();
+        var workflowJsonTypeOptions = new SerializationTypeOptions();
         workflowJsonTypeOptions.RegisterTypeAlias(typeof(UnregisteredPayload), nameof(UnregisteredPayload));
         workflowJsonTypeOptions.RegisterLegacySimpleAssemblyQualifiedName(typeof(UnregisteredPayload));
         var mapper = CreateMapper(workflowJsonTypeOptions);
@@ -60,7 +61,7 @@ public class VariableDefinitionMapperTests
     [Fact]
     public void Map_WritesRegisteredVariableTypeAsAlias()
     {
-        var workflowJsonTypeOptions = new WorkflowJsonTypeOptions();
+        var workflowJsonTypeOptions = new SerializationTypeOptions();
         workflowJsonTypeOptions.RegisterTypeAlias(typeof(UnregisteredPayload), nameof(UnregisteredPayload));
         var mapper = CreateMapper(workflowJsonTypeOptions);
         var variable = new Variable<UnregisteredPayload>("payload", new());
@@ -70,9 +71,9 @@ public class VariableDefinitionMapperTests
         Assert.Equal(nameof(UnregisteredPayload), definition.TypeName);
     }
 
-    private VariableDefinitionMapper CreateMapper(WorkflowJsonTypeOptions workflowJsonTypeOptions)
+    private VariableDefinitionMapper CreateMapper(SerializationTypeOptions workflowJsonTypeOptions)
     {
-        var workflowJsonTypeRegistry = new WorkflowJsonTypeRegistry(Microsoft.Extensions.Options.Options.Create(workflowJsonTypeOptions));
+        var workflowJsonTypeRegistry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(workflowJsonTypeOptions));
         return new(workflowJsonTypeRegistry, _scopeFactory, NullLogger<VariableDefinitionMapper>.Instance);
     }
 

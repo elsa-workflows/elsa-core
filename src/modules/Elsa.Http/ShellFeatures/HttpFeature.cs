@@ -28,6 +28,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Http.ShellFeatures;
 
@@ -218,7 +219,7 @@ public class HttpFeature : IMiddlewareShellFeature
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
 
-        services.Configure<WorkflowJsonTypeOptions>(options =>
+        services.Configure<SerializationTypeOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(HttpRequest), "HttpRequest");
             options.RegisterTypeAlias(typeof(HttpResponse), "HttpResponse");

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows;
 
@@ -11,7 +12,7 @@ public class Hasher : IHasher
 {
     private readonly JsonSerializerOptions _serializerOptions;
     
-    public Hasher(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
+    public Hasher(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _serializerOptions = new JsonSerializerOptions
         {

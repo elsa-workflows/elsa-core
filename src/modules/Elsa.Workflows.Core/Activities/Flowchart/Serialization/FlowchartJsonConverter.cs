@@ -6,6 +6,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 
@@ -13,7 +14,7 @@ namespace Elsa.Workflows.Activities.Flowchart.Serialization;
 /// A JSON converter for <see cref="Activities.Flowchart"/>.
 /// </summary>
 [UsedImplicitly]
-public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory) : JsonConverter<Activities.Flowchart>
+public class FlowchartJsonConverter(IIdentityGenerator identityGenerator, ISerializationTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory) : JsonConverter<Activities.Flowchart>
 {
     private const string AllActivitiesKey = "allActivities";
     private const string AllConnectionsKey = "allConnections";

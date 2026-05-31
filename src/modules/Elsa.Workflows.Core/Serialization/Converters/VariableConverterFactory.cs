@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.Logging;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -10,12 +11,12 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class VariableConverterFactory : JsonConverterFactory
 {
-    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
     private readonly ILoggerFactory _loggerFactory;
 
     /// <inheritdoc />
     // ReSharper disable once ContextualLoggerProblem
-    public VariableConverterFactory(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory)
+    public VariableConverterFactory(ISerializationTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory)
     {
         _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
         _loggerFactory = loggerFactory;

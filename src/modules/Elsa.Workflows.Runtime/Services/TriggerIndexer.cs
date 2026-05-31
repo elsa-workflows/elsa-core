@@ -15,6 +15,7 @@ using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -49,7 +50,7 @@ public class TriggerIndexer : ITriggerIndexer
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
         IDistributedLockProvider distributedLockProvider,
-        IWorkflowJsonTypeRegistry workflowJsonTypeRegistry,
+        ISerializationTypeRegistry workflowJsonTypeRegistry,
         IOptions<DistributedLockingOptions> lockingOptions,
         ILogger<TriggerIndexer> logger)
     {

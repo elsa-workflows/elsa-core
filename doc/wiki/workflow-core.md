@@ -150,11 +150,11 @@ Custom constructor and additional converter configurators are registered by `Wor
 
 ### Workflow JSON Type Identifiers
 
-Workflow JSON type resolution uses `IWorkflowJsonTypeRegistry`, not expression type aliases. Register workflow-serializable payload types through `WorkflowJsonTypeOptions`; keep `ExpressionOptions` for expression/type metadata only.
+Workflow JSON type resolution uses the shared `ISerializationTypeRegistry` from `Elsa.Common.Serialization`, not expression type aliases. Register workflow-serializable payload types through `SerializationTypeOptions`; keep `ExpressionOptions` for expression/type metadata only.
 
 New workflow JSON writes preferred aliases when a type is registered. Compatibility reads also accept explicitly registered legacy names, including selected CLR names from older persisted workflow JSON. Unknown CLR names are rejected rather than loaded dynamically. Polymorphic object reads also reject abstract, interface, open generic, and unsupported collection targets unless the resolver can map a known collection interface to a concrete collection type.
 
-Public API payloads that expose workflow JSON type identifiers should emit values from `IWorkflowJsonTypeRegistry`. For example, incident strategy descriptors return the alias that workflow JSON accepts, while registered legacy CLR names remain readable during the compatibility window.
+Public API payloads that expose workflow JSON type identifiers should emit values from `ISerializationTypeRegistry`. For example, incident strategy descriptors return the alias that workflow JSON accepts, while registered legacy CLR names remain readable during the compatibility window.
 
 ## When To Change This Layer
 

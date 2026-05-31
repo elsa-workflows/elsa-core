@@ -1,9 +1,9 @@
-namespace Elsa.Workflows;
+namespace Elsa.Common.Serialization;
 
 /// <summary>
-/// A registry of types that may be resolved from workflow JSON type identifiers.
+/// A registry of types that may be resolved from serialization type identifiers.
 /// </summary>
-public interface IWorkflowJsonTypeRegistry
+public interface ISerializationTypeRegistry
 {
     /// <summary>
     /// Registers a type with an alias.

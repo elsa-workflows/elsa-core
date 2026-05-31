@@ -5,13 +5,14 @@ using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows;
 using Humanizer;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Api.Endpoints.IncidentStrategies.List;
 
 /// <summary>
 /// Returns list of available <see cref="IIncidentStrategy" /> implementations.
 /// </summary>
-internal class List(IEnumerable<IIncidentStrategy> strategies, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry) : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDescriptor>>
+internal class List(IEnumerable<IIncidentStrategy> strategies, ISerializationTypeRegistry workflowJsonTypeRegistry) : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDescriptor>>
 {
     public override void Configure()
     {
@@ -29,7 +30,7 @@ internal class List(IEnumerable<IIncidentStrategy> strategies, IWorkflowJsonType
 
 internal record IncidentStrategyDescriptor(string DisplayName, string Description, string TypeName)
 {
-    public static IncidentStrategyDescriptor FromStrategy(IIncidentStrategy strategy, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
+    public static IncidentStrategyDescriptor FromStrategy(IIncidentStrategy strategy, ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         var type = strategy.GetType();
         var displayNameAttribute = type.GetCustomAttribute<DisplayNameAttribute>();

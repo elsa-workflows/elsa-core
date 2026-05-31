@@ -8,10 +8,10 @@ using Elsa.Scheduling.Handlers;
 using Elsa.Scheduling.Services;
 using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
-using Elsa.Workflows.Extensions;
 using Elsa.Workflows.Management.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Scheduling.ShellFeatures;
 
@@ -52,7 +52,7 @@ public class SchedulingFeature : IShellFeature
             .AddTriggerPayloadValidator<CronTriggerPayloadValidator, CronTriggerPayload>()
             .AddActivitiesFrom<SchedulingFeature>();
 
-        services.Configure<WorkflowJsonTypeOptions>(options =>
+        services.Configure<SerializationTypeOptions>(options =>
         {
             options.AddTypeAlias<CronBookmarkPayload>();
             options.AddTypeAlias<CronTriggerPayload>();

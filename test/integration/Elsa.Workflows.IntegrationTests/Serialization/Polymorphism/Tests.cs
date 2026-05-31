@@ -6,6 +6,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
 
@@ -75,7 +76,7 @@ public class Tests
     private JsonSerializerOptions GetSerializerOptions()
     {
         var referenceHandler = new CrossScopedReferenceHandler();
-        var workflowJsonTypeRegistry = new WorkflowJsonTypeRegistry(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonTypeOptions()));
+        var workflowJsonTypeRegistry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(new SerializationTypeOptions()));
         workflowJsonTypeRegistry.RegisterType(typeof(Model), nameof(Model));
         workflowJsonTypeRegistry.RegisterType(typeof(CustomDictionary), nameof(CustomDictionary));
 

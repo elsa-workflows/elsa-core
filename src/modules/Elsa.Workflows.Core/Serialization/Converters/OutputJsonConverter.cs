@@ -3,8 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Serialization.Helpers;
-using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -13,10 +12,10 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
 {
-    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
 
     /// <inheritdoc />
-    public OutputJsonConverter(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
+    public OutputJsonConverter(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
     }
@@ -51,7 +50,7 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
     public override void Write(Utf8JsonWriter writer, Output<T>? value, JsonSerializerOptions options)
     {
         var valueType = typeof(T);
-        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, valueType, out var alias)
+        var valueTypeAlias = SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, valueType, out var alias)
             ? alias
             : valueType.GetSimpleAssemblyQualifiedName();
 

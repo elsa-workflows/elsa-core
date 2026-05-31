@@ -12,6 +12,7 @@ using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Scheduling.Features;
 
@@ -58,7 +59,7 @@ public class SchedulingFeature : FeatureBase
             // Graceful shutdown: register scheduled-trigger ingress for diagnostic visibility (FR-006).
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Scheduling.IngressSources.ScheduledTriggerIngressSource>();
 
-        Services.Configure<WorkflowJsonTypeOptions>(options =>
+        Services.Configure<SerializationTypeOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(CronBookmarkPayload), nameof(CronBookmarkPayload));
             options.RegisterTypeAlias(typeof(CronTriggerPayload), nameof(CronTriggerPayload));

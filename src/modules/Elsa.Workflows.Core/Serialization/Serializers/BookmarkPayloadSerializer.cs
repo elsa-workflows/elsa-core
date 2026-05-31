@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Workflows.Serialization.Converters;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Serializers;
 
@@ -11,7 +12,7 @@ public class BookmarkPayloadSerializer : IBookmarkPayloadSerializer
     /// <summary>
     /// Initializes a new instance of the <see cref="BookmarkPayloadSerializer"/> class.
     /// </summary>
-    public BookmarkPayloadSerializer(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
+    public BookmarkPayloadSerializer(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _settings = new JsonSerializerOptions
         {

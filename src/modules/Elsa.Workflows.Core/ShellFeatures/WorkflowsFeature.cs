@@ -11,7 +11,6 @@ using Elsa.Workflows.Activities.Flowchart.Serialization;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Exceptions;
-using Elsa.Workflows.Extensions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
@@ -89,7 +88,7 @@ public class WorkflowsFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.Configure<WorkflowJsonTypeOptions>(options =>
+        services.Configure<SerializationTypeOptions>(options =>
         {
             options.AddTypeAlias<ExceptionState>(nameof(ExceptionState));
             options.AddTypeAlias<FaultException>(nameof(FaultException));
@@ -184,7 +183,7 @@ public class WorkflowsFeature : IShellFeature
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.
-            .AddSingleton<IWorkflowJsonTypeRegistry, WorkflowJsonTypeRegistry>()
+            .AddSingleton<ISerializationTypeRegistry, SerializationTypeRegistry>()
             .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
             .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
             .AddSingleton<IActivitySerializer, JsonActivitySerializer>()

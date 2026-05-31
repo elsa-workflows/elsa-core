@@ -2,24 +2,24 @@ using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management.Mappers;
 
 /// <summary>
 /// Maps <see cref="Variable"/>s to <see cref="VariableDefinition"/>s and vice versa.
 /// </summary>
-public class VariableDefinitionMapper(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
+public class VariableDefinitionMapper(ISerializationTypeRegistry workflowJsonTypeRegistry, IServiceScopeFactory scopeFactory, ILogger<VariableDefinitionMapper> logger)
 {
     /// <summary>
     /// Maps a <see cref="VariableDefinition"/> to a <see cref="Variable"/>.
     /// </summary>
     public Variable? Map(VariableDefinition source)
     {
-        var type = WorkflowJsonTypeResolver.TryResolveType(workflowJsonTypeRegistry, source.TypeName, out var resolvedType) ? resolvedType : null;
+        var type = SerializationTypeResolver.TryResolveType(workflowJsonTypeRegistry, source.TypeName, out var resolvedType) ? resolvedType : null;
 
         if (type == null)
         {
@@ -69,11 +69,11 @@ public class VariableDefinitionMapper(IWorkflowJsonTypeRegistry workflowJsonType
     {
         var variableType = source.GetType();
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(workflowJsonTypeRegistry, valueType, out var alias) ? alias : null;
+        var valueTypeAlias = SerializationTypeResolver.TryGetAlias(workflowJsonTypeRegistry, valueType, out var alias) ? alias : null;
         var value = source.Value;
         var serializedValue = value.Format();
         var storageDriverTypeName = source.StorageDriverType != null
-            ? WorkflowJsonTypeResolver.TryGetAlias(workflowJsonTypeRegistry, source.StorageDriverType, out var storageDriverAlias)
+            ? SerializationTypeResolver.TryGetAlias(workflowJsonTypeRegistry, source.StorageDriverType, out var storageDriverAlias)
                 ? storageDriverAlias
                 : source.StorageDriverType.GetSimpleAssemblyQualifiedName()
             : null;
@@ -85,7 +85,7 @@ public class VariableDefinitionMapper(IWorkflowJsonTypeRegistry workflowJsonType
         var isArray = valueType.IsArray;
         var isCollection = valueType.IsCollectionType();
         var elementValueType = isArray ? valueType.GetElementType()! : isCollection ? valueType.GenericTypeArguments[0] : valueType;
-        var elementTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(workflowJsonTypeRegistry, elementValueType, out var elementAlias)
+        var elementTypeAlias = SerializationTypeResolver.TryGetAlias(workflowJsonTypeRegistry, elementValueType, out var elementAlias)
             ? elementAlias
             : elementValueType.GetSimpleAssemblyQualifiedName();
 
@@ -102,7 +102,7 @@ public class VariableDefinitionMapper(IWorkflowJsonTypeRegistry workflowJsonType
         if (string.IsNullOrEmpty(storageDriverTypeName))
             return null;
 
-        if (WorkflowJsonTypeResolver.TryResolveType(workflowJsonTypeRegistry, storageDriverTypeName, out var type) && typeof(IStorageDriver).IsAssignableFrom(type))
+        if (SerializationTypeResolver.TryResolveType(workflowJsonTypeRegistry, storageDriverTypeName, out var type) && typeof(IStorageDriver).IsAssignableFrom(type))
             return type;
 
         // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.

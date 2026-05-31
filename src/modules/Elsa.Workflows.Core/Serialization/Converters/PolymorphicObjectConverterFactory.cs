@@ -1,7 +1,7 @@
 using System.Dynamic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -10,12 +10,12 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class PolymorphicObjectConverterFactory : JsonConverterFactory
 {
-    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
 
     /// <summary>
     /// A JSON converter factory that creates <see cref="PolymorphicObjectConverter"/> instances.
     /// </summary>
-    public PolymorphicObjectConverterFactory(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
+    public PolymorphicObjectConverterFactory(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
     }
@@ -25,7 +25,7 @@ public class PolymorphicObjectConverterFactory : JsonConverterFactory
     /// </summary>
     public PolymorphicObjectConverterFactory()
     {
-        _workflowJsonTypeRegistry = WorkflowJsonTypeRegistry.CreateDefault();
+        _workflowJsonTypeRegistry = SerializationTypeRegistry.CreateDefault();
     }
 
     /// <inheritdoc />

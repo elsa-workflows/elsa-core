@@ -6,7 +6,6 @@ using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Workflows.Extensions;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Builders;
@@ -170,7 +169,7 @@ public class WorkflowsFeature : FeatureBase
 
     private void AddElsaCore(IServiceCollection services)
     {
-        services.Configure<WorkflowJsonTypeOptions>(options =>
+        services.Configure<SerializationTypeOptions>(options =>
         {
             options.AddTypeAlias<ExceptionState>(nameof(ExceptionState));
             options.AddTypeAlias<FaultException>(nameof(FaultException));
@@ -266,7 +265,7 @@ public class WorkflowsFeature : FeatureBase
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.
-            .AddSingleton<IWorkflowJsonTypeRegistry, WorkflowJsonTypeRegistry>()
+            .AddSingleton<ISerializationTypeRegistry, SerializationTypeRegistry>()
             .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
             .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
             .AddSingleton<IActivitySerializer, JsonActivitySerializer>()

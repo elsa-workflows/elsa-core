@@ -4,6 +4,7 @@ using Elsa.Expressions.Options;
 using Elsa.Workflows.Options;
 using Jint;
 using Jint.Runtime;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Expressions.JavaScript;
 
@@ -20,7 +21,7 @@ internal static class JavaScriptExceptionTypeAliasRegistrar
             options.RegisterTypeAlias(wrapperExceptionType, "Jint.JavaScriptErrorWrapperException");
     }
 
-    public static void Register(WorkflowJsonTypeOptions options)
+    public static void Register(SerializationTypeOptions options)
     {
         options.RegisterTypeAlias(typeof(ScriptPreparationException), nameof(ScriptPreparationException));
         options.RegisterTypeAlias(typeof(JavaScriptException), nameof(JavaScriptException));

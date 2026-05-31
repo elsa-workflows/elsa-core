@@ -1,26 +1,25 @@
-using Elsa.Workflows.Options;
 using Microsoft.Extensions.Options;
 
-namespace Elsa.Workflows.Services;
+namespace Elsa.Common.Serialization;
 
 /// <inheritdoc />
-public class WorkflowJsonTypeRegistry : IWorkflowJsonTypeRegistry
+public class SerializationTypeRegistry : ISerializationTypeRegistry
 {
-    private readonly Dictionary<string, Type> _aliasTypeDictionary = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Type> _aliasTypeDictionary = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<Type, string> _typeAliasDictionary = new();
 
     /// <summary>
     /// Creates a default registry.
     /// </summary>
-    public static IWorkflowJsonTypeRegistry CreateDefault()
+    public static ISerializationTypeRegistry CreateDefault()
     {
-        return new WorkflowJsonTypeRegistry(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonTypeOptions()));
+        return new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(new SerializationTypeOptions()));
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowJsonTypeRegistry"/> class.
+    /// Initializes a new instance of the <see cref="SerializationTypeRegistry"/> class.
     /// </summary>
-    public WorkflowJsonTypeRegistry(IOptions<WorkflowJsonTypeOptions> options)
+    public SerializationTypeRegistry(IOptions<SerializationTypeOptions> options)
     {
         foreach (var entry in options.Value.AliasTypeDictionary)
             RegisterTypeName(entry.Value, entry.Key);

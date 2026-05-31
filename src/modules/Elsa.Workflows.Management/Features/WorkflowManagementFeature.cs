@@ -32,6 +32,7 @@ using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management.Features;
 
@@ -315,7 +316,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         });
 
         Services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));
-        Services.Configure<WorkflowJsonTypeOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));
+        Services.Configure<SerializationTypeOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));
         Services.Configure<HostMethodActivitiesOptions>(_ => { });
         Services.Configure<WorkflowReferenceGraphOptions>(_ => { });
     }

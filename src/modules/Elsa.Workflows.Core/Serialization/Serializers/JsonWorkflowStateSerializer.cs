@@ -13,13 +13,13 @@ namespace Elsa.Workflows.Serialization.Serializers;
 /// </summary>
 public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStateSerializer
 {
-    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
     private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonWorkflowStateSerializer"/> class.
     /// </summary>
-    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory)
+    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, ISerializationTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory)
         : base(serviceProvider)
     {
         _workflowJsonTypeRegistry = workflowJsonTypeRegistry;

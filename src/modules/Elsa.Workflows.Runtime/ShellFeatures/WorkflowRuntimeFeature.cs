@@ -25,6 +25,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
@@ -184,7 +185,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
-        services.Configure<WorkflowJsonTypeOptions>(RegisterWorkflowTypeAliases);
+        services.Configure<SerializationTypeOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -361,7 +362,7 @@ public class WorkflowRuntimeFeature : IShellFeature
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(WorkflowJsonTypeOptions options)
+    private void RegisterWorkflowTypeAliases(SerializationTypeOptions options)
     {
         WorkflowRuntimeTypeAliasRegistrar.Register(options, GetRegisteredWorkflowTypes());
     }

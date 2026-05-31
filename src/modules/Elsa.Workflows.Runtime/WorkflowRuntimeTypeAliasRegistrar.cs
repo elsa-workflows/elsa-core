@@ -1,15 +1,15 @@
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Extensions;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime;
 
 internal static class WorkflowRuntimeTypeAliasRegistrar
 {
-    public static void Register(WorkflowJsonTypeOptions options, IEnumerable<Type> workflowTypes)
+    public static void Register(SerializationTypeOptions options, IEnumerable<Type> workflowTypes)
     {
         options.AddTypeAlias<EventBookmarkPayload>();
         options.AddTypeAlias<ExecuteWorkflowPayload>();

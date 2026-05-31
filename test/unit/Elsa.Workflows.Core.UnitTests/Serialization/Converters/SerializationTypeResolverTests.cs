@@ -7,21 +7,21 @@ using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
-using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 
-public sealed class WorkflowJsonTypeResolverTests
+public sealed class SerializationTypeResolverTests
 {
     private static readonly string UnsafeAssemblyQualifiedTypeAlias = typeof(System.Text.StringBuilder).AssemblyQualifiedName!;
-    private readonly WorkflowJsonTypeRegistry _workflowJsonTypeRegistry = new(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonTypeOptions()));
+    private readonly SerializationTypeRegistry _workflowJsonTypeRegistry = new(Microsoft.Extensions.Options.Options.Create(new SerializationTypeOptions()));
     private readonly JsonSerializerOptions _options;
 
-    public WorkflowJsonTypeResolverTests()
+    public SerializationTypeResolverTests()
     {
         _workflowJsonTypeRegistry.RegisterType(typeof(ExceptionState), nameof(ExceptionState));
         _workflowJsonTypeRegistry.RegisterType(typeof(FaultException), nameof(FaultException));
@@ -52,6 +52,14 @@ public sealed class WorkflowJsonTypeResolverTests
         var typeAlias = typeof(RegisteredPayload).GetSimpleAssemblyQualifiedName();
 
         var result = JsonSerializer.Deserialize<Type>(JsonString(typeAlias), _options);
+
+        Assert.Equal(typeof(RegisteredPayload), result);
+    }
+
+    [Fact]
+    public void When_DeserializeRegisteredTypeAliasWithDifferentCasing_Then_ReturnsExpectedType()
+    {
+        var result = JsonSerializer.Deserialize<Type>(JsonString("registeredpayload"), _options);
 
         Assert.Equal(typeof(RegisteredPayload), result);
     }
@@ -150,7 +158,7 @@ public sealed class WorkflowJsonTypeResolverTests
         module.UseWorkflows();
         module.Apply();
         using var serviceProvider = services.BuildServiceProvider();
-        var registry = serviceProvider.GetRequiredService<IWorkflowJsonTypeRegistry>();
+        var registry = serviceProvider.GetRequiredService<ISerializationTypeRegistry>();
 
         var aliasRegistered = registry.TryGetAlias(typeof(NullReferenceException), out var alias);
         var typeRegistered = registry.TryGetType(nameof(NullReferenceException), out var type);
@@ -322,15 +330,15 @@ public sealed class WorkflowJsonTypeResolverTests
     public void When_RegistryChangesAfterLegacyResolutionAttempt_Then_LegacyResolutionUsesCurrentRegistry()
     {
         var typeAlias = typeof(LateRegisteredPayload).GetSimpleAssemblyQualifiedName();
-        Assert.False(WorkflowJsonTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out _));
+        Assert.False(SerializationTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out _));
 
         _workflowJsonTypeRegistry.RegisterType(typeof(LateRegisteredPayload), "LateRegisteredPayload");
 
-        Assert.True(WorkflowJsonTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out var result));
+        Assert.True(SerializationTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out var result));
         Assert.Equal(typeof(LateRegisteredPayload), result);
     }
 
-    private static JsonSerializerOptions CreateOptions(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry) => new()
+    private static JsonSerializerOptions CreateOptions(ISerializationTypeRegistry workflowJsonTypeRegistry) => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
@@ -341,7 +349,7 @@ public sealed class WorkflowJsonTypeResolverTests
         }
     };
 
-    private static JsonSerializerOptions CreatePolymorphicOnlyOptions(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry) => new()
+    private static JsonSerializerOptions CreatePolymorphicOnlyOptions(ISerializationTypeRegistry workflowJsonTypeRegistry) => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,

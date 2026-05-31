@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Extensions;
 using Elsa.Workflows;
-using Elsa.Workflows.Extensions;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
@@ -11,6 +10,7 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -94,6 +94,6 @@ public static class DependencyInjectionExtensions
     private static void AddWorkflowRegistration(IServiceCollection services, Type workflowType)
     {
         services.PostConfigure<RuntimeOptions>(options => options.Workflows.Add(workflowType));
-        services.Configure<WorkflowJsonTypeOptions>(options => options.AddSimpleAssemblyQualifiedTypeAlias(workflowType));
+        services.Configure<SerializationTypeOptions>(options => options.AddSimpleAssemblyQualifiedTypeAlias(workflowType));
     }
 }

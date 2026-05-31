@@ -13,6 +13,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Resilience.Features;
 
@@ -68,7 +69,7 @@ public class ResilienceFeature(IModule module) : FeatureBase(module)
             options.AddTypeAlias<List<RetryAttemptRecord>>("RetryAttemptRecordList");
         });
 
-        Services.Configure<WorkflowJsonTypeOptions>(options =>
+        Services.Configure<SerializationTypeOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(List<RetryAttemptRecord>), "RetryAttemptRecordList");
         });

@@ -31,6 +31,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.Features;
 
@@ -270,7 +271,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.Configure(WorkflowInboxCleanupOptions);
         Services.Configure(WorkflowDispatcherOptions);
         Services.Configure(BookmarkQueuePurgeOptions);
-        Services.Configure<WorkflowJsonTypeOptions>(RegisterWorkflowTypeAliases);
+        Services.Configure<SerializationTypeOptions>(RegisterWorkflowTypeAliases);
         Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         Services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -443,7 +444,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(WorkflowJsonTypeOptions options)
+    private void RegisterWorkflowTypeAliases(SerializationTypeOptions options)
     {
         WorkflowRuntimeTypeAliasRegistrar.Register(options, GetRegisteredWorkflowTypes());
     }

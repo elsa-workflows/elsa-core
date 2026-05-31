@@ -4,6 +4,7 @@ using System.Text.Json.Serialization.Metadata;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.Comparers;
 
@@ -17,14 +18,14 @@ public class WorkflowTriggerEqualityComparer : IEqualityComparer<StoredTrigger>
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
-    public WorkflowTriggerEqualityComparer() : this(WorkflowJsonTypeRegistry.CreateDefault())
+    public WorkflowTriggerEqualityComparer() : this(SerializationTypeRegistry.CreateDefault())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTriggerEqualityComparer"/> class.
     /// </summary>
-    public WorkflowTriggerEqualityComparer(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
+    public WorkflowTriggerEqualityComparer(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         _settings = new()
         {

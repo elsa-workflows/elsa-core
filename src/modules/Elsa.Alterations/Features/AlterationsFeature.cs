@@ -11,6 +11,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Alterations.Features;
 
@@ -60,7 +61,7 @@ public class AlterationsFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
-        Services.Configure<WorkflowJsonTypeOptions>(options =>
+        Services.Configure<SerializationTypeOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
             options.RegisterLegacySimpleAssemblyQualifiedName(typeof(AlterationPlanParams));

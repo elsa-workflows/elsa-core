@@ -4,20 +4,20 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Extensions;
 
-namespace Elsa.Workflows.Options;
+namespace Elsa.Common.Serialization;
 
 /// <summary>
-/// Options for workflow JSON type identifiers.
+/// Options for serialization type identifiers.
 /// </summary>
-public class WorkflowJsonTypeOptions
+public class SerializationTypeOptions
 {
-    private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>(StringComparer.Ordinal);
+    private readonly IDictionary<string, Type> _aliasTypeDictionary = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
     private readonly IDictionary<Type, string> _typeAliasDictionary = new Dictionary<Type, string>();
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WorkflowJsonTypeOptions"/> class.
+    /// Initializes a new instance of the <see cref="SerializationTypeOptions"/> class.
     /// </summary>
-    public WorkflowJsonTypeOptions()
+    public SerializationTypeOptions()
     {
         AliasTypeDictionary = new ReadOnlyDictionary<string, Type>(_aliasTypeDictionary);
         TypeAliasDictionary = new ReadOnlyDictionary<Type, string>(_typeAliasDictionary);
@@ -60,9 +60,9 @@ public class WorkflowJsonTypeOptions
     public IDictionary<Type, string> TypeAliasDictionary { get; }
 
     /// <summary>
-    /// Registers a preferred workflow JSON alias.
+    /// Registers a preferred serialization alias.
     /// </summary>
-    public WorkflowJsonTypeOptions RegisterTypeAlias(Type type, string alias)
+    public SerializationTypeOptions RegisterTypeAlias(Type type, string alias)
     {
         _aliasTypeDictionary[alias] = type;
         _typeAliasDictionary[type] = alias;
@@ -70,16 +70,16 @@ public class WorkflowJsonTypeOptions
     }
 
     /// <summary>
-    /// Registers a legacy workflow JSON identifier for compatibility reads.
+    /// Registers a legacy serialization identifier for compatibility reads.
     /// </summary>
-    public WorkflowJsonTypeOptions RegisterLegacyTypeName(Type type, string typeName)
+    public SerializationTypeOptions RegisterLegacyTypeName(Type type, string typeName)
     {
         _aliasTypeDictionary[typeName] = type;
         return this;
     }
 
     /// <summary>
-    /// Registers the type's simple assembly-qualified name as a legacy workflow JSON identifier.
+    /// Registers the type's simple assembly-qualified name as a legacy serialization identifier.
     /// </summary>
-    public WorkflowJsonTypeOptions RegisterLegacySimpleAssemblyQualifiedName(Type type) => RegisterLegacyTypeName(type, type.GetSimpleAssemblyQualifiedName());
+    public SerializationTypeOptions RegisterLegacySimpleAssemblyQualifiedName(Type type) => RegisterLegacyTypeName(type, type.GetSimpleAssemblyQualifiedName());
 }

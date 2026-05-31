@@ -36,15 +36,6 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.AddOtlpExporter(options => ConfigureDiagnosticsOtlpExporter(options, configuration, "logs"));
 });
 
-builder.Logging.AddOpenTelemetry(logging =>
-{
-    logging.IncludeFormattedMessage = true;
-    logging.IncludeScopes = true;
-    logging.ParseStateValues = true;
-    logging.SetResourceBuilder(CreateOpenTelemetryResource(builder.Environment.ApplicationName, serviceVersion));
-    logging.AddOtlpExporter(options => ConfigureDiagnosticsOtlpExporter(options, configuration, "logs"));
-});
-
 services.AddOpenTelemetry()
     .ConfigureResource(resource => resource.AddService(builder.Environment.ApplicationName, serviceVersion: serviceVersion))
     .WithTracing(tracing => tracing

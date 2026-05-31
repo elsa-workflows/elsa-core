@@ -10,6 +10,6 @@
 
 ## Incident Strategy Descriptor
 
-`GET /descriptors/incident-strategies` returns `typeName` values from the workflow JSON type registry.
+`GET /descriptors/incident-strategies` returns `typeName` values from the shared serialization type registry.
 
 Clients should persist or submit returned `typeName` values unchanged. During the compatibility window, existing CLR names registered as legacy identifiers remain accepted when workflow JSON is read.

@@ -5,6 +5,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Comparers;
 
@@ -190,9 +191,9 @@ public class WorkflowTriggerEqualityComparerTests
         return deserialized!;
     }
 
-    private static IWorkflowJsonTypeRegistry CreateTypeRegistry()
+    private static ISerializationTypeRegistry CreateTypeRegistry()
     {
-        var registry = new WorkflowJsonTypeRegistry(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonTypeOptions()));
+        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(new SerializationTypeOptions()));
         registry.RegisterType(typeof(TestPayload), nameof(TestPayload));
         registry.RegisterType(typeof(TypedPayload), nameof(TypedPayload));
         registry.RegisterType(typeof(NestedPayload), nameof(NestedPayload));
