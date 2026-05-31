@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Http.UnitTests.RateLimiting;
 
@@ -419,7 +420,10 @@ public class IngressRateLimitingTests
 
     private static WebApplicationBuilder CreateBuilder()
     {
-        var builder = WebApplication.CreateSlimBuilder();
+        // Pin the environment to Production so the developer exception page does not swallow
+        // pipeline exceptions (e.g. an unregistered rate limiting policy) into a 500 response.
+        // Otherwise the FailsWhenPolicyIsNotRegistered assertion becomes environment-dependent and flaky.
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { EnvironmentName = Environments.Production });
         builder.WebHost.UseTestServer();
         return builder;
     }
