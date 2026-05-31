@@ -51,9 +51,11 @@ public class BackgroundCommandProcessorTests
         services.AddSingleton<ICommandsChannel, CommandsChannel>();
         await using var serviceProvider = services.BuildServiceProvider();
         var channel = serviceProvider.GetRequiredService<ICommandsChannel>();
-        var commandContext = new CommandContext(new TestCommand(), CommandStrategy.Background, typeof(Unit), new Dictionary<object, object>(), serviceProvider, CancellationToken.None);
+        using var commandCancellationTokenSource = new CancellationTokenSource();
+        var commandContext = new CommandContext(new TestCommand(), CommandStrategy.Background, typeof(Unit), new Dictionary<object, object>(), serviceProvider, commandCancellationTokenSource.Token);
         var strategyContext = new CommandStrategyContext(commandContext, new TestCommandHandler(), serviceProvider);
 
+        await commandCancellationTokenSource.CancelAsync();
         await CommandStrategy.Background.ExecuteAsync<Unit>(strategyContext);
 
         var queuedContext = await channel.Reader.ReadAsync();
@@ -61,6 +63,7 @@ public class BackgroundCommandProcessorTests
         Assert.Same(CommandStrategy.Default, queuedContext.CommandStrategy);
         Assert.Same(commandContext.Command, queuedContext.Command);
         Assert.Same(commandContext.Headers, queuedContext.Headers);
+        Assert.False(queuedContext.CancellationToken.IsCancellationRequested);
     }
 
     private sealed class RecordingCommandSender(CommandSenderRecorder recorder) : ICommandSender
