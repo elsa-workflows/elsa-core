@@ -162,7 +162,7 @@ public sealed class ActivityJsonConverterTests
         Converters =
         {
             sut,
-            new TypeJsonConverter(WellKnownTypeRegistry.CreateDefault()),
+            new TypeJsonConverter(),
             new PolymorphicObjectConverterFactory()
         },
         TypeInfoResolver = new ModifiableJsonTypeInfoResolver(new CustomConstructorConfigurator().GetModifiers())

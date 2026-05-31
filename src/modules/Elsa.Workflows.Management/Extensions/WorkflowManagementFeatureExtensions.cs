@@ -1,6 +1,8 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Features;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Management;
 
@@ -16,6 +18,7 @@ public static class WorkflowManagementFeatureExtensions
     {
         management.AddVariableType<T>(category);
         management.Module.AddTypeAlias<T>(alias);
+        management.Module.Services.Configure<WorkflowJsonTypeOptions>(options => options.RegisterTypeAlias(typeof(T), alias));
         return management;
     }
 }

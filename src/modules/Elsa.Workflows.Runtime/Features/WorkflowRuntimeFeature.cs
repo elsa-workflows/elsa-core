@@ -4,7 +4,6 @@ using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Features;
 using Elsa.Common.RecurringTasks;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -14,6 +13,7 @@ using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Bookmarks;
 using Elsa.Workflows.Runtime.Entities;
@@ -275,7 +275,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.Configure(WorkflowInboxCleanupOptions);
         Services.Configure(WorkflowDispatcherOptions);
         Services.Configure(BookmarkQueuePurgeOptions);
-        Services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
+        Services.Configure<WorkflowJsonTypeOptions>(RegisterWorkflowTypeAliases);
         Services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         Services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -448,7 +448,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
         Services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    private void RegisterWorkflowTypeAliases(WorkflowJsonTypeOptions options)
     {
         var workflowTypes = Workflows is IWorkflowTypeRegistry workflowTypeRegistry
             ? WorkflowTypes.Concat(workflowTypeRegistry.WorkflowTypes)

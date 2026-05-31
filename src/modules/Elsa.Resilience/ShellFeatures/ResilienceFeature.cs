@@ -10,6 +10,7 @@ using Elsa.Resilience.Recorders;
 using Elsa.Resilience.Serialization;
 using Elsa.Resilience.StrategySources;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -25,6 +26,11 @@ public class ResilienceFeature : IFastEndpointsShellFeature
         services.Configure<ExpressionOptions>(options =>
         {
             options.AddTypeAlias<List<RetryAttemptRecord>>("RetryAttemptRecordList");
+        });
+
+        services.Configure<WorkflowJsonTypeOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(List<RetryAttemptRecord>), "RetryAttemptRecordList");
         });
         
         services.AddOptions<ResilienceOptions>();

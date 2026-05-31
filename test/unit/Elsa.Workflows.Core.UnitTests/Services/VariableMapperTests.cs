@@ -1,7 +1,7 @@
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Core.UnitTests.Services;
 
 public class VariableMapperTests
 {
-    private readonly WellKnownTypeRegistry _registry = new();
+    private readonly WorkflowJsonTypeRegistry _registry = new(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonTypeOptions()));
     private readonly VariableMapper _mapper;
 
     public VariableMapperTests()

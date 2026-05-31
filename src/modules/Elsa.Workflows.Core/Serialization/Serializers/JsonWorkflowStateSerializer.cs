@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Elsa.Common.Serialization;
-using Elsa.Expressions.Contracts;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Elsa.Workflows.State;
@@ -14,16 +13,16 @@ namespace Elsa.Workflows.Serialization.Serializers;
 /// </summary>
 public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStateSerializer
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
     private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JsonWorkflowStateSerializer"/> class.
     /// </summary>
-    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, IWellKnownTypeRegistry wellKnownTypeRegistry, ILoggerFactory loggerFactory)
+    public JsonWorkflowStateSerializer(IServiceProvider serviceProvider, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry, ILoggerFactory loggerFactory)
         : base(serviceProvider)
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
         _loggerFactory = loggerFactory;
     }
 
@@ -135,9 +134,9 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     /// <inheritdoc />
     protected override void AddConverters(JsonSerializerOptions options)
     {
-        options.Converters.Add(new TypeJsonConverter(_wellKnownTypeRegistry));
-        options.Converters.Add(new PolymorphicObjectConverterFactory(_wellKnownTypeRegistry));
-        options.Converters.Add(new VariableConverterFactory(_wellKnownTypeRegistry, _loggerFactory));
+        options.Converters.Add(new TypeJsonConverter(_workflowJsonTypeRegistry));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(_workflowJsonTypeRegistry));
+        options.Converters.Add(new VariableConverterFactory(_workflowJsonTypeRegistry, _loggerFactory));
         options.Converters.Add(new FuncExpressionValueConverter());
     }
 }

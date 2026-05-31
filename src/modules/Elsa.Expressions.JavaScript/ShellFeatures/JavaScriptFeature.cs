@@ -12,6 +12,7 @@ using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -106,6 +107,7 @@ public class JavaScriptFeature : IShellFeature
             options.DisableVariableCopying = DisableVariableCopying;
         });
         services.Configure<ExpressionOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
+        services.Configure<WorkflowJsonTypeOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
 
         // JavaScript services.
         services

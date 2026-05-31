@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Services;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -72,10 +71,10 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     protected override void AddConverters(JsonSerializerOptions options)
     {
         var expressionDescriptorRegistry = ServiceProvider.GetRequiredService<IExpressionDescriptorRegistry>();
-        var wellKnownTypeRegistry = ServiceProvider.GetRequiredService<IWellKnownTypeRegistry>();
+        var workflowJsonTypeRegistry = ServiceProvider.GetRequiredService<IWorkflowJsonTypeRegistry>();
 
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-        options.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry));
+        options.Converters.Add(new TypeJsonConverter(workflowJsonTypeRegistry));
         options.Converters.Add(new SafeValueConverterFactory());
         options.Converters.Add(new ExpressionJsonConverterFactory(expressionDescriptorRegistry));
         options.Converters.Add(new FuncExpressionValueConverter());

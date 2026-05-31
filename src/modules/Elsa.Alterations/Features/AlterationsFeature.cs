@@ -10,6 +10,7 @@ using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Features;
@@ -64,6 +65,12 @@ public class AlterationsFeature : FeatureBase
         {
             options.RegisterTypeAlias(typeof(AlterationPlanParams), typeof(AlterationPlanParams).GetSimpleAssemblyQualifiedName());
             options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
+        });
+
+        Services.Configure<WorkflowJsonTypeOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
+            options.RegisterLegacySimpleAssemblyQualifiedName(typeof(AlterationPlanParams));
         });
 
         Services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();

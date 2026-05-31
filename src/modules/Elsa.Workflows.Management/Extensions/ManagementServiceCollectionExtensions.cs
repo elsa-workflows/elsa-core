@@ -2,6 +2,7 @@ using System.Reflection;
 using Elsa.Expressions.Extensions;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -98,6 +99,7 @@ public static class ManagementServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddVariableTypeAndAlias<T>(this IServiceCollection services, string alias, string category)
     {
+        services.Configure<WorkflowJsonTypeOptions>(options => options.RegisterTypeAlias(typeof(T), alias));
         return services
             .AddVariableDescriptor<T>(category)
             .AddTypeAlias<T>(alias);

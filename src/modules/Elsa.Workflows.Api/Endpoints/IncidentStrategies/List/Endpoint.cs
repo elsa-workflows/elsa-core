@@ -2,8 +2,8 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Elsa.Abstractions;
-using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Workflows;
 using Humanizer;
 
 namespace Elsa.Workflows.Api.Endpoints.IncidentStrategies.List;
@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Api.Endpoints.IncidentStrategies.List;
 /// <summary>
 /// Returns list of available <see cref="IIncidentStrategy" /> implementations.
 /// </summary>
-internal class List(IEnumerable<IIncidentStrategy> strategies) : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDescriptor>>
+internal class List(IEnumerable<IIncidentStrategy> strategies, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry) : ElsaEndpointWithoutRequest<ListResponse<IncidentStrategyDescriptor>>
 {
     public override void Configure()
     {
@@ -21,15 +21,15 @@ internal class List(IEnumerable<IIncidentStrategy> strategies) : ElsaEndpointWit
 
     public override Task<ListResponse<IncidentStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var descriptors = strategies.Select(IncidentStrategyDescriptor.FromStrategy).OrderBy(x => x.DisplayName).ToList();
-        var response =new ListResponse<IncidentStrategyDescriptor>(descriptors);
+        var descriptors = strategies.Select(x => IncidentStrategyDescriptor.FromStrategy(x, workflowJsonTypeRegistry)).OrderBy(x => x.DisplayName).ToList();
+        var response = new ListResponse<IncidentStrategyDescriptor>(descriptors);
         return Task.FromResult(response);
     }
 }
 
 internal record IncidentStrategyDescriptor(string DisplayName, string Description, string TypeName)
 {
-    public static IncidentStrategyDescriptor FromStrategy(IIncidentStrategy strategy)
+    public static IncidentStrategyDescriptor FromStrategy(IIncidentStrategy strategy, IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
     {
         var type = strategy.GetType();
         var displayNameAttribute = type.GetCustomAttribute<DisplayNameAttribute>();
@@ -38,6 +38,7 @@ internal record IncidentStrategyDescriptor(string DisplayName, string Descriptio
         var displayName = displayNameAttribute?.DisplayName ?? displayAttribute?.Name ?? type.Name.Replace("Strategy", "").Humanize();
         var description = descriptionAttribute?.Description ?? displayAttribute?.Description ?? "";
 
-        return new IncidentStrategyDescriptor(displayName, description, type.GetSimpleAssemblyQualifiedName());
+        var typeName = workflowJsonTypeRegistry.TryGetAlias(type, out var alias) ? alias : type.FullName!;
+        return new IncidentStrategyDescriptor(displayName, description, typeName);
     }
 }

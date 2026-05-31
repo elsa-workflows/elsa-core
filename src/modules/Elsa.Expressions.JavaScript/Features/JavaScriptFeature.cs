@@ -16,6 +16,7 @@ using Elsa.Expressions.JavaScript.Services;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Services;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Expressions.JavaScript.Features;
@@ -61,6 +62,7 @@ public class JavaScriptFeature : FeatureBase
     {
         Services.Configure(JintOptions);
         Services.Configure<ExpressionOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
+        Services.Configure<WorkflowJsonTypeOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
 
         // JavaScript services.
         Services

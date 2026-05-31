@@ -1,11 +1,11 @@
 using System.Reflection;
-using Elsa.Expressions.Options;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using NSubstitute;
@@ -71,7 +71,7 @@ public class WorkflowRuntimeFeatureTests
     public void WorkflowsAdd_RegistersWorkflowTypeAlias()
     {
         var workflowType = typeof(GenericWorkflow<int>);
-        var options = new ExpressionOptions();
+        var options = new WorkflowJsonTypeOptions();
 
         _feature.Workflows.Add(workflowType);
 
@@ -117,7 +117,7 @@ public class WorkflowRuntimeFeatureTests
     public void ShellWorkflowsAdd_RegistersWorkflowTypeAlias()
     {
         var workflowType = typeof(GenericWorkflow<int>);
-        var options = new ExpressionOptions();
+        var options = new WorkflowJsonTypeOptions();
 
         _shellFeature.Workflows.Add(workflowType);
 
@@ -146,7 +146,7 @@ public class WorkflowRuntimeFeatureTests
     public void RegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
     {
         var workflowType = typeof(GenericWorkflow<int>);
-        var options = new ExpressionOptions();
+        var options = new WorkflowJsonTypeOptions();
         _feature.AddWorkflow(workflowType);
         _feature.Workflows[typeof(NotAWorkflow).AssemblyQualifiedName!] = _ => new ValueTask<IWorkflow>(new GenericWorkflow<int>());
 
@@ -160,7 +160,7 @@ public class WorkflowRuntimeFeatureTests
     public void ShellRegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
     {
         var workflowType = typeof(GenericWorkflow<int>);
-        var options = new ExpressionOptions();
+        var options = new WorkflowJsonTypeOptions();
         _shellFeature.AddWorkflow(workflowType);
         _shellFeature.Workflows[typeof(NotAWorkflow).AssemblyQualifiedName!] = _ => new ValueTask<IWorkflow>(new GenericWorkflow<int>());
 
@@ -204,7 +204,7 @@ public class WorkflowRuntimeFeatureTests
         }
     }
 
-    private static void RegisterWorkflowTypeAliases(object feature, ExpressionOptions options)
+    private static void RegisterWorkflowTypeAliases(object feature, WorkflowJsonTypeOptions options)
     {
         feature.GetType()
             .GetMethod("RegisterWorkflowTypeAliases", BindingFlags.Instance | BindingFlags.NonPublic)!

@@ -49,7 +49,7 @@ public class TriggerIndexer : ITriggerIndexer
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
         IDistributedLockProvider distributedLockProvider,
-        IWellKnownTypeRegistry wellKnownTypeRegistry,
+        IWorkflowJsonTypeRegistry workflowJsonTypeRegistry,
         IOptions<DistributedLockingOptions> lockingOptions,
         ILogger<TriggerIndexer> logger)
     {
@@ -62,7 +62,7 @@ public class TriggerIndexer : ITriggerIndexer
         _serviceProvider = serviceProvider;
         _hasher = hasher;
         _distributedLockProvider = distributedLockProvider;
-        _triggerEqualityComparer = new WorkflowTriggerEqualityComparer(wellKnownTypeRegistry);
+        _triggerEqualityComparer = new WorkflowTriggerEqualityComparer(workflowJsonTypeRegistry);
         _lockingOptions = lockingOptions.Value;
         _logger = logger;
         _workflowDefinitionService = workflowDefinitionService;

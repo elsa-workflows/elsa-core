@@ -1,11 +1,9 @@
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Extensions;
 using Elsa.Expressions.Helpers;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -17,21 +15,21 @@ namespace Elsa.Workflows;
 public class VariableMapper
 {
     private readonly ILogger<VariableMapper> _logger;
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VariableMapper"/> class.
     /// </summary>
-    /// <param name="wellKnownTypeRegistry">The well-known type registry.</param>
+    /// <param name="workflowJsonTypeRegistry">The workflow JSON type registry.</param>
     /// <param name="logger">The logger.</param>
-    public VariableMapper(IWellKnownTypeRegistry wellKnownTypeRegistry, ILogger<VariableMapper> logger)
+    public VariableMapper(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry, ILogger<VariableMapper> logger)
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
         _logger = logger;
     }
 
     /// <inheritdoc />
-    public VariableMapper() : this(new WellKnownTypeRegistry(), NullLogger<VariableMapper>.Instance)
+    public VariableMapper() : this(WorkflowJsonTypeRegistry.CreateDefault(), NullLogger<VariableMapper>.Instance)
     {
         
     }
@@ -67,7 +65,7 @@ public class VariableMapper
         var variableType = source.GetType();
         var value = source.Value;
         var valueType = variableType.IsConstructedGenericType ? variableType.GetGenericArguments().FirstOrDefault() ?? typeof(object) : typeof(object);
-        var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
+        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, valueType, out var alias) ? alias : valueType.GetSimpleAssemblyQualifiedName();
         var storageDriverTypeName = source.StorageDriverType?.GetSimpleAssemblyQualifiedName();
         var serializedValue = value.Format();
 
@@ -79,7 +77,7 @@ public class VariableMapper
         if (string.IsNullOrWhiteSpace(typeAlias))
             return typeof(object);
 
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type))
+        if (WorkflowJsonTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out var type))
             return type;
 
         _logger.LogWarning("Failed to resolve variable type alias {VariableTypeName}", typeAlias);
@@ -91,7 +89,7 @@ public class VariableMapper
         if (string.IsNullOrWhiteSpace(typeAlias))
             return null;
 
-        if (WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var type) && IsStorageDriverType(type))
+        if (WorkflowJsonTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out var type) && IsStorageDriverType(type))
             return type;
 
         _logger.LogWarning("Failed to resolve storage driver type alias {StorageDriverTypeName}", typeAlias);

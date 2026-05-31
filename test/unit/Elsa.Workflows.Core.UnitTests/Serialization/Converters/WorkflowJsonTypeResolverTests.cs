@@ -5,11 +5,12 @@ using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
@@ -17,15 +18,15 @@ namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 public sealed class WorkflowJsonTypeResolverTests
 {
     private static readonly string UnsafeAssemblyQualifiedTypeAlias = typeof(System.Text.StringBuilder).AssemblyQualifiedName!;
-    private readonly WellKnownTypeRegistry _wellKnownTypeRegistry = new(Microsoft.Extensions.Options.Options.Create(new ExpressionOptions()));
+    private readonly WorkflowJsonTypeRegistry _workflowJsonTypeRegistry = new(Microsoft.Extensions.Options.Options.Create(new WorkflowJsonTypeOptions()));
     private readonly JsonSerializerOptions _options;
 
     public WorkflowJsonTypeResolverTests()
     {
-        _wellKnownTypeRegistry.RegisterType(typeof(ExceptionState), nameof(ExceptionState));
-        _wellKnownTypeRegistry.RegisterType(typeof(FaultException), nameof(FaultException));
-        _wellKnownTypeRegistry.RegisterType(typeof(RegisteredPayload), "RegisteredPayload");
-        _options = CreateOptions(_wellKnownTypeRegistry);
+        _workflowJsonTypeRegistry.RegisterType(typeof(ExceptionState), nameof(ExceptionState));
+        _workflowJsonTypeRegistry.RegisterType(typeof(FaultException), nameof(FaultException));
+        _workflowJsonTypeRegistry.RegisterType(typeof(RegisteredPayload), "RegisteredPayload");
+        _options = CreateOptions(_workflowJsonTypeRegistry);
     }
 
     [Theory]
@@ -105,8 +106,8 @@ public sealed class WorkflowJsonTypeResolverTests
     [MemberData(nameof(JsonIslandValues))]
     public void When_SerializeSpecialJsonIslandType_Then_CanBeDeserialized(object value, Type expectedType)
     {
-        _wellKnownTypeRegistry.RegisterType(typeof(JObject), nameof(JObject));
-        _wellKnownTypeRegistry.RegisterType(typeof(JArray), nameof(JArray));
+        _workflowJsonTypeRegistry.RegisterType(typeof(JObject), nameof(JObject));
+        _workflowJsonTypeRegistry.RegisterType(typeof(JArray), nameof(JArray));
 
         var json = JsonSerializer.Serialize(value, _options);
         var result = JsonSerializer.Deserialize<object>(json, _options);
@@ -149,8 +150,7 @@ public sealed class WorkflowJsonTypeResolverTests
         module.UseWorkflows();
         module.Apply();
         using var serviceProvider = services.BuildServiceProvider();
-        var expressionOptions = serviceProvider.GetRequiredService<IOptions<ExpressionOptions>>();
-        var registry = new WellKnownTypeRegistry(expressionOptions);
+        var registry = serviceProvider.GetRequiredService<IWorkflowJsonTypeRegistry>();
 
         var aliasRegistered = registry.TryGetAlias(typeof(NullReferenceException), out var alias);
         var typeRegistered = registry.TryGetType(nameof(NullReferenceException), out var type);
@@ -165,6 +165,21 @@ public sealed class WorkflowJsonTypeResolverTests
         Assert.Equal(typeof(MemoryStorageDriver), memoryStorageDriverType);
         Assert.True(registry.TryGetType(typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName(), out var legacyMemoryStorageDriverType));
         Assert.Equal(typeof(MemoryStorageDriver), legacyMemoryStorageDriverType);
+        Assert.True(registry.TryGetAlias(typeof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy), out var incidentStrategyAlias));
+        Assert.Equal(nameof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy), incidentStrategyAlias);
+        Assert.True(registry.TryGetType(typeof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy).GetSimpleAssemblyQualifiedName(), out var legacyIncidentStrategyType));
+        Assert.Equal(typeof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy), legacyIncidentStrategyType);
+    }
+
+    [Fact]
+    public void When_TypeAliasExistsOnlyInExpressionOptions_Then_WorkflowJsonDoesNotResolveIt()
+    {
+        var expressionOptions = new ExpressionOptions();
+        expressionOptions.RegisterTypeAlias(typeof(ExpressionOnlyPayload), "ExpressionOnlyPayload");
+        var expressionRegistry = new WellKnownTypeRegistry(Microsoft.Extensions.Options.Options.Create(expressionOptions));
+
+        Assert.True(expressionRegistry.TryGetType("ExpressionOnlyPayload", out _));
+        Assert.Throws<JsonException>(() => JsonSerializer.Deserialize<Type>(JsonString("ExpressionOnlyPayload"), _options));
     }
 
     [Fact]
@@ -233,7 +248,7 @@ public sealed class WorkflowJsonTypeResolverTests
     [Fact]
     public void When_DeserializePolymorphicObjectWithNonInstantiableType_Then_ThrowsJsonException()
     {
-        _wellKnownTypeRegistry.RegisterType(typeof(AbstractPayload), "AbstractPayload");
+        _workflowJsonTypeRegistry.RegisterType(typeof(AbstractPayload), "AbstractPayload");
         var json = """
         {
           "_type": "AbstractPayload"
@@ -259,7 +274,7 @@ public sealed class WorkflowJsonTypeResolverTests
     [Fact]
     public void When_DeserializePolymorphicObjectWithoutTypeJsonConverterAndUnknownAssemblyQualifiedType_Then_ThrowsJsonException()
     {
-        var options = CreatePolymorphicOnlyOptions(_wellKnownTypeRegistry);
+        var options = CreatePolymorphicOnlyOptions(_workflowJsonTypeRegistry);
         var json = $$"""
         {
           "capacity": 16,
@@ -307,32 +322,32 @@ public sealed class WorkflowJsonTypeResolverTests
     public void When_RegistryChangesAfterLegacyResolutionAttempt_Then_LegacyResolutionUsesCurrentRegistry()
     {
         var typeAlias = typeof(LateRegisteredPayload).GetSimpleAssemblyQualifiedName();
-        Assert.False(WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out _));
+        Assert.False(WorkflowJsonTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out _));
 
-        _wellKnownTypeRegistry.RegisterType(typeof(LateRegisteredPayload), "LateRegisteredPayload");
+        _workflowJsonTypeRegistry.RegisterType(typeof(LateRegisteredPayload), "LateRegisteredPayload");
 
-        Assert.True(WorkflowJsonTypeResolver.TryResolveType(_wellKnownTypeRegistry, typeAlias, out var result));
+        Assert.True(WorkflowJsonTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out var result));
         Assert.Equal(typeof(LateRegisteredPayload), result);
     }
 
-    private static JsonSerializerOptions CreateOptions(WellKnownTypeRegistry wellKnownTypeRegistry) => new()
+    private static JsonSerializerOptions CreateOptions(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry) => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         Converters =
         {
-            new PolymorphicObjectConverterFactory(wellKnownTypeRegistry),
-            new TypeJsonConverter(wellKnownTypeRegistry)
+            new PolymorphicObjectConverterFactory(workflowJsonTypeRegistry),
+            new TypeJsonConverter(workflowJsonTypeRegistry)
         }
     };
 
-    private static JsonSerializerOptions CreatePolymorphicOnlyOptions(WellKnownTypeRegistry wellKnownTypeRegistry) => new()
+    private static JsonSerializerOptions CreatePolymorphicOnlyOptions(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry) => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         Converters =
         {
-            new PolymorphicObjectConverterFactory(wellKnownTypeRegistry)
+            new PolymorphicObjectConverterFactory(workflowJsonTypeRegistry)
         }
     };
 
@@ -362,6 +377,11 @@ public sealed class WorkflowJsonTypeResolverTests
     }
 
     public sealed class LateRegisteredPayload
+    {
+        public string? Name { get; set; }
+    }
+
+    public sealed class ExpressionOnlyPayload
     {
         public string? Name { get; set; }
     }

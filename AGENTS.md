@@ -83,7 +83,7 @@ Before handing off changes, verify the following when applicable:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/007-secrets-module/plan.md`.
+shell commands, and other important information, read `specs/010-workflow-json-hardening/plan.md`.
 <!-- SPECKIT END -->
 
 ## Active Technologies

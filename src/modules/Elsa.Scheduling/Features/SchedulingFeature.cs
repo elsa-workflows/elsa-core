@@ -11,6 +11,7 @@ using Elsa.Scheduling.Services;
 using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
 using Elsa.Workflows.Management.Features;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Scheduling.Features;
@@ -66,6 +67,16 @@ public class SchedulingFeature : FeatureBase
             options.AddTypeAlias<StartAtPayload>();
             options.AddTypeAlias<TimerBookmarkPayload>();
             options.AddTypeAlias<TimerTriggerPayload>();
+        });
+
+        Services.Configure<WorkflowJsonTypeOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(CronBookmarkPayload), nameof(CronBookmarkPayload));
+            options.RegisterTypeAlias(typeof(CronTriggerPayload), nameof(CronTriggerPayload));
+            options.RegisterTypeAlias(typeof(DelayPayload), nameof(DelayPayload));
+            options.RegisterTypeAlias(typeof(StartAtPayload), nameof(StartAtPayload));
+            options.RegisterTypeAlias(typeof(TimerBookmarkPayload), nameof(TimerBookmarkPayload));
+            options.RegisterTypeAlias(typeof(TimerTriggerPayload), nameof(TimerTriggerPayload));
         });
 
         Module.Configure<WorkflowManagementFeature>(management => management.AddActivitiesFrom<SchedulingFeature>());

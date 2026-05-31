@@ -148,6 +148,14 @@ Core serializers live under [Serialization](../../src/modules/Elsa.Workflows.Cor
 
 Custom constructor and additional converter configurators are registered by `WorkflowsFeature`.
 
+### Workflow JSON Type Identifiers
+
+Workflow JSON type resolution uses `IWorkflowJsonTypeRegistry`, not expression type aliases. Register workflow-serializable payload types through `WorkflowJsonTypeOptions`; keep `ExpressionOptions` for expression/type metadata only.
+
+New workflow JSON writes preferred aliases when a type is registered. Compatibility reads also accept explicitly registered legacy names, including selected CLR names from older persisted workflow JSON. Unknown CLR names are rejected rather than loaded dynamically. Polymorphic object reads also reject abstract, interface, open generic, and unsupported collection targets unless the resolver can map a known collection interface to a concrete collection type.
+
+Public API payloads that expose workflow JSON type identifiers should emit values from `IWorkflowJsonTypeRegistry`. For example, incident strategy descriptors return the alias that workflow JSON accepts, while registered legacy CLR names remain readable during the compatibility window.
+
 ## When To Change This Layer
 
 Change workflow core only when you are changing engine semantics, activity contracts, execution state, serialization, core activity behavior, or flowchart behavior. If the change is about persisted definitions, API DTOs, background dispatch, or a module-specific transport, start in management, API, runtime, or the extension module instead.

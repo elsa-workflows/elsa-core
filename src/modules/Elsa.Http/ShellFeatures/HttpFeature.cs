@@ -20,6 +20,7 @@ using Elsa.Http.UIHints;
 using Elsa.Resilience.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Extensions;
+using Elsa.Workflows.Options;
 using FluentStorage;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -234,6 +235,24 @@ public class HttpFeature : IMiddlewareShellFeature
             options.AddTypeAlias<HttpStatusCode>();
             options.AddTypeAlias<HttpRequestException>();
             options.AddTypeAlias<HttpEndpointBookmarkPayload>();
+        });
+
+        services.Configure<WorkflowJsonTypeOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(HttpRequest), "HttpRequest");
+            options.RegisterTypeAlias(typeof(HttpResponse), "HttpResponse");
+            options.RegisterTypeAlias(typeof(HttpResponseMessage), "HttpResponseMessage");
+            options.RegisterTypeAlias(typeof(HttpHeaders), "HttpHeaders");
+            options.RegisterTypeAlias(typeof(HttpRouteData), "RouteData");
+            options.RegisterTypeAlias(typeof(IFormFile), "FormFile");
+            options.RegisterTypeAlias(typeof(IFormFile[]), "FormFile[]");
+            options.RegisterTypeAlias(typeof(HttpFile), "HttpFile");
+            options.RegisterTypeAlias(typeof(HttpFile[]), "HttpFile[]");
+            options.RegisterTypeAlias(typeof(Downloadable), "Downloadable");
+            options.RegisterTypeAlias(typeof(Downloadable[]), "Downloadable[]");
+            options.RegisterTypeAlias(typeof(HttpStatusCode), nameof(HttpStatusCode));
+            options.RegisterTypeAlias(typeof(HttpRequestException), nameof(HttpRequestException));
+            options.RegisterTypeAlias(typeof(HttpEndpointBookmarkPayload), nameof(HttpEndpointBookmarkPayload));
         });
     }
 

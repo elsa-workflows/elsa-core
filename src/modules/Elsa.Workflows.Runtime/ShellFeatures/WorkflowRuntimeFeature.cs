@@ -3,13 +3,13 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Common.RecurringTasks;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
@@ -189,7 +189,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
-        services.Configure<ExpressionOptions>(RegisterWorkflowTypeAliases);
+        services.Configure<WorkflowJsonTypeOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -366,7 +366,7 @@ public class WorkflowRuntimeFeature : IShellFeature
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
     }
 
-    private void RegisterWorkflowTypeAliases(ExpressionOptions options)
+    private void RegisterWorkflowTypeAliases(WorkflowJsonTypeOptions options)
     {
         var workflowTypes = Workflows is IWorkflowTypeRegistry workflowTypeRegistry
             ? WorkflowTypes.Concat(workflowTypeRegistry.WorkflowTypes)
