@@ -265,6 +265,7 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     /// <inheritdoc />
     public void Clear()
     {
+        _manualActivityDescriptors.Clear();
         _tenantRegistries.Clear();
         _agnosticRegistry.ActivityDescriptors.Clear();
         _agnosticRegistry.LatestActivityDescriptors.Clear();

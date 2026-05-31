@@ -13,15 +13,16 @@ public class ActivityRegistryTests
     private const string TestActivityType = "TestActivity";
     private const string CurrentTenant = "tenant1";
 
+    private readonly IActivityDescriber _activityDescriber;
     private readonly ILogger<ActivityRegistry> _logger;
     private readonly ActivityRegistry _registry;
 
     public ActivityRegistryTests()
     {
         var tenantAccessor = Substitute.For<ITenantAccessor>();
-        var activityDescriber = Substitute.For<IActivityDescriber>();
+        _activityDescriber = Substitute.For<IActivityDescriber>();
         _logger = Substitute.For<ILogger<ActivityRegistry>>();
-        _registry = new(activityDescriber, [], tenantAccessor, _logger);
+        _registry = new(_activityDescriber, [], tenantAccessor, _logger);
 
         // Set default tenant for all tests
         tenantAccessor.TenantId.Returns(CurrentTenant);
@@ -194,6 +195,25 @@ public class ActivityRegistryTests
 
         // Assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetDescriptorsAsync_ReturnsEmpty_WhenRegistryCleared()
+    {
+        // Arrange
+        _activityDescriber.DescribeActivityAsync(typeof(ActivityRegistryTests), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(CreateDescriptor(TestActivityType, 1, CurrentTenant)));
+
+        await _registry.RegisterAsync(typeof(ActivityRegistryTests), CancellationToken.None);
+
+        // Act
+        _registry.Clear();
+        var descriptors = await _registry.GetDescriptorsAsync();
+
+        // Assert
+        Assert.Empty(descriptors);
+        Assert.Empty(_registry.ListAll());
+        Assert.Null(_registry.Find(TestActivityType));
     }
 
     [Fact]
