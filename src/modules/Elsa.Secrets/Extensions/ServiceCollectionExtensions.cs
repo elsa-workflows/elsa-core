@@ -20,7 +20,6 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ISecretValueProtector, DefaultSecretValueProtector>();
         services.TryAddSingleton<ISecretManager, DefaultSecretManager>();
         services.TryAddSingleton<ISecretResolver, DefaultSecretResolver>();
-        services.TryAddSingleton<ISecretProvider, SecretProviderAdapter>();
         services.TryAddSingleton<ISecretStoreRegistry, SecretStoreRegistry>();
         services.TryAddSingleton<ISecretTypeRegistry, SecretTypeRegistry>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretStore, EncryptedSecretStore>());
