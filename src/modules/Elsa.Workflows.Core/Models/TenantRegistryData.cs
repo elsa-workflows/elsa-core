@@ -31,6 +31,11 @@ public class TenantRegistryData
     public ConcurrentDictionary<(string Type, int Version), ActivityDescriptor> ActivityDescriptors { get; } = new();
 
     /// <summary>
+    /// Cached latest-version activity descriptors by type for fast lookups.
+    /// </summary>
+    internal ConcurrentDictionary<string, ActivityDescriptor> LatestActivityDescriptors { get; } = new();
+
+    /// <summary>
     /// Secondary index of activity descriptors grouped by their provider type.
     /// </summary>
     /// <remarks>
