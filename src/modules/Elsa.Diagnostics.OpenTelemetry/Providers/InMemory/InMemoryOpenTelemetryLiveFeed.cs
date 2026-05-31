@@ -63,16 +63,18 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
 
         public void TryWrite(OpenTelemetryBatch batch)
         {
-            foreach (var resource in batch.Resources)
+            var serviceResourceIds = ResolveServiceResourceIds(batch.Resources);
+
+            foreach (var resource in batch.Resources.Where(MatchesResource))
                 TryWrite(new OpenTelemetryStreamItem { Resource = resource });
 
-            foreach (var trace in batch.Traces.Where(Matches))
+            foreach (var trace in batch.Traces.Where(trace => MatchesTrace(trace, serviceResourceIds)))
                 TryWrite(new OpenTelemetryStreamItem { Trace = trace });
 
-            foreach (var log in batch.Logs.Where(x => string.IsNullOrWhiteSpace(filter.TraceId) || string.Equals(x.TraceId, filter.TraceId, StringComparison.OrdinalIgnoreCase)))
+            foreach (var log in batch.Logs.Where(log => MatchesLog(log, serviceResourceIds)))
                 TryWrite(new OpenTelemetryStreamItem { Log = log });
 
-            foreach (var point in batch.MetricPoints)
+            foreach (var point in batch.MetricPoints.Where(point => MatchesMetricPoint(point, serviceResourceIds)))
                 TryWrite(new OpenTelemetryStreamItem { MetricPoint = point });
         }
 
@@ -152,15 +154,140 @@ public class InMemoryOpenTelemetryLiveFeed(IOptions<OpenTelemetryDiagnosticsOpti
             return item.DroppedItems?.SignalType;
         }
 
-        private bool Matches(TelemetryTrace trace)
+        private bool MatchesResource(TelemetryResource resource)
         {
-            if (!string.IsNullOrWhiteSpace(filter.TraceId) && !string.Equals(trace.TraceId, filter.TraceId, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(filter.TraceId))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.WorkflowInstanceId))
+                return false;
+
+            if (filter.Status != null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.ResourceId) && !EqualsIgnoreCase(resource.Id, filter.ResourceId))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.ServiceName) && !EqualsIgnoreCase(resource.ServiceName, filter.ServiceName))
+                return false;
+
+            if (filter.From != null && resource.LastSeen < filter.From)
+                return false;
+
+            if (filter.To != null && resource.LastSeen > filter.To)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.Search) && !Matches(resource.Id, filter.Search) && !Matches(resource.ServiceName, filter.Search))
+                return false;
+
+            return true;
+        }
+
+        private bool MatchesTrace(TelemetryTrace trace, HashSet<string>? serviceResourceIds)
+        {
+            if (!string.IsNullOrWhiteSpace(filter.TraceId) && !EqualsIgnoreCase(trace.TraceId, filter.TraceId))
                 return false;
 
             if (filter.Status != null && trace.Status != filter.Status)
                 return false;
 
+            if (filter.From != null && trace.StartTime < filter.From)
+                return false;
+
+            if (filter.To != null && trace.StartTime > filter.To)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.WorkflowInstanceId) && !trace.WorkflowInstanceIds.Any(id => Matches(id, filter.WorkflowInstanceId)))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.ResourceId) && !trace.ResourceIds.Contains(filter.ResourceId, StringComparer.OrdinalIgnoreCase))
+                return false;
+
+            if (serviceResourceIds != null && !trace.ResourceIds.Any(serviceResourceIds.Contains))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.Search) && !Matches(trace.TraceId, filter.Search) && !Matches(trace.Name, filter.Search))
+                return false;
+
             return true;
         }
+
+        private bool MatchesLog(OtlpLogRecord log, HashSet<string>? serviceResourceIds)
+        {
+            if (filter.Status != null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.ResourceId) && !EqualsIgnoreCase(log.ResourceId, filter.ResourceId))
+                return false;
+
+            if (serviceResourceIds != null && !serviceResourceIds.Contains(log.ResourceId))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.TraceId) && !EqualsIgnoreCase(log.TraceId, filter.TraceId))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.WorkflowInstanceId) && !AttributeMatches(log.Attributes, "workflow.instance.id", filter.WorkflowInstanceId))
+                return false;
+
+            if (filter.From != null && log.Timestamp < filter.From)
+                return false;
+
+            if (filter.To != null && log.Timestamp > filter.To)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.Search) && !Matches(log.Body, filter.Search))
+                return false;
+
+            return true;
+        }
+
+        private bool MatchesMetricPoint(MetricPoint point, HashSet<string>? serviceResourceIds)
+        {
+            if (filter.Status != null)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.ResourceId) && !EqualsIgnoreCase(point.ResourceId, filter.ResourceId))
+                return false;
+
+            if (serviceResourceIds != null && !serviceResourceIds.Contains(point.ResourceId))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.TraceId) && !EqualsIgnoreCase(point.TraceId, filter.TraceId))
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.WorkflowInstanceId) && !AttributeMatches(point.Attributes, "workflow.instance.id", filter.WorkflowInstanceId))
+                return false;
+
+            if (filter.From != null && point.Timestamp < filter.From)
+                return false;
+
+            if (filter.To != null && point.Timestamp > filter.To)
+                return false;
+
+            if (!string.IsNullOrWhiteSpace(filter.Search) && !Matches(point.InstrumentName, filter.Search) && !Matches(point.InstrumentId, filter.Search))
+                return false;
+
+            return true;
+        }
+
+        private HashSet<string>? ResolveServiceResourceIds(IEnumerable<TelemetryResource> resources)
+        {
+            if (string.IsNullOrWhiteSpace(filter.ServiceName))
+                return null;
+
+            return resources
+                .Where(x => EqualsIgnoreCase(x.ServiceName, filter.ServiceName))
+                .Select(x => x.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+
+        private static bool AttributeMatches(IDictionary<string, string?> attributes, string key, string? search)
+        {
+            return attributes.TryGetValue(key, out var value) && Matches(value, search);
+        }
+
+        private static bool EqualsIgnoreCase(string? candidate, string? search) => string.Equals(candidate, search, StringComparison.OrdinalIgnoreCase);
+
+        private static bool Matches(string? candidate, string? search) => !string.IsNullOrEmpty(candidate) && !string.IsNullOrEmpty(search) && candidate.Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 }

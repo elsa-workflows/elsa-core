@@ -48,6 +48,17 @@ public class OtlpIngestionSecurityTests
         Assert.True(authorized);
     }
 
+    [Fact(DisplayName = "Incorrect API key header rejects ingestion")]
+    public void RejectsIncorrectConfiguredApiKey()
+    {
+        var context = CreateContext(IPAddress.Parse("10.0.0.5"));
+        context.Request.Headers["x-otlp-api-key"] = "not-secret";
+
+        var authorized = OtlpIngestionSecurity.IsAuthorized(context, new OpenTelemetryDiagnosticsOptions { ApiKey = "secret" });
+
+        Assert.False(authorized);
+    }
+
     private static DefaultHttpContext CreateContext(IPAddress? remoteAddress)
     {
         var context = new DefaultHttpContext();

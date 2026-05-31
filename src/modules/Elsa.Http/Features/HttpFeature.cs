@@ -1,4 +1,4 @@
-using Elsa.Expressions.Options;
+using System.Net;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -20,12 +20,14 @@ using Elsa.Http.UIHints;
 using Elsa.Resilience.Extensions;
 using Elsa.Resilience.Features;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using FluentStorage;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Http.Features;
 
@@ -246,19 +248,22 @@ public class HttpFeature(IModule module) : FeatureBase(module)
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             Services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
 
-        Services.Configure<ExpressionOptions>(options =>
+        Services.Configure<SerializationTypeOptions>(options =>
         {
-            options.AddTypeAlias<HttpRequest>("HttpRequest");
-            options.AddTypeAlias<HttpResponse>("HttpResponse");
-            options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
-            options.AddTypeAlias<HttpHeaders>("HttpHeaders");
-            options.AddTypeAlias<HttpRouteData>("RouteData");
-            options.AddTypeAlias<IFormFile>("FormFile");
-            options.AddTypeAlias<IFormFile[]>("FormFile[]");
-            options.AddTypeAlias<HttpFile>("HttpFile");
-            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
-            options.AddTypeAlias<Downloadable>("Downloadable");
-            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
+            options.RegisterTypeAlias(typeof(HttpRequest), "HttpRequest");
+            options.RegisterTypeAlias(typeof(HttpResponse), "HttpResponse");
+            options.RegisterTypeAlias(typeof(HttpResponseMessage), "HttpResponseMessage");
+            options.RegisterTypeAlias(typeof(HttpHeaders), "HttpHeaders");
+            options.RegisterTypeAlias(typeof(HttpRouteData), "RouteData");
+            options.RegisterTypeAlias(typeof(IFormFile), "FormFile");
+            options.RegisterTypeAlias(typeof(IFormFile[]), "FormFile[]");
+            options.RegisterTypeAlias(typeof(HttpFile), "HttpFile");
+            options.RegisterTypeAlias(typeof(HttpFile[]), "HttpFile[]");
+            options.RegisterTypeAlias(typeof(Downloadable), "Downloadable");
+            options.RegisterTypeAlias(typeof(Downloadable[]), "Downloadable[]");
+            options.RegisterTypeAlias(typeof(HttpStatusCode), nameof(HttpStatusCode));
+            options.RegisterTypeAlias(typeof(HttpRequestException), nameof(HttpRequestException));
+            options.RegisterTypeAlias(typeof(HttpEndpointBookmarkPayload), nameof(HttpEndpointBookmarkPayload));
         });
     }
 }

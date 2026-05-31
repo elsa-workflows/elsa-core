@@ -10,6 +10,7 @@ using FastEndpoints.Security;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
+using Xunit.Sdk;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.OpenTelemetry.IntegrationTests;
@@ -72,6 +73,57 @@ public class OpenTelemetryHubTests
     }
 
     [Fact]
+    public async Task LiveFeed_WhenServiceNameFilterIsSet_OnlyPublishesMatchingResourcesAndTraces()
+    {
+        var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions()));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var enumerator = liveFeed.SubscribeAsync(new OpenTelemetryTraceFilter { ServiceName = "api" }, timeout.Token).GetAsyncEnumerator(timeout.Token);
+        var next = enumerator.MoveNextAsync().AsTask();
+
+        await liveFeed.PublishAsync(new OpenTelemetryBatch(
+            [Resource("resource-skip", "worker")],
+            [Trace("trace-skip", ["resource-skip"])],
+            [], [], [], []), timeout.Token);
+
+        var completed = await Task.WhenAny(next, Task.Delay(TimeSpan.FromMilliseconds(150), timeout.Token));
+        Assert.NotSame(next, completed);
+
+        await liveFeed.PublishAsync(new OpenTelemetryBatch(
+            [Resource("resource-keep", "api")],
+            [Trace("trace-keep", ["resource-keep"])],
+            [], [], [], []), timeout.Token);
+
+        Assert.True(await next);
+        Assert.Equal("resource-keep", enumerator.Current.Resource?.Id);
+
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.Equal("trace-keep", enumerator.Current.Trace?.TraceId);
+    }
+
+    [Fact]
+    public async Task LiveFeed_WhenResourceFilterIsSet_FiltersLogsAndMetricPoints()
+    {
+        var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions()));
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var enumerator = liveFeed.SubscribeAsync(new OpenTelemetryTraceFilter { ResourceId = "resource-keep" }, timeout.Token).GetAsyncEnumerator(timeout.Token);
+        var first = enumerator.MoveNextAsync().AsTask();
+
+        await liveFeed.PublishAsync(new OpenTelemetryBatch(
+            [],
+            [],
+            [],
+            [],
+            [MetricPoint("point-skip", "resource-skip"), MetricPoint("point-keep", "resource-keep")],
+            [Log("log-skip", "resource-skip"), Log("log-keep", "resource-keep")]), timeout.Token);
+
+        Assert.True(await first);
+        Assert.Equal("log-keep", enumerator.Current.Log?.Id);
+
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.Equal("point-keep", enumerator.Current.MetricPoint?.Id);
+    }
+
+    [Fact]
     public async Task LiveFeed_WhenSubscriberQueueOverflows_PublishesDroppedItemSummary()
     {
         var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions { SubscriberChannelCapacity = 1 }));
@@ -91,9 +143,10 @@ public class OpenTelemetryHubTests
         }
 
         Assert.NotNull(summary);
-        Assert.Equal(OpenTelemetrySignalType.Trace, summary.DroppedItems!.SignalType);
-        Assert.Equal("SubscriberQueueFull", summary.DroppedItems.Reason);
-        Assert.True(summary.DroppedItems.Count > 0);
+        var nonNullSummary = summary!;
+        Assert.Equal(OpenTelemetrySignalType.Trace, nonNullSummary.DroppedItems!.SignalType);
+        Assert.Equal("SubscriberQueueFull", nonNullSummary.DroppedItems.Reason);
+        Assert.True(nonNullSummary.DroppedItems.Count > 0);
     }
 
     private OpenTelemetryHub CreateHub(IOpenTelemetryLiveFeed liveFeed, string permission, IOpenTelemetryClient? caller = null)
@@ -119,9 +172,24 @@ public class OpenTelemetryHubTests
         return new ClaimsPrincipal(identity);
     }
 
-    private TelemetryTrace Trace(string traceId)
+    private TelemetryResource Resource(string id, string serviceName)
     {
-        return new(traceId, $"{traceId}-root", traceId, _now, _now.AddMilliseconds(10), TimeSpan.FromMilliseconds(10), SpanStatus.Ok, [], [], 1);
+        return new(id, serviceName, null, null, new Dictionary<string, string?>(), _now, TelemetryResourceStatus.Active);
+    }
+
+    private TelemetryTrace Trace(string traceId, IReadOnlyCollection<string>? resourceIds = null, IReadOnlyCollection<string>? workflowInstanceIds = null)
+    {
+        return new(traceId, $"{traceId}-root", traceId, _now, _now.AddMilliseconds(10), TimeSpan.FromMilliseconds(10), SpanStatus.Ok, resourceIds ?? [], workflowInstanceIds ?? [], 1);
+    }
+
+    private MetricPoint MetricPoint(string id, string resourceId)
+    {
+        return new(id, $"{id}-instrument", $"{id}-instrument", resourceId, _now, 1, null, null, new Dictionary<string, string?>(), null, null);
+    }
+
+    private OtlpLogRecord Log(string id, string resourceId)
+    {
+        return new(id, resourceId, _now, "Information", 9, id, null, null, new Dictionary<string, string?>());
     }
 
     private class TestLiveFeed(params OpenTelemetryStreamItem[] items) : IOpenTelemetryLiveFeed
@@ -209,7 +277,7 @@ public class OpenTelemetryHubTests
                 assertion();
                 return;
             }
-            catch (Exception e)
+            catch (XunitException e)
             {
                 lastException = e;
                 await Task.Delay(25);

@@ -8,6 +8,7 @@ using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
@@ -41,6 +42,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.NotNull(serviceProvider.GetRequiredService<IElsaConsoleLogHubAuthorizer>());
         Assert.NotNull(serviceProvider.GetRequiredService<ElsaConsoleLogSubscriptionManager>());
         Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
+        Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
         Assert.Contains(serviceProvider.GetServices<IShellInitializer>(), x => x.GetType() == typeof(ConsoleLogCaptureShellInitializer));
         Assert.Contains(serviceProvider.GetServices<IDrainHandler>(), x => x.GetType() == typeof(ConsoleLogCaptureShellDrainHandler));
         AssertConsoleLogPipelineContributors(serviceProvider);
@@ -94,6 +96,8 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogCapture>());
         Assert.NotNull(serviceProvider.GetRequiredService<IConsoleLogProvider>());
         Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogContextAccessor>());
+        Assert.Same(serviceProvider.GetRequiredService<ConsoleLogContextAccessor>(), serviceProvider.GetRequiredService<IConsoleLogMetadataAccessor>());
+        Assert.Contains(serviceProvider.GetServices<IHostedService>(), x => x.GetType().Name == "ConsoleLogCaptureHostedService");
         AssertConsoleLogPipelineContributors(serviceProvider);
     }
 
@@ -135,6 +139,49 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ConsoleCapture_AttachesAmbientElsaMetadataAtWriteTime()
+    {
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddConsoleLogsServices(options => options.SourceId = "test-source")
+            .BuildServiceProvider();
+        var contextAccessor = serviceProvider.GetRequiredService<IConsoleLogContextAccessor>();
+        var initializer = serviceProvider.GetServices<IShellInitializer>().OfType<ConsoleLogCaptureShellInitializer>().Single();
+
+        await initializer.InitializeAsync(CancellationToken.None);
+
+        try
+        {
+            var line = $"console-workflow-capture-{Guid.NewGuid():N}";
+            using (contextAccessor.PushWorkflowInstanceId("workflow-captured"))
+                Console.WriteLine(line);
+
+            var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+            await AssertEventuallyAsync(async () =>
+            {
+                var result = await provider.GetRecentAsync(new()
+                {
+                    Metadata = new Dictionary<string, string>
+                    {
+                        [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-captured"
+                    },
+                    Query = line,
+                    Limit = 10
+                });
+
+                var capturedLine = Assert.Single(result.Items);
+                Assert.Equal("workflow-captured", capturedLine.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+            });
+        }
+        finally
+        {
+            var drainHandler = serviceProvider.GetServices<IDrainHandler>().OfType<ConsoleLogCaptureShellDrainHandler>().Single();
+            await drainHandler.DrainAsync(new NoopDrainExtensionHandle(), CancellationToken.None);
+        }
+    }
+
+    [Fact]
     public async Task AddConsoleLogsServices_DecoratesExistingProvider()
     {
         var innerProvider = new RecordingConsoleLogProvider();
@@ -151,6 +198,88 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
 
         Assert.NotNull(innerProvider.PublishedLine);
         Assert.Equal("workflow-console", innerProvider.PublishedLine.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+    }
+
+    [Fact]
+    public async Task DecoratedProvider_FiltersRecentRowsByMetadataWhenInnerProviderDoesNot()
+    {
+        var innerProvider = new MetadataIgnoringConsoleLogProvider();
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<IConsoleLogProvider>(innerProvider)
+            .AddConsoleLogsServices()
+            .BuildServiceProvider();
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        await provider.PublishAsync(CreateLine("workflow-a", "a"));
+        await provider.PublishAsync(CreateLine("workflow-b", "b"));
+
+        var result = await provider.GetRecentAsync(new()
+        {
+            Metadata = new Dictionary<string, string>
+            {
+                [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-b"
+            }
+        });
+
+        var line = Assert.Single(result.Items);
+        Assert.Equal("b", line.Text);
+    }
+
+    [Fact]
+    public async Task DecoratedProvider_FiltersRecentRowsByBufferedMetadataWhenInnerProviderDropsMetadata()
+    {
+        var innerProvider = new MetadataDroppingConsoleLogProvider();
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<IConsoleLogProvider>(innerProvider)
+            .AddConsoleLogsServices()
+            .BuildServiceProvider();
+        var contextAccessor = serviceProvider.GetRequiredService<IConsoleLogContextAccessor>();
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        using (contextAccessor.PushWorkflowInstanceId("workflow-buffered"))
+            await provider.PublishAsync(new ConsoleLogLine { Text = "buffered", Source = new ConsoleLogSource { Id = "test-source" } });
+
+        Assert.Empty(Assert.Single(innerProvider.PublishedLines).Metadata);
+
+        var result = await provider.GetRecentAsync(new()
+        {
+            Metadata = new Dictionary<string, string>
+            {
+                [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-buffered"
+            }
+        });
+
+        var line = Assert.Single(result.Items);
+        Assert.Equal("buffered", line.Text);
+        Assert.Equal("workflow-buffered", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+    }
+
+    [Fact]
+    public async Task DecoratedProvider_FiltersLiveRowsByMetadataWhenInnerProviderDoesNot()
+    {
+        var innerProvider = new MetadataIgnoringConsoleLogProvider();
+        innerProvider.LiveItems.Add(CreateLine("workflow-a", "a"));
+        innerProvider.LiveItems.Add(CreateLine("workflow-b", "b"));
+
+        await using var serviceProvider = new ServiceCollection()
+            .AddLogging()
+            .AddSingleton<IConsoleLogProvider>(innerProvider)
+            .AddConsoleLogsServices()
+            .BuildServiceProvider();
+        var provider = serviceProvider.GetRequiredService<IConsoleLogProvider>();
+
+        var lines = await provider.SubscribeAsync(new()
+        {
+            Metadata = new Dictionary<string, string>
+            {
+                [ConsoleLogMetadataKeys.WorkflowInstanceId] = "workflow-b"
+            }
+        }).Where(x => x.Line != null).Select(x => x.Line!).ToListAsync();
+
+        var line = Assert.Single(lines);
+        Assert.Equal("b", line.Text);
     }
 
     private static void AssertConsoleLogPipelineContributors(IServiceProvider serviceProvider)
@@ -171,7 +300,7 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
                 await assertion();
                 return;
             }
-            catch (Exception e)
+            catch (Xunit.Sdk.XunitException e)
             {
                 lastException = e;
                 await Task.Delay(25);
@@ -181,6 +310,16 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         if (lastException != null)
             throw lastException;
     }
+
+    private static ConsoleLogLine CreateLine(string workflowInstanceId, string text) => new()
+    {
+        Text = text,
+        Source = new ConsoleLogSource { Id = "test-source" },
+        Metadata = new Dictionary<string, string>
+        {
+            [ConsoleLogMetadataKeys.WorkflowInstanceId] = workflowInstanceId
+        }
+    };
 
     private sealed class RecordingConsoleLogProvider : IConsoleLogProvider
     {
@@ -195,6 +334,66 @@ public class ConsoleLogsRegistrationTests : IAsyncLifetime
         public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult(new RecentConsoleLogsResult());
+        }
+
+        public IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return AsyncEnumerable.Empty<ConsoleLogStreamingItem>();
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+        }
+    }
+
+    private sealed class MetadataIgnoringConsoleLogProvider : IConsoleLogProvider
+    {
+        public List<ConsoleLogLine> RecentItems { get; } = [];
+        public List<ConsoleLogLine> LiveItems { get; } = [];
+
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        {
+            RecentItems.Add(line);
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RecentConsoleLogsResult { Items = RecentItems });
+        }
+
+        public async IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(
+            ConsoleLogFilter filter,
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            foreach (var line in LiveItems)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return ConsoleLogStreamingItem.FromLine(line);
+                await Task.Yield();
+            }
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
+        }
+    }
+
+    private sealed class MetadataDroppingConsoleLogProvider : IConsoleLogProvider
+    {
+        public List<ConsoleLogLine> PublishedLines { get; } = [];
+
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        {
+            PublishedLines.Add(line with { Metadata = new Dictionary<string, string>() });
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RecentConsoleLogsResult { Items = PublishedLines });
         }
 
         public IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Common.RecurringTasks;
@@ -7,7 +9,9 @@ using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Runtime.Discovery;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Options;
@@ -21,6 +25,7 @@ using Medallion.Threading.FileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
@@ -39,6 +44,7 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// A list of workflow builders configured during application startup.
     /// </summary>
     public IDictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>> Workflows { get; set; } = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
+    private ISet<Type> WorkflowTypes { get; } = new HashSet<Type>();
 
     /// <summary>
     /// A factory that instantiates a concrete <see cref="IWorkflowRuntime"/>.
@@ -146,10 +152,40 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// </summary>
     public GracefulShutdownOptions? GracefulShutdown { get; set; }
 
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
+    {
+        return AddWorkflow(typeof(T));
+    }
+
+    /// <summary>
+    /// Register the specified workflow type.
+    /// </summary>
+    public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
+    {
+        Workflows.Add(workflowType);
+        WorkflowTypes.Add(workflowType);
+        return this;
+    }
+
+    /// <summary>
+    /// Register all workflows in the specified assembly.
+    /// </summary>
+    [RequiresUnreferencedCode("The assembly is required to be referenced.")]
+    public WorkflowRuntimeFeature AddWorkflowsFrom(Assembly assembly)
+    {
+        foreach (var workflowType in WorkflowTypeScanner.GetWorkflowTypes(assembly))
+            AddWorkflow(workflowType);
+
+        return this;
+    }
 
     public void ConfigureServices(IServiceCollection services)
     {
         // Options.
+        services.Configure<SerializationTypeOptions>(RegisterWorkflowTypeAliases);
         services.Configure<RuntimeOptions>(options => { options.Workflows = Workflows; });
         services.Configure<WorkflowDispatcherOptions>(options =>
         {
@@ -324,5 +360,35 @@ public class WorkflowRuntimeFeature : IShellFeature
         services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         services.TryAddScoped(WorkflowDispatchOutboxStore);
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
+    }
+
+    private void RegisterWorkflowTypeAliases(SerializationTypeOptions options)
+    {
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, GetRegisteredWorkflowTypes());
+    }
+
+    private IEnumerable<Type> GetRegisteredWorkflowTypes()
+    {
+        return WorkflowTypes
+            .Concat(Workflows.Keys.Select(TryResolveWorkflowType).Where(type => type != null).Select(type => type!))
+            .Distinct();
+    }
+
+    private static Type? TryResolveWorkflowType(string typeName)
+    {
+        Type? type;
+
+        try
+        {
+            type = Type.GetType(typeName, false);
+        }
+        catch (Exception e) when (e is ArgumentException or FileLoadException or FileNotFoundException or TypeLoadException or BadImageFormatException)
+        {
+            return null;
+        }
+
+        return type != null && typeof(IWorkflow).IsAssignableFrom(type) && type is { IsAbstract: false, IsInterface: false, ContainsGenericParameters: false }
+            ? type
+            : null;
     }
 }

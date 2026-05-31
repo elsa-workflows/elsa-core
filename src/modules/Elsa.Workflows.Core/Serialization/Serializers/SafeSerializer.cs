@@ -71,10 +71,10 @@ public class SafeSerializer : ConfigurableSerializer, ISafeSerializer
     protected override void AddConverters(JsonSerializerOptions options)
     {
         var expressionDescriptorRegistry = ServiceProvider.GetRequiredService<IExpressionDescriptorRegistry>();
-        var wellKnownTypeRegistry = ServiceProvider.GetRequiredService<IWellKnownTypeRegistry>();
+        var workflowJsonTypeRegistry = ServiceProvider.GetRequiredService<ISerializationTypeRegistry>();
 
         options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-        options.Converters.Add(new TypeJsonConverter(wellKnownTypeRegistry));
+        options.Converters.Add(new TypeJsonConverter(workflowJsonTypeRegistry));
         options.Converters.Add(new SafeValueConverterFactory());
         options.Converters.Add(new ExpressionJsonConverterFactory(expressionDescriptorRegistry));
         options.Converters.Add(new FuncExpressionValueConverter());

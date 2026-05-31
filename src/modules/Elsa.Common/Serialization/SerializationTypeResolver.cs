@@ -2,15 +2,14 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text.Json;
-using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 
-namespace Elsa.Workflows.Serialization.Helpers;
+namespace Elsa.Common.Serialization;
 
 /// <summary>
-/// Resolves workflow JSON type aliases without loading arbitrary CLR type names.
+/// Resolves serialization type aliases without loading arbitrary CLR type names.
 /// </summary>
-public static class WorkflowJsonTypeResolver
+public static class SerializationTypeResolver
 {
     private static readonly IDictionary<string, Type> GenericCollectionTypes = new Dictionary<string, Type>(StringComparer.Ordinal)
     {
@@ -52,39 +51,85 @@ public static class WorkflowJsonTypeResolver
         [typeof(IDictionary)] = typeof(Dictionary<string, object>)
     };
 
-    public static Type ResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string? typeAlias)
+    /// <summary>
+    /// Resolves the specified serialization type alias.
+    /// </summary>
+    public static Type ResolveType(ISerializationTypeRegistry serializationTypeRegistry, string? typeAlias)
     {
         if (string.IsNullOrWhiteSpace(typeAlias))
-            throw new JsonException("The workflow JSON type alias is missing.");
+            throw new JsonException("The serialization type alias is missing.");
 
-        if (TryResolveType(wellKnownTypeRegistry, typeAlias, out var type))
+        if (TryResolveType(serializationTypeRegistry, typeAlias, out var type))
             return type;
 
-        throw new JsonException($"Unknown workflow JSON type alias '{typeAlias}'. Only registered aliases and supported compound aliases can be deserialized.");
+        throw new JsonException(
+            $"Unknown serialization type alias '{typeAlias}'. Only registered aliases and supported compound aliases can be deserialized.");
     }
 
-    public static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, out Type type)
+    /// <summary>
+    /// Attempts to resolve the specified serialization type alias.
+    /// </summary>
+    public static bool TryResolveType(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, out Type type)
     {
         IReadOnlyList<Type>? registeredTypes = null;
-        return TryResolveType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type);
+        return TryResolveType(serializationTypeRegistry, typeAlias, ref registeredTypes, out type);
     }
 
-    public static bool TryGetAlias(IWellKnownTypeRegistry wellKnownTypeRegistry, Type type, out string alias)
+    private static bool TryResolveType(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
-        if (wellKnownTypeRegistry.TryGetAlias(type, out alias!))
+        if (serializationTypeRegistry.TryGetType(typeAlias, out var registeredType))
+        {
+            type = registeredType;
+            return true;
+        }
+
+        if (TryResolveArrayType(serializationTypeRegistry, typeAlias, ref registeredTypes, out var arrayType))
+        {
+            type = arrayType;
+            return true;
+        }
+
+        if (TryResolveGenericCollectionType(serializationTypeRegistry, typeAlias, ref registeredTypes, out var genericCollectionType))
+        {
+            type = genericCollectionType;
+            return true;
+        }
+
+        if (TryResolveRegisteredLegacyTypeName(serializationTypeRegistry, typeAlias, ref registeredTypes, out var legacyType))
+        {
+            type = legacyType;
+            return true;
+        }
+
+        type = null!;
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to return a serialization type alias that this resolver can read back.
+    /// </summary>
+    public static bool TryGetAlias(ISerializationTypeRegistry serializationTypeRegistry, Type type, out string alias)
+    {
+        if (serializationTypeRegistry.TryGetAlias(type, out alias!))
             return true;
 
-        if (type.IsArray && TryGetAlias(wellKnownTypeRegistry, type.GetElementType()!, out var elementTypeAlias))
+        if (type.IsArray)
         {
-            alias = $"{elementTypeAlias}[]";
-            return true;
+            var elementType = type.GetElementType()!;
+
+            if (TryGetAlias(serializationTypeRegistry, elementType, out var elementTypeAlias))
+            {
+                alias = $"{elementTypeAlias}[]";
+                return true;
+            }
         }
 
         if (type is { IsGenericType: true, GenericTypeArguments.Length: 1 })
         {
             var genericTypeDefinition = type.GetGenericTypeDefinition();
+
             if (TryGetWritableGenericCollectionAlias(genericTypeDefinition, out var genericTypeAlias) &&
-                TryGetAlias(wellKnownTypeRegistry, type.GenericTypeArguments[0], out elementTypeAlias))
+                TryGetAlias(serializationTypeRegistry, type.GenericTypeArguments[0], out var elementTypeAlias))
             {
                 alias = $"{genericTypeAlias}<{elementTypeAlias}>";
                 return true;
@@ -95,6 +140,9 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
+    /// <summary>
+    /// Attempts to map a supported collection interface type to an instantiable concrete type.
+    /// </summary>
     public static bool TryGetInstantiableCollectionType(Type type, out Type instantiableType)
     {
         if (type.IsGenericType)
@@ -114,38 +162,22 @@ public static class WorkflowJsonTypeResolver
         return false;
     }
 
-    private static bool TryResolveType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
-    {
-        if (wellKnownTypeRegistry.TryGetType(typeAlias, out type!))
-            return true;
-
-        if (TryResolveArrayType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
-            return true;
-
-        if (TryResolveGenericCollectionType(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
-            return true;
-
-        if (TryResolveRegisteredLegacyTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
-            return true;
-
-        type = null!;
-        return false;
-    }
-
-    private static bool TryResolveArrayType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveArrayType(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
+
         if (!typeAlias.EndsWith("[]", StringComparison.Ordinal))
             return false;
 
-        if (!TryResolveType(wellKnownTypeRegistry, typeAlias[..^2], ref registeredTypes, out var elementType))
+        var elementTypeAlias = typeAlias[..^2];
+        if (!TryResolveType(serializationTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
             return false;
 
         type = elementType.MakeArrayType();
         return true;
     }
 
-    private static bool TryResolveGenericCollectionType(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveGenericCollectionType(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
         var genericStart = typeAlias.IndexOf('<', StringComparison.Ordinal);
@@ -153,10 +185,12 @@ public static class WorkflowJsonTypeResolver
         if (genericStart <= 0 || !typeAlias.EndsWith(">", StringComparison.Ordinal))
             return false;
 
-        if (!GenericCollectionTypes.TryGetValue(typeAlias[..genericStart], out var genericTypeDefinition))
+        var genericTypeAlias = typeAlias[..genericStart];
+        if (!GenericCollectionTypes.TryGetValue(genericTypeAlias, out var genericTypeDefinition))
             return false;
 
-        if (!TryResolveType(wellKnownTypeRegistry, typeAlias[(genericStart + 1)..^1], ref registeredTypes, out var elementType))
+        var elementTypeAlias = typeAlias[(genericStart + 1)..^1];
+        if (!TryResolveType(serializationTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
             return false;
 
         type = genericTypeDefinition.MakeGenericType(elementType);
@@ -170,46 +204,59 @@ public static class WorkflowJsonTypeResolver
 
         if (GenericCollectionInterfaceMappings.TryGetValue(genericTypeDefinition, out var instantiableGenericTypeDefinition) &&
             GenericCollectionAliases.TryGetValue(instantiableGenericTypeDefinition, out alias!))
+        {
             return true;
+        }
 
         alias = null!;
         return false;
     }
 
-    private static bool TryResolveRegisteredLegacyTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static bool TryResolveRegisteredLegacyTypeName(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
-        registeredTypes ??= wellKnownTypeRegistry.ListTypes().ToArray();
+        registeredTypes ??= GetRegisteredTypes(serializationTypeRegistry);
         var registeredTypeSnapshot = registeredTypes;
 
-        type = registeredTypeSnapshot.FirstOrDefault(x =>
-            string.Equals(x.GetSimpleAssemblyQualifiedName(), typeAlias, StringComparison.Ordinal) ||
-            string.Equals(x.AssemblyQualifiedName, typeAlias, StringComparison.Ordinal))!;
-
-        if (type != null)
+        if (TryResolveRegisteredSimpleAssemblyQualifiedName(registeredTypeSnapshot, typeAlias, out type))
             return true;
 
-        if (TryResolveLegacyGenericCollectionTypeName(wellKnownTypeRegistry, typeAlias, ref registeredTypes, out type))
+        if (TryResolveLegacyGenericCollectionTypeName(serializationTypeRegistry, typeAlias, ref registeredTypes, out type))
             return true;
+
+        Type? resolvedType;
 
         try
         {
-            var resolvedType = Type.GetType(
+            resolvedType = Type.GetType(
                 typeAlias,
                 assemblyName => ResolveAssembly(registeredTypeSnapshot, assemblyName),
                 (assembly, typeName, ignoreCase) => ResolveType(registeredTypeSnapshot, assembly, typeName, ignoreCase),
                 false);
-
-            type = resolvedType!;
-            return resolvedType != null;
         }
         catch (Exception e) when (e is ArgumentException or FileLoadException)
         {
-            type = null!;
-            return false;
+            resolvedType = null;
         }
+
+        type = resolvedType!;
+        return resolvedType != null;
     }
 
-    private static bool TryResolveLegacyGenericCollectionTypeName(IWellKnownTypeRegistry wellKnownTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
+    private static IReadOnlyList<Type> GetRegisteredTypes(ISerializationTypeRegistry serializationTypeRegistry)
+    {
+        return serializationTypeRegistry.ListTypes().ToArray();
+    }
+
+    private static bool TryResolveRegisteredSimpleAssemblyQualifiedName(IEnumerable<Type> registeredTypes, string typeAlias, out Type type)
+    {
+        type = registeredTypes.FirstOrDefault(x =>
+            string.Equals(x.GetSimpleAssemblyQualifiedName(), typeAlias, StringComparison.Ordinal) ||
+            string.Equals(x.AssemblyQualifiedName, typeAlias, StringComparison.Ordinal))!;
+
+        return type != null;
+    }
+
+    private static bool TryResolveLegacyGenericCollectionTypeName(ISerializationTypeRegistry serializationTypeRegistry, string typeAlias, ref IReadOnlyList<Type>? registeredTypes, out Type type)
     {
         type = null!;
 
@@ -225,9 +272,11 @@ public static class WorkflowJsonTypeResolver
             if (!string.Equals(assemblyName, genericTypeDefinition.Assembly.GetName().Name, StringComparison.Ordinal))
                 continue;
 
-            if (!TryResolveType(wellKnownTypeRegistry, typeAlias[prefix.Length..separatorIndex], ref registeredTypes, out var elementType))
+            var elementTypeAlias = typeAlias[prefix.Length..separatorIndex];
+            if (!TryResolveType(serializationTypeRegistry, elementTypeAlias, ref registeredTypes, out var elementType))
                 return false;
 
+            // The resolver only closes known collection definitions over registered element types.
 #pragma warning disable IL2055
             type = genericTypeDefinition.MakeGenericType(elementType);
 #pragma warning restore IL2055

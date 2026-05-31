@@ -83,7 +83,7 @@ Before handing off changes, verify the following when applicable:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/008-diagnostics-otel/plan.md`.
+shell commands, and other important information, read `specs/008-diagnostics-otel/plan.md` and `specs/010-workflow-json-hardening/plan.md`.
 <!-- SPECKIT END -->
 
 ## Active Technologies

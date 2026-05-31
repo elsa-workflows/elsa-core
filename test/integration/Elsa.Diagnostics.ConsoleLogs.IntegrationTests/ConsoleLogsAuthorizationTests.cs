@@ -1,6 +1,6 @@
 using System.Reflection;
 using System.Security.Claims;
-using System.Text.Json;
+using System.Text;
 using ConsoleLogStreaming.Core.Models;
 using ConsoleLogStreaming.Core;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
@@ -9,6 +9,7 @@ using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using FastEndpoints;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -60,17 +61,14 @@ public class ConsoleLogsAuthorizationTests
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
         var provider = new TestConsoleLogProvider();
         var endpoint = Activator.CreateInstance(endpointType, provider)!;
-        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
-        var request = JsonSerializer.Deserialize(
+        SetJsonRequest(endpointType, endpoint,
             """
             {
                 "workflowInstanceId": "workflow-instance-a"
             }
-            """,
-            requestDtoType,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            """);
 
-        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
         await Assert.IsAssignableFrom<Task>(result);
 
         Assert.NotNull(provider.LastFilter);
@@ -79,14 +77,59 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("workflow-instance-a", workflowInstanceId);
     }
 
+    [Theory]
+    [InlineData("stdout", ConsoleStream.Stdout)]
+    [InlineData("stderr", ConsoleStream.Stderr)]
+    public async Task RecentEndpoint_MapsLowercaseStreamFilter(string stream, ConsoleStream expected)
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider)!;
+        SetJsonRequest(endpointType, endpoint,
+            $$"""
+            {
+                "stream": "{{stream}}"
+            }
+            """);
+
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        Assert.Equal(expected, provider.LastFilter.Stream);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("all")]
+    public async Task RecentEndpoint_MapsAllStreamFilterToNull(string? stream)
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider)!;
+        var streamJson = stream == null ? "null" : $"\"{stream}\"";
+        SetJsonRequest(endpointType, endpoint,
+            $$"""
+            {
+                "stream": {{streamJson}}
+            }
+            """);
+
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        Assert.Null(provider.LastFilter.Stream);
+    }
+
     [Fact]
     public async Task RecentEndpoint_MapsActivityFiltersToMetadataFilter()
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
         var provider = new TestConsoleLogProvider();
         var endpoint = Activator.CreateInstance(endpointType, provider)!;
-        var (requestDtoType, _) = GetEndpointDtoTypes(endpointType);
-        var request = JsonSerializer.Deserialize(
+        SetJsonRequest(endpointType, endpoint,
             """
             {
                 "workflowInstanceId": "workflow-instance-a",
@@ -94,15 +137,28 @@ public class ConsoleLogsAuthorizationTests
                 "activityId": "activity-a",
                 "activityNodeId": "node-a"
             }
-            """,
-            requestDtoType,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+            """);
 
-        var result = endpointType.GetMethod("ExecuteAsync")!.Invoke(endpoint, [request, CancellationToken.None]);
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
         await Assert.IsAssignableFrom<Task>(result);
 
         Assert.NotNull(provider.LastFilter);
         AssertActivityMetadata(provider.LastFilter.Metadata);
+    }
+
+    [Fact]
+    public async Task RecentEndpoint_WhenJsonRequestHasUnknownEmptyBody_UsesEmptyFilter()
+    {
+        var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
+        var provider = new TestConsoleLogProvider();
+        var endpoint = Activator.CreateInstance(endpointType, provider)!;
+        SetJsonRequest(endpointType, endpoint, "", includeContentLength: false);
+
+        var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
+        await Assert.IsAssignableFrom<Task>(result);
+
+        Assert.NotNull(provider.LastFilter);
+        Assert.Empty(provider.LastFilter.Metadata);
     }
 
     [Fact]
@@ -166,6 +222,20 @@ public class ConsoleLogsAuthorizationTests
         Assert.Equal("node-a", metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
     }
 
+    private static void SetJsonRequest(Type endpointType, object endpoint, string json, bool includeContentLength = true)
+    {
+        var bytes = Encoding.UTF8.GetBytes(json);
+        var context = new DefaultHttpContext();
+        context.Request.Body = new MemoryStream(bytes);
+        if (includeContentLength)
+            context.Request.ContentLength = bytes.Length;
+        context.Request.ContentType = "application/json";
+
+        endpointType
+            .GetProperty("HttpContext", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
+            .SetValue(endpoint, context);
+    }
+
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
@@ -222,7 +292,7 @@ public class ConsoleLogsAuthorizationTests
     private static ElsaConsoleLogsHub CreateHub(TestConsoleLogProvider provider, params string[] permissions)
     {
         var hubContext = new TestHubContext();
-        var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
+        var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, new TestConsoleLogSourceRegistry(), hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
         var authorizer = new ElsaConsoleLogStreamHubAuthorizer();
 
         return new ElsaConsoleLogsHub(provider, authorizer, subscriptionManager)

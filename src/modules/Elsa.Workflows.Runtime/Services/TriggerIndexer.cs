@@ -15,6 +15,7 @@ using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -31,6 +32,7 @@ public class TriggerIndexer : ITriggerIndexer
     private readonly IServiceProvider _serviceProvider;
     private readonly IStimulusHasher _hasher;
     private readonly IDistributedLockProvider _distributedLockProvider;
+    private readonly WorkflowTriggerEqualityComparer _triggerEqualityComparer;
     private readonly DistributedLockingOptions _lockingOptions;
     private readonly ILogger _logger;
 
@@ -48,6 +50,7 @@ public class TriggerIndexer : ITriggerIndexer
         IServiceProvider serviceProvider,
         IStimulusHasher hasher,
         IDistributedLockProvider distributedLockProvider,
+        ISerializationTypeRegistry workflowJsonTypeRegistry,
         IOptions<DistributedLockingOptions> lockingOptions,
         ILogger<TriggerIndexer> logger)
     {
@@ -60,6 +63,7 @@ public class TriggerIndexer : ITriggerIndexer
         _serviceProvider = serviceProvider;
         _hasher = hasher;
         _distributedLockProvider = distributedLockProvider;
+        _triggerEqualityComparer = new WorkflowTriggerEqualityComparer(workflowJsonTypeRegistry);
         _lockingOptions = lockingOptions.Value;
         _logger = logger;
         _workflowDefinitionService = workflowDefinitionService;
@@ -118,7 +122,7 @@ public class TriggerIndexer : ITriggerIndexer
             : new(0);
 
         // Diff triggers.
-        var diff = Diff.For(currentTriggers, newTriggers, new WorkflowTriggerEqualityComparer());
+        var diff = Diff.For(currentTriggers, newTriggers, _triggerEqualityComparer);
 
         // Replace triggers for the specified workflow.
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
@@ -140,7 +144,7 @@ public class TriggerIndexer : ITriggerIndexer
     {
         var emptyTriggerList = new List<StoredTrigger>(0);
         var currentTriggers = await GetCurrentTriggersAsync(workflow.Identity.DefinitionId, cancellationToken).ToList();
-        var diff = Diff.For(currentTriggers, emptyTriggerList, new WorkflowTriggerEqualityComparer());
+        var diff = Diff.For(currentTriggers, emptyTriggerList, _triggerEqualityComparer);
         await _triggerStore.ReplaceAsync(diff.Removed, diff.Added, cancellationToken);
         var indexedWorkflow = new IndexedWorkflowTriggers(workflow, emptyTriggerList, currentTriggers, emptyTriggerList);
         await _notificationSender.SendAsync(new WorkflowTriggersIndexed(indexedWorkflow), cancellationToken);

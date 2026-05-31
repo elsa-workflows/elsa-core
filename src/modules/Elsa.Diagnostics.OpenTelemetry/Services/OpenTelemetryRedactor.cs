@@ -51,7 +51,12 @@ public class OpenTelemetryRedactor(IOptions<OpenTelemetryDiagnosticsOptions> opt
 
     private Dictionary<string, string?> RedactDictionary(IDictionary<string, string?> values)
     {
-        return values.ToDictionary(x => x.Key, x => RedactValue(x.Key, x.Value), StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var (key, value) in values)
+            result[key] = RedactValue(key, value);
+
+        return result;
     }
 
     private string? RedactValue(string name, string? value)

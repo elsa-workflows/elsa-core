@@ -20,11 +20,28 @@ public class ConsoleLogsHubSourceStatusTests
     {
         var source = new ConsoleLogSource { Id = "source-1", DisplayName = "Source 1" };
         var provider = new SingleLineProvider(new ConsoleLogLine { Text = "message", Source = source });
+        var sourceRegistry = new TestConsoleLogSourceRegistry();
         var client = new TestConsoleLogsClient();
         var hubContext = new TestHubContext(client);
-        var manager = new ElsaConsoleLogSubscriptionManager(provider, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
+        using var manager = new ElsaConsoleLogSubscriptionManager(provider, sourceRegistry, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
 
         await manager.SubscribeAsync("connection-1", new ElsaConsoleLogFilter(), CancellationToken.None);
+
+        Assert.Same(source, await client.SourceChanged.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+    }
+
+    [Fact]
+    public async Task PushedSubscription_ForwardsSourceChangeFromRegistry()
+    {
+        var source = new ConsoleLogSource { Id = "source-1", DisplayName = "Source 1" };
+        var provider = new IdleProvider();
+        var sourceRegistry = new TestConsoleLogSourceRegistry();
+        var client = new TestConsoleLogsClient();
+        var hubContext = new TestHubContext(client);
+        using var manager = new ElsaConsoleLogSubscriptionManager(provider, sourceRegistry, hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
+
+        await manager.SubscribeAsync("connection-1", new ElsaConsoleLogFilter { SourceId = source.Id }, CancellationToken.None);
+        sourceRegistry.Raise(source);
 
         Assert.Same(source, await client.SourceChanged.Task.WaitAsync(TimeSpan.FromSeconds(5)));
     }
@@ -50,6 +67,30 @@ public class ConsoleLogsHubSourceStatusTests
         public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([line.Source]);
+        }
+    }
+
+    private sealed class IdleProvider : IConsoleLogProvider
+    {
+        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new RecentConsoleLogsResult());
+        }
+
+        public async IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            yield break;
+        }
+
+        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult<IReadOnlyCollection<ConsoleLogSource>>([]);
         }
     }
 

@@ -50,7 +50,7 @@ public class ExpressionOptions
     /// Gets the type alias dictionary.
     /// </summary>
     public IDictionary<string, Type> AliasTypeDictionary { get; set; }
-    
+
     /// <summary>
     /// Registers a well-known type alias.
     /// </summary>

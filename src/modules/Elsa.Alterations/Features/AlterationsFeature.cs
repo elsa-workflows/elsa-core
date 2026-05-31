@@ -1,6 +1,7 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Extensions;
+using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
@@ -8,7 +9,9 @@ using Elsa.Alterations.Workflows;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Alterations.Features;
 
@@ -58,6 +61,12 @@ public class AlterationsFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Services.Configure<SerializationTypeOptions>(options =>
+        {
+            options.RegisterTypeAlias(typeof(AlterationPlanParams), nameof(AlterationPlanParams));
+            options.RegisterLegacySimpleAssemblyQualifiedName(typeof(AlterationPlanParams));
+        });
+
         Services.AddScoped<IAlterationPlanManager, AlterationPlanManager>();
         Services.AddAlterations();
         Services.AddAlterationsCore();

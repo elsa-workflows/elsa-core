@@ -7,13 +7,16 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.PortResolvers;
@@ -21,12 +24,14 @@ using Elsa.Workflows.Serialization.Configurators;
 using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.Serializers;
 using Elsa.Workflows.Services;
+using Elsa.Workflows.State;
 using Elsa.Workflows.UIHints.CheckList;
 using Elsa.Workflows.UIHints.Dictionary;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
 using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.Features;
 
@@ -164,6 +169,32 @@ public class WorkflowsFeature : FeatureBase
 
     private void AddElsaCore(IServiceCollection services)
     {
+        services.Configure<SerializationTypeOptions>(options =>
+        {
+            options.AddTypeAlias<ExceptionState>(nameof(ExceptionState));
+            options.AddTypeAlias<FaultException>(nameof(FaultException));
+            options.AddTypeAlias<VariablesDictionary>(nameof(VariablesDictionary));
+            options.AddTypeAlias<Token>(nameof(Token));
+            options.RegisterLegacyTypeName(typeof(FlowJoinMode), "Elsa.Workflows.Core.Activities.Flowchart.Models.FlowJoinMode, Elsa.Workflows.Core");
+            options.AddTypeAliasWithLegacyName<FlowJoinMode>(nameof(FlowJoinMode));
+            options.AddTypeAliasWithLegacyName<WorkflowStorageDriver>(nameof(WorkflowStorageDriver));
+            options.AddTypeAliasWithLegacyName<WorkflowInstanceStorageDriver>(nameof(WorkflowInstanceStorageDriver));
+            options.AddTypeAliasWithLegacyName<MemoryStorageDriver>(nameof(MemoryStorageDriver));
+            options.AddTypeAliasWithLegacyName<FaultStrategy>(nameof(FaultStrategy));
+            options.AddTypeAliasWithLegacyName<ContinueWithIncidentsStrategy>(nameof(ContinueWithIncidentsStrategy));
+            options.AddTypeAlias<Exception>(nameof(Exception));
+            options.AddTypeAlias<ArgumentException>(nameof(ArgumentException));
+            options.AddTypeAlias<ArgumentNullException>(nameof(ArgumentNullException));
+            options.AddTypeAlias<InvalidOperationException>(nameof(InvalidOperationException));
+            options.AddTypeAlias<NullReferenceException>(nameof(NullReferenceException));
+            options.AddTypeAlias<OperationCanceledException>(nameof(OperationCanceledException));
+            options.AddTypeAlias<TaskCanceledException>(nameof(TaskCanceledException));
+            options.AddTypeAlias<TimeoutException>(nameof(TimeoutException));
+            options.AddTypeAlias<NotSupportedException>(nameof(NotSupportedException));
+            options.AddTypeAlias<JObject>(nameof(JObject));
+            options.AddTypeAlias<JArray>(nameof(JArray));
+        });
+
         services
 
             // Core.
@@ -234,6 +265,7 @@ public class WorkflowsFeature : FeatureBase
             .AddStorageDriver<MemoryStorageDriver>()
 
             // Serialization.
+            .AddSingleton<ISerializationTypeRegistry, SerializationTypeRegistry>()
             .AddSingleton<IWorkflowStateSerializer, JsonWorkflowStateSerializer>()
             .AddSingleton<IPayloadSerializer, JsonPayloadSerializer>()
             .AddSingleton<IActivitySerializer, JsonActivitySerializer>()

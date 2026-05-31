@@ -1,9 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
-using Elsa.Workflows.Serialization.Helpers;
 using JetBrains.Annotations;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -17,12 +16,18 @@ public class TypeJsonConverter : JsonConverter<Type>
     /// Prefix for unregistered type metadata that is not used for CLR type loading during deserialization.
     /// </summary>
     private const string UnregisteredTypeAliasPrefix = "UnregisteredClrType:";
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
 
     /// <inheritdoc />
-    public TypeJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public TypeJsonConverter(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
+    }
+
+    /// <inheritdoc />
+    public TypeJsonConverter()
+    {
+        _workflowJsonTypeRegistry = SerializationTypeRegistry.CreateDefault();
     }
 
     /// <inheritdoc />
@@ -38,13 +43,13 @@ public class TypeJsonConverter : JsonConverter<Type>
         if (typeAlias?.StartsWith(UnregisteredTypeAliasPrefix, StringComparison.Ordinal) == true)
             return typeof(Exception);
 
-        return WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeAlias);
+        return SerializationTypeResolver.ResolveType(_workflowJsonTypeRegistry, typeAlias);
     }
 
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, Type value, JsonSerializerOptions options)
     {
-        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, value, out var typeAlias))
+        if (!SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, value, out var typeAlias))
             typeAlias = $"{UnregisteredTypeAliasPrefix}{value.GetSimpleAssemblyQualifiedName()}";
 
         writer.WriteStringValue(typeAlias);

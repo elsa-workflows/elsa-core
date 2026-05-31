@@ -1,9 +1,12 @@
 using CShells.Features;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Activities.Flowchart.Options;
 using Elsa.Workflows.Activities.Flowchart.Serialization;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.ShellFeatures;
 
@@ -30,6 +33,7 @@ public class FlowchartFeature : IShellFeature
 
         if (FlowchartOptionsConfigurator != null)
             services.Configure(FlowchartOptionsConfigurator);
+
+        services.Configure<SerializationTypeOptions>(options => options.AddTypeAlias<FlowScope>("FlowScope"));
     }
 }
-

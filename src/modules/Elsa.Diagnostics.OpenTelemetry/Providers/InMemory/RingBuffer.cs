@@ -5,6 +5,7 @@ public class RingBuffer<T>
     private readonly Queue<T> _items = new();
     private readonly object _lock = new();
     private readonly int _capacity;
+    private long _droppedCount;
 
     public RingBuffer(int capacity)
     {
@@ -14,7 +15,14 @@ public class RingBuffer<T>
         _capacity = capacity;
     }
 
-    public long DroppedCount { get; private set; }
+    public long DroppedCount
+    {
+        get
+        {
+            lock (_lock)
+                return _droppedCount;
+        }
+    }
 
     public void Add(T item)
     {
@@ -23,7 +31,7 @@ public class RingBuffer<T>
             if (_items.Count == _capacity)
             {
                 _items.Dequeue();
-                DroppedCount++;
+                _droppedCount++;
             }
 
             _items.Enqueue(item);
