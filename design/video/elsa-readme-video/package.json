@@ -9,10 +9,10 @@
     "still": "remotion still ElsaReadme ../exports/elsa-workflows-readme-poster.png --frame=36"
   },
   "dependencies": {
-    "@remotion/cli": "4.0.462",
+    "@remotion/cli": "4.0.469",
     "react": "19.2.6",
     "react-dom": "19.2.6",
-    "remotion": "4.0.462"
+    "remotion": "4.0.469"
   },
   "devDependencies": {
     "@types/react": "19.2.14",
