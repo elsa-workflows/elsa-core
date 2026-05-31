@@ -325,9 +325,10 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         if (_agnosticRegistry.ProvidedActivityDescriptors.ContainsKey(providerType))
             yield return _agnosticRegistry;
 
-        foreach (var registry in _tenantRegistries.Values.Where(x => x.ProvidedActivityDescriptors.ContainsKey(providerType)))
+        foreach (var registry in _tenantRegistries.Values)
         {
-            yield return registry;
+            if (registry.ProvidedActivityDescriptors.ContainsKey(providerType))
+                yield return registry;
         }
     }
 
