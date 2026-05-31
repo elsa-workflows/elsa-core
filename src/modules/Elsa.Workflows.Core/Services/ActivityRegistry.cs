@@ -324,10 +324,9 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         if (_agnosticRegistry.ProvidedActivityDescriptors.ContainsKey(providerType))
             yield return _agnosticRegistry;
 
-        foreach (var registry in _tenantRegistries.Values)
+        foreach (var registry in _tenantRegistries.Values.Where(x => x.ProvidedActivityDescriptors.ContainsKey(providerType)))
         {
-            if (registry.ProvidedActivityDescriptors.ContainsKey(providerType))
-                yield return registry;
+            yield return registry;
         }
     }
 
@@ -350,9 +349,15 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
 
     private static void RecomputeLatestDescriptor(TenantRegistryData registry, string typeName)
     {
-        var latestDescriptor = registry.ActivityDescriptors.Values
-            .Where(x => x.TypeName == typeName)
-            .MaxBy(x => x.Version);
+        ActivityDescriptor? latestDescriptor = null;
+        foreach (var descriptor in registry.ActivityDescriptors.Values)
+        {
+            if (descriptor.TypeName != typeName)
+                continue;
+
+            if (latestDescriptor == null || descriptor.Version > latestDescriptor.Version)
+                latestDescriptor = descriptor;
+        }
 
         if (latestDescriptor == null)
             registry.LatestActivityDescriptors.TryRemove(typeName, out _);
