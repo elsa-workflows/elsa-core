@@ -28,8 +28,6 @@ public class EFCoreWorkflowDefinitionPersistenceFeature(IModule module) : Persis
     public override void Apply()
     {
         base.Apply();
-        Services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(EFCoreWorkflowDefinitionStore.WorkflowDefinitionStateType, "EFCoreWorkflowDefinitionState"));
-        Services.Configure<WorkflowJsonTypeOptions>(options => options.RegisterTypeAlias(EFCoreWorkflowDefinitionStore.WorkflowDefinitionStateType, "EFCoreWorkflowDefinitionState"));
         AddEntityStore<WorkflowDefinition, EFCoreWorkflowDefinitionStore>();
     }
 }
