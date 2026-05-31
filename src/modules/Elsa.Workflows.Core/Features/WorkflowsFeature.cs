@@ -92,7 +92,12 @@ public class WorkflowsFeature : FeatureBase
     /// <summary>
     /// A delegate to configure the <see cref="IActivityExecutionPipeline"/>.
     /// </summary>
-    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder.UseDefaultActivityInvoker();
+    public Action<IActivityExecutionPipelineBuilder> ActivityExecutionPipeline { get; set; } = builder => builder
+        .UseLogging()
+        .UseExceptionHandling()
+        .UseExecutionLogging()
+        .UseNotifications()
+        .UseDefaultActivityInvoker();
 
     /// <summary>
     /// Fluent method to set <see cref="StandardInStreamProvider"/>.

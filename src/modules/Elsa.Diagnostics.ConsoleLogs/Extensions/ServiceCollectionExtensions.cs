@@ -1,9 +1,5 @@
-using ConsoleLogStreaming.Contracts;
-using ConsoleLogStreaming.Core;
 using ConsoleLogStreaming.Core.DependencyInjection;
 using ConsoleLogStreaming.Core.Options;
-using ConsoleLogStreaming.SignalR;
-using ConsoleLogStreaming.SignalR.DependencyInjection;
 using CShells.Lifecycle;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
@@ -20,13 +16,14 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogOptions>? configureOptions = null)
     {
         services.AddConsoleLogContextServices();
-        services.AddConsoleLogStreamingHost(options =>
+        services.AddConsoleLogStreaming(options =>
         {
             ElsaConsoleLogOptions.ConfigureDefaults(options);
             configureOptions?.Invoke(options);
         });
-        services.AddConsoleLogStreamingSignalR(options => options.HubPath = EndpointRouteBuilderExtensions.HubRoute);
-        services.TryAddSingleton<IConsoleLogStreamingHubAuthorizer, ElsaConsoleLogStreamingHubAuthorizer>();
+        services.AddSignalR();
+        services.DecorateConsoleLogProvider();
+        services.TryAddSingleton<IElsaConsoleLogHubAuthorizer, ElsaConsoleLogStreamHubAuthorizer>();
         services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
         services.TryAddScoped<ConsoleLogCaptureShellLease>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IShellInitializer, ConsoleLogCaptureShellInitializer>());

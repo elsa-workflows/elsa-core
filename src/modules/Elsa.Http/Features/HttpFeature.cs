@@ -1,5 +1,4 @@
 using System.Net;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -247,24 +246,6 @@ public class HttpFeature(IModule module) : FeatureBase(module)
 
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             Services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
-
-        Services.Configure<ExpressionOptions>(options =>
-        {
-            options.AddTypeAlias<HttpRequest>("HttpRequest");
-            options.AddTypeAlias<HttpResponse>("HttpResponse");
-            options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
-            options.AddTypeAlias<HttpHeaders>("HttpHeaders");
-            options.AddTypeAlias<HttpRouteData>("RouteData");
-            options.AddTypeAlias<IFormFile>("FormFile");
-            options.AddTypeAlias<IFormFile[]>("FormFile[]");
-            options.AddTypeAlias<HttpFile>("HttpFile");
-            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
-            options.AddTypeAlias<Downloadable>("Downloadable");
-            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
-            options.AddTypeAlias<HttpStatusCode>();
-            options.AddTypeAlias<HttpRequestException>();
-            options.AddTypeAlias<HttpEndpointBookmarkPayload>();
-        });
 
         Services.Configure<WorkflowJsonTypeOptions>(options =>
         {

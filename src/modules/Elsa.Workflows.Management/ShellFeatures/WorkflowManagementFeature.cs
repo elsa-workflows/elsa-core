@@ -7,6 +7,7 @@ using Elsa.Common.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
@@ -131,5 +132,7 @@ public class WorkflowManagementFeature : IShellFeature
 
         // Register the default variable descriptors declared on this feature.
         services.AddVariableDescriptors(VariableDescriptors);
+
+        services.Configure<WorkflowJsonTypeOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));
     }
 }

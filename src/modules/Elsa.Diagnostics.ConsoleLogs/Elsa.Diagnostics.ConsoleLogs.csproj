@@ -9,6 +9,8 @@
 
     <ItemGroup>
         <PackageReference Include="CShells" />
+        <PackageReference Include="ConsoleLogStreaming.Core" />
+        <PackageReference Include="ConsoleLogStreaming.SignalR" />
         <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 

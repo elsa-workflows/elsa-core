@@ -1,6 +1,7 @@
 using Elsa.Diagnostics.OpenTelemetry.Contracts;
 using Elsa.Diagnostics.OpenTelemetry.Options;
 using Elsa.Diagnostics.OpenTelemetry.Providers.InMemory;
+using Elsa.Diagnostics.OpenTelemetry.RealTime;
 using Elsa.Diagnostics.OpenTelemetry.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -25,6 +26,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IOpenTelemetryIngestor, OpenTelemetryIngestor>();
         services.TryAddSingleton<IOpenTelemetryProvider, DefaultOpenTelemetryProvider>();
         services.TryAddSingleton<ICollectorConfigurationProvider, CollectorConfigurationProvider>();
+        services.TryAddSingleton<OpenTelemetrySubscriptionManager>();
 
         return services;
     }

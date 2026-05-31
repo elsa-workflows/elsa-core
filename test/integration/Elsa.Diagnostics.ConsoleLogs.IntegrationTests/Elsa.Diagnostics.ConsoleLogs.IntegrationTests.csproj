@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="ConsoleLogStreaming.Core" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
     </ItemGroup>

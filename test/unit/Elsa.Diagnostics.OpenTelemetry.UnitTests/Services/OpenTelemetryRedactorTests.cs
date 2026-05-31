@@ -18,4 +18,22 @@ public class OpenTelemetryRedactorTests
 
         Assert.Equal("[Redacted]", result.Logs.Single().Attributes["password"]);
     }
+
+    [Fact]
+    public void Redact_WhenAttributeKeysDifferOnlyByCase_UsesLastValue()
+    {
+        var redactor = new OpenTelemetryRedactor(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions()));
+        var log = new OtlpLogRecord("1", "resource", DateTimeOffset.UtcNow, "Information", null, "hello", null, null, new Dictionary<string, string?>
+        {
+            ["Password"] = "first",
+            ["password"] = "second"
+        });
+        var batch = new OpenTelemetryBatch([], [], [], [], [], [log]);
+
+        var result = redactor.Redact(batch);
+
+        var attributes = result.Logs.Single().Attributes;
+        Assert.Single(attributes);
+        Assert.Equal("[Redacted]", attributes["Password"]);
+    }
 }

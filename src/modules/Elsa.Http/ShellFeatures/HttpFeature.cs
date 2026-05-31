@@ -1,7 +1,6 @@
 using System.Net;
 using CShells.AspNetCore.Features;
 using CShells.Features;
-using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
@@ -218,24 +217,6 @@ public class HttpFeature : IMiddlewareShellFeature
 
         foreach (var httpWorkflowInstanceIdSelectorType in HttpWorkflowInstanceIdSelectorTypes)
             services.AddScoped(typeof(IHttpWorkflowInstanceIdSelector), httpWorkflowInstanceIdSelectorType);
-
-        services.Configure<ExpressionOptions>(options =>
-        {
-            options.AddTypeAlias<HttpRequest>("HttpRequest");
-            options.AddTypeAlias<HttpResponse>("HttpResponse");
-            options.AddTypeAlias<HttpResponseMessage>("HttpResponseMessage");
-            options.AddTypeAlias<HttpHeaders>("HttpHeaders");
-            options.AddTypeAlias<HttpRouteData>("RouteData");
-            options.AddTypeAlias<IFormFile>("FormFile");
-            options.AddTypeAlias<IFormFile[]>("FormFile[]");
-            options.AddTypeAlias<HttpFile>("HttpFile");
-            options.AddTypeAlias<HttpFile[]>("HttpFile[]");
-            options.AddTypeAlias<Downloadable>("Downloadable");
-            options.AddTypeAlias<Downloadable[]>("Downloadable[]");
-            options.AddTypeAlias<HttpStatusCode>();
-            options.AddTypeAlias<HttpRequestException>();
-            options.AddTypeAlias<HttpEndpointBookmarkPayload>();
-        });
 
         services.Configure<WorkflowJsonTypeOptions>(options =>
         {

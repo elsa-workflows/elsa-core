@@ -1,9 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Extensions;
+using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Helpers;
+using Elsa.Workflows.Services;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -12,12 +13,12 @@ namespace Elsa.Workflows.Serialization.Converters;
 /// </summary>
 public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
 {
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly IWorkflowJsonTypeRegistry _workflowJsonTypeRegistry;
 
     /// <inheritdoc />
-    public OutputJsonConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public OutputJsonConverter(IWorkflowJsonTypeRegistry workflowJsonTypeRegistry)
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
     }
 
     /// <inheritdoc />
@@ -50,7 +51,9 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
     public override void Write(Utf8JsonWriter writer, Output<T>? value, JsonSerializerOptions options)
     {
         var valueType = typeof(T);
-        var valueTypeAlias = _wellKnownTypeRegistry.GetAliasOrDefault(valueType);
+        var valueTypeAlias = WorkflowJsonTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, valueType, out var alias)
+            ? alias
+            : valueType.GetSimpleAssemblyQualifiedName();
 
         var model = new
         {

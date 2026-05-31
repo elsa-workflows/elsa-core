@@ -15,14 +15,22 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpointWithoutRequ
     /// <inheritdoc />
     public override void Configure()
     {
-        Get("/activity-executions/{id}");
+        Get("/activity-executions/{id}", "/activity-executions/{*id}", "/activity-executions/by-id");
         ConfigurePermissions("read:activity-execution");
     }
 
     /// <inheritdoc />
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var id = Route<string>("id");
+        var id = Query<string>("id", false) ?? Route<string>("id", false);
+
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            AddError("The activity execution ID is required.");
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+
         var filter = new ActivityExecutionRecordFilter
         {
             Id = id

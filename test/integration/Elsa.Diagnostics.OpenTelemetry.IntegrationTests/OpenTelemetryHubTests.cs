@@ -9,6 +9,8 @@ using FastEndpoints;
 using FastEndpoints.Security;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging.Abstractions;
+using Xunit.Sdk;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.OpenTelemetry.IntegrationTests;
@@ -37,8 +39,11 @@ public class OpenTelemetryHubTests
 
         await hub.SubscribeAsync(new OpenTelemetryTraceFilter { TraceId = "trace-1" });
 
-        Assert.Equal("trace-1", Assert.Single(caller.Items).Trace?.TraceId);
-        Assert.Equal("trace-1", liveFeed.Filter?.TraceId);
+        await AssertEventuallyAsync(() =>
+        {
+            Assert.Equal("trace-1", Assert.Single(caller.Items).Trace?.TraceId);
+            Assert.Equal("trace-1", liveFeed.Filter?.TraceId);
+        });
     }
 
     [Fact]
@@ -79,22 +84,30 @@ public class OpenTelemetryHubTests
 
         Assert.True(await first);
 
-        var observed = new[] { enumerator.Current };
-        if (enumerator.Current.DroppedItems == null && await enumerator.MoveNextAsync())
-            observed = [.. observed, enumerator.Current];
+        OpenTelemetryStreamItem? summary = enumerator.Current.DroppedItems != null ? enumerator.Current : null;
+        for (var i = 0; summary == null && i < 5 && await enumerator.MoveNextAsync(); i++)
+        {
+            if (enumerator.Current.DroppedItems != null)
+                summary = enumerator.Current;
+        }
 
-        var summary = Assert.Single(observed, x => x.DroppedItems != null);
-        Assert.Equal(OpenTelemetrySignalType.Trace, summary.DroppedItems!.SignalType);
-        Assert.Equal("SubscriberQueueFull", summary.DroppedItems.Reason);
-        Assert.True(summary.DroppedItems.Count > 0);
+        Assert.NotNull(summary);
+        var nonNullSummary = summary!;
+        Assert.Equal(OpenTelemetrySignalType.Trace, nonNullSummary.DroppedItems!.SignalType);
+        Assert.Equal("SubscriberQueueFull", nonNullSummary.DroppedItems.Reason);
+        Assert.True(nonNullSummary.DroppedItems.Count > 0);
     }
 
     private OpenTelemetryHub CreateHub(IOpenTelemetryLiveFeed liveFeed, string permission, IOpenTelemetryClient? caller = null)
     {
-        return new OpenTelemetryHub(liveFeed)
+        caller ??= new CapturingOpenTelemetryClient();
+        var hubContext = new TestHubContext(caller);
+        var subscriptionManager = new OpenTelemetrySubscriptionManager(liveFeed, hubContext, NullLogger<OpenTelemetrySubscriptionManager>.Instance);
+
+        return new OpenTelemetryHub(subscriptionManager)
         {
             Context = new TestHubCallerContext(CreateUser(permission)),
-            Clients = new TestHubCallerClients(caller ?? new CapturingOpenTelemetryClient())
+            Clients = new TestHubCallerClients(caller)
         };
     }
 
@@ -157,6 +170,56 @@ public class OpenTelemetryHubTests
         public IOpenTelemetryClient OthersInGroup(string groupName) => throw new NotSupportedException();
         public IOpenTelemetryClient User(string userId) => throw new NotSupportedException();
         public IOpenTelemetryClient Users(IReadOnlyList<string> userIds) => throw new NotSupportedException();
+    }
+
+    private class TestHubContext(IOpenTelemetryClient caller) : IHubContext<OpenTelemetryHub, IOpenTelemetryClient>
+    {
+        public IHubClients<IOpenTelemetryClient> Clients { get; } = new TestHubClients(caller);
+
+        public IGroupManager Groups { get; } = new TestGroupManager();
+    }
+
+    private class TestHubClients(IOpenTelemetryClient caller) : IHubClients<IOpenTelemetryClient>
+    {
+        public IOpenTelemetryClient All => throw new NotSupportedException();
+        public IOpenTelemetryClient AllExcept(IReadOnlyList<string> excludedConnectionIds) => throw new NotSupportedException();
+        public IOpenTelemetryClient Client(string connectionId) => caller;
+        public IOpenTelemetryClient Clients(IReadOnlyList<string> connectionIds) => throw new NotSupportedException();
+        public IOpenTelemetryClient Group(string groupName) => throw new NotSupportedException();
+        public IOpenTelemetryClient GroupExcept(string groupName, IReadOnlyList<string> excludedConnectionIds) => throw new NotSupportedException();
+        public IOpenTelemetryClient Groups(IReadOnlyList<string> groupNames) => throw new NotSupportedException();
+        public IOpenTelemetryClient User(string userId) => throw new NotSupportedException();
+        public IOpenTelemetryClient Users(IReadOnlyList<string> userIds) => throw new NotSupportedException();
+    }
+
+    private class TestGroupManager : IGroupManager
+    {
+        public Task AddToGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task RemoveFromGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private static async Task AssertEventuallyAsync(Action assertion)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
+        Exception? lastException = null;
+
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            try
+            {
+                assertion();
+                return;
+            }
+            catch (XunitException e)
+            {
+                lastException = e;
+                await Task.Delay(25);
+            }
+        }
+
+        if (lastException != null)
+            throw lastException;
     }
 
     private class TestHubCallerContext(ClaimsPrincipal user) : HubCallerContext

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Elsa.Diagnostics.ConsoleLogs.Contracts;
 
 /// <summary>
@@ -6,7 +8,9 @@ namespace Elsa.Diagnostics.ConsoleLogs.Contracts;
 public sealed record ElsaConsoleLogFilter
 {
     public string? SourceId { get; init; }
-    public global::ConsoleLogStreaming.Contracts.ConsoleLogStreaming? Stream { get; init; }
+
+    [JsonConverter(typeof(ConsoleStreamJsonConverter))]
+    public global::ConsoleLogStreaming.Core.Models.ConsoleStream? Stream { get; init; }
     public string? Query { get; init; }
     public string? WorkflowInstanceId { get; init; }
     public string? WorkflowDefinitionId { get; init; }
