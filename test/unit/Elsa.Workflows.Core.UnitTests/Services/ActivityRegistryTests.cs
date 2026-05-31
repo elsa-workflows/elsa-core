@@ -405,7 +405,7 @@ public class ActivityRegistryTests
     }
 
     [Fact]
-    public async Task RefreshDescriptorsAsync_RemovesLatestDescriptor_WhenProviderDropsTenantGroup()
+    public async Task RefreshDescriptorsAsync_PreservesExistingDescriptors_WhenProviderReturnsNoTenantGroups()
     {
         // Arrange
         var provider = new MutableProvider(
@@ -422,7 +422,7 @@ public class ActivityRegistryTests
         var result = _registry.Find(TestActivityType);
 
         // Assert
-        Assert.Null(result);
+        AssertDescriptor(result, CurrentTenant, 2);
     }
 
 
