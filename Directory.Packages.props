@@ -155,13 +155,13 @@
         <PackageVersion Include="Nuplane.Sources.Directory" Version="0.0.8"/>
         <PackageVersion Include="Nuke.Components" Version="10.1.0"/>
         <PackageVersion Include="Open.Linq.AsyncExtensions" Version="1.2.0"/>
-        <PackageVersion Include="OpenTelemetry" Version="1.14.0"/>
+        <PackageVersion Include="OpenTelemetry" Version="1.15.3"/>
         <PackageVersion Include="OpenTelemetry.AutoInstrumentation" Version="1.13.0"/>
-        <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.14.0"/>
-        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.14.0"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3"/>
+        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3"/>
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2"/>
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.14.0-beta.1"/>
         <PackageVersion Include="OpenTelemetry.Instrumentation.StackExchangeRedis" Version="1.14.0-beta.1"/>
         <PackageVersion Include="Parlot" Version="1.5.7"/>
