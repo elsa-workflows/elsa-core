@@ -184,6 +184,7 @@ The reference server registers disabled-by-default fixed-window policies under `
 ## Security Review Checklist
 
 - Does the endpoint require authentication or a permission?
+- Do SignalR hub methods enforce authentication and permission checks on every subscribed method, not only at the hub class level?
 - Does mutable API behavior honor read-only mode?
 - Does the operation need tenant scoping?
 - Are exposed API or HTTP workflow trigger routes protected by appropriate ingress rate limiting?
