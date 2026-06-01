@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides PostgreSQL persistence for Elsa modular persistence.
+        </Description>
+        <PackageTags>elsa module modular-persistence persistence postgresql</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Npgsql" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ModularPersistence.Relational\Elsa.ModularPersistence.Relational.csproj" />
+    </ItemGroup>
+
+</Project>

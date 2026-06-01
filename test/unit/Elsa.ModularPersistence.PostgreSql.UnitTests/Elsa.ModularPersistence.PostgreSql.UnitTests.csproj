@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.ModularPersistence.PostgreSql]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.PostgreSql\Elsa.ModularPersistence.PostgreSql.csproj" />
+    </ItemGroup>
+
+</Project>
