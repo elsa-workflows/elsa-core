@@ -146,7 +146,8 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
             Order = inputAttribute?.Order ?? 0,
             IsBrowsable = inputAttribute?.IsBrowsable ?? true,
             AutoEvaluate = inputAttribute?.AutoEvaluate ?? true,
-            IsSerializable = inputAttribute?.IsSerializable ?? true
+            IsSerializable = inputAttribute?.IsSerializable ?? true,
+            IsSensitive = inputAttribute?.CanContainSecrets ?? false
         };
     }
 
@@ -176,7 +177,8 @@ public class HostMethodActivityDescriber(IActivityDescriber activityDescriber) :
             Order = inputAttribute?.Order ?? 0,
             IsBrowsable = inputAttribute?.IsBrowsable ?? true,
             AutoEvaluate = inputAttribute?.AutoEvaluate ?? true,
-            IsSerializable = inputAttribute?.IsSerializable ?? true
+            IsSerializable = inputAttribute?.IsSerializable ?? true,
+            IsSensitive = inputAttribute?.CanContainSecrets ?? false
         };
     }
 
