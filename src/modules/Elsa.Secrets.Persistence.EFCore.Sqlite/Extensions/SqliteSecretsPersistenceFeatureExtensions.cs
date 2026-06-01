@@ -1,7 +1,6 @@
 using System.Reflection;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
-using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Features;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -27,8 +26,6 @@ public static class SqliteSecretsPersistenceFeatureExtensions
         ElsaDbContextOptions? options = null,
         Action<SqliteDbContextOptionsBuilder>? configure = null)
     {
-        feature.Module.Services.AddSqliteEntityModelCreatingHandlers();
-        feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaSqlite(Assembly, connectionStringFunc(sp), options, configure);
-        return feature;
+        return feature.UseSqlite(Assembly, connectionStringFunc, options, configure);
     }
 }
