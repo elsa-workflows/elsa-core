@@ -4,6 +4,7 @@ using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Extensions;
 using Elsa.ModularPersistence.Planning;
+using Elsa.ModularPersistence.Services;
 using Elsa.ModularPersistence.Validation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -108,6 +109,71 @@ public class ModularPersistenceFeatureTests
     }
 
     [Fact]
+    public async Task StartupTaskRetriesMaterializationFailuresBeforeSucceeding()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        var manifest = CreateManifest("sample.secrets");
+        var materializer = new FakeStorageManifestMaterializer("Retry") { FailuresBeforeSuccess = 1 };
+
+        module.UseModularPersistence(feature =>
+        {
+            feature.ConfigureOptions = options =>
+            {
+                options.MaterializationRetryCount = 2;
+                options.MaterializationRetryDelay = TimeSpan.Zero;
+            };
+            feature.RegisterManifest(manifest);
+        });
+        services.AddSingleton<IStorageManifestMaterializer>(materializer);
+        module.Apply();
+
+        var serviceProvider = services.BuildServiceProvider();
+        var startupTask = serviceProvider.GetServices<IStartupTask>().OfType<Elsa.ModularPersistence.Services.ModularPersistenceMaterializationStartupTask>().Single();
+        await startupTask.ExecuteAsync(CancellationToken.None);
+
+        var tracker = serviceProvider.GetRequiredService<IStorageManifestMaterializationTracker>();
+        Assert.Equal(2, materializer.Attempts);
+        Assert.Equal([manifest], materializer.MaterializedManifests);
+        Assert.Single(tracker.Records, x => !x.Succeeded);
+        Assert.Single(tracker.Records, x => x.Succeeded);
+    }
+
+    [Fact]
+    public async Task StartupTaskWrapsFinalFailureWithActionableContext()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        var manifest = CreateManifest("sample.secrets");
+        var materializer = new FakeStorageManifestMaterializer("Retry") { FailuresBeforeSuccess = 10 };
+
+        module.UseModularPersistence(feature =>
+        {
+            feature.ConfigureOptions = options =>
+            {
+                options.MaterializationRetryCount = 2;
+                options.MaterializationRetryDelay = TimeSpan.Zero;
+            };
+            feature.RegisterManifest(manifest);
+        });
+        services.AddSingleton<IStorageManifestMaterializer>(materializer);
+        module.Apply();
+
+        var serviceProvider = services.BuildServiceProvider();
+        var startupTask = serviceProvider.GetServices<IStartupTask>().OfType<Elsa.ModularPersistence.Services.ModularPersistenceMaterializationStartupTask>().Single();
+        var exception = await Assert.ThrowsAsync<StorageManifestMaterializationException>(async () => await startupTask.ExecuteAsync(CancellationToken.None));
+        var tracker = serviceProvider.GetRequiredService<IStorageManifestMaterializationTracker>();
+
+        Assert.Equal("Retry", exception.ProviderName);
+        Assert.Equal("sample.secrets", exception.SchemaName);
+        Assert.Equal("1.0.0", exception.Version);
+        Assert.Equal(3, exception.AttemptCount);
+        Assert.Contains("idempotent schema/history operations", exception.Message);
+        Assert.Equal(3, materializer.Attempts);
+        Assert.Equal(3, tracker.Records.Count(x => !x.Succeeded));
+    }
+
+    [Fact]
     public async Task DiagnosticsReportsConfiguredProviderManifestVersionsAndFailures()
     {
         var services = new ServiceCollection();
@@ -126,7 +192,7 @@ public class ModularPersistenceFeatureTests
 
         var serviceProvider = services.BuildServiceProvider();
         var startupTask = serviceProvider.GetServices<IStartupTask>().OfType<Elsa.ModularPersistence.Services.ModularPersistenceMaterializationStartupTask>().Single();
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await startupTask.ExecuteAsync(CancellationToken.None));
+        await Assert.ThrowsAsync<StorageManifestMaterializationException>(async () => await startupTask.ExecuteAsync(CancellationToken.None));
 
         var diagnostics = serviceProvider.GetRequiredService<IModularPersistenceDiagnosticsService>().GetDiagnostics();
 
@@ -213,12 +279,19 @@ public class ModularPersistenceFeatureTests
 
         public bool ThrowOnMaterialize { get; set; }
 
+        public int FailuresBeforeSuccess { get; set; }
+
+        public int Attempts { get; private set; }
+
         public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 
         public ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)
         {
+            Attempts++;
             if (ThrowOnMaterialize)
                 throw new InvalidOperationException("Materialization failed.");
+            if (Attempts <= FailuresBeforeSuccess)
+                throw new InvalidOperationException($"Materialization failed on attempt {Attempts}.");
 
             MaterializedManifests.Add(manifest);
             return ValueTask.CompletedTask;

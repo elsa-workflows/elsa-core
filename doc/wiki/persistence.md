@@ -147,6 +147,8 @@ SQL Server and PostgreSQL expose provider-specific optimized index switches. The
 
 Schema materialization runs in a transaction. SQL Server takes a transaction-scoped `sp_getapplock`; PostgreSQL takes a transaction-scoped advisory lock. The locks serialize startup materialization for the shared portable schema. PostgreSQL optimized JSONB expression indexes are created inside the same transaction, so concurrent index creation is intentionally not used by the materializer.
 
+Startup materialization retries are opt-in through `ModularPersistenceOptions.MaterializationRetryCount` and `ModularPersistenceOptions.MaterializationRetryDelay`. The default is one attempt. Each failed attempt is recorded in modular persistence diagnostics, and the final failure is wrapped with provider, schema, version, attempt count, and recovery guidance. Provider materializers are expected to keep transaction boundaries explicit and use idempotent DDL/schema-history writes so a failed startup can be retried safely.
+
 Shared relational contract tests live in [Elsa.ModularPersistence.Relational.IntegrationTests](../../test/integration/Elsa.ModularPersistence.Relational.IntegrationTests). SQLite runs locally by default. SQL Server and PostgreSQL contract rows compile by default and execute only when these environment variables point at dedicated test databases:
 
 - `ELSA_MODULAR_PERSISTENCE_SQLSERVER_CONNECTION_STRING`

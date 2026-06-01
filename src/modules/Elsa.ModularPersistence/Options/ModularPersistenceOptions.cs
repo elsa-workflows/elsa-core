@@ -8,4 +8,8 @@ public sealed class ModularPersistenceOptions
     public bool MaterializeOnStartup { get; set; } = true;
 
     public string? ProviderName { get; set; }
+
+    public int MaterializationRetryCount { get; set; }
+
+    public TimeSpan MaterializationRetryDelay { get; set; } = TimeSpan.FromSeconds(1);
 }
