@@ -31,7 +31,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await using var scope = _serviceProvider.CreateAsyncScope();
         var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SecretsElsaDbContext>>();
         await using var dbContext = await factory.CreateDbContextAsync();
-        await dbContext.Database.EnsureCreatedAsync();
+        await dbContext.Database.MigrateAsync();
     }
 
     public async Task DisposeAsync()
