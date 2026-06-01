@@ -44,6 +44,11 @@ public class InputDescriptor : PropertyDescriptor
     public bool? IsReadOnly { get; set; }
     
     /// <summary>
+    /// True if the input can contain secrets and should be treated as sensitive.
+    /// </summary>
+    public bool IsSensitive { get; set; }
+
+    /// <summary>
     /// The storage driver type to use for persistence.
     /// If no driver is specified, the referenced memory block will remain in memory for as long as the expression execution context exists.
     /// </summary>
