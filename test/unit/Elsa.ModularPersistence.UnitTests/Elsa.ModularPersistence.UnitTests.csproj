@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.ModularPersistence]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence\Elsa.ModularPersistence.csproj" />
+    </ItemGroup>
+
+</Project>
