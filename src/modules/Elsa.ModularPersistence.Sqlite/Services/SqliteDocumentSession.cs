@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Documents;
+using Elsa.ModularPersistence.Queries;
 using Elsa.ModularPersistence.Relational.Contracts;
 
 namespace Elsa.ModularPersistence.Sqlite.Services;
@@ -12,6 +13,8 @@ namespace Elsa.ModularPersistence.Sqlite.Services;
 /// </summary>
 public sealed class SqliteDocumentSession(IRelationalConnectionFactory connectionFactory, StorageManifestDescriptor manifest) : IDocumentSession
 {
+    private static readonly DocumentQueryCapabilities QueryCapabilities = DocumentQueryCapabilities.Portable;
+
     public async ValueTask<DocumentEnvelope?> LoadAsync(DocumentKey key, CancellationToken cancellationToken = default)
     {
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
@@ -27,18 +30,7 @@ public sealed class SqliteDocumentSession(IRelationalConnectionFactory connectio
         if (!await reader.ReadAsync(cancellationToken))
             return null;
 
-        var tenantId = reader.GetString(2);
-        var metadataJson = reader.IsDBNull(7) ? null : reader.GetString(7);
-
-        return new DocumentEnvelope(
-            reader.GetString(0),
-            reader.GetString(1),
-            string.IsNullOrEmpty(tenantId) ? null : tenantId,
-            reader.GetInt64(3),
-            DateTimeOffset.Parse(reader.GetString(4), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
-            DateTimeOffset.Parse(reader.GetString(5), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
-            reader.GetString(6),
-            DeserializeMetadata(metadataJson));
+        return ReadDocument(reader);
     }
 
     public async ValueTask<DocumentSaveResult> SaveAsync(DocumentEnvelope document, ExpectedDocumentVersion expectedVersion = default, CancellationToken cancellationToken = default)
@@ -60,6 +52,25 @@ public sealed class SqliteDocumentSession(IRelationalConnectionFactory connectio
         await transaction.CommitAsync(cancellationToken);
 
         return new DocumentSaveResult(document.Key, document.Version);
+    }
+
+    public async ValueTask<IReadOnlyCollection<DocumentEnvelope>> QueryAsync(DocumentQuery query, CancellationToken cancellationToken = default)
+    {
+        var planner = new DocumentQueryPlanner();
+        var plan = planner.Plan(manifest, query, QueryCapabilities);
+        if (!plan.IsExecutable)
+            throw new DocumentQueryException(plan, "Document query failed planning.");
+
+        await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
+        await using var command = connection.CreateCommand();
+        ConfigureQueryCommand(command, plan.StorageUnit!, query);
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var documents = new List<DocumentEnvelope>();
+        while (await reader.ReadAsync(cancellationToken))
+            documents.Add(ReadDocument(reader));
+
+        return documents;
     }
 
     public async ValueTask DeleteAsync(DocumentKey key, ExpectedDocumentVersion expectedVersion = default, CancellationToken cancellationToken = default)
@@ -130,6 +141,134 @@ public sealed class SqliteDocumentSession(IRelationalConnectionFactory connectio
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return result is null ? null : Convert.ToInt64(result);
     }
+
+    private static void ConfigureQueryCommand(DbCommand command, StorageUnitDescriptor storageUnit, DocumentQuery query)
+    {
+        var whereClauses = new List<string>
+        {
+            "d.Type = @DocumentType"
+        };
+        AddParameter(command, "@DocumentType", query.DocumentType);
+
+        for (var i = 0; i < query.Filters.Count; i++)
+        {
+            var filter = query.Filters[i];
+            var field = storageUnit.Fields.Single(x => x.Name == filter.FieldName);
+            whereClauses.Add(BuildFilterExistsClause(command, filter, field, i));
+        }
+
+        var orderBy = query.Sorts.Count == 0
+            ? ""
+            : $"{Environment.NewLine}ORDER BY {string.Join(", ", query.Sorts.Select((sort, index) => BuildSortExpression(command, storageUnit, sort, index)))}";
+
+        var paging = "";
+        if (query.Page is not null)
+        {
+            AddParameter(command, "@Limit", query.Page.Limit);
+            AddParameter(command, "@Offset", query.Page.Offset);
+            paging = $"{Environment.NewLine}LIMIT @Limit OFFSET @Offset";
+        }
+
+        command.CommandText = $"""
+            SELECT d.Id, d.Type, d.TenantId, d.Version, d.CreatedAt, d.UpdatedAt, d.Data, d.Metadata
+            FROM ModularPersistenceDocuments d
+            WHERE {string.Join($"{Environment.NewLine}  AND ", whereClauses)}
+            {orderBy}{paging};
+            """;
+    }
+
+    private static string BuildFilterExistsClause(DbCommand command, DocumentQueryFilter filter, StorageFieldDescriptor field, int filterIndex)
+    {
+        var alias = $"i{filterIndex}";
+        var indexParameter = $"@Filter{filterIndex}IndexName";
+        var fieldParameter = $"@Filter{filterIndex}FieldName";
+        AddParameter(command, indexParameter, filter.IndexName);
+        AddParameter(command, fieldParameter, filter.FieldName);
+
+        return $"""
+            EXISTS (
+                SELECT 1
+                FROM ModularPersistenceDocumentIndexes {alias}
+                WHERE {alias}.DocumentId = d.Id
+                  AND {alias}.DocumentType = d.Type
+                  AND {alias}.TenantId = d.TenantId
+                  AND {alias}.IndexName = {indexParameter}
+                  AND {alias}.FieldName = {fieldParameter}
+                  AND {BuildFilterCondition(command, alias, filter, field, filterIndex)}
+            )
+            """;
+    }
+
+    private static string BuildFilterCondition(DbCommand command, string alias, DocumentQueryFilter filter, StorageFieldDescriptor field, int filterIndex)
+    {
+        var column = GetIndexedColumn(field.Type);
+        return filter.Operator switch
+        {
+            DocumentQueryFilterOperator.Equals => $"{column.For(alias)} = {AddQueryValueParameter(command, filter, field, filterIndex, 0)}",
+            DocumentQueryFilterOperator.NotEquals => $"{column.For(alias)} <> {AddQueryValueParameter(command, filter, field, filterIndex, 0)}",
+            DocumentQueryFilterOperator.In => $"{column.For(alias)} IN ({string.Join(", ", filter.Values.Select((_, valueIndex) => AddQueryValueParameter(command, filter, field, filterIndex, valueIndex)))})",
+            DocumentQueryFilterOperator.GreaterThan => $"{column.For(alias)} > {AddQueryValueParameter(command, filter, field, filterIndex, 0)}",
+            DocumentQueryFilterOperator.GreaterThanOrEqual => $"{column.For(alias)} >= {AddQueryValueParameter(command, filter, field, filterIndex, 0)}",
+            DocumentQueryFilterOperator.LessThan => $"{column.For(alias)} < {AddQueryValueParameter(command, filter, field, filterIndex, 0)}",
+            DocumentQueryFilterOperator.LessThanOrEqual => $"{column.For(alias)} <= {AddQueryValueParameter(command, filter, field, filterIndex, 0)}",
+            DocumentQueryFilterOperator.Between => $"{column.For(alias)} >= {AddQueryValueParameter(command, filter, field, filterIndex, 0)} AND {column.For(alias)} <= {AddQueryValueParameter(command, filter, field, filterIndex, 1)}",
+            DocumentQueryFilterOperator.IsNull => $"{alias}.NullValue = 1",
+            DocumentQueryFilterOperator.IsNotNull => $"{alias}.NullValue = 0",
+            DocumentQueryFilterOperator.StartsWith => throw new NotSupportedException("SQLite document queries do not support starts-with in the portable MVP."),
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter.Operator, "Unknown query filter operator.")
+        };
+    }
+
+    private static string BuildSortExpression(DbCommand command, StorageUnitDescriptor storageUnit, DocumentQuerySort sort, int sortIndex)
+    {
+        var field = storageUnit.Fields.Single(x => x.Name == sort.FieldName);
+        var column = GetIndexedColumn(field.Type);
+        var indexParameter = $"@Sort{sortIndex}IndexName";
+        var fieldParameter = $"@Sort{sortIndex}FieldName";
+        AddParameter(command, indexParameter, sort.IndexName);
+        AddParameter(command, fieldParameter, sort.FieldName);
+
+        var direction = sort.SortOrder == StorageIndexSortOrder.Descending ? "DESC" : "ASC";
+        return $"""
+            (
+                SELECT {column.For("s" + sortIndex)}
+                FROM ModularPersistenceDocumentIndexes s{sortIndex}
+                WHERE s{sortIndex}.DocumentId = d.Id
+                  AND s{sortIndex}.DocumentType = d.Type
+                  AND s{sortIndex}.TenantId = d.TenantId
+                  AND s{sortIndex}.IndexName = {indexParameter}
+                  AND s{sortIndex}.FieldName = {fieldParameter}
+                LIMIT 1
+            ) {direction}
+            """;
+    }
+
+    private static string AddQueryValueParameter(DbCommand command, DocumentQueryFilter filter, StorageFieldDescriptor field, int filterIndex, int valueIndex)
+    {
+        var parameterName = $"@Filter{filterIndex}Value{valueIndex}";
+        AddParameter(command, parameterName, ConvertQueryValue(filter.Values[valueIndex], field.Type));
+        return parameterName;
+    }
+
+    private static object? ConvertQueryValue(DocumentQueryValue value, StorageFieldType fieldType) =>
+        fieldType switch
+        {
+            StorageFieldType.String or StorageFieldType.Guid or StorageFieldType.Json or StorageFieldType.Binary => value.TextValue,
+            StorageFieldType.Int32 or StorageFieldType.Int64 or StorageFieldType.Decimal => value.NumberValue is null ? null : decimal.ToDouble(value.NumberValue.Value),
+            StorageFieldType.Boolean => value.BooleanValue is true ? 1 : 0,
+            StorageFieldType.DateTimeOffset => value.DateTimeValue?.ToString("O"),
+            _ => throw new ArgumentOutOfRangeException(nameof(fieldType), fieldType, "Unknown storage field type.")
+        };
+
+    private static IndexedColumn GetIndexedColumn(StorageFieldType fieldType) =>
+        fieldType switch
+        {
+            StorageFieldType.String or StorageFieldType.Guid or StorageFieldType.Json or StorageFieldType.Binary => new IndexedColumn("StringValue"),
+            StorageFieldType.Int32 or StorageFieldType.Int64 or StorageFieldType.Decimal => new IndexedColumn("NumberValue"),
+            StorageFieldType.Boolean => new IndexedColumn("BooleanValue"),
+            StorageFieldType.DateTimeOffset => new IndexedColumn("DateTimeValue"),
+            _ => throw new ArgumentOutOfRangeException(nameof(fieldType), fieldType, "Unknown storage field type.")
+        };
 
     private static async ValueTask InsertDocumentAsync(DbConnection connection, DbTransaction transaction, DocumentEnvelope document, CancellationToken cancellationToken)
     {
@@ -297,6 +436,27 @@ public sealed class SqliteDocumentSession(IRelationalConnectionFactory connectio
         string.IsNullOrWhiteSpace(metadataJson)
             ? null
             : JsonSerializer.Deserialize<IReadOnlyDictionary<string, string>>(metadataJson);
+
+    private static DocumentEnvelope ReadDocument(DbDataReader reader)
+    {
+        var tenantId = reader.GetString(2);
+        var metadataJson = reader.IsDBNull(7) ? null : reader.GetString(7);
+
+        return new DocumentEnvelope(
+            reader.GetString(0),
+            reader.GetString(1),
+            string.IsNullOrEmpty(tenantId) ? null : tenantId,
+            reader.GetInt64(3),
+            DateTimeOffset.Parse(reader.GetString(4), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+            DateTimeOffset.Parse(reader.GetString(5), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind),
+            reader.GetString(6),
+            DeserializeMetadata(metadataJson));
+    }
+
+    private readonly record struct IndexedColumn(string Name)
+    {
+        public string For(string alias) => $"{alias}.{Name}";
+    }
 
     private sealed record IndexedValue(string? StringValue, double? NumberValue, int? BooleanValue, string? DateTimeValue, bool IsNull)
     {

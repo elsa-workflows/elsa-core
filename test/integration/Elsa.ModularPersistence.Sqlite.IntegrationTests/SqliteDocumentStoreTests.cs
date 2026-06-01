@@ -1,5 +1,6 @@
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Documents;
+using Elsa.ModularPersistence.Queries;
 using Elsa.ModularPersistence.Relational.Contracts;
 using Elsa.ModularPersistence.Sqlite.Options;
 using Elsa.ModularPersistence.Sqlite.Services;
@@ -47,7 +48,7 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         Assert.Equal(document.Version, loaded.Version);
         Assert.Equal(document.Data, loaded.Data);
         Assert.Equal("test", loaded.Metadata["source"]);
-        Assert.Equal(3, await CountIndexRowsAsync(document.Key));
+        Assert.Equal(4, await CountIndexRowsAsync(document.Key));
         Assert.True(await IndexValueExistsAsync("IX_Secrets_Name", "Name", stringValue: "Alpha"));
         Assert.True(await IndexValueExistsAsync("IX_Secrets_Priority", "Priority", numberValue: 42));
         Assert.True(await IndexValueExistsAsync("IX_Secrets_ExpiresAt", "ExpiresAt", dateTimeValue: "2026-01-02T03:04:05.0000000+00:00"));
@@ -64,7 +65,7 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         await session.SaveAsync(first, ExpectedDocumentVersion.New);
         await session.SaveAsync(second, ExpectedDocumentVersion.Exact(1));
 
-        Assert.Equal(3, await CountIndexRowsAsync(first.Key));
+        Assert.Equal(4, await CountIndexRowsAsync(first.Key));
         Assert.False(await IndexValueExistsAsync("IX_Secrets_Name", "Name", stringValue: "Alpha"));
         Assert.True(await IndexValueExistsAsync("IX_Secrets_Name", "Name", stringValue: "Beta"));
         Assert.True(await IndexValueExistsAsync("IX_Secrets_Priority", "Priority", numberValue: 2));
@@ -121,7 +122,96 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
 
         await Assert.ThrowsAsync<DocumentConcurrencyException>(async () => await session.DeleteAsync(document.Key, ExpectedDocumentVersion.Exact(2)));
         Assert.NotNull(await session.LoadAsync(document.Key));
-        Assert.Equal(3, await CountIndexRowsAsync(document.Key));
+        Assert.Equal(4, await CountIndexRowsAsync(document.Key));
+    }
+
+    [Fact]
+    public async Task QueryAsyncFiltersEqualsInAndSortsWithPaging()
+    {
+        await MaterializeAsync();
+
+        await using var session = await _store.OpenSessionAsync();
+        await session.SaveAsync(CreateDocument("secret-1", 1, """{"TenantId":"tenant-a","Name":"Alpha","Priority":1,"ExpiresAt":null}"""));
+        await session.SaveAsync(CreateDocument("secret-2", 1, """{"TenantId":"tenant-a","Name":"Beta","Priority":2,"ExpiresAt":null}"""));
+        await session.SaveAsync(CreateDocument("secret-3", 1, """{"TenantId":"tenant-a","Name":"Gamma","Priority":3,"ExpiresAt":null}"""));
+
+        var query = new DocumentQuery(
+            "Secrets",
+            [
+                DocumentQueryFilter.Equal("IX_Secrets_TenantId", "TenantId", DocumentQueryValue.String("tenant-a")),
+                DocumentQueryFilter.In(
+                    "IX_Secrets_Name",
+                    "Name",
+                    [
+                        DocumentQueryValue.String("Alpha"),
+                        DocumentQueryValue.String("Gamma")
+                    ])
+            ],
+            [
+                new DocumentQuerySort("IX_Secrets_Priority", "Priority", StorageIndexSortOrder.Descending)
+            ],
+            new DocumentQueryPage(1));
+
+        var results = await session.QueryAsync(query);
+
+        var result = Assert.Single(results);
+        Assert.Equal("secret-3", result.Id);
+    }
+
+    [Fact]
+    public async Task QueryAsyncFiltersRangeAndNullValues()
+    {
+        await MaterializeAsync();
+
+        await using var session = await _store.OpenSessionAsync();
+        await session.SaveAsync(CreateDocument("secret-1", 1, """{"TenantId":"tenant-a","Name":"Alpha","Priority":1,"ExpiresAt":null}"""));
+        await session.SaveAsync(CreateDocument("secret-2", 1, """{"TenantId":"tenant-a","Name":"Beta","Priority":2,"ExpiresAt":"2026-02-01T00:00:00+00:00"}"""));
+        await session.SaveAsync(CreateDocument("secret-3", 1, """{"TenantId":"tenant-a","Name":"Gamma","Priority":3,"ExpiresAt":"2026-03-01T00:00:00+00:00"}"""));
+
+        var rangeQuery = new DocumentQuery(
+            "Secrets",
+            [
+                DocumentQueryFilter.Between("IX_Secrets_Priority", "Priority", DocumentQueryValue.Int32(2), DocumentQueryValue.Int32(3))
+            ],
+            [
+                new DocumentQuerySort("IX_Secrets_Priority", "Priority")
+            ],
+            new DocumentQueryPage(1, 1));
+        var nullQuery = new DocumentQuery(
+            "Secrets",
+            [
+                DocumentQueryFilter.IsNull("IX_Secrets_ExpiresAt", "ExpiresAt")
+            ]);
+
+        var rangeResults = await session.QueryAsync(rangeQuery);
+        var nullResults = await session.QueryAsync(nullQuery);
+
+        Assert.Equal("secret-3", Assert.Single(rangeResults).Id);
+        Assert.Equal("secret-1", Assert.Single(nullResults).Id);
+    }
+
+    [Fact]
+    public async Task QueryAsyncRejectsUnsupportedAndUndeclaredIndexQueries()
+    {
+        await MaterializeAsync();
+
+        await using var session = await _store.OpenSessionAsync();
+        var unsupported = new DocumentQuery(
+            "Secrets",
+            [
+                DocumentQueryFilter.StartsWith("IX_Secrets_Name", "Name", DocumentQueryValue.String("A"))
+            ]);
+        var missingIndex = new DocumentQuery(
+            "Secrets",
+            [
+                DocumentQueryFilter.Equal("IX_Secrets_Missing", "Name", DocumentQueryValue.String("Alpha"))
+            ]);
+
+        var unsupportedException = await Assert.ThrowsAsync<DocumentQueryException>(async () => await session.QueryAsync(unsupported));
+        var missingIndexException = await Assert.ThrowsAsync<DocumentQueryException>(async () => await session.QueryAsync(missingIndex));
+
+        Assert.Contains(unsupportedException.Plan.Diagnostics, x => x.Code == "UnsupportedQueryOperator");
+        Assert.Contains(missingIndexException.Plan.Diagnostics, x => x.Code == "UnknownIndex");
     }
 
     public ValueTask DisposeAsync()
@@ -188,8 +278,15 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         long version,
         string data = """{"TenantId":"tenant-a","Name":"Alpha","Priority":1,"ExpiresAt":null}""",
         IReadOnlyDictionary<string, string>? metadata = null) =>
+        CreateDocument("secret-1", version, data, metadata);
+
+    private static DocumentEnvelope CreateDocument(
+        string id,
+        long version,
+        string data,
+        IReadOnlyDictionary<string, string>? metadata = null) =>
         new(
-            "secret-1",
+            id,
             "Secrets",
             "tenant-a",
             version,
@@ -216,6 +313,7 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
                         new StorageKeyDescriptor("PK_Secrets", ["Id"])
                     ],
                     [
+                        new StorageIndexDescriptor("IX_Secrets_TenantId", [new StorageIndexFieldDescriptor("TenantId")]),
                         new StorageIndexDescriptor("IX_Secrets_Name", [new StorageIndexFieldDescriptor("Name")]),
                         new StorageIndexDescriptor("IX_Secrets_Priority", [new StorageIndexFieldDescriptor("Priority")]),
                         new StorageIndexDescriptor("IX_Secrets_ExpiresAt", [new StorageIndexFieldDescriptor("ExpiresAt")])
