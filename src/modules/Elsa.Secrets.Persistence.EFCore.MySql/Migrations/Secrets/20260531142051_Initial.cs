@@ -34,6 +34,8 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Name = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    NormalizedName = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     DisplayName = table.Column<string>(type: "varchar(200)", maxLength: 200, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: true)
@@ -60,10 +62,10 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Secret_Name",
+                name: "IX_Secret_NormalizedName",
                 schema: _schema.Schema,
                 table: "Secrets",
-                column: "Name",
+                column: "NormalizedName",
                 unique: true);
 
             migrationBuilder.CreateIndex(

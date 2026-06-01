@@ -1,7 +1,6 @@
 using System.Reflection;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
-using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Features;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -26,8 +25,6 @@ public static class MySqlSecretsPersistenceFeatureExtensions
         ElsaDbContextOptions? options = null,
         Action<MySqlDbContextOptionsBuilder>? configure = null)
     {
-        feature.Module.Services.AddMySqlEntityModelCreatingHandlers();
-        feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaMySql(Assembly, connectionStringFunc(sp), options, configure: configure);
-        return feature;
+        return feature.UseMySql(Assembly, connectionStringFunc, options, configure);
     }
 }

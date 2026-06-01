@@ -16,7 +16,7 @@ namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.ShellFeatures;
     DependsOn = ["Secrets"])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores secrets data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
-public class PostgreSqlSecretsPersistenceFeature : EFCoreSecretsPersistenceShellFeatureBase
+public class PostgreSqlSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase
 {
     /// <inheritdoc />
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)

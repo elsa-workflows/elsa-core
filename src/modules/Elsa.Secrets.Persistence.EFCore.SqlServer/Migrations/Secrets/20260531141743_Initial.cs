@@ -29,6 +29,7 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.Migrations.Secrets
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NormalizedName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     DisplayName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TypeName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -46,10 +47,10 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.Migrations.Secrets
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Secret_Name",
+                name: "IX_Secret_NormalizedName",
                 schema: _schema.Schema,
                 table: "Secrets",
-                column: "Name",
+                column: "NormalizedName",
                 unique: true);
 
             migrationBuilder.CreateIndex(

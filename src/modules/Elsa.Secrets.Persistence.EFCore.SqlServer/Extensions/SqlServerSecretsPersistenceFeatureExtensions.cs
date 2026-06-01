@@ -1,7 +1,6 @@
 using System.Reflection;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
-using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Features;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
@@ -26,7 +25,6 @@ public static class SqlServerSecretsPersistenceFeatureExtensions
         ElsaDbContextOptions? options = null,
         Action<SqlServerDbContextOptionsBuilder>? configure = null)
     {
-        feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaSqlServer(Assembly, connectionStringFunc(sp), options, configure);
-        return feature;
+        return feature.UseSqlServer(Assembly, connectionStringFunc, options, configure);
     }
 }

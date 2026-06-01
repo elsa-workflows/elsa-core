@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Elsa.Persistence.EFCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,19 +9,27 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
     /// <inheritdoc />
     public partial class Initial : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+
+        public Initial(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "Elsa");
+                name: _schema.Schema);
 
             migrationBuilder.CreateTable(
                 name: "Secrets",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
+                    NormalizedName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     DisplayName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "TEXT", nullable: true),
                     TypeName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
@@ -37,33 +47,33 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Secret_Name",
-                schema: "Elsa",
+                name: "IX_Secret_NormalizedName",
+                schema: _schema.Schema,
                 table: "Secrets",
-                column: "Name",
+                column: "NormalizedName",
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secret_Scope",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Secrets",
                 column: "Scope");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secret_Status",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Secrets",
                 column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secret_StoreName",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Secrets",
                 column: "StoreName");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Secret_TypeName",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Secrets",
                 column: "TypeName");
         }
@@ -73,7 +83,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
         {
             migrationBuilder.DropTable(
                 name: "Secrets",
-                schema: "Elsa");
+                schema: _schema.Schema);
         }
     }
 }

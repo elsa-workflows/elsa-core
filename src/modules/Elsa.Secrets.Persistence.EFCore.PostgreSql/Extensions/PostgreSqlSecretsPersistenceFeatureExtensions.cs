@@ -1,7 +1,6 @@
 using System.Reflection;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
-using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Features;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 
@@ -26,8 +25,6 @@ public static class PostgreSqlSecretsPersistenceFeatureExtensions
         ElsaDbContextOptions? options = null,
         Action<NpgsqlDbContextOptionsBuilder>? configure = null)
     {
-        feature.Module.Services.AddPostgreSqlEntityModelCreatingHandlers();
-        feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaPostgreSql(Assembly, connectionStringFunc(sp), options, configure);
-        return feature;
+        return feature.UsePostgreSql(Assembly, connectionStringFunc, options, configure);
     }
 }

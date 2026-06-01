@@ -43,6 +43,11 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Scope")
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
@@ -77,9 +82,9 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("IX_Secret_Name");
+                        .HasDatabaseName("IX_Secret_NormalizedName");
 
                     b.HasIndex("Scope")
                         .HasDatabaseName("IX_Secret_Scope");
