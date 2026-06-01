@@ -92,11 +92,14 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await repository.AddAsync(new Secret { Name = "SMTP:PASSWORD", DisplayName = "SMTP password" });
 
         var reloaded = await repository.GetAsync("smtp:password");
+        var whitespaceReloaded = await repository.GetAsync(" SMTP:PASSWORD ");
         var activeReplacementResult = await repository.TryAddOrReplaceDeletedAsync(new Secret { Name = "smtp:password", DisplayName = "Replacement password" });
         var duplicateException = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "Duplicate password" }));
 
         Assert.NotNull(reloaded);
+        Assert.NotNull(whitespaceReloaded);
         Assert.Equal("SMTP:PASSWORD", reloaded.Name);
+        Assert.Equal(reloaded.Id, whitespaceReloaded.Id);
         Assert.False(activeReplacementResult);
         Assert.Equal("A secret named 'smtp:password' already exists.", duplicateException.Message);
     }

@@ -7,8 +7,6 @@ namespace Elsa.Secrets.Persistence.EFCore.Repositories;
 
 public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) : ISecretRepository
 {
-    private static readonly SemaphoreSlim Semaphore = new(1, 1);
-
     public async Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -30,83 +28,66 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
 
     public async Task AddAsync(Secret secret, CancellationToken cancellationToken = default)
     {
-        await Semaphore.WaitAsync(cancellationToken);
-        try
-        {
-            await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-            var normalizedName = NormalizeName(secret.Name);
-            if (await dbContext.Secrets.AnyAsync(x => x.Name.ToLower() == normalizedName, cancellationToken))
-                throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var normalizedName = NormalizeName(secret.Name);
+        if (await ExistsByNormalizedNameAsync(dbContext, normalizedName, cancellationToken))
+            throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
-            await dbContext.Secrets.AddAsync(secret, cancellationToken);
-            SecretSerialization.StoreSerializedProperties(dbContext, secret);
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        finally
-        {
-            Semaphore.Release();
-        }
+        await dbContext.Secrets.AddAsync(secret, cancellationToken);
+        SetNormalizedName(dbContext, secret);
+        SecretSerialization.StoreSerializedProperties(dbContext, secret);
+        await SaveChangesAsync(dbContext, secret.Name, cancellationToken);
     }
 
     public async Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
     {
-        await Semaphore.WaitAsync(cancellationToken);
-        try
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
+
+        if (existingSecret == null)
         {
-            await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-            var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
-
-            if (existingSecret == null)
-            {
-                await dbContext.Secrets.AddAsync(secret, cancellationToken);
-                SecretSerialization.StoreSerializedProperties(dbContext, secret);
-                await dbContext.SaveChangesAsync(cancellationToken);
-                return true;
-            }
-
-            if (existingSecret.Status != SecretStatus.Deleted)
-                return false;
-
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            dbContext.Secrets.Remove(existingSecret);
-            await dbContext.SaveChangesAsync(cancellationToken);
             await dbContext.Secrets.AddAsync(secret, cancellationToken);
+            SetNormalizedName(dbContext, secret);
             SecretSerialization.StoreSerializedProperties(dbContext, secret);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            return true;
+            return await TrySaveChangesAsync(dbContext, secret.Name, cancellationToken);
         }
-        finally
-        {
-            Semaphore.Release();
-        }
+
+        if (existingSecret.Status != SecretStatus.Deleted)
+            return false;
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        dbContext.Secrets.Remove(existingSecret);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        await dbContext.Secrets.AddAsync(secret, cancellationToken);
+        SetNormalizedName(dbContext, secret);
+        SecretSerialization.StoreSerializedProperties(dbContext, secret);
+
+        if (!await TrySaveChangesAsync(dbContext, secret.Name, cancellationToken))
+            return false;
+
+        await transaction.CommitAsync(cancellationToken);
+        return true;
     }
 
     public async Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
-        await Semaphore.WaitAsync(cancellationToken);
-        try
-        {
-            await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-            var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
-            if (existingSecret == null)
-            {
-                await dbContext.Secrets.AddAsync(secret, cancellationToken);
-                SecretSerialization.StoreSerializedProperties(dbContext, secret);
-            }
-            else
-            {
-                Copy(secret, existingSecret);
-                SecretSerialization.StoreSerializedProperties(dbContext, existingSecret);
-            }
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        finally
+        if (existingSecret == null)
         {
-            Semaphore.Release();
+            await dbContext.Secrets.AddAsync(secret, cancellationToken);
+            SetNormalizedName(dbContext, secret);
+            SecretSerialization.StoreSerializedProperties(dbContext, secret);
         }
+        else
+        {
+            Copy(secret, existingSecret);
+            SetNormalizedName(dbContext, existingSecret);
+            SecretSerialization.StoreSerializedProperties(dbContext, existingSecret);
+        }
+
+        await SaveChangesAsync(dbContext, secret.Name, cancellationToken);
     }
 
     private static void Copy(Secret source, Secret target)
@@ -127,8 +108,55 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
     private static Task<Secret?> FindByNameAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
     {
         var normalizedName = NormalizeName(name);
-        return dbContext.Secrets.FirstOrDefaultAsync(x => x.Name.ToLower() == normalizedName, cancellationToken);
+        return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretConfiguration.NormalizedNamePropertyName) == normalizedName, cancellationToken);
     }
 
-    private static string NormalizeName(string name) => name.ToLowerInvariant();
+    private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)
+    {
+        return dbContext.Secrets.AnyAsync(x => EF.Property<string>(x, SecretConfiguration.NormalizedNamePropertyName) == normalizedName, cancellationToken);
+    }
+
+    private async Task SaveChangesAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException e)
+        {
+            if (await IsNameConflictAsync(name, cancellationToken))
+                throw new InvalidOperationException($"A secret named '{name}' already exists.", e);
+
+            throw;
+        }
+    }
+
+    private async Task<bool> TrySaveChangesAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException)
+        {
+            if (await IsNameConflictAsync(name, cancellationToken))
+                return false;
+
+            throw;
+        }
+    }
+
+    private async Task<bool> IsNameConflictAsync(string name, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        return await ExistsByNormalizedNameAsync(dbContext, NormalizeName(name), cancellationToken);
+    }
+
+    private static void SetNormalizedName(SecretsElsaDbContext dbContext, Secret secret)
+    {
+        dbContext.Entry(secret).Property(SecretConfiguration.NormalizedNamePropertyName).CurrentValue = NormalizeName(secret.Name);
+    }
+
+    private static string NormalizeName(string name) => name.Trim().ToLowerInvariant();
 }

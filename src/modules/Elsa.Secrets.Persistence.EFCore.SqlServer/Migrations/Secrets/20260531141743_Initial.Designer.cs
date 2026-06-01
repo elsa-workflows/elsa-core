@@ -47,6 +47,11 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.Migrations.Secrets
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Scope")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -81,9 +86,9 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.Migrations.Secrets
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("IX_Secret_Name");
+                        .HasDatabaseName("IX_Secret_NormalizedName");
 
                     b.HasIndex("Scope")
                         .HasDatabaseName("IX_Secret_Scope");
