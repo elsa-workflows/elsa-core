@@ -169,8 +169,10 @@ MongoDB integration contract tests compile by default and execute only when `ELS
 Runtime entity data path benchmarks live in [Elsa.Workflows.PerformanceTests](../../test/performance/Elsa.Workflows.PerformanceTests). Run them with BenchmarkDotNet when changing runtime entity create, read, query, update, or document-store code:
 
 ```sh
-dotnet run -c Release --project test/performance/Elsa.Workflows.PerformanceTests/Elsa.Workflows.PerformanceTests.csproj --filter '*RuntimeEntityDataBenchmark*'
+dotnet run -c Release --project test/performance/Elsa.Workflows.PerformanceTests/Elsa.Workflows.PerformanceTests.csproj -- --filter '*RuntimeEntityDataBenchmark*'
 ```
+
+Workflow runtime persistence candidate benchmarks and the first vNext decision baseline are recorded in [Persistence vNext Workflow Runtime Benchmarks](persistence-vnext-workflow-runtime-benchmarks.md).
 
 ## Adding A Store
 
