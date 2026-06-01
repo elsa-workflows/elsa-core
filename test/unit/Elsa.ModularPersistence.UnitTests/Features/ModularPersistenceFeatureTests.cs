@@ -2,6 +2,9 @@ using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Descriptors;
+using Elsa.ModularPersistence.Extensions;
+using Elsa.ModularPersistence.Planning;
+using Elsa.ModularPersistence.Validation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ModularPersistence.UnitTests.Features;
@@ -118,6 +121,7 @@ public class ModularPersistenceFeatureTests
             feature.RegisterManifest(manifest);
         });
         services.AddSingleton<IStorageManifestMaterializer>(materializer);
+        services.AddStorageProviderCapabilities("Failing", ProviderCapabilities.PortableDocument);
         module.Apply();
 
         var serviceProvider = services.BuildServiceProvider();
@@ -135,10 +139,54 @@ public class ModularPersistenceFeatureTests
         var manifestDiagnostic = Assert.Single(diagnostics.Manifests);
         Assert.Equal("sample.secrets", manifestDiagnostic.SchemaName);
         Assert.Equal("1.0.0", manifestDiagnostic.Version);
+        var physicalizationPlan = Assert.Single(diagnostics.PhysicalizationPlans);
+        Assert.Equal("Failing", physicalizationPlan.ProviderName);
+        Assert.True(physicalizationPlan.IsSupported);
         var failure = Assert.Single(diagnostics.MaterializationFailures);
         Assert.Equal("Failing", failure.ProviderName);
         Assert.Equal("sample.secrets", failure.SchemaName);
         Assert.Equal("InvalidOperationException", failure.ErrorType);
+    }
+
+    [Fact]
+    public void DiagnosticsReportsUnsupportedPhysicalizationPlans()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        var manifest = new StorageManifestDescriptor(
+            "sample.optimized",
+            new StorageManifestVersion(1),
+            [
+                new StorageUnitDescriptor(
+                    "Customers",
+                    [
+                        new StorageFieldDescriptor("Id", StorageFieldType.String, true),
+                        new StorageFieldDescriptor("Email", StorageFieldType.String)
+                    ],
+                    [
+                        new StorageKeyDescriptor("PK_Customers", ["Id"])
+                    ],
+                    [
+                        new StorageIndexDescriptor("IX_Customers_Email", [new StorageIndexFieldDescriptor("Email")], physicalizationIntent: PhysicalizationIntent.OptimizedIndexes)
+                    ])
+            ]);
+
+        module.UseModularPersistence(feature =>
+        {
+            feature.UseProvider("Portable");
+            feature.RegisterManifest(manifest);
+        });
+        services.AddSingleton<IStorageManifestMaterializer>(new FakeStorageManifestMaterializer("Portable"));
+        services.AddStorageProviderCapabilities("Portable", ProviderCapabilities.PortableDocument);
+        module.Apply();
+
+        var diagnostics = services.BuildServiceProvider().GetRequiredService<IModularPersistenceDiagnosticsService>().GetDiagnostics();
+
+        var plan = Assert.Single(diagnostics.PhysicalizationPlans);
+        Assert.False(plan.IsSupported);
+        var unsupported = Assert.Single(plan.Items, x => x.Status == PhysicalizationPlanStatus.Unsupported);
+        Assert.Equal("IX_Customers_Email", unsupported.Name);
+        Assert.Contains("OptimizedIndexes", unsupported.Message);
     }
 
     private static StorageManifestDescriptor CreateManifest(string schemaName) =>

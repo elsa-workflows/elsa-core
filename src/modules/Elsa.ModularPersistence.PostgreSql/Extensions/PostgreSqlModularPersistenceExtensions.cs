@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Features;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Planning;
 using Elsa.ModularPersistence.Runtime;
 using Elsa.ModularPersistence.PostgreSql;
 using Elsa.ModularPersistence.PostgreSql.Features;
@@ -55,6 +56,11 @@ public static class PostgreSqlModularPersistenceExtensions
         {
             var options = sp.GetRequiredService<PostgreSqlModularPersistenceOptions>();
             return new StorageProviderCapabilitiesRegistration(PostgreSqlDocumentSchemaMaterializer.ProviderNameValue, PostgreSqlDocumentProviderCapabilities.Create(options.UseOptimizedJsonbIndexes));
+        });
+        services.AddSingleton<IStoragePhysicalizationPlanner>(sp =>
+        {
+            var options = sp.GetRequiredService<PostgreSqlModularPersistenceOptions>();
+            return new StoragePhysicalizationPlannerRegistration(PostgreSqlDocumentSchemaMaterializer.ProviderNameValue, PostgreSqlDocumentProviderCapabilities.Create(options.UseOptimizedJsonbIndexes));
         });
         services.PostConfigure<ModularPersistenceOptions>(options => options.ProviderName ??= PostgreSqlDocumentSchemaMaterializer.ProviderNameValue);
 

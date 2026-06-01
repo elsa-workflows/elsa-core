@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Planning;
 using Elsa.ModularPersistence.Runtime;
 using Elsa.ModularPersistence.Services;
 using Elsa.ModularPersistence.Validation;
@@ -33,6 +34,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddStorageProviderCapabilities(this IServiceCollection services, string providerName, ProviderCapabilities capabilities)
     {
         services.AddSingleton(new StorageProviderCapabilitiesRegistration(providerName, capabilities));
+        services.AddSingleton<IStoragePhysicalizationPlanner>(new StoragePhysicalizationPlannerRegistration(providerName, capabilities));
         return services;
     }
 }
