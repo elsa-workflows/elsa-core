@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Features;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Runtime;
 using Elsa.ModularPersistence.PostgreSql;
 using Elsa.ModularPersistence.PostgreSql.Features;
 using Elsa.ModularPersistence.PostgreSql.Options;
@@ -44,6 +45,7 @@ public static class PostgreSqlModularPersistenceExtensions
         services.AddOptions<PostgreSqlModularPersistenceOptions>();
         services.TryAddSingleton(sp => sp.GetRequiredService<IOptions<PostgreSqlModularPersistenceOptions>>().Value);
         services.TryAddSingleton(sp => new PostgreSqlModularPersistenceConnectionFactory(sp.GetRequiredService<PostgreSqlModularPersistenceOptions>()));
+        services.TryAddSingleton<IRuntimeEntityDocumentStoreFactory, PostgreSqlRuntimeEntityDocumentStoreFactory>();
         services.AddSingleton<IStorageManifestMaterializer>(sp =>
         {
             var options = sp.GetRequiredService<PostgreSqlModularPersistenceOptions>();

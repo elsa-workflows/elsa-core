@@ -20,6 +20,9 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IStorageManifestMaterializationTracker, StorageManifestMaterializationTracker>();
         services.TryAddSingleton<IModularPersistenceDiagnosticsService, ModularPersistenceDiagnosticsService>();
         services.TryAddSingleton<IRuntimeStorageDefinitionStore, InMemoryRuntimeStorageDefinitionStore>();
+        services.TryAddSingleton<IRuntimeSchemaAuditTrail, InMemoryRuntimeSchemaAuditTrail>();
+        services.TryAddSingleton<IRuntimeEntityDocumentStoreFactoryRegistry, RuntimeEntityDocumentStoreFactoryRegistry>();
+        services.TryAddSingleton<IRuntimeEntityDataService, RuntimeEntityDataService>();
         services.TryAddSingleton<IStorageProviderCapabilitiesRegistry, StorageProviderCapabilitiesRegistry>();
         services.TryAddSingleton<IRuntimeStorageDefinitionManager, RuntimeStorageDefinitionManager>();
         services.AddStartupTask<ModularPersistenceMaterializationStartupTask>();
