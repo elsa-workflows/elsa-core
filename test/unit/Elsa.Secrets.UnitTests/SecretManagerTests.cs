@@ -174,6 +174,66 @@ public class SecretManagerTests
     }
 
     [Fact]
+    public async Task UpdateAsync_UpdatesMetadataWithoutChangingIdentityOrVersion()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            DisplayName = "SMTP password",
+            Description = "Old description",
+            Scope = "production",
+            Value = "one"
+        });
+
+        var updated = await _fixture.Manager.UpdateAsync("smtp:password", new UpdateSecretRequest
+        {
+            DisplayName = "  SMTP credential  ",
+            Description = "  Rotated manually  "
+        });
+
+        Assert.Equal("smtp:password", updated.Name);
+        Assert.Equal("SMTP credential", updated.DisplayName);
+        Assert.Equal("Rotated manually", updated.Description);
+        Assert.Equal("production", updated.Scope);
+        Assert.Equal(SecretTypeNames.Text, updated.TypeName);
+        Assert.Equal(SecretStoreNames.Encrypted, updated.StoreName);
+        Assert.Single(updated.Versions);
+        Assert.NotNull(updated.UpdatedAt);
+        Assert.Equal("one", await _fixture.Resolver.ResolveAsync("smtp:password"));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UsesTechnicalNameAsFallbackDisplayName_AndClearsBlankDescription()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            DisplayName = "SMTP password",
+            Description = "Old description",
+            Value = "one"
+        });
+
+        var updated = await _fixture.Manager.UpdateAsync("smtp:password", new UpdateSecretRequest
+        {
+            DisplayName = " ",
+            Description = " "
+        });
+
+        Assert.Equal("smtp:password", updated.DisplayName);
+        Assert.Null(updated.Description);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Throws_WhenSecretDoesNotExist()
+    {
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _fixture.Manager.UpdateAsync("missing:secret", new UpdateSecretRequest
+        {
+            DisplayName = "Missing",
+            Description = "Missing"
+        }));
+    }
+
+    [Fact]
     public async Task ListPageAsync_AppliesFiltersBeforePaging()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest

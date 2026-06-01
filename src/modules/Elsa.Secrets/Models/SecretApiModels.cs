@@ -32,6 +32,12 @@ public class CreateSecretRequest
     public IDictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 }
 
+public class UpdateSecretRequest
+{
+    public string? DisplayName { get; set; }
+    public string? Description { get; set; }
+}
+
 public class RotateSecretRequest
 {
     public string? Value { get; set; }
