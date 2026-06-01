@@ -124,7 +124,15 @@ Shell-managed hosts can enable the `ModularPersistence` shell feature and one pr
 - `PostgreSQL Modular Persistence`
 - `MongoDB Modular Persistence`
 
-Each provider shell feature exposes its connection settings through package manifest settings. The modular persistence diagnostics endpoint is available at `GET /diagnostics/modular-persistence` and reports configured provider selection, registered providers, manifests and versions, startup materialization records, and materialization failures observed by the current process.
+Each provider shell feature exposes its connection settings through package manifest settings. The modular persistence diagnostics endpoint is available at `GET /diagnostics/modular-persistence` and reports configured provider selection, registered providers, manifests and versions, startup materialization records, physicalization plans, and materialization failures observed by the current process.
+
+Runtime storage definitions expose operator-facing physicalization controls through the admin API:
+
+- `POST /admin/modular-persistence/runtime-storage-definitions/{id}/physicalization-plan` returns the provider plan for a draft or published runtime definition. The request can include `providerName` to inspect a provider other than the configured default.
+- `POST /admin/modular-persistence/runtime-storage-definitions/{id}/indexes/promote` marks a draft definition index as `OptimizedIndexes`.
+- `POST /admin/modular-persistence/runtime-storage-definitions/{id}/indexes/demote` marks a draft definition index as `PortableDocument`.
+
+Promote and demote operations only mutate draft definitions. Published definitions remain immutable; change them by creating and publishing a new definition version. Providers still decide whether optimized physicalization is supported and enabled. If a provider does not support the requested physicalization, the physicalization plan reports the unsupported items before materialization.
 
 Relational provider packages create the portable tables and indexes by default:
 
@@ -157,6 +165,12 @@ MongoDB stores the original document JSON in `DataJson` for round-tripping and s
 MongoDB write operations use single-document atomic writes by default. `MongoDbModularPersistenceOptions.TransactionMode` can be set to `TransactionPerWrite` for deployments that support MongoDB transactions.
 
 MongoDB integration contract tests compile by default and execute only when `ELSA_MODULAR_PERSISTENCE_MONGODB_CONNECTION_STRING` points at a MongoDB instance. The tests create and drop a unique test database.
+
+Runtime entity data path benchmarks live in [Elsa.Workflows.PerformanceTests](../../test/performance/Elsa.Workflows.PerformanceTests). Run them with BenchmarkDotNet when changing runtime entity create, read, query, update, or document-store code:
+
+```sh
+dotnet run -c Release --project test/performance/Elsa.Workflows.PerformanceTests/Elsa.Workflows.PerformanceTests.csproj --filter '*RuntimeEntityDataBenchmark*'
+```
 
 ## Adding A Store
 
