@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.ModularPersistence.*]*</Include>
+        <Threshold>0</Threshold>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Microsoft.Data.SqlClient" />
+        <PackageReference Include="Npgsql" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.Sqlite\Elsa.ModularPersistence.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.SqlServer\Elsa.ModularPersistence.SqlServer.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.PostgreSql\Elsa.ModularPersistence.PostgreSql.csproj" />
+    </ItemGroup>
+
+</Project>

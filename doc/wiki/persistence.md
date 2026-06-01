@@ -109,6 +109,30 @@ Packages:
 
 This path uses explicit SQL and FluentMigrator. It stores timestamps as UTC ISO-8601 text and JSON payloads as text in SQLite.
 
+## Modular Persistence vNext
+
+Modular persistence vNext uses explicit document stores and provider packages rather than EF Core. The portable relational schema stores document payloads in `ModularPersistenceDocuments` and declared index values in `ModularPersistenceDocumentIndexes`.
+
+Relational provider packages create the portable tables and indexes by default:
+
+- [Elsa.ModularPersistence.Sqlite](../../src/modules/Elsa.ModularPersistence.Sqlite)
+- [Elsa.ModularPersistence.SqlServer](../../src/modules/Elsa.ModularPersistence.SqlServer)
+- [Elsa.ModularPersistence.PostgreSql](../../src/modules/Elsa.ModularPersistence.PostgreSql)
+
+SQL Server and PostgreSQL expose provider-specific optimized index switches. These are off by default and require both provider opt-in and a manifest index with `PhysicalizationIntent.OptimizedIndexes`.
+
+- SQL Server: `SqlServerModularPersistenceOptions.UseOptimizedIndexes`
+- PostgreSQL: `PostgreSqlModularPersistenceOptions.UseOptimizedJsonbIndexes`
+
+Schema materialization runs in a transaction. SQL Server takes a transaction-scoped `sp_getapplock`; PostgreSQL takes a transaction-scoped advisory lock. The locks serialize startup materialization for the shared portable schema. PostgreSQL optimized JSONB expression indexes are created inside the same transaction, so concurrent index creation is intentionally not used by the materializer.
+
+Shared relational contract tests live in [Elsa.ModularPersistence.Relational.IntegrationTests](../../test/integration/Elsa.ModularPersistence.Relational.IntegrationTests). SQLite runs locally by default. SQL Server and PostgreSQL contract rows compile by default and execute only when these environment variables point at dedicated test databases:
+
+- `ELSA_MODULAR_PERSISTENCE_SQLSERVER_CONNECTION_STRING`
+- `ELSA_MODULAR_PERSISTENCE_POSTGRESQL_CONNECTION_STRING`
+
+The live contract fixtures drop the modular persistence test tables before each test.
+
 ## Adding A Store
 
 When adding a new store implementation:
