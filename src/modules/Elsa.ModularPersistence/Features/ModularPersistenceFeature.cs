@@ -1,12 +1,11 @@
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
-using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Descriptors;
+using Elsa.ModularPersistence.Extensions;
 using Elsa.ModularPersistence.Options;
 using Elsa.ModularPersistence.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.ModularPersistence.Features;
 
@@ -17,6 +16,15 @@ public sealed class ModularPersistenceFeature(IModule module) : FeatureBase(modu
 {
     public bool MaterializeOnStartup { get; set; } = true;
 
+    public string? ProviderName { get; set; }
+
+    public Action<ModularPersistenceOptions>? ConfigureOptions { get; set; }
+
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly<ModularPersistenceFeature>();
+    }
+
     public ModularPersistenceFeature RegisterManifest(StorageManifestDescriptor manifest)
     {
         ArgumentNullException.ThrowIfNull(manifest);
@@ -25,10 +33,21 @@ public sealed class ModularPersistenceFeature(IModule module) : FeatureBase(modu
         return this;
     }
 
+    public ModularPersistenceFeature UseProvider(string providerName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerName);
+        ProviderName = providerName;
+        return this;
+    }
+
     public override void Apply()
     {
-        Services.TryAddSingleton<IStorageManifestRegistry, StorageManifestRegistry>();
-        Services.Configure<ModularPersistenceOptions>(options => options.MaterializeOnStartup = MaterializeOnStartup);
-        Services.AddStartupTask<ModularPersistenceMaterializationStartupTask>();
+        Services.AddModularPersistenceServices(options =>
+        {
+            options.MaterializeOnStartup = MaterializeOnStartup;
+            options.ProviderName = ProviderName;
+            ConfigureOptions?.Invoke(options);
+        });
+        Module.AddFastEndpointsFromModule();
     }
 }

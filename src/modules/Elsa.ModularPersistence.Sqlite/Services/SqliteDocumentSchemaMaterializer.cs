@@ -10,6 +10,10 @@ namespace Elsa.ModularPersistence.Sqlite.Services;
 /// </summary>
 public sealed class SqliteDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory) : IStorageManifestMaterializer
 {
+    public const string ProviderNameValue = "SQLite";
+
+    public string ProviderName => ProviderNameValue;
+
     public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 
     public async ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)

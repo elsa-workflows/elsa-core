@@ -8,6 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
         <PackageReference Include="MongoDB.Driver" />
     </ItemGroup>
 

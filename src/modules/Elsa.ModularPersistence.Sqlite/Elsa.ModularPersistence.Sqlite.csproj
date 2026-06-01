@@ -8,7 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="CShells" />
         <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 
     <ItemGroup>

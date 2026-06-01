@@ -18,8 +18,7 @@ public class ModularPersistencePostgreSqlAssemblyTests
         "Microsoft.Data.Sqlite",
         "Microsoft.Data.SqlClient",
         "FluentMigrator",
-        "MongoDB",
-        "CShells"
+        "MongoDB"
     ];
 
     [Fact]

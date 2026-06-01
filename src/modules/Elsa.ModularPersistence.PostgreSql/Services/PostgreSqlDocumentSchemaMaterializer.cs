@@ -11,7 +11,11 @@ namespace Elsa.ModularPersistence.PostgreSql.Services;
 /// </summary>
 public sealed class PostgreSqlDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, PostgreSqlModularPersistenceOptions? options = null) : IStorageManifestMaterializer
 {
+    public const string ProviderNameValue = "PostgreSQL";
+
     private readonly PostgreSqlModularPersistenceOptions _options = options ?? new PostgreSqlModularPersistenceOptions();
+
+    public string ProviderName => ProviderNameValue;
 
     public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 

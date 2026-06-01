@@ -8,7 +8,8 @@ namespace Elsa.ModularPersistence.Services;
 public sealed class ModularPersistenceMaterializationStartupTask(
     IStorageManifestRegistry registry,
     IEnumerable<IStorageManifestMaterializer> materializers,
-    IOptions<ModularPersistenceOptions> options) : IStartupTask
+    IOptions<ModularPersistenceOptions> options,
+    IStorageManifestMaterializationTracker materializationTracker) : IStartupTask
 {
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
@@ -18,12 +19,31 @@ public sealed class ModularPersistenceMaterializationStartupTask(
         var materializerList = materializers.ToArray();
         foreach (var manifest in registry.Manifests)
         {
-            var matchingMaterializers = materializerList.Where(x => x.CanMaterialize(manifest)).ToArray();
+            var matchingMaterializers = materializerList
+                .Where(x => IsSelectedProvider(x, options.Value.ProviderName) && x.CanMaterialize(manifest))
+                .ToArray();
             if (matchingMaterializers.Length == 0)
-                throw new InvalidOperationException($"No modular persistence materializer is registered for manifest '{manifest.SchemaName}' version '{manifest.Version}'.");
+            {
+                var providerText = string.IsNullOrWhiteSpace(options.Value.ProviderName) ? "any provider" : $"provider '{options.Value.ProviderName}'";
+                throw new InvalidOperationException($"No modular persistence materializer is registered for manifest '{manifest.SchemaName}' version '{manifest.Version}' using {providerText}.");
+            }
 
             foreach (var materializer in matchingMaterializers)
-                await materializer.MaterializeAsync(manifest, cancellationToken);
+            {
+                try
+                {
+                    await materializer.MaterializeAsync(manifest, cancellationToken);
+                    materializationTracker.RecordApplied(materializer.ProviderName, manifest.SchemaName, manifest.Version.ToString(), DateTimeOffset.UtcNow);
+                }
+                catch (Exception e)
+                {
+                    materializationTracker.RecordFailed(materializer.ProviderName, manifest.SchemaName, manifest.Version.ToString(), DateTimeOffset.UtcNow, e);
+                    throw;
+                }
+            }
         }
     }
+
+    private static bool IsSelectedProvider(IStorageManifestMaterializer materializer, string? providerName) =>
+        string.IsNullOrWhiteSpace(providerName) || string.Equals(materializer.ProviderName, providerName, StringComparison.OrdinalIgnoreCase);
 }

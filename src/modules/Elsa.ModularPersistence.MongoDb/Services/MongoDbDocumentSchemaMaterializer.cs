@@ -11,7 +11,11 @@ namespace Elsa.ModularPersistence.MongoDb.Services;
 /// </summary>
 public sealed class MongoDbDocumentSchemaMaterializer(MongoDbModularPersistenceOptions options) : IStorageManifestMaterializer
 {
+    public const string ProviderNameValue = "MongoDB";
+
     private readonly MongoDbCollectionResolver _collectionResolver = new(options);
+
+    public string ProviderName => ProviderNameValue;
 
     public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 

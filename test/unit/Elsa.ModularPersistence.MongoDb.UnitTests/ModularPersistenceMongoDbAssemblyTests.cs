@@ -18,8 +18,7 @@ public class ModularPersistenceMongoDbAssemblyTests
         "Microsoft.EntityFrameworkCore",
         "Microsoft.Data.Sqlite",
         "Microsoft.Data.SqlClient",
-        "FluentMigrator",
-        "CShells"
+        "FluentMigrator"
     ];
 
     [Fact]

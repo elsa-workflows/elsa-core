@@ -115,6 +115,17 @@ Modular persistence vNext uses explicit document stores and provider packages ra
 
 Modules register storage manifests through `UseModularPersistence`. The feature keeps manifest registration provider-neutral and adds a startup task that materializes registered manifests through the selected provider materializer. Set `ModularPersistenceFeature.MaterializeOnStartup` to `false` when hosts need to run materialization manually.
 
+Provider selection is configured on `ModularPersistenceFeature.ProviderName`, through `UseProvider(providerName)`, or through provider-specific helpers such as `UseSqliteProvider`, `UseSqlServerProvider`, `UsePostgreSqlProvider`, and `UseMongoDbProvider`. Provider packages register their own materializers and connection options so core contracts do not reference concrete database dependencies.
+
+Shell-managed hosts can enable the `ModularPersistence` shell feature and one provider shell feature:
+
+- `SQLite Modular Persistence`
+- `SQL Server Modular Persistence`
+- `PostgreSQL Modular Persistence`
+- `MongoDB Modular Persistence`
+
+Each provider shell feature exposes its connection settings through package manifest settings. The modular persistence diagnostics endpoint is available at `GET /diagnostics/modular-persistence` and reports configured provider selection, registered providers, manifests and versions, startup materialization records, and materialization failures observed by the current process.
+
 Relational provider packages create the portable tables and indexes by default:
 
 - [Elsa.ModularPersistence.Sqlite](../../src/modules/Elsa.ModularPersistence.Sqlite)

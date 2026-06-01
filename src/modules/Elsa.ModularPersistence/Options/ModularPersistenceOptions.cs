@@ -6,4 +6,6 @@ namespace Elsa.ModularPersistence.Options;
 public sealed class ModularPersistenceOptions
 {
     public bool MaterializeOnStartup { get; set; } = true;
+
+    public string? ProviderName { get; set; }
 }
