@@ -7,13 +7,13 @@ public static class ActivityTypeNameHelper
 {
     public static string? GenerateNamespace(Type activityType)
     {
-        var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>();
+        var activityAttr = activityType.GetCustomAttribute<ActivityAttribute>(false);
         return activityAttr?.Namespace ?? activityType.Namespace;
     }
 
     public static string GenerateTypeName(Type type, string? ns)
     {
-        var activityAttr = type.GetCustomAttribute<ActivityAttribute>();
+        var activityAttr = type.GetCustomAttribute<ActivityAttribute>(false);
         string typeName;
         
         if (type.IsGenericType)
