@@ -38,7 +38,36 @@ public class SecretExpressionDescriptorProvider : IExpressionDescriptorProvider
         if (valueElement.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null)
             return new Expression(SecretExpression.TypeName, null);
 
-        var reference = valueElement.Deserialize<SecretReference>(context.Options);
+        var reference = DeserializeReference(valueElement, context.Options);
         return new Expression(SecretExpression.TypeName, reference);
+    }
+
+    private static SecretReference? DeserializeReference(JsonElement valueElement, JsonSerializerOptions options)
+    {
+        try
+        {
+            return valueElement.ValueKind switch
+            {
+                JsonValueKind.Object => valueElement.Deserialize<SecretReference>(options),
+                JsonValueKind.String => DeserializeStringReference(valueElement.GetString(), options),
+                _ => null
+            };
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static SecretReference? DeserializeStringReference(string? value, JsonSerializerOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var trimmedValue = value.Trim();
+        if (trimmedValue.StartsWith('{'))
+            return JsonSerializer.Deserialize<SecretReference>(trimmedValue, options);
+
+        return new SecretReference(trimmedValue);
     }
 }

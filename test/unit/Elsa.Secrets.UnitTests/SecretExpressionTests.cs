@@ -97,6 +97,42 @@ public class SecretExpressionTests
     }
 
     [Fact]
+    public void SecretExpression_DeserializesEmptyStringAsNullReference()
+    {
+        var options = CreateSerializerOptions();
+        const string json = """{"type":"Secret","value":""}""";
+
+        var expression = JsonSerializer.Deserialize<Expression>(json, options)!;
+
+        Assert.Equal(SecretExpression.TypeName, expression.Type);
+        Assert.Null(expression.Value);
+    }
+
+    [Fact]
+    public void SecretExpression_DeserializesStringAsSecretName()
+    {
+        var options = CreateSerializerOptions();
+        const string json = """{"type":"Secret","value":"api:key"}""";
+
+        var expression = JsonSerializer.Deserialize<Expression>(json, options)!;
+
+        var reference = Assert.IsType<SecretReference>(expression.Value);
+        Assert.Equal(new SecretReference("api:key"), reference);
+    }
+
+    [Fact]
+    public void SecretExpression_DeserializesStringifiedSecretReference()
+    {
+        var options = CreateSerializerOptions();
+        const string json = """{"type":"Secret","value":"{\"name\":\"api:key\",\"typeName\":\"text\",\"scope\":\"production\"}"}""";
+
+        var expression = JsonSerializer.Deserialize<Expression>(json, options)!;
+
+        var reference = Assert.IsType<SecretReference>(expression.Value);
+        Assert.Equal(new SecretReference("api:key", SecretTypeNames.Text, "production"), reference);
+    }
+
+    [Fact]
     public void WorkflowInputJson_StoresSecretReferenceNotSecretValue()
     {
         var options = CreateSerializerOptions();
