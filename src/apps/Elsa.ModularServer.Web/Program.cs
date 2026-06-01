@@ -2,6 +2,7 @@ using ConsoleLogStreaming.Core.Capture;
 using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
+using Elsa.Dashboard.Api.ShellFeatures;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.ShellFeatures;
@@ -73,6 +74,7 @@ builder.AddShells(shells => shells
             typeof(WorkflowRuntimeFeature),
             typeof(WorkflowsFeature),
             typeof(DistributedRuntimeFeature),
+            typeof(DashboardApiFeature),
             typeof(WorkflowsApiFeature));
     }));
 
