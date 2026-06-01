@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.ModularPersistence.MongoDb]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.MongoDb\Elsa.ModularPersistence.MongoDb.csproj" />
+    </ItemGroup>
+
+</Project>

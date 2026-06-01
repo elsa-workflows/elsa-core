@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides MongoDB persistence for Elsa modular persistence.
+        </Description>
+        <PackageTags>elsa module modular-persistence persistence mongodb</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MongoDB.Driver" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ModularPersistence\Elsa.ModularPersistence.csproj" />
+    </ItemGroup>
+
+</Project>

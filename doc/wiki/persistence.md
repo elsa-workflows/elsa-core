@@ -133,6 +133,14 @@ Shared relational contract tests live in [Elsa.ModularPersistence.Relational.Int
 
 The live contract fixtures drop the modular persistence test tables before each test.
 
+The MongoDB provider is non-relational and does not use the relational document/index tables:
+
+- [Elsa.ModularPersistence.MongoDb](../../src/modules/Elsa.ModularPersistence.MongoDb)
+
+`MongoDbModularPersistenceOptions.CollectionStrategy` defaults to `SharedCollection`, which stores all document types in `SharedCollectionName` and discriminates documents with the `Type` field. `CollectionPerType` stores each document type in a sanitized collection named with `CollectionPerTypePrefix`.
+
+MongoDB stores the original document JSON in `DataJson` for round-tripping and stores parsed BSON in `Data` for native filtering and indexing. Declared storage indexes become native MongoDB indexes over `Data.<field>` paths, prefixed by `Type` and `TenantId` in shared collection mode and by `TenantId` in collection-per-type mode. This keeps MongoDB-facing contracts free of relational table and generic-index assumptions.
+
 ## Adding A Store
 
 When adding a new store implementation:
