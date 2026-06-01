@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Elsa.Persistence.EFCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -7,11 +9,11 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
     /// <inheritdoc />
     public partial class Initial : Migration
     {
-        private readonly Elsa.Persistence.EFCore.IElsaDbContextSchema _schema;
+        private readonly IElsaDbContextSchema _schema;
 
-        public Initial(Elsa.Persistence.EFCore.IElsaDbContextSchema schema)
+        public Initial(IElsaDbContextSchema schema)
         {
-            _schema = schema;
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
         }
 
         /// <inheritdoc />

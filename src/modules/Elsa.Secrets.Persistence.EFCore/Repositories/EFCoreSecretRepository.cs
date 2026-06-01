@@ -108,12 +108,12 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
     private static Task<Secret?> FindByNameAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
     {
         var normalizedName = NormalizeName(name);
-        return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretConfiguration.NormalizedNamePropertyName) == normalizedName, cancellationToken);
+        return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)
     {
-        return dbContext.Secrets.AnyAsync(x => EF.Property<string>(x, SecretConfiguration.NormalizedNamePropertyName) == normalizedName, cancellationToken);
+        return dbContext.Secrets.AnyAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
     private async Task SaveChangesAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
@@ -155,7 +155,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
 
     private static void SetNormalizedName(SecretsElsaDbContext dbContext, Secret secret)
     {
-        dbContext.Entry(secret).Property(SecretConfiguration.NormalizedNamePropertyName).CurrentValue = NormalizeName(secret.Name);
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = NormalizeName(secret.Name);
     }
 
     private static string NormalizeName(string name) => name.Trim().ToLowerInvariant();

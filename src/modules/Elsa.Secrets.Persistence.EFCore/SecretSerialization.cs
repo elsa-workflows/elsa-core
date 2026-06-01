@@ -7,9 +7,6 @@ namespace Elsa.Secrets.Persistence.EFCore;
 
 internal static class SecretSerialization
 {
-    public const string SerializedTagsPropertyName = "SerializedTags";
-    public const string SerializedVersionsPropertyName = "SerializedVersions";
-
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -17,8 +14,8 @@ internal static class SecretSerialization
 
     public static void StoreSerializedProperties(DbContext dbContext, Secret secret)
     {
-        dbContext.Entry(secret).Property(SerializedTagsPropertyName).CurrentValue = JsonSerializer.Serialize(secret.Tags.Order(StringComparer.OrdinalIgnoreCase), JsonOptions);
-        dbContext.Entry(secret).Property(SerializedVersionsPropertyName).CurrentValue = JsonSerializer.Serialize(secret.Versions, JsonOptions);
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.SerializedTags).CurrentValue = JsonSerializer.Serialize(secret.Tags.Order(StringComparer.OrdinalIgnoreCase), JsonOptions);
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.SerializedVersions).CurrentValue = JsonSerializer.Serialize(secret.Versions, JsonOptions);
     }
 
     public static void LoadSerializedProperties(DbContext dbContext, Secret? secret)
@@ -26,8 +23,8 @@ internal static class SecretSerialization
         if (secret == null)
             return;
 
-        var tagsJson = dbContext.Entry(secret).Property<string>(SerializedTagsPropertyName).CurrentValue;
-        var versionsJson = dbContext.Entry(secret).Property<string>(SerializedVersionsPropertyName).CurrentValue;
+        var tagsJson = dbContext.Entry(secret).Property<string>(SecretShadowPropertyNames.SerializedTags).CurrentValue;
+        var versionsJson = dbContext.Entry(secret).Property<string>(SecretShadowPropertyNames.SerializedVersions).CurrentValue;
         var tags = Deserialize(tagsJson, static () => new List<string>());
         var versions = Deserialize(versionsJson, static () => new List<SecretVersion>());
         secret.Tags = tags.ToHashSet(StringComparer.OrdinalIgnoreCase);
