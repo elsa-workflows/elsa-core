@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Secrets.Persistence.EFCore.Repositories;
 
-public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) : ISecretRepository
+public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator) : ISecretRepository
 {
     public async Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
@@ -29,7 +29,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
     public async Task AddAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        var normalizedName = NormalizeName(secret.Name);
+        var normalizedName = secretNameValidator.Normalize(secret.Name);
         if (await ExistsByNormalizedNameAsync(dbContext, normalizedName, cancellationToken))
             throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
@@ -105,9 +105,9 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
         target.Versions = source.Versions.ToList();
     }
 
-    private static Task<Secret?> FindByNameAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
+    private Task<Secret?> FindByNameAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
     {
-        var normalizedName = NormalizeName(name);
+        var normalizedName = secretNameValidator.Normalize(name);
         return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
@@ -150,13 +150,11 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store) :
     private async Task<bool> IsNameConflictAsync(string name, CancellationToken cancellationToken)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
-        return await ExistsByNormalizedNameAsync(dbContext, NormalizeName(name), cancellationToken);
+        return await ExistsByNormalizedNameAsync(dbContext, secretNameValidator.Normalize(name), cancellationToken);
     }
 
-    private static void SetNormalizedName(SecretsElsaDbContext dbContext, Secret secret)
+    private void SetNormalizedName(SecretsElsaDbContext dbContext, Secret secret)
     {
-        dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = NormalizeName(secret.Name);
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = secretNameValidator.Normalize(secret.Name);
     }
-
-    private static string NormalizeName(string name) => name.Trim().ToLowerInvariant();
 }

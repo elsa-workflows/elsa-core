@@ -1,9 +1,11 @@
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Repositories;
 using Elsa.Secrets.Persistence.EFCore.Sqlite.Extensions;
+using Elsa.Secrets.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -21,6 +23,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         var connectionString = $"Data Source={_databasePath}";
         services.AddSqliteEntityModelCreatingHandlers();
         services.AddDbContextFactory<SecretsElsaDbContext>(builder => builder.UseElsaSqlite(typeof(SqliteSecretsPersistenceFeatureExtensions).Assembly, connectionString));
+        services.AddSingleton<ISecretNameValidator, DefaultSecretNameValidator>();
         services.AddScoped<Store<SecretsElsaDbContext, Secret>>();
         services.AddScoped<EFCoreSecretRepository>();
         _serviceProvider = services.BuildServiceProvider();
