@@ -143,6 +143,12 @@ public static partial class ActivityExecutionContextExtensions
 
     private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object value)
     {
+        if (inputDescriptor.IsSensitive)
+        {
+            context.ActivityState.Remove(inputDescriptor.Name);
+            return Task.CompletedTask;
+        }
+
         // Store the serialized input value in the activity state.
         // Serializing the value ensures we store a copy of the value and not a reference to the input, which may change over time.
         if (inputDescriptor.IsSerializable != false)

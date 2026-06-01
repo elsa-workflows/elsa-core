@@ -114,7 +114,6 @@ Start in [src/modules/Elsa.Secrets](../../src/modules/Elsa.Secrets).
 
 - [ISecretManager](../../src/modules/Elsa.Secrets/Contracts/ISecretManager.cs): create, get, rotate, revoke, delete, and test secrets.
 - [ISecretResolver](../../src/modules/Elsa.Secrets/Contracts/ISecretResolver.cs): resolve the latest active secret value by immutable technical name.
-- [ISecretProvider](../../src/modules/Elsa.Secrets/Contracts/ISecretProvider.cs): legacy-compatible provider adapter backed by `ISecretResolver`.
 - [ISecretStore](../../src/modules/Elsa.Secrets/Contracts/ISecretStore.cs) / [ISecretStoreRegistry](../../src/modules/Elsa.Secrets/Contracts/ISecretStoreRegistry.cs): pluggable backend stores.
 - [ISecretTypeRegistry](../../src/modules/Elsa.Secrets/Contracts/ISecretTypeRegistry.cs): extensible secret types (text, RSA key, X.509 certificate reference).
 - [ISecretRepository](../../src/modules/Elsa.Secrets/Contracts/ISecretRepository.cs): durable secret and version storage.
@@ -150,11 +149,26 @@ Permission constants are in [SecretsPermissions](../../src/modules/Elsa.Secrets/
 
 ### Using Secrets In Workflows
 
-Activities with sensitive inputs can use a `SecretReference` in place of a literal value. The runtime calls `ISecretResolver` at the point of use so workflow definitions store only the reference, not the resolved value.
+Activities with sensitive inputs can use the `Secret` expression in place of a literal value. Studio presents this as a no-code picker for inputs marked as sensitive, such as the HTTP Request `Authorization` input. The picker stores a `SecretReference` with the secret name, optional type, and optional scope; it does not store the current secret value in the workflow definition.
+
+At runtime, the `Secret` expression calls `ISecretResolver` at the point of use and returns the latest active version. Rotating a secret through `ISecretManager.RotateAsync` updates future workflow runs without editing workflow JSON. If a reference includes a type or scope, resolution must match those constraints; for example, a text token reference should not resolve an RSA key, and a `production` reference should not resolve a `development` secret. Expired, revoked, missing, or incompatible secrets fail with a non-secret error message.
+
+Sensitive activity inputs are not written to activity state after evaluation. Prefer a `Secret` expression for credentials such as bearer tokens, API keys, passwords, and connection strings instead of literals, variables, logs, workflow outputs, incident messages, or custom headers that are not marked sensitive. Treat any custom activity input that can carry credentials as sensitive by setting `CanContainSecrets = true`.
+
+JavaScript expressions can resolve secrets when the host enables `Elsa.Secrets.JavaScript`:
+
+```javascript
+const token = await getSecret("crm:token");
+return `Bearer ${token}`;
+```
+
+`getSecret(name)` returns a `Promise<string>`, so JavaScript must either `await` it inside an async function/IIFE or compose it with `.then(...)`. Do not write resolved values to logs, variables, outputs, exceptions, or activity state. Use the `Secret` expression for simple no-code binding, and use `getSecret` only when a script needs to combine a secret with runtime data.
 
 ### Tests
 
 - [test/unit/Elsa.Secrets.UnitTests](../../test/unit/Elsa.Secrets.UnitTests)
+- [test/integration/Elsa.JavaScript.IntegrationTests](../../test/integration/Elsa.JavaScript.IntegrationTests)
+- [test/integration/Elsa.Activities.IntegrationTests](../../test/integration/Elsa.Activities.IntegrationTests)
 
 Spec: [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md).
 
@@ -170,6 +184,7 @@ The reference server registers disabled-by-default fixed-window policies under `
 ## Security Review Checklist
 
 - Does the endpoint require authentication or a permission?
+- Do SignalR hub methods enforce authentication and permission checks on every subscribed method, not only at the hub class level?
 - Does mutable API behavior honor read-only mode?
 - Does the operation need tenant scoping?
 - Are exposed API or HTTP workflow trigger routes protected by appropriate ingress rate limiting?
