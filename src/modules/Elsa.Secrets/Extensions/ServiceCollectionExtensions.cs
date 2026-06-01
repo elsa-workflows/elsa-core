@@ -1,3 +1,5 @@
+using Elsa.Expressions.Contracts;
+using Elsa.Secrets.Providers;
 using Elsa.Secrets.Repositories;
 using Elsa.Secrets.Services;
 using Elsa.Secrets.Stores;
@@ -22,6 +24,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ISecretResolver, DefaultSecretResolver>();
         services.TryAddSingleton<ISecretStoreRegistry, SecretStoreRegistry>();
         services.TryAddSingleton<ISecretTypeRegistry, SecretTypeRegistry>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IExpressionDescriptorProvider, SecretExpressionDescriptorProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretStore, EncryptedSecretStore>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretStore, ConfigurationSecretStore>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretTypeProvider, TextSecretTypeProvider>());
