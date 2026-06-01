@@ -141,6 +141,10 @@ The MongoDB provider is non-relational and does not use the relational document/
 
 MongoDB stores the original document JSON in `DataJson` for round-tripping and stores parsed BSON in `Data` for native filtering and indexing. Declared storage indexes become native MongoDB indexes over `Data.<field>` paths, prefixed by `Type` and `TenantId` in shared collection mode and by `TenantId` in collection-per-type mode. This keeps MongoDB-facing contracts free of relational table and generic-index assumptions.
 
+MongoDB write operations use single-document atomic writes by default. `MongoDbModularPersistenceOptions.TransactionMode` can be set to `TransactionPerWrite` for deployments that support MongoDB transactions.
+
+MongoDB integration contract tests compile by default and execute only when `ELSA_MODULAR_PERSISTENCE_MONGODB_CONNECTION_STRING` points at a MongoDB instance. The tests create and drop a unique test database.
+
 ## Adding A Store
 
 When adding a new store implementation:

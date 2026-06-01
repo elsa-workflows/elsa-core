@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.ModularPersistence.MongoDb]*</Include>
+        <Threshold>0</Threshold>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MongoDB.Driver" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.MongoDb\Elsa.ModularPersistence.MongoDb.csproj" />
+    </ItemGroup>
+
+</Project>
