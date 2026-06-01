@@ -8,6 +8,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Elsa.ModularPersistence.Relational\Elsa.ModularPersistence.Relational.csproj" />
     </ItemGroup>
 
