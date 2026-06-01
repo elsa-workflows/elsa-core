@@ -149,6 +149,11 @@ public sealed class SqliteDocumentSession(IRelationalConnectionFactory connectio
             "d.Type = @DocumentType"
         };
         AddParameter(command, "@DocumentType", query.DocumentType);
+        if (query.TenantId is not null)
+        {
+            whereClauses.Add("d.TenantId = @TenantId");
+            AddParameter(command, "@TenantId", NormalizeTenantId(query.TenantId));
+        }
 
         for (var i = 0; i < query.Filters.Count; i++)
         {

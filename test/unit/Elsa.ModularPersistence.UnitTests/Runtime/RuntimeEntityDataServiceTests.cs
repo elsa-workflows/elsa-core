@@ -64,6 +64,27 @@ public class RuntimeEntityDataServiceTests
     }
 
     [Fact]
+    public async Task QueryCanBeScopedToTenant()
+    {
+        await _definitionStore.SaveAsync(CreateDefinition(RuntimeStorageDefinitionState.Published));
+        await _service.CreateAsync("customers", new RuntimeEntitySaveRequest("customer-a", """{"Id":"customer-a","Email":"shared@example.com"}""", "tenant-a"), _context);
+        await _service.CreateAsync("customers", new RuntimeEntitySaveRequest("customer-b", """{"Id":"customer-b","Email":"shared@example.com"}""", "tenant-b"), _context);
+
+        var queried = await _service.QueryAsync(
+            "customers",
+            new RuntimeEntityQueryRequest(
+                [
+                    new RuntimeEntityQueryFilter("Email", DocumentQueryFilterOperator.Equals, [DocumentQueryValue.String("shared@example.com")])
+                ],
+                tenantId: "tenant-a"),
+            _context);
+
+        var record = Assert.Single(queried);
+        Assert.Equal("customer-a", record.Id);
+        Assert.Equal("tenant-a", record.TenantId);
+    }
+
+    [Fact]
     public async Task QueryRequiresIndexedFields()
     {
         await _definitionStore.SaveAsync(CreateDefinition(RuntimeStorageDefinitionState.Published));
@@ -128,6 +149,7 @@ public class RuntimeEntityDataServiceTests
             {
                 var results = documents.Values
                     .Where(x => x.Type == query.DocumentType)
+                    .Where(x => query.TenantId is null || string.Equals(x.TenantId, query.TenantId, StringComparison.Ordinal))
                     .Where(document => query.Filters.All(filter => Matches(document, filter)))
                     .ToArray();
                 return ValueTask.FromResult<IReadOnlyCollection<DocumentEnvelope>>(results);

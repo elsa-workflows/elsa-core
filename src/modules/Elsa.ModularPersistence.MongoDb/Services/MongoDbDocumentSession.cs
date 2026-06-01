@@ -214,6 +214,8 @@ public sealed class MongoDbDocumentSession(
     private static FilterDefinition<BsonDocument> BuildQueryFilter(StorageUnitDescriptor storageUnit, DocumentQuery query)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("Type", query.DocumentType);
+        if (query.TenantId is not null)
+            filter &= Builders<BsonDocument>.Filter.Eq("TenantId", NormalizeTenantId(query.TenantId));
 
         foreach (var queryFilter in query.Filters)
         {
