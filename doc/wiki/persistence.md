@@ -113,6 +113,8 @@ This path uses explicit SQL and FluentMigrator. It stores timestamps as UTC ISO-
 
 Modular persistence vNext uses explicit document stores and provider packages rather than EF Core. The portable relational schema stores document payloads in `ModularPersistenceDocuments` and declared index values in `ModularPersistenceDocumentIndexes`.
 
+Modules register storage manifests through `UseModularPersistence`. The feature keeps manifest registration provider-neutral and adds a startup task that materializes registered manifests through the selected provider materializer. Set `ModularPersistenceFeature.MaterializeOnStartup` to `false` when hosts need to run materialization manually.
+
 Relational provider packages create the portable tables and indexes by default:
 
 - [Elsa.ModularPersistence.Sqlite](../../src/modules/Elsa.ModularPersistence.Sqlite)

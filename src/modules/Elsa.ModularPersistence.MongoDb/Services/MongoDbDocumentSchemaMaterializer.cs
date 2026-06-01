@@ -1,4 +1,5 @@
 using Elsa.ModularPersistence.Descriptors;
+using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.MongoDb.Options;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -8,9 +9,11 @@ namespace Elsa.ModularPersistence.MongoDb.Services;
 /// <summary>
 /// Materializes declared modular persistence indexes into MongoDB.
 /// </summary>
-public sealed class MongoDbDocumentSchemaMaterializer(MongoDbModularPersistenceOptions options)
+public sealed class MongoDbDocumentSchemaMaterializer(MongoDbModularPersistenceOptions options) : IStorageManifestMaterializer
 {
     private readonly MongoDbCollectionResolver _collectionResolver = new(options);
+
+    public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 
     public async ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)
     {

@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Relational.Contracts;
 
@@ -7,8 +8,10 @@ namespace Elsa.ModularPersistence.Sqlite.Services;
 /// <summary>
 /// Materializes the portable document schema into SQLite.
 /// </summary>
-public sealed class SqliteDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory)
+public sealed class SqliteDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory) : IStorageManifestMaterializer
 {
+    public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
+
     public async ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);

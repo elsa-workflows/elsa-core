@@ -7,4 +7,9 @@
         <PackageTags>elsa module modular-persistence persistence</PackageTags>
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+    </ItemGroup>
+
 </Project>
