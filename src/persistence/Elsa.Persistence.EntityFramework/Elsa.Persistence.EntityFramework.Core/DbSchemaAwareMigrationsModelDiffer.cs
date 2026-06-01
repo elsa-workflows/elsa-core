@@ -82,13 +82,13 @@ public class DbSchemaAwareMigrationsModelDiffer : MigrationsModelDiffer
             return false;
         }
         
-        var sourceDebug = NormalizeSchemas(source.ToDebugString(MetadataDebugStringOptions.SingleLineDefault, 0), sourceSchema, targetSchema);
-        var targetDebug = target.ToDebugString(MetadataDebugStringOptions.SingleLineDefault, 0); //NormalizeSchemas(target.ToDebugString(MetadataDebugStringOptions.SingleLineDefault, 0), sourceSchema, targetSchema);
+        var sourceDebug = ReplaceSchemas(source.ToDebugString(MetadataDebugStringOptions.SingleLineDefault, 0), sourceSchema, _dbOptions.SchemaName);
+        var targetDebug = target.ToDebugString(MetadataDebugStringOptions.SingleLineDefault, 0);
 
         return string.Equals(sourceDebug, targetDebug, StringComparison.Ordinal);
     }
 
-    private static string NormalizeSchemas(string debugString, string toReplace, string runtimeSchema)
+    private static string ReplaceSchemas(string debugString, string toReplace, string runtimeSchema)
     {
         return Regex.Replace(debugString, Regex.Escape(toReplace!), runtimeSchema, RegexOptions.CultureInvariant);
     }
