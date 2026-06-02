@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Relational.Contracts;
 using Elsa.ModularPersistence.SqlServer.Options;
@@ -8,9 +9,11 @@ namespace Elsa.ModularPersistence.SqlServer.Services;
 /// <summary>
 /// Materializes the portable document schema into SQL Server.
 /// </summary>
-public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, SqlServerModularPersistenceOptions? options = null)
+public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, SqlServerModularPersistenceOptions? options = null) : IStorageManifestMaterializer
 {
     private readonly SqlServerModularPersistenceOptions _options = options ?? new SqlServerModularPersistenceOptions();
+
+    public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 
     public async ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)
     {

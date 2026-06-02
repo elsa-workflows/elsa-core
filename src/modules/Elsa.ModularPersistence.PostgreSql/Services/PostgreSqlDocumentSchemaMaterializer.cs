@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.PostgreSql.Options;
 using Elsa.ModularPersistence.Relational.Contracts;
@@ -8,9 +9,11 @@ namespace Elsa.ModularPersistence.PostgreSql.Services;
 /// <summary>
 /// Materializes the portable document schema into PostgreSQL.
 /// </summary>
-public sealed class PostgreSqlDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, PostgreSqlModularPersistenceOptions? options = null)
+public sealed class PostgreSqlDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, PostgreSqlModularPersistenceOptions? options = null) : IStorageManifestMaterializer
 {
     private readonly PostgreSqlModularPersistenceOptions _options = options ?? new PostgreSqlModularPersistenceOptions();
+
+    public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 
     public async ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)
     {

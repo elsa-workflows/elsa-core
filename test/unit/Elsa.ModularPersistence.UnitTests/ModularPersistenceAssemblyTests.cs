@@ -8,7 +8,6 @@ public class ModularPersistenceAssemblyTests
 
     private static readonly string[] ForbiddenReferencePrefixes =
     [
-        "Elsa.",
         "Microsoft.EntityFrameworkCore",
         "Microsoft.Data.Sqlite",
         "FluentMigrator",
@@ -17,6 +16,19 @@ public class ModularPersistenceAssemblyTests
         "Microsoft.Data.SqlClient",
         "CShells"
     ];
+
+    private static readonly string[] RequiredReferences =
+    [
+        "Elsa.Common",
+        "Elsa.Features"
+    ];
+
+    [Fact]
+    public void AssemblyReferencesHostingInfrastructureOnly()
+    {
+        foreach (var reference in RequiredReferences)
+            Assert.Contains(reference, _referencedAssemblyNames);
+    }
 
     [Fact]
     public void AssemblyDoesNotReferenceForbiddenDependencies()
