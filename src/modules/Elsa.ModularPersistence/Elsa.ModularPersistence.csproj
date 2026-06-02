@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides provider-neutral abstractions for Elsa modular persistence.
+        </Description>
+        <PackageTags>elsa module modular-persistence persistence</PackageTags>
+    </PropertyGroup>
+
+</Project>

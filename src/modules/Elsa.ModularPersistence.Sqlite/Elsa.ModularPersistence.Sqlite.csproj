@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides SQLite persistence scaffolding for Elsa modular persistence.
+        </Description>
+        <PackageTags>elsa module modular-persistence persistence sqlite</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ModularPersistence.Relational\Elsa.ModularPersistence.Relational.csproj" />
+    </ItemGroup>
+
+</Project>

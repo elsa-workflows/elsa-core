@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides shared relational building blocks for Elsa modular persistence.
+        </Description>
+        <PackageTags>elsa module modular-persistence persistence relational</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ModularPersistence\Elsa.ModularPersistence.csproj" />
+    </ItemGroup>
+
+</Project>
