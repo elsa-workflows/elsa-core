@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Documents;
+using Elsa.ModularPersistence.MongoDb.Options;
 using Elsa.ModularPersistence.Queries;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -11,7 +12,12 @@ namespace Elsa.ModularPersistence.MongoDb.Services;
 /// <summary>
 /// Executes MongoDB document operations.
 /// </summary>
-public sealed class MongoDbDocumentSession(IMongoDatabase database, MongoDbCollectionResolver collectionResolver, StorageManifestDescriptor manifest) : IDocumentSession
+public sealed class MongoDbDocumentSession(
+    MongoClient client,
+    IMongoDatabase database,
+    MongoDbCollectionResolver collectionResolver,
+    MongoDbModularPersistenceOptions options,
+    StorageManifestDescriptor manifest) : IDocumentSession
 {
     private static readonly DocumentQueryCapabilities QueryCapabilities = DocumentQueryCapabilities.Portable;
 
@@ -29,24 +35,23 @@ public sealed class MongoDbDocumentSession(IMongoDatabase database, MongoDbColle
         var collection = GetCollection(document.Type);
         var mongoDocument = CreateMongoDocument(document);
 
-        switch (expectedVersion.Kind)
+        await ExecuteWriteAsync(async session =>
         {
-            case ExpectedDocumentVersionKind.Any:
-                await collection.ReplaceOneAsync(
-                    Builders<BsonDocument>.Filter.Eq("_id", BuildMongoId(document.Key)),
-                    mongoDocument,
-                    new ReplaceOptions { IsUpsert = true },
-                    cancellationToken);
-                break;
-            case ExpectedDocumentVersionKind.New:
-                await InsertNewAsync(collection, mongoDocument, document.Key, cancellationToken);
-                break;
-            case ExpectedDocumentVersionKind.Exact:
-                await ReplaceExactAsync(collection, mongoDocument, document.Key, expectedVersion.Version!.Value, cancellationToken);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(expectedVersion), expectedVersion.Kind, "Unknown expected document version kind.");
-        }
+            switch (expectedVersion.Kind)
+            {
+                case ExpectedDocumentVersionKind.Any:
+                    await ReplaceAnyAsync(session, collection, mongoDocument, document.Key, cancellationToken);
+                    break;
+                case ExpectedDocumentVersionKind.New:
+                    await InsertNewAsync(session, collection, mongoDocument, document.Key, cancellationToken);
+                    break;
+                case ExpectedDocumentVersionKind.Exact:
+                    await ReplaceExactAsync(session, collection, mongoDocument, document.Key, expectedVersion.Version!.Value, cancellationToken);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(expectedVersion), expectedVersion.Kind, "Unknown expected document version kind.");
+            }
+        }, cancellationToken);
 
         return new DocumentSaveResult(document.Key, document.Version);
     }
@@ -94,9 +99,15 @@ public sealed class MongoDbDocumentSession(IMongoDatabase database, MongoDbColle
                 throw new ArgumentOutOfRangeException(nameof(expectedVersion), expectedVersion.Kind, "Unknown expected document version kind.");
         }
 
-        var result = await collection.DeleteOneAsync(filter, cancellationToken);
-        if (expectedVersion.Kind == ExpectedDocumentVersionKind.Exact && result.DeletedCount == 0)
-            throw new DocumentConcurrencyException(key, $"Document '{key.Id}' version did not match expected version {expectedVersion.Version}.");
+        await ExecuteWriteAsync(async session =>
+        {
+            var result = session is null
+                ? await collection.DeleteOneAsync(filter, cancellationToken)
+                : await collection.DeleteOneAsync(session, filter, null, cancellationToken);
+
+            if (expectedVersion.Kind == ExpectedDocumentVersionKind.Exact && result.DeletedCount == 0)
+                throw new DocumentConcurrencyException(key, $"Document '{key.Id}' version did not match expected version {expectedVersion.Version}.");
+        }, cancellationToken);
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -108,11 +119,53 @@ public sealed class MongoDbDocumentSession(IMongoDatabase database, MongoDbColle
     private IMongoCollection<BsonDocument> GetCollection(string documentType) =>
         database.GetCollection<BsonDocument>(collectionResolver.GetCollectionName(documentType));
 
-    private static async ValueTask InsertNewAsync(IMongoCollection<BsonDocument> collection, BsonDocument document, DocumentKey key, CancellationToken cancellationToken)
+    private async ValueTask ExecuteWriteAsync(Func<IClientSessionHandle?, Task> operation, CancellationToken cancellationToken)
+    {
+        if (options.TransactionMode == MongoDbTransactionMode.Disabled)
+        {
+            await operation(null);
+            return;
+        }
+
+        using var session = await client.StartSessionAsync(cancellationToken: cancellationToken);
+        session.StartTransaction();
+
+        try
+        {
+            await operation(session);
+            await session.CommitTransactionAsync(cancellationToken);
+        }
+        catch
+        {
+            await session.AbortTransactionAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    private static async ValueTask ReplaceAnyAsync(
+        IClientSessionHandle? session,
+        IMongoCollection<BsonDocument> collection,
+        BsonDocument document,
+        DocumentKey key,
+        CancellationToken cancellationToken)
+    {
+        var filter = Builders<BsonDocument>.Filter.Eq("_id", BuildMongoId(key));
+        var options = new ReplaceOptions { IsUpsert = true };
+
+        if (session is null)
+            await collection.ReplaceOneAsync(filter, document, options, cancellationToken);
+        else
+            await collection.ReplaceOneAsync(session, filter, document, options, cancellationToken);
+    }
+
+    private static async ValueTask InsertNewAsync(IClientSessionHandle? session, IMongoCollection<BsonDocument> collection, BsonDocument document, DocumentKey key, CancellationToken cancellationToken)
     {
         try
         {
-            await collection.InsertOneAsync(document, cancellationToken: cancellationToken);
+            if (session is null)
+                await collection.InsertOneAsync(document, cancellationToken: cancellationToken);
+            else
+                await collection.InsertOneAsync(session, document, cancellationToken: cancellationToken);
         }
         catch (MongoWriteException e) when (e.WriteError?.Category == ServerErrorCategory.DuplicateKey)
         {
@@ -121,6 +174,7 @@ public sealed class MongoDbDocumentSession(IMongoDatabase database, MongoDbColle
     }
 
     private static async ValueTask ReplaceExactAsync(
+        IClientSessionHandle? session,
         IMongoCollection<BsonDocument> collection,
         BsonDocument document,
         DocumentKey key,
@@ -128,7 +182,10 @@ public sealed class MongoDbDocumentSession(IMongoDatabase database, MongoDbColle
         CancellationToken cancellationToken)
     {
         var filter = Builders<BsonDocument>.Filter.Eq("_id", BuildMongoId(key)) & Builders<BsonDocument>.Filter.Eq("Version", expectedVersion);
-        var result = await collection.ReplaceOneAsync(filter, document, cancellationToken: cancellationToken);
+        var result = session is null
+            ? await collection.ReplaceOneAsync(filter, document, cancellationToken: cancellationToken)
+            : await collection.ReplaceOneAsync(session, filter, document, cancellationToken: cancellationToken);
+
         if (result.MatchedCount == 0)
             throw new DocumentConcurrencyException(key, $"Document '{key.Id}' version did not match expected version {expectedVersion}.");
     }

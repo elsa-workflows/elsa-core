@@ -11,6 +11,8 @@ public sealed class MongoDbModularPersistenceOptions
 
     public MongoDbCollectionStrategy CollectionStrategy { get; set; }
 
+    public MongoDbTransactionMode TransactionMode { get; set; }
+
     public string SharedCollectionName { get; set; } = "ModularPersistenceDocuments";
 
     public string CollectionPerTypePrefix { get; set; } = "ModularPersistence";
