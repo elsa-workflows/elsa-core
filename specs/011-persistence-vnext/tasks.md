@@ -64,9 +64,9 @@
 
 ## S7 - Physicalization And Performance
 
-- [ ] T045 Add storage policy model.
-- [ ] T046 Implement optimized relational indexes for one provider.
-- [ ] T047 Implement native document-provider optimization for one provider.
+- [x] T045 Add storage policy model.
+- [x] T046 Implement optimized relational indexes for one provider.
+- [x] T047 Implement native document-provider optimization for one provider.
 - [ ] T048 Add benchmarks.
 - [ ] T049 Open/review/merge S7 PR and close associated issue.
 

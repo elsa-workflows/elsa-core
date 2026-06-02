@@ -406,6 +406,8 @@ Exit criteria:
 - Hot-path indexes can be optimized.
 - Provider-specific behavior is explicit and observable.
 
+Local progress note: the POC now includes provider-neutral physicalization policies with schema validation plus SQLite and MongoDB planners. SQLite emits dedicated table/index DDL operations; MongoDB emits dedicated collection/native-index operations. This proves the extension point, but representative benchmarks and operational promote/demote commands are still needed.
+
 ## Phase 10: Workflow Runtime Evaluation
 
 Goal: determine whether high-throughput workflow runtime persistence should use vNext.

@@ -200,6 +200,8 @@ Acceptance criteria:
 
 GitHub issue mapping: [#7676](https://github.com/elsa-workflows/elsa-core/issues/7676)
 
+Local progress note: provider-neutral physicalization policies and manifest validation are implemented locally. SQLite can plan dedicated table/index DDL for hot storage units, and MongoDB can plan dedicated collection/native-index operations. Real workload benchmarks remain open.
+
 ## S8 - Workflow Runtime Evaluation And Hardening
 
 Outcome: vNext is evaluated against workflow runtime hot paths and hardened for production.
