@@ -1,6 +1,8 @@
 using ConsoleLogStreaming.Core.DependencyInjection;
 using ConsoleLogStreaming.Core.Options;
 using CShells.Lifecycle;
+using Elsa.Dashboard.Abstractions.Extensions;
+using Elsa.Diagnostics.ConsoleLogs.Dashboard;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<ConsoleLogCaptureShellLease>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IShellInitializer, ConsoleLogCaptureShellInitializer>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IDrainHandler, ConsoleLogCaptureShellDrainHandler>());
+        services.AddDashboardContributor<ConsoleLogsDashboardContributor>();
 
         return services;
     }

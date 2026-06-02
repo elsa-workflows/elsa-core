@@ -9,7 +9,7 @@ namespace Elsa.Dashboard.Api.ShellFeatures;
 [ShellFeature(
     DisplayName = "Dashboard API",
     Description = "Provides operational dashboard API endpoints for Elsa Studio",
-    DependsOn = ["ElsaFastEndpoints", "WorkflowInstances", "WorkflowRuntime"])]
+    DependsOn = ["ElsaFastEndpoints"])]
 [UsedImplicitly]
 public class DashboardApiFeature : IFastEndpointsShellFeature
 {
