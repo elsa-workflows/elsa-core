@@ -55,11 +55,11 @@
 
 ## S6 - Runtime-Defined Entities
 
-- [ ] T039 Define runtime entity definition model.
-- [ ] T040 Add draft/published/retired lifecycle.
-- [ ] T041 Add validation and capability checks.
-- [ ] T042 Add CRUD/API integration.
-- [ ] T043 Add audit trail.
+- [x] T039 Define runtime entity definition model.
+- [x] T040 Add draft/published/retired lifecycle.
+- [x] T041 Add validation and capability checks.
+- [x] T042 Add CRUD/API integration.
+- [x] T043 Add audit trail.
 - [ ] T044 Open/review/merge S6 PR and close associated issue.
 
 ## S7 - Physicalization And Performance

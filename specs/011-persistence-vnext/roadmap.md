@@ -174,6 +174,8 @@ Acceptance criteria:
 
 GitHub issue mapping: [#7675](https://github.com/elsa-workflows/elsa-core/issues/7675)
 
+Local progress note: runtime entity definitions, draft/published/retired lifecycle, validation, fixed-slot indexed instance storage, service-level CRUD/query API, and audit records are implemented locally. The POC intentionally does not add Studio UI or HTTP endpoints yet.
+
 ## S7 - Physicalization And Performance
 
 Outcome: Hot entities and indexes can opt into provider-optimized physical storage.

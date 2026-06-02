@@ -15,6 +15,7 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.MongoDb\Elsa.Persistence.VNext.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.PostgreSql\Elsa.Persistence.VNext.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.Relational\Elsa.Persistence.VNext.Relational.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.Runtime\Elsa.Persistence.VNext.Runtime.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.Sqlite\Elsa.Persistence.VNext.Sqlite.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.SqlServer\Elsa.Persistence.VNext.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Secrets.Persistence.VNext\Elsa.Secrets.Persistence.VNext.csproj" />
