@@ -385,6 +385,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularPersistence.Mon
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.ModularPersistence.MongoDb.IntegrationTests", "test\integration\Elsa.ModularPersistence.MongoDb.IntegrationTests\Elsa.ModularPersistence.MongoDb.IntegrationTests.csproj", "{2616EDC3-CF46-497F-AFF0-DA7005B1F952}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.Persistence.ModularPersistence", "src\modules\Elsa.Workflows.Management.Persistence.ModularPersistence\Elsa.Workflows.Management.Persistence.ModularPersistence.csproj", "{99DCA80E-ADE4-4CBE-8885-110ABA468A08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Management.Persistence.ModularPersistence.UnitTests", "test\unit\Elsa.Workflows.Management.Persistence.ModularPersistence.UnitTests\Elsa.Workflows.Management.Persistence.ModularPersistence.UnitTests.csproj", "{5F9FDC6D-1171-432D-B993-100C64D5E5D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1641,6 +1645,30 @@ Global
 		{2616EDC3-CF46-497F-AFF0-DA7005B1F952}.Release|x64.Build.0 = Release|Any CPU
 		{2616EDC3-CF46-497F-AFF0-DA7005B1F952}.Release|x86.ActiveCfg = Release|Any CPU
 		{2616EDC3-CF46-497F-AFF0-DA7005B1F952}.Release|x86.Build.0 = Release|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Debug|x64.Build.0 = Debug|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Debug|x86.Build.0 = Debug|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Release|x64.ActiveCfg = Release|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Release|x64.Build.0 = Release|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Release|x86.ActiveCfg = Release|Any CPU
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08}.Release|x86.Build.0 = Release|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Debug|x64.Build.0 = Debug|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Debug|x86.Build.0 = Debug|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Release|x64.ActiveCfg = Release|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Release|x64.Build.0 = Release|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Release|x86.ActiveCfg = Release|Any CPU
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1783,6 +1811,8 @@ Global
 		{C3514903-2A7C-4962-BE1E-71D36BBFA6EC} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
 		{842A010A-5AE2-417E-8170-8CAC0BFF2C7D} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{2616EDC3-CF46-497F-AFF0-DA7005B1F952} = {1B8D5897-902E-4632-8698-E89CAF3DDF54}
+		{99DCA80E-ADE4-4CBE-8885-110ABA468A08} = {5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}
+		{5F9FDC6D-1171-432D-B993-100C64D5E5D2} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
