@@ -2,9 +2,11 @@ using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Features;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.SqlServer;
 using Elsa.ModularPersistence.SqlServer.Features;
 using Elsa.ModularPersistence.SqlServer.Options;
 using Elsa.ModularPersistence.SqlServer.Services;
+using Elsa.ModularPersistence.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -46,6 +48,11 @@ public static class SqlServerModularPersistenceExtensions
         {
             var options = sp.GetRequiredService<SqlServerModularPersistenceOptions>();
             return new SqlServerDocumentSchemaMaterializer(sp.GetRequiredService<SqlServerModularPersistenceConnectionFactory>(), options);
+        });
+        services.AddSingleton(sp =>
+        {
+            var options = sp.GetRequiredService<SqlServerModularPersistenceOptions>();
+            return new StorageProviderCapabilitiesRegistration(SqlServerDocumentSchemaMaterializer.ProviderNameValue, SqlServerDocumentProviderCapabilities.Create(options.UseOptimizedIndexes));
         });
         services.PostConfigure<ModularPersistenceOptions>(options => options.ProviderName ??= SqlServerDocumentSchemaMaterializer.ProviderNameValue);
 

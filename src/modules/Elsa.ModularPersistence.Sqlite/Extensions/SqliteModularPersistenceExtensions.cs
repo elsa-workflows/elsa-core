@@ -1,7 +1,9 @@
 using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
+using Elsa.ModularPersistence.Extensions;
 using Elsa.ModularPersistence.Features;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Sqlite;
 using Elsa.ModularPersistence.Sqlite.Features;
 using Elsa.ModularPersistence.Sqlite.Options;
 using Elsa.ModularPersistence.Sqlite.Services;
@@ -43,6 +45,7 @@ public static class SqliteModularPersistenceExtensions
         services.TryAddSingleton(sp => sp.GetRequiredService<IOptions<SqliteModularPersistenceOptions>>().Value);
         services.TryAddSingleton(sp => new SqliteModularPersistenceConnectionFactory(sp.GetRequiredService<SqliteModularPersistenceOptions>()));
         services.AddSingleton<IStorageManifestMaterializer>(sp => new SqliteDocumentSchemaMaterializer(sp.GetRequiredService<SqliteModularPersistenceConnectionFactory>()));
+        services.AddStorageProviderCapabilities(SqliteDocumentSchemaMaterializer.ProviderNameValue, SqliteDocumentProviderCapabilities.Value);
         services.PostConfigure<ModularPersistenceOptions>(options => options.ProviderName ??= SqliteDocumentSchemaMaterializer.ProviderNameValue);
 
         return services;
