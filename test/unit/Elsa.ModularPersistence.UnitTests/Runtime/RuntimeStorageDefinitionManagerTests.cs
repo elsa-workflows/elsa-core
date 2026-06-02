@@ -12,6 +12,7 @@ public class RuntimeStorageDefinitionManagerTests
     private readonly InMemoryRuntimeStorageDefinitionStore _store = new();
     private readonly FakeStorageManifestMaterializer _materializer = new("Fake");
     private readonly StorageManifestMaterializationTracker _tracker = new();
+    private readonly InMemoryRuntimeSchemaAuditTrail _auditTrail = new();
     private readonly RuntimeStorageDefinitionManager _manager;
 
     public RuntimeStorageDefinitionManagerTests()
@@ -25,7 +26,8 @@ public class RuntimeStorageDefinitionManagerTests
             [_materializer],
             capabilities,
             Microsoft.Extensions.Options.Options.Create(new ModularPersistenceOptions { ProviderName = "Fake" }),
-            _tracker);
+            _tracker,
+            _auditTrail);
     }
 
     [Fact]
@@ -39,6 +41,9 @@ public class RuntimeStorageDefinitionManagerTests
         Assert.Same(definition, saved);
         Assert.Same(definition, loaded);
         Assert.Equal(RuntimeStorageDefinitionState.Draft, loaded?.State);
+        var audit = Assert.Single(await _auditTrail.ListAsync(definition.Id));
+        Assert.Equal(RuntimeSchemaAuditAction.DraftSaved, audit.Action);
+        Assert.True(audit.Succeeded);
     }
 
     [Fact]
@@ -62,6 +67,10 @@ public class RuntimeStorageDefinitionManagerTests
         var record = Assert.Single(_tracker.Records);
         Assert.True(record.Succeeded);
         Assert.Equal("Fake", record.ProviderName);
+        var audit = (await _auditTrail.ListAsync(definition.Id)).Last();
+        Assert.Equal(RuntimeSchemaAuditAction.Published, audit.Action);
+        Assert.Equal(RuntimeStorageDefinitionState.Draft, audit.Before?.State);
+        Assert.Equal(RuntimeStorageDefinitionState.Published, audit.After?.State);
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Features;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Runtime;
 using Elsa.ModularPersistence.SqlServer;
 using Elsa.ModularPersistence.SqlServer.Features;
 using Elsa.ModularPersistence.SqlServer.Options;
@@ -44,6 +45,7 @@ public static class SqlServerModularPersistenceExtensions
         services.AddOptions<SqlServerModularPersistenceOptions>();
         services.TryAddSingleton(sp => sp.GetRequiredService<IOptions<SqlServerModularPersistenceOptions>>().Value);
         services.TryAddSingleton(sp => new SqlServerModularPersistenceConnectionFactory(sp.GetRequiredService<SqlServerModularPersistenceOptions>()));
+        services.TryAddSingleton<IRuntimeEntityDocumentStoreFactory, SqlServerRuntimeEntityDocumentStoreFactory>();
         services.AddSingleton<IStorageManifestMaterializer>(sp =>
         {
             var options = sp.GetRequiredService<SqlServerModularPersistenceOptions>();
