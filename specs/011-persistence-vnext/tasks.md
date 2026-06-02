@@ -37,10 +37,10 @@
 
 ## S4 - MongoDB Document Provider
 
-- [ ] T027 Implement MongoDB document provider.
-- [ ] T028 Materialize native collections and indexes.
-- [ ] T029 Implement indexed query translation.
-- [ ] T030 Add optimistic concurrency.
+- [x] T027 Implement MongoDB document provider.
+- [x] T028 Materialize native collections and indexes.
+- [x] T029 Implement indexed query translation.
+- [x] T030 Add optimistic concurrency.
 - [ ] T031 Add MongoDB provider contract tests.
 - [ ] T032 Open/review/merge S4 PR and close associated issue.
 

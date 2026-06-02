@@ -118,6 +118,8 @@ Acceptance criteria:
 
 GitHub issue mapping: [#7673](https://github.com/elsa-workflows/elsa-core/issues/7673)
 
+Local progress note: MongoDB provider package, native collection/index planner, query translation, and expected-version write/delete filters are implemented locally. Live MongoDB contract tests require a running MongoDB service or CI worker.
+
 ## S5 - Elsa Integration And First Module Migration
 
 Outcome: Elsa consumes vNext persistence and one real module no longer needs EF Core migrations.
