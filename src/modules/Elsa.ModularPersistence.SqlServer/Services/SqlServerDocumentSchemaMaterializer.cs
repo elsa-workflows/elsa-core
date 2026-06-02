@@ -11,7 +11,11 @@ namespace Elsa.ModularPersistence.SqlServer.Services;
 /// </summary>
 public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, SqlServerModularPersistenceOptions? options = null) : IStorageManifestMaterializer
 {
+    public const string ProviderNameValue = "SQL Server";
+
     private readonly SqlServerModularPersistenceOptions _options = options ?? new SqlServerModularPersistenceOptions();
+
+    public string ProviderName => ProviderNameValue;
 
     public bool CanMaterialize(StorageManifestDescriptor manifest) => true;
 

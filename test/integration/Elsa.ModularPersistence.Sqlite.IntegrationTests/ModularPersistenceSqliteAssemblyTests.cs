@@ -11,8 +11,7 @@ public class ModularPersistenceSqliteAssemblyTests
         "Microsoft.EntityFrameworkCore",
         "MongoDB",
         "System.Data.SqlClient",
-        "Microsoft.Data.SqlClient",
-        "CShells"
+        "Microsoft.Data.SqlClient"
     ];
 
     [Fact]

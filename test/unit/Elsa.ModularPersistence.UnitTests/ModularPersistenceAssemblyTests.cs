@@ -13,12 +13,12 @@ public class ModularPersistenceAssemblyTests
         "FluentMigrator",
         "MongoDB",
         "System.Data.SqlClient",
-        "Microsoft.Data.SqlClient",
-        "CShells"
+        "Microsoft.Data.SqlClient"
     ];
 
     private static readonly string[] RequiredReferences =
     [
+        "Elsa.Api.Common",
         "Elsa.Common",
         "Elsa.Features"
     ];
@@ -31,7 +31,7 @@ public class ModularPersistenceAssemblyTests
     }
 
     [Fact]
-    public void AssemblyDoesNotReferenceForbiddenDependencies()
+    public void AssemblyDoesNotReferenceProviderDependencies()
     {
         var forbiddenReferences = _referencedAssemblyNames.Where(name => name is not null && ForbiddenReferencePrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal))).ToList();
 

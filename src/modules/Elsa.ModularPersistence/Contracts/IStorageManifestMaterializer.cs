@@ -7,6 +7,8 @@ namespace Elsa.ModularPersistence.Contracts;
 /// </summary>
 public interface IStorageManifestMaterializer
 {
+    string ProviderName { get; }
+
     bool CanMaterialize(StorageManifestDescriptor manifest);
 
     ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default);
