@@ -10,3 +10,4 @@
 * [8. Empty String as Default Tenant ID](0008-empty-string-as-default-tenant-id.md)
 * [9. Asterisk Sentinel Value for Tenant-Agnostic Entities](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
 * [10. Default Admin User Bootstrap for Initial Identity Access](0010-default-admin-user-bootstrap-for-initial-identity-access.md)
+* [11. Persistence vNext First Module Candidate](0011-persistence-vnext-first-module-candidate.md)
