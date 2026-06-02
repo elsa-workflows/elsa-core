@@ -228,25 +228,36 @@ public class DefaultDashboardProvider(
         if (provider == null)
             return new();
 
-        var sources = await provider.ListSourcesAsync(cancellationToken);
-        var storageDiagnostics = serviceProvider.GetServices<IStructuredLogStorageDiagnostics>().ToList();
-        var recentErrors = await provider.GetRecentAsync(new()
+        try
         {
-            Levels = [StructuredLogLevel.Error, StructuredLogLevel.Critical],
-            From = range.From,
-            To = range.To,
-            Take = 1000
-        }, cancellationToken);
+            var sources = await provider.ListSourcesAsync(cancellationToken);
+            var storageDiagnostics = serviceProvider.GetServices<IStructuredLogStorageDiagnostics>().ToList();
+            var recentErrors = await provider.GetRecentAsync(new()
+            {
+                Levels = [StructuredLogLevel.Error, StructuredLogLevel.Critical],
+                From = range.From,
+                To = range.To,
+                Take = 1000
+            }, cancellationToken);
 
-        return new()
+            return new()
+            {
+                Capability = DashboardCapabilityStatus.Available,
+                SourceCount = sources.Count,
+                StaleSourceCount = sources.Count(x => x.Status == StructuredLogSourceStatus.Stale || x.Status == StructuredLogSourceStatus.Disconnected),
+                RecentErrorOrCriticalCount = recentErrors.Items.Count,
+                DroppedWriteCount = storageDiagnostics.Aggregate(0L, (total, x) => checked(total + x.DroppedWriteCount)),
+                DroppedEventCount = recentErrors.DroppedEvents
+            };
+        }
+        catch (UnauthorizedAccessException)
         {
-            Capability = DashboardCapabilityStatus.Available,
-            SourceCount = sources.Count,
-            StaleSourceCount = sources.Count(x => x.Status == StructuredLogSourceStatus.Stale || x.Status == StructuredLogSourceStatus.Disconnected),
-            RecentErrorOrCriticalCount = recentErrors.Items.Count,
-            DroppedWriteCount = storageDiagnostics.Aggregate(0L, (total, x) => checked(total + x.DroppedWriteCount)),
-            DroppedEventCount = recentErrors.DroppedEvents
-        };
+            return new() { Capability = new(DashboardCapabilityStatus.Unauthorized.Status, "No access to structured logs") };
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            return new() { Capability = new(DashboardCapabilityStatus.Unavailable.Status, "Structured log summary is unavailable") };
+        }
     }
 
     private async Task<DashboardConsoleLogSummary> GetConsoleLogSummaryAsync(DashboardRange range, CancellationToken cancellationToken)
@@ -255,23 +266,34 @@ public class DefaultDashboardProvider(
         if (provider == null)
             return new();
 
-        var sources = await provider.ListSourcesAsync(cancellationToken);
-        var recentStderr = await provider.GetRecentAsync(new()
+        try
         {
-            Stream = ConsoleStream.Stderr,
-            From = range.From,
-            To = range.To,
-            Limit = 1000
-        }, cancellationToken);
+            var sources = await provider.ListSourcesAsync(cancellationToken);
+            var recentStderr = await provider.GetRecentAsync(new()
+            {
+                Stream = ConsoleStream.Stderr,
+                From = range.From,
+                To = range.To,
+                Limit = 1000
+            }, cancellationToken);
 
-        return new()
+            return new()
+            {
+                Capability = DashboardCapabilityStatus.Available,
+                SourceCount = sources.Count,
+                StaleSourceCount = sources.Count(x => x.Health is ConsoleLogSourceHealth.Stale or ConsoleLogSourceHealth.Disconnected),
+                RecentStderrCount = recentStderr.Items.Count,
+                DroppedLineCount = recentStderr.Dropped.Aggregate(0L, (total, x) => checked(total + x.Count))
+            };
+        }
+        catch (UnauthorizedAccessException)
         {
-            Capability = DashboardCapabilityStatus.Available,
-            SourceCount = sources.Count,
-            StaleSourceCount = sources.Count(x => x.Health is ConsoleLogSourceHealth.Stale or ConsoleLogSourceHealth.Disconnected),
-            RecentStderrCount = recentStderr.Items.Count,
-            DroppedLineCount = recentStderr.Dropped.Aggregate(0L, (total, x) => checked(total + x.Count))
-        };
+            return new() { Capability = new(DashboardCapabilityStatus.Unauthorized.Status, "No access to console logs") };
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            return new() { Capability = new(DashboardCapabilityStatus.Unavailable.Status, "Console log summary is unavailable") };
+        }
     }
 
     private async Task<long> CountAsync(
