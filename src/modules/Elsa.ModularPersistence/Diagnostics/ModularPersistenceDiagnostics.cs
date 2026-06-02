@@ -5,4 +5,5 @@ public sealed record ModularPersistenceDiagnostics(
     bool MaterializeOnStartup,
     IReadOnlyCollection<StorageProviderDiagnostic> Providers,
     IReadOnlyCollection<StorageManifestDiagnostic> Manifests,
+    IReadOnlyCollection<Planning.StoragePhysicalizationPlan> PhysicalizationPlans,
     IReadOnlyCollection<StorageManifestMaterializationFailure> MaterializationFailures);

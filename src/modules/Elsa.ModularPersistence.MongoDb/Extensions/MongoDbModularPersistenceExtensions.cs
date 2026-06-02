@@ -5,6 +5,7 @@ using Elsa.ModularPersistence.MongoDb.Features;
 using Elsa.ModularPersistence.MongoDb.Options;
 using Elsa.ModularPersistence.MongoDb.Services;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Planning;
 using Elsa.ModularPersistence.Runtime;
 using Elsa.ModularPersistence.Validation;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,7 @@ public static class MongoDbModularPersistenceExtensions
         services.TryAddSingleton<IRuntimeEntityDocumentStoreFactory, MongoDbRuntimeEntityDocumentStoreFactory>();
         services.AddSingleton<IStorageManifestMaterializer>(sp => new MongoDbDocumentSchemaMaterializer(sp.GetRequiredService<MongoDbModularPersistenceOptions>()));
         services.AddSingleton(new StorageProviderCapabilitiesRegistration(MongoDbDocumentSchemaMaterializer.ProviderNameValue, MongoDbDocumentProviderCapabilities.Value));
+        services.AddSingleton<IStoragePhysicalizationPlanner>(new StoragePhysicalizationPlannerRegistration(MongoDbDocumentSchemaMaterializer.ProviderNameValue, MongoDbDocumentProviderCapabilities.Value));
         services.PostConfigure<ModularPersistenceOptions>(options => options.ProviderName ??= MongoDbDocumentSchemaMaterializer.ProviderNameValue);
 
         return services;

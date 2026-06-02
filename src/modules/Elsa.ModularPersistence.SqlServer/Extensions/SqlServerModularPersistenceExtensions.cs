@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Features;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Planning;
 using Elsa.ModularPersistence.Runtime;
 using Elsa.ModularPersistence.SqlServer;
 using Elsa.ModularPersistence.SqlServer.Features;
@@ -55,6 +56,11 @@ public static class SqlServerModularPersistenceExtensions
         {
             var options = sp.GetRequiredService<SqlServerModularPersistenceOptions>();
             return new StorageProviderCapabilitiesRegistration(SqlServerDocumentSchemaMaterializer.ProviderNameValue, SqlServerDocumentProviderCapabilities.Create(options.UseOptimizedIndexes));
+        });
+        services.AddSingleton<IStoragePhysicalizationPlanner>(sp =>
+        {
+            var options = sp.GetRequiredService<SqlServerModularPersistenceOptions>();
+            return new StoragePhysicalizationPlannerRegistration(SqlServerDocumentSchemaMaterializer.ProviderNameValue, SqlServerDocumentProviderCapabilities.Create(options.UseOptimizedIndexes));
         });
         services.PostConfigure<ModularPersistenceOptions>(options => options.ProviderName ??= SqlServerDocumentSchemaMaterializer.ProviderNameValue);
 

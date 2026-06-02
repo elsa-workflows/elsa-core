@@ -1,6 +1,7 @@
 using Elsa.ModularPersistence.Contracts;
 using Elsa.ModularPersistence.Diagnostics;
 using Elsa.ModularPersistence.Options;
+using Elsa.ModularPersistence.Planning;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ModularPersistence.Services;
@@ -8,6 +9,7 @@ namespace Elsa.ModularPersistence.Services;
 public sealed class ModularPersistenceDiagnosticsService(
     IStorageManifestRegistry registry,
     IEnumerable<IStorageManifestMaterializer> materializers,
+    IEnumerable<IStoragePhysicalizationPlanner> physicalizationPlanners,
     IStorageManifestMaterializationTracker tracker,
     IOptions<ModularPersistenceOptions> options) : IModularPersistenceDiagnosticsService
 {
@@ -15,6 +17,7 @@ public sealed class ModularPersistenceDiagnosticsService(
     {
         var manifestList = registry.Manifests.ToArray();
         var materializerList = materializers.ToArray();
+        var plannerList = physicalizationPlanners.ToArray();
         var records = tracker.Records;
         var selectedProviderName = options.Value.ProviderName;
 
@@ -43,7 +46,14 @@ public sealed class ModularPersistenceDiagnosticsService(
             .OrderByDescending(x => x.FailedAt)
             .ToArray();
 
-        return new ModularPersistenceDiagnostics(selectedProviderName, options.Value.MaterializeOnStartup, providers, manifests, failures);
+        var plans = plannerList
+            .Where(x => IsSelectedProvider(x.ProviderName, selectedProviderName))
+            .SelectMany(planner => manifestList.Select(planner.Plan))
+            .OrderBy(x => x.ProviderName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.SchemaName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return new ModularPersistenceDiagnostics(selectedProviderName, options.Value.MaterializeOnStartup, providers, manifests, plans, failures);
     }
 
     private static bool IsSelectedProvider(string providerName, string? selectedProviderName) =>
