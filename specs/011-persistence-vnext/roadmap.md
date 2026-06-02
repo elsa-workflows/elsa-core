@@ -32,7 +32,7 @@ Validation:
 
 - `dotnet test test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj`
 
-GitHub issue mapping: parent issue until slice issue is created.
+GitHub issue mapping: [#7670](https://github.com/elsa-workflows/elsa-core/issues/7670)
 
 ## S2 - Portable SQLite Document Store MVP
 
@@ -65,6 +65,8 @@ Validation:
 
 - Targeted unit and SQLite integration tests.
 
+GitHub issue mapping: [#7671](https://github.com/elsa-workflows/elsa-core/issues/7671)
+
 ## S3 - SQL Server And PostgreSQL Relational Document Providers
 
 Outcome: The portable document/index contract runs on SQL Server and PostgreSQL.
@@ -88,6 +90,8 @@ Acceptance criteria:
 - Same document/index contract tests pass on SQLite, SQL Server, and PostgreSQL.
 - Provider differences remain isolated to provider packages.
 
+GitHub issue mapping: [#7672](https://github.com/elsa-workflows/elsa-core/issues/7672)
+
 ## S4 - MongoDB Document Provider
 
 Outcome: The same storage/index model works on MongoDB using native collections and indexes.
@@ -109,6 +113,8 @@ Acceptance criteria:
 
 - Same document/index contract tests pass on MongoDB.
 - Native indexes are created and used for declared indexes.
+
+GitHub issue mapping: [#7673](https://github.com/elsa-workflows/elsa-core/issues/7673)
 
 ## S5 - Elsa Integration And First Module Migration
 
@@ -134,6 +140,8 @@ Acceptance criteria:
 - Provider-specific EF Core migration packages are not required for Secrets vNext.
 - Existing behavior is preserved.
 
+GitHub issue mapping: [#7674](https://github.com/elsa-workflows/elsa-core/issues/7674)
+
 ## S6 - Runtime-Defined Entities
 
 Outcome: Admin-defined entities can be published, persisted, and queried through the document/index model.
@@ -158,6 +166,8 @@ Acceptance criteria:
 - Instances can be created and queried by indexed fields.
 - No physical table per runtime entity is required by default.
 
+GitHub issue mapping: [#7675](https://github.com/elsa-workflows/elsa-core/issues/7675)
+
 ## S7 - Physicalization And Performance
 
 Outcome: Hot entities and indexes can opt into provider-optimized physical storage.
@@ -180,6 +190,8 @@ Acceptance criteria:
 - At least one document provider supports provider-native optimization.
 - Portable default remains unchanged.
 
+GitHub issue mapping: [#7676](https://github.com/elsa-workflows/elsa-core/issues/7676)
+
 ## S8 - Workflow Runtime Evaluation And Hardening
 
 Outcome: vNext is evaluated against workflow runtime hot paths and hardened for production.
@@ -200,3 +212,5 @@ Acceptance criteria:
 
 - Clear go/no-go decision for workflow runtime stores.
 - Production operational risks are documented and mitigated.
+
+GitHub issue mapping: [#7677](https://github.com/elsa-workflows/elsa-core/issues/7677)
