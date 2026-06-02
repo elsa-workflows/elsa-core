@@ -46,10 +46,10 @@
 
 ## S5 - Elsa Integration And First Module Migration
 
-- [ ] T033 Add Elsa vNext persistence integration package.
-- [ ] T034 Add shell feature/options/startup materialization.
-- [ ] T035 Add diagnostics for applied manifests and provider status.
-- [ ] T036 Implement Secrets vNext store.
+- [x] T033 Add Elsa vNext persistence integration package.
+- [x] T034 Add shell feature/options/startup materialization.
+- [x] T035 Add diagnostics for applied manifests and provider status.
+- [x] T036 Implement Secrets vNext store.
 - [ ] T037 Add migration/import path from existing EF Core store if required.
 - [ ] T038 Open/review/merge S5 PR and close associated issue.
 

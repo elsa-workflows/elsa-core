@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Experimental Elsa integration services for Persistence vNext.
+        </Description>
+        <PackageTags>elsa module persistence vnext experimental integration</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\Elsa.Common\Elsa.Common.csproj" />
+        <ProjectReference Include="..\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj" />
+    </ItemGroup>
+
+</Project>

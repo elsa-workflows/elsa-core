@@ -146,6 +146,8 @@ Acceptance criteria:
 
 GitHub issue mapping: [#7674](https://github.com/elsa-workflows/elsa-core/issues/7674)
 
+Local progress note: opt-in Elsa integration package, startup materialization task, status snapshot, and Secrets vNext repository are implemented locally. Existing Secrets persistence remains intact; import/migration from existing stores is intentionally left open until the storage model is proven further.
+
 ## S6 - Runtime-Defined Entities
 
 Outcome: Admin-defined entities can be published, persisted, and queried through the document/index model.

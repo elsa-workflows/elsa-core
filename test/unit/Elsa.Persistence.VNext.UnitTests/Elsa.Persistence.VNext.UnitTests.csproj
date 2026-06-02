@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.Extensions\Elsa.Persistence.VNext.Extensions.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.MongoDb\Elsa.Persistence.VNext.MongoDb.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.PostgreSql\Elsa.Persistence.VNext.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.Relational\Elsa.Persistence.VNext.Relational.csproj" />
