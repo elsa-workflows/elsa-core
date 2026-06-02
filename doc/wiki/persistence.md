@@ -180,6 +180,8 @@ Operational guidance for diagnostics, schema-history repair, tenant isolation, r
 
 Package naming, ownership, reusable boundaries, and external extraction risks are recorded in [Persistence vNext Extraction Boundaries](persistence-vnext-extraction-boundaries.md).
 
+Standalone host examples, provider-scoped examples, the provider compatibility matrix, and semantic versioning policy are recorded in [Persistence vNext Examples And Compatibility](persistence-vnext-examples-compatibility.md).
+
 ## Adding A Store
 
 When adding a new store implementation:
