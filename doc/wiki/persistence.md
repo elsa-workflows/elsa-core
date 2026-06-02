@@ -178,6 +178,8 @@ Workflow runtime persistence candidate benchmarks and the first vNext decision b
 
 Operational guidance for diagnostics, schema-history repair, tenant isolation, runtime schema security, backup/restore, and roll-forward recovery is recorded in [Persistence vNext Operations](persistence-vnext-operations.md).
 
+Package naming, ownership, reusable boundaries, and external extraction risks are recorded in [Persistence vNext Extraction Boundaries](persistence-vnext-extraction-boundaries.md).
+
 ## Adding A Store
 
 When adding a new store implementation:
