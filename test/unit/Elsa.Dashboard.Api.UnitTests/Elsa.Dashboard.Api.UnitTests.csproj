@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Dashboard.Api]*</Include>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
+    </ItemGroup>
+
+</Project>
