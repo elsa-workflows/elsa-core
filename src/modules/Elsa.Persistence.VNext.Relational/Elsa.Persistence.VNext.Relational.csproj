@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Experimental shared relational document store infrastructure for Elsa Persistence vNext.
+        </Description>
+        <PackageTags>elsa module persistence vnext relational experimental</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj" />
+    </ItemGroup>
+
+</Project>

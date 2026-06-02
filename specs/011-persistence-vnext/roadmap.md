@@ -92,6 +92,8 @@ Acceptance criteria:
 
 GitHub issue mapping: [#7672](https://github.com/elsa-workflows/elsa-core/issues/7672)
 
+Local progress note: provider packages and SQL dialect tests are implemented locally. Live SQL Server/PostgreSQL contract tests require a running Docker/Testcontainers environment or CI worker.
+
 ## S4 - MongoDB Document Provider
 
 Outcome: The same storage/index model works on MongoDB using native collections and indexes.

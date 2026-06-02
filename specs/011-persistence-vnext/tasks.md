@@ -29,9 +29,9 @@
 
 ## S3 - SQL Server And PostgreSQL Relational Document Providers
 
-- [ ] T022 Implement SQL Server document provider.
-- [ ] T023 Implement PostgreSQL document provider.
-- [ ] T024 Add startup locking/materialization strategy.
+- [x] T022 Implement SQL Server document provider.
+- [x] T023 Implement PostgreSQL document provider.
+- [x] T024 Add startup locking/materialization strategy.
 - [ ] T025 Add relational provider contract tests.
 - [ ] T026 Open/review/merge S3 PR and close associated issue.
 
