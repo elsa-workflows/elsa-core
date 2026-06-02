@@ -1,18 +1,7 @@
-using System.Runtime.CompilerServices;
-using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.Core.Models;
 using Elsa.Common;
-using Elsa.Common.Services;
-using Elsa.Dashboard.Api.Models;
+using Elsa.Dashboard.Abstractions.Contracts;
+using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Services;
-using Elsa.Diagnostics.StructuredLogs.Contracts;
-using Elsa.Diagnostics.StructuredLogs.Models;
-using Elsa.Workflows;
-using Elsa.Workflows.Management;
-using Elsa.Workflows.Management.Entities;
-using Elsa.Workflows.Management.Stores;
-using Elsa.Workflows.Runtime;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
@@ -21,209 +10,268 @@ namespace Elsa.Dashboard.Api.UnitTests;
 public class DefaultDashboardProviderTests
 {
     private readonly DateTimeOffset _now = new(2026, 06, 01, 12, 00, 00, TimeSpan.Zero);
-    private readonly MemoryWorkflowInstanceStore _workflowInstanceStore;
-    private readonly TestRuntimeAdminService _runtimeAdminService = new();
-
-    public DefaultDashboardProviderTests()
-    {
-        _workflowInstanceStore = new(new MemoryStore<WorkflowInstance>());
-    }
 
     [Fact]
-    public async Task GetOverviewAsync_ReturnsRuntimeWorkflowAndDiagnosticsMetrics()
+    public async Task GetOverviewAsync_WithNoContributors_ReturnsStableEmptySnapshot()
     {
-        await AddInstanceAsync("running", WorkflowStatus.Running, WorkflowSubStatus.Executing, _now.AddMinutes(-30));
-        await AddInstanceAsync("completed", WorkflowStatus.Finished, WorkflowSubStatus.Finished, _now.AddHours(-2), finishedAt: _now.AddHours(-1.5));
-        await AddInstanceAsync("faulted", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, _now.AddHours(-4), updatedAt: _now.AddHours(-3), incidentCount: 2);
-        await AddInstanceAsync("suspended", WorkflowStatus.Running, WorkflowSubStatus.Suspended, _now.AddHours(-5), updatedAt: _now.AddHours(-4));
-        await AddInstanceAsync("system-completed", WorkflowStatus.Finished, WorkflowSubStatus.Finished, _now.AddHours(-3), finishedAt: _now.AddHours(-2), isSystem: true);
-        var provider = CreateProvider(services =>
-        {
-            services.AddSingleton<IStructuredLogProvider>(new TestStructuredLogProvider(
-                [new() { Id = "structured-1", DisplayName = "Structured 1", Status = StructuredLogSourceStatus.Stale }],
-                [new() { Level = StructuredLogLevel.Error, SourceId = "structured-1" }],
-                droppedEvents: 4));
-            services.AddSingleton<IStructuredLogStorageDiagnostics>(new TestStructuredLogStorageDiagnostics(3));
-            services.AddSingleton<IConsoleLogProvider>(new TestConsoleLogProvider(
-                [new() { Id = "console-1", Health = ConsoleLogSourceHealth.Disconnected }],
-                [new() { Text = "stderr", Stream = ConsoleStream.Stderr }]));
-        });
+        var provider = CreateProvider();
 
-        var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours), CancellationToken.None);
+        var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours));
 
         Assert.Equal("Elsa.TestHost", overview.BackendName);
         Assert.Equal("Integration", overview.EnvironmentName);
+        Assert.Equal(DashboardRuntimeStatusKeys.Unavailable, overview.Runtime.Status);
+        Assert.Equal(0, overview.WorkflowInstances.Running);
+        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
+        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, overview.Diagnostics.ConsoleLogs.Capability.Status);
+        Assert.Empty(overview.Metrics);
+        Assert.Empty(overview.Panels);
+    }
+
+    [Fact]
+    public async Task GetOverviewAsync_ComposesWorkflowAndDiagnosticsContributors()
+    {
+        var provider = CreateProvider(
+            new TestContributor("diagnostics", 200)
+            {
+                Overview = new()
+                {
+                    Diagnostics = new()
+                    {
+                        StructuredLogs = new()
+                        {
+                            Capability = DashboardCapabilityStatus.Available,
+                            SourceCount = 2
+                        }
+                    }
+                }
+            },
+            new TestContributor("workflows", 100)
+            {
+                Overview = new()
+                {
+                    Runtime = new()
+                    {
+                        Status = DashboardRuntimeStatusKeys.AcceptingWork,
+                        IsAcceptingWork = true
+                    },
+                    WorkflowInstances = new()
+                    {
+                        Running = 3,
+                        Completed = 5,
+                        Faulted = 1
+                    }
+                }
+            });
+
+        var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours));
+
         Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
-        Assert.Equal(2, overview.WorkflowInstances.Running);
-        Assert.Equal(1, overview.WorkflowInstances.Completed);
+        Assert.Equal(3, overview.WorkflowInstances.Running);
+        Assert.Equal(5, overview.WorkflowInstances.Completed);
         Assert.Equal(1, overview.WorkflowInstances.Faulted);
-        Assert.Equal(1, overview.WorkflowInstances.Suspended);
-        Assert.Equal(1, overview.WorkflowInstances.IncidentBearing);
-        Assert.Equal(TimeSpan.FromMinutes(30), overview.WorkflowInstances.AverageDuration);
         Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(1, overview.Diagnostics.StructuredLogs.SourceCount);
-        Assert.Equal(1, overview.Diagnostics.StructuredLogs.StaleSourceCount);
-        Assert.Equal(1, overview.Diagnostics.StructuredLogs.RecentErrorOrCriticalCount);
-        Assert.Equal(3, overview.Diagnostics.StructuredLogs.DroppedWriteCount);
-        Assert.Equal(4, overview.Diagnostics.StructuredLogs.DroppedEventCount);
-        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.ConsoleLogs.Capability.Status);
-        Assert.Equal(1, overview.Diagnostics.ConsoleLogs.SourceCount);
-        Assert.Equal(1, overview.Diagnostics.ConsoleLogs.StaleSourceCount);
-        Assert.Equal(1, overview.Diagnostics.ConsoleLogs.RecentStderrCount);
+        Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
     }
 
     [Fact]
-    public async Task GetWorkflowTrendsAsync_BucketsWorkflowActivityByRange()
+    public async Task GetNeedsAttentionAsync_ReturnsContributorFindingsInDeterministicOrder()
     {
-        await AddInstanceAsync("created", WorkflowStatus.Running, WorkflowSubStatus.Executing, _now.AddHours(-2), updatedAt: _now.AddHours(-1.75));
-        await AddInstanceAsync("finished", WorkflowStatus.Finished, WorkflowSubStatus.Finished, _now.AddHours(-2), updatedAt: _now.AddHours(-1), finishedAt: _now.AddHours(-1));
-        await AddInstanceAsync("faulted", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, _now.AddHours(-3), updatedAt: _now.AddHours(-1).AddMinutes(15));
-        var provider = CreateProvider();
+        var provider = CreateProvider(
+            new TestContributor("b", 20)
+            {
+                Findings =
+                [
+                    new() { Id = "second-b", Message = "Second B", Priority = 20 },
+                    new() { Id = "second-a", Message = "Second A", Priority = 20 }
+                ]
+            },
+            new TestContributor("a", 10)
+            {
+                Findings =
+                [
+                    new() { Id = "first", Message = "First", Priority = 10 }
+                ]
+            });
 
-        var response = await provider.GetWorkflowTrendsAsync(new()
-        {
-            Range = DashboardRangeKeys.TwentyFourHours,
-            Granularity = DashboardTrendGranularity.Hour
-        }, CancellationToken.None);
+        var response = await provider.GetNeedsAttentionAsync(new(DashboardRangeKeys.TwentyFourHours), 10);
 
-        Assert.Equal(24, response.Buckets.Count);
-        var createdBucket = response.Buckets.Single(x => x.From == _now.AddHours(-2) && x.To == _now.AddHours(-1));
-        var finishedBucket = response.Buckets.Single(x => x.From == _now.AddHours(-1) && x.To == _now);
-        Assert.Equal(2, createdBucket.CreatedOrStarted);
-        Assert.Equal(1, finishedBucket.Finished);
-        Assert.Equal(1, finishedBucket.Faulted);
-    }
-
-    [Fact]
-    public async Task GetNeedsAttentionAsync_ReturnsPriorityOrderedFindings()
-    {
-        _runtimeAdminService.Status = new(
-            new(QuiescenceReason.AdministrativePause, _now.AddMinutes(-10), null, "maintenance", "operator", "test"),
-            [new("Webhook", IngressSourceState.PauseFailed, new InvalidOperationException("pause failed"), _now.AddMinutes(-5))],
-            0);
-        await AddInstanceAsync("faulted", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, _now.AddHours(-3), updatedAt: _now.AddHours(-2), incidentCount: 1);
-        var provider = CreateProvider(services =>
-        {
-            services.AddSingleton<IStructuredLogProvider>(new TestStructuredLogProvider([], [new() { Level = StructuredLogLevel.Critical, SourceId = "structured-1" }]));
-            services.AddSingleton<IConsoleLogProvider>(new TestConsoleLogProvider([], [new() { Text = "stderr", Stream = ConsoleStream.Stderr }]));
-        });
-
-        var response = await provider.GetNeedsAttentionAsync(new(DashboardRangeKeys.TwentyFourHours), 4, CancellationToken.None);
-
-        Assert.Equal(4, response.Findings.Count);
         Assert.Collection(response.Findings,
-            finding => Assert.Equal("runtime-paused", finding.Id),
-            finding => Assert.Equal("ingress-source-failures", finding.Id),
-            finding => Assert.Equal("workflow-faults", finding.Id),
-            finding => Assert.Equal("workflow-incidents", finding.Id));
+            finding => Assert.Equal("first", finding.Id),
+            finding => Assert.Equal("second-a", finding.Id),
+            finding => Assert.Equal("second-b", finding.Id));
     }
 
     [Fact]
-    public async Task GetRecentActivityAsync_ReturnsDenseOrderedSummaries()
+    public async Task ContributorFailure_DoesNotBreakDashboard()
     {
-        await AddInstanceAsync("old", WorkflowStatus.Finished, WorkflowSubStatus.Finished, _now.AddHours(-5), updatedAt: _now.AddHours(-4), finishedAt: _now.AddHours(-4));
-        await AddInstanceAsync("newest", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, _now.AddHours(-2), updatedAt: _now.AddMinutes(-5), incidentCount: 3, definitionId: "payments", name: "Payments");
-        await AddInstanceAsync("middle", WorkflowStatus.Running, WorkflowSubStatus.Suspended, _now.AddHours(-3), updatedAt: _now.AddHours(-1));
-        var provider = CreateProvider();
+        var provider = CreateProvider(
+            new ThrowingContributor("broken", 1),
+            new TestContributor("healthy", 2)
+            {
+                Overview = new()
+                {
+                    WorkflowInstances = new()
+                    {
+                        Running = 7
+                    }
+                },
+                Findings =
+                [
+                    new() { Id = "healthy", Message = "Healthy", Priority = 10 }
+                ]
+            });
 
-        var response = await provider.GetRecentActivityAsync(new(DashboardRangeKeys.TwentyFourHours), 2, CancellationToken.None);
+        var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours));
+        var needsAttention = await provider.GetNeedsAttentionAsync(new(DashboardRangeKeys.TwentyFourHours), 10);
+
+        Assert.Equal(7, overview.WorkflowInstances.Running);
+        Assert.Single(needsAttention.Findings);
+    }
+
+    [Fact]
+    public async Task RequestCancellation_IsNotSwallowed()
+    {
+        using var cancellationTokenSource = new CancellationTokenSource();
+        await cancellationTokenSource.CancelAsync();
+        var provider = CreateProvider(new CanceledContributor());
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => provider.GetOverviewAsync(new(), cancellationTokenSource.Token));
+    }
+
+    [Fact]
+    public async Task GetWorkflowTrendsAsync_AggregatesContributorBuckets()
+    {
+        var from = _now.AddHours(-1);
+        var provider = CreateProvider(
+            new TestContributor("a", 1)
+            {
+                Trend = new()
+                {
+                    Buckets = [new() { From = from, To = _now, CreatedOrStarted = 1, Faulted = 2 }]
+                }
+            },
+            new TestContributor("b", 2)
+            {
+                Trend = new()
+                {
+                    Buckets = [new() { From = from, To = _now, CreatedOrStarted = 3, Finished = 4 }]
+                }
+            });
+
+        var response = await provider.GetWorkflowTrendsAsync(new() { Range = DashboardRangeKeys.OneHour, Granularity = DashboardTrendGranularity.Hour });
+        var bucket = Assert.Single(response.Buckets);
+
+        Assert.Equal(4, bucket.CreatedOrStarted);
+        Assert.Equal(4, bucket.Finished);
+        Assert.Equal(2, bucket.Faulted);
+    }
+
+    [Fact]
+    public async Task GetRecentActivityAsync_MergesAndLimitsContributorItems()
+    {
+        var provider = CreateProvider(
+            new TestContributor("a", 1)
+            {
+                RecentActivity = new()
+                {
+                    Items = [Recent("old", _now.AddMinutes(-10)), Recent("new", _now)]
+                }
+            },
+            new TestContributor("b", 2)
+            {
+                RecentActivity = new()
+                {
+                    Items = [Recent("middle", _now.AddMinutes(-5))]
+                }
+            });
+
+        var response = await provider.GetRecentActivityAsync(new(DashboardRangeKeys.OneHour), 2);
 
         Assert.Collection(response.Items,
-            item =>
-            {
-                Assert.Equal("newest", item.InstanceId);
-                Assert.Equal("payments", item.DefinitionId);
-                Assert.Equal("Payments", item.WorkflowName);
-                Assert.Equal(nameof(WorkflowSubStatus.Faulted), item.SubStatus);
-                Assert.Equal(3, item.IncidentCount);
-            },
+            item => Assert.Equal("new", item.InstanceId),
             item => Assert.Equal("middle", item.InstanceId));
     }
 
     [Fact]
-    public async Task GetWorkflowHotspotsAsync_GroupsByWorkflowDefinitionAndMetric()
+    public void DashboardApiProject_DoesNotReferenceWorkflowOrDiagnosticsModules()
     {
-        await AddInstanceAsync("payments-1", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, _now.AddHours(-3), updatedAt: _now.AddHours(-2), incidentCount: 2, definitionId: "payments", name: "Payments");
-        await AddInstanceAsync("payments-2", WorkflowStatus.Finished, WorkflowSubStatus.Finished, _now.AddHours(-2), updatedAt: _now.AddHours(-1), finishedAt: _now.AddMinutes(-45), incidentCount: 3, definitionId: "payments", name: "Payments");
-        await AddInstanceAsync("orders-1", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, _now.AddHours(-2), updatedAt: _now.AddMinutes(-30), incidentCount: 1, definitionId: "orders", name: "Orders");
-        var provider = CreateProvider();
+        var projectFile = FindRepositoryRoot().Combine("src/modules/Elsa.Dashboard.Api/Elsa.Dashboard.Api.csproj");
+        var project = File.ReadAllText(projectFile);
 
-        var response = await provider.GetWorkflowHotspotsAsync(new()
-        {
-            Range = DashboardRangeKeys.TwentyFourHours,
-            Metric = DashboardHotspotMetric.Incidents,
-            Take = 2
-        }, CancellationToken.None);
-
-        Assert.Collection(response.Items,
-            hotspot =>
-            {
-                Assert.Equal("payments", hotspot.DefinitionId);
-                Assert.Equal("Payments", hotspot.WorkflowName);
-                Assert.Equal(5, hotspot.Value);
-            },
-            hotspot =>
-            {
-                Assert.Equal("orders", hotspot.DefinitionId);
-                Assert.Equal(1, hotspot.Value);
-            });
+        Assert.DoesNotContain("Elsa.Workflows", project);
+        Assert.DoesNotContain("Elsa.Diagnostics", project);
+        Assert.Contains("Elsa.Dashboard.Abstractions", project);
     }
 
-    [Fact]
-    public async Task GetOverviewAsync_ReturnsDiagnosticsCapabilityStates()
-    {
-        var notInstalled = await CreateProvider().GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours), CancellationToken.None);
-        var degraded = await CreateProvider(services =>
-        {
-            services.AddSingleton<IStructuredLogProvider>(new ThrowingStructuredLogProvider(new UnauthorizedAccessException()));
-            services.AddSingleton<IConsoleLogProvider>(new ThrowingConsoleLogProvider(new InvalidOperationException()));
-        }).GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours), CancellationToken.None);
+    private DefaultDashboardProvider CreateProvider(params IDashboardContributor[] contributors) =>
+        new(contributors, new(new TestClock(_now)), new TestHostEnvironment());
 
-        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, notInstalled.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, notInstalled.Diagnostics.ConsoleLogs.Capability.Status);
-        Assert.Equal(DashboardCapabilityStatus.Unauthorized.Status, degraded.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(DashboardCapabilityStatus.Unavailable.Status, degraded.Diagnostics.ConsoleLogs.Capability.Status);
+    private static DashboardRecentActivityItem Recent(string id, DateTimeOffset updatedAt) => new()
+    {
+        InstanceId = id,
+        DefinitionId = "workflow",
+        Status = "Finished",
+        SubStatus = "Finished",
+        CreatedAt = updatedAt.AddMinutes(-1),
+        UpdatedAt = updatedAt
+    };
+
+    private static DirectoryInfo FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory != null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "Elsa.sln")))
+                return directory;
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Could not locate repository root.");
     }
 
-    private async Task AddInstanceAsync(
-        string id,
-        WorkflowStatus status,
-        WorkflowSubStatus subStatus,
-        DateTimeOffset createdAt,
-        DateTimeOffset? updatedAt = null,
-        DateTimeOffset? finishedAt = null,
-        int incidentCount = 0,
-        bool isSystem = false,
-        string definitionId = "workflow",
-        string? name = null)
+    private sealed class TestContributor(string id, int order) : IDashboardContributor
     {
-        await _workflowInstanceStore.SaveAsync(new()
-        {
-            Id = id,
-            DefinitionId = definitionId,
-            DefinitionVersionId = $"{definitionId}:1",
-            Version = 1,
-            Status = status,
-            SubStatus = subStatus,
-            IncidentCount = incidentCount,
-            IsSystem = isSystem,
-            Name = name ?? definitionId,
-            CreatedAt = createdAt,
-            UpdatedAt = updatedAt ?? createdAt,
-            FinishedAt = finishedAt
-        });
+        public string Id { get; } = id;
+
+        public int Order { get; } = order;
+
+        public DashboardOverviewContribution? Overview { get; init; }
+
+        public IReadOnlyCollection<DashboardFinding> Findings { get; init; } = [];
+
+        public DashboardTrendResponse? Trend { get; init; }
+
+        public DashboardRecentActivityResponse? RecentActivity { get; init; }
+
+        public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => ValueTask.FromResult(Overview);
+
+        public ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context) => ValueTask.FromResult(Findings);
+
+        public ValueTask<DashboardTrendResponse?> GetWorkflowTrendsAsync(DashboardTrendContext context) => ValueTask.FromResult(Trend);
+
+        public ValueTask<DashboardRecentActivityResponse?> GetRecentActivityAsync(DashboardListContext context) => ValueTask.FromResult(RecentActivity);
     }
 
-    private DefaultDashboardProvider CreateProvider(Action<IServiceCollection>? configureServices = null)
+    private sealed class ThrowingContributor(string id, int order) : IDashboardContributor
     {
-        var services = new ServiceCollection();
-        configureServices?.Invoke(services);
-        return new(
-            _workflowInstanceStore,
-            _runtimeAdminService,
-            new(new TestClock(_now)),
-            services.BuildServiceProvider(),
-            new TestHostEnvironment());
+        public string Id { get; } = id;
+
+        public int Order { get; } = order;
+
+        public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => throw new InvalidOperationException("Broken");
+
+        public ValueTask<IReadOnlyCollection<DashboardFinding>> GetFindingsAsync(DashboardContext context) => throw new InvalidOperationException("Broken");
+    }
+
+    private sealed class CanceledContributor : IDashboardContributor
+    {
+        public string Id => "canceled";
+
+        public int Order => 0;
+
+        public ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context) => throw new OperationCanceledException(context.CancellationToken);
     }
 
     private sealed class TestClock(DateTimeOffset utcNow) : ISystemClock
@@ -231,86 +279,19 @@ public class DefaultDashboardProviderTests
         public DateTimeOffset UtcNow { get; } = utcNow;
     }
 
-    private sealed class TestRuntimeAdminService : IWorkflowRuntimeAdminService
-    {
-        public RuntimeAdminStatus Status { get; set; } = new(QuiescenceState.Initial("test"), [], 0);
-
-        public RuntimeAdminStatus GetStatus() => Status;
-
-        public ValueTask<QuiescenceState> PauseAsync(string? reason, string? requestedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask<QuiescenceState> ResumeAsync(string? requestedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask<DrainOutcome> ForceDrainAsync(string? reason, string? requestedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
-    }
-
-    private sealed class TestStructuredLogProvider(
-        IReadOnlyCollection<StructuredLogSource> sources,
-        IReadOnlyCollection<StructuredLogEvent> recentItems,
-        long droppedEvents = 0) : IStructuredLogProvider
-    {
-        public ValueTask PublishAsync(StructuredLogEvent logEvent, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-
-        public ValueTask<RecentStructuredLogsResult> GetRecentAsync(StructuredLogFilter filter, CancellationToken cancellationToken = default) => ValueTask.FromResult(new RecentStructuredLogsResult(recentItems, droppedEvents));
-
-        public async IAsyncEnumerable<StructuredLogEvent> SubscribeAsync(StructuredLogFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public ValueTask<IReadOnlyCollection<StructuredLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(sources);
-    }
-
-    private sealed class ThrowingStructuredLogProvider(Exception exception) : IStructuredLogProvider
-    {
-        public ValueTask PublishAsync(StructuredLogEvent logEvent, CancellationToken cancellationToken = default) => throw exception;
-
-        public ValueTask<RecentStructuredLogsResult> GetRecentAsync(StructuredLogFilter filter, CancellationToken cancellationToken = default) => throw exception;
-
-        public IAsyncEnumerable<StructuredLogEvent> SubscribeAsync(StructuredLogFilter filter, CancellationToken cancellationToken = default) => throw exception;
-
-        public ValueTask<IReadOnlyCollection<StructuredLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) => throw exception;
-    }
-
-    private sealed class TestStructuredLogStorageDiagnostics(long droppedWriteCount) : IStructuredLogStorageDiagnostics
-    {
-        public long DroppedWriteCount { get; } = droppedWriteCount;
-    }
-
-    private sealed class TestConsoleLogProvider(
-        IReadOnlyCollection<ConsoleLogSource> sources,
-        IReadOnlyList<ConsoleLogLine> recentItems) : IConsoleLogProvider
-    {
-        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
-
-        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) => ValueTask.FromResult(new RecentConsoleLogsResult { Items = recentItems });
-
-        public async IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken = default)
-        {
-            await Task.CompletedTask;
-            yield break;
-        }
-
-        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) => ValueTask.FromResult(sources);
-    }
-
-    private sealed class ThrowingConsoleLogProvider(Exception exception) : IConsoleLogProvider
-    {
-        public ValueTask PublishAsync(ConsoleLogLine line, CancellationToken cancellationToken = default) => throw exception;
-
-        public ValueTask<RecentConsoleLogsResult> GetRecentAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) => throw exception;
-
-        public IAsyncEnumerable<ConsoleLogStreamingItem> SubscribeAsync(ConsoleLogFilter filter, CancellationToken cancellationToken = default) => throw exception;
-
-        public ValueTask<IReadOnlyCollection<ConsoleLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default) => throw exception;
-    }
-
     private sealed class TestHostEnvironment : IHostEnvironment
     {
         public string EnvironmentName { get; set; } = "Integration";
+
         public string ApplicationName { get; set; } = "Elsa.TestHost";
-        public string ContentRootPath { get; set; } = Directory.GetCurrentDirectory();
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
+
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+
+        public IFileProvider ContentRootFileProvider { get; set; } = null!;
     }
+}
+
+internal static class DirectoryInfoExtensions
+{
+    public static string Combine(this DirectoryInfo directory, string path) => Path.Combine(directory.FullName, path);
 }

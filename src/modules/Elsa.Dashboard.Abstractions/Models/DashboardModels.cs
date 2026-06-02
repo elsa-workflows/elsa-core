@@ -1,4 +1,4 @@
-namespace Elsa.Dashboard.Api.Models;
+namespace Elsa.Dashboard.Abstractions.Models;
 
 public record DashboardQuery(string? Range = null, bool IncludeSystem = false);
 
@@ -10,6 +10,8 @@ public record DashboardOverview
     public DashboardRuntimeStatus Runtime { get; init; } = new();
     public DashboardWorkflowInstanceMetrics WorkflowInstances { get; init; } = new();
     public DashboardDiagnosticsSummary Diagnostics { get; init; } = new();
+    public IReadOnlyCollection<DashboardMetricCard> Metrics { get; init; } = [];
+    public IReadOnlyCollection<DashboardPanelSummary> Panels { get; init; } = [];
     public string AppliedRange { get; init; } = DashboardRangeKeys.TwentyFourHours;
     public DateTimeOffset From { get; init; }
     public DateTimeOffset To { get; init; }
@@ -78,6 +80,35 @@ public record DashboardConsoleLogSummary
     public int StaleSourceCount { get; init; }
     public int RecentStderrCount { get; init; }
     public long DroppedLineCount { get; init; }
+}
+
+public record DashboardMetricCard
+{
+    public string Id { get; init; } = null!;
+    public string Label { get; init; } = null!;
+    public string? Value { get; init; }
+    public string? Caption { get; init; }
+    public string? Icon { get; init; }
+    public string? Color { get; init; }
+    public DashboardNavigationTarget? Navigation { get; init; }
+    public int Order { get; init; }
+}
+
+public record DashboardPanelSummary
+{
+    public string Id { get; init; } = null!;
+    public string Title { get; init; } = null!;
+    public string? Summary { get; init; }
+    public DashboardCapabilityStatus Capability { get; init; } = DashboardCapabilityStatus.Available;
+    public DashboardNavigationTarget? Navigation { get; init; }
+    public int Order { get; init; }
+}
+
+public record DashboardNavigationTarget
+{
+    public string Kind { get; init; } = null!;
+    public string? Target { get; init; }
+    public string? Label { get; init; }
 }
 
 public record DashboardFinding
@@ -209,3 +240,5 @@ public static class DashboardHotspotMetric
     public const string Incidents = "Incidents";
     public const string Duration = "Duration";
 }
+
+public record DashboardRange(string Key, DateTimeOffset From, DateTimeOffset To);

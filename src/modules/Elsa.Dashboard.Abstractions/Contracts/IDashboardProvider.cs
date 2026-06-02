@@ -1,6 +1,6 @@
-using Elsa.Dashboard.Api.Models;
+using Elsa.Dashboard.Abstractions.Models;
 
-namespace Elsa.Dashboard.Api.Contracts;
+namespace Elsa.Dashboard.Abstractions.Contracts;
 
 public interface IDashboardProvider
 {
