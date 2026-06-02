@@ -2,6 +2,7 @@
     
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence\Elsa.ModularPersistence.csproj" />
     </ItemGroup>
 
 </Project>

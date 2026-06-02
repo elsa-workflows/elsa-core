@@ -1,3 +1,4 @@
+using Elsa.ModularPersistence.Planning;
 using Elsa.ModularPersistence.Runtime;
 
 namespace Elsa.ModularPersistence.Endpoints.RuntimeStorageDefinitions;
@@ -30,3 +31,15 @@ public sealed record RuntimeStorageDefinitionPublishResponse(
     IReadOnlyCollection<string> Errors);
 
 public sealed record RuntimeSchemaAuditResponse(IReadOnlyCollection<RuntimeSchemaAuditEntry> Items);
+
+public sealed class RuntimeStorageIndexPhysicalizationRequest
+{
+    public string IndexName { get; set; } = default!;
+}
+
+public sealed class RuntimeStoragePhysicalizationPlanRequest
+{
+    public string? ProviderName { get; set; }
+}
+
+public sealed record RuntimeStoragePhysicalizationPlanResponse(IReadOnlyCollection<StoragePhysicalizationPlan> Plans);
