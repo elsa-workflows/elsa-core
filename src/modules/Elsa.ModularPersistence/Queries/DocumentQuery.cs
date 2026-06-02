@@ -11,12 +11,14 @@ public sealed record DocumentQuery
         string documentType,
         IEnumerable<DocumentQueryFilter>? filters = null,
         IEnumerable<DocumentQuerySort>? sorts = null,
-        DocumentQueryPage? page = null)
+        DocumentQueryPage? page = null,
+        string? tenantId = null)
     {
         DocumentType = DescriptorValidation.RequireName(documentType, nameof(documentType));
         Filters = (filters ?? []).ToArray();
         Sorts = (sorts ?? []).ToArray();
         Page = page;
+        TenantId = string.IsNullOrWhiteSpace(tenantId) ? null : tenantId.Trim();
     }
 
     public string DocumentType { get; }
@@ -26,4 +28,6 @@ public sealed record DocumentQuery
     public IReadOnlyList<DocumentQuerySort> Sorts { get; }
 
     public DocumentQueryPage? Page { get; }
+
+    public string? TenantId { get; }
 }

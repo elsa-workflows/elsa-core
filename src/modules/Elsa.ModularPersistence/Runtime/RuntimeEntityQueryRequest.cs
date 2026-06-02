@@ -4,12 +4,13 @@ namespace Elsa.ModularPersistence.Runtime;
 
 public sealed record RuntimeEntityQueryRequest
 {
-    public RuntimeEntityQueryRequest(IEnumerable<RuntimeEntityQueryFilter> filters, IEnumerable<DocumentQuerySort>? sorts = null, int? limit = null, int offset = 0)
+    public RuntimeEntityQueryRequest(IEnumerable<RuntimeEntityQueryFilter> filters, IEnumerable<DocumentQuerySort>? sorts = null, int? limit = null, int offset = 0, string? tenantId = null)
     {
         Filters = filters?.ToArray() ?? throw new ArgumentNullException(nameof(filters));
         Sorts = (sorts ?? []).ToArray();
         Limit = limit;
         Offset = offset;
+        TenantId = string.IsNullOrWhiteSpace(tenantId) ? null : tenantId.Trim();
     }
 
     public IReadOnlyList<RuntimeEntityQueryFilter> Filters { get; }
@@ -19,4 +20,6 @@ public sealed record RuntimeEntityQueryRequest
     public int? Limit { get; }
 
     public int Offset { get; }
+
+    public string? TenantId { get; }
 }

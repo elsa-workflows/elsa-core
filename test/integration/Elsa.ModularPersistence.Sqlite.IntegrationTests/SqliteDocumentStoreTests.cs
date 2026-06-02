@@ -159,6 +159,29 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task QueryAsyncCanBeScopedToTenant()
+    {
+        await MaterializeAsync();
+
+        await using var session = await _store.OpenSessionAsync();
+        await session.SaveAsync(CreateDocument("secret-a", 1, """{"TenantId":"tenant-a","Name":"Shared","Priority":1,"ExpiresAt":null}""", tenantId: "tenant-a"));
+        await session.SaveAsync(CreateDocument("secret-b", 1, """{"TenantId":"tenant-b","Name":"Shared","Priority":1,"ExpiresAt":null}""", tenantId: "tenant-b"));
+
+        var query = new DocumentQuery(
+            "Secrets",
+            [
+                DocumentQueryFilter.Equal("IX_Secrets_Name", "Name", DocumentQueryValue.String("Shared"))
+            ],
+            tenantId: "tenant-a");
+
+        var results = await session.QueryAsync(query);
+
+        var result = Assert.Single(results);
+        Assert.Equal("secret-a", result.Id);
+        Assert.Equal("tenant-a", result.TenantId);
+    }
+
+    [Fact]
     public async Task QueryAsyncFiltersRangeAndNullValues()
     {
         await MaterializeAsync();
@@ -284,11 +307,12 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         string id,
         long version,
         string data,
-        IReadOnlyDictionary<string, string>? metadata = null) =>
+        IReadOnlyDictionary<string, string>? metadata = null,
+        string tenantId = "tenant-a") =>
         new(
             id,
             "Secrets",
-            "tenant-a",
+            tenantId,
             version,
             new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             new DateTimeOffset(2026, 1, 1, 0, 0, (int)version, TimeSpan.Zero),

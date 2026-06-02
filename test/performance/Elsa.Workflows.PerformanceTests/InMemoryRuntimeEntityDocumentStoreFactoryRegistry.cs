@@ -49,6 +49,7 @@ internal sealed class InMemoryRuntimeEntityDocumentStoreFactoryRegistry : IRunti
             {
                 var results = documents.Values
                     .Where(x => x.Type == query.DocumentType)
+                    .Where(x => query.TenantId is null || string.Equals(x.TenantId, query.TenantId, StringComparison.Ordinal))
                     .Where(document => query.Filters.All(filter => Matches(document, filter)))
                     .Skip(query.Page?.Offset ?? 0)
                     .Take(query.Page?.Limit ?? int.MaxValue)

@@ -35,7 +35,7 @@ public sealed class RuntimeEntityDataService(
             throw new InvalidOperationException("Runtime entity queries must include at least one indexed field filter.");
 
         var page = request.Limit is null ? null : new DocumentQueryPage(request.Limit.Value, request.Offset);
-        var query = new DocumentQuery(definition.StorageUnitName, filters, request.Sorts, page);
+        var query = new DocumentQuery(definition.StorageUnitName, filters, request.Sorts, page, request.TenantId);
         await using var session = await storeFactoryRegistry.CreateStore(manifest, providerName).OpenSessionAsync(cancellationToken);
         var results = await session.QueryAsync(query, cancellationToken);
         return results.Select(x => ToRecord(x)).ToArray();

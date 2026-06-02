@@ -176,6 +176,8 @@ dotnet run -c Release --project test/performance/Elsa.Workflows.PerformanceTests
 
 Workflow runtime persistence candidate benchmarks and the first vNext decision baseline are recorded in [Persistence vNext Workflow Runtime Benchmarks](persistence-vnext-workflow-runtime-benchmarks.md). The resulting migration decision is recorded in [Persistence vNext Workflow Runtime Decision](persistence-vnext-workflow-runtime-decision.md).
 
+Operational guidance for diagnostics, schema-history repair, tenant isolation, runtime schema security, backup/restore, and roll-forward recovery is recorded in [Persistence vNext Operations](persistence-vnext-operations.md).
+
 ## Adding A Store
 
 When adding a new store implementation:

@@ -16,7 +16,7 @@ internal sealed class Endpoint(IRuntimeEntityDataService dataService) : ElsaEndp
 
     public override async Task<RuntimeEntityRecordsResponse> ExecuteAsync(RuntimeEntityQueryEndpointRequest request, CancellationToken cancellationToken)
     {
-        var query = new RuntimeEntityQueryRequest(request.Filters, limit: request.Limit, offset: request.Offset);
+        var query = new RuntimeEntityQueryRequest(request.Filters, limit: request.Limit, offset: request.Offset, tenantId: request.TenantId);
         var records = await dataService.QueryAsync(Route<string>("definitionId")!, query, EndpointContext.Create(User), request.ProviderName, cancellationToken);
         return new RuntimeEntityRecordsResponse(records);
     }

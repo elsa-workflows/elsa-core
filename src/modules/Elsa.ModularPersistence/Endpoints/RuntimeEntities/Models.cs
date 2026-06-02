@@ -36,5 +36,7 @@ public sealed class RuntimeEntityQueryEndpointRequest
 
     public int Offset { get; set; }
 
+    public string? TenantId { get; set; }
+
     public string? ProviderName { get; set; }
 }
