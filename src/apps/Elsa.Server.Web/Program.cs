@@ -95,6 +95,7 @@ services
                 runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = allowLocalDistributedRuntimeLockProvider;
             })
             .UseWorkflowsApi()
+            .UseDashboardApi()
             .UseFluentStorageProvider()
             .UseElsaScriptBlobStorage()
             .UseScheduling()

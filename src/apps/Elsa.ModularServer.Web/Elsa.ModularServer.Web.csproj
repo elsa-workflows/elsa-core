@@ -11,6 +11,7 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.OpenTelemetry\Elsa.Diagnostics.OpenTelemetry.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite\Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.csproj" />
