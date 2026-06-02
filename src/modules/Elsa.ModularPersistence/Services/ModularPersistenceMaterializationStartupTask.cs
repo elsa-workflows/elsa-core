@@ -1,5 +1,6 @@
 using Elsa.Common;
 using Elsa.ModularPersistence.Contracts;
+using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Options;
 using Microsoft.Extensions.Options;
 
@@ -29,17 +30,35 @@ public sealed class ModularPersistenceMaterializationStartupTask(
             }
 
             foreach (var materializer in matchingMaterializers)
+                await MaterializeWithRetryAsync(materializer, manifest, cancellationToken);
+        }
+    }
+
+    private async Task MaterializeWithRetryAsync(IStorageManifestMaterializer materializer, StorageManifestDescriptor manifest, CancellationToken cancellationToken)
+    {
+        var maxAttempts = Math.Max(0, options.Value.MaterializationRetryCount) + 1;
+        var retryDelay = options.Value.MaterializationRetryDelay < TimeSpan.Zero ? TimeSpan.Zero : options.Value.MaterializationRetryDelay;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
             {
-                try
-                {
-                    await materializer.MaterializeAsync(manifest, cancellationToken);
-                    materializationTracker.RecordApplied(materializer.ProviderName, manifest.SchemaName, manifest.Version.ToString(), DateTimeOffset.UtcNow);
-                }
-                catch (Exception e)
-                {
-                    materializationTracker.RecordFailed(materializer.ProviderName, manifest.SchemaName, manifest.Version.ToString(), DateTimeOffset.UtcNow, e);
-                    throw;
-                }
+                await materializer.MaterializeAsync(manifest, cancellationToken);
+                materializationTracker.RecordApplied(materializer.ProviderName, manifest.SchemaName, manifest.Version.ToString(), DateTimeOffset.UtcNow);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                materializationTracker.RecordFailed(materializer.ProviderName, manifest.SchemaName, manifest.Version.ToString(), DateTimeOffset.UtcNow, e);
+                if (attempt == maxAttempts)
+                    throw new StorageManifestMaterializationException(materializer.ProviderName, manifest, attempt, e);
+
+                if (retryDelay > TimeSpan.Zero)
+                    await Task.Delay(retryDelay, cancellationToken);
             }
         }
     }
