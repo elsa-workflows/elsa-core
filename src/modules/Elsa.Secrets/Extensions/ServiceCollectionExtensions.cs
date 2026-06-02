@@ -1,4 +1,5 @@
 using Elsa.Expressions.Contracts;
+using Elsa.ModularPersistence.Documents;
 using Elsa.Secrets.Providers;
 using Elsa.Secrets.Repositories;
 using Elsa.Secrets.Services;
@@ -31,6 +32,13 @@ public static class ServiceCollectionExtensions
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretTypeProvider, RsaKeySecretTypeProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretTypeProvider, X509CertificateSecretTypeProvider>());
 
+        return services;
+    }
+
+    public static IServiceCollection AddModularPersistenceSecretRepository(this IServiceCollection services, Func<IServiceProvider, IDocumentStore> documentStoreFactory)
+    {
+        services.AddSingleton(documentStoreFactory);
+        services.Replace(ServiceDescriptor.Singleton<ISecretRepository, ModularPersistenceSecretRepository>());
         return services;
     }
 }

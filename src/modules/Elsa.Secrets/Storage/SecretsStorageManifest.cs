@@ -6,6 +6,11 @@ public static class SecretsStorageManifest
 {
     public const string SchemaName = "elsa.secrets";
     public const string SecretsStorageUnitName = "Secrets";
+    public const string NameIndexName = "UX_Secrets_Name";
+    public const string StatusNameIndexName = "IX_Secrets_Status_Name";
+    public const string TypeNameNameIndexName = "IX_Secrets_TypeName_Name";
+    public const string StoreNameNameIndexName = "IX_Secrets_StoreName_Name";
+    public const string ScopeNameIndexName = "IX_Secrets_Scope_Name";
 
     public static StorageManifestDescriptor Create() =>
         new(
@@ -35,11 +40,11 @@ public static class SecretsStorageManifest
                         new StorageKeyDescriptor("UK_Secrets_Name", ["Name"], StorageKeyKind.Unique)
                     ],
                     [
-                        new StorageIndexDescriptor("UX_Secrets_Name", [new StorageIndexFieldDescriptor("Name")], true),
-                        new StorageIndexDescriptor("IX_Secrets_Status_Name", [new StorageIndexFieldDescriptor("Status"), new StorageIndexFieldDescriptor("Name")]),
-                        new StorageIndexDescriptor("IX_Secrets_TypeName_Name", [new StorageIndexFieldDescriptor("TypeName"), new StorageIndexFieldDescriptor("Name")]),
-                        new StorageIndexDescriptor("IX_Secrets_StoreName_Name", [new StorageIndexFieldDescriptor("StoreName"), new StorageIndexFieldDescriptor("Name")]),
-                        new StorageIndexDescriptor("IX_Secrets_Scope_Name", [new StorageIndexFieldDescriptor("Scope"), new StorageIndexFieldDescriptor("Name")])
+                        new StorageIndexDescriptor(NameIndexName, [new StorageIndexFieldDescriptor("Name")], true),
+                        new StorageIndexDescriptor(StatusNameIndexName, [new StorageIndexFieldDescriptor("Status"), new StorageIndexFieldDescriptor("Name")]),
+                        new StorageIndexDescriptor(TypeNameNameIndexName, [new StorageIndexFieldDescriptor("TypeName"), new StorageIndexFieldDescriptor("Name")]),
+                        new StorageIndexDescriptor(StoreNameNameIndexName, [new StorageIndexFieldDescriptor("StoreName"), new StorageIndexFieldDescriptor("Name")]),
+                        new StorageIndexDescriptor(ScopeNameIndexName, [new StorageIndexFieldDescriptor("Scope"), new StorageIndexFieldDescriptor("Name")])
                     ])
             ]);
 }

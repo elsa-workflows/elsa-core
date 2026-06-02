@@ -12,6 +12,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.ModularPersistence.Sqlite\Elsa.ModularPersistence.Sqlite.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Secrets\Elsa.Secrets.csproj" />
     </ItemGroup>
 
 </Project>
