@@ -82,7 +82,7 @@ public sealed class PostgreSqlDocumentSession(IRelationalConnectionFactory conne
         ValidateDeleteConcurrency(key, currentVersion, expectedVersion);
 
         await DeleteIndexEntriesAsync(connection, transaction, key, cancellationToken);
-        await DeleteDocumentAsync(connection, transaction, key, cancellationToken);
+        await DeleteDocumentAsync(connection, transaction, key, expectedVersion, cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
 
@@ -300,16 +300,21 @@ public sealed class PostgreSqlDocumentSession(IRelationalConnectionFactory conne
             throw new DocumentConcurrencyException(document.Key, $"Document '{document.Id}' version did not match expected version {expectedVersion.Version}.");
     }
 
-    private static async ValueTask DeleteDocumentAsync(DbConnection connection, DbTransaction transaction, DocumentKey key, CancellationToken cancellationToken)
+    private static async ValueTask DeleteDocumentAsync(DbConnection connection, DbTransaction transaction, DocumentKey key, ExpectedDocumentVersion expectedVersion, CancellationToken cancellationToken)
     {
         await using var command = connection.CreateCommand();
         command.Transaction = transaction;
-        command.CommandText = """
+        var exactVersionClause = expectedVersion.Kind == ExpectedDocumentVersionKind.Exact ? " AND Version = @ExpectedVersion" : "";
+        command.CommandText = $"""
             DELETE FROM ModularPersistenceDocuments
-            WHERE Id = @Id AND Type = @Type AND TenantId = @TenantId;
+            WHERE Id = @Id AND Type = @Type AND TenantId = @TenantId{exactVersionClause};
             """;
         AddKeyParameters(command, key);
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        if (expectedVersion.Kind == ExpectedDocumentVersionKind.Exact)
+            AddParameter(command, "@ExpectedVersion", expectedVersion.Version);
+
+        if (await command.ExecuteNonQueryAsync(cancellationToken) == 0 && expectedVersion.Kind == ExpectedDocumentVersionKind.Exact)
+            throw new DocumentConcurrencyException(key, $"Document '{key.Id}' version did not match expected version {expectedVersion.Version}.");
     }
 
     private static async ValueTask DeleteIndexEntriesAsync(DbConnection connection, DbTransaction transaction, DocumentKey key, CancellationToken cancellationToken)

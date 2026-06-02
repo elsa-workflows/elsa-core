@@ -1,14 +1,17 @@
 using System.Data.Common;
 using Elsa.ModularPersistence.Descriptors;
 using Elsa.ModularPersistence.Relational.Contracts;
+using Elsa.ModularPersistence.SqlServer.Options;
 
 namespace Elsa.ModularPersistence.SqlServer.Services;
 
 /// <summary>
 /// Materializes the portable document schema into SQL Server.
 /// </summary>
-public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory)
+public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFactory connectionFactory, SqlServerModularPersistenceOptions? options = null)
 {
+    private readonly SqlServerModularPersistenceOptions _options = options ?? new SqlServerModularPersistenceOptions();
+
     public async ValueTask MaterializeAsync(StorageManifestDescriptor manifest, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);
@@ -16,12 +19,19 @@ public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFac
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
+        await AcquireSchemaLockAsync(connection, transaction, cancellationToken);
         await ExecuteAsync(connection, transaction, CreateDocumentsTableSql, cancellationToken);
         await ExecuteAsync(connection, transaction, CreateDocumentIndexesTableSql, cancellationToken);
         await ExecuteAsync(connection, transaction, CreateSchemaHistoryTableSql, cancellationToken);
         await ExecuteAsync(connection, transaction, CreateDocumentIndexesByStringValueSql, cancellationToken);
         await ExecuteAsync(connection, transaction, CreateDocumentIndexesByNumberValueSql, cancellationToken);
         await ExecuteAsync(connection, transaction, CreateDocumentIndexesByDateTimeValueSql, cancellationToken);
+        if (_options.UseOptimizedIndexes)
+        {
+            foreach (var sql in BuildOptimizedIndexSql(manifest))
+                await ExecuteAsync(connection, transaction, sql, cancellationToken);
+        }
+
         await RecordManifestVersionAsync(connection, transaction, manifest, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
@@ -98,6 +108,73 @@ public sealed class SqlServerDocumentSchemaMaterializer(IRelationalConnectionFac
             ON dbo.ModularPersistenceDocumentIndexes (DocumentType, TenantId, IndexName, FieldName, DateTimeValue);
         END;
         """;
+
+    private async ValueTask AcquireSchemaLockAsync(DbConnection connection, DbTransaction transaction, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            DECLARE @LockResult int;
+            EXEC @LockResult = sp_getapplock
+                @Resource = N'Elsa.ModularPersistence.Schema',
+                @LockMode = N'Exclusive',
+                @LockOwner = N'Transaction',
+                @LockTimeout = @LockTimeout;
+
+            IF @LockResult < 0
+                THROW 51000, 'Timed out waiting for the Elsa modular persistence schema lock.', 1;
+            """;
+        AddParameter(command, "@LockTimeout", Convert.ToInt32(_options.SchemaLockTimeout.TotalMilliseconds));
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private static IEnumerable<string> BuildOptimizedIndexSql(StorageManifestDescriptor manifest)
+    {
+        foreach (var storageUnit in manifest.StorageUnits)
+        {
+            foreach (var index in storageUnit.Indexes)
+            {
+                if (index.PhysicalizationIntent != PhysicalizationIntent.OptimizedIndexes)
+                    continue;
+
+                foreach (var indexField in index.Fields)
+                {
+                    var field = storageUnit.Fields.Single(x => x.Name == indexField.FieldName);
+                    var valueColumn = GetIndexedColumn(field.Type);
+                    var name = SanitizeIdentifier($"IX_ModularPersistenceDocumentIndexes_Optimized_{index.Name}_{field.Name}_{valueColumn}");
+                    var indexName = EscapeSqlLiteral(index.Name);
+                    var fieldName = EscapeSqlLiteral(field.Name);
+
+                    yield return $"""
+                        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'{name}' AND object_id = OBJECT_ID(N'dbo.ModularPersistenceDocumentIndexes'))
+                        BEGIN
+                            CREATE INDEX {name}
+                            ON dbo.ModularPersistenceDocumentIndexes (DocumentType, TenantId, {valueColumn})
+                            WHERE IndexName = N'{indexName}' AND FieldName = N'{fieldName}' AND NullValue = 0;
+                        END;
+                        """;
+                }
+            }
+        }
+    }
+
+    private static string GetIndexedColumn(StorageFieldType fieldType) =>
+        fieldType switch
+        {
+            StorageFieldType.String or StorageFieldType.Guid or StorageFieldType.Json or StorageFieldType.Binary => "StringValue",
+            StorageFieldType.Int32 or StorageFieldType.Int64 or StorageFieldType.Decimal => "NumberValue",
+            StorageFieldType.Boolean => "BooleanValue",
+            StorageFieldType.DateTimeOffset => "DateTimeValue",
+            _ => throw new ArgumentOutOfRangeException(nameof(fieldType), fieldType, "Unknown storage field type.")
+        };
+
+    private static string SanitizeIdentifier(string value)
+    {
+        var chars = value.Select(x => char.IsLetterOrDigit(x) ? x : '_').ToArray();
+        return new string(chars);
+    }
+
+    private static string EscapeSqlLiteral(string value) => value.Replace("'", "''", StringComparison.Ordinal);
 
     private static async ValueTask RecordManifestVersionAsync(DbConnection connection, DbTransaction transaction, StorageManifestDescriptor manifest, CancellationToken cancellationToken)
     {
