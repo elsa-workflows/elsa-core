@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides an experimental Persistence vNext metadata projection for Elsa workflow instances.
+        </Description>
+        <PackageTags>elsa module workflows management modular-persistence persistence</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ModularPersistence\Elsa.ModularPersistence.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+
+</Project>
