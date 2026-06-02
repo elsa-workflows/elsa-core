@@ -235,15 +235,14 @@ Goal: implement a YesSQL-like portable document store over SQLite first.
 
 Tasks:
 
-- Define `IDocumentSession`.
 - Define `IDocumentStore`.
 - Define document envelope:
   - `Id`
-  - `Type`
-  - `TenantId`
+  - `StorageUnit`
   - `Version`
-  - `Data`
+  - `Content`
   - timestamps
+- Define explicit save and query request records.
 - Implement SQLite document table.
 - Implement generic field index table.
 - Implement save/load/delete.

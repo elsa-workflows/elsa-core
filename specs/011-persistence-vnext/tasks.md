@@ -16,15 +16,15 @@
 
 ## S2 - Portable SQLite Document Store MVP
 
-- [ ] T012 Define document envelope and session/store contracts.
-- [ ] T013 Add SQLite document table manifest/materialization.
-- [ ] T014 Implement save/load/delete.
-- [ ] T015 Implement generic field index storage.
-- [ ] T016 Implement index maintenance in the same transaction.
-- [ ] T017 Implement query by declared indexes.
-- [ ] T018 Add optimistic concurrency.
-- [ ] T019 Add unindexed-query validation.
-- [ ] T020 Add SQLite document store tests.
+- [x] T012 Define document envelope and store contracts.
+- [x] T013 Add SQLite document table materialization.
+- [x] T014 Implement save/load/delete.
+- [x] T015 Implement generic field index storage.
+- [x] T016 Implement index maintenance in the same transaction.
+- [x] T017 Implement query by declared indexes.
+- [x] T018 Add optimistic concurrency.
+- [x] T019 Add unindexed-query validation.
+- [x] T020 Add SQLite document store tests.
 - [ ] T021 Open/review/merge S2 PR and close associated issue.
 
 ## S3 - SQL Server And PostgreSQL Relational Document Providers
