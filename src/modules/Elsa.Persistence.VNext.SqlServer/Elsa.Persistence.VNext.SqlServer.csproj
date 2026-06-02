@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Experimental SQL Server provider for Elsa Persistence vNext.
+        </Description>
+        <PackageTags>elsa module persistence vnext sqlserver experimental</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj" />
+    </ItemGroup>
+
+</Project>
