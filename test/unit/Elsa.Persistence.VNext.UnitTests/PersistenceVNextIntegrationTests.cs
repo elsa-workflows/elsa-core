@@ -50,6 +50,27 @@ public class PersistenceVNextIntegrationTests
         Assert.Contains(typeof(RecordingDocumentStore).FullName!, status.DocumentStoreTypes);
     }
 
+    [Fact]
+    public async Task StartupTask_RecordsRecoveryHintsWhenMaterializationFails()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddPersistenceVNext();
+        services.AddSingleton<IPersistenceSchemaProvider, OrdersSchemaProvider>();
+        services.AddSingleton<IDocumentStore, FailingDocumentStore>();
+
+        using var serviceProvider = services.BuildServiceProvider();
+        var startupTask = Assert.Single(serviceProvider.GetServices<IStartupTask>());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => startupTask.ExecuteAsync(CancellationToken.None));
+
+        var status = serviceProvider.GetRequiredService<IPersistenceVNextStatus>().Snapshot;
+        Assert.False(status.Succeeded);
+        Assert.Equal("provider unavailable", status.ErrorMessage);
+        Assert.Contains(status.RecoveryHints, x => x.Contains("connect to its database"));
+        Assert.Contains(status.RecoveryHints, x => x.Contains("materialization lock strategy"));
+    }
+
     private class OrdersSchemaProvider : IPersistenceSchemaProvider
     {
         public PersistenceSchema DescribeSchema()
@@ -88,6 +109,15 @@ public class PersistenceVNextIntegrationTests
             return Task.CompletedTask;
         }
 
+        public Task<StoredDocument> SaveAsync(SaveDocumentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<StoredDocument?> LoadAsync(string storageUnit, string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<bool> DeleteAsync(string storageUnit, string id, long? expectedVersion = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<IReadOnlyList<StoredDocument>> QueryAsync(DocumentQuery query, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private class FailingDocumentStore : IDocumentStore
+    {
+        public Task MaterializeAsync(CancellationToken cancellationToken = default) => throw new InvalidOperationException("provider unavailable");
         public Task<StoredDocument> SaveAsync(SaveDocumentRequest request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<StoredDocument?> LoadAsync(string storageUnit, string id, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<bool> DeleteAsync(string storageUnit, string id, long? expectedVersion = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();

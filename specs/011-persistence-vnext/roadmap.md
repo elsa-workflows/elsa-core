@@ -224,3 +224,5 @@ Acceptance criteria:
 - Production operational risks are documented and mitigated.
 
 GitHub issue mapping: [#7677](https://github.com/elsa-workflows/elsa-core/issues/7677)
+
+Local progress note: a workflow runtime evaluator and go/no-go design note are implemented locally. Metadata/module stores are classified as good vNext candidates, hot lookup stores are benchmark-gated, and queue/log workloads remain specialized-provider candidates. Real provider benchmarks and concurrency/locking contract tests remain open.

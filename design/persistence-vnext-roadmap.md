@@ -430,6 +430,8 @@ Likely outcome:
 - Management/catalog/metadata stores are good candidates.
 - Runtime execution hot paths may need specialized providers or optimized physicalization.
 
+Local progress note: the POC includes a documented go/no-go decision and evaluator. The current recommendation is to use vNext for management/module metadata first, gate hot lookups behind benchmarks and physicalization, and keep queues/logs on specialized providers until runtime contract tests prove otherwise.
+
 ## Phase 11: Hardening
 
 Goal: make the framework production-safe.

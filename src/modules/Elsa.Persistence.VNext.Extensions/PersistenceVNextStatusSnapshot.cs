@@ -8,8 +8,11 @@ public record PersistenceVNextStatusSnapshot(
     IReadOnlyList<string> SchemaNames,
     IReadOnlyList<string> StorageUnits,
     IReadOnlyList<string> DocumentStoreTypes,
-    string? ErrorMessage = null)
+    string? ErrorMessage = null,
+    IReadOnlyList<string>? RecoveryHints = null)
 {
+    public IReadOnlyList<string> RecoveryHints { get; init; } = RecoveryHints ?? [];
+
     public static PersistenceVNextStatusSnapshot NotStarted { get; } = new(
         MaterializationEnabled: false,
         Succeeded: false,

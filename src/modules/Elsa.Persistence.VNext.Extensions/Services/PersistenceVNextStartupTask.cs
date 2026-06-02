@@ -39,7 +39,13 @@ public class PersistenceVNextStartupTask(
         }
         catch (Exception e)
         {
-            status.RecordFailure(new(true, false, attemptedAt, null, schemaNames, storageUnits, storeTypes, e.Message));
+            var recoveryHints = new[]
+            {
+                "Verify that every registered provider can connect to its database.",
+                "Check that the configured database user can create or alter the required schema objects.",
+                "If multiple nodes start concurrently, verify the provider's materialization lock strategy."
+            };
+            status.RecordFailure(new(true, false, attemptedAt, null, schemaNames, storageUnits, storeTypes, e.Message, recoveryHints));
             logger.LogError(e, "Persistence vNext materialization failed.");
             throw;
         }

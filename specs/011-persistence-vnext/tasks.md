@@ -74,6 +74,6 @@
 
 - [ ] T050 Benchmark runtime persistence candidates.
 - [ ] T051 Validate concurrency, locking, and retry behavior.
-- [ ] T052 Add provider diagnostics and recovery guidance.
-- [ ] T053 Document go/no-go decision for workflow runtime stores.
+- [x] T052 Add provider diagnostics and recovery guidance.
+- [x] T053 Document go/no-go decision for workflow runtime stores.
 - [ ] T054 Open/review/merge S8 PR and close associated issue.
