@@ -24,7 +24,7 @@ public static class EFCoreAIConversationCleanup
 
     private static async ValueTask<int> DeleteExpiredConfiguredAsync(AIDbContext dbContext, string configuredRetentionMode, DateTimeOffset now, CancellationToken cancellationToken)
     {
-        if (string.Equals(dbContext.Database.ProviderName, "Microsoft.EntityFrameworkCore.Sqlite", StringComparison.Ordinal))
+        if (IsSqliteProvider(dbContext.Database.ProviderName))
         {
             // EF Core SQLite cannot translate this DateTimeOffset predicate in ExecuteDeleteAsync for this model.
             var tableName = ResolveConversationTableName(dbContext);
@@ -48,6 +48,9 @@ WHERE ""RetentionMode"" = {{0}}
         var entityType = dbContext.Model.FindEntityType(typeof(AIConversationRecord)) ?? throw new InvalidOperationException("AI conversation entity metadata was not found.");
         return entityType.GetTableName() ?? throw new InvalidOperationException("AI conversation table metadata was not found.");
     }
+
+    private static bool IsSqliteProvider(string? providerName) =>
+        providerName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
 
     private static string QuoteSqliteIdentifier(string identifier) => $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
 }

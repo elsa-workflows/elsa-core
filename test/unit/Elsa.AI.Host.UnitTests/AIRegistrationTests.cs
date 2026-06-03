@@ -298,6 +298,21 @@ public class AIRegistrationTests
         Assert.Equal("Cannot overwrite an AI conversation that belongs to another user.", exception.Message);
     }
 
+    [Fact(DisplayName = "In-memory conversation store validates required conversation fields")]
+    public async Task InMemoryConversationStoreValidatesRequiredConversationFields()
+    {
+        var store = new InMemoryAIConversationStore();
+        var conversation = new AIConversation
+        {
+            Id = "conversation-invalid"
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(conversation));
+
+        Assert.Equal("conversation", exception.ParamName);
+        Assert.Equal("A conversation user ID is required. (Parameter 'conversation')", exception.Message);
+    }
+
     private class ScopedAuditHandler : IAIAuditEventHandler
     {
         public static int RecordedCount { get; set; }

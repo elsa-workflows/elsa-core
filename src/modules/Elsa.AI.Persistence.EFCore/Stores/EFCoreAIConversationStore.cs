@@ -52,18 +52,18 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException) when (isNew)
+        catch (DbUpdateException e) when (isNew)
         {
-            await RetryAsUpdateAsync(conversation, cancellationToken);
+            await RetryAsUpdateAsync(conversation, e, cancellationToken);
         }
     }
 
-    private async ValueTask RetryAsUpdateAsync(AIConversation conversation, CancellationToken cancellationToken)
+    private async ValueTask RetryAsUpdateAsync(AIConversation conversation, DbUpdateException originalException, CancellationToken cancellationToken)
     {
         dbContext.ChangeTracker.Clear();
         var record = await dbContext.Conversations.FindAsync([conversation.Id], cancellationToken);
         if (record == null)
-            throw new DbUpdateException($"Failed to insert AI conversation {conversation.Id}, and no existing record was found for retry.");
+            throw new DbUpdateException($"Failed to insert AI conversation {conversation.Id}, and no existing record was found for retry.", originalException);
 
         if (!BelongsToTenant(record.TenantId, conversation.TenantId))
             throw new InvalidOperationException("Cannot overwrite an AI conversation that belongs to another tenant.");

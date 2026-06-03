@@ -96,6 +96,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
             var tools = scope.ServiceProvider.GetServices<IAITool>().ToList();
             var toolInfos = GetToolInfos(tools);
             UpdateToolTypeCache(toolInfos);
+            // Definitions are cached by design. Runtime enablement is refreshed in ListAsync; dynamic Definition properties are not.
             _definitions = toolInfos.Select(x => x.Definition).ToList().AsReadOnly();
             return _definitions;
         }

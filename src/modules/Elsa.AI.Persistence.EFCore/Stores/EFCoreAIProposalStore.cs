@@ -33,6 +33,10 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
         {
             throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
         }
+        else
+        {
+            ValidateUserOwnership(record, proposal);
+        }
 
         Map(proposal, record);
 
@@ -40,21 +44,23 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException) when (isNew)
+        catch (DbUpdateException e) when (isNew)
         {
-            await RetryAsUpdateAsync(proposal, cancellationToken);
+            await RetryAsUpdateAsync(proposal, e, cancellationToken);
         }
     }
 
-    private async ValueTask RetryAsUpdateAsync(AIProposal proposal, CancellationToken cancellationToken)
+    private async ValueTask RetryAsUpdateAsync(AIProposal proposal, DbUpdateException originalException, CancellationToken cancellationToken)
     {
         dbContext.ChangeTracker.Clear();
         var record = await dbContext.Proposals.FindAsync([proposal.Id], cancellationToken);
         if (record == null)
-            throw new DbUpdateException($"Failed to insert AI proposal {proposal.Id}, and no existing record was found for retry.");
+            throw new DbUpdateException($"Failed to insert AI proposal {proposal.Id}, and no existing record was found for retry.", originalException);
 
         if (!BelongsToTenant(record.TenantId, proposal.TenantId))
             throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another tenant.");
+
+        ValidateUserOwnership(record, proposal);
 
         Map(proposal, record);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -113,6 +119,12 @@ public class EFCoreAIProposalStore(AIDbContext dbContext) : IAIProposalStore
         string.Equals(NormalizeTenantId(storedTenantId), NormalizeTenantId(requestedTenantId), StringComparison.Ordinal);
 
     private static string NormalizeTenantId(string? tenantId) => tenantId ?? "";
+
+    private static void ValidateUserOwnership(AIProposalRecord record, AIProposal proposal)
+    {
+        if (!string.IsNullOrWhiteSpace(record.CreatedBy) && !string.Equals(record.CreatedBy, proposal.CreatedBy, StringComparison.Ordinal))
+            throw new InvalidOperationException("Cannot overwrite an AI proposal that belongs to another user.");
+    }
 
     private static void Validate(AIProposal proposal)
     {

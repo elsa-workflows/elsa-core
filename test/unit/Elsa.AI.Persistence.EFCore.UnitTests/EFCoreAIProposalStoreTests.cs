@@ -138,6 +138,38 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         Assert.Equal("user-1", original.CreatedBy);
     }
 
+    [Fact(DisplayName = "Proposal store rejects cross-user overwrites")]
+    public async Task ProposalStoreRejectsCrossUserOverwrites()
+    {
+        var store = new EFCoreAIProposalStore(_dbContext);
+        await store.SaveAsync(new AIProposal
+        {
+            Id = "proposal-cross-user",
+            TenantId = "tenant-1",
+            ConversationId = "conversation-1",
+            Kind = AIProposalKind.WorkflowCreate,
+            CreatedBy = "user-1"
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIProposal
+        {
+            Id = "proposal-cross-user",
+            TenantId = "tenant-1",
+            ConversationId = "conversation-2",
+            Kind = AIProposalKind.WorkflowCreate,
+            CreatedBy = "user-2"
+        }));
+        _dbContext.ChangeTracker.Clear();
+
+        var original = await store.FindAsync("proposal-cross-user", "tenant-1");
+
+        Assert.Equal("Cannot overwrite an AI proposal that belongs to another user.", exception.Message);
+        Assert.NotNull(original);
+        Assert.Equal("conversation-1", original.ConversationId);
+        Assert.Equal("user-1", original.CreatedBy);
+    }
+
     [Fact(DisplayName = "Proposal store preserves creation timestamp on update")]
     public async Task ProposalStorePreservesCreationTimestampOnUpdate()
     {

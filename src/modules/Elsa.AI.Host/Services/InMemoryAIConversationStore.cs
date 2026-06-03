@@ -22,6 +22,7 @@ public class InMemoryAIConversationStore : IAITransientConversationStore
 
     public ValueTask SaveAsync(AIConversation conversation, CancellationToken cancellationToken = default)
     {
+        Validate(conversation);
         PruneExpired();
         _conversations.AddOrUpdate(
             conversation.Id,
@@ -63,4 +64,13 @@ public class InMemoryAIConversationStore : IAITransientConversationStore
     }
 
     private static string NormalizeTenantId(string? tenantId) => tenantId ?? "";
+
+    private static void Validate(AIConversation conversation)
+    {
+        if (string.IsNullOrWhiteSpace(conversation.Id))
+            throw new ArgumentException("A conversation ID is required.", nameof(conversation));
+
+        if (string.IsNullOrWhiteSpace(conversation.UserId))
+            throw new ArgumentException("A conversation user ID is required.", nameof(conversation));
+    }
 }
