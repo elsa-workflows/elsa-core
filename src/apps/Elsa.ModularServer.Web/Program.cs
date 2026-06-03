@@ -8,6 +8,7 @@ using Elsa.ModularServer.Web.Catalog;
 using Elsa.ShellFeatures;
 using Elsa.Workflows.Api.ShellFeatures;
 using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Workflows.Runtime.Dashboard.ShellFeatures;
 using Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 using Elsa.Workflows.Runtime.ShellFeatures;
 using Elsa.Workflows.ShellFeatures;
@@ -75,6 +76,7 @@ builder.AddShells(shells => shells
             typeof(WorkflowsFeature),
             typeof(DistributedRuntimeFeature),
             typeof(DashboardApiFeature),
+            typeof(WorkflowRuntimeDashboardFeature),
             typeof(WorkflowsApiFeature));
     }));
 
