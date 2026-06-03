@@ -3,6 +3,8 @@ using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
 using Elsa.Dashboard.Api.ShellFeatures;
+using Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
+using Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.ShellFeatures;
@@ -77,6 +79,8 @@ builder.AddShells(shells => shells
             typeof(DistributedRuntimeFeature),
             typeof(DashboardApiFeature),
             typeof(WorkflowRuntimeDashboardFeature),
+            typeof(ConsoleLogsDashboardFeature),
+            typeof(StructuredLogsDashboardFeature),
             typeof(WorkflowsApiFeature));
     }));
 
