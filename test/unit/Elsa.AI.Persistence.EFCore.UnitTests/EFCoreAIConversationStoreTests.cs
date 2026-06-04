@@ -69,7 +69,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             CreatedAt = now,
             UpdatedAt = now,
             RetentionExpiresAt = now.AddDays(1),
-            Messages = [CreateMessage("message-1", "first")]
+            Messages = [CreateMessage("conversation-2", "message-1", "first")]
         });
 
         await store.SaveAsync(new AIConversation
@@ -80,7 +80,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             CreatedAt = now,
             UpdatedAt = now.AddMinutes(1),
             RetentionExpiresAt = now.AddDays(1),
-            Messages = [CreateMessage("message-2", "second")]
+            Messages = [CreateMessage("conversation-2", "message-2", "second")]
         });
 
         _dbContext.ChangeTracker.Clear();
@@ -106,7 +106,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             CreatedAt = createdAt,
             UpdatedAt = createdAt,
             RetentionExpiresAt = retentionExpiresAt,
-            Messages = [CreateMessage("message-1", "first")]
+            Messages = [CreateMessage("conversation-timestamps", "message-1", "first")]
         });
 
         await store.SaveAsync(new AIConversation
@@ -117,7 +117,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             CreatedAt = createdAt.AddMinutes(5),
             UpdatedAt = createdAt.AddMinutes(5),
             RetentionExpiresAt = retentionExpiresAt.AddMinutes(5),
-            Messages = [CreateMessage("message-2", "second")]
+            Messages = [CreateMessage("conversation-timestamps", "message-2", "second")]
         });
         _dbContext.ChangeTracker.Clear();
 
@@ -142,7 +142,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             UserId = "user-1",
             CreatedAt = now,
             UpdatedAt = now,
-            Messages = [CreateMessage("message-1", "first")]
+            Messages = [CreateMessage("conversation-cross-tenant", "message-1", "first")]
         });
         _dbContext.ChangeTracker.Clear();
 
@@ -153,7 +153,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             UserId = "user-2",
             CreatedAt = now,
             UpdatedAt = now,
-            Messages = [CreateMessage("message-2", "second")]
+            Messages = [CreateMessage("conversation-cross-tenant", "message-2", "second")]
         }));
         _dbContext.ChangeTracker.Clear();
 
@@ -178,7 +178,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             UserId = "user-1",
             CreatedAt = now,
             UpdatedAt = now,
-            Messages = [CreateMessage("message-1", "first")]
+            Messages = [CreateMessage("conversation-default-tenant", "message-1", "first")]
         });
         _dbContext.ChangeTracker.Clear();
 
@@ -189,7 +189,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             UserId = "user-1",
             CreatedAt = now,
             UpdatedAt = now.AddMinutes(1),
-            Messages = [CreateMessage("message-2", "second")]
+            Messages = [CreateMessage("conversation-default-tenant", "message-2", "second")]
         });
         _dbContext.ChangeTracker.Clear();
 
@@ -213,7 +213,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             UserId = "user-1",
             CreatedAt = now,
             UpdatedAt = now,
-            Messages = [CreateMessage("message-1", "first")]
+            Messages = [CreateMessage("conversation-cross-user", "message-1", "first")]
         });
         _dbContext.ChangeTracker.Clear();
 
@@ -224,7 +224,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             UserId = "user-2",
             CreatedAt = now,
             UpdatedAt = now,
-            Messages = [CreateMessage("message-2", "second")]
+            Messages = [CreateMessage("conversation-cross-user", "message-2", "second")]
         }));
         _dbContext.ChangeTracker.Clear();
 
@@ -342,8 +342,8 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.False(char.IsHighSurrogate(message.Content[^1]));
     }
 
-    [Fact(DisplayName = "Conversation store prunes completed ephemeral conversations on read")]
-    public async Task ConversationStorePrunesCompletedEphemeralConversationsOnRead()
+    [Fact(DisplayName = "Conversation store hides completed ephemeral conversations on read")]
+    public async Task ConversationStoreHidesCompletedEphemeralConversationsOnRead()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
 
@@ -472,11 +472,11 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         await _connection.DisposeAsync();
     }
 
-    private static AIMessage CreateMessage(string id, string content) =>
+    private static AIMessage CreateMessage(string conversationId, string id, string content) =>
         new()
         {
             Id = id,
-            ConversationId = "conversation-2",
+            ConversationId = conversationId,
             Role = AIMessageRole.Assistant,
             Content = content,
             CreatedAt = DateTimeOffset.UtcNow
