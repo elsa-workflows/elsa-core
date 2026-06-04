@@ -1755,6 +1755,7 @@ public class AIChatEndpointTests
         {
             Name = "echo",
             DisplayName = "Echo",
+            Mutability = AIToolMutability.Proposal,
             TenantBehavior = AITenantBehavior.TenantScoped
         };
 

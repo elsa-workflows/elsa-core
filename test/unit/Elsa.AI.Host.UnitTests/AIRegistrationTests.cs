@@ -117,6 +117,19 @@ public class AIRegistrationTests
         Assert.True(service.IsEnabled(definition));
     }
 
+    [Fact(DisplayName = "Tool enablement enables read-only tools by default")]
+    public void ToolEnablementEnablesReadOnlyToolsByDefault()
+    {
+        var service = new AIToolEnablementService();
+        var definition = new AIToolDefinition
+        {
+            Name = "workflow.inspect",
+            Mutability = AIToolMutability.ReadOnly
+        };
+
+        Assert.True(service.IsEnabled(definition));
+    }
+
     [Fact(DisplayName = "AI host allows context provider overrides on startup")]
     public async Task AIHostAllowsContextProviderOverridesOnStartup()
     {
