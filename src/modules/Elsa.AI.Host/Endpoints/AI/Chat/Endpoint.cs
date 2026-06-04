@@ -42,8 +42,8 @@ public class Endpoint(
         };
         var response = HttpContext.Response;
         response.ContentType = "text/event-stream";
-        response.Headers.CacheControl = "no-cache";
-        response.Headers.Connection = "keep-alive";
+        response.Headers["Cache-Control"] = "no-cache";
+        response.Headers["Connection"] = "keep-alive";
 
         var completed = false;
         var reconnectAccepted = request.IsReconnect;

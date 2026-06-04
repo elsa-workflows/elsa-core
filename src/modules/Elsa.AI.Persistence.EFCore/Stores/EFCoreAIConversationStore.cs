@@ -144,16 +144,18 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
         }
     }
 
-    private static AIMessage CreateTruncatedMessage(AIMessage message, string content) =>
-        message with
+    private static AIMessage CreateTruncatedMessage(AIMessage message, string content)
+    {
+        var metadata = message.Metadata.DeepClone().AsObject();
+        metadata["truncated"] = true;
+        metadata["maxBytes"] = MaxMessagesJsonBytes;
+
+        return message with
         {
             Content = content,
-            Metadata = new JsonObject
-            {
-                ["truncated"] = true,
-                ["maxBytes"] = MaxMessagesJsonBytes
-            }
+            Metadata = metadata
         };
+    }
 
     private static int NormalizeSliceLength(string value, int length)
     {

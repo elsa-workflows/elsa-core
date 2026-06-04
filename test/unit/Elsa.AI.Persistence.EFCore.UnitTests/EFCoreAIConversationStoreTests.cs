@@ -327,7 +327,8 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
                     ConversationId = "conversation-large-emoji",
                     Role = AIMessageRole.Assistant,
                     Content = "x" + string.Concat(Enumerable.Repeat("😀", 90_000)),
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    Metadata = new JsonObject { ["source"] = "chat" }
                 }
             ]
         });
@@ -338,6 +339,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         var message = Assert.Single(reloaded!.Messages);
 
         Assert.True(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024);
+        Assert.Equal("chat", message.Metadata["source"]!.GetValue<string>());
         Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
         Assert.False(char.IsHighSurrogate(message.Content[^1]));
     }
