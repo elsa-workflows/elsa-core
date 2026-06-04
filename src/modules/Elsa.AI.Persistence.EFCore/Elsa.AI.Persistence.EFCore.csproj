@@ -11,6 +11,7 @@
         <PackageReference Include="CShells" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
