@@ -26,36 +26,41 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
     public ValueTask<IAITool?> FindAsync(string name, AIToolQuery query, CancellationToken cancellationToken = default)
     {
         var scope = scopeFactory.CreateScope();
+        ResolvedTool? resolvedTool = null;
         try
         {
-            var tool = ResolveCachedTool(scope.ServiceProvider, name) ?? ResolveAndCacheTool(scope.ServiceProvider, name);
-            if (tool == null || !TryGetDefinition(tool, out var definition) || !IsVisible(definition, query) || !enablementService.IsEnabled(definition))
+            resolvedTool = ResolveCachedTool(scope.ServiceProvider, name) ?? ResolveAndCacheTool(scope.ServiceProvider, name);
+            if (resolvedTool == null || !TryGetDefinition(resolvedTool.Tool, out var definition) || !IsVisible(definition, query) || !enablementService.IsEnabled(definition))
             {
+                resolvedTool?.Dispose();
                 scope.Dispose();
                 return ValueTask.FromResult<IAITool?>(null);
             }
 
-            return ValueTask.FromResult<IAITool?>(new ScopedAITool(scope, tool));
+            return ValueTask.FromResult<IAITool?>(new ScopedAITool(scope, resolvedTool.Tool, resolvedTool.DisposeTool));
         }
         catch
         {
+            resolvedTool?.Dispose();
             scope.Dispose();
             throw;
         }
     }
 
-    private IAITool? ResolveCachedTool(IServiceProvider serviceProvider, string name)
+    private ResolvedTool? ResolveCachedTool(IServiceProvider serviceProvider, string name)
     {
         if (!_toolTypes.TryGetValue(name, out var toolType))
             return null;
 
-        IAITool tool;
+        ResolvedTool resolvedTool;
         try
         {
-            if (ActivatorUtilities.GetServiceOrCreateInstance(serviceProvider, toolType) is not IAITool resolvedTool)
+            if (serviceProvider.GetService(toolType) is IAITool scopeOwnedTool)
+                resolvedTool = new ResolvedTool(scopeOwnedTool, DisposeTool: false);
+            else if (ActivatorUtilities.CreateInstance(serviceProvider, toolType) is IAITool createdTool)
+                resolvedTool = new ResolvedTool(createdTool, DisposeTool: true);
+            else
                 return null;
-
-            tool = resolvedTool;
         }
         catch (InvalidOperationException)
         {
@@ -64,22 +69,28 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
             return null;
         }
 
-        if (!TryGetDefinition(tool, out var definition))
+        if (!TryGetDefinition(resolvedTool.Tool, out var definition))
         {
+            resolvedTool.Dispose();
             _uncacheableToolNames[name] = true;
             _toolTypes.TryRemove(name, out _);
             return null;
         }
 
-        return string.Equals(definition.Name, name, StringComparison.OrdinalIgnoreCase) ? tool : null;
+        if (string.Equals(definition.Name, name, StringComparison.OrdinalIgnoreCase))
+            return resolvedTool;
+
+        resolvedTool.Dispose();
+        return null;
     }
 
-    private IAITool? ResolveAndCacheTool(IServiceProvider serviceProvider, string name)
+    private ResolvedTool? ResolveAndCacheTool(IServiceProvider serviceProvider, string name)
     {
         var tools = serviceProvider.GetServices<IAITool>().ToList();
         var toolInfos = GetToolInfos(tools);
         UpdateToolTypeCache(toolInfos);
-        return toolInfos.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase))?.Tool;
+        var tool = toolInfos.FirstOrDefault(x => string.Equals(x.Definition.Name, name, StringComparison.OrdinalIgnoreCase))?.Tool;
+        return tool == null ? null : new ResolvedTool(tool, DisposeTool: false);
     }
 
     private IReadOnlyCollection<AIToolDefinition> GetCachedDefinitions()
@@ -211,7 +222,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
         return grantedPermissions.Contains(PermissionNames.All) || definition.Permissions.All(grantedPermissions.Contains);
     }
 
-    private class ScopedAITool(IServiceScope scope, IAITool inner) : IAITool
+    private class ScopedAITool(IServiceScope scope, IAITool inner, bool disposeInner) : IAITool
     {
         private bool _disposed;
 
@@ -235,7 +246,19 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
                 return;
 
             _disposed = true;
+            if (disposeInner)
+                inner.Dispose();
+
             scope.Dispose();
+        }
+    }
+
+    private record ResolvedTool(IAITool Tool, bool DisposeTool)
+    {
+        public void Dispose()
+        {
+            if (DisposeTool)
+                Tool.Dispose();
         }
     }
 

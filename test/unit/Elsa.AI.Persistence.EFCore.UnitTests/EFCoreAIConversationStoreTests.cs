@@ -92,8 +92,8 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.Equal("second", Assert.Single(reloaded.Messages).Content);
     }
 
-    [Fact(DisplayName = "Conversation store preserves creation and retention timestamps on update")]
-    public async Task ConversationStorePreservesCreationAndRetentionTimestampsOnUpdate()
+    [Fact(DisplayName = "Conversation store preserves creation timestamp and updates retention timestamp")]
+    public async Task ConversationStorePreservesCreationTimestampAndUpdatesRetentionTimestamp()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
         var createdAt = DateTimeOffset.UtcNow.AddMinutes(-10);
@@ -126,7 +126,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.NotNull(reloaded);
         Assert.Equal(createdAt, reloaded.CreatedAt);
         Assert.Equal(createdAt.AddMinutes(5), reloaded.UpdatedAt);
-        Assert.Equal(retentionExpiresAt, reloaded.RetentionExpiresAt);
+        Assert.Equal(retentionExpiresAt.AddMinutes(5), reloaded.RetentionExpiresAt);
     }
 
     [Fact(DisplayName = "Conversation store rejects cross-tenant overwrites")]

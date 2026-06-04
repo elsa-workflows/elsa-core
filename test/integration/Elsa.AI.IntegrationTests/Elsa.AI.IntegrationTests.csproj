@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <Include>[Elsa.AI.*]*</Include>
-        <Threshold>0</Threshold>
     </PropertyGroup>
 
     <ItemGroup>

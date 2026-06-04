@@ -729,7 +729,9 @@ public class AIOrchestrator(
         {
             var now = DateTimeOffset.UtcNow;
             var retentionMode = conversation?.RetentionMode ?? AIRetentionMode.Configured;
-            var retentionExpiresAt = conversation?.RetentionExpiresAt ?? (retentionMode == AIRetentionMode.Configured ? now.Add(options.Value.ConversationRetention) : null);
+            DateTimeOffset? retentionExpiresAt = retentionMode == AIRetentionMode.Configured
+                ? now.Add(options.Value.ConversationRetention)
+                : null;
 
             await conversationStore.SaveAsync(new AIConversation
             {

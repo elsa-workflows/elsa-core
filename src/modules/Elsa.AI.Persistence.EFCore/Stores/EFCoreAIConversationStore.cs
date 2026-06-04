@@ -102,8 +102,7 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
         record.UpdatedAt = conversation.UpdatedAt;
         record.ProviderSessionId = conversation.ProviderSessionId;
         record.RetentionMode = conversation.RetentionMode.ToString();
-        if (record.RetentionExpiresAt == null)
-            record.RetentionExpiresAt = conversation.RetentionExpiresAt;
+        record.RetentionExpiresAt = conversation.RetentionExpiresAt;
 
         record.Messages = SerializeMessages(conversation.Messages);
     }

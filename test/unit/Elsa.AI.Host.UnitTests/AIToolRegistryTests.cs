@@ -160,6 +160,27 @@ public class AIToolRegistryTests
         Assert.Equal(0, OtherCountingTool.ConstructionCount);
     }
 
+    [Fact(DisplayName = "Tool registry disposes cached concrete tool instances")]
+    public async Task ToolRegistryDisposesCachedConcreteToolInstances()
+    {
+        DisposableCachedTool.ConstructionCount = 0;
+        DisposableCachedTool.DisposeCount = 0;
+        var services = new ServiceCollection();
+        services.AddTransient<IAITool, DisposableCachedTool>();
+        var registry = CreateRegistry(services);
+
+        await registry.ListAsync(new AIToolQuery { ActorId = "user-1" });
+        DisposableCachedTool.ConstructionCount = 0;
+        DisposableCachedTool.DisposeCount = 0;
+
+        var tool = await registry.FindAsync("disposable-cached", new AIToolQuery { ActorId = "user-1" });
+        tool?.Dispose();
+
+        Assert.NotNull(tool);
+        Assert.Equal(1, DisposableCachedTool.ConstructionCount);
+        Assert.Equal(1, DisposableCachedTool.DisposeCount);
+    }
+
     [Fact(DisplayName = "Tool registry find applies tenant and actor filters")]
     public async Task ToolRegistryFindAppliesTenantAndActorFilters()
     {
@@ -454,6 +475,32 @@ public class AIToolRegistryTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+    }
+
+    private class DisposableCachedTool : IAITool
+    {
+        public static int ConstructionCount { get; set; }
+        public static int DisposeCount { get; set; }
+
+        public DisposableCachedTool()
+        {
+            ConstructionCount++;
+        }
+
+        public AIToolDefinition Definition { get; } = new()
+        {
+            Name = "disposable-cached",
+            DisplayName = "Disposable cached",
+            EnabledByDefault = true
+        };
+
+        public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+            DisposeCount++;
+        }
     }
 
     private class ThrowingDefinitionTool(ScopedDependency dependency) : IAITool
