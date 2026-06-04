@@ -72,6 +72,10 @@ public class AIToolsEndpointTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
     }
 
     private class WorkflowEditorTool : IAITool
@@ -86,6 +90,10 @@ public class AIToolsEndpointTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
     }
 
     private class CountingTool : IAITool
@@ -112,6 +120,10 @@ public class AIToolsEndpointTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
 
         public static void Reset()
         {

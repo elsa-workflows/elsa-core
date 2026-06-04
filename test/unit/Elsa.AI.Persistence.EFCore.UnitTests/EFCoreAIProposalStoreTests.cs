@@ -225,7 +225,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         };
 
         await store.SaveAsync(proposal);
-        _dbContext.ChangeTracker.Clear();
+        context.ChangeTracker.Clear();
 
         var reloaded = await new EFCoreAIProposalStore(_dbContext).FindAsync("proposal-concurrent", "tenant-1");
 

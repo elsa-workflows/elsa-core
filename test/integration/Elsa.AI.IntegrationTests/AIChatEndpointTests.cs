@@ -1743,6 +1743,10 @@ public class AIChatEndpointTests
                 }
             });
         }
+
+        public void Dispose()
+        {
+        }
     }
 
     private class DisabledEchoTool : IAITool
@@ -1756,6 +1760,10 @@ public class AIChatEndpointTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult { Summary = "Echoed" });
+
+        public void Dispose()
+        {
+        }
     }
 
     private class ThrowingTool : IAITool
@@ -1770,6 +1778,10 @@ public class AIChatEndpointTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Sensitive internal tool failure.");
+
+        public void Dispose()
+        {
+        }
     }
 
     private class DelayedEchoTool : IAITool
@@ -1794,6 +1806,10 @@ public class AIChatEndpointTests
                 }
             };
         }
+
+        public void Dispose()
+        {
+        }
     }
 
     private class LargeEchoTool : IAITool
@@ -1816,6 +1832,10 @@ public class AIChatEndpointTests
                     ["content"] = new string('d', 512)
                 }
             });
+        }
+
+        public void Dispose()
+        {
         }
     }
 

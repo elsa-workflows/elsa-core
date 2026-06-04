@@ -435,6 +435,10 @@ public class AIToolRegistryTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
     }
 
     private class CountingTool : IAITool
@@ -455,6 +459,10 @@ public class AIToolRegistryTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
     }
 
     private class OtherCountingTool : IAITool
@@ -475,6 +483,10 @@ public class AIToolRegistryTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
     }
 
     private class DisposableCachedTool : IAITool
@@ -518,6 +530,10 @@ public class AIToolRegistryTests
 
         public ValueTask<AIToolResult> ExecuteAsync(AIToolExecutionContext context, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AIToolResult());
+
+        public void Dispose()
+        {
+        }
     }
 
     private class ScopedDependency(ScopeDisposalTracker tracker) : IDisposable
