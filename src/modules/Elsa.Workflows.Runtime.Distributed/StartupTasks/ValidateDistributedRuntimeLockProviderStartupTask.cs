@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Elsa.Workflows.Runtime.Distributed.StartupTasks;
 
 /// <summary>
-/// Fails startup when distributed runtime uses a local-only lock provider without explicit opt-in.
+/// Checks the distributed runtime lock provider during startup.
 /// </summary>
 [UsedImplicitly]
 [Order(-1000)]

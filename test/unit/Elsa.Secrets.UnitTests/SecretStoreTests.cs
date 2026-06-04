@@ -41,12 +41,84 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task ConfigurationStore_FallsBackToRootConfigurationKey()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["SmtpPassword"] = "root-configured-secret" })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        var secret = await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = " SmtpPassword "
+        });
+        var value = await fixture.Resolver.ResolveAsync("smtp:password");
+
+        Assert.Equal("root-configured-secret", value);
+        Assert.Null(secret.Versions.Single().Payload.Value);
+        Assert.Equal("SmtpPassword", secret.Versions.Single().Payload.Metadata["configurationKey"]);
+    }
+
+    [Fact]
+    public async Task ConfigurationStore_RotateAsync_UsesReplacementConfigurationKey()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Elsa:Secrets:OldPassword"] = "old-configured-secret",
+                ["Elsa:Secrets:NewPassword"] = "new-configured-secret"
+            })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "OldPassword"
+        });
+        await fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest { ConfigurationKey = "NewPassword" });
+        var value = await fixture.Resolver.ResolveAsync("smtp:password");
+
+        Assert.Equal("new-configured-secret", value);
+    }
+
+    [Fact]
+    public async Task ConfigurationStore_TestAsync_ReturnsFalseWhenConfiguredValueIsMissing()
+    {
+        var fixture = new SecretTestFixture();
+        await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "MissingPassword"
+        });
+
+        var result = await fixture.Manager.TestAsync("smtp:password");
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("Secret value is unavailable.", result.Error);
+    }
+
+    [Fact]
+    public void Registries_Throw_WhenTypeOrStoreIsMissing()
+    {
+        var fixture = new SecretTestFixture();
+
+        var missingType = Assert.Throws<InvalidOperationException>(() => fixture.TypeRegistry.Get("missing-type"));
+        var missingStore = Assert.Throws<InvalidOperationException>(() => fixture.StoreRegistry.Get("missing-store"));
+
+        Assert.Contains("missing-type", missingType.Message);
+        Assert.Contains("missing-store", missingStore.Message);
+    }
+
+    [Fact]
     public async Task FileRepository_PersistsSecretAggregate()
     {
-        var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
-        try
+        await WithFileRepositoryAsync(async (repository, path) =>
         {
-            var repository = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
             var secret = new Secret
             {
                 Name = "smtp:password",
@@ -65,22 +137,49 @@ public class SecretStoreTests
             Assert.Contains("api-key", reloaded.Tags);
             Assert.True(reloaded.Versions.Single().Payload.Metadata.ContainsKey("protectedvalue"));
             Assert.Equal(1, reloaded.Versions.Single().Version);
-        }
-        finally
+        });
+    }
+
+    [Fact]
+    public async Task FileRepository_SaveAsync_AddsAndUpdatesSecret()
+    {
+        await WithFileRepositoryAsync(async (repository, _) =>
         {
-            if (File.Exists(path))
-                File.Delete(path);
-        }
+            await repository.SaveAsync(new Secret { Name = "smtp:password", DisplayName = "SMTP password" });
+            await repository.SaveAsync(new Secret { Name = "smtp:password", DisplayName = "Updated password" });
+            var reloaded = await repository.GetAsync("smtp:password");
+
+            Assert.NotNull(reloaded);
+            Assert.Equal("Updated password", reloaded.DisplayName);
+        });
+    }
+
+    [Fact]
+    public async Task FileRepository_TryAddOrReplaceDeletedAsync_ReplacesOnlyDeletedSecret()
+    {
+        await WithFileRepositoryAsync(async (repository, _) =>
+        {
+            await repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "SMTP password" });
+
+            var activeReplacementResult = await repository.TryAddOrReplaceDeletedAsync(new Secret { Name = "SMTP:PASSWORD", DisplayName = "Active replacement" });
+            await repository.SaveAsync(new Secret { Name = "smtp:password", DisplayName = "Deleted password", Status = SecretStatus.Deleted });
+            var deletedReplacementResult = await repository.TryAddOrReplaceDeletedAsync(new Secret { Name = "SMTP:PASSWORD", DisplayName = "Replacement password" });
+            var reloaded = await repository.GetAsync("smtp:password");
+
+            Assert.False(activeReplacementResult);
+            Assert.True(deletedReplacementResult);
+            Assert.NotNull(reloaded);
+            Assert.Equal("Replacement password", reloaded.DisplayName);
+            Assert.Equal(SecretStatus.Active, reloaded.Status);
+        });
     }
 
     [Fact]
     public async Task FileRepository_RecoversFromCorruptJson()
     {
-        var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
-        try
+        await WithFileRepositoryAsync(async (repository, path) =>
         {
             await File.WriteAllTextAsync(path, "{not-valid-json");
-            var repository = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
 
             var secrets = await repository.ListAsync();
             await repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "SMTP password" });
@@ -88,12 +187,7 @@ public class SecretStoreTests
 
             Assert.Empty(secrets);
             Assert.NotNull(reloaded);
-        }
-        finally
-        {
-            if (File.Exists(path))
-                File.Delete(path);
-        }
+        });
     }
 
     [Fact]
@@ -116,5 +210,20 @@ public class SecretStoreTests
         Assert.Equal("SMTP password", reloaded!.DisplayName);
         Assert.Single(reloaded.Versions);
         Assert.True(reloaded.Versions.Single().Payload.Metadata.ContainsKey("protectedValue"));
+    }
+
+    private static async Task WithFileRepositoryAsync(Func<FileSecretRepository, string, Task> test)
+    {
+        var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
+        try
+        {
+            var repository = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
+            await test(repository, path);
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
     }
 }

@@ -106,6 +106,72 @@ Structured logs define diagnostics permissions in [StructuredLogsPermissions](..
 
 Identity endpoints and user-management endpoints are permission-based; see [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
 
+## Secrets
+
+Start in [src/modules/Elsa.Secrets](../../src/modules/Elsa.Secrets).
+
+[SecretsFeature](../../src/modules/Elsa.Secrets/Features/SecretsFeature.cs) registers secrets services and FastEndpoints. It provides:
+
+- [ISecretManager](../../src/modules/Elsa.Secrets/Contracts/ISecretManager.cs): create, get, rotate, revoke, delete, and test secrets.
+- [ISecretResolver](../../src/modules/Elsa.Secrets/Contracts/ISecretResolver.cs): resolve the latest active secret value by immutable technical name.
+- [ISecretStore](../../src/modules/Elsa.Secrets/Contracts/ISecretStore.cs) / [ISecretStoreRegistry](../../src/modules/Elsa.Secrets/Contracts/ISecretStoreRegistry.cs): pluggable backend stores.
+- [ISecretTypeRegistry](../../src/modules/Elsa.Secrets/Contracts/ISecretTypeRegistry.cs): extensible secret types (text, RSA key, X.509 certificate reference).
+- [ISecretRepository](../../src/modules/Elsa.Secrets/Contracts/ISecretRepository.cs): durable secret and version storage.
+
+### Built-In Stores
+
+| Store | Class | Notes |
+| --- | --- | --- |
+| Elsa-managed encrypted store | [EncryptedSecretStore](../../src/modules/Elsa.Secrets/Stores/EncryptedSecretStore.cs) | Encrypts values with data protection. Default writable store. |
+| Configuration-backed read-only | [ConfigurationSecretStore](../../src/modules/Elsa.Secrets/Stores/ConfigurationSecretStore.cs) | Maps configuration keys to secret values. Read-only; cannot be written from the API. |
+
+### Secret Versioning
+
+Each logical secret has an immutable technical name. `ISecretManager.RotateAsync` creates a new active version and retires the previous active version. Runtime code always resolves the latest active version; expired or revoked secrets fail resolution with a non-secret error.
+
+### Management Endpoints
+
+Routes under `/elsa/api` (Elsa route prefix applies):
+
+| Route | Permission |
+| --- | --- |
+| `GET /secrets` | `read:secrets` |
+| `GET /secrets/{name}` | `read:secrets` |
+| `POST /secrets` | `write:secrets` |
+| `DELETE /secrets/{name}` | `delete:secrets` |
+| `POST /secrets/{name}/rotate` | `write:secrets` |
+| `POST /secrets/{name}/revoke` | `write:secrets` |
+| `POST /secrets/{name}/test` | `test:secrets` |
+| `POST /secrets/picker` | `read:secrets` |
+| `GET /secrets/descriptors` | `read:secrets` |
+
+Permission constants are in [SecretsPermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsPermissions.cs).
+
+### Using Secrets In Workflows
+
+Activities with sensitive inputs can use the `Secret` expression in place of a literal value. Studio presents this as a no-code picker for inputs marked as sensitive, such as the HTTP Request `Authorization` input. The picker stores a `SecretReference` with the secret name, optional type, and optional scope; it does not store the current secret value in the workflow definition.
+
+At runtime, the `Secret` expression calls `ISecretResolver` at the point of use and returns the latest active version. Rotating a secret through `ISecretManager.RotateAsync` updates future workflow runs without editing workflow JSON. If a reference includes a type or scope, resolution must match those constraints; for example, a text token reference should not resolve an RSA key, and a `production` reference should not resolve a `development` secret. Expired, revoked, missing, or incompatible secrets fail with a non-secret error message.
+
+Sensitive activity inputs are not written to activity state after evaluation. Prefer a `Secret` expression for credentials such as bearer tokens, API keys, passwords, and connection strings instead of literals, variables, logs, workflow outputs, incident messages, or custom headers that are not marked sensitive. Treat any custom activity input that can carry credentials as sensitive by setting `CanContainSecrets = true`.
+
+JavaScript expressions can resolve secrets when the host enables `Elsa.Secrets.JavaScript`:
+
+```javascript
+const token = await getSecret("crm:token");
+return `Bearer ${token}`;
+```
+
+`getSecret(name)` returns a `Promise<string>`, so JavaScript must either `await` it inside an async function/IIFE or compose it with `.then(...)`. Do not write resolved values to logs, variables, outputs, exceptions, or activity state. Use the `Secret` expression for simple no-code binding, and use `getSecret` only when a script needs to combine a secret with runtime data.
+
+### Tests
+
+- [test/unit/Elsa.Secrets.UnitTests](../../test/unit/Elsa.Secrets.UnitTests)
+- [test/integration/Elsa.JavaScript.IntegrationTests](../../test/integration/Elsa.JavaScript.IntegrationTests)
+- [test/integration/Elsa.Activities.IntegrationTests](../../test/integration/Elsa.Activities.IntegrationTests)
+
+Spec: [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md).
+
 ## Ingress Rate Limiting
 
 Elsa exposes opt-in ASP.NET Core rate limiting hooks for two ingress surfaces:
@@ -118,6 +184,7 @@ The reference server registers disabled-by-default fixed-window policies under `
 ## Security Review Checklist
 
 - Does the endpoint require authentication or a permission?
+- Do SignalR hub methods enforce authentication and permission checks on every subscribed method, not only at the hub class level?
 - Does mutable API behavior honor read-only mode?
 - Does the operation need tenant scoping?
 - Are exposed API or HTTP workflow trigger routes protected by appropriate ingress rate limiting?

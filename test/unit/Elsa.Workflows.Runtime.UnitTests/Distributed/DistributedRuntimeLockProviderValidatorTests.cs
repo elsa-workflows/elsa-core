@@ -3,6 +3,7 @@ using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Workflows.Runtime.Distributed;
 using Medallion.Threading;
 using Medallion.Threading.FileSystem;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Distributed;
@@ -19,14 +20,24 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
-    public void Validate_Throws_WhenFileSystemProviderIsUsedWithoutOptIn()
+    public void Validate_DoesNotThrow_WhenFileSystemProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(_fileProvider);
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
+        validator.Validate();
+    }
 
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(DistributedLockingOptions.AllowLocalLockProviderInDistributedRuntime), exception.Message);
+    [Fact]
+    public void Validate_LogsWarning_WhenFileSystemProviderIsUsedWithoutOptIn()
+    {
+        var logger = new CapturingLogger<DistributedRuntimeLockProviderValidator>();
+        var validator = CreateValidator(_fileProvider, logger: logger);
+
+        validator.Validate();
+
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning &&
+            entry.Message.Contains("local-only lock provider", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -38,48 +49,49 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
-    public void Validate_Throws_WhenWrappedProviderUsesFileSystemProvider()
+    public void Validate_DoesNotThrow_WhenWrappedProviderUsesFileSystemProvider()
     {
         var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(WrappedDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughCustomProperty()
+    public void Validate_LogsWarning_WhenWrappedProviderUsesFileSystemProvider()
+    {
+        var logger = new CapturingLogger<DistributedRuntimeLockProviderValidator>();
+        var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider), logger: logger);
+
+        validator.Validate();
+
+        Assert.Contains(logger.Entries, entry =>
+            entry.Level == LogLevel.Warning &&
+            entry.Message.Contains(nameof(WrappedDistributedLockProvider), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughCustomProperty()
     {
         var validator = CreateValidator(new CustomWrappedDistributedLockProvider(_fileProvider));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(CustomWrappedDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughProviderCollection()
+    public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughProviderCollection()
     {
         var validator = CreateValidator(new CompositeDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(CompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenProviderUsesFileSystemProviderThroughNonGenericProviderCollection()
+    public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughNonGenericProviderCollection()
     {
         System.Collections.IEnumerable providers = new IDistributedLockProvider[] { new CustomDistributedLockProvider(), _fileProvider };
         var validator = CreateValidator(new NonGenericCompositeDistributedLockProvider(providers));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(NonGenericCompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
@@ -99,14 +111,11 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
     }
 
     [Fact]
-    public void Validate_Throws_WhenNullableProviderCollectionContainsFileSystemProvider()
+    public void Validate_DoesNotThrow_WhenNullableProviderCollectionContainsFileSystemProvider()
     {
         var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null, _fileProvider]));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(NullableCompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
@@ -141,20 +150,15 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
             new ValueEqualDistributedLockProvider("same", _fileProvider)
         ]));
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(FileDistributedSynchronizationProvider), exception.Message);
-        Assert.Contains(nameof(CompositeDistributedLockProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
-    public void Validate_Throws_WhenNoopProviderIsUsedWithoutOptIn()
+    public void Validate_DoesNotThrow_WhenNoopProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(new NoopDistributedSynchronizationProvider());
 
-        var exception = Assert.Throws<InvalidOperationException>(validator.Validate);
-
-        Assert.Contains(nameof(NoopDistributedSynchronizationProvider), exception.Message);
+        validator.Validate();
     }
 
     [Fact]
@@ -173,12 +177,15 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    private static DistributedRuntimeLockProviderValidator CreateValidator(IDistributedLockProvider provider, Action<DistributedLockingOptions>? configure = null)
+    private static DistributedRuntimeLockProviderValidator CreateValidator(
+        IDistributedLockProvider provider,
+        Action<DistributedLockingOptions>? configure = null,
+        ILogger<DistributedRuntimeLockProviderValidator>? logger = null)
     {
         var options = new DistributedLockingOptions();
         configure?.Invoke(options);
 
-        return new(provider, Microsoft.Extensions.Options.Options.Create(options), NullLogger<DistributedRuntimeLockProviderValidator>.Instance);
+        return new(provider, Microsoft.Extensions.Options.Options.Create(options), logger ?? NullLogger<DistributedRuntimeLockProviderValidator>.Instance);
     }
 
     public void Dispose()
@@ -297,5 +304,33 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         public ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 
         public ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            Entries.Add(new(logLevel, formatter(state, exception)));
+        }
+    }
+
+    private sealed record LogEntry(LogLevel Level, string Message);
+
+    private sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+        public void Dispose()
+        {
+        }
     }
 }

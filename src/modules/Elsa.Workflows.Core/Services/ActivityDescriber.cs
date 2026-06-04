@@ -164,7 +164,10 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
             null,
             propertyInfo,
             uiSpecification
-        );
+        )
+        {
+            IsSensitive = inputAttribute?.CanContainSecrets ?? false
+        };
     }
 
     /// <inheritdoc />

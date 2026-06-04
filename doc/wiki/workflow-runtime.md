@@ -172,14 +172,15 @@ Distributed runtime support lives in [Elsa.Workflows.Runtime.Distributed](../../
 
 ### Distributed Lock Provider Safety
 
-The default workflow runtime lock provider is file-system based and writes under `App_Data/locks`. That provider is useful for single-host development and tests, but it is not safe for clustered deployments where nodes have separate file systems. When `UseDistributedRuntime()` is enabled, startup fails if Elsa detects the default file-system provider or the no-op provider unless the host explicitly opts in to local-only lock semantics:
+The default workflow runtime lock provider is file-system based and writes under `App_Data/locks`. That provider is useful for single-host development and tests, but it is not safe for clustered deployments where nodes have separate file systems. When `UseDistributedRuntime()` is enabled, Elsa logs a startup warning if it detects the default file-system provider or the no-op provider unless the host explicitly acknowledges local-only lock semantics:
 
 ```csharp
 elsa.UseWorkflowRuntime(runtime =>
 {
     runtime.UseDistributedRuntime();
 
-    // Single-host development/test only. Do not use this for clustered production deployments.
+    // Single-host development/test only. Suppresses the startup warning.
+    // Do not use this for clustered production deployments.
     runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
 });
 ```

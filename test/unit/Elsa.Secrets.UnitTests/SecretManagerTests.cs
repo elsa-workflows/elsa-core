@@ -7,6 +7,16 @@ public class SecretManagerTests
 {
     private readonly SecretTestFixture _fixture = new();
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("a")]
+    [InlineData("1secret")]
+    [InlineData("secret name")]
+    public async Task CreateAsync_RejectsInvalidTechnicalNames(string name)
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = name, Value = "one" }));
+    }
+
     [Fact]
     public async Task CreateAsync_NormalizesTechnicalName_AndDoesNotExposeValueInModel()
     {
@@ -80,6 +90,47 @@ public class SecretManagerTests
     }
 
     [Fact]
+    public async Task CreateAsync_AllowsEncryptedCertificateWithThumbprintMetadata()
+    {
+        var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "tls:certificate",
+            TypeName = SecretTypeNames.X509Certificate,
+            Value = " ",
+            Metadata = new Dictionary<string, string> { ["thumbprint"] = "ABC123" }
+        });
+
+        Assert.Equal(SecretTypeNames.X509Certificate, secret.TypeName);
+        Assert.Equal("ABC123", secret.Versions.Single().Payload.Metadata["thumbprint"]);
+    }
+
+    [Theory]
+    [InlineData(SecretTypeNames.Text, SecretStoreNames.Encrypted, null, null)]
+    [InlineData(SecretTypeNames.RsaKey, SecretStoreNames.Encrypted, " ", null)]
+    [InlineData(SecretTypeNames.RsaKey, SecretStoreNames.Configuration, null, " ")]
+    [InlineData(SecretTypeNames.X509Certificate, SecretStoreNames.Encrypted, " ", null)]
+    [InlineData(SecretTypeNames.X509Certificate, SecretStoreNames.Configuration, null, " ")]
+    public async Task CreateAsync_RejectsInvalidPayloadForTypeAndStore(string typeName, string storeName, string? value, string? configurationKey)
+    {
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = $"secret:{Guid.NewGuid():N}",
+            TypeName = typeName,
+            StoreName = storeName,
+            Value = value,
+            ConfigurationKey = configurationKey
+        }));
+    }
+
+    [Fact]
+    public async Task RotateAsync_RejectsInvalidReplacementPayload()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest()));
+    }
+
+    [Fact]
     public async Task CreateAsync_AllowsOnlyOneConcurrentReuseOfDeletedSecretName()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
@@ -120,6 +171,126 @@ public class SecretManagerTests
 
         Assert.Single(items);
         Assert.Equal(3, count);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UpdatesMetadataWithoutChangingIdentityOrVersion()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            DisplayName = "SMTP password",
+            Description = "Old description",
+            Scope = "production",
+            Value = "one"
+        });
+
+        var updated = await _fixture.Manager.UpdateAsync("smtp:password", new UpdateSecretRequest
+        {
+            DisplayName = "  SMTP credential  ",
+            Description = "  Rotated manually  "
+        });
+
+        Assert.Equal("smtp:password", updated.Name);
+        Assert.Equal("SMTP credential", updated.DisplayName);
+        Assert.Equal("Rotated manually", updated.Description);
+        Assert.Equal("production", updated.Scope);
+        Assert.Equal(SecretTypeNames.Text, updated.TypeName);
+        Assert.Equal(SecretStoreNames.Encrypted, updated.StoreName);
+        Assert.Single(updated.Versions);
+        Assert.NotNull(updated.UpdatedAt);
+        Assert.Equal("one", await _fixture.Resolver.ResolveAsync("smtp:password"));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UsesTechnicalNameAsFallbackDisplayName_AndClearsBlankDescription()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            DisplayName = "SMTP password",
+            Description = "Old description",
+            Value = "one"
+        });
+
+        var updated = await _fixture.Manager.UpdateAsync("smtp:password", new UpdateSecretRequest
+        {
+            DisplayName = " ",
+            Description = " "
+        });
+
+        Assert.Equal("smtp:password", updated.DisplayName);
+        Assert.Null(updated.Description);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Throws_WhenSecretDoesNotExist()
+    {
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _fixture.Manager.UpdateAsync("missing:secret", new UpdateSecretRequest
+        {
+            DisplayName = "Missing",
+            Description = "Missing"
+        }));
+    }
+
+    [Fact]
+    public async Task ListPageAsync_AppliesFiltersBeforePaging()
+    {
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            DisplayName = "SMTP Password",
+            Description = "Production credential",
+            Scope = "Production",
+            Value = "one"
+        });
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "api:key",
+            DisplayName = "API Key",
+            Description = "Production credential",
+            Scope = "production",
+            Value = "two"
+        });
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "dev:token",
+            Description = "Development credential",
+            Scope = "development",
+            Value = "three"
+        });
+        await _fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "old:credential",
+            Description = "Production credential",
+            Scope = "production",
+            Value = "four"
+        });
+        await _fixture.Manager.RevokeAsync("old:credential");
+
+        var page = await _fixture.Manager.ListPageAsync(new ListSecretsRequest
+        {
+            Search = "credential",
+            TypeNames = [SecretTypeNames.Text],
+            StoreNames = [SecretStoreNames.Encrypted],
+            Scope = "PRODUCTION",
+            Status = SecretStatus.Active,
+            Page = 1,
+            PageSize = 1
+        });
+
+        Assert.Equal(2, page.TotalCount);
+        Assert.Single(page.Items);
+        Assert.Equal("smtp:password", page.Items.Single().Name);
+    }
+
+    [Fact]
+    public async Task TestAsync_ReturnsFailedResult_WhenSecretDoesNotExist()
+    {
+        var result = await _fixture.Manager.TestAsync("missing:secret");
+
+        Assert.False(result.Succeeded);
+        Assert.Contains("missing:secret", result.Error);
     }
 
     private async Task<bool> TryCreateAsync(CreateSecretRequest request)

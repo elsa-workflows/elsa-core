@@ -4,7 +4,9 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Activities.Flowchart.Options;
 using Elsa.Workflows.Activities.Flowchart.Serialization;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Features;
 
@@ -33,10 +35,7 @@ public class FlowchartFeature : FeatureBase
 
         if (FlowchartOptionsConfigurator != null)
             Services.Configure(FlowchartOptionsConfigurator);
-    }
 
-    public override void Configure()
-    {
-        Module.AddTypeAlias<FlowScope>("FlowScope");
+        Services.Configure<SerializationTypeOptions>(options => options.AddTypeAlias<FlowScope>("FlowScope"));
     }
 }

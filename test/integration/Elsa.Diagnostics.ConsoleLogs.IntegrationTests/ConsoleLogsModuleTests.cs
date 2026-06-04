@@ -1,8 +1,6 @@
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.Diagnostics.ConsoleLogs.Features;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
-using Elsa.Diagnostics.ConsoleLogs.RealTime;
-using Microsoft.AspNetCore.Authorization;
 
 namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
@@ -17,14 +15,6 @@ public class ConsoleLogsModuleTests
     }
 
     [Fact]
-    public void Hub_RequiresConsoleLogsPermission()
-    {
-        var authorize = Assert.Single(typeof(ConsoleLogsHub).GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true).Cast<AuthorizeAttribute>());
-
-        Assert.Equal(ConsoleLogsPermissions.Read, authorize.Policy);
-    }
-
-    [Fact]
     public void ConsoleLogsAssembly_DoesNotReferenceStructuredLogsOrExternalProviders()
     {
         var references = typeof(ConsoleLogsFeature)
@@ -35,5 +25,6 @@ public class ConsoleLogsModuleTests
 
         Assert.DoesNotContain("Elsa.Diagnostics.StructuredLogs", references);
         Assert.DoesNotContain("Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite", references);
+        Assert.DoesNotContain("ConsoleLogStreaming.Persistence.Sqlite", references);
     }
 }

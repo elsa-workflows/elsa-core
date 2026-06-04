@@ -47,6 +47,18 @@ public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretSto
         return ApplyFilters(secrets, request).LongCount();
     }
 
+    public async Task<Secret> UpdateAsync(string name, UpdateSecretRequest request, CancellationToken cancellationToken = default)
+    {
+        var secret = await GetExistingAsync(name, cancellationToken);
+
+        secret.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? secret.Name : request.DisplayName.Trim();
+        secret.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await repository.SaveAsync(secret, cancellationToken);
+        return secret;
+    }
+
     public async Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default)
     {
         var secret = await GetExistingAsync(name, cancellationToken);

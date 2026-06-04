@@ -9,7 +9,7 @@ using Timer = Elsa.Scheduling.Activities.Timer;
 
 namespace Elsa.Scheduling.Handlers;
 
-public class UpdateTenantSchedules : ITenantActivatedEvent, ITenantDeletedEvent
+public class UpdateTenantSchedules : ITenantDeletedEvent
 {
     private static readonly string[] ActivityTypeNames =
     [
@@ -17,19 +17,6 @@ public class UpdateTenantSchedules : ITenantActivatedEvent, ITenantDeletedEvent
         ActivityTypeNameHelper.GenerateTypeName<Timer>(),
         ActivityTypeNameHelper.GenerateTypeName<Delay>()
     ];
-
-    public async Task TenantActivatedAsync(TenantActivatedEventArgs args)
-    {
-        var serviceProvider = args.TenantScope.ServiceProvider;
-        var cancellationToken = args.CancellationToken;
-        var triggerScheduler = args.TenantScope.ServiceProvider.GetRequiredService<ITriggerScheduler>();
-        var bookmarkScheduler = args.TenantScope.ServiceProvider.GetRequiredService<IBookmarkScheduler>();
-        var triggers = (await GetTriggersAsync(serviceProvider, cancellationToken)).ToList();
-        var bookmarks = (await GetBookmarksAsync(serviceProvider, cancellationToken)).ToList();
-
-        await triggerScheduler.ScheduleAsync(triggers, args.CancellationToken);
-        await bookmarkScheduler.ScheduleAsync(bookmarks, args.CancellationToken);
-    }
 
     public async Task TenantDeletedAsync(TenantDeletedEventArgs args)
     {

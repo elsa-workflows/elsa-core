@@ -74,6 +74,8 @@ Real-time updates live under [RealTime](../../src/modules/Elsa.Workflows.Api/Rea
 
 Hosts map these hubs with `app.UseWorkflowsSignalRHubs()` when SignalR is enabled.
 
+`WorkflowInstanceHub` carries `[Authorize]`, so every connection requires authentication. The `ObserveInstanceAsync` method additionally enforces `read:workflow-instances` (or wildcard `read:*` or `*`) and tenant access: callers can only observe workflow instances that belong to their current tenant or are tenant-agnostic.
+
 ## Authorization And Read-Only Mode
 
 Workflow API registers [NotReadOnlyRequirementHandler](../../src/modules/Elsa.Workflows.Api/Requirements/NotReadOnlyRequirement.cs) and the policy name in [AuthorizationPolicies](../../src/modules/Elsa.Workflows.Api/Constants/AuthorizationPolicies.cs). Mutable workflow definition endpoints use this policy to honor management read-only mode.

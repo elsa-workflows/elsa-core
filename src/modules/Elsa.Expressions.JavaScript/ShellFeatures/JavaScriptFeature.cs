@@ -12,8 +12,10 @@ using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Workflows;
+using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Expressions.JavaScript.ShellFeatures;
 
@@ -106,6 +108,7 @@ public class JavaScriptFeature : IShellFeature
             options.DisableVariableCopying = DisableVariableCopying;
         });
         services.Configure<ExpressionOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
+        services.Configure<SerializationTypeOptions>(JavaScriptExceptionTypeAliasRegistrar.Register);
 
         // JavaScript services.
         services
@@ -117,7 +120,7 @@ public class JavaScriptFeature : IShellFeature
             .AddScoped<ITypeDefinitionService, TypeDefinitionService>()
             .AddScoped<ITypeDescriber, TypeDescriber>()
             .AddScoped<ITypeDefinitionDocumentRenderer, TypeDefinitionDocumentRenderer>()
-            .AddSingleton<ITypeAliasRegistry, TypeAliasRegistry>()
+            .AddSingleton<ITypeAliasRegistry, Services.TypeAliasRegistry>()
             .AddFunctionDefinitionProvider<CommonFunctionsDefinitionProvider>()
             .AddFunctionDefinitionProvider<ActivityOutputFunctionsDefinitionProvider>()
             .AddFunctionDefinitionProvider<RunJavaScriptFunctionsDefinitionProvider>()

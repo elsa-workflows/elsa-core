@@ -1,6 +1,8 @@
+using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using JetBrains.Annotations;
+using ConsoleLogSource = ConsoleLogStreaming.Core.Models.ConsoleLogSource;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Sources;
 
@@ -15,6 +17,7 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
 
     public override async Task<IReadOnlyCollection<ConsoleLogSource>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        return await provider.ListSourcesAsync(cancellationToken);
+        var sources = await provider.ListSourcesAsync(cancellationToken);
+        return sources.ToList();
     }
 }

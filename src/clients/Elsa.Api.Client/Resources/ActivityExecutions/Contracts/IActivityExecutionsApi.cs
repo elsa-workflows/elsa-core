@@ -43,8 +43,8 @@ public interface IActivityExecutionsApi
     /// <param name="id">The ID of the activity execution.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>The activity execution.</returns>
-    [Get("/activity-executions/{id}")]
-    Task<ActivityExecutionRecord?> GetAsync(string id, CancellationToken cancellationToken = default);
+    [Get("/activity-executions/by-id")]
+    Task<ActivityExecutionRecord?> GetAsync([Query] string id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets the call stack (execution chain) for a given activity execution.

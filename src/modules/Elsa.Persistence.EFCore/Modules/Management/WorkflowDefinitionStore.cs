@@ -22,8 +22,6 @@ namespace Elsa.Persistence.EFCore.Modules.Management;
 public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, WorkflowDefinition> store, IPayloadSerializer payloadSerializer, ILogger<EFCoreWorkflowDefinitionStore> logger)
     : IWorkflowDefinitionStore
 {
-    internal static Type WorkflowDefinitionStateType => typeof(WorkflowDefinitionState);
-
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {

@@ -52,6 +52,7 @@ flowchart LR
 | [Identity, Tenancy, And Security](identity-tenancy-security.md) | Users, applications, roles, API keys, tenant resolution, and authorization touch points. |
 | [Testing Guide](testing-guide.md) | Test project layout, fixture choices, and targeted commands. |
 | [Extension Guide](extension-guide.md) | How to add features, activities, expression providers, stores, endpoints, and ingress sources. |
+| [OpenTelemetry Workflow Instrumentation](opentelemetry-workflows.md) | First-party workflow and activity traces and metrics emitted through `System.Diagnostics`. |
 | [Specs And ADRs](specs-and-adrs.md) | How current specs and ADRs explain design intent. |
 | [Build, Run, And Operate](build-run-operate.md) | Build commands, sample hosts, runtime knobs, Docker notes, and operational endpoints. |
 

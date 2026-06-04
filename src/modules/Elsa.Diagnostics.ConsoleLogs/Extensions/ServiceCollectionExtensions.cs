@@ -1,4 +1,6 @@
-using Elsa.Diagnostics.ConsoleLogs.Providers.InMemory;
+using ConsoleLogStreaming.Core.DependencyInjection;
+using ConsoleLogStreaming.Core.Options;
+using CShells.Lifecycle;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,20 +10,24 @@ namespace Elsa.Diagnostics.ConsoleLogs.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogsOptions>? configureOptions = null)
+    /// <summary>
+    /// Registers shell-level console-log consumers and exposes the process-wide capture pipeline through DI.
+    /// </summary>
+    public static IServiceCollection AddConsoleLogsServices(this IServiceCollection services, Action<ConsoleLogOptions>? configureOptions = null)
     {
-        if (configureOptions != null)
-            services.Configure(configureOptions);
-
+        services.AddConsoleLogContextServices();
+        services.AddConsoleLogStreaming(options =>
+        {
+            ElsaConsoleLogOptions.ConfigureDefaults(options);
+            configureOptions?.Invoke(options);
+        });
         services.AddSignalR();
-        services.AddOptions<ConsoleLogsOptions>();
-        services.TryAddSingleton<IConsoleLogSourceRegistry, ConsoleLogSourceRegistry>();
-        services.TryAddSingleton<IConsoleLogRedactor, ConsoleLogRedactor>();
-        services.TryAddSingleton<ConsoleLineFormatter>();
-        services.TryAddSingleton<IConsoleLogProvider, InMemoryConsoleLogProvider>();
-        services.TryAddSingleton<ConsoleLogSubscriptionManager>();
-        services.TryAddSingleton<IConsoleLogCapture, ConsoleCaptureTee>();
-        services.AddHostedService<ConsoleLogCaptureHostedService>();
+        services.DecorateConsoleLogProvider();
+        services.TryAddSingleton<IElsaConsoleLogHubAuthorizer, ElsaConsoleLogStreamHubAuthorizer>();
+        services.TryAddSingleton<ElsaConsoleLogSubscriptionManager>();
+        services.TryAddScoped<ConsoleLogCaptureShellLease>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IShellInitializer, ConsoleLogCaptureShellInitializer>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IDrainHandler, ConsoleLogCaptureShellDrainHandler>());
 
         return services;
     }

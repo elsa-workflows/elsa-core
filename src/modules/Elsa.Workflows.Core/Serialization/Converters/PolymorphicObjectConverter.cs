@@ -4,12 +4,10 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Elsa.Expressions.Contracts;
-using Elsa.Expressions.Services;
 using Elsa.Extensions;
-using Elsa.Workflows.Serialization.Helpers;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -24,14 +22,14 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string IdPropertyName = "$id";
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
-    private readonly IWellKnownTypeRegistry _wellKnownTypeRegistry;
+    private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
     /// </summary>
-    public PolymorphicObjectConverter(IWellKnownTypeRegistry wellKnownTypeRegistry)
+    public PolymorphicObjectConverter(ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
-        _wellKnownTypeRegistry = wellKnownTypeRegistry;
+        _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
     }
 
     /// <summary>
@@ -39,7 +37,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     /// </summary>
     public PolymorphicObjectConverter()
     {
-        _wellKnownTypeRegistry = WellKnownTypeRegistry.CreateDefault();
+        _workflowJsonTypeRegistry = SerializationTypeRegistry.CreateDefault();
     }
 
     /// <inheritdoc />
@@ -350,12 +348,12 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         }
 
         // If we found the _type property, attempt to resolve the type.
-        return typeName != null ? WorkflowJsonTypeResolver.ResolveType(_wellKnownTypeRegistry, typeName) : default;
+        return typeName != null ? SerializationTypeResolver.ResolveType(_workflowJsonTypeRegistry, typeName) : default;
     }
 
     private void WriteTypeMetadata(Utf8JsonWriter writer, Type type)
     {
-        if (!WorkflowJsonTypeResolver.TryGetAlias(_wellKnownTypeRegistry, type, out var typeAlias))
+        if (!SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, type, out var typeAlias))
             return;
 
         writer.WritePropertyName(TypePropertyName);
@@ -370,7 +368,7 @@ public class PolymorphicObjectConverter : JsonConverter<object>
         if (!targetType.IsInterface && !targetType.IsAbstract)
             return targetType;
 
-        if (WorkflowJsonTypeResolver.TryGetInstantiableCollectionType(targetType, out var instantiableCollectionType))
+        if (SerializationTypeResolver.TryGetInstantiableCollectionType(targetType, out var instantiableCollectionType))
             return instantiableCollectionType;
 
         throw new JsonException($"Workflow JSON type alias resolved to non-instantiable type '{targetType}'.");
