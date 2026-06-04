@@ -53,7 +53,7 @@ public class SumWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder workflow)
     {
-        var sum = workflow.WithVariable<int>("Sum", 0);
+        var sum = workflow.WithVariable<int>("Sum");
 
         workflow.Root = new Sequence
         {

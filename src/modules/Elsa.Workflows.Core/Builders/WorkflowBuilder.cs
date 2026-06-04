@@ -63,7 +63,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
         DefinitionId = definitionId;
         return this;
     }
-    
+
     public IWorkflowBuilder WithId(string id)
     {
         Id = id;
@@ -84,8 +84,14 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
         var variable = new Variable<T>(null!, default!);
         Variables.Add(variable);
         variable.WithWorkflowStorage();
-        variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.  
+        variable.Id = null!; // This ensures that a deterministic ID is assigned by the builder.
         return variable;
+    }
+
+    /// <inheritdoc />
+    public Variable<T> WithVariable<T>(string name)
+    {
+        return WithVariable<T>(name, default!);
     }
 
     /// <inheritdoc />

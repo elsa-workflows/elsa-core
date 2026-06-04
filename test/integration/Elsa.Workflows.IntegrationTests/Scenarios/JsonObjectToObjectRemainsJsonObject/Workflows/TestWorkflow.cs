@@ -10,7 +10,7 @@ public class TestWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
-        var item = builder.WithVariable<JsonObject>("item", default!);
+        var item = builder.WithVariable<JsonObject>("item");
 
         builder.Root = new Sequence
         {

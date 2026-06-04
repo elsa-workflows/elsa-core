@@ -13,7 +13,7 @@ public interface IWorkflowBuilder
     /// The definition ID to use for the workflow being built.
     /// </summary>
     string? DefinitionId { get; set; }
-    
+
     /// <summary>
     /// The version ID to use for the workflow being built.
     /// </summary>
@@ -28,22 +28,22 @@ public interface IWorkflowBuilder
     /// The version of the workflow being built.
     /// </summary>
     int Version { get; set; }
-    
+
     /// <summary>
     /// The name of the workflow.
     /// </summary>
     string? Name { get; set; }
-    
+
     /// <summary>
     /// A description of the workflow.
     /// </summary>
     string? Description { get; set; }
-    
+
     /// <summary>
     /// WorkflowDefinition is readonly.
     /// </summary>
     bool IsReadonly { get; set; }
-    
+
     /// <summary>
     /// WorkflowDefinition is readonly.
     /// </summary>
@@ -53,27 +53,27 @@ public interface IWorkflowBuilder
     /// Options for the workflow being built.
     /// </summary>
     WorkflowOptions WorkflowOptions { get; }
-    
+
     /// <summary>
-    /// The activity to execute when the workflow is run. 
+    /// The activity to execute when the workflow is run.
     /// </summary>
     IActivity? Root { get; set; }
-    
+
     /// <summary>
     /// The workflow variables to store with the workflow being built.
     /// </summary>
     ICollection<Variable> Variables { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the inputs.
     /// </summary>
     ICollection<InputDefinition> Inputs { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the outputs.
     /// </summary>
     ICollection<OutputDefinition> Outputs { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the outcomes.
     /// </summary>
@@ -89,7 +89,7 @@ public interface IWorkflowBuilder
     /// </summary>
     [Obsolete("Use PropertyBag instead")]
     IDictionary<string, object> CustomProperties { get; }
-    
+
     /// <summary>
     /// A fluent method for setting the <see cref="DefinitionId"/> property.
     /// </summary>
@@ -114,78 +114,83 @@ public interface IWorkflowBuilder
     /// </summary>
     [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     Variable<T> WithVariable<T>();
-    
+
+    /// <summary>
+    /// A fluent method for adding a variable to <see cref="Variables"/> with a default value.
+    /// </summary>
+    Variable<T> WithVariable<T>(string name);
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     Variable<T> WithVariable<T>(string name, T value);
-    
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     [Obsolete("Use the overload that takes a name instead. This overload will be removed in a future version.")]
     Variable<T> WithVariable<T>(T value);
-    
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     IWorkflowBuilder WithVariable<T>(Variable<T> variable);
-    
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     IWorkflowBuilder WithVariable(Variable variable);
-    
+
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
     IWorkflowBuilder WithVariables(params Variable[] variables);
-    
+
     /// <summary>
     /// A fluent method for adding an input to <see cref="Inputs"/>.
     /// </summary>
     InputDefinition WithInput<T>(string name, string? description = default);
-    
+
     /// <summary>
     /// A fluent method for adding an input to <see cref="Inputs"/>.
     /// </summary>
     InputDefinition WithInput(string name, Type type, string? description = default);
-    
+
     /// <summary>
     /// A fluent method for adding an input to <see cref="Inputs"/>.
     /// </summary>
     InputDefinition WithInput(string name, Type type, Action<InputDefinition>? setup = default);
-    
+
     /// <summary>
     /// A fluent method for adding an input to <see cref="Inputs"/>.
     /// </summary>
     InputDefinition WithInput(Action<InputDefinition> setup);
-    
+
     /// <summary>
     /// A fluent method for adding an input to <see cref="Inputs"/>.
     /// </summary>
     IWorkflowBuilder WithInput(InputDefinition inputDefinition);
-    
+
     /// <summary>
     /// A fluent method for adding an output to <see cref="Outputs"/>.
     /// </summary>
     OutputDefinition WithOutput<T>(string name, string? description = default);
-    
+
     /// <summary>
     /// A fluent method for adding an output to <see cref="Outputs"/>.
     /// </summary>
     OutputDefinition WithOutput(string name, Type type, string? description = default);
-    
+
     /// <summary>
     /// A fluent method for adding an output to <see cref="Outputs"/>.
     /// </summary>
     OutputDefinition WithOutput(string name, Type type, Action<OutputDefinition>? setup = default);
-    
+
     /// <summary>
     /// A fluent method for adding an output to <see cref="Outputs"/>.
     /// </summary>
     OutputDefinition WithOutput(Action<OutputDefinition> setup);
-    
+
     /// <summary>
     /// A fluent method for adding an output to <see cref="Outputs"/>.
     /// </summary>
@@ -205,7 +210,7 @@ public interface IWorkflowBuilder
     /// Marks the workflow as readonly.
     /// </summary>
     IWorkflowBuilder AsReadonly();
-    
+
     /// <summary>
     /// Marks the workflow as a system workflow.
     /// </summary>
@@ -215,7 +220,7 @@ public interface IWorkflowBuilder
     /// Build a new <see cref="Workflow"/> instance using the information collected in this pipelineBuilder.
     /// </summary>
     Task<Workflow> BuildWorkflowAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Creates a new <see cref="Workflow"/> instance using the specified <see cref="IWorkflow"/> definition.
     /// </summary>
