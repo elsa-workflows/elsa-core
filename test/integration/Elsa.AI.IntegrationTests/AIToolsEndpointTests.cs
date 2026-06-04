@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Security.Claims;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
@@ -135,7 +136,7 @@ public class AIToolsEndpointTests
     {
         var identity = new ClaimsIdentity(permissions.Select(x => new Claim(PermissionNames.ClaimType, x)), "test");
         var property = typeof(ToolsEndpoint)
-            .GetProperty(nameof(ToolsEndpoint.HttpContext))!;
+            .GetProperty(nameof(ToolsEndpoint.HttpContext), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!;
         property.SetValue(endpoint, new DefaultHttpContext
         {
             User = new ClaimsPrincipal(identity)

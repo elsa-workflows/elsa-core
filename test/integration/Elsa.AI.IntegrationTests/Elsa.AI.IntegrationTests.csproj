@@ -5,6 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.AI.Host\Elsa.AI.Host.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.AI.Copilot\Elsa.AI.Copilot.csproj" />
