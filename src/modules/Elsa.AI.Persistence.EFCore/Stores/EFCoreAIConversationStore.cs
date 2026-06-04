@@ -137,16 +137,19 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
             var candidateContent = message.Content[..candidateLength];
             var candidateJson = JsonSerializer.Serialize(new[] { CreateTruncatedMessage(message, candidateContent) });
 
-            if (candidateLength == 0 || Encoding.UTF8.GetByteCount(candidateJson) <= MaxMessagesJsonBytes)
+            if (Encoding.UTF8.GetByteCount(candidateJson) <= MaxMessagesJsonBytes)
                 return candidateJson;
+
+            if (candidateLength == 0)
+                return JsonSerializer.Serialize(new[] { CreateTruncatedMessage(message, "", preserveMetadata: false) });
 
             candidateLength -= Math.Max(1, candidateLength / 10);
         }
     }
 
-    private static AIMessage CreateTruncatedMessage(AIMessage message, string content)
+    private static AIMessage CreateTruncatedMessage(AIMessage message, string content, bool preserveMetadata = true)
     {
-        var metadata = message.Metadata.DeepClone().AsObject();
+        var metadata = preserveMetadata ? message.Metadata.DeepClone().AsObject() : [];
         metadata["truncated"] = true;
         metadata["maxBytes"] = MaxMessagesJsonBytes;
 

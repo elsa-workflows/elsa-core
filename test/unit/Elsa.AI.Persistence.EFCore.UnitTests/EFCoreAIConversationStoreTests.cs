@@ -344,6 +344,41 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.False(char.IsHighSurrogate(message.Content[^1]));
     }
 
+    [Fact(DisplayName = "Conversation store drops oversized metadata when truncation still exceeds the byte limit")]
+    public async Task ConversationStoreDropsOversizedMetadataWhenTruncationStillExceedsTheByteLimit()
+    {
+        var store = new EFCoreAIConversationStore(_dbContext);
+
+        await store.SaveAsync(new AIConversation
+        {
+            Id = "conversation-large-metadata",
+            UserId = "user-1",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Messages =
+            [
+                new AIMessage
+                {
+                    Id = "message-metadata",
+                    ConversationId = "conversation-large-metadata",
+                    Role = AIMessageRole.Assistant,
+                    Content = new string('x', 128),
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    Metadata = new JsonObject { ["source"] = new string('m', 2 * 1024 * 1024) }
+                }
+            ]
+        });
+        _dbContext.ChangeTracker.Clear();
+
+        var reloaded = await store.FindAsync("conversation-large-metadata");
+        var record = await _dbContext.Conversations.AsNoTracking().SingleAsync(x => x.Id == "conversation-large-metadata");
+        var message = Assert.Single(reloaded!.Messages);
+
+        Assert.True(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024);
+        Assert.Null(message.Metadata["source"]);
+        Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
+    }
+
     [Fact(DisplayName = "Conversation store hides completed ephemeral conversations on read")]
     public async Task ConversationStoreHidesCompletedEphemeralConversationsOnRead()
     {

@@ -125,18 +125,19 @@ public class AIToolRegistryTests
         Assert.Equal("default", tool.Name);
     }
 
-    [Fact(DisplayName = "Tool registry tolerates incomplete tool definition names")]
-    public async Task ToolRegistryToleratesIncompleteToolDefinitionNames()
+    [Fact(DisplayName = "Tool registry excludes incomplete tool definition names")]
+    public async Task ToolRegistryExcludesIncompleteToolDefinitionNames()
     {
         var registry = CreateRegistry(
             [
-                new TestTool(new AIToolDefinition { DisplayName = "Incomplete" })
+                new TestTool(new AIToolDefinition { DisplayName = "Incomplete" }),
+                new TestTool(new AIToolDefinition { Name = "valid", DisplayName = "Valid" })
             ]);
 
         var tools = await registry.ListAsync(new AIToolQuery { ActorId = "user-1" });
 
         var tool = Assert.Single(tools);
-        Assert.Equal("", tool.Name);
+        Assert.Equal("valid", tool.Name);
     }
 
     [Fact(DisplayName = "Tool registry uses cached concrete type lookup after listing tools")]

@@ -148,6 +148,7 @@ public class AIToolRegistry(IServiceScopeFactory scopeFactory, AIToolEnablementS
             .Select(CreateToolInfo)
             .Where(x => x != null)
             .Select(x => x!)
+            .Where(x => !string.IsNullOrWhiteSpace(x.Definition.Name))
             .ToList();
     }
 
