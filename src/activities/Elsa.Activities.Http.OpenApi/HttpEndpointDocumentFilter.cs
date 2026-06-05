@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Elsa.Activities.Http.Bookmarks;
 using Elsa.Activities.Http.Options;
 using Elsa.Models;
@@ -7,7 +7,11 @@ using Elsa.Services.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+#if NET10_0_OR_GREATER
+using Microsoft.OpenApi;
+#else
 using Microsoft.OpenApi.Models;
+#endif
 using Open.Linq.AsyncExtensions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -31,12 +35,16 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
+#if NET10_0_OR_GREATER
+        swaggerDoc.Tags ??= new HashSet<OpenApiTag>();
+#else
         swaggerDoc.Tags ??= new List<OpenApiTag>();
+#endif
 
         var tag = new OpenApiTag
         {
             Name = "Workflow Endpoints",
-            Description = "A collection of HTTP endpoints exposed by workflows",
+            Description = "A collection of HTTP endpoints exposed by workflows"
         };
 
         var schemaRepository = context.SchemaRepository;
@@ -55,17 +63,21 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
                 Description = first.Description,
                 Operations = grouping.ToDictionary(GetOperationType, httpEndpoint =>
                 {
-                    var operation = new OpenApiOperation
-                    {
-                        Tags = { tag },
-                    };
+                    var operation = new OpenApiOperation();
 
-                    if (httpEndpoint.TargetType != null || httpEndpoint.JsonSchema != null)
+#if NET10_0_OR_GREATER
+                    operation.Tags ??= new HashSet<OpenApiTagReference>();
+                    operation.Tags.Add(new OpenApiTagReference(tag.Name, swaggerDoc));
+#else
+                    operation.Tags.Add(tag);
+#endif
+
+                    if (httpEndpoint.TargetType != null || !string.IsNullOrWhiteSpace(httpEndpoint.JsonSchema))
                     {
                         operation.RequestBody = new OpenApiRequestBody
                         {
                             Required = true,
-                            Content =
+                            Content = new Dictionary<string, OpenApiMediaType>
                             {
                                 ["Unspecified"] = new OpenApiMediaType
                                 {
@@ -126,6 +138,21 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
         return new HttpEndpointDescriptor(activityId, path, method, displayName, description, targetType, schema);
     }
 
+#if NET10_0_OR_GREATER
+    private HttpMethod GetOperationType(HttpEndpointDescriptor httpEndpoint) =>
+        httpEndpoint.Method switch
+        {
+            { } s when s.Equals(HttpMethods.Get, StringComparison.OrdinalIgnoreCase) => HttpMethod.Get,
+            { } s when s.Equals(HttpMethods.Post, StringComparison.OrdinalIgnoreCase) => HttpMethod.Post,
+            { } s when s.Equals(HttpMethods.Patch, StringComparison.OrdinalIgnoreCase) => HttpMethod.Patch,
+            { } s when s.Equals(HttpMethods.Delete, StringComparison.OrdinalIgnoreCase) => HttpMethod.Delete,
+            { } s when s.Equals(HttpMethods.Put, StringComparison.OrdinalIgnoreCase) => HttpMethod.Put,
+            { } s when s.Equals(HttpMethods.Options, StringComparison.OrdinalIgnoreCase) => HttpMethod.Options,
+            { } s when s.Equals(HttpMethods.Head, StringComparison.OrdinalIgnoreCase) => HttpMethod.Head,
+            { } s when s.Equals(HttpMethods.Trace, StringComparison.OrdinalIgnoreCase) => HttpMethod.Trace,
+            _ => HttpMethod.Get
+        };
+#else
     private OperationType GetOperationType(HttpEndpointDescriptor httpEndpoint) =>
         httpEndpoint.Method switch
         {
@@ -133,12 +160,13 @@ public class HttpEndpointDocumentFilter : IDocumentFilter
             { } s when s.Equals(HttpMethods.Post, StringComparison.OrdinalIgnoreCase) => OperationType.Post,
             { } s when s.Equals(HttpMethods.Patch, StringComparison.OrdinalIgnoreCase) => OperationType.Patch,
             { } s when s.Equals(HttpMethods.Delete, StringComparison.OrdinalIgnoreCase) => OperationType.Delete,
-            { } s when s.Equals(HttpMethods.Put, StringComparison.OrdinalIgnoreCase) => OperationType.Patch,
+            { } s when s.Equals(HttpMethods.Put, StringComparison.OrdinalIgnoreCase) => OperationType.Put,
             { } s when s.Equals(HttpMethods.Options, StringComparison.OrdinalIgnoreCase) => OperationType.Options,
             { } s when s.Equals(HttpMethods.Head, StringComparison.OrdinalIgnoreCase) => OperationType.Head,
             { } s when s.Equals(HttpMethods.Trace, StringComparison.OrdinalIgnoreCase) => OperationType.Trace,
             _ => OperationType.Get
         };
+#endif
 }
 
 internal record HttpEndpointDescriptor(string Id, string Path, string Method, string? DisplayName, string? Description, Type? TargetType, string? JsonSchema);
