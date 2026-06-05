@@ -11,6 +11,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/secrets/{id}")]
     [Produces("application/json")]
+    [Tags("Secrets")]
     public class Delete : Controller
     {
         private readonly ISecretsStore _secretsStore;
