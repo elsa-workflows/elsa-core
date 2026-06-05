@@ -2,6 +2,13 @@ using Elsa.Common;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Services;
+using Elsa.Diagnostics.ConsoleLogs.Dashboard;
+using Elsa.Diagnostics.ConsoleLogs.Dashboard.Extensions;
+using Elsa.Diagnostics.StructuredLogs.Dashboard;
+using Elsa.Diagnostics.StructuredLogs.Dashboard.Extensions;
+using Elsa.Workflows.Runtime.Dashboard;
+using Elsa.Workflows.Runtime.Dashboard.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
@@ -204,8 +211,50 @@ public class DefaultDashboardProviderTests
         Assert.Contains("Elsa.Dashboard.Abstractions", project);
     }
 
+    [Fact]
+    public void OwnerProjects_DoNotReferenceDashboardAbstractions()
+    {
+        var root = FindRepositoryRoot();
+        var ownerProjects = new[]
+        {
+            "src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj",
+            "src/modules/Elsa.Diagnostics.ConsoleLogs/Elsa.Diagnostics.ConsoleLogs.csproj",
+            "src/modules/Elsa.Diagnostics.StructuredLogs/Elsa.Diagnostics.StructuredLogs.csproj"
+        };
+
+        foreach (var ownerProject in ownerProjects)
+        {
+            var project = File.ReadAllText(root.Combine(ownerProject));
+            Assert.DoesNotContain("Elsa.Dashboard.Abstractions", project);
+        }
+    }
+
+    [Fact]
+    public void DashboardCompanionProjects_RegisterExpectedContributors()
+    {
+        var services = new ServiceCollection();
+
+        services
+            .AddWorkflowRuntimeDashboard()
+            .AddStructuredLogsDashboard()
+            .AddConsoleLogsDashboard();
+
+        AssertRegisteredContributor<WorkflowDashboardContributor>(services);
+        AssertRegisteredContributor<StructuredLogsDashboardContributor>(services);
+        AssertRegisteredContributor<ConsoleLogsDashboardContributor>(services);
+        Assert.Equal(3, services.Count(x => x.ServiceType == typeof(IDashboardContributor)));
+    }
+
     private DefaultDashboardProvider CreateProvider(params IDashboardContributor[] contributors) =>
         new(contributors, new(new TestClock(_now)), new TestHostEnvironment());
+
+    private static void AssertRegisteredContributor<TContributor>(IServiceCollection services)
+    {
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IDashboardContributor) &&
+            descriptor.ImplementationType == typeof(TContributor) &&
+            descriptor.Lifetime == ServiceLifetime.Scoped);
+    }
 
     private static DashboardRecentActivityItem Recent(string id, DateTimeOffset updatedAt) => new()
     {

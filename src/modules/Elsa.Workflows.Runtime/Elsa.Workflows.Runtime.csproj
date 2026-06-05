@@ -17,7 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Elsa.Dashboard.Abstractions\Elsa.Dashboard.Abstractions.csproj" />
         <ProjectReference Include="..\Elsa.Caching\Elsa.Caching.csproj" />
         <ProjectReference Include="..\Elsa.KeyValues\Elsa.KeyValues.csproj" />
         <ProjectReference Include="..\Elsa.Tenants\Elsa.Tenants.csproj" />

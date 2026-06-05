@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides console log dashboard contributions.
+        </Description>
+        <PackageTags>elsa module diagnostics console-logs dashboard operations</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Dashboard.Abstractions\Elsa.Dashboard.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
+    </ItemGroup>
+
+</Project>

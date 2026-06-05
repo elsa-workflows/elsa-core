@@ -96,6 +96,7 @@ services
             })
             .UseWorkflowsApi()
             .UseDashboardApi()
+            .UseWorkflowRuntimeDashboard()
             .UseFluentStorageProvider()
             .UseElsaScriptBlobStorage()
             .UseScheduling()
@@ -148,7 +149,11 @@ services
         }
 
         if(useStructuredLogs)
-            elsa.UseStructuredLogs();
+        {
+            elsa
+                .UseStructuredLogs()
+                .UseStructuredLogsDashboard();
+        }
         
         ConfigureForTest?.Invoke(elsa);
     });

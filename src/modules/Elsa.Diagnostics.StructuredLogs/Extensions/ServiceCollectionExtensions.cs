@@ -1,5 +1,3 @@
-using Elsa.Dashboard.Abstractions.Extensions;
-using Elsa.Diagnostics.StructuredLogs.Dashboard;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Logging;
 using Elsa.Diagnostics.StructuredLogs.Options;
@@ -30,7 +28,6 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IStructuredLogProvider, DefaultStructuredLogProvider>();
         services.TryAddSingleton<StructuredLogSubscriptionManager>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, StructuredLogLoggerProvider>());
-        services.AddDashboardContributor<StructuredLogsDashboardContributor>();
 
         return services;
     }

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides structured log dashboard contributions.
+        </Description>
+        <PackageTags>elsa module diagnostics structured-logs dashboard operations</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Dashboard.Abstractions\Elsa.Dashboard.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj" />
+    </ItemGroup>
+
+</Project>
