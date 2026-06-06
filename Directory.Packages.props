@@ -141,6 +141,7 @@
         <PackageVersion Include="Microsoft.Identity.Client" Version="4.79.2"/>
         <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1"/>
         <PackageVersion Include="Moq" Version="4.20.72"/>
+        <PackageVersion Include="MongoDB.Driver" Version="3.8.1"/>
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
 		<PackageVersion Include="Npgsql" Version="10.0.3"/>
