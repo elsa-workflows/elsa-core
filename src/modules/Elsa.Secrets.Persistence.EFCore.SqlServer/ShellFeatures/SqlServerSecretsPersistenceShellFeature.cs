@@ -12,7 +12,7 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.ShellFeatures;
 [ShellFeature(
     DisplayName = "SqlServer Secrets Persistence",
     Description = "Provides SqlServer persistence for secrets",
-    DependsOn = ["Secrets"])]
+    DependsOn = [typeof(global::Elsa.Secrets.ShellFeatures.SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores secrets data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

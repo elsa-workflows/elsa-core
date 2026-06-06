@@ -17,7 +17,7 @@ namespace Elsa.Diagnostics.StructuredLogs.ShellFeatures;
 [ShellFeature(
     DisplayName = "Structured Logs",
     Description = "Provides live structured log streaming over REST and SignalR",
-    DependsOn = ["ElsaFastEndpoints"])]
+    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class StructuredLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 {

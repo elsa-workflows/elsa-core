@@ -14,7 +14,7 @@ namespace Elsa.Identity.ShellFeatures;
 [ShellFeature(
     DisplayName = "Default Admin User Initialization",
     Description = "Initializes a default admin user from configuration if provided",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
 [UsedImplicitly]
 public class DefaultAdminUserFeature : IShellFeature
 {

@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Identity;
 [ShellFeature(
     DisplayName = "MySql Identity Persistence",
     Description = "Provides MySql persistence for identity management",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores identity data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlIdentityPersistenceShellFeature

@@ -12,7 +12,7 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.ShellFeatures;
 [ShellFeature(
     DisplayName = "ElsaScript Blob Storage",
     Description = "Provides ElsaScript format support for the BlobStorage workflow provider",
-    DependsOn = ["BlobStorage", "ElsaScript"])]
+    DependsOn = [typeof(global::Elsa.WorkflowProviders.BlobStorage.ShellFeatures.BlobStorageFeature), typeof(global::Elsa.Dsl.ElsaScript.ShellFeatures.ElsaScriptFeature)])]
 [UsedImplicitly]
 public class ElsaScriptBlobStorageFeature : IShellFeature
 {

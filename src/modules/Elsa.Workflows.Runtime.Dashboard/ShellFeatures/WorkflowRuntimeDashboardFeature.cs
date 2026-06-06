@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Runtime.Dashboard.ShellFeatures;
 [ShellFeature(
     DisplayName = "Workflow Runtime Dashboard",
     Description = "Provides workflow runtime dashboard contributions",
-    DependsOn = ["WorkflowRuntime", "DashboardApi"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature), typeof(global::Elsa.Dashboard.Api.ShellFeatures.DashboardApiFeature)])]
 [UsedImplicitly]
 public class WorkflowRuntimeDashboardFeature : IShellFeature
 {

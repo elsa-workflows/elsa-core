@@ -34,7 +34,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures;
 [ShellFeature(
     DisplayName = "SQL Server Workflow Persistence",
     Description = "Provides SQL Server persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = ["SqlServerWorkflowDefinitionPersistence", "SqlServerWorkflowInstancePersistence", "SqlServerWorkflowRuntimePersistence"])]
+    DependsOn = [typeof(global::Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management.SqlServerWorkflowDefinitionPersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management.SqlServerWorkflowInstancePersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime.SqlServerWorkflowRuntimePersistenceShellFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase

@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Management;
 [ShellFeature(
     DisplayName = "MySql Workflow Instance Persistence",
     Description = "Provides MySql persistence for workflow instances",
-    DependsOn = ["WorkflowManagement", "WorkflowInstances"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature), typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowInstancesFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow instances in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlWorkflowInstancePersistenceShellFeature

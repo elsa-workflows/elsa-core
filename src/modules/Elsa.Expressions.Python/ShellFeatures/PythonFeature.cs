@@ -19,7 +19,7 @@ namespace Elsa.Expressions.Python.ShellFeatures;
 [ShellFeature(
     DisplayName = "Python Expressions",
     Description = "Provides Python expression evaluation capabilities for workflows",
-    DependsOn = ["Mediator", "Expressions"])]
+    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.MediatorFeature), typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature)])]
 [UsedImplicitly]
 public class PythonFeature : IShellFeature
 {

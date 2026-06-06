@@ -41,7 +41,7 @@ public abstract class ScriptModuleShellFeatureBase : IShellFeature
 [ShellFeature(
     DisplayName = "Lodash JavaScript Library",
     Description = "Provides Lodash utility library for JavaScript expressions",
-    DependsOn = ["JavaScript"])]
+    DependsOn = [typeof(global::Elsa.Expressions.JavaScript.ShellFeatures.JavaScriptFeature)])]
 [UsedImplicitly]
 public class LodashFeature : ScriptModuleShellFeatureBase
 {
@@ -54,7 +54,7 @@ public class LodashFeature : ScriptModuleShellFeatureBase
 [ShellFeature(
     DisplayName = "Lodash FP JavaScript Library",
     Description = "Provides Lodash FP (functional programming) utility library for JavaScript expressions",
-    DependsOn = ["JavaScript"])]
+    DependsOn = [typeof(global::Elsa.Expressions.JavaScript.ShellFeatures.JavaScriptFeature)])]
 [UsedImplicitly]
 public class LodashFpFeature : ScriptModuleShellFeatureBase
 {
@@ -67,7 +67,7 @@ public class LodashFpFeature : ScriptModuleShellFeatureBase
 [ShellFeature(
     DisplayName = "Moment JavaScript Library",
     Description = "Provides Moment.js date/time library for JavaScript expressions",
-    DependsOn = ["JavaScript"])]
+    DependsOn = [typeof(global::Elsa.Expressions.JavaScript.ShellFeatures.JavaScriptFeature)])]
 [UsedImplicitly]
 public class MomentFeature : ScriptModuleShellFeatureBase
 {

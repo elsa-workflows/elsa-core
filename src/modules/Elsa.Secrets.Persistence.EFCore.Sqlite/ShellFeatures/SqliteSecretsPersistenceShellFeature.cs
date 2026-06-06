@@ -13,7 +13,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.ShellFeatures;
 [ShellFeature(
     DisplayName = "Sqlite Secrets Persistence",
     Description = "Provides Sqlite persistence for secrets",
-    DependsOn = ["Secrets"])]
+    DependsOn = [typeof(global::Elsa.Secrets.ShellFeatures.SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores secrets data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management;
 [ShellFeature(
     DisplayName = "SqlServer Workflow Definition Persistence",
     Description = "Provides SqlServer persistence for workflow definitions",
-    DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature), typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowDefinitionsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow definitions in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerWorkflowDefinitionPersistenceShellFeature

@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Runtime;
 [ShellFeature(
     DisplayName = "MySql Workflow Runtime Persistence",
     Description = "Provides MySql persistence for workflow runtime",
-    DependsOn = ["WorkflowRuntime"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow runtime data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlWorkflowRuntimePersistenceShellFeature

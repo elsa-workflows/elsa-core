@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="CShells.AspNetCore.Abstractions" />
+        <PackageReference Include="CShells.FastEndpoints" />
         <PackageReference Include="CShells.FastEndpoints.Abstractions" />
         <PackageReference Include="FastEndpoints" />
         <PackageReference Include="FastEndpoints.Security" />

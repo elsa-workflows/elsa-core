@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 [ShellFeature(
     DisplayName = "SqlServer Workflow Runtime Persistence",
     Description = "Provides SqlServer persistence for workflow runtime",
-    DependsOn = ["WorkflowRuntime"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow runtime data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerWorkflowRuntimePersistenceShellFeature

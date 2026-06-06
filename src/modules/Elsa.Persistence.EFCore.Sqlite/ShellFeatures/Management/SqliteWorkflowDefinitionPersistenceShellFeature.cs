@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Management;
 [ShellFeature(
     DisplayName = "Sqlite Workflow Definition Persistence",
     Description = "Provides Sqlite persistence for workflow definitions",
-    DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature), typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowDefinitionsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow definitions in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteWorkflowDefinitionPersistenceShellFeature

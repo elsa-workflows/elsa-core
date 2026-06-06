@@ -14,7 +14,7 @@ namespace Elsa.Labels.ShellFeatures;
 [ShellFeature(
     DisplayName = "Labels",
     Description = "Enables functionality to tag workflows with labels",
-    DependsOn = ["Mediator"])]
+    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.MediatorFeature)])]
 [UsedImplicitly]
 public class LabelsFeature : IShellFeature
 {

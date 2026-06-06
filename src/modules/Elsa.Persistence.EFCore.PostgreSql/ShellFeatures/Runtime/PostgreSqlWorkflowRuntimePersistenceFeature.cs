@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Runtime;
 [ShellFeature(
     DisplayName = "PostgreSql Workflow Runtime Persistence",
     Description = "Provides PostgreSql persistence for workflow runtime",
-    DependsOn = ["WorkflowRuntime"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores workflow runtime data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlWorkflowRuntimePersistenceFeature

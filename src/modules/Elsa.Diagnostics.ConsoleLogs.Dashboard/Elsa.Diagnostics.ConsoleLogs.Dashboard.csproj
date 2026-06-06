@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Dashboard.Abstractions\Elsa.Dashboard.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
         <ProjectReference Include="..\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />
     </ItemGroup>
 

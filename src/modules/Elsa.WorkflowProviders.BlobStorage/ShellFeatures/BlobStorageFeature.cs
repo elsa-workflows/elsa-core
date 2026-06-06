@@ -17,7 +17,7 @@ namespace Elsa.WorkflowProviders.BlobStorage.ShellFeatures;
 [ShellFeature(
     DisplayName = "Blob Storage Workflow Provider",
     Description = "Provides workflow definitions from blob storage",
-    DependsOn = ["WorkflowManagement"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature)])]
 [UsedImplicitly]
 public class BlobStorageFeature : IShellFeature
 {

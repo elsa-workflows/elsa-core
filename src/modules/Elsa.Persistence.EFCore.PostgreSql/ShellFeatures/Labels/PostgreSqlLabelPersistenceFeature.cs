@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Labels;
 [ShellFeature(
     DisplayName = "PostgreSql Label Persistence",
     Description = "Provides PostgreSql persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(global::Elsa.Labels.ShellFeatures.LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores workflow label data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlLabelPersistenceFeature

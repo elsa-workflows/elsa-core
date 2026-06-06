@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Caching.ShellFeatures;
 using Elsa.Expressions.JavaScript.Activities;
 using Elsa.Expressions.JavaScript.Contracts;
 using Elsa.Expressions.JavaScript.Extensions;
@@ -12,10 +13,11 @@ using Elsa.Expressions.Options;
 using Elsa.Extensions;
 using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Workflows;
-using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Common.Serialization;
+using Elsa.Common.ShellFeatures;
+using Elsa.Expressions.ShellFeatures;
 
 namespace Elsa.Expressions.JavaScript.ShellFeatures;
 
@@ -25,7 +27,7 @@ namespace Elsa.Expressions.JavaScript.ShellFeatures;
 [ShellFeature(
     DisplayName = "JavaScript Expressions",
     Description = "Provides JavaScript expression evaluation capabilities for workflows",
-    DependsOn = ["Mediator", "Expressions", "MemoryCache"])]
+    DependsOn = [typeof(MediatorFeature), typeof(ExpressionsFeature), typeof(MemoryCacheFeature)])]
 [UsedImplicitly]
 public class JavaScriptFeature : IShellFeature
 {

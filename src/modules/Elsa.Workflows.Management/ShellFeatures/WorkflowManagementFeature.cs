@@ -37,13 +37,13 @@ namespace Elsa.Workflows.Management.ShellFeatures;
     Description = "Provides comprehensive workflow definition and instance management capabilities",
     DependsOn =
     [
-        "StringCompression",
-        "Mediator",
-        "MemoryCache",
-        "SystemClock",
-        "Workflows",
-        "WorkflowDefinitions",
-        "WorkflowInstances"
+        typeof(global::Elsa.Common.ShellFeatures.StringCompressionFeature),
+        typeof(global::Elsa.Common.ShellFeatures.MediatorFeature),
+        typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature),
+        typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature),
+        typeof(global::Elsa.Workflows.ShellFeatures.WorkflowsFeature),
+        typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowDefinitionsFeature),
+        typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowInstancesFeature)
     ])]
 [UsedImplicitly]
 public class WorkflowManagementFeature : IShellFeature

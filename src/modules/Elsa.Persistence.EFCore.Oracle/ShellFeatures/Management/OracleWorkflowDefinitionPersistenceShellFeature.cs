@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management;
 [ShellFeature(
     DisplayName = "Oracle Workflow Definition Persistence",
     Description = "Provides Oracle persistence for workflow definitions",
-    DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature), typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowDefinitionsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow definitions in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleWorkflowDefinitionPersistenceShellFeature

@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Labels;
 [ShellFeature(
     DisplayName = "Oracle Label Persistence",
     Description = "Provides Oracle persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(global::Elsa.Labels.ShellFeatures.LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow label data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleLabelPersistenceShellFeature

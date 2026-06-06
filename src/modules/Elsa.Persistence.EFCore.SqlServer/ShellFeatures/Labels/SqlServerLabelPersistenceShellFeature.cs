@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Labels;
 [ShellFeature(
     DisplayName = "SqlServer Label Persistence",
     Description = "Provides SqlServer persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(global::Elsa.Labels.ShellFeatures.LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow label data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerLabelPersistenceShellFeature

@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants;
 [ShellFeature(
     DisplayName = "PostgreSql Tenant Persistence",
     Description = "Provides PostgreSql persistence for tenant management",
-    DependsOn = ["TenantManagement"])]
+    DependsOn = [typeof(global::Elsa.Tenants.ShellFeatures.TenantManagementFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores tenant data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlTenantPersistenceFeature

@@ -18,7 +18,7 @@ namespace Elsa.Expressions.CSharp.ShellFeatures;
 [ShellFeature(
     DisplayName = "C# Expressions",
     Description = "Provides C# expression evaluation capabilities for workflows",
-    DependsOn = ["Mediator", "Expressions", "MemoryCache"])]
+    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.MediatorFeature), typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature), typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature)])]
 [UsedImplicitly]
 public class CSharpFeature : IShellFeature
 {

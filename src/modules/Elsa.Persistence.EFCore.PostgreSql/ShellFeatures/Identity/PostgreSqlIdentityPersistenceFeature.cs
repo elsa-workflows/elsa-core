@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity;
 [ShellFeature(
     DisplayName = "PostgreSql Identity Persistence",
     Description = "Provides PostgreSql persistence for identity management",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores identity data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlIdentityPersistenceFeature

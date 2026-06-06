@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels;
 [ShellFeature(
     DisplayName = "MySql Label Persistence",
     Description = "Provides MySql persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(global::Elsa.Labels.ShellFeatures.LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow label data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlLabelPersistenceShellFeature

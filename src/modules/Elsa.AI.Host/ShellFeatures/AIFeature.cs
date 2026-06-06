@@ -11,7 +11,7 @@ namespace Elsa.AI.Host.ShellFeatures;
     "AI",
     DisplayName = "AI Host",
     Description = "Hosts Weaver AI orchestration, governed tools, proposals, and audit services",
-    DependsOn = ["ElsaFastEndpoints"])]
+    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class AIFeature : IFastEndpointsShellFeature
 {

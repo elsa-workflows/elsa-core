@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Runtime;
 [ShellFeature(
     DisplayName = "Oracle Workflow Runtime Persistence",
     Description = "Provides Oracle persistence for workflow runtime",
-    DependsOn = ["WorkflowRuntime"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow runtime data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleWorkflowRuntimePersistenceShellFeature

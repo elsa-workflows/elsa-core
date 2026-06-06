@@ -8,7 +8,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
 [ShellFeature(
     DisplayName = "Console Logs Dashboard",
     Description = "Provides console log dashboard contributions",
-    DependsOn = ["ConsoleLogs", "DashboardApi"])]
+    DependsOn = [typeof(global::Elsa.Diagnostics.ConsoleLogs.ShellFeatures.ConsoleLogsFeature), typeof(global::Elsa.Dashboard.Api.ShellFeatures.DashboardApiFeature)])]
 [UsedImplicitly]
 public class ConsoleLogsDashboardFeature : IShellFeature
 {

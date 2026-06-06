@@ -22,7 +22,7 @@ namespace Elsa.Identity.ShellFeatures;
 [ShellFeature(
     DisplayName = "Identity",
     Description = "Provides identity management, authentication and authorization capabilities",
-    DependsOn = ["SystemClock"])]
+    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature)])]
 [UsedImplicitly]
 public class IdentityFeature : IFastEndpointsShellFeature
 {

@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Identity;
 [ShellFeature(
     DisplayName = "Oracle Identity Persistence",
     Description = "Provides Oracle persistence for identity management",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores identity data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleIdentityPersistenceShellFeature

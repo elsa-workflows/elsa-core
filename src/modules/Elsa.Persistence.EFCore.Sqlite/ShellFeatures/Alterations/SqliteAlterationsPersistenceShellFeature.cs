@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Alterations;
 [ShellFeature(
     DisplayName = "Sqlite Alterations Persistence",
     Description = "Provides Sqlite persistence for workflow alterations",
-    DependsOn = ["Alterations"])]
+    DependsOn = [typeof(global::Elsa.Alterations.ShellFeatures.AlterationsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow alteration records in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteAlterationsPersistenceShellFeature

@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Identity;
 [ShellFeature(
     DisplayName = "Sqlite Identity Persistence",
     Description = "Provides Sqlite persistence for identity management",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores identity data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteIdentityPersistenceShellFeature

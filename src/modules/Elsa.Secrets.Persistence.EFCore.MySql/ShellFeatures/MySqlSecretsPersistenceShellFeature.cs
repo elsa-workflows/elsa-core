@@ -13,7 +13,7 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.ShellFeatures;
 [ShellFeature(
     DisplayName = "MySql Secrets Persistence",
     Description = "Provides MySql persistence for secrets",
-    DependsOn = ["Secrets"])]
+    DependsOn = [typeof(global::Elsa.Secrets.ShellFeatures.SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores secrets data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

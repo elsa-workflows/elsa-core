@@ -20,7 +20,7 @@ namespace Elsa.Identity.ShellFeatures;
 [ShellFeature(
     DisplayName = "Default Authentication",
     Description = "Provides JWT bearer and API key authentication",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
 [UsedImplicitly]
 public class DefaultAuthenticationFeature : IShellFeature
 {

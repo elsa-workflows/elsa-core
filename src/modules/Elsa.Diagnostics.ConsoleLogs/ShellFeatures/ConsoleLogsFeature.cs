@@ -16,7 +16,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.ShellFeatures;
 [ShellFeature(
     DisplayName = "Console Logs",
     Description = "Provides live raw console log streaming over REST and SignalR",
-    DependsOn = ["ElsaFastEndpoints", "Workflows"])]
+    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature), typeof(global::Elsa.Workflows.ShellFeatures.WorkflowsFeature)])]
 [UsedImplicitly]
 public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 {

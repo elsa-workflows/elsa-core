@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Alterations;
 [ShellFeature(
     DisplayName = "SqlServer Alterations Persistence",
     Description = "Provides SqlServer persistence for workflow alterations",
-    DependsOn = ["Alterations"])]
+    DependsOn = [typeof(global::Elsa.Alterations.ShellFeatures.AlterationsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow alteration records in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerAlterationsPersistenceShellFeature

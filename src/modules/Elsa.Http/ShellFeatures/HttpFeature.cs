@@ -38,7 +38,7 @@ namespace Elsa.Http.ShellFeatures;
 [ShellFeature(
     DisplayName = "HTTP",
     Description = "Provides HTTP-related activities and services for workflow execution",
-    DependsOn = ["HttpJavaScript", "Resilience"])]
+    DependsOn = [typeof(global::Elsa.Http.ShellFeatures.HttpJavaScriptFeature), typeof(global::Elsa.Resilience.ShellFeatures.ResilienceFeature)])]
 [UsedImplicitly]
 public class HttpFeature : IMiddlewareShellFeature
 {

@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Tenants;
 [ShellFeature(
     DisplayName = "Oracle Tenant Persistence",
     Description = "Provides Oracle persistence for tenant management",
-    DependsOn = ["TenantManagement"])]
+    DependsOn = [typeof(global::Elsa.Tenants.ShellFeatures.TenantManagementFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores tenant data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleTenantPersistenceShellFeature

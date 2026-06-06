@@ -14,7 +14,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Tenants;
 [ShellFeature(
     DisplayName = "SqlServer Tenant Persistence",
     Description = "Provides SqlServer persistence for tenant management",
-    DependsOn = ["TenantManagement"])]
+    DependsOn = [typeof(global::Elsa.Tenants.ShellFeatures.TenantManagementFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores tenant data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerTenantPersistenceShellFeature

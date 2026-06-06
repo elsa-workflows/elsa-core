@@ -24,11 +24,11 @@ namespace Elsa.Workflows.Api.ShellFeatures;
     Description = "Provides REST API endpoints for workflow management",
     DependsOn =
 [
-    "ElsaFastEndpoints",
-    "WorkflowInstances",
-    "WorkflowManagement",
-    "WorkflowRuntime",
-    "SasTokens"
+    typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature),
+    typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowInstancesFeature),
+    typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature),
+    typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature),
+    typeof(global::Elsa.SasTokens.ShellFeatures.SasTokensFeature)
 ])]
 [UsedImplicitly]
 public class WorkflowsApiFeature : IFastEndpointsShellFeature

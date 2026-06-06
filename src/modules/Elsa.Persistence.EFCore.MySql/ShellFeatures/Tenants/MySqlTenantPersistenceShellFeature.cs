@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Tenants;
 [ShellFeature(
     DisplayName = "MySql Tenant Persistence",
     Description = "Provides MySql persistence for tenant management",
-    DependsOn = ["TenantManagement"])]
+    DependsOn = [typeof(global::Elsa.Tenants.ShellFeatures.TenantManagementFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores tenant data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlTenantPersistenceShellFeature

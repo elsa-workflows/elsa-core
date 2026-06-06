@@ -14,7 +14,7 @@ namespace Elsa.Diagnostics.OpenTelemetry.ShellFeatures;
 [ShellFeature(
     DisplayName = "OpenTelemetry Diagnostics",
     Description = "Provides OpenTelemetry diagnostics collection, query services, and live updates",
-    DependsOn = ["ElsaFastEndpoints"])]
+    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class OpenTelemetryFeature : IFastEndpointsShellFeature, IWebShellFeature
 {

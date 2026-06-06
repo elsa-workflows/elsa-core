@@ -14,7 +14,7 @@ namespace Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 [ShellFeature(
     DisplayName = "Distributed Runtime",
     Description = "Provides distributed workflow runtime capabilities",
-    DependsOn = ["WorkflowRuntime", "Resilience"])]
+    DependsOn = [typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature), typeof(global::Elsa.Resilience.ShellFeatures.ResilienceFeature)])]
 [UsedImplicitly]
 public class DistributedRuntimeFeature : IShellFeature
 {

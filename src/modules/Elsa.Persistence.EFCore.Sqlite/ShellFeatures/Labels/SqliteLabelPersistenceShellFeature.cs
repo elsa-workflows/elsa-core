@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Labels;
 [ShellFeature(
     DisplayName = "Sqlite Label Persistence",
     Description = "Provides Sqlite persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(global::Elsa.Labels.ShellFeatures.LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow label data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteLabelPersistenceShellFeature

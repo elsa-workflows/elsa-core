@@ -9,7 +9,7 @@ namespace Elsa.Secrets.ShellFeatures;
 [ShellFeature(
     DisplayName = "Secrets",
     Description = "Provides named secret management, secret stores, and runtime secret resolution.",
-    DependsOn = ["ElsaFastEndpoints"])]
+    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class SecretsFeature : IFastEndpointsShellFeature
 {

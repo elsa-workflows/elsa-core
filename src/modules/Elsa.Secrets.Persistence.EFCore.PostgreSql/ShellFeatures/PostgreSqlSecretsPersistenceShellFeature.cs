@@ -13,7 +13,7 @@ namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.ShellFeatures;
 [ShellFeature(
     DisplayName = "PostgreSql Secrets Persistence",
     Description = "Provides PostgreSql persistence for secrets",
-    DependsOn = ["Secrets"])]
+    DependsOn = [typeof(global::Elsa.Secrets.ShellFeatures.SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores secrets data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

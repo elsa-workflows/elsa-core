@@ -12,7 +12,7 @@ namespace Elsa.Http.ShellFeatures;
 [ShellFeature(
     DisplayName = "HTTP Cache",
     Description = "Provides HTTP workflow caching for improved performance",
-    DependsOn = ["Http", "CachingWorkflowDefinitions"])]
+    DependsOn = [typeof(global::Elsa.Http.ShellFeatures.HttpFeature), typeof(global::Elsa.Workflows.Management.ShellFeatures.CachingWorkflowDefinitionsFeature)])]
 [UsedImplicitly]
 public class HttpCacheFeature : IShellFeature
 {

@@ -40,12 +40,12 @@ namespace Elsa.Workflows.ShellFeatures;
     Description = "Provides core workflow execution, activity execution, and workflow serialization services",
     DependsOn =
 [
-    "SystemClock",
-    "Expressions",
-    "Mediator",
-    "DefaultFormatters",
-    "Multitenancy",
-    "CommitStrategies"
+    typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature),
+    typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature),
+    typeof(global::Elsa.Common.ShellFeatures.MediatorFeature),
+    typeof(global::Elsa.Common.ShellFeatures.DefaultFormattersFeature),
+    typeof(global::Elsa.Common.ShellFeatures.MultitenancyFeature),
+    typeof(global::Elsa.Workflows.ShellFeatures.CommitStrategiesFeature)
 ])]
 public class WorkflowsFeature : IShellFeature
 {

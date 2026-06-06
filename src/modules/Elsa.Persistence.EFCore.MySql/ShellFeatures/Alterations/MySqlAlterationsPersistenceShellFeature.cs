@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Alterations;
 [ShellFeature(
     DisplayName = "MySql Alterations Persistence",
     Description = "Provides MySql persistence for workflow alterations",
-    DependsOn = ["Alterations"])]
+    DependsOn = [typeof(global::Elsa.Alterations.ShellFeatures.AlterationsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow alteration records in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlAlterationsPersistenceShellFeature

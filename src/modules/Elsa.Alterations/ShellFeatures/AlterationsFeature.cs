@@ -22,7 +22,7 @@ namespace Elsa.Alterations.ShellFeatures;
 [ShellFeature(
     DisplayName = "Alterations",
     Description = "Provides workflow alteration capabilities for modifying running workflow instances",
-    DependsOn = ["ElsaFastEndpoints", "WorkflowRuntime"])]
+    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature), typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 public class AlterationsFeature : IFastEndpointsShellFeature
 {

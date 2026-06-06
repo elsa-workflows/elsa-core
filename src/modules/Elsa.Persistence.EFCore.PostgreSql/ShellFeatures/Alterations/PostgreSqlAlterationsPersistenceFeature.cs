@@ -15,7 +15,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations;
 [ShellFeature(
     DisplayName = "PostgreSql Alterations Persistence",
     Description = "Provides PostgreSql persistence for workflow alterations",
-    DependsOn = ["Alterations"])]
+    DependsOn = [typeof(global::Elsa.Alterations.ShellFeatures.AlterationsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores workflow alteration records in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlAlterationsPersistenceFeature

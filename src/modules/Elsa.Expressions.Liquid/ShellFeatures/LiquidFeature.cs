@@ -18,7 +18,7 @@ namespace Elsa.Expressions.Liquid.ShellFeatures;
 [ShellFeature(
     DisplayName = "Liquid Expressions",
     Description = "Provides Liquid template expression evaluation capabilities for workflows",
-    DependsOn = ["MemoryCache", "Mediator", "Expressions"])]
+    DependsOn = [typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature), typeof(global::Elsa.Common.ShellFeatures.MediatorFeature), typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature)])]
 [UsedImplicitly]
 public class LiquidFeature : IShellFeature
 {

@@ -8,7 +8,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
 [ShellFeature(
     DisplayName = "Structured Logs Dashboard",
     Description = "Provides structured log dashboard contributions",
-    DependsOn = ["StructuredLogs", "DashboardApi"])]
+    DependsOn = [typeof(global::Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogsFeature), typeof(global::Elsa.Dashboard.Api.ShellFeatures.DashboardApiFeature)])]
 [UsedImplicitly]
 public class StructuredLogsDashboardFeature : IShellFeature
 {
