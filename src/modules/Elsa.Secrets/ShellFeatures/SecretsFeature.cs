@@ -1,6 +1,7 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Secrets.Extensions;
+using Elsa.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,7 +10,7 @@ namespace Elsa.Secrets.ShellFeatures;
 [ShellFeature(
     DisplayName = "Secrets",
     Description = "Provides named secret management, secret stores, and runtime secret resolution.",
-    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class SecretsFeature : IFastEndpointsShellFeature
 {

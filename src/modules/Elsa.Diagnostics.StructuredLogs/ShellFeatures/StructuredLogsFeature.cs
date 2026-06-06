@@ -4,6 +4,7 @@ using CShells.Features;
 using Elsa.Diagnostics.StructuredLogs.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,7 @@ namespace Elsa.Diagnostics.StructuredLogs.ShellFeatures;
 [ShellFeature(
     DisplayName = "Structured Logs",
     Description = "Provides live structured log streaming over REST and SignalR",
-    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class StructuredLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 {

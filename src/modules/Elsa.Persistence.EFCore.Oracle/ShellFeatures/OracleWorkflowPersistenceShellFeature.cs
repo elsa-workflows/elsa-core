@@ -1,6 +1,8 @@
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management;
+using Elsa.Persistence.EFCore.Oracle.ShellFeatures.Runtime;
 using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures;
@@ -34,7 +36,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures;
 [ShellFeature(
     DisplayName = "Oracle Workflow Persistence",
     Description = "Provides Oracle persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = [typeof(global::Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management.OracleWorkflowDefinitionPersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management.OracleWorkflowInstancePersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.Oracle.ShellFeatures.Runtime.OracleWorkflowRuntimePersistenceShellFeature)])]
+    DependsOn = [typeof(OracleWorkflowDefinitionPersistenceShellFeature), typeof(OracleWorkflowInstancePersistenceShellFeature), typeof(OracleWorkflowRuntimePersistenceShellFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase

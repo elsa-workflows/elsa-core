@@ -1,9 +1,10 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
-using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Secrets.Persistence.EFCore.ShellFeatures;
+using Elsa.Secrets.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.ShellFeatures;
 [ShellFeature(
     DisplayName = "Sqlite Secrets Persistence",
     Description = "Provides Sqlite persistence for secrets",
-    DependsOn = [typeof(global::Elsa.Secrets.ShellFeatures.SecretsFeature)])]
+    DependsOn = [typeof(SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores secrets data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

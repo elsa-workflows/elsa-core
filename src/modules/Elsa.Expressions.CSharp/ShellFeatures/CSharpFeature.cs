@@ -1,10 +1,13 @@
 using CShells.Features;
-using Elsa.Expressions.CSharp.ActivityDescriptorModifiers;
+using Elsa.Caching.ShellFeatures;
+using Elsa.Common.ShellFeatures;
 using Elsa.Expressions.CSharp.Activities;
+using Elsa.Expressions.CSharp.ActivityDescriptorModifiers;
 using Elsa.Expressions.CSharp.Contracts;
 using Elsa.Expressions.CSharp.Options;
 using Elsa.Expressions.CSharp.Providers;
 using Elsa.Expressions.CSharp.Services;
+using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using JetBrains.Annotations;
@@ -18,7 +21,7 @@ namespace Elsa.Expressions.CSharp.ShellFeatures;
 [ShellFeature(
     DisplayName = "C# Expressions",
     Description = "Provides C# expression evaluation capabilities for workflows",
-    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.MediatorFeature), typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature), typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature)])]
+    DependsOn = [typeof(MediatorFeature), typeof(ExpressionsFeature), typeof(MemoryCacheFeature)])]
 [UsedImplicitly]
 public class CSharpFeature : IShellFeature
 {

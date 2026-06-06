@@ -1,5 +1,7 @@
 using CShells.Features;
+using Elsa.Dashboard.Api.ShellFeatures;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard.Extensions;
+using Elsa.Diagnostics.ConsoleLogs.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +10,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
 [ShellFeature(
     DisplayName = "Console Logs Dashboard",
     Description = "Provides console log dashboard contributions",
-    DependsOn = [typeof(global::Elsa.Diagnostics.ConsoleLogs.ShellFeatures.ConsoleLogsFeature), typeof(global::Elsa.Dashboard.Api.ShellFeatures.DashboardApiFeature)])]
+    DependsOn = [typeof(ConsoleLogsFeature), typeof(DashboardApiFeature)])]
 [UsedImplicitly]
 public class ConsoleLogsDashboardFeature : IShellFeature
 {

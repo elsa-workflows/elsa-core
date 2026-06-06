@@ -1,6 +1,7 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Dashboard.Api.Extensions;
+using Elsa.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,7 +10,7 @@ namespace Elsa.Dashboard.Api.ShellFeatures;
 [ShellFeature(
     DisplayName = "Dashboard API",
     Description = "Provides operational dashboard API endpoints for Elsa Studio",
-    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class DashboardApiFeature : IFastEndpointsShellFeature
 {

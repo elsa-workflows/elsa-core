@@ -2,6 +2,7 @@ using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.AI.Host.Options;
 using Elsa.Extensions;
+using Elsa.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,7 +12,7 @@ namespace Elsa.AI.Host.ShellFeatures;
     "AI",
     DisplayName = "AI Host",
     Description = "Hosts Weaver AI orchestration, governed tools, proposals, and audit services",
-    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature)])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class AIFeature : IFastEndpointsShellFeature
 {

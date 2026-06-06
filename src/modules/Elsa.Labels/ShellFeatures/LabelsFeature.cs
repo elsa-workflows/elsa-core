@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
@@ -14,7 +15,7 @@ namespace Elsa.Labels.ShellFeatures;
 [ShellFeature(
     DisplayName = "Labels",
     Description = "Enables functionality to tag workflows with labels",
-    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.MediatorFeature)])]
+    DependsOn = [typeof(MediatorFeature)])]
 [UsedImplicitly]
 public class LabelsFeature : IShellFeature
 {

@@ -1,6 +1,7 @@
 using CShells.Features;
 using Elsa.Http.Handlers;
 using Elsa.Http.Services;
+using Elsa.Workflows.Management.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +13,7 @@ namespace Elsa.Http.ShellFeatures;
 [ShellFeature(
     DisplayName = "HTTP Cache",
     Description = "Provides HTTP workflow caching for improved performance",
-    DependsOn = [typeof(global::Elsa.Http.ShellFeatures.HttpFeature), typeof(global::Elsa.Workflows.Management.ShellFeatures.CachingWorkflowDefinitionsFeature)])]
+    DependsOn = [typeof(HttpFeature), typeof(CachingWorkflowDefinitionsFeature)])]
 [UsedImplicitly]
 public class HttpCacheFeature : IShellFeature
 {

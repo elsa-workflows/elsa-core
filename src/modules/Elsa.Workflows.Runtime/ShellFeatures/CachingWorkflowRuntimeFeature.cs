@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Caching.ShellFeatures;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Stores;
 using JetBrains.Annotations;
@@ -12,7 +13,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 [ShellFeature(
     DisplayName = "Caching Workflow Runtime",
     Description = "Provides caching for workflow runtime operations",
-    DependsOn = [typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature), typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
+    DependsOn = [typeof(MemoryCacheFeature), typeof(WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 public class CachingWorkflowRuntimeFeature : IShellFeature
 {

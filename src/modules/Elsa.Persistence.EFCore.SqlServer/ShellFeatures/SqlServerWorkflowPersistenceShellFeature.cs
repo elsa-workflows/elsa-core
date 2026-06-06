@@ -1,6 +1,8 @@
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management;
+using Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures;
@@ -34,7 +36,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures;
 [ShellFeature(
     DisplayName = "SQL Server Workflow Persistence",
     Description = "Provides SQL Server persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = [typeof(global::Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management.SqlServerWorkflowDefinitionPersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management.SqlServerWorkflowInstancePersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime.SqlServerWorkflowRuntimePersistenceShellFeature)])]
+    DependsOn = [typeof(SqlServerWorkflowDefinitionPersistenceShellFeature), typeof(SqlServerWorkflowInstancePersistenceShellFeature), typeof(SqlServerWorkflowRuntimePersistenceShellFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase

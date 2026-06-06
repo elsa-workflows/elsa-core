@@ -1,6 +1,8 @@
 using CShells.Features;
+using Elsa.Dsl.ElsaScript.ShellFeatures;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
+using Elsa.WorkflowProviders.BlobStorage.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,7 +14,7 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.ShellFeatures;
 [ShellFeature(
     DisplayName = "ElsaScript Blob Storage",
     Description = "Provides ElsaScript format support for the BlobStorage workflow provider",
-    DependsOn = [typeof(global::Elsa.WorkflowProviders.BlobStorage.ShellFeatures.BlobStorageFeature), typeof(global::Elsa.Dsl.ElsaScript.ShellFeatures.ElsaScriptFeature)])]
+    DependsOn = [typeof(BlobStorageFeature), typeof(ElsaScriptFeature)])]
 [UsedImplicitly]
 public class ElsaScriptBlobStorageFeature : IShellFeature
 {

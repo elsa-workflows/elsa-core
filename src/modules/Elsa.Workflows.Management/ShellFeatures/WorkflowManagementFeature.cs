@@ -1,13 +1,13 @@
 using System.Dynamic;
-using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json;
 using CShells.Features;
 using Elsa.Caching.Features;
 using Elsa.Common.Features;
+using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
-using Elsa.Workflows.Options;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
@@ -22,10 +22,10 @@ using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management.ShellFeatures;
 
@@ -42,8 +42,8 @@ namespace Elsa.Workflows.Management.ShellFeatures;
         typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature),
         typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature),
         typeof(global::Elsa.Workflows.ShellFeatures.WorkflowsFeature),
-        typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowDefinitionsFeature),
-        typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowInstancesFeature)
+        typeof(WorkflowDefinitionsFeature),
+        typeof(WorkflowInstancesFeature)
     ])]
 [UsedImplicitly]
 public class WorkflowManagementFeature : IShellFeature

@@ -10,7 +10,7 @@ namespace Elsa.Tenants.ShellFeatures;
 [ShellFeature(
     DisplayName = "Tenant Management Endpoints",
     Description = "Provides REST API endpoints for tenant management",
-    DependsOn = [typeof(global::Elsa.Tenants.ShellFeatures.TenantManagementFeature)])]
+    DependsOn = [typeof(TenantManagementFeature)])]
 [UsedImplicitly]
 public class TenantManagementEndpointsFeature : IShellFeature
 {

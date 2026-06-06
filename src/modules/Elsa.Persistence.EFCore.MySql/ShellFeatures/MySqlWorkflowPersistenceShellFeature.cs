@@ -1,6 +1,8 @@
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Persistence.EFCore.MySql.ShellFeatures.Management;
+using Elsa.Persistence.EFCore.MySql.ShellFeatures.Runtime;
 using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.EFCore.MySql.ShellFeatures;
@@ -34,7 +36,7 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures;
 [ShellFeature(
     DisplayName = "MySql Workflow Persistence",
     Description = "Provides MySql persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = [typeof(global::Elsa.Persistence.EFCore.MySql.ShellFeatures.Management.MySqlWorkflowDefinitionPersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.MySql.ShellFeatures.Management.MySqlWorkflowInstancePersistenceShellFeature), typeof(global::Elsa.Persistence.EFCore.MySql.ShellFeatures.Runtime.MySqlWorkflowRuntimePersistenceShellFeature)])]
+    DependsOn = [typeof(MySqlWorkflowDefinitionPersistenceShellFeature), typeof(MySqlWorkflowInstancePersistenceShellFeature), typeof(MySqlWorkflowRuntimePersistenceShellFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase

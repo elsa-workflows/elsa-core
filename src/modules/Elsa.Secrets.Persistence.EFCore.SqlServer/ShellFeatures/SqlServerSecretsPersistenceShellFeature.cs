@@ -1,9 +1,10 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
-using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Secrets.Persistence.EFCore.ShellFeatures;
+using Elsa.Secrets.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ namespace Elsa.Secrets.Persistence.EFCore.SqlServer.ShellFeatures;
 [ShellFeature(
     DisplayName = "SqlServer Secrets Persistence",
     Description = "Provides SqlServer persistence for secrets",
-    DependsOn = [typeof(global::Elsa.Secrets.ShellFeatures.SecretsFeature)])]
+    DependsOn = [typeof(SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores secrets data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

@@ -1,11 +1,15 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Extensions;
+using Elsa.SasTokens.ShellFeatures;
+using Elsa.ShellFeatures;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
-using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Api.Security;
+using Elsa.Workflows.Api.Serialization;
 using Elsa.Workflows.Api.Services;
+using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Workflows.Runtime.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,11 +28,11 @@ namespace Elsa.Workflows.Api.ShellFeatures;
     Description = "Provides REST API endpoints for workflow management",
     DependsOn =
 [
-    typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature),
-    typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowInstancesFeature),
-    typeof(global::Elsa.Workflows.Management.ShellFeatures.WorkflowManagementFeature),
-    typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature),
-    typeof(global::Elsa.SasTokens.ShellFeatures.SasTokensFeature)
+    typeof(ElsaFastEndpointsFeature),
+    typeof(WorkflowInstancesFeature),
+    typeof(WorkflowManagementFeature),
+    typeof(WorkflowRuntimeFeature),
+    typeof(SasTokensFeature)
 ])]
 [UsedImplicitly]
 public class WorkflowsApiFeature : IFastEndpointsShellFeature

@@ -1,10 +1,13 @@
 using CShells.Features;
+using Elsa.Caching.ShellFeatures;
+using Elsa.Common.ShellFeatures;
 using Elsa.Expressions.Liquid.Contracts;
 using Elsa.Expressions.Liquid.Filters;
 using Elsa.Expressions.Liquid.Handlers;
 using Elsa.Expressions.Liquid.Options;
 using Elsa.Expressions.Liquid.Providers;
 using Elsa.Expressions.Liquid.Services;
+using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Fluid.Filters;
 using JetBrains.Annotations;
@@ -18,7 +21,7 @@ namespace Elsa.Expressions.Liquid.ShellFeatures;
 [ShellFeature(
     DisplayName = "Liquid Expressions",
     Description = "Provides Liquid template expression evaluation capabilities for workflows",
-    DependsOn = [typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature), typeof(global::Elsa.Common.ShellFeatures.MediatorFeature), typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature)])]
+    DependsOn = [typeof(MemoryCacheFeature), typeof(MediatorFeature), typeof(ExpressionsFeature)])]
 [UsedImplicitly]
 public class LiquidFeature : IShellFeature
 {

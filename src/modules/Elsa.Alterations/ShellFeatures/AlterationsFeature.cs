@@ -8,11 +8,13 @@ using Elsa.Alterations.Core.Stores;
 using Elsa.Alterations.Extensions;
 using Elsa.Alterations.Services;
 using Elsa.Alterations.Workflows;
+using Elsa.Common.Serialization;
 using Elsa.Extensions;
+using Elsa.ShellFeatures;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.ShellFeatures;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Alterations.ShellFeatures;
 
@@ -22,7 +24,7 @@ namespace Elsa.Alterations.ShellFeatures;
 [ShellFeature(
     DisplayName = "Alterations",
     Description = "Provides workflow alteration capabilities for modifying running workflow instances",
-    DependsOn = [typeof(global::Elsa.ShellFeatures.ElsaFastEndpointsFeature), typeof(global::Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature)])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature), typeof(WorkflowRuntimeFeature)])]
 [UsedImplicitly]
 public class AlterationsFeature : IFastEndpointsShellFeature
 {

@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Identity.ShellFeatures;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Identity;
 [ShellFeature(
     DisplayName = "SqlServer Identity Persistence",
     Description = "Provides SqlServer persistence for identity management",
-    DependsOn = [typeof(global::Elsa.Identity.ShellFeatures.IdentityFeature)])]
+    DependsOn = [typeof(IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores identity data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerIdentityPersistenceShellFeature

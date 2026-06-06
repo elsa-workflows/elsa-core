@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Alterations.ShellFeatures;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Alterations;
 [ShellFeature(
     DisplayName = "Oracle Alterations Persistence",
     Description = "Provides Oracle persistence for workflow alterations",
-    DependsOn = [typeof(global::Elsa.Alterations.ShellFeatures.AlterationsFeature)])]
+    DependsOn = [typeof(AlterationsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores workflow alteration records in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleAlterationsPersistenceShellFeature

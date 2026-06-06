@@ -1,4 +1,5 @@
 using CShells.FastEndpoints.Contracts;
+using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.FastEndpointConfigurators;
 using JetBrains.Annotations;
@@ -10,7 +11,7 @@ namespace Elsa.ShellFeatures;
 /// Registers the Elsa-specific FastEndpoints configurator.
 /// This feature should be enabled alongside the CShells FastEndpointsFeature to apply Elsa's serialization settings.
 /// </summary>
-[ShellFeature(DependsOn = [typeof(global::CShells.FastEndpoints.Features.FastEndpointsFeature)])]
+[ShellFeature(DependsOn = [typeof(FastEndpointsFeature)])]
 [UsedImplicitly]
 public class ElsaFastEndpointsFeature : IShellFeature
 {

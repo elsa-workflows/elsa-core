@@ -1,7 +1,7 @@
 using CShells.Features;
-using Elsa.Common;
 using Elsa.Common.Serialization;
 using Elsa.Common.ShellFeatures;
+using Elsa.Common;
 using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows.ActivationValidators;
@@ -12,8 +12,8 @@ using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.IncidentStrategies;
-using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
+using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.Middleware.Activities;
 using Elsa.Workflows.Middleware.Workflows;
 using Elsa.Workflows.Options;
@@ -40,12 +40,12 @@ namespace Elsa.Workflows.ShellFeatures;
     Description = "Provides core workflow execution, activity execution, and workflow serialization services",
     DependsOn =
 [
-    typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature),
-    typeof(global::Elsa.Expressions.ShellFeatures.ExpressionsFeature),
-    typeof(global::Elsa.Common.ShellFeatures.MediatorFeature),
-    typeof(global::Elsa.Common.ShellFeatures.DefaultFormattersFeature),
-    typeof(global::Elsa.Common.ShellFeatures.MultitenancyFeature),
-    typeof(global::Elsa.Workflows.ShellFeatures.CommitStrategiesFeature)
+    typeof(SystemClockFeature),
+    typeof(ExpressionsFeature),
+    typeof(MediatorFeature),
+    typeof(DefaultFormattersFeature),
+    typeof(MultitenancyFeature),
+    typeof(CommitStrategiesFeature)
 ])]
 public class WorkflowsFeature : IShellFeature
 {

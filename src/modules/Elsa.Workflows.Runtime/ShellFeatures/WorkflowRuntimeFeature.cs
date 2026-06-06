@@ -1,14 +1,15 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using CShells.Features;
-using Elsa.Common;
 using Elsa.Common.RecurringTasks;
+using Elsa.Common.Serialization;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Discovery;
@@ -20,12 +21,12 @@ using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.Runtime.UIHints;
-using Medallion.Threading;
+using Elsa.Workflows.ShellFeatures;
 using Medallion.Threading.FileSystem;
-using Microsoft.Extensions.DependencyInjection;
+using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
@@ -35,7 +36,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",
-    DependsOn = [typeof(global::Elsa.Workflows.ShellFeatures.WorkflowsFeature)])]
+    DependsOn = [typeof(WorkflowsFeature)])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();

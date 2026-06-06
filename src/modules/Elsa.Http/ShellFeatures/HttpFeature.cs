@@ -1,6 +1,7 @@
 using System.Net;
 using CShells.AspNetCore.Features;
 using CShells.Features;
+using Elsa.Common.Serialization;
 using Elsa.Extensions;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.ContentWriters;
@@ -17,9 +18,10 @@ using Elsa.Http.Tasks;
 using Elsa.Http.TriggerPayloadValidators;
 using Elsa.Http.UIHints;
 using Elsa.Resilience.Extensions;
-using Elsa.Workflows;
+using Elsa.Resilience.ShellFeatures;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Options;
+using Elsa.Workflows;
 using FluentStorage;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -28,7 +30,6 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Http.ShellFeatures;
 
@@ -38,7 +39,7 @@ namespace Elsa.Http.ShellFeatures;
 [ShellFeature(
     DisplayName = "HTTP",
     Description = "Provides HTTP-related activities and services for workflow execution",
-    DependsOn = [typeof(global::Elsa.Http.ShellFeatures.HttpJavaScriptFeature), typeof(global::Elsa.Resilience.ShellFeatures.ResilienceFeature)])]
+    DependsOn = [typeof(HttpJavaScriptFeature), typeof(ResilienceFeature)])]
 [UsedImplicitly]
 public class HttpFeature : IMiddlewareShellFeature
 {

@@ -3,6 +3,7 @@ using CShells.Configuration;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -22,7 +23,7 @@ namespace Elsa.Identity.ShellFeatures;
 [ShellFeature(
     DisplayName = "Identity",
     Description = "Provides identity management, authentication and authorization capabilities",
-    DependsOn = [typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature)])]
+    DependsOn = [typeof(SystemClockFeature)])]
 [UsedImplicitly]
 public class IdentityFeature : IFastEndpointsShellFeature
 {
