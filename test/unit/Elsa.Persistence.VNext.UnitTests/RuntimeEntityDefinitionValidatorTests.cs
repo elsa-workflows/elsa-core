@@ -64,7 +64,7 @@ public class RuntimeEntityDefinitionValidatorTests
     }
 
     [Fact]
-    public void Validate_CapsIndexesAtRuntimeSlotCount()
+    public void Validate_RejectsIndexesBeyondRuntimeSlotCount()
     {
         var validator = new RuntimeEntityDefinitionValidator(Microsoft.Extensions.Options.Options.Create(new RuntimeEntityOptions { MaxIndexedFields = 100 }));
         var definition = CreateDefinition();
