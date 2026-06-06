@@ -1,6 +1,6 @@
 using CShells.Features;
 using Elsa.Common.Multitenancy;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Tenants.AspNetCore.Options;
 using Elsa.Tenants.AspNetCore.Services;
 using JetBrains.Annotations;

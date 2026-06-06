@@ -1,5 +1,5 @@
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Management;
 using Elsa.Persistence.EFCore;
 using JetBrains.Annotations;

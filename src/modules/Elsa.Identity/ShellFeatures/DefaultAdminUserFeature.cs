@@ -2,7 +2,7 @@ using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Identity.HostedServices;
 using Elsa.Identity.Options;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

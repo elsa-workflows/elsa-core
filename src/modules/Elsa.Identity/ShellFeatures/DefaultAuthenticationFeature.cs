@@ -5,7 +5,7 @@ using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Options;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Requirements;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

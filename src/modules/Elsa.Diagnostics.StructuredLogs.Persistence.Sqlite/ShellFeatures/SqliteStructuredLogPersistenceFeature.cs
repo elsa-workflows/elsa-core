@@ -1,7 +1,7 @@
 using CShells.Features;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.ShellFeatures;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Extensions;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 

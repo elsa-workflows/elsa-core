@@ -10,7 +10,7 @@ using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Services;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Workflows;
 using Elsa.Workflows.Options;
 using JetBrains.Annotations;
