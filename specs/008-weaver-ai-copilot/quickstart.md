@@ -11,6 +11,8 @@ Validate the MVP path for Weaver without relying on direct Studio-to-provider ca
 5. Create a workflow proposal.
 6. Validate, approve, apply, and durably audit the proposal.
 
+The Copilot adapter should use `GitHub.Copilot.SDK` as the agent runtime. Elsa Server supplies context, tool callbacks, redaction, audit, and proposal enforcement; it should not emulate Copilot's tool continuation loop.
+
 ## Worktree Setup
 
 Implementation should run from dedicated git worktrees, not the primary local checkout. Create separate worktrees for Core and the paired Studio module so feature work, generated artifacts, and test output stay isolated:
@@ -33,7 +35,7 @@ services
             ai.UseHost();
             ai.UseCopilot(copilot =>
             {
-                copilot.CliPath = "copilot";
+                copilot.RuntimePath = "copilot";
                 copilot.Model = "configured-model";
             });
         });
@@ -47,14 +49,15 @@ services
 3. Request `GET /ai/tools` as an authorized user and verify MVP tools are returned.
 4. Start `POST /ai/chat` with a `WorkflowDefinition` attachment reference and ask Weaver to explain it.
 5. Verify stream events include assistant deltas and any tool lifecycle events.
-6. Ask Weaver to generate a simple workflow.
-7. Verify a `proposal.created` event appears and `GET /ai/proposals/{id}` returns payload, rationale, warnings, diagnostics, and graph preview.
-8. Attempt to apply without approval and verify the server rejects the transition.
-9. Approve and apply the proposal as an authorized user.
-10. Verify the workflow is persisted, validation passed, and durable audit records exist for prompt, tool calls, approval, and apply.
-11. Restart the server with durable persistence configured and verify proposals and audit records are still available.
-12. Disconnect during a chat turn, reconnect within the configured grace window, and verify durable outputs produced while disconnected are recoverable.
-13. Ask for runtime trends using attached references plus a selected time range and diagnostics scope, then verify results do not include data outside that scope.
+6. Verify Elsa logs/audit show server-side tool execution and that Copilot SDK session events, not Host-managed continuation turns, drove the agent loop.
+7. Ask Weaver to generate a simple workflow.
+8. Verify a `proposal.created` event appears and `GET /ai/proposals/{id}` returns payload, rationale, warnings, diagnostics, and graph preview.
+9. Attempt to apply without approval and verify the server rejects the transition.
+10. Approve and apply the proposal as an authorized user.
+11. Verify the workflow is persisted, validation passed, and durable audit records exist for prompt, tool calls, approval, and apply.
+12. Restart the server with durable persistence configured and verify proposals and audit records are still available.
+13. Disconnect during a chat turn, reconnect within the configured grace window, and verify durable outputs produced while disconnected are recoverable.
+14. Ask for runtime trends using attached references plus a selected time range and diagnostics scope, then verify results do not include data outside that scope.
 
 ## Targeted Test Commands
 

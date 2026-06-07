@@ -15,6 +15,7 @@ public static class ServiceCollectionExtensions
             services.Configure(configureOptions);
 
         services.AddOptions<CopilotOptions>();
+        services.TryAddSingleton<CopilotSessionEventMapper>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IAIProvider, CopilotProvider>());
 
         return services;
