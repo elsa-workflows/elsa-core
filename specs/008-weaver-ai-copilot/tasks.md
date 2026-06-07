@@ -97,13 +97,13 @@
 - [X] T053 [P] [US1] Implement workflow instance context provider in `src/modules/Elsa.AI.Host/Context/WorkflowInstanceContextProvider.cs`.
 - [X] T054 [US1] Implement context resolver with authorization and redaction in `src/modules/Elsa.AI.Host/Context/AIContextResolver.cs`.
 - [X] T055 [US1] Implement AI tool registry with enablement filtering in `src/modules/Elsa.AI.Host/Services/AIToolRegistry.cs`.
-- [X] T056 [US1] Implement orchestrator turn flow in `src/modules/Elsa.AI.Host/Services/AIOrchestrator.cs`.
+- [X] T056 [US1] Implement host chat preparation, persistence, audit, and provider streaming flow in `src/modules/Elsa.AI.Host/Services/AIOrchestrator.cs`.
 - [X] T057 [US1] Implement reconnect grace tracking in `src/modules/Elsa.AI.Host/Streaming/AIStreamSessionManager.cs`.
 - [X] T058 [US1] Implement stream event mapper in `src/modules/Elsa.AI.Host/Streaming/AIStreamEventMapper.cs`.
 - [X] T059 [US1] Implement chat endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Chat/Endpoint.cs`.
 - [X] T060 [US1] Implement tools endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Tools/Endpoint.cs`.
 - [X] T061 [US1] Implement capabilities endpoint in `src/modules/Elsa.AI.Host/Endpoints/AI/Capabilities/Endpoint.cs`.
-- [X] T062 [US1] Implement Copilot provider event adapter in `src/modules/Elsa.AI.Copilot/Adapters/CopilotProvider.cs`.
+- [X] T062R [US1] Replace placeholder Copilot provider with `GitHub.Copilot.SDK` session create/resume, SDK-owned agent loop, event mapping, and governed Elsa tool callbacks in `src/modules/Elsa.AI.Copilot/Adapters/CopilotProvider.cs`.
 - [X] T063 [US1] Implement Copilot feature and shell feature registration in `src/modules/Elsa.AI.Copilot/ShellFeatures/CopilotAIFeature.cs`.
 - [X] T064 [US1] Draft paired Studio Razor chat panel implementation, after reviewing the `elsa-extensions` `origin/feat/ai` UI prototype at commit `93f0e09d71e57f5daff1e2d593f0a51faaa80417`, in `../elsa-studio/src/modules/Elsa.Studio.AI/UI/Components/WeaverChatPanel.razor`.
 - [X] T065 [US1] Run chat MVP tests in `test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj`.
@@ -245,7 +245,8 @@
 
 **Purpose**: Close cross-cutting governance gaps, validate boundaries, update documentation, and run targeted checks.
 
-- [ ] T131 [P] Update implementation quickstart notes in `specs/008-weaver-ai-copilot/quickstart.md`.
+- [X] T131 [P] Update implementation quickstart notes in `specs/008-weaver-ai-copilot/quickstart.md`.
+- [X] T131A [P] Add Copilot-native runtime boundary tests proving Host does not execute provider continuation loops and `Elsa.AI.Copilot` depends on `GitHub.Copilot.SDK`.
 - [ ] T132 [P] Add API documentation in `src/modules/Elsa.AI.Host/README.md`.
 - [ ] T133 [P] Add Copilot adapter documentation in `src/modules/Elsa.AI.Copilot/README.md`.
 - [ ] T134 [P] Add persistence provider documentation in `src/modules/Elsa.AI.Persistence.EFCore/README.md`.
