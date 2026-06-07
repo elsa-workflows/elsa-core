@@ -2,15 +2,17 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Secrets.Persistence.EFCore.Oracle.Extensions;
 using Elsa.Secrets.Persistence.EFCore.ShellFeatures;
 using Elsa.Secrets.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Secrets.Persistence.EFCore.Oracle.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
 [ShellFeature(
     DisplayName = "Oracle Secrets Persistence",
     Description = "Provides Oracle persistence for secrets",

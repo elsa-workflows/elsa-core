@@ -30,11 +30,13 @@ using Elsa.Workflows.UIHints.Dictionary;
 using Elsa.Workflows.UIHints.Dropdown;
 using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Workflows",
     Description = "Provides core workflow execution, activity execution, and workflow serialization services",

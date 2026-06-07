@@ -12,12 +12,15 @@ using Elsa.Workflows.Management.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Common.Serialization;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 
 namespace Elsa.Scheduling.ShellFeatures;
 
 /// <summary>
 /// Provides scheduling features to the system.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Scheduling)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Scheduling",
     Description = "Provides scheduling capabilities for workflows including cron and delay-based triggers",

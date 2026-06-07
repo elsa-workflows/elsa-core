@@ -3,8 +3,8 @@ using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Diagnostics.OpenTelemetry.Extensions;
 using Elsa.Diagnostics.OpenTelemetry.Options;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Diagnostics.OpenTelemetry.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
 [ShellFeature(
     DisplayName = "OpenTelemetry Diagnostics",
     Description = "Provides OpenTelemetry diagnostics collection, query services, and live updates",

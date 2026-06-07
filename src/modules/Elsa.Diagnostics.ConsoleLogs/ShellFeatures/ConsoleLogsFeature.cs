@@ -5,6 +5,7 @@ using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
 using Elsa.ShellFeatures;
 using Elsa.Workflows.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.ShellFeatures;
 /// <summary>
 /// Provides live raw console log streaming over REST and SignalR.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
 [ShellFeature(
     DisplayName = "Console Logs",
     Description = "Provides live raw console log streaming over REST and SignalR",

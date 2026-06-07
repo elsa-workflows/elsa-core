@@ -1,11 +1,13 @@
 using CShells.Features;
 using Elsa.AI.Copilot.Options;
 using Elsa.Extensions;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Copilot.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.AI)]
 [ShellFeature(
     "CopilotAI",
     DisplayName = "Copilot AI Provider",

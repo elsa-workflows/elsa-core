@@ -5,6 +5,7 @@
   <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/ShellFeatures')">
     <PackageReference Include="Elsa.Platform.PackageManifest.Generator" PrivateAssets="all" />
     <Compile Include="$(MSBuildThisFileDirectory)PackageManifestHints.cs" Link="PackageManifestHints.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PackageManifestCategories.cs" Link="PackageManifestCategories.cs" />
   </ItemGroup>
 
 </Project>

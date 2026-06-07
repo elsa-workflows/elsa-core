@@ -7,12 +7,14 @@ using Elsa.Workflows.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Common.Serialization;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 
 namespace Elsa.Workflows.ShellFeatures;
 
 /// <summary>
 /// Adds support for the Flowchart activity.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Flowchart",
     Description = "Adds support for the Flowchart activity")]

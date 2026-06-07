@@ -22,6 +22,7 @@ using Elsa.Resilience.ShellFeatures;
 using Elsa.Workflows.Management.Extensions;
 using Elsa.Workflows.Options;
 using Elsa.Workflows;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using FluentStorage;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
@@ -36,6 +37,8 @@ namespace Elsa.Http.ShellFeatures;
 /// <summary>
 /// Installs services related to HTTP services and activities.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.HTTP)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "HTTP",
     Description = "Provides HTTP-related activities and services for workflow execution",

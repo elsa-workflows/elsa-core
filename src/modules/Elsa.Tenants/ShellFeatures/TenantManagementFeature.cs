@@ -1,6 +1,7 @@
 using CShells.Features;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +10,7 @@ namespace Elsa.Tenants.ShellFeatures;
 /// <summary>
 /// Enables tenant management capabilities.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
 [ShellFeature(
     DisplayName = "Tenant Management",
     Description = "Provides tenant store and management capabilities")]

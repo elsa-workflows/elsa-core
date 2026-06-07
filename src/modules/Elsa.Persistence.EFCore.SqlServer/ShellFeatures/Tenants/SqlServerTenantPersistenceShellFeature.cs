@@ -2,8 +2,8 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Tenants;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Tenants.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +12,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Tenants;
 /// <summary>
 /// Configures the tenants feature to use SqlServer persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
 [ShellFeature(
     DisplayName = "SqlServer Tenant Persistence",
     Description = "Provides SqlServer persistence for tenant management",

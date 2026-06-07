@@ -2,6 +2,7 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Expressions.JavaScript.Options;
 using Elsa.Expressions.JavaScript.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,6 +40,8 @@ public abstract class ScriptModuleShellFeatureBase : IShellFeature
 /// <summary>
 /// Adds Lodash library support to JavaScript expressions.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "Lodash JavaScript Library",
     Description = "Provides Lodash utility library for JavaScript expressions",
@@ -52,6 +55,8 @@ public class LodashFeature : ScriptModuleShellFeatureBase
 /// <summary>
 /// Adds Lodash FP library support to JavaScript expressions.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "Lodash FP JavaScript Library",
     Description = "Provides Lodash FP (functional programming) utility library for JavaScript expressions",
@@ -65,6 +70,8 @@ public class LodashFpFeature : ScriptModuleShellFeatureBase
 /// <summary>
 /// Adds Moment.js library support to JavaScript expressions.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "Moment JavaScript Library",
     Description = "Provides Moment.js date/time library for JavaScript expressions",

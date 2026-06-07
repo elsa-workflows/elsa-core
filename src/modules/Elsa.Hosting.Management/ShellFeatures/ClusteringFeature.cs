@@ -3,6 +3,7 @@ using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.HostedServices;
 using Elsa.Hosting.Management.Options;
 using Elsa.Hosting.Management.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,7 @@ namespace Elsa.Hosting.Management.ShellFeatures;
 /// <summary>
 /// Installs and configures the clustering feature.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
 [ShellFeature(
     DisplayName = "Clustering",
     Description = "Provides clustering and heartbeat capabilities for distributed Elsa deployments")]

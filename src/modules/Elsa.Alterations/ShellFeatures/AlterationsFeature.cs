@@ -13,6 +13,7 @@ using Elsa.Extensions;
 using Elsa.ShellFeatures;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +22,8 @@ namespace Elsa.Alterations.ShellFeatures;
 /// <summary>
 /// Adds the Elsa alterations services.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Alterations",
     Description = "Provides workflow alteration capabilities for modifying running workflow instances",

@@ -10,6 +10,7 @@ using Elsa.Expressions.Python.Services;
 using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,8 @@ namespace Elsa.Expressions.Python.ShellFeatures;
 /// <summary>
 /// Installs Python integration.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "Python Expressions",
     Description = "Provides Python expression evaluation capabilities for workflows",

@@ -2,15 +2,17 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Secrets.Persistence.EFCore.ShellFeatures;
 using Elsa.Secrets.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Persistence.EFCore.MySql.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
 [ShellFeature(
     DisplayName = "MySql Secrets Persistence",
     Description = "Provides MySql persistence for secrets",

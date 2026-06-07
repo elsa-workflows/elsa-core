@@ -1,10 +1,12 @@
 using CShells.Features;
 using Elsa.Workflows.Management.ShellFeatures;
 using Elsa.Workflows.Runtime.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Elsa Core",
     Description = "Core Elsa workflow system functionality",

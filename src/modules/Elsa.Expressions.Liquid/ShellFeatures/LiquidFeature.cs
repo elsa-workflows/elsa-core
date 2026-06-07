@@ -9,6 +9,7 @@ using Elsa.Expressions.Liquid.Providers;
 using Elsa.Expressions.Liquid.Services;
 using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Fluid.Filters;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,8 @@ namespace Elsa.Expressions.Liquid.ShellFeatures;
 /// <summary>
 /// Configures Liquid functionality.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "Liquid Expressions",
     Description = "Provides Liquid template expression evaluation capabilities for workflows",

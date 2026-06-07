@@ -11,6 +11,7 @@ using Elsa.Identity.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,8 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Provides identity feature to authenticate &amp; authorize API requests.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
 [ShellFeature(
     DisplayName = "Identity",
     Description = "Provides identity management, authentication and authorization capabilities",

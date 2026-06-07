@@ -1,6 +1,7 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,6 +14,8 @@ namespace Elsa.Shells.Api.ShellFeatures;
 /// This feature implements <see cref="IFastEndpointsShellFeature"/> to indicate that this assembly
 /// contains FastEndpoints that should be automatically discovered and registered.
 /// </remarks>
+[ManifestFeatureCategory(ManifestFeatureCategories.Shells)]
+[ManifestFeatureCategory(ManifestFeatureCategories.API)]
 [ShellFeature(
     DisplayName = "Shells API",
     Description = "Provides REST API endpoints for shell management",

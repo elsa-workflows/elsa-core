@@ -1,12 +1,14 @@
 using CShells.Features;
 using Elsa.Common.Codecs;
 using Elsa.Common.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
 [UsedImplicitly]
+[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
 [ShellFeature(
     "StringCompression",
     DisplayName = "String Compression",

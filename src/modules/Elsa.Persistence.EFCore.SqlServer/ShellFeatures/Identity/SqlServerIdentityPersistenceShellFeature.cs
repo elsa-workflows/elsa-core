@@ -12,6 +12,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use SqlServer persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
 [ShellFeature(
     DisplayName = "SqlServer Identity Persistence",
     Description = "Provides SqlServer persistence for identity management",

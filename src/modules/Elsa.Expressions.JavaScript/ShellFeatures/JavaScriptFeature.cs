@@ -11,19 +11,21 @@ using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Services;
 using Elsa.Expressions.Options;
 using Elsa.Extensions;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Workflows;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Common.Serialization;
 using Elsa.Common.ShellFeatures;
 using Elsa.Expressions.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 
 namespace Elsa.Expressions.JavaScript.ShellFeatures;
 
 /// <summary>
 /// Installs JavaScript integration.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "JavaScript Expressions",
     Description = "Provides JavaScript expression evaluation capabilities for workflows",

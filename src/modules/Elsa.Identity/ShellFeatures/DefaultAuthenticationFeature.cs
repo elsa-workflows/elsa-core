@@ -5,8 +5,8 @@ using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Options;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Requirements;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +17,8 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Provides an authorization feature that configures the system with JWT bearer and API key authentication.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
 [ShellFeature(
     DisplayName = "Default Authentication",
     Description = "Provides JWT bearer and API key authentication",

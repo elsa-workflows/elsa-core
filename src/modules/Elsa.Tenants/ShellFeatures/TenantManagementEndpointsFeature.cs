@@ -1,4 +1,5 @@
 using CShells.Features;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,6 +8,8 @@ namespace Elsa.Tenants.ShellFeatures;
 /// <summary>
 /// Enables tenant management endpoints.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory(ManifestFeatureCategories.API)]
 [ShellFeature(
     DisplayName = "Tenant Management Endpoints",
     Description = "Provides REST API endpoints for tenant management",

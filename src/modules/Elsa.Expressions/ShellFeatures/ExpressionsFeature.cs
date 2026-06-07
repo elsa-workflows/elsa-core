@@ -1,6 +1,7 @@
 using CShells.Features;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Expressions.ShellFeatures;
@@ -8,6 +9,7 @@ namespace Elsa.Expressions.ShellFeatures;
 /// <summary>
 /// Installs and configures the expressions feature.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
 [ShellFeature(
     "Expressions",
     DisplayName = "Expressions",
