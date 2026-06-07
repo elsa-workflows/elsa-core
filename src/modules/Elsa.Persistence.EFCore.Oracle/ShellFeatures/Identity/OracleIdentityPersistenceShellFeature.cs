@@ -12,6 +12,8 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use Oracle persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
 [ShellFeature(
     DisplayName = "Oracle Identity Persistence",
     Description = "Provides Oracle persistence for identity management",

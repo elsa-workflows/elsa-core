@@ -2,10 +2,12 @@ using System.ComponentModel;
 using CShells.Features;
 using Elsa.Common.Serialization;
 using Elsa.Common.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
 [ShellFeature(
     "DefaultFormatters",
     DisplayName = "Default Formatters",

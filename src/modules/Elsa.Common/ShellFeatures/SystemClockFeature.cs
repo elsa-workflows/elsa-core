@@ -1,5 +1,6 @@
 using CShells.Features;
 using Elsa.Common.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
@@ -7,6 +8,7 @@ namespace Elsa.Common.ShellFeatures;
 /// <summary>
 /// Configures the system clock.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
 [ShellFeature(
     "SystemClock",
     DisplayName = "System Clock",

@@ -1,8 +1,8 @@
 using CShells.Features;
 using Elsa.Common.Multitenancy;
-using Elsa.Platform.PackageManifest.Generator.Hints;
 using Elsa.Tenants.AspNetCore.Options;
 using Elsa.Tenants.AspNetCore.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +11,8 @@ namespace Elsa.Tenants.AspNetCore.ShellFeatures;
 /// <summary>
 /// Provides multi-tenant HTTP routing features.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory(ManifestFeatureCategories.HTTP)]
 [ShellFeature(
     DisplayName = "Multi-tenant HTTP Routing",
     Description = "Provides multi-tenant HTTP routing capabilities for workflows")]

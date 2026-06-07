@@ -3,6 +3,7 @@ using Elsa.Common.Services;
 using Elsa.KeyValues.Contracts;
 using Elsa.KeyValues.Entities;
 using Elsa.KeyValues.Stores;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -12,6 +13,8 @@ namespace Elsa.KeyValues.ShellFeatures;
 /// <summary>
 /// Installs and configures key-value store features.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Storage)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
 [ShellFeature(
     DisplayName = "Key-Value Store",
     Description = "Provides key-value storage capabilities for workflows")]

@@ -33,6 +33,8 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures;
 /// </code>
 /// </example>
 /// </remarks>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Oracle Workflow Persistence",
     Description = "Provides Oracle persistence for workflow definitions, instances, and runtime data with unified configuration",

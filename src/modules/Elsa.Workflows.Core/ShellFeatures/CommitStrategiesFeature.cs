@@ -2,10 +2,12 @@ using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.CommitStates.Tasks;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     "CommitStrategies",
     DisplayName = "Commit Strategies",

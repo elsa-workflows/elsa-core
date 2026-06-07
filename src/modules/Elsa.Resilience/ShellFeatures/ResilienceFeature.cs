@@ -14,9 +14,11 @@ using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Elsa.Common.Serialization;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 
 namespace Elsa.Resilience.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Resilience)]
 [ShellFeature(
     DisplayName = "Resilience",
     Description = "Provides workflow resilience strategies and retry attempt tracking")]

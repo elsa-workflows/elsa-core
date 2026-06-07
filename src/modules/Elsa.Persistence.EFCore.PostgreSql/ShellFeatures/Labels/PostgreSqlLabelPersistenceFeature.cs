@@ -13,6 +13,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use PostgreSql persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Labels)]
 [ShellFeature(
     DisplayName = "PostgreSql Label Persistence",
     Description = "Provides PostgreSql persistence for label management",

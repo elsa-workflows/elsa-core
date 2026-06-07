@@ -55,6 +55,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures;
 /// </code>
 /// </example>
 /// </remarks>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Sqlite Workflow Persistence",
     Description = "Provides Sqlite persistence for workflow definitions, instances, and runtime data with unified configuration",

@@ -24,6 +24,7 @@ using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +33,7 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Installs and configures the workflow management feature.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Workflow Management",
     Description = "Provides comprehensive workflow definition and instance management capabilities",

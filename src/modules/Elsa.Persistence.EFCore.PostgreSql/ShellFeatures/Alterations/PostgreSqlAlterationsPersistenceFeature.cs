@@ -13,6 +13,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Alterations;
 /// <summary>
 /// Configures the alterations feature to use PostgreSql persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
 [ShellFeature(
     DisplayName = "PostgreSql Alterations Persistence",
     Description = "Provides PostgreSql persistence for workflow alterations",

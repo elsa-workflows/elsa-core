@@ -6,10 +6,12 @@ using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.ShellHandlers;
 using Elsa.Extensions;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
 [ShellFeature(
     "Multitenancy",
     DisplayName = "Multitenancy",

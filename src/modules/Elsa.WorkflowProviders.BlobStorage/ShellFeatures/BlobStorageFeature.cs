@@ -5,6 +5,7 @@ using Elsa.WorkflowProviders.BlobStorage.Handlers;
 using Elsa.WorkflowProviders.BlobStorage.Providers;
 using Elsa.Workflows.Management.ShellFeatures;
 using Elsa.Workflows.Runtime;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using FluentStorage.Blobs;
 using FluentStorage;
 using JetBrains.Annotations;
@@ -15,6 +16,8 @@ namespace Elsa.WorkflowProviders.BlobStorage.ShellFeatures;
 /// <summary>
 /// A feature that enables the FluentStorage workflow definition provider.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Storage)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Blob Storage Workflow Provider",
     Description = "Provides workflow definitions from blob storage",

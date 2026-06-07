@@ -22,6 +22,7 @@ using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Medallion.Threading.FileSystem;
 using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -33,6 +34,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 /// <summary>
 /// Installs and configures workflow runtime features.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",

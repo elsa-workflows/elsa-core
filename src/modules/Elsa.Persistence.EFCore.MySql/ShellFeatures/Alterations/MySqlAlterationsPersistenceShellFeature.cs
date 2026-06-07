@@ -13,6 +13,8 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Alterations;
 /// <summary>
 /// Configures the alterations feature to use MySql persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
 [ShellFeature(
     DisplayName = "MySql Alterations Persistence",
     Description = "Provides MySql persistence for workflow alterations",

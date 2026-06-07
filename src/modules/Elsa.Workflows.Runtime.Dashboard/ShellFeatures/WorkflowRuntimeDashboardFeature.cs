@@ -2,11 +2,14 @@ using CShells.Features;
 using Elsa.Dashboard.Api.ShellFeatures;
 using Elsa.Workflows.Runtime.Dashboard.Extensions;
 using Elsa.Workflows.Runtime.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Dashboard.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Dashboard)]
 [ShellFeature(
     DisplayName = "Workflow Runtime Dashboard",
     Description = "Provides workflow runtime dashboard contributions",

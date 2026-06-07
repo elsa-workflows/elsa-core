@@ -10,6 +10,7 @@ using Elsa.Expressions.CSharp.Services;
 using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,8 @@ namespace Elsa.Expressions.CSharp.ShellFeatures;
 /// <summary>
 /// Installs C# integration.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
 [ShellFeature(
     DisplayName = "C# Expressions",
     Description = "Provides C# expression evaluation capabilities for workflows",

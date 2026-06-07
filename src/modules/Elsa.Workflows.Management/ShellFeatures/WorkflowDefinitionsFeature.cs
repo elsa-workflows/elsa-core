@@ -1,5 +1,6 @@
 using CShells.Features;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,6 +9,7 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Configures workflow definition storage.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
 [ShellFeature(
     DisplayName = "Workflow Definitions",
     Description = "Manages workflow definitions and their storage")]

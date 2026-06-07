@@ -3,11 +3,13 @@ using CShells.Features;
 using Elsa.AI.Host.Options;
 using Elsa.Extensions;
 using Elsa.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.AI)]
 [ShellFeature(
     "AI",
     DisplayName = "AI Host",

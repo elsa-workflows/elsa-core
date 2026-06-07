@@ -12,6 +12,8 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Alterations;
 /// <summary>
 /// Configures the alterations feature to use Oracle persistence.
 /// </summary>
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
 [ShellFeature(
     DisplayName = "Oracle Alterations Persistence",
     Description = "Provides Oracle persistence for workflow alterations",

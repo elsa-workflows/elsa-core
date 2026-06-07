@@ -1,11 +1,14 @@
 using CShells.Features;
 using Elsa.Extensions;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Persistence.EFCore.ShellFeatures;
 
+[ManifestFeatureCategory(ManifestFeatureCategories.AI)]
+[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
 [ShellFeature(
     "AIPersistence",
     DisplayName = "AI Persistence",
