@@ -286,7 +286,10 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
             }
         };
 
-        await RunAndAssertLines(forEach, new[] { "a", "b" });
+        var result = await _fixture.RunActivityAsync(forEach);
+
+        Assert.Equal(new[] { "a", "b" }, _fixture.CapturingTextWriter.Lines);
+        Assert.Equal("b", result.WorkflowState.Output["Output"]);
     }
     
     private static WriteLine WriteCurrentValue() => new(context => context.GetVariable<string>(CurrentValueVar));
