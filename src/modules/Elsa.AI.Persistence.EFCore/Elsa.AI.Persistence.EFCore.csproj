@@ -11,11 +11,11 @@
         <PackageReference Include="CShells" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
         <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
     </ItemGroup>
 

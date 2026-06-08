@@ -209,7 +209,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
     public async Task ProposalStoreRetriesConcurrentInsertsAsUpdates()
     {
         var options = new DbContextOptionsBuilder<AIDbContext>()
-            .UseSqlite(_connection)
+            .UseSqliteAIMigrations(_connection)
             .AddInterceptors(new ConcurrentProposalInsertInterceptor(_connection))
             .Options;
         await using var context = new AIDbContext(options);
@@ -344,7 +344,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();
-        _dbContext = new AIDbContext(new DbContextOptionsBuilder<AIDbContext>().UseSqlite(_connection).Options);
+        _dbContext = new AIDbContext(new DbContextOptionsBuilder<AIDbContext>().UseSqliteAIMigrations(_connection).Options);
         await _dbContext.Database.MigrateAsync();
     }
 
@@ -368,7 +368,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
                 return result;
 
             _inserted = true;
-            var options = new DbContextOptionsBuilder<AIDbContext>().UseSqlite(connection).Options;
+            var options = new DbContextOptionsBuilder<AIDbContext>().UseSqliteAIMigrations(connection).Options;
             await using var competingContext = new AIDbContext(options);
             competingContext.Proposals.Add(new AIProposalRecord
             {

@@ -1,9 +1,21 @@
 using Elsa.AI.Persistence.EFCore.Entities;
+using Elsa.Persistence.EFCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Persistence.EFCore;
 
-public class AIDbContext(DbContextOptions<AIDbContext> options) : DbContext(options)
+public class AIDbContext : ElsaDbContextBase
 {
+    private static readonly IServiceProvider EmptyServiceProvider = new ServiceCollection().BuildServiceProvider();
+
+    public AIDbContext(DbContextOptions<AIDbContext> options) : this(options, EmptyServiceProvider)
+    {
+    }
+
+    public AIDbContext(DbContextOptions<AIDbContext> options, IServiceProvider serviceProvider) : base(options, serviceProvider)
+    {
+    }
+
     public DbSet<AIConversationRecord> Conversations => Set<AIConversationRecord>();
     public DbSet<AIProposalRecord> Proposals => Set<AIProposalRecord>();
     public DbSet<AIAuditRecord> AuditRecords => Set<AIAuditRecord>();
@@ -46,5 +58,7 @@ public class AIDbContext(DbContextOptions<AIDbContext> options) : DbContext(opti
             entity.Property(x => x.RetentionMode).IsRequired();
             entity.Property(x => x.Messages).IsRequired();
         });
+
+        base.OnModelCreating(modelBuilder);
     }
 }
