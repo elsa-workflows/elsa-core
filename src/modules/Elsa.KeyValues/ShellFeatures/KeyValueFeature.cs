@@ -13,8 +13,8 @@ namespace Elsa.KeyValues.ShellFeatures;
 /// <summary>
 /// Installs and configures key-value store features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Storage)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Storage")]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     DisplayName = "Key-Value Store",
     Description = "Provides key-value storage capabilities for workflows")]

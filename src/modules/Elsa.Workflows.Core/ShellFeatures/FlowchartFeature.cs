@@ -14,7 +14,7 @@ namespace Elsa.Workflows.ShellFeatures;
 /// <summary>
 /// Adds support for the Flowchart activity.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Flowchart",
     Description = "Adds support for the Flowchart activity")]

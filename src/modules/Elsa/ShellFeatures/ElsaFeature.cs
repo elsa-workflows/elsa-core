@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Elsa Core",
     Description = "Core Elsa workflow system functionality",

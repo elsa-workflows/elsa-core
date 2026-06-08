@@ -2,7 +2,6 @@ using CShells.Features;
 using CShells.Lifecycle;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
-using Elsa.Common.Multitenancy.HostedServices;
 using Elsa.Common.RecurringTasks;
 using Elsa.Common.ShellHandlers;
 using Elsa.Extensions;
@@ -11,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Common.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     "Multitenancy",
     DisplayName = "Multitenancy",

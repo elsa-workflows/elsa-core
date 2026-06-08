@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Tenants;
 /// <summary>
 /// Configures the tenants feature to use PostgreSql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "PostgreSql Tenant Persistence",
     Description = "Provides PostgreSql persistence for tenant management",

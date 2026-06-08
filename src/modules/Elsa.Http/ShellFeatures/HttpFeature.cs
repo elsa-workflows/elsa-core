@@ -37,8 +37,8 @@ namespace Elsa.Http.ShellFeatures;
 /// <summary>
 /// Installs services related to HTTP services and activities.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.HTTP)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("HTTP")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "HTTP",
     Description = "Provides HTTP-related activities and services for workflow execution",

@@ -19,8 +19,8 @@ namespace Elsa.Scheduling.ShellFeatures;
 /// <summary>
 /// Provides scheduling features to the system.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Scheduling)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Scheduling")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Scheduling",
     Description = "Provides scheduling capabilities for workflows including cron and delay-based triggers",

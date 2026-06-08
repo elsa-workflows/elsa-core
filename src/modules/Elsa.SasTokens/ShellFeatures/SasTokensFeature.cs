@@ -10,7 +10,7 @@ namespace Elsa.SasTokens.ShellFeatures;
 /// <summary>
 /// Adds the SAS tokens feature to the workflow runtime.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "SAS Tokens",
     Description = "Provides shared access signature token generation and validation")]

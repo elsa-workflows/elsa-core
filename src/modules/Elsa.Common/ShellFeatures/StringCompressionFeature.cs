@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Common.ShellFeatures;
 
 [UsedImplicitly]
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     "StringCompression",
     DisplayName = "String Compression",

@@ -22,8 +22,8 @@ namespace Elsa.Alterations.ShellFeatures;
 /// <summary>
 /// Adds the Elsa alterations services.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Alterations")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Alterations",
     Description = "Provides workflow alteration capabilities for modifying running workflow instances",

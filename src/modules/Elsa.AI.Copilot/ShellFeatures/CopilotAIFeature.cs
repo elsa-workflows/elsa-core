@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Copilot.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.AI)]
+[ManifestFeatureCategory("AI")]
 [ShellFeature(
     "CopilotAI",
     DisplayName = "Copilot AI Provider",

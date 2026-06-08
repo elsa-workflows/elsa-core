@@ -34,7 +34,7 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 /// <summary>
 /// Installs and configures workflow runtime features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",

@@ -8,7 +8,7 @@ namespace Elsa.Common.ShellFeatures;
 /// <summary>
 /// Configures the system clock.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     "SystemClock",
     DisplayName = "System Clock",

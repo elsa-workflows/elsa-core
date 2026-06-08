@@ -13,8 +13,8 @@ namespace Elsa.Dsl.ElsaScript.ShellFeatures;
 /// <summary>
 /// Feature for ElsaScript DSL support.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Scripting")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "ElsaScript DSL",
     Description = "Provides ElsaScript DSL support for defining workflows")]

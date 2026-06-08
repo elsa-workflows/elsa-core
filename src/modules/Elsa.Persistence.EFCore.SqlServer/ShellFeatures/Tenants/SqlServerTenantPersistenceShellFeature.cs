@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Tenants;
 /// <summary>
 /// Configures the tenants feature to use SqlServer persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "SqlServer Tenant Persistence",
     Description = "Provides SqlServer persistence for tenant management",

@@ -19,8 +19,8 @@ namespace Elsa.Expressions.Liquid.ShellFeatures;
 /// <summary>
 /// Configures Liquid functionality.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
+[ManifestFeatureCategory("Expressions")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "Liquid Expressions",
     Description = "Provides Liquid template expression evaluation capabilities for workflows",

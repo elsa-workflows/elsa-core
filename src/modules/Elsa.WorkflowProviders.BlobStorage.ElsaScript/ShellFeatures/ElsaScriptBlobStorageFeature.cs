@@ -12,9 +12,9 @@ namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.ShellFeatures;
 /// <summary>
 /// A feature that enables ElsaScript support for the BlobStorage workflow provider.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Storage)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Storage")]
+[ManifestFeatureCategory("Scripting")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "ElsaScript Blob Storage",
     Description = "Provides ElsaScript format support for the BlobStorage workflow provider",

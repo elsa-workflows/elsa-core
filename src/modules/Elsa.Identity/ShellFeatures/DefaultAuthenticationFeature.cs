@@ -17,8 +17,8 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Provides an authorization feature that configures the system with JWT bearer and API key authentication.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
+[ManifestFeatureCategory("Identity")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Default Authentication",
     Description = "Provides JWT bearer and API key authentication",

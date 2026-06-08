@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Tenants;
 /// <summary>
 /// Configures the tenants feature to use Oracle persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "Oracle Tenant Persistence",
     Description = "Provides Oracle persistence for tenant management",

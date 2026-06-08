@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Management;
 /// <summary>
 /// Configures the management feature to use PostgreSql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "PostgreSql Workflow Instance Persistence",
     Description = "Provides PostgreSql persistence for workflow instances",

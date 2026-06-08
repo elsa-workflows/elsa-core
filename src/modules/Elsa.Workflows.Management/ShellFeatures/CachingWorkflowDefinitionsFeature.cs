@@ -11,8 +11,8 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Configures workflow definition caching.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Caching)]
+[ManifestFeatureCategory("Workflows")]
+[ManifestFeatureCategory("Caching")]
 [ShellFeature(
     DisplayName = "Caching Workflow Definitions",
     Description = "Provides caching for workflow definitions")]

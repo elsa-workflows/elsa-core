@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use MySql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Identity")]
 [ShellFeature(
     DisplayName = "MySql Identity Persistence",
     Description = "Provides MySql persistence for identity management",

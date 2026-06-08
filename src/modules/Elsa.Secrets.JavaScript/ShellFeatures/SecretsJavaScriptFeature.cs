@@ -9,8 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.JavaScript.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "Secrets JavaScript",
     Description = "Provides JavaScript expression functions for resolving Elsa secrets.",

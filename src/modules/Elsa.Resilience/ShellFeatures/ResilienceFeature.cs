@@ -18,7 +18,7 @@ using Elsa.Platform.PackageManifest.Generator.Hints;
 
 namespace Elsa.Resilience.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Resilience)]
+[ManifestFeatureCategory("Resilience")]
 [ShellFeature(
     DisplayName = "Resilience",
     Description = "Provides workflow resilience strategies and retry attempt tracking")]

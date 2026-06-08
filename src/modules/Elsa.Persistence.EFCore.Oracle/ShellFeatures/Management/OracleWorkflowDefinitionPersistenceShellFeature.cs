@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Management;
 /// <summary>
 /// Configures the management feature to use Oracle persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Oracle Workflow Definition Persistence",
     Description = "Provides Oracle persistence for workflow definitions",

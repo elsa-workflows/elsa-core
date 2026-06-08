@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Dashboard.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Dashboard)]
+[ManifestFeatureCategory("Workflows")]
+[ManifestFeatureCategory("Dashboard")]
 [ShellFeature(
     DisplayName = "Workflow Runtime Dashboard",
     Description = "Provides workflow runtime dashboard contributions",

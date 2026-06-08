@@ -36,7 +36,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflows",
     Description = "Provides core workflow execution, activity execution, and workflow serialization services",

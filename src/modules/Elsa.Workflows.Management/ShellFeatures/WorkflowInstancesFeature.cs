@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Enables storage of workflow instances.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflow Instances",
     Description = "Manages workflow execution instances and their persistent state")]

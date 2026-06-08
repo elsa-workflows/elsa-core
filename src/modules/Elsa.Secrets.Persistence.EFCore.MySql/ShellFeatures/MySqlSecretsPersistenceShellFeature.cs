@@ -11,8 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Persistence.EFCore.MySql.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "MySql Secrets Persistence",
     Description = "Provides MySql persistence for secrets",

@@ -11,8 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "PostgreSql Secrets Persistence",
     Description = "Provides PostgreSql persistence for secrets",

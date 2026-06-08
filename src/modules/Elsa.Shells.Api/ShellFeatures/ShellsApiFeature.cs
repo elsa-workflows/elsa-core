@@ -14,8 +14,8 @@ namespace Elsa.Shells.Api.ShellFeatures;
 /// This feature implements <see cref="IFastEndpointsShellFeature"/> to indicate that this assembly
 /// contains FastEndpoints that should be automatically discovered and registered.
 /// </remarks>
-[ManifestFeatureCategory(ManifestFeatureCategories.Shells)]
-[ManifestFeatureCategory(ManifestFeatureCategories.API)]
+[ManifestFeatureCategory("Shells")]
+[ManifestFeatureCategory("API")]
 [ShellFeature(
     DisplayName = "Shells API",
     Description = "Provides REST API endpoints for shell management",

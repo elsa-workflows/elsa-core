@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use MySql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Labels)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "MySql Label Persistence",
     Description = "Provides MySql persistence for label management",

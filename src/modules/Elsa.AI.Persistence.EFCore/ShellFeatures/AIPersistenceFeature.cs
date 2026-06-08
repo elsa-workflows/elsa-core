@@ -7,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Persistence.EFCore.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.AI)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("AI")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     "AIPersistence",
     DisplayName = "AI Persistence",

@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Alterations;
 /// <summary>
 /// Configures the alterations feature to use Sqlite persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Alterations")]
 [ShellFeature(
     DisplayName = "Sqlite Alterations Persistence",
     Description = "Provides Sqlite persistence for workflow alterations",

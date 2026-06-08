@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use Sqlite persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Labels)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "Sqlite Label Persistence",
     Description = "Provides Sqlite persistence for label management",

@@ -11,8 +11,8 @@ namespace Elsa.Tenants.AspNetCore.ShellFeatures;
 /// <summary>
 /// Provides multi-tenant HTTP routing features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
-[ManifestFeatureCategory(ManifestFeatureCategories.HTTP)]
+[ManifestFeatureCategory("Tenancy")]
+[ManifestFeatureCategory("HTTP")]
 [ShellFeature(
     DisplayName = "Multi-tenant HTTP Routing",
     Description = "Provides multi-tenant HTTP routing capabilities for workflows")]

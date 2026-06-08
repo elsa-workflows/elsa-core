@@ -16,8 +16,8 @@ namespace Elsa.WorkflowProviders.BlobStorage.ShellFeatures;
 /// <summary>
 /// A feature that enables the FluentStorage workflow definition provider.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Storage)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Storage")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Blob Storage Workflow Provider",
     Description = "Provides workflow definitions from blob storage",

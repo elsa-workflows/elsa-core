@@ -11,8 +11,8 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Feature that initializes an admin user from configuration if provided.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
+[ManifestFeatureCategory("Identity")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Default Admin User Initialization",
     Description = "Initializes a default admin user from configuration if provided",

@@ -19,8 +19,8 @@ namespace Elsa.Expressions.Python.ShellFeatures;
 /// <summary>
 /// Installs Python integration.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
+[ManifestFeatureCategory("Expressions")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "Python Expressions",
     Description = "Provides Python expression evaluation capabilities for workflows",

@@ -15,7 +15,7 @@ namespace Elsa.Diagnostics.StructuredLogs.ShellFeatures;
 /// <summary>
 /// Provides live structured log streaming over REST and SignalR.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
+[ManifestFeatureCategory("Diagnostics")]
 [ShellFeature(
     DisplayName = "Structured Logs",
     Description = "Provides live structured log streaming over REST and SignalR",

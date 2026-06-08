@@ -11,8 +11,8 @@ namespace Elsa.Workflows.Runtime.ShellFeatures;
 /// <summary>
 /// Installs and configures workflow runtime caching features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Caching)]
+[ManifestFeatureCategory("Workflows")]
+[ManifestFeatureCategory("Caching")]
 [ShellFeature(
     DisplayName = "Caching Workflow Runtime",
     Description = "Provides caching for workflow runtime operations",

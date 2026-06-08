@@ -24,8 +24,8 @@ namespace Elsa.Expressions.JavaScript.ShellFeatures;
 /// <summary>
 /// Installs JavaScript integration.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
+[ManifestFeatureCategory("Expressions")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "JavaScript Expressions",
     Description = "Provides JavaScript expression evaluation capabilities for workflows",

@@ -12,7 +12,7 @@ namespace Elsa.Hosting.Management.ShellFeatures;
 /// <summary>
 /// Installs and configures the clustering feature.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     DisplayName = "Clustering",
     Description = "Provides clustering and heartbeat capabilities for distributed Elsa deployments")]

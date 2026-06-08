@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Dashboard)]
+[ManifestFeatureCategory("Diagnostics")]
+[ManifestFeatureCategory("Dashboard")]
 [ShellFeature(
     DisplayName = "Structured Logs Dashboard",
     Description = "Provides structured log dashboard contributions",

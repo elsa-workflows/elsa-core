@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Runtime;
 /// <summary>
 /// Configures the runtime feature to use MySql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "MySql Workflow Runtime Persistence",
     Description = "Provides MySql persistence for workflow runtime",

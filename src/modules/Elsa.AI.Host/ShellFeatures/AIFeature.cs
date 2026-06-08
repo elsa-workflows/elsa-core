@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.AI)]
+[ManifestFeatureCategory("AI")]
 [ShellFeature(
     "AI",
     DisplayName = "AI Host",

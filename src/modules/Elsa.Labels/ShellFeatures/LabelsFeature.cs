@@ -13,7 +13,7 @@ namespace Elsa.Labels.ShellFeatures;
 /// <summary>
 /// Enables functionality to tag workflows with labels.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Labels)]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "Labels",
     Description = "Enables functionality to tag workflows with labels",

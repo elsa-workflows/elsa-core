@@ -19,8 +19,8 @@ namespace Elsa.Expressions.CSharp.ShellFeatures;
 /// <summary>
 /// Installs C# integration.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
+[ManifestFeatureCategory("Expressions")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "C# Expressions",
     Description = "Provides C# expression evaluation capabilities for workflows",

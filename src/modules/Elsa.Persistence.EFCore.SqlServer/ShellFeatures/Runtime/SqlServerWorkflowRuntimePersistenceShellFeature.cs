@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 /// <summary>
 /// Configures the runtime feature to use SqlServer persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "SqlServer Workflow Runtime Persistence",
     Description = "Provides SqlServer persistence for workflow runtime",

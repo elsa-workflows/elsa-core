@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Secrets.Persistence.EFCore.SqlServer.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "SqlServer Secrets Persistence",
     Description = "Provides SqlServer persistence for secrets",

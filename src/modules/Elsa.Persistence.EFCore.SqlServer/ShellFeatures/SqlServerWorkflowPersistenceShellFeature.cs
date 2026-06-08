@@ -33,8 +33,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures;
 /// </code>
 /// </example>
 /// </remarks>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "SQL Server Workflow Persistence",
     Description = "Provides SQL Server persistence for workflow definitions, instances, and runtime data with unified configuration",

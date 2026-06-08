@@ -33,7 +33,7 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Installs and configures the workflow management feature.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflow Management",
     Description = "Provides comprehensive workflow definition and instance management capabilities",

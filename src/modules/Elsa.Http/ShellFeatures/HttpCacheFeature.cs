@@ -11,8 +11,8 @@ namespace Elsa.Http.ShellFeatures;
 /// <summary>
 /// Installs services related to HTTP caching.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.HTTP)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Caching)]
+[ManifestFeatureCategory("HTTP")]
+[ManifestFeatureCategory("Caching")]
 [ShellFeature(
     DisplayName = "HTTP Cache",
     Description = "Provides HTTP workflow caching for improved performance",

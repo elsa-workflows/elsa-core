@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use SqlServer persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Labels)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "SqlServer Label Persistence",
     Description = "Provides SqlServer persistence for label management",

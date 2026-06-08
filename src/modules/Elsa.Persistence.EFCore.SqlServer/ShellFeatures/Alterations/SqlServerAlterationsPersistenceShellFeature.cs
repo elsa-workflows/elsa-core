@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Alterations;
 /// <summary>
 /// Configures the alterations feature to use SqlServer persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Alterations)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Alterations")]
 [ShellFeature(
     DisplayName = "SqlServer Alterations Persistence",
     Description = "Provides SqlServer persistence for workflow alterations",

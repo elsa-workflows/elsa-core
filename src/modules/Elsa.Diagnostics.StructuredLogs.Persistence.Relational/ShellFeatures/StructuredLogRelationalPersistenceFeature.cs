@@ -9,8 +9,8 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.ShellFeatures;
 /// <summary>
 /// Provides shared relational persistence services for diagnostics structured logs.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("Diagnostics")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "Structured Log Relational Persistence",
     Description = "Provides shared relational persistence services for diagnostics structured logs",

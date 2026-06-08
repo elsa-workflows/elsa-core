@@ -12,7 +12,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace Elsa.Diagnostics.OpenTelemetry.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
+[ManifestFeatureCategory("Diagnostics")]
 [ShellFeature(
     DisplayName = "OpenTelemetry Diagnostics",
     Description = "Provides OpenTelemetry diagnostics collection, query services, and live updates",

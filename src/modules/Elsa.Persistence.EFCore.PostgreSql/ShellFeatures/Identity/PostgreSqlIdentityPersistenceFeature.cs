@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use PostgreSql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Identity")]
 [ShellFeature(
     DisplayName = "PostgreSql Identity Persistence",
     Description = "Provides PostgreSql persistence for identity management",

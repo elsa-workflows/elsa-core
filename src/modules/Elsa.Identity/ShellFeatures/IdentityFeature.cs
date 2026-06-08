@@ -21,8 +21,8 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Provides identity feature to authenticate &amp; authorize API requests.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
+[ManifestFeatureCategory("Identity")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Identity",
     Description = "Provides identity management, authentication and authorization capabilities",

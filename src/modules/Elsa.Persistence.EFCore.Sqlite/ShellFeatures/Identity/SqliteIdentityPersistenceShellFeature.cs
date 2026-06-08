@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use Sqlite persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Identity)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Identity")]
 [ShellFeature(
     DisplayName = "Sqlite Identity Persistence",
     Description = "Provides Sqlite persistence for identity management",

@@ -11,7 +11,7 @@ namespace Elsa.Tenants.ShellFeatures;
 /// <summary>
 /// Configures multi-tenancy features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "Tenants",
     Description = "Provides multi-tenancy capabilities for workflows")]

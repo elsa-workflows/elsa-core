@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Elsa.Secrets.Persistence.EFCore.Oracle.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "Oracle Secrets Persistence",
     Description = "Provides Oracle persistence for secrets",

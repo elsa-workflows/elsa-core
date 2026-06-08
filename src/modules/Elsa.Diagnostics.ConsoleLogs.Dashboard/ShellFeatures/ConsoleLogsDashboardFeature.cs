@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Dashboard)]
+[ManifestFeatureCategory("Diagnostics")]
+[ManifestFeatureCategory("Dashboard")]
 [ShellFeature(
     DisplayName = "Console Logs Dashboard",
     Description = "Provides console log dashboard contributions",

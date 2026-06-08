@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Management.ShellFeatures;
 /// <summary>
 /// Configures workflow definition storage.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflow Definitions",
     Description = "Manages workflow definitions and their storage")]

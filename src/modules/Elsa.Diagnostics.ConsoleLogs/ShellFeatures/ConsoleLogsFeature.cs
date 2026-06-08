@@ -16,7 +16,7 @@ namespace Elsa.Diagnostics.ConsoleLogs.ShellFeatures;
 /// <summary>
 /// Provides live raw console log streaming over REST and SignalR.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
+[ManifestFeatureCategory("Diagnostics")]
 [ShellFeature(
     DisplayName = "Console Logs",
     Description = "Provides live raw console log streaming over REST and SignalR",

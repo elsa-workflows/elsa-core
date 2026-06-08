@@ -10,7 +10,7 @@ namespace Elsa.Tenants.ShellFeatures;
 /// <summary>
 /// Enables tenant management capabilities.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "Tenant Management",
     Description = "Provides tenant store and management capabilities")]

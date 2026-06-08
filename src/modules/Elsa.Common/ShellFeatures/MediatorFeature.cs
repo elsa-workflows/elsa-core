@@ -10,7 +10,7 @@ namespace Elsa.Common.ShellFeatures;
 /// <summary>
 /// Adds and configures the Mediator feature.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     "Mediator",
     DisplayName = "Mediator",

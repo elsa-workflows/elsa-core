@@ -9,7 +9,7 @@ namespace Elsa.Expressions.ShellFeatures;
 /// <summary>
 /// Installs and configures the expressions feature.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Expressions)]
+[ManifestFeatureCategory("Expressions")]
 [ShellFeature(
     "Expressions",
     DisplayName = "Expressions",

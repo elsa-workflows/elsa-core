@@ -9,8 +9,8 @@ namespace Elsa.Caching.ShellFeatures;
 /// <summary>
 /// Configures the MemoryCache.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Caching)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Caching")]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     DisplayName = "Memory Cache",
     Description = "Provides in-memory caching services")]

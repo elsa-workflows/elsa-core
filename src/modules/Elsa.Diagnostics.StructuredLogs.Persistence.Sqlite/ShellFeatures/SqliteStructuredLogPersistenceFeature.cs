@@ -10,8 +10,8 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.ShellFeatures;
 /// <summary>
 /// Provides SQLite persistence for diagnostics structured logs.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Diagnostics)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
+[ManifestFeatureCategory("Diagnostics")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "SQLite Structured Log Persistence",
     Description = "Provides SQLite persistence for diagnostics structured logs",

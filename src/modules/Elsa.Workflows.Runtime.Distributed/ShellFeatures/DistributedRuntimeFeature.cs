@@ -14,8 +14,8 @@ namespace Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 /// <summary>
 /// Installs and configures distributed workflow runtime features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Infrastructure)]
+[ManifestFeatureCategory("Workflows")]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     DisplayName = "Distributed Runtime",
     Description = "Provides distributed workflow runtime capabilities",

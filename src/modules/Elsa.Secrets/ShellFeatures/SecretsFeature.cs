@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Secrets)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Security)]
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Secrets",
     Description = "Provides named secret management, secret stores, and runtime secret resolution.",

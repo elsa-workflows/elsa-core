@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dashboard.Api.ShellFeatures;
 
-[ManifestFeatureCategory(ManifestFeatureCategories.Dashboard)]
-[ManifestFeatureCategory(ManifestFeatureCategories.API)]
+[ManifestFeatureCategory("Dashboard")]
+[ManifestFeatureCategory("API")]
 [ShellFeature(
     DisplayName = "Dashboard API",
     Description = "Provides operational dashboard API endpoints for Elsa Studio",

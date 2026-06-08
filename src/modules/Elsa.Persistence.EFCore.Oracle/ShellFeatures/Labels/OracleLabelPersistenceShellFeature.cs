@@ -12,8 +12,8 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use Oracle persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Labels)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "Oracle Label Persistence",
     Description = "Provides Oracle persistence for label management",

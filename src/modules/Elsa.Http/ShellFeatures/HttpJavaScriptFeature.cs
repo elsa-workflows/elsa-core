@@ -10,8 +10,8 @@ namespace Elsa.Http.ShellFeatures;
 /// <summary>
 /// Provides JavaScript integration for HTTP features.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.HTTP)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Scripting)]
+[ManifestFeatureCategory("HTTP")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "HTTP JavaScript",
     Description = "Provides JavaScript integration for HTTP activities",

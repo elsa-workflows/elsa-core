@@ -24,8 +24,8 @@ namespace Elsa.Workflows.Api.ShellFeatures;
 /// This feature implements <see cref="IFastEndpointsShellFeature"/> to indicate that this assembly
 /// contains FastEndpoints that should be automatically discovered and registered.
 /// </remarks>
-[ManifestFeatureCategory(ManifestFeatureCategories.Workflows)]
-[ManifestFeatureCategory(ManifestFeatureCategories.API)]
+[ManifestFeatureCategory("Workflows")]
+[ManifestFeatureCategory("API")]
 [ShellFeature(
     DisplayName = "Workflows API",
     Description = "Provides REST API endpoints for workflow management",

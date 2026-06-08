@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.MySql.ShellFeatures.Tenants;
 /// <summary>
 /// Configures the tenants feature to use MySql persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "MySql Tenant Persistence",
     Description = "Provides MySql persistence for tenant management",

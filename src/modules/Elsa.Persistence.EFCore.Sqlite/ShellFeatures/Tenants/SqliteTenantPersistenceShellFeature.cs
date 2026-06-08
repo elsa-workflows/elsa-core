@@ -13,8 +13,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Tenants;
 /// <summary>
 /// Configures the tenants feature to use Sqlite persistence.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Persistence)]
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Tenancy")]
 [ShellFeature(
     DisplayName = "Sqlite Tenant Persistence",
     Description = "Provides Sqlite persistence for tenant management",

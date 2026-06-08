@@ -8,8 +8,8 @@ namespace Elsa.Tenants.ShellFeatures;
 /// <summary>
 /// Enables tenant management endpoints.
 /// </summary>
-[ManifestFeatureCategory(ManifestFeatureCategories.Tenancy)]
-[ManifestFeatureCategory(ManifestFeatureCategories.API)]
+[ManifestFeatureCategory("Tenancy")]
+[ManifestFeatureCategory("API")]
 [ShellFeature(
     DisplayName = "Tenant Management Endpoints",
     Description = "Provides REST API endpoints for tenant management",
