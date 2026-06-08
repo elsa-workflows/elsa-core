@@ -380,10 +380,15 @@ public partial class Flowchart
         var flowchartContext = context.ReceiverActivityExecutionContext;
         await CompleteIfNoPendingWorkAsync(flowchartContext);
         var flowchart = (Flowchart)flowchartContext.Activity;
+        var canceledActivity = context.SenderActivityExecutionContext.Activity;
+
+        if (!flowchart.Activities.Contains(canceledActivity))
+            return;
+
         var flowGraph = flowchartContext.GetFlowGraph();
         var flowScope = flowchart.GetFlowScope(flowchartContext);
 
         // Propagate canceled connections visited count by scheduling with Outcomes.Empty
-        await MaybeScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, context.SenderActivityExecutionContext.Activity, context.SenderActivityExecutionContext, Outcomes.Empty, OnChildCompletedAsync);
+        await MaybeScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, canceledActivity, context.SenderActivityExecutionContext, Outcomes.Empty, OnChildCompletedAsync);
     }
 }
