@@ -1,7 +1,10 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
+using Elsa.AI.Host.Options;
+using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 using System.Text.Json.Nodes;
 
 namespace Elsa.AI.Host.UnitTests.Context;
@@ -120,6 +123,9 @@ public class AIContextResolverTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<AIContextResolver>();
+        services.AddSingleton<WorkflowGroundingMapper>();
+        services.AddSingleton(sp => new AIGroundingResultFormatter(MicrosoftOptions.Create(new AIHostOptions())));
+        services.AddSingleton<RuntimeGroundingMapper>();
         configure(services);
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }

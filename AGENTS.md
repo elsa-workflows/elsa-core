@@ -83,7 +83,7 @@ Before handing off changes, verify the following when applicable:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/008-weaver-ai-copilot/plan.md`.
+shell commands, and other important information, read `specs/012-weaver-grounding-tools/plan.md`.
 <!-- SPECKIT END -->
 
 ## Active Technologies
@@ -99,8 +99,11 @@ shell commands, and other important information, read `specs/008-weaver-ai-copil
 - In-memory store for tests/development; Elsa-managed encrypted store with EF Core persistence for production; configuration-backed read-only store for deployment-managed values. No cloud vault or OS certificate store provider in v1. (007-secrets-module)
 - C# latest, nullable reference types enabled, implicit usings enabled; paired Studio Blazor/Razor module work in the Studio repository. + Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing identity/authorization and tenancy services, workflow definition/instance abstractions, diagnostics/log abstractions, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Logging`, OpenTelemetry, `System.Text.Json`, SignalR or SSE streaming, GitHub Copilot SDK isolated behind `Elsa.AI.Copilot`, and headless Copilot CLI JSON-RPC integration. (008-weaver-ai-copilot)
 - Configurable conversation/session retention with in-memory support for development and tests; durable proposal and audit stores required for MVP using Elsa persistence provider abstractions and an EF Core provider package for production. (008-weaver-ai-copilot)
+- C# latest, nullable reference types enabled, implicit usings enabled. + Elsa AI abstractions/host modules, `GitHub.Copilot.SDK` isolated behind `Elsa.AI.Copilot`, Activity Registry, workflow management/runtime abstractions, existing identity/tenancy services, FastEndpoints through Elsa endpoint patterns, `System.Text.Json`, `Microsoft.Extensions.Options`, and `Microsoft.Extensions.Logging`. (012-weaver-grounding-tools)
+- Existing workflow definition/runtime stores and Activity Registry are read sources; durable proposal and audit stores remain the write/governance path; no new required database schema for the grounding MVP. (012-weaver-grounding-tools)
 
 ## Recent Changes
+- 012-weaver-grounding-tools: Plans governed Weaver grounding tools for installed activities, workflow definitions, workflow proposals, workflow instances, incidents, and Studio capability discovery.
 - 008-weaver-ai-copilot: Captures Weaver as a server-hosted, provider-isolated AI copilot platform with Studio chat, governed tools, proposal-only workflow mutations, audit, and extensibility.
 - 006-diagnostics-console-logs: Plans raw stdout/stderr console capture with redaction-before-provider boundaries, bounded in-memory recent/live buffers, REST backfill/source endpoints, and a SignalR live hub.
 - 005-structured-log-persistence: Plans pluggable structured log storage with in-memory default and opt-in SQLite persistence using FluentMigrator.

@@ -2,6 +2,9 @@
 
   <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/ShellFeatures')">
     <PackageReference Include="Elsa.Platform.PackageManifest.Generator" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/ShellFeatures') and '$(GenerateElsaPackageManifest)' != 'false' and '$(MSBuildProjectName)' != 'Elsa.Api.Common'">
     <Compile Include="$(MSBuildThisFileDirectory)PackageManifestHints.cs" Link="PackageManifestHints.cs" />
   </ItemGroup>
 
