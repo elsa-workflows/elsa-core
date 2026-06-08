@@ -3,9 +3,11 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Management.Activities.SetOutput;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests;
@@ -285,8 +287,22 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
                 }
             }
         };
+        var outerComplete = new Complete(["False"]);
+        var outerFlowchart = new Flowchart
+        {
+            Activities =
+            {
+                forEach,
+                outerComplete
+            },
+            Connections =
+            {
+                new() { Source = new(forEach, "Done"), Target = new(outerComplete) }
+            }
+        };
+        var options = new RunWorkflowOptions().WithCounterBasedFlowchart();
 
-        var result = await _fixture.RunActivityAsync(forEach);
+        var result = await _fixture.RunActivityAsync(outerFlowchart, options);
 
         Assert.Equal(new[] { "a", "b" }, _fixture.CapturingTextWriter.Lines);
         Assert.Equal("b", result.WorkflowState.Output["Output"]);
