@@ -2,6 +2,9 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Management.Activities.SetOutput;
 using Elsa.Workflows.Models;
 using Xunit.Abstractions;
 
@@ -246,6 +249,44 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         Assert.NotNull(forEachContext);
         Assert.Equal(ActivityStatus.Running, forEachContext.Status);
         Assert.Equal(1, forEachContext.AggregateFaultCount);
+    }
+
+    [Fact(DisplayName = "ForEach completes when a nested flowchart completes the composite")]
+    public async Task ForEach_Completes_WhenNestedFlowchartCompletesComposite()
+    {
+        var dataSource = new[]
+        {
+            "a", "b", "c"
+        };
+        var writeLine = WriteCurrentValue();
+        var decision = new FlowDecision(context => context.GetVariable<string>(CurrentValueVar) == "b");
+        var setOutput = new SetOutput
+        {
+            OutputName = new("Output"),
+            OutputValue = new(context => context.GetVariable<string>(CurrentValueVar))
+        };
+        var complete = new Complete(["True"]);
+        var forEach = new ForEach<string>(dataSource)
+        {
+            Body = new Flowchart
+            {
+                Activities =
+                {
+                    writeLine,
+                    decision,
+                    setOutput,
+                    complete
+                },
+                Connections =
+                {
+                    new() { Source = new(writeLine, "Done"), Target = new(decision) },
+                    new() { Source = new(decision, "True"), Target = new(setOutput) },
+                    new() { Source = new(setOutput, "Done"), Target = new(complete) }
+                }
+            }
+        };
+
+        await RunAndAssertLines(forEach, new[] { "a", "b" });
     }
     
     private static WriteLine WriteCurrentValue() => new(context => context.GetVariable<string>(CurrentValueVar));

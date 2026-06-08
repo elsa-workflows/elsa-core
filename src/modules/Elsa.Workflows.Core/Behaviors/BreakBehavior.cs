@@ -21,6 +21,8 @@ public class BreakBehavior : Behavior
 
     private async ValueTask OnCompleteCompositeAsync(CompleteCompositeSignal signal, SignalContext context)
     {
+        context.ReceiverActivityExecutionContext.SetIsBreaking();
+
         // Cancel each descendant to clear bookmarks and cancel jobs etc.
         await CancelDescendantsAsync(context);
 
