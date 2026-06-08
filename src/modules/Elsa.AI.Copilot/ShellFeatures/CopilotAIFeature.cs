@@ -16,10 +16,10 @@ namespace Elsa.AI.Copilot.ShellFeatures;
 public class CopilotAIFeature : IShellFeature
 {
     private static readonly CopilotOptions DefaultOptions = new();
-
-    public string CliPath { get; set; } = DefaultOptions.CliPath;
+    
     public string? RuntimePath { get; set; } = DefaultOptions.RuntimePath;
     public string? RuntimeUrl { get; set; } = DefaultOptions.RuntimeUrl;
+    public ICollection<string> RuntimeArguments { get; set; } = [];
     public string? WorkingDirectory { get; set; } = DefaultOptions.WorkingDirectory;
     public string? BaseDirectory { get; set; } = DefaultOptions.BaseDirectory;
     public string? GitHubToken { get; set; } = DefaultOptions.GitHubToken;
@@ -35,8 +35,9 @@ public class CopilotAIFeature : IShellFeature
 
     private void ConfigureOptions(CopilotOptions options)
     {
-        options.RuntimePath = RuntimePath ?? CliPath;
+        options.RuntimePath = RuntimePath;
         options.RuntimeUrl = RuntimeUrl;
+        options.RuntimeArguments = RuntimeArguments;
         options.WorkingDirectory = WorkingDirectory;
         options.BaseDirectory = BaseDirectory;
         options.GitHubToken = GitHubToken;

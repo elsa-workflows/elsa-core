@@ -11,6 +11,10 @@
         <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
     </ItemGroup>
     <ItemGroup>
+      <ProjectReference Include="..\..\modules\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.AI.Copilot\Elsa.AI.Copilot.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.AI.Host\Elsa.AI.Host.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.AI.Persistence.EFCore\Elsa.AI.Persistence.EFCore.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.ConsoleLogs.Dashboard\Elsa.Diagnostics.ConsoleLogs.Dashboard.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.ConsoleLogs\Elsa.Diagnostics.ConsoleLogs.csproj" />

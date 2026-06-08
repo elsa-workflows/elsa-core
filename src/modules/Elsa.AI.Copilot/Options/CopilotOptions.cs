@@ -15,10 +15,4 @@ public class CopilotOptions
     public string? Model { get; set; }
     public string? ReasoningEffort { get; set; }
     public string? ProviderName { get; set; } = "copilot";
-
-    public string CliPath
-    {
-        get => RuntimePath ?? "copilot";
-        set => RuntimePath = value;
-    }
 }
