@@ -118,6 +118,11 @@ public interface IWorkflowBuilder
     /// <summary>
     /// A fluent method for adding a variable to <see cref="Variables"/>.
     /// </summary>
+    Variable<T> WithVariable<T>(string name);
+    
+    /// <summary>
+    /// A fluent method for adding a variable to <see cref="Variables"/>.
+    /// </summary>
     Variable<T> WithVariable<T>(string name, T value);
     
     /// <summary>

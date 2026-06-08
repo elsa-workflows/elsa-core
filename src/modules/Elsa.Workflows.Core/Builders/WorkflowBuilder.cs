@@ -89,6 +89,14 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     }
 
     /// <inheritdoc />
+    public Variable<T> WithVariable<T>(string name)
+    {
+        var variable = new Variable<T>(name, default!);
+        Variables.Add(variable);
+        return variable;
+    }
+
+    /// <inheritdoc />
     public Variable<T> WithVariable<T>(string name, T value)
     {
         var variable = new Variable<T>(name, value);
