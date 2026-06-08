@@ -36,7 +36,7 @@ public class BreakBehavior : Behavior
         context.StopPropagation();
         
         // Set the IsBreaking property to true.
-        context.ReceiverActivityExecutionContext.SetProperty("IsBreaking", true);
+        context.ReceiverActivityExecutionContext.SetIsBreaking();
     }
     
     private async Task CancelDescendantsAsync(SignalContext context)
