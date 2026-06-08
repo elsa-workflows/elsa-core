@@ -124,6 +124,7 @@
         <PackageVersion Include="FluentMigrator.Runner.SQLite" Version="8.0.1"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>
         <PackageVersion Include="Fody" Version="6.9.3" PrivateAssets="All"/>
+        <PackageVersion Include="GitHub.Copilot.SDK" Version="1.0.0"/>
         <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Humanizer.Core" Version="3.0.10"/>
         <PackageVersion Include="IronCompress" Version="1.7.0"/>

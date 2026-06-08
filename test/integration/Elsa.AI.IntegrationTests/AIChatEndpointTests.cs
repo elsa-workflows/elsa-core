@@ -462,7 +462,7 @@ public class AIChatEndpointTests
         services.AddAIHostServices();
         services.RemoveAll<IAIAuditSink>();
         services.AddSingleton<IAIAuditSink>(auditSink);
-        services.AddSingleton<IAIProvider, ToolCallAIProvider>();
+        services.AddSingleton<IAIProvider, UnknownToolAIProvider>();
         using var provider = services.BuildServiceProvider();
         var orchestrator = provider.GetRequiredService<IAIOrchestrator>();
 
@@ -534,10 +534,10 @@ public class AIChatEndpointTests
         Assert.Equal("Tool execution failed.", toolResult.Data["error"]!.GetValue<string>());
     }
 
-    [Fact(DisplayName = "Chat orchestration sends tool results back to provider continuations")]
-    public async Task ChatOrchestrationSendsToolResultsBackToProviderContinuations()
+    [Fact(DisplayName = "Chat orchestration lets providers own tool continuation")]
+    public async Task ChatOrchestrationLetsProvidersOwnToolContinuation()
     {
-        var provider = new ToolContinuationAIProvider();
+        var provider = new ToolCallAIProvider();
         var services = new ServiceCollection();
         services.AddAIHostServices();
         services.AddSingleton<IAIProvider>(provider);
@@ -554,19 +554,9 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var continuation = Assert.Single(provider.Requests, x => x.Messages.Any(message => message.Role == AIMessageRole.Tool));
-        var continuationMessages = continuation.Messages.Where(x => x.Role is AIMessageRole.Assistant or AIMessageRole.Tool).ToList();
+        var request = Assert.Single(provider.Requests);
 
-        Assert.Empty(continuation.ToolResults);
-        Assert.Collection(
-            continuationMessages,
-            assistant => Assert.Equal(AIMessageRole.Assistant, assistant.Role),
-            tool =>
-            {
-                Assert.Equal(AIMessageRole.Tool, tool.Role);
-                Assert.Equal("tool-call-1", tool.Metadata["toolCallId"]!.GetValue<string>());
-                Assert.Equal("Echoed", tool.Content);
-            });
+        Assert.DoesNotContain(request.Messages, x => x.Role == AIMessageRole.Tool);
         Assert.Contains(events, x => x.Type == "assistant.delta" && x.Data["content"]!.GetValue<string>() == "Used Echoed");
     }
 
@@ -969,8 +959,8 @@ public class AIChatEndpointTests
         Assert.Equal(2, conversation.Messages.Count);
     }
 
-    [Fact(DisplayName = "Chat orchestration resumes persisted tool results on reconnect")]
-    public async Task ChatOrchestrationResumesPersistedToolResultsOnReconnect()
+    [Fact(DisplayName = "Chat orchestration sends persisted history on reconnect")]
+    public async Task ChatOrchestrationSendsPersistedHistoryOnReconnect()
     {
         var provider = new CapturingTurnProvider();
         var services = new ServiceCollection();
@@ -1048,7 +1038,6 @@ public class AIChatEndpointTests
         var completedConversation = await store.FindAsync("conversation-1");
 
         Assert.Equal("", reconnectRequest.Message);
-        Assert.Empty(reconnectRequest.ToolResults);
         Assert.Equal("tool-call-1", restoredToolMessage.Metadata["toolCallId"]!.GetValue<string>());
         Assert.Equal("echo", restoredToolMessage.Metadata["toolName"]!.GetValue<string>());
         Assert.Equal("Echoed", restoredToolMessage.Content);
@@ -1358,13 +1347,12 @@ public class AIChatEndpointTests
         Assert.Equal(64, data["maxBytes"]!.GetValue<int>());
     }
 
-    [Fact(DisplayName = "Chat orchestration persists max tool turn warning")]
-    public async Task ChatOrchestrationPersistsMaxToolTurnWarning()
+    [Fact(DisplayName = "Chat orchestration persists provider-emitted tool results")]
+    public async Task ChatOrchestrationPersistsProviderEmittedToolResults()
     {
         var services = new ServiceCollection();
         services.AddAIHostServices();
-        services.AddSingleton<IAIProvider, EndlessToolCallAIProvider>();
-        services.AddSingleton<IAITool, EchoTool>();
+        services.AddSingleton<IAIProvider, ProviderToolEventAIProvider>();
         using var provider = services.BuildServiceProvider();
         var orchestrator = provider.GetRequiredService<IAIOrchestrator>();
         var store = provider.GetRequiredService<IAIConversationStore>();
@@ -1374,22 +1362,19 @@ public class AIChatEndpointTests
                            ConversationId = "conversation-1",
                            UserId = "user-1",
                            TenantId = "tenant-1",
-                           Message = "Use tools forever"
+                           Message = "Use a tool"
                        }))
         {
             // Intentionally drain the stream to completion.
         }
 
         var conversation = await store.FindAsync("conversation-1");
+        var toolMessage = Assert.Single(conversation!.Messages, x => x.Role == AIMessageRole.Tool);
 
-        Assert.Contains(
-            conversation!.Messages,
-            x => x.Role == AIMessageRole.Assistant && x.Content == "Tool execution stopped because the provider requested too many continuation turns.");
+        Assert.Equal("tool-call-1", toolMessage.Metadata["toolCallId"]!.GetValue<string>());
+        Assert.Equal("echo", toolMessage.Metadata["toolName"]!.GetValue<string>());
+        Assert.Equal("Echoed", toolMessage.Content);
     }
-
-    private static string? GetToolResultSummary(AITurnRequest request) =>
-        request.ToolResults.FirstOrDefault()?.Result.Summary ??
-        request.Messages.LastOrDefault(x => x.Role == AIMessageRole.Tool)?.Content;
 
     private class SequencedAIProvider : IAIProvider
     {
@@ -1398,7 +1383,7 @@ public class AIChatEndpointTests
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
 
@@ -1425,7 +1410,7 @@ public class AIChatEndpointTests
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
 
@@ -1458,7 +1443,7 @@ public class AIChatEndpointTests
             });
         }
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             Requests.Add(request);
@@ -1483,7 +1468,7 @@ public class AIChatEndpointTests
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Session creation failed.");
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             yield break;
@@ -1501,7 +1486,7 @@ public class AIChatEndpointTests
                 ProviderSessionId = $"provider-session-{request.ConversationId}"
             });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             if (!cancellationToken.IsCancellationRequested)
@@ -1522,7 +1507,7 @@ public class AIChatEndpointTests
             return ValueTask.FromResult(new AISessionHandle());
         }
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
 
@@ -1609,107 +1594,118 @@ public class AIChatEndpointTests
             throw new InvalidOperationException("Context unavailable.");
     }
 
-    private class ToolContinuationAIProvider : IAIProvider
+    private class ToolCallAIProvider : IAIProvider
     {
-        public string Name => "tool-continuation";
+        public string Name => "tool-caller";
         public List<AITurnRequest> Requests { get; } = [];
 
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             Requests.Add(request);
-            var toolResultSummary = GetToolResultSummary(request);
-
-            if (toolResultSummary == null)
+            var result = await toolInvoker.InvokeAsync(new AIProviderToolInvocation
             {
-                yield return new AIProviderEvent
+                Id = "tool-call-1",
+                ToolName = "echo",
+                Arguments = new JsonObject
                 {
-                    Type = "tool.call",
-                    Sequence = 1,
-                    Timestamp = DateTimeOffset.UtcNow,
-                    Data = new JsonObject
-                    {
-                        ["id"] = "tool-call-1",
-                        ["toolName"] = "echo",
-                        ["arguments"] = new JsonObject
-                        {
-                            ["text"] = "hello"
-                        }
-                    }
-                };
+                    ["text"] = "hello"
+                }
+            }, cancellationToken);
 
-                yield break;
-            }
+            yield return new AIProviderEvent
+            {
+                Type = "tool.result",
+                Sequence = 1,
+                Timestamp = DateTimeOffset.UtcNow,
+                Data = new JsonObject
+                {
+                    ["toolCallId"] = "tool-call-1",
+                    ["toolName"] = "echo",
+                    ["status"] = result.Status.ToString(),
+                    ["summary"] = result.Summary,
+                    ["error"] = result.Error,
+                    ["data"] = result.Data.DeepClone()
+                }
+            };
 
             yield return new AIProviderEvent
             {
                 Type = "assistant.delta",
-                Sequence = 1,
+                Sequence = 2,
                 Timestamp = DateTimeOffset.UtcNow,
                 Data = new JsonObject
                 {
-                    ["content"] = $"Used {toolResultSummary}"
+                    ["content"] = $"Used {result.Summary}"
                 }
             };
         }
     }
 
-    private class ToolCallAIProvider : IAIProvider
+    private class UnknownToolAIProvider : IAIProvider
     {
-        public string Name => "tool-caller";
+        public string Name => "unknown-tool-caller";
 
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
+            var result = await toolInvoker.InvokeAsync(new AIProviderToolInvocation
+            {
+                Id = "tool-call-1",
+                ToolName = "echo",
+                Arguments = new JsonObject
+                {
+                    ["text"] = "hello"
+                }
+            }, cancellationToken);
 
             yield return new AIProviderEvent
             {
-                Type = "tool.call",
+                Type = "tool.result",
                 Sequence = 1,
                 Timestamp = DateTimeOffset.UtcNow,
                 Data = new JsonObject
                 {
-                    ["id"] = "tool-call-1",
+                    ["toolCallId"] = "tool-call-1",
                     ["toolName"] = "echo",
-                    ["arguments"] = new JsonObject
-                    {
-                        ["text"] = "hello"
-                    }
+                    ["status"] = result.Status.ToString(),
+                    ["summary"] = result.Summary,
+                    ["error"] = result.Error,
+                    ["data"] = result.Data.DeepClone()
                 }
             };
         }
     }
 
-    private class EndlessToolCallAIProvider : IAIProvider
+    private class ProviderToolEventAIProvider : IAIProvider
     {
-        private int _index;
-
-        public string Name => "endless-tool-caller";
+        public string Name => "provider-tool-event";
 
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
-            var id = Interlocked.Increment(ref _index);
 
             yield return new AIProviderEvent
             {
-                Type = "tool.call",
+                Type = "tool.result",
                 Sequence = 1,
                 Timestamp = DateTimeOffset.UtcNow,
                 Data = new JsonObject
                 {
-                    ["id"] = $"tool-call-{id}",
+                    ["toolCallId"] = "tool-call-1",
                     ["toolName"] = "echo",
-                    ["arguments"] = new JsonObject
+                    ["status"] = AIToolInvocationStatus.Completed.ToString(),
+                    ["summary"] = "Echoed",
+                    ["data"] = new JsonObject
                     {
                         ["text"] = "hello"
                     }

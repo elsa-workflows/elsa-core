@@ -18,7 +18,14 @@ public class CopilotAIFeature : IShellFeature
     private static readonly CopilotOptions DefaultOptions = new();
 
     public string CliPath { get; set; } = DefaultOptions.CliPath;
+    public string? RuntimePath { get; set; } = DefaultOptions.RuntimePath;
+    public string? RuntimeUrl { get; set; } = DefaultOptions.RuntimeUrl;
+    public string? WorkingDirectory { get; set; } = DefaultOptions.WorkingDirectory;
+    public string? BaseDirectory { get; set; } = DefaultOptions.BaseDirectory;
+    public string? GitHubToken { get; set; } = DefaultOptions.GitHubToken;
+    public bool? UseLoggedInUser { get; set; } = DefaultOptions.UseLoggedInUser;
     public string? Model { get; set; } = DefaultOptions.Model;
+    public string? ReasoningEffort { get; set; } = DefaultOptions.ReasoningEffort;
     public string? ProviderName { get; set; } = DefaultOptions.ProviderName;
 
     public void ConfigureServices(IServiceCollection services)
@@ -28,8 +35,14 @@ public class CopilotAIFeature : IShellFeature
 
     private void ConfigureOptions(CopilotOptions options)
     {
-        options.CliPath = CliPath;
+        options.RuntimePath = RuntimePath ?? CliPath;
+        options.RuntimeUrl = RuntimeUrl;
+        options.WorkingDirectory = WorkingDirectory;
+        options.BaseDirectory = BaseDirectory;
+        options.GitHubToken = GitHubToken;
+        options.UseLoggedInUser = UseLoggedInUser;
         options.Model = Model;
+        options.ReasoningEffort = ReasoningEffort;
         options.ProviderName = ProviderName;
     }
 }

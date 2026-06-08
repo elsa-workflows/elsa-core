@@ -123,7 +123,7 @@ public class AICapabilitiesEndpointTests
         public ValueTask<AISessionHandle> CreateSessionAsync(CreateAISessionRequest request, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(new AISessionHandle { Id = request.ConversationId });
 
-        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        public async IAsyncEnumerable<AIProviderEvent> ExecuteTurnAsync(AITurnRequest request, IAIProviderToolInvoker toolInvoker, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             await Task.Yield();
             yield break;
