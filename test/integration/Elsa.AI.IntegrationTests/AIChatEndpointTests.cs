@@ -451,7 +451,9 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        Assert.Empty(provider.Requests.Single().Tools);
+        var tools = provider.Requests.Single().Tools;
+        Assert.DoesNotContain(tools, x => x.Name == "disabled-echo");
+        Assert.Contains(tools, x => x.Name == "activities.search");
     }
 
     [Fact(DisplayName = "Chat orchestration audits unresolved tool calls")]

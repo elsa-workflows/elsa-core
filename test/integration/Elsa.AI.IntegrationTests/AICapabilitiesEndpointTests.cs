@@ -3,6 +3,7 @@ using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Endpoints.AI.Capabilities;
 using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Services;
+using Microsoft.Extensions.DependencyInjection;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.AI.IntegrationTests;
@@ -16,7 +17,8 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions { ConversationPersistenceEnabled = true }),
             [new TestAIProvider()],
             [new TestConversationStore()],
-            [new TestProposalStore()]);
+            [new TestProposalStore()],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
@@ -25,9 +27,13 @@ public class AICapabilitiesEndpointTests
         Assert.True(response.ProposalReview);
         Assert.Contains("WorkflowDefinition", response.SupportedAttachmentKinds);
         Assert.Contains("WorkflowInstance", response.SupportedAttachmentKinds);
-        Assert.DoesNotContain("ActivitySelection", response.SupportedAttachmentKinds);
-        Assert.DoesNotContain("DiagnosticsScope", response.SupportedAttachmentKinds);
-        Assert.DoesNotContain("TimeRange", response.SupportedAttachmentKinds);
+        Assert.Contains("Activity", response.SupportedAttachmentKinds);
+        Assert.Contains("DiagnosticsScope", response.SupportedAttachmentKinds);
+        Assert.Contains("TimeRange", response.SupportedAttachmentKinds);
+        Assert.Contains(response.Grounding, x => x.Family == "activities");
+        Assert.Contains(response.Grounding, x => x.Family == "workflows");
+        Assert.Contains(response.Grounding, x => x.Family == "proposals");
+        Assert.Contains(response.Grounding, x => x.Family == "runtime");
     }
 
     [Fact(DisplayName = "Capabilities endpoint hides unavailable capabilities")]
@@ -37,7 +43,8 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions { StreamingEnabled = false, ConversationPersistenceEnabled = true }),
             [new TestAIProvider()],
             [new TestConversationStore()],
-            []);
+            [],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
@@ -53,7 +60,8 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions()),
             [new TestAIProvider("provider-1"), new TestAIProvider("provider-2")],
             [new TestConversationStore()],
-            []);
+            [],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
@@ -67,7 +75,8 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions { DefaultProviderName = "provider-2" }),
             [new TestAIProvider("provider-1"), new TestAIProvider("provider-2")],
             [new TestConversationStore()],
-            []);
+            [],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
@@ -81,7 +90,8 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions()),
             [new TestAIProvider()],
             [new TestConversationStore()],
-            []);
+            [],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
@@ -95,7 +105,8 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions { ConversationPersistenceEnabled = true }),
             [new TestAIProvider()],
             [new InMemoryAIConversationStore()],
-            [new TestProposalStore()]);
+            [new TestProposalStore()],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
@@ -109,12 +120,16 @@ public class AICapabilitiesEndpointTests
             MicrosoftOptions.Create(new AIHostOptions { ConversationPersistenceEnabled = false }),
             [new TestAIProvider()],
             [new TestConversationStore()],
-            [new TestProposalStore()]);
+            [new TestProposalStore()],
+            CreateScopeFactory());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
         Assert.False(response.ConversationPersistence);
     }
+
+    private static IServiceScopeFactory CreateScopeFactory() =>
+        new ServiceCollection().BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
     private class TestAIProvider(string name = "test") : IAIProvider
     {

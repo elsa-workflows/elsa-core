@@ -46,18 +46,21 @@ services
 
 1. Start Elsa Server with Weaver enabled.
 2. Request `GET /ai/capabilities` and verify streaming, proposal review, attachment kinds, and agents are listed.
-3. Request `GET /ai/tools` as an authorized user and verify MVP tools are returned.
-4. Start `POST /ai/chat` with a `WorkflowDefinition` attachment reference and ask Weaver to explain it.
-5. Verify stream events include assistant deltas and any tool lifecycle events.
-6. Verify Elsa logs/audit show server-side tool execution and that Copilot SDK session events, not Host-managed continuation turns, drove the agent loop.
-7. Ask Weaver to generate a simple workflow.
-8. Verify a `proposal.created` event appears and `GET /ai/proposals/{id}` returns payload, rationale, warnings, diagnostics, and graph preview.
-9. Attempt to apply without approval and verify the server rejects the transition.
-10. Approve and apply the proposal as an authorized user.
-11. Verify the workflow is persisted, validation passed, and durable audit records exist for prompt, tool calls, approval, and apply.
-12. Restart the server with durable persistence configured and verify proposals and audit records are still available.
-13. Disconnect during a chat turn, reconnect within the configured grace window, and verify durable outputs produced while disconnected are recoverable.
-14. Ask for runtime trends using attached references plus a selected time range and diagnostics scope, then verify results do not include data outside that scope.
+3. Verify `GET /ai/capabilities` advertises grounding families for activities, workflows, proposals, and runtime, including disabled reasons when stores are not registered.
+4. Request `GET /ai/tools` as an authorized user and verify Activity Registry, workflow definition, proposal, instance, and incident tools are returned.
+5. Ask Weaver which installed activity can receive an HTTP request and verify the answer uses `activities.search` or `activities.getDescriptor`.
+6. Start `POST /ai/chat` with a `WorkflowDefinition` attachment reference and ask Weaver to explain it.
+7. Verify stream events include assistant deltas and any tool lifecycle events.
+8. Verify Elsa logs/audit show server-side tool execution and that Copilot SDK session events, not Host-managed continuation turns, drove the agent loop.
+9. Ask Weaver to generate a simple workflow.
+10. Verify a proposal is created and `GET /ai/proposals/{id}` returns payload, rationale, warnings, diagnostics, and graph preview.
+11. Attempt to apply without approval and verify the server rejects the transition.
+12. Approve and apply the proposal as an authorized user.
+13. Verify the workflow is persisted, validation passed, and durable audit records exist for prompt, tool calls, approval, and apply.
+14. Restart the server with durable persistence configured and verify proposals and audit records are still available.
+15. Disconnect during a chat turn, reconnect within the configured grace window, and verify durable outputs produced while disconnected are recoverable.
+16. Ask for runtime trends using attached references plus a selected time range and diagnostics scope, then verify results do not include data outside that scope.
+17. Ask Weaver why a failed workflow instance failed and verify it uses `instances.getExecutionHistory`, `instances.getActivityState`, `incidents.search`, or `incidents.get` without exposing sensitive state.
 
 ## Targeted Test Commands
 
