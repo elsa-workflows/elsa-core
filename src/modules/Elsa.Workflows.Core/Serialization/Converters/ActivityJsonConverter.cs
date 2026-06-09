@@ -27,57 +27,70 @@ public class ActivityJsonConverter(
         if (!JsonDocument.TryParseValue(ref reader, out var doc))
             throw new JsonException("Failed to parse JsonDocument");
 
-        var activityRoot = doc.RootElement;
-        var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
-        var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
-
-        // If the activity type is a NotFoundActivity, try to extract the original activity type name and version.
-        if (activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
+        using (doc)
         {
-            activityRoot = JsonDocument.Parse(originalActivityJson.GetString()!).RootElement;
-            activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
-        }
+            JsonDocument? originalActivityDoc = null;
 
-        var clonedOptions = GetClonedOptions(options);
-        // If the activity type is not found, create a NotFoundActivity instead.
-        if (activityDescriptor == null)
-        {
-            var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
-            var notFoundActivityResult = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
-            LogExceptionsIfAny(notFoundActivityResult);
-
-            var notFoundActivity = notFoundActivityResult.Activity;
-            notFoundActivity.Type = notFoundActivityTypeName;
-            notFoundActivity.Version = 1;
-            notFoundActivity.MissingTypeName = activityTypeName;
-            notFoundActivity.MissingTypeVersion = activityTypeVersion;
-            notFoundActivity.OriginalActivityJson = activityRoot.ToString();
-
-            // Extract metadata from doc.RootElement rather than activityRoot.
-            // In round-trip scenarios, activityRoot may have been reassigned to the inner originalActivityJson (see line 37),
-            // but we want the metadata from the current activity being deserialized, which represents the NotFoundActivity
-            // placeholder's position and annotations in the designer.
-            if (doc.RootElement.TryGetProperty("metadata", out var outerMetadataElement))
+            try
             {
-                var outerMetadata = JsonSerializer.Deserialize<IDictionary<string, object>>(outerMetadataElement.GetRawText(), clonedOptions);
-                if (outerMetadata != null)
+                var activityRoot = doc.RootElement;
+                var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
+                var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+
+                // If the activity type is a NotFoundActivity, try to extract the original activity type name and version.
+                if (activityTypeName.Equals(notFoundActivityTypeName) && activityRoot.TryGetProperty("originalActivityJson", out var originalActivityJson))
                 {
-                    notFoundActivity.Metadata = outerMetadata;
+                    originalActivityDoc = JsonDocument.Parse(originalActivityJson.GetString()!);
+                    activityRoot = originalActivityDoc.RootElement;
+                    activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
                 }
+
+                var clonedOptions = GetClonedOptions(options);
+                // If the activity type is not found, create a NotFoundActivity instead.
+                if (activityDescriptor == null)
+                {
+                    var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
+                    var notFoundActivityResult = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
+                    LogExceptionsIfAny(notFoundActivityResult);
+
+                    var notFoundActivity = notFoundActivityResult.Activity;
+                    notFoundActivity.Type = notFoundActivityTypeName;
+                    notFoundActivity.Version = 1;
+                    notFoundActivity.MissingTypeName = activityTypeName;
+                    notFoundActivity.MissingTypeVersion = activityTypeVersion;
+                    notFoundActivity.OriginalActivityJson = activityRoot.ToString();
+
+                    // Extract metadata from doc.RootElement rather than activityRoot.
+                    // In round-trip scenarios, activityRoot may have been reassigned to the inner originalActivityJson (see line 42),
+                    // but we want the metadata from the current activity being deserialized, which represents the NotFoundActivity
+                    // placeholder's position and annotations in the designer.
+                    if (doc.RootElement.TryGetProperty("metadata", out var outerMetadataElement))
+                    {
+                        var outerMetadata = JsonSerializer.Deserialize<IDictionary<string, object>>(outerMetadataElement.GetRawText(), clonedOptions);
+                        if (outerMetadata != null)
+                        {
+                            notFoundActivity.Metadata = outerMetadata;
+                        }
+                    }
+
+                    // Set display text and description after metadata assignment to ensure they always reflect the current state
+                    notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
+                    notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
+
+                    return notFoundActivity;
+                }
+
+                var context = JsonActivityConstructorContextHelper.Create(activityDescriptor, activityRoot, clonedOptions);
+                var activityResult = activityDescriptor.Constructor(context);
+                LogExceptionsIfAny(activityResult);
+
+                return activityResult.Activity;
             }
-
-            // Set display text and description after metadata assignment to ensure they always reflect the current state
-            notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
-            notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
-
-            return notFoundActivity;
+            finally
+            {
+                originalActivityDoc?.Dispose();
+            }
         }
-
-        var context = JsonActivityConstructorContextHelper.Create(activityDescriptor, activityRoot, clonedOptions);
-        var activityResult = activityDescriptor.Constructor(context);
-        LogExceptionsIfAny(activityResult);
-
-        return activityResult.Activity;
     }
 
     void LogExceptionsIfAny(ActivityConstructionResult result)
