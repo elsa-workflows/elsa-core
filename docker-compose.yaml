@@ -1,5 +1,3 @@
-version: '3.7'
-
 services:
 
     mongodb:
@@ -19,8 +17,8 @@ services:
         volumes:
             - pgdata:/var/lib/postgresql/data
           
-    mysql:
-        image: mysql:5.7
+    mysql-v8:
+        image: mysql:8
         restart: always
         environment:
             MYSQL_DATABASE: 'elsa'
@@ -28,20 +26,7 @@ services:
             MYSQL_PASSWORD: 'password'
             MYSQL_ROOT_PASSWORD: 'password'
         ports:
-            - '3306:3306'
-        expose:
-            - '3306'
-                
-    mysql-arm:
-        image: arm64v8/mysql:8
-        restart: always
-        environment:
-            MYSQL_DATABASE: 'Elsa'
-            MYSQL_USER: 'user'
-            MYSQL_PASSWORD: 'password'
-            MYSQL_ROOT_PASSWORD: 'password'
-        ports:
-            - '3306:3306'
+            - '3306:3306' 
         expose:
             - '3306'
                 
@@ -58,8 +43,14 @@ services:
         ports:
             - "1433:1433"
 
+    # Azurite (Official Microsoft Local Emulator)
     azureblobstorage:
-        image: mcr.microsoft.com/azure-blob-storage
+        image: mcr.microsoft.com/azure-storage/azurite
+        restart: always
+        ports:
+            - "10000:10000" # Blob service port
+            - "10001:10001" # Queue service port
+            - "10002:10002" # Table service port
 
     redis:
         image: redis
