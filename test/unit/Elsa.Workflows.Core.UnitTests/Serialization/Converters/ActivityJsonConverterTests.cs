@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Activities;
@@ -63,12 +63,31 @@ public sealed class ActivityJsonConverterTests
         var notFoundActivity = (NotFoundActivity)result;
         Assert.Equal(UnknownActivityTypeName, notFoundActivity.MissingTypeName);
         Assert.Equal(0, notFoundActivity.MissingTypeVersion);
-
-        var expectedJsonDoc = JsonDocument.Parse(UnknownActivityJson);
-        var actualJsonDoc = JsonDocument.Parse(notFoundActivity.OriginalActivityJson);
-        Assert.Equal(expectedJsonDoc.RootElement.ToString(), actualJsonDoc.RootElement.ToString());
+        AssertEquivalentJson(UnknownActivityJson, notFoundActivity.OriginalActivityJson);
         Assert.True(notFoundActivity.Metadata.ContainsKey("displayText"));
         Assert.True(notFoundActivity.Metadata.ContainsKey("description"));
+    }
+
+    [Fact]
+    public void When_DeserializeNestedNotFoundActivity_Then_PreservesMissingActivityBehavior()
+    {
+        // Arrange
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry
+            .Find(NotFoundActivityTypeName)
+            .Returns(new ActivityDescriptor());
+
+        var sut = CreateSut(activityRegistry);
+
+        // Act
+        var result = Execute(sut, NestedNotFoundActivityJson);
+
+        // Assert
+        var notFoundActivity = Assert.IsType<NotFoundActivity>(result);
+        Assert.Equal(UnknownActivityTypeName, notFoundActivity.MissingTypeName);
+        Assert.Equal(0, notFoundActivity.MissingTypeVersion);
+        AssertEquivalentJson(UnknownActivityJson, notFoundActivity.OriginalActivityJson);
+        Assert.True(notFoundActivity.Metadata.ContainsKey("outerMarker"));
     }
 
     [Fact]
@@ -122,6 +141,13 @@ public sealed class ActivityJsonConverterTests
 
     static IActivity? Execute(ActivityJsonConverter sut, string json) =>
         JsonSerializer.Deserialize<IActivity>(json, GetSerializerOptions(sut));
+
+    static void AssertEquivalentJson(string expectedJson, string actualJson)
+    {
+        using var expectedJsonDoc = JsonDocument.Parse(expectedJson);
+        using var actualJsonDoc = JsonDocument.Parse(actualJson);
+        Assert.Equal(expectedJsonDoc.RootElement.ToString(), actualJsonDoc.RootElement.ToString());
+    }
 
     static IActivityRegistry CreateActivityRegistry(string typeName, IActivity activity, int? version = null)
     {
@@ -177,6 +203,18 @@ public sealed class ActivityJsonConverterTests
     private static readonly WriteLine WriteLineActivity = new("Hello world!");
     private static readonly string WriteLineActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteLine>();
     private static readonly string NotFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+    private static readonly string NestedNotFoundActivityJson =
+        $$"""
+        {
+           "id": "wrapped-not-found",
+           "type": "{{NotFoundActivityTypeName}}",
+           "version": 1,
+           "originalActivityJson": {{JsonSerializer.Serialize(UnknownActivityJson)}},
+           "metadata": {
+               "outerMarker": "preserved"
+           }
+        }
+        """;
 
     private const string WriteLineActivityJson_WithVersion = 
 """
