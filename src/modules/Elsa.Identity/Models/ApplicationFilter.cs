@@ -21,6 +21,11 @@ public class ApplicationFilter
     /// Gets or sets the application name to filter for.
     /// </summary>
     public string? Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to ignore tenant scoping when querying the application store.
+    /// </summary>
+    public bool TenantAgnostic { get; set; }
     
     /// <summary>
     /// Applies the filter to the specified queryable.

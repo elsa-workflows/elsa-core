@@ -50,7 +50,7 @@ public class DefaultApplicationCredentialsValidator : IApplicationCredentialsVal
             return null;
         
         var clientId = _apiKeyParser.Parse(apiKey);
-        var application = await _applicationProvider.FindByClientIdAsync(clientId, cancellationToken);
+        var application = await _applicationProvider.FindByClientIdAsync(clientId, tenantAgnostic: true, cancellationToken);
         
         if(application == null)
             return null;

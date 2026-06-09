@@ -34,7 +34,7 @@ public class EFCoreApplicationStore : IApplicationStore
     /// <inheritdoc />
     public async Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _applicationStore.FindAsync(query => Filter(query, filter), cancellationToken);
+        return await _applicationStore.FindAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
     
     private static IQueryable<Application> Filter(IQueryable<Application> query, ApplicationFilter filter) => filter.Apply(query);

@@ -265,6 +265,34 @@ public class DefaultSecretHasherTests
         Assert.Equal(encodedLegacyHash, application.HashedApiKey);
     }
 
+    [Fact]
+    public async Task ValidateAsync_UsesTenantAgnosticLookupForApplications()
+    {
+        var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
+        var apiKey = apiKeyGenerator.Generate("client-1");
+        var hasher = new DefaultSecretHasher();
+        var hashedApiKey = hasher.HashSecret(apiKey);
+        var application = new Application
+        {
+            Id = "app-1",
+            ClientId = "client-1",
+            Name = "Client 1",
+            HashedApiKey = hashedApiKey.EncodeSecret(),
+            HashedApiKeySalt = hashedApiKey.EncodeSalt(),
+            HashedClientSecret = "",
+            HashedClientSecretSalt = ""
+        };
+        var applicationProvider = new RecordingApplicationProvider(application);
+        var validator = new DefaultApplicationCredentialsValidator(apiKeyGenerator, applicationProvider, hasher);
+
+        var validatedApplication = await validator.ValidateAsync(apiKey);
+
+        Assert.Same(application, validatedApplication);
+        Assert.NotNull(applicationProvider.LastFilter);
+        Assert.True(applicationProvider.LastFilter!.TenantAgnostic);
+        Assert.Equal("client-1", applicationProvider.LastFilter.ClientId);
+    }
+
     private static HashedSecret CreateLegacyHash(string secret)
     {
         var salt = RandomNumberGenerator.GetBytes(32);
@@ -365,6 +393,19 @@ public class DefaultSecretHasherTests
 
         public Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
         {
+            var application = filter.Apply(new[] { _application }.AsQueryable()).FirstOrDefault();
+            return Task.FromResult(application);
+        }
+    }
+
+    private sealed class RecordingApplicationProvider(Application application) : IApplicationProvider
+    {
+        private readonly Application _application = application;
+        public ApplicationFilter? LastFilter { get; private set; }
+
+        public Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
+        {
+            LastFilter = filter;
             var application = filter.Apply(new[] { _application }.AsQueryable()).FirstOrDefault();
             return Task.FromResult(application);
         }
