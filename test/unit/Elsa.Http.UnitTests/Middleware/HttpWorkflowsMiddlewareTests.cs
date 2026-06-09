@@ -115,10 +115,10 @@ public class HttpWorkflowsMiddlewareTests
         stimulusHasher ??= new CapturingStimulusHasher();
 
         return new ServiceCollection()
-            .AddSingleton(bookmarkStore)
-            .AddSingleton(routeMatcher)
-            .AddSingleton(routeTable)
-            .AddSingleton(stimulusHasher)
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton<IRouteMatcher>(routeMatcher)
+            .AddSingleton<IRouteTable>(routeTable)
+            .AddSingleton<IStimulusHasher>(stimulusHasher)
             .BuildServiceProvider();
     }
 
