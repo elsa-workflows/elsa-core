@@ -2,10 +2,16 @@ using System;
 using System.Threading.Tasks;
 using Elsa.Persistence;
 using Elsa.Persistence.EntityFramework.Core.Extensions;
+using Elsa.Persistence.EntityFramework.Sqlite;
+#if NET9_0
+// Currently not supported in net10 until Pomelo supports it
+//using Elsa.Persistence.EntityFramework.MySql;
+#endif
+//using Elsa.Persistence.EntityFramework.PostgreSql;
+//using Elsa.Persistence.EntityFramework.SqlServer;
 using Elsa.Persistence.Specifications.WorkflowInstances;
 using Elsa.Services;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Persistence.EntityFramework.SqlServer;
 
 namespace Elsa.Samples.Persistence.EntityFramework
 {
@@ -19,13 +25,14 @@ namespace Elsa.Samples.Persistence.EntityFramework
                     // Configure Elsa to use the Entity Framework Core persistence provider using one of the three available providers 
                     .UseEntityFrameworkPersistence(ef =>
                     {
-                        //ef.UseSqlite();
-                        
-                        //ef.UsePostgreSql("Server=127.0.0.1;Port=5432;Database=elsa;User Id=postgres;Password=password;");
+                        ef.UseSqlite();
 
+                        //ef.UsePostgreSql("Server=127.0.0.1;Port=5432;Database=elsa;User Id=root;Password=Password12!;");
+#if NET9_0
+                        // Currently not supported in net10 until Pomelo supports it
                         //ef.UseMySql("Server=localhost;Port=3306;Database=elsa;User=root;Password=password;");
-
-                        ef.UseSqlServer("Server=localhost;Database=Elsa;Integrated Security=true");
+#endif
+                        //ef.UseSqlServer("Server=localhost,1433;Database=Elsa;User Id=SA;Password=:8jNZdK7cK;TrustServerCertificate=True");
                     })
                     .AddConsoleActivities()
                     .AddWorkflow<HelloWorld>())
