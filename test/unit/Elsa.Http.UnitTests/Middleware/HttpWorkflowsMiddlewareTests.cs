@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Middleware;
 using Elsa.Http.Options;
@@ -14,6 +15,7 @@ namespace Elsa.Http.UnitTests.Middleware;
 
 public class HttpWorkflowsMiddlewareTests
 {
+    private static readonly MethodInfo ExecuteWithinTimeoutAsyncMethod = typeof(HttpWorkflowsMiddleware).GetMethod("ExecuteWithinTimeoutAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private const string CurrentTenantId = "tenant-a";
     private const string OtherTenantId = "tenant-b";
     private const string BookmarkHash = "http-endpoint:/colliding:get";
@@ -52,6 +54,63 @@ public class HttpWorkflowsMiddlewareTests
         Assert.NotNull(_bookmarkStore.LastFilter);
         var filter = _bookmarkStore.LastFilter!;
         Assert.False(filter.TenantAgnostic);
+    }
+
+    [Fact]
+    public async Task ExecuteWithinTimeoutAsync_RestoresRequestAbortedAfterSuccess()
+    {
+        using var requestAbortedSource = new CancellationTokenSource();
+        var httpContext = new DefaultHttpContext { RequestAborted = requestAbortedSource.Token };
+        var observedToken = CancellationToken.None;
+
+        var result = await ExecuteWithinTimeoutAsync(async cancellationToken =>
+        {
+            observedToken = cancellationToken;
+            Assert.Equal(cancellationToken, httpContext.RequestAborted);
+            await Task.CompletedTask;
+            return 42;
+        }, TimeSpan.FromSeconds(1), httpContext);
+
+        Assert.Equal(42, result);
+        Assert.NotEqual(requestAbortedSource.Token, observedToken);
+        Assert.Equal(requestAbortedSource.Token, httpContext.RequestAborted);
+    }
+
+    [Fact]
+    public async Task ExecuteWithinTimeoutAsync_RestoresRequestAbortedAfterFault()
+    {
+        using var requestAbortedSource = new CancellationTokenSource();
+        var httpContext = new DefaultHttpContext { RequestAborted = requestAbortedSource.Token };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => ExecuteWithinTimeoutAsync<int>(_ => throw new InvalidOperationException("Boom"), TimeSpan.FromSeconds(1), httpContext));
+
+        Assert.Equal(requestAbortedSource.Token, httpContext.RequestAborted);
+    }
+
+    [Fact]
+    public async Task ExecuteWithinTimeoutAsync_RestoresRequestAbortedAfterCancellation()
+    {
+        using var requestAbortedSource = new CancellationTokenSource();
+        requestAbortedSource.Cancel();
+
+        var httpContext = new DefaultHttpContext { RequestAborted = requestAbortedSource.Token };
+        var observedToken = CancellationToken.None;
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => ExecuteWithinTimeoutAsync<int>(cancellationToken =>
+        {
+            observedToken = cancellationToken;
+            return Task.FromCanceled<int>(cancellationToken);
+        }, TimeSpan.FromSeconds(1), httpContext));
+
+        Assert.True(observedToken.IsCancellationRequested);
+        Assert.Equal(requestAbortedSource.Token, httpContext.RequestAborted);
+    }
+
+    private async Task<T> ExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)
+    {
+        var method = ExecuteWithinTimeoutAsyncMethod.MakeGenericMethod(typeof(T));
+        var task = (Task<T>)method.Invoke(_middleware, [action, requestTimeout, httpContext])!;
+        return await task;
     }
 
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
