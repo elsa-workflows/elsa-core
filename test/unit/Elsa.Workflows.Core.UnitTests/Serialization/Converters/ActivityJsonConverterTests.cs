@@ -48,11 +48,7 @@ public sealed class ActivityJsonConverterTests
     public void When_DeserializeUnknownActivity_Then_ReturnsNotFoundActivity()
     {
         // Arrange
-        var activityRegistry = Substitute.For<IActivityRegistry>();
-        activityRegistry
-            .Find(NotFoundActivityTypeName)
-            .Returns(new ActivityDescriptor());
-
+        var activityRegistry = CreateUnknownActivityRegistry(new ActivityDescriptor());
         var sut = CreateSut(activityRegistry);
 
         // Act
@@ -69,6 +65,20 @@ public sealed class ActivityJsonConverterTests
         Assert.Equal(expectedJsonDoc.RootElement.ToString(), actualJsonDoc.RootElement.ToString());
         Assert.True(notFoundActivity.Metadata.ContainsKey("displayText"));
         Assert.True(notFoundActivity.Metadata.ContainsKey("description"));
+    }
+
+    [Fact]
+    public void When_DeserializeUnknownActivity_And_NotFoundActivityDescriptorMissing_Then_ThrowsClearException()
+    {
+        // Arrange
+        var activityRegistry = CreateUnknownActivityRegistry();
+        var sut = CreateSut(activityRegistry);
+
+        // Act
+        var exception = Assert.Throws<InvalidOperationException>(() => Execute(sut, UnknownActivityJson));
+
+        // Assert
+        Assert.Equal($"Unable to deserialize activity type '{UnknownActivityTypeName}' because the NotFoundActivity descriptor is not registered. Ensure the activity registry has been populated before deserializing workflows.", exception.Message);
     }
 
     [Fact]
@@ -133,6 +143,13 @@ public sealed class ActivityJsonConverterTests
         else
             activityRegistry.Find(typeName).Returns(descriptor);
 
+        return activityRegistry;
+    }
+
+    static IActivityRegistry CreateUnknownActivityRegistry(ActivityDescriptor? notFoundActivityDescriptor = null)
+    {
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry.Find(NotFoundActivityTypeName).Returns(notFoundActivityDescriptor);
         return activityRegistry;
     }
 
