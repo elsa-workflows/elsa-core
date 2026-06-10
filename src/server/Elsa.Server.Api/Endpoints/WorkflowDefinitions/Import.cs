@@ -7,6 +7,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System.Threading;
 using System.Threading.Tasks;
 using Elsa.Server.Api.Helpers;
+using Asp.Versioning;
 
 namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
 {
@@ -34,7 +35,7 @@ namespace Elsa.Server.Api.Endpoints.WorkflowDefinitions
             OperationId = "WorkflowDefinitions.Import",
             Tags = new[] { "WorkflowDefinitions" })
         ]
-        public async Task<IActionResult> Handle(string workflowDefinitionId, [FromForm] IFormFile? file, CancellationToken cancellationToken)
+        public async Task<IActionResult> Handle(string workflowDefinitionId, IFormFile? file, CancellationToken cancellationToken)
         {
             if (file == null)
                 return BadRequest();

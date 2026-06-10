@@ -19,6 +19,7 @@ public static class ElsaDbContextOptionsExtensions
     {
         ((IDbContextOptionsBuilderInfrastructure)optionsBuilder).AddOrUpdateExtension(new ElsaDbContextOptionsExtension(options));
         optionsBuilder.ReplaceService<IMigrationsAssembly, DbSchemaAwareMigrationAssembly>();
+        optionsBuilder.ReplaceService<IMigrationsModelDiffer, DbSchemaAwareMigrationsModelDiffer>();
         return optionsBuilder;
     }
 

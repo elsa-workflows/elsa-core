@@ -28,6 +28,10 @@ public class ElsaDbContextOptionsExtension : IDbContextOptionsExtension
     /// <inheritdoc />
     public void ApplyServices(IServiceCollection services)
     {
+        if (Options != null)
+        {
+            services.AddSingleton(Options);
+        }
     }
 
     /// <inheritdoc />

@@ -27,6 +27,11 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.1" />
     </ItemGroup>
 
+    <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.0" />
+    </ItemGroup>
+
     <ItemGroup>
         <ProjectReference Include="..\..\..\core\Elsa.Core\Elsa.Core.csproj" />
     </ItemGroup>
