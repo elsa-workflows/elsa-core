@@ -88,6 +88,8 @@ public sealed class ActivityJsonConverterTests
         Assert.Equal(0, notFoundActivity.MissingTypeVersion);
         AssertEquivalentJson(UnknownActivityJson, notFoundActivity.OriginalActivityJson);
         Assert.True(notFoundActivity.Metadata.ContainsKey("outerMarker"));
+        Assert.True(notFoundActivity.Metadata.ContainsKey("displayText"));
+        Assert.True(notFoundActivity.Metadata.ContainsKey("description"));
     }
 
     [Fact]
