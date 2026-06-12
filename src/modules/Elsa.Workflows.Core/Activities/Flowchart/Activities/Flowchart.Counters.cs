@@ -388,6 +388,12 @@ public partial class Flowchart
         var flowGraph = flowchartContext.GetFlowGraph();
         var flowScope = flowchart.GetFlowScope(flowchartContext);
 
+        // A dangling activity is not reachable from the flow graph's start (for example a self-looping parallel
+        // branch that gets canceled when the flowchart completes through another branch). It has no forward
+        // outbound connections to propagate, so there is nothing to schedule. See https://github.com/elsa-workflows/elsa-core/issues/7717.
+        if (flowGraph.IsDanglingActivity(canceledActivity))
+            return;
+
         // Propagate canceled connections visited count by scheduling with Outcomes.Empty
         await MaybeScheduleOutboundActivitiesAsync(flowGraph, flowScope, flowchartContext, canceledActivity, context.SenderActivityExecutionContext, Outcomes.Empty, OnChildCompletedAsync);
     }
