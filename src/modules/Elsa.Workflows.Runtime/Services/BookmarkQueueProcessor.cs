@@ -19,22 +19,33 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
             var pageArgs = PageArgs.FromRange(offset, batchSize);
             var page = await store.PageAsync(pageArgs, new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
 
-            await ProcessPageAsync(page, cancellationToken);
+            if (page.Items.Count == 0)
+                break;
+
+            var deletedCount = await ProcessPageAsync(page, cancellationToken);
+
+            // Advance past items that remain in the queue so they are retried on the next worker cycle, not reprocessed in this run.
+            offset += page.Items.Count - deletedCount;
 
             if (page.Items.Count < batchSize)
                 break;
-
-            offset += batchSize;
         }
     }
 
-    private async Task ProcessPageAsync(Page<BookmarkQueueItem> page, CancellationToken cancellationToken = default)
+    private async Task<int> ProcessPageAsync(Page<BookmarkQueueItem> page, CancellationToken cancellationToken = default)
     {
-        foreach (var bookmarkQueueItem in page.Items) 
-            await ProcessItemAsync(bookmarkQueueItem, cancellationToken);
+        var deletedCount = 0;
+
+        foreach (var bookmarkQueueItem in page.Items)
+        {
+            if (await ProcessItemAsync(bookmarkQueueItem, cancellationToken))
+                deletedCount++;
+        }
+
+        return deletedCount;
     }
 
-    private async Task ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
+    private async Task<bool> ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
         var filter = item.CreateBookmarkFilter();
         var options = item.Options;
@@ -47,10 +58,10 @@ public class BookmarkQueueProcessor(IBookmarkQueueStore store, IWorkflowResumer 
         {
             logger.LogDebug("Successfully resumed {WorkflowCount} workflow instances using stimulus {StimulusHash} for activity type {ActivityType}", responses.Count, item.StimulusHash, item.ActivityTypeName);
             await store.DeleteAsync(item.Id, cancellationToken);
+            return true;
         }
-        else
-        {
-            logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
-        }
+
+        logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
+        return false;
     }
 }
