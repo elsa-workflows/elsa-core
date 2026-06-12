@@ -361,6 +361,8 @@ namespace Elsa.Services.Workflows
             {
                 if (workflowExecutionContext.HasBlockingActivities)
                     workflowExecutionContext.Suspend();
+                else if (workflowExecutionContext.Status == WorkflowStatus.Suspended)
+                    workflowExecutionContext.Resume();
             }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)

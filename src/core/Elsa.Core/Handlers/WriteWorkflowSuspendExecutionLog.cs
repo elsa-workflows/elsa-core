@@ -12,7 +12,11 @@ public class WriteWorkflowSuspendExecutionLog : INotificationHandler<WorkflowSus
     public Task Handle(WorkflowSuspended notification, CancellationToken cancellationToken)
     {
         var context = notification.WorkflowExecutionContext;
-        var blockingActivity = context.WorkflowInstance.BlockingActivities.First();
+        var blockingActivity = context.WorkflowInstance.BlockingActivities.FirstOrDefault();
+
+        if (blockingActivity == null)
+            return Task.CompletedTask;
+
         context.WorkflowExecutionLog.AddEntry(context.WorkflowInstance.Id, blockingActivity.ActivityId, blockingActivity.ActivityType, nameof(WorkflowStatus.Suspended), null, null, null, null);
         return Task.CompletedTask;
     }
