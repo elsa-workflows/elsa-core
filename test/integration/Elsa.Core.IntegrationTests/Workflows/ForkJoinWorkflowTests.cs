@@ -1,8 +1,11 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Elsa.Activities.Console;
 using Elsa.Activities.ControlFlow;
 using Elsa.Activities.Signaling;
 using Elsa.Activities.Signaling.Models;
+using Elsa.Builders;
 using Elsa.Models;
 using Elsa.Persistence.Specifications.WorkflowExecutionLogRecords;
 using Elsa.Services.Models;
@@ -87,7 +90,7 @@ namespace Elsa.Core.IntegrationTests.Workflows
             Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
             Assert.True(await GetIsFinishedAsync());
         }
-        
+
         [Fact(DisplayName = "Normal join should not eagerly clear blocking activities")]
         public async Task Test03()
         {
@@ -132,6 +135,18 @@ namespace Elsa.Core.IntegrationTests.Workflows
             Assert.Equal(2, workflowInstance.BlockingActivities.Count);
         }
 
+        [Fact(DisplayName = "WaitAny join completes when a later branch clears blocking activities from an earlier branch")]
+        public async Task Test07()
+        {
+            var workflow = new ForkJoinClearsBlockingActivityWorkflow();
+            var workflowBlueprint = WorkflowBuilder.Build(workflow);
+            var workflowResult = await WorkflowStarter.StartWorkflowAsync(workflowBlueprint);
+            var workflowInstance = workflowResult.WorkflowInstance!;
+
+            Assert.Equal(WorkflowStatus.Finished, workflowInstance.WorkflowStatus);
+            Assert.Empty(workflowInstance.BlockingActivities);
+        }
+
         private async Task<WorkflowInstance> TriggerSignalAsync(IWorkflowBlueprint workflowBlueprint, WorkflowInstance workflowInstance, string signal)
         {
             var workflowExecutionContext = new WorkflowExecutionContext(ServiceScope.ServiceProvider, workflowBlueprint, workflowInstance);
@@ -145,6 +160,22 @@ namespace Elsa.Core.IntegrationTests.Workflows
             await WorkflowStorageService.UpdateInputAsync(workflowInstance, new WorkflowInput(triggeredSignal));
             var result = await WorkflowRunner.RunWorkflowAsync(workflowBlueprint, workflowInstance, receiveSignal.ActivityBlueprint.Id);
             return result.WorkflowInstance!;
+        }
+
+        private class ForkJoinClearsBlockingActivityWorkflow : IWorkflow
+        {
+            public void Build(IWorkflowBuilder builder)
+            {
+                builder.StartWith<Fork>(
+                        activity => activity.Set(x => x.Branches, new HashSet<string>(new[] { "Blocking", "Completing" })),
+                        fork =>
+                        {
+                            fork.When("Blocking").SignalReceived("Signal1").ThenNamed("Join");
+                            fork.When("Completing").WriteLine("Completing branch executed").ThenNamed("Join");
+                        })
+                    .Add<Join>(join => join.Set(x => x.Mode, Join.JoinMode.WaitAny)).WithName("Join")
+                    .WriteLine("Finished").WithName("Finished");
+            }
         }
     }
 }
