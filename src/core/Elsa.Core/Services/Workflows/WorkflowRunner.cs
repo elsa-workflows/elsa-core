@@ -361,6 +361,12 @@ namespace Elsa.Services.Workflows
             {
                 if (workflowExecutionContext.HasBlockingActivities)
                     workflowExecutionContext.Suspend();
+                else if (workflowExecutionContext.Status == WorkflowStatus.Suspended)
+                {
+                    var currentStatus = workflowExecutionContext.WorkflowInstance.WorkflowStatus;
+                    workflowExecutionContext.Resume();
+                    await _mediator.Publish(new WorkflowStatusChanged(workflowExecutionContext.WorkflowInstance, workflowExecutionContext.WorkflowInstance.WorkflowStatus, currentStatus), cancellationToken);
+                }
             }
 
             if (workflowExecutionContext.Status == WorkflowStatus.Running)
