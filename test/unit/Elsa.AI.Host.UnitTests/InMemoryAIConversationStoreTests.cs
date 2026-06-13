@@ -139,9 +139,11 @@ public class InMemoryAIConversationStoreTests
         await _store.SaveAsync(expired);
 
         await _store.SaveAsync(CreateConversation(id: "active"));
+        await _store.SaveAsync(CreateConversation(id: expired.Id, tenantId: "tenant-2", userId: "user-2"));
 
-        var found = await _store.FindAsync(expired.Id);
-        Assert.Null(found);
+        var replacement = await _store.FindAsync(expired.Id);
+        Assert.NotNull(replacement);
+        Assert.Equal("tenant-2", replacement.TenantId);
 
         var active = await _store.FindAsync("active");
         Assert.NotNull(active);
