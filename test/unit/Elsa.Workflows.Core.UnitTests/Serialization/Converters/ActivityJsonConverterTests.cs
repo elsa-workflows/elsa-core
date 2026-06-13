@@ -72,6 +72,20 @@ public sealed class ActivityJsonConverterTests
     }
 
     [Fact]
+    public void When_DeserializeUnknownActivity_And_NotFoundDescriptorMissing_Then_ThrowsClearJsonException()
+    {
+        // Arrange
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        var sut = CreateSut(activityRegistry);
+
+        // Act
+        var exception = Assert.Throws<JsonException>(() => Execute(sut, UnknownActivityJson));
+
+        // Assert
+        Assert.Equal($"Could not deserialize activity type '{UnknownActivityTypeName}' because the '{nameof(NotFoundActivity)}' descriptor is not registered.", exception.Message);
+    }
+
+    [Fact]
     public void When_DeserializeWorkflowAsActivity_And_WorkflowDefinitionIdSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
