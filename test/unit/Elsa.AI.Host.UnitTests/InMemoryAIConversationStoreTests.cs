@@ -58,12 +58,14 @@ public class InMemoryAIConversationStoreTests
         await _store.SaveAsync(completed);
 
         var found = await _store.FindAsync(completed.Id);
-        Assert.Equal(AIConversationStatus.Completed, found?.Status);
+        Assert.NotNull(found);
+        Assert.Equal(AIConversationStatus.Completed, found.Status);
     }
 
     [Theory(DisplayName = "Ephemeral terminal conversations expire on lookup")]
     [InlineData(AIConversationStatus.Completed)]
     [InlineData(AIConversationStatus.Failed)]
+    [InlineData(AIConversationStatus.Expired)]
     public async Task FindAsyncExpiresTerminalEphemeralConversations(AIConversationStatus status)
     {
         var conversation = CreateConversation(
@@ -104,6 +106,18 @@ public class InMemoryAIConversationStoreTests
         Assert.Equal(conversation.Id, found.Id);
     }
 
+    [Fact(DisplayName = "Configured conversations without retention deadline remain available")]
+    public async Task FindAsyncKeepsConfiguredConversationsWithoutRetentionDeadline()
+    {
+        var conversation = CreateConversation();
+        await _store.SaveAsync(conversation);
+
+        var found = await _store.FindAsync(conversation.Id);
+
+        Assert.NotNull(found);
+        Assert.Equal(conversation.Id, found.Id);
+    }
+
     [Fact(DisplayName = "Configured conversations expire after retention deadline")]
     public async Task FindAsyncExpiresConfiguredConversationsAfterRetentionDeadline()
     {
@@ -128,6 +142,35 @@ public class InMemoryAIConversationStoreTests
 
         var found = await _store.FindAsync(expired.Id);
         Assert.Null(found);
+
+        var active = await _store.FindAsync("active");
+        Assert.NotNull(active);
+        Assert.Equal("active", active.Id);
+    }
+
+    [Fact(DisplayName = "Conversation IDs are matched case-insensitively")]
+    public async Task FindAsyncMatchesConversationIdsCaseInsensitively()
+    {
+        var conversation = CreateConversation(id: "Conversation-1");
+        await _store.SaveAsync(conversation);
+
+        var found = await _store.FindAsync("conversation-1");
+
+        Assert.NotNull(found);
+        Assert.Equal("Conversation-1", found.Id);
+    }
+
+    [Fact(DisplayName = "Null and empty tenant IDs are treated as the default tenant")]
+    public async Task SaveAsyncTreatsNullAndEmptyTenantIdsAsDefaultTenant()
+    {
+        await _store.SaveAsync(CreateConversation(tenantId: null));
+        var overwrite = CreateConversation(tenantId: "");
+
+        await _store.SaveAsync(overwrite);
+
+        var found = await _store.FindAsync(overwrite.Id);
+        Assert.NotNull(found);
+        Assert.Equal("", found.TenantId);
     }
 
     private static AIConversation CreateConversation(
