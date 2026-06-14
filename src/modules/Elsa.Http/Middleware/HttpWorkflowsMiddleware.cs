@@ -252,13 +252,15 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         // Replace the original cancellation token with the combined one.
         httpContext.RequestAborted = combinedTokenSource.Token;
 
-        // Execute the action.
-        var result = await action(httpContext.RequestAborted);
-
-        // Restore the original cancellation token.
-        httpContext.RequestAborted = originalCancellationToken;
-
-        return result;
+        try
+        {
+            return await action(httpContext.RequestAborted);
+        }
+        finally
+        {
+            // Restore the original cancellation token even when execution faults or is canceled.
+            httpContext.RequestAborted = originalCancellationToken;
+        }
     }
 
     private HttpRouteData GetMatchingRoute(IServiceProvider serviceProvider, string path)
@@ -359,8 +361,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
-        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
+        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))?.WorkflowState ?? workflowExecutionResult.WorkflowState;
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState, cancellationToken));
         return true;
     }
 
