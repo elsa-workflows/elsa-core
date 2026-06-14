@@ -361,8 +361,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
-        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
+        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))?.WorkflowState ?? workflowExecutionResult.WorkflowState;
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState, cancellationToken));
         return true;
     }
 
