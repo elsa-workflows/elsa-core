@@ -20,8 +20,8 @@ namespace Elsa.Http.UnitTests.Middleware;
 
 public class HttpWorkflowsMiddlewareTests
 {
-    private static readonly MethodInfo HandleWorkflowFaultAsyncMethod = typeof(HttpWorkflowsMiddleware).GetMethod("HandleWorkflowFaultAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-    private static readonly MethodInfo ExecuteWithinTimeoutAsyncMethod = typeof(HttpWorkflowsMiddleware).GetMethod("ExecuteWithinTimeoutAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    private static readonly MethodInfo HandleWorkflowFaultAsyncMethod = GetRequiredPrivateMethod("HandleWorkflowFaultAsync");
+    private static readonly MethodInfo ExecuteWithinTimeoutAsyncMethod = GetRequiredPrivateMethod("ExecuteWithinTimeoutAsync");
     private const string CurrentTenantId = "tenant-a";
     private const string OtherTenantId = "tenant-b";
     private const string BookmarkHash = "http-endpoint:/colliding:get";
@@ -185,6 +185,9 @@ public class HttpWorkflowsMiddlewareTests
         var task = (Task<T>)method.Invoke(_middleware, [action, requestTimeout, httpContext])!;
         return await task;
     }
+
+    private static MethodInfo GetRequiredPrivateMethod(string name) =>
+        typeof(HttpWorkflowsMiddleware).GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic) ?? throw new MissingMethodException(typeof(HttpWorkflowsMiddleware).FullName, name);
 
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
     {
