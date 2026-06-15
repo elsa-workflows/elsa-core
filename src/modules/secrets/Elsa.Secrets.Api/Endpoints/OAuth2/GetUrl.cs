@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Mime;
 using System.Threading;
@@ -16,6 +16,7 @@ namespace Elsa.Secrets.Api.Endpoints.OAuth2;
 [ApiVersion("1")]
 [Route("v{apiVersion:apiVersion}/oauth2/url/{secretId}")]
 [Produces(MediaTypeNames.Application.Json)]
+[Tags("Secrets")]
 public class GetUrl : Controller
 {
 	private readonly ISecretsManager _secretsManager;

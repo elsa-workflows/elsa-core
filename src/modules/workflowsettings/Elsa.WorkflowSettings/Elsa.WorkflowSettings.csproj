@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\..\..\..\common.props" />
     <Import Project="..\..\..\..\configureawait.props" />
@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.8" />
     </ItemGroup>
 
     <ItemGroup>
