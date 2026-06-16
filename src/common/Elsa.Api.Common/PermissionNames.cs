@@ -16,9 +16,14 @@ public static class PermissionNames
     public const string ExecutePythonExpressions = "exec:python-expressions";
 
     /// <summary>
-    /// Permission required to pause, resume, force-drain, or query the workflow runtime's graceful-shutdown status.
+    /// Permission required to pause, resume, or force-drain the workflow runtime.
     /// </summary>
     public const string ManageWorkflowRuntime = "ManageWorkflowRuntime";
+
+    /// <summary>
+    /// Permission required to query the workflow runtime's graceful-shutdown status.
+    /// </summary>
+    public const string ReadWorkflowRuntime = "read:workflow-runtime";
 
     /// <summary>
     /// Permission required to list or inspect bookmark queue dead-letter items.
