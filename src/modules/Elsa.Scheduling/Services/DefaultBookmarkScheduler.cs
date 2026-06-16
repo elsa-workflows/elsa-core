@@ -22,7 +22,7 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
     }
 
     /// <inheritdoc />
-    public Task ScheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task ScheduleAsync(IEnumerable<StoredBookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
         var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay);
@@ -35,11 +35,11 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             .Concat(timerBookmarks.Select(bookmark => CreateScheduleAt(bookmark.Id, bookmark.WorkflowInstanceId, bookmark.GetPayload<TimerBookmarkPayload>().ResumeAt)))
             .Concat(cronBookmarks.Select(bookmark => CreateCronSchedule(bookmark.Id, bookmark.WorkflowInstanceId, bookmark.GetPayload<CronBookmarkPayload>().CronExpression)));
 
-        return ScheduleAsync(schedules, cancellationToken);
+        await ScheduleAsync(schedules, cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task ScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
+    public async Task ScheduleAsync(string workflowInstanceId, IEnumerable<Bookmark> bookmarks, CancellationToken cancellationToken = default)
     {
         var bookmarkList = bookmarks.ToList();
         var delayBookmarks = bookmarkList.Filter(SchedulingStimulusNames.Delay);
@@ -52,7 +52,7 @@ public class DefaultBookmarkScheduler : IBookmarkScheduler
             .Concat(timerBookmarks.Select(bookmark => CreateScheduleAt(bookmark.Id, workflowInstanceId, bookmark.GetPayload<TimerBookmarkPayload>().ResumeAt)))
             .Concat(cronBookmarks.Select(bookmark => CreateCronSchedule(bookmark.Id, workflowInstanceId, bookmark.GetPayload<CronBookmarkPayload>().CronExpression)));
 
-        return ScheduleAsync(schedules, cancellationToken);
+        await ScheduleAsync(schedules, cancellationToken);
     }
 
     /// <inheritdoc />
