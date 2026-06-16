@@ -85,6 +85,20 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
     }
 
     [Fact]
+    public void Schedule_WithDelayExceedingTimerLimit_ShouldStillSetupTimer()
+    {
+        // Arrange - System.Timers.Timer rejects intervals greater than int.MaxValue milliseconds.
+        SetupSystemClock(DefaultNow);
+        var startAt = DefaultNow.AddDays(26);
+
+        // Act
+        CreateScheduledTask(startAt: startAt);
+
+        // Assert - Verify that no error was logged (timer should be set up successfully)
+        AssertNoErrorLogged();
+    }
+
+    [Fact]
     public void Schedule_WithZeroDelay_ShouldUseMinimumDelay()
     {
         // Arrange - simulate a case where startAt is exactly now

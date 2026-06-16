@@ -12,6 +12,7 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// </summary>
 public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 {
+    private static readonly TimeSpan MaxTimerInterval = TimeSpan.FromMilliseconds(int.MaxValue);
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -66,7 +67,9 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
             delay = TimeSpan.FromMilliseconds(1);
         }
 
-        _timer = new(delay.TotalMilliseconds)
+        var timerDelay = delay > MaxTimerInterval ? MaxTimerInterval : delay;
+
+        _timer = new(timerDelay.TotalMilliseconds)
         {
             Enabled = true
         };
@@ -78,6 +81,14 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 
             // Check if disposed before proceeding
             if (_disposed) return;
+
+            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+            // For longer delays, keep scheduling capped intervals until the target instant arrives.
+            if (_startAt > _systemClock.UtcNow)
+            {
+                Schedule();
+                return;
+            }
 
             using var scope = _scopeFactory.CreateScope();
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
