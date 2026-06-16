@@ -73,3 +73,4 @@ src/designer/elsa-workflows-studio/loader
 # Created by developers using GNU/Linux
 .directory
 launchSettings.json
+/src/persistence/Elsa.Persistence.EntityFramework/Elsa.Persistence.EntityFramework.Core/Properties/PublishProfiles/FolderProfile.pubxml
