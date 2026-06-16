@@ -1,6 +1,6 @@
 # Elsa Roadmap
 
-Last refreshed: 2026-06-10
+Last refreshed: 2026-06-17
 
 This roadmap is a product direction document, not a fixed release calendar. Elsa is developed through a mix of core maintainer work, customer-funded work, and community contributions, so sequencing can change when real-world demand changes. The intent is stable: make Elsa the most productive, dependable, and extensible workflow platform for the .NET ecosystem.
 
@@ -72,7 +72,7 @@ Legend: `[x]` shipped foundation, `[~]` partially shipped or needs productizatio
 
 - [x] HTTP, scheduling, scripting, and persistence provider foundations
 - [x] Connections and Secrets foundations
-- [x] Extension packages for SQL, CSV, Email, Slack, Telnyx, GitHub DevOps, Azure Storage, Azure Service Bus, Kafka, MassTransit/RabbitMQ, Quartz, Hangfire, Dapper, MongoDB, Elasticsearch, OpenTelemetry, Logging, Agents, OpenAPI, Webhooks, OrchardCore, IO, compression, and ProtoActor-backed runtime/caching
+- [x] Extension packages for SQL, CSV, Email, Slack, Telnyx, LDAP, GitHub DevOps, Azure Storage, Azure Service Bus, Kafka, MassTransit/RabbitMQ, Quartz, Hangfire, Dapper, MongoDB, Elasticsearch, OpenTelemetry, Logging, Agents, OpenAPI, Webhooks, OrchardCore, IO, compression, and ProtoActor-backed runtime/caching
 - [~] Modular package loading and manifest metadata
 - [~] OpenAPI activity/provider foundations
 - [ ] Connector SDK
@@ -100,17 +100,17 @@ These are already present in the codebase and should be treated as foundations f
 - Distributed runtime support in [`Elsa.Workflows.Runtime.Distributed`](src/modules/Elsa.Workflows.Runtime.Distributed).
 - Structured diagnostics with recent/live capture plus SQLite persistence in [`Elsa.Diagnostics.StructuredLogs`](src/modules/Elsa.Diagnostics.StructuredLogs) and [`Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite`](src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite).
 - Raw stdout/stderr console diagnostics in [`Elsa.Diagnostics.ConsoleLogs`](src/modules/Elsa.Diagnostics.ConsoleLogs), with the post-3.7 console pipeline now carrying workflow and activity execution context through [PR #7536](https://github.com/elsa-workflows/elsa-core/pull/7536).
-- Core OpenTelemetry diagnostics are actively in productization through [PR #7537](https://github.com/elsa-workflows/elsa-core/pull/7537), which adds OTLP ingestion, bounded storage, REST APIs, SignalR live updates, collector configuration, security checks, and tests.
-- Core `main` now includes `Elsa.AI.Abstractions`, `Elsa.AI.Host`, `Elsa.AI.Copilot`, and `Elsa.AI.Persistence.EFCore` through [PR #7523](https://github.com/elsa-workflows/elsa-core/pull/7523), giving Weaver a merged server-side foundation while Studio UX and broader productization remain roadmap work.
+- Core `main` now includes `Elsa.Diagnostics.OpenTelemetry`, which provides OTLP ingestion, bounded in-memory storage, REST APIs, SignalR live updates, collector configuration, permissions, and tests in [`src/modules/Elsa.Diagnostics.OpenTelemetry`](src/modules/Elsa.Diagnostics.OpenTelemetry). The productization gap is no longer "does a backend exist?" but rather release packaging, default workflow semantic metrics, and diagnostics correlation.
+- Core `main` now includes `Elsa.AI.Abstractions`, `Elsa.AI.Host`, `Elsa.AI.Copilot`, and `Elsa.AI.Persistence.EFCore` through [PR #7523](https://github.com/elsa-workflows/elsa-core/pull/7523), and Studio `main` now includes `Elsa.Studio.AI` through [elsa-studio#900](https://github.com/elsa-workflows/elsa-studio/pull/900). That gives Weaver both server and Studio workspace foundations, while proposal actions, broader authoring contracts, and polished product UX remain roadmap work.
 - State machine core activity support in [`Elsa.Workflows.Core/Activities/StateMachine`](src/modules/Elsa.Workflows.Core/Activities/StateMachine).
 - ElsaScript DSL and blob storage integration in [`Elsa.Dsl.ElsaScript`](src/modules/Elsa.Dsl.ElsaScript) and [`Elsa.WorkflowProviders.BlobStorage.ElsaScript`](src/modules/Elsa.WorkflowProviders.BlobStorage.ElsaScript).
 - Activity unit testing helpers and guidance in [`src/common/Elsa.Testing.Shared`](src/common/Elsa.Testing.Shared) and [`doc/qa/test-guidelines.md`](doc/qa/test-guidelines.md).
-- Label infrastructure in [`Elsa.Labels`](src/modules/Elsa.Labels), which is the likely backend foundation for workflow categories, tags, and folders.
+- Label infrastructure now spans Core and Studio: [`Elsa.Labels`](src/modules/Elsa.Labels) exposes label and workflow-label endpoints, and [`Elsa.Studio.Labels`](https://github.com/elsa-workflows/elsa-studio/tree/main/src/modules/Elsa.Studio.Labels) adds label management pages plus workflow-definition label editing. Folder views, broader metadata search, and richer organization UX remain roadmap work.
 - Elsa Studio is already a modular Blazor product shell with workflow authoring, instance browsing, designer modules, diagnostics, authentication, localization, branding, custom elements, and early React wrapper work in [elsa-workflows/elsa-studio](https://github.com/elsa-workflows/elsa-studio).
 - Studio `3.7.0` shipped the modern authentication framework, Elsa Identity and OIDC modules, activity call-stack visualization, incident count badges, pending-instance filtering, and custom theme/DataPanel extensibility.
 - Studio `3.8.0-preview1` shipped the server logs module, console logs module, structured-log storage diagnostics, the OpenTelemetry diagnostics page from [elsa-studio#834](https://github.com/elsa-workflows/elsa-studio/pull/834), sequence and state-machine designer foundations, the secrets module, and the alterations designer.
 - Elsa Extensions is an active modular integration repository with 70+ module projects in [elsa-workflows/elsa-extensions](https://github.com/elsa-workflows/elsa-extensions), targeting `net8.0`, `net9.0`, and `net10.0`.
-- Extensions already provide broad integration foundations: Connections, Secrets, Agents, OpenAPI, SQL/CSV/data tooling, messaging, schedulers, cloud storage, logging, webhooks, persistence providers, and external system activities.
+- Extensions already provide broad integration foundations: Connections, Secrets, Agents, OpenAPI, SQL/CSV/data tooling, messaging, schedulers, cloud storage, logging, webhooks, persistence providers, LDAP, and external system activities. LDAP joined `main` through [elsa-extensions#127](https://github.com/elsa-workflows/elsa-extensions/pull/127).
 - Extensions `3.7.0` adds package manifest metadata, infrastructure attributes, shell features for MassTransit/Quartz/Webhooks, Dapper and MongoDB activity execution-chain lookups, Dapper bookmark queue filtering, Kafka multitenancy/schema-trigger work, Quartz lifecycle/job cleanup fixes, and other operational hardening.
 
 The public roadmap issue remains useful history: [elsa-workflows/elsa-core#3232](https://github.com/elsa-workflows/elsa-core/issues/3232). Several items in that issue are now done in code but still open in the issue body, so this file should be considered the current working roadmap.
@@ -235,7 +235,7 @@ High-value items:
 - Build AI-assisted workflow generation that produces multiple visible activities from intent rather than hiding logic in one script activity. This direction is proposed in [discussion #7367](https://github.com/elsa-workflows/elsa-core/discussions/7367), and merged [#7523](https://github.com/elsa-workflows/elsa-core/pull/7523) now provides the first Weaver AI Copilot server foundation with AI abstractions, provider/session contracts, chat/tool endpoints, audit events, proposal persistence, EF Core storage, and integration/unit tests.
 - Provide an Elsa MCP/tooling surface for reading, validating, editing, and explaining workflow JSON/ElsaScript. This would make Elsa a strong fit for AI-enabled .NET development environments.
 - Align AI authoring with the Extensions Agents work: provider abstractions, MCP tools, OpenAI/Claude/local model support, tool approval, secrets handling, and Studio UX should share contracts instead of creating parallel AI stacks.
-- Build a Studio copilot only after the authoring contracts are stable: validation, generated activity metadata, designer APIs, diagnostics links, and test scaffolding should be available before AI generation becomes prominent. [elsa-studio#553](https://github.com/elsa-workflows/elsa-studio/issues/553) has clear community signal and maintainer interest, while merged [#7523](https://github.com/elsa-workflows/elsa-core/pull/7523) is still Core/backend-oriented and should not be treated as a complete Studio product surface.
+- Productize the Studio copilot foundation that landed in [elsa-studio#900](https://github.com/elsa-workflows/elsa-studio/pull/900): proposal review/apply flows, validation, generated activity metadata, designer APIs, diagnostics links, and test scaffolding should be available before AI generation becomes prominent. [elsa-studio#553](https://github.com/elsa-workflows/elsa-studio/issues/553) remains the durable demand signal, and the current Studio workspace still depends on Core exposing more proposal/action endpoints.
 - Add "explain this workflow", "find risky activities", "suggest tests", and "generate migration notes" capabilities backed by workflow graph metadata.
 - Pair AI generation with validation: generated workflows should include test scaffolds, required input/output definitions, secrets handling, and clear review diffs.
 
@@ -251,7 +251,7 @@ Near term:
 
 1. Finish runtime confidence work: graceful shutdown remaining tasks, recovery clarity, distributed runtime regressions, security documentation, and OIDC recipes.
 2. Stabilize Studio authoring: designer regression harness, input/property-editor fixes, async dispatch/run UX, state machine Studio/docs completion, and a clear UI framework direction.
-3. Complete the diagnostics trilogy: merge/release the Core OpenTelemetry backend, connect it to the Studio OpenTelemetry page, document collector setup, and correlate traces/logs/metrics with workflow incidents.
+3. Complete the diagnostics trilogy: release and operationalize the Core OpenTelemetry backend, connect it to the Studio OpenTelemetry page, document collector setup, and correlate traces/logs/metrics with workflow incidents.
 4. Make workflow authoring easier to manage at scale: organization, search, progress/timeline APIs, testing docs, and user preference/table-state persistence.
 5. Reconcile shipped extension foundations with roadmap status: package manifests, Connections/Secrets, OpenAPI, Agents, schedulers, messaging, and integration maturity labels.
 
