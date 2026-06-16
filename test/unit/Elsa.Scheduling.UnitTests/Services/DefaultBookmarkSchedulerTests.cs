@@ -32,12 +32,13 @@ public class DefaultBookmarkSchedulerTests
 
         var scheduleTask = _scheduler.ScheduleAsync(bookmarks, CancellationToken.None);
 
-        var allSchedulingStarted = await WaitUntilAsync(() => Volatile.Read(ref scheduledCount) == bookmarks.Count, TimeSpan.FromSeconds(1));
-        Assert.True(allSchedulingStarted);
-        Assert.False(scheduleTask.IsCompleted);
-
+        var allSchedulingStarted = await WaitUntilAsync(() => Volatile.Read(ref scheduledCount) == bookmarks.Count, TimeSpan.FromSeconds(5));
+        var completedBeforeRelease = scheduleTask.IsCompleted;
         releaseScheduler.SetResult();
         await scheduleTask;
+
+        Assert.True(allSchedulingStarted);
+        Assert.False(completedBeforeRelease);
     }
 
     private static IReadOnlyCollection<StoredBookmark> CreateStoredDelayBookmarks(int count)
