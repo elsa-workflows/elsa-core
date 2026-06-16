@@ -21,7 +21,7 @@ public static class PermissionNames
     public const string ManageWorkflowRuntime = "ManageWorkflowRuntime";
 
     /// <summary>
-    /// Permission required to query the workflow runtime's graceful-shutdown status.
+    /// Permission required to query workflow runtime status.
     /// </summary>
     public const string ReadWorkflowRuntime = "read:workflow-runtime";
 
