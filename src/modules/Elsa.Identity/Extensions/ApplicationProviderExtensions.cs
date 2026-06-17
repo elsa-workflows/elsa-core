@@ -15,13 +15,15 @@ public static class ApplicationProviderExtensions
     /// </summary>
     /// <param name="applicationProvider">The user provider.</param>
     /// <param name="clientId">The client ID to search by.</param>
+    /// <param name="tenantAgnostic">Whether to bypass tenant scoping when resolving the application.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The application with the specified client ID.</returns>
-    public static async Task<Application?> FindByClientIdAsync(this IApplicationProvider applicationProvider, string clientId, CancellationToken cancellationToken = default)
+    public static async Task<Application?> FindByClientIdAsync(this IApplicationProvider applicationProvider, string clientId, bool tenantAgnostic = false, CancellationToken cancellationToken = default)
     {
         var filter = new ApplicationFilter
         {
-            ClientId = clientId
+            ClientId = clientId,
+            TenantAgnostic = tenantAgnostic
         };
         
         return await applicationProvider.FindAsync(filter, cancellationToken);
