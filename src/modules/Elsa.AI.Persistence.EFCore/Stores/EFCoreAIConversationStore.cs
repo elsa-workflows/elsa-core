@@ -199,7 +199,7 @@ public class EFCoreAIConversationStore(AIDbContext dbContext) : IAIConversationS
     private static bool IsExpired(AIConversation conversation)
     {
         if (conversation.RetentionMode == AIRetentionMode.Ephemeral)
-            return conversation.Status is AIConversationStatus.Completed or AIConversationStatus.Failed;
+            return conversation.Status is AIConversationStatus.Completed or AIConversationStatus.Failed or AIConversationStatus.Expired;
 
         if (conversation.RetentionMode == AIRetentionMode.Durable)
             return false;
