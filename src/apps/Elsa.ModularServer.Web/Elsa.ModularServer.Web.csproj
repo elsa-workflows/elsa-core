@@ -25,6 +25,7 @@
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Platform.Integration\Elsa.Platform.Integration.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Resilience\Elsa.Resilience.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Secrets.JavaScript\Elsa.Secrets.JavaScript.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Secrets\Elsa.Secrets.csproj" />

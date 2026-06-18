@@ -131,6 +131,9 @@
         <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4"/>
         <PackageVersion Include="Jint" Version="4.4.2"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.11"/>
+        <PackageVersion Include="Loom" Version="0.0.1-preview.10"/>
+        <PackageVersion Include="Loom.Abstractions" Version="0.0.1-preview.10"/>
+        <PackageVersion Include="Loom.Serialization.Json" Version="0.0.1-preview.10"/>
         <PackageVersion Include="MailKit" Version="4.14.1"/>
         <PackageVersion Include="MassTransit" Version="8.5.7"/>
         <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.7"/>

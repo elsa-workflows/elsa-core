@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Integrates Elsa workflow runtimes with Elsa Platform deployment commands.
+        </Description>
+        <PackageTags>elsa module platform integration deployment workflows</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Loom" />
+        <PackageReference Include="Loom.Abstractions" />
+        <PackageReference Include="Loom.Serialization.Json" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\common\Elsa.Features\Elsa.Features.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -7,6 +7,7 @@ using Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
+using Elsa.Platform.Integration.ShellFeatures;
 using Elsa.ShellFeatures;
 using Elsa.Workflows.Api.ShellFeatures;
 using Elsa.Workflows.Management.ShellFeatures;
@@ -29,6 +30,7 @@ ConsoleStreamHook.Install();
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+configuration.AddJsonFile(configuration["Elsa:PlatformIntegration:ShellOverlayPath"] ?? "platform-shell-overrides.json", optional: true, reloadOnChange: false);
 var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString();
 
 builder.Logging.AddOpenTelemetry(logging =>
@@ -77,6 +79,7 @@ builder.AddShells(shells => shells
             typeof(WorkflowRuntimeFeature),
             typeof(WorkflowsFeature),
             typeof(DistributedRuntimeFeature),
+            typeof(ElsaPlatformIntegrationFeature),
             typeof(DashboardApiFeature),
             typeof(WorkflowRuntimeDashboardFeature),
             typeof(ConsoleLogsDashboardFeature),
