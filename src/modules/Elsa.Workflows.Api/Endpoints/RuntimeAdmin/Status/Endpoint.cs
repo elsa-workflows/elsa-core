@@ -15,7 +15,7 @@ internal sealed class StatusEndpoint(IWorkflowRuntimeAdminService admin) : ElsaE
     public override void Configure()
     {
         Get("/admin/workflow-runtime/status");
-        ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
+        ConfigurePermissions(PermissionNames.ReadWorkflowRuntime, PermissionNames.ManageWorkflowRuntime);
     }
 
     public override async Task HandleAsync(CancellationToken ct)
