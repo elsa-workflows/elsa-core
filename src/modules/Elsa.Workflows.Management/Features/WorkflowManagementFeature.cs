@@ -58,6 +58,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     private bool IsReadOnlyMode { get; set; }
+    private bool FailOnValidationErrors { get; set; }
 
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -216,6 +217,17 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables failing workflow publication when the workflow has validation errors.
+    /// Defaults to <c>false</c> in 3.6.x and 3.7.x (publication succeeds and validation errors are returned as
+    /// warnings). Set to <c>true</c> to fail publication when validation errors are present.
+    /// </summary>
+    public WorkflowManagementFeature UseFailOnValidationErrors(bool enabled = true)
+    {
+        FailOnValidationErrors = enabled;
+        return this;
+    }
+
     public WorkflowManagementFeature UseWorkflowDefinitionPublisher(Func<IServiceProvider, IWorkflowDefinitionPublisher> workflowDefinitionPublisher)
     {
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
@@ -309,6 +321,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
             options.IsReadOnlyMode = IsReadOnlyMode;
+            options.FailOnValidationErrors = FailOnValidationErrors;
         });
 
         Services.Configure<HostMethodActivitiesOptions>(_ => { });

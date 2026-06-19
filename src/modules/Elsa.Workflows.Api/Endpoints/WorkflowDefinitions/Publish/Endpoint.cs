@@ -45,8 +45,19 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
 
         var isPublished = definition.IsPublished;
         var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
+
+        if (result is { Succeeded: false })
+        {
+            foreach (var validationError in result.ValidationErrors)
+                AddError(validationError.Message);
+
+            await Send.ErrorsAsync(400, cancellationToken);
+            return;
+        }
+
+        var validationErrors = result?.ValidationErrors.Select(e => e.Message).ToList() ?? [];
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
-        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0);
+        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0, validationErrors);
         await Send.OkAsync(response, cancellationToken);
     }
 }
