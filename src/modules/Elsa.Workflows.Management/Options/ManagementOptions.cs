@@ -32,4 +32,14 @@ public class ManagementOptions
     /// A mode that does not allow editing workflows.
     /// </summary>
     public bool IsReadOnlyMode { get; set; }
+
+    /// <summary>
+    /// Determines whether publishing a workflow definition fails when the workflow has validation errors.
+    /// When <c>false</c> (the default in 3.6.x and 3.7.x), publishing is allowed to succeed and any validation
+    /// errors are returned as warnings on the publish result. When <c>true</c>, publishing fails if any validation
+    /// errors are present. This restores the ability to publish workflows that intentionally leave required
+    /// properties blank (for example, an empty Cron expression used to disable a trigger). As of 3.8.0 this
+    /// defaults to <c>true</c> (opt-out) instead of being opt-in.
+    /// </summary>
+    public bool FailOnValidationErrors { get; set; }
 }
