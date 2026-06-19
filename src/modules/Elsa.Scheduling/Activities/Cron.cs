@@ -44,8 +44,17 @@ public class Cron : EventGenerator
             return;
         }
         
+        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression);
+
+        // Treat a blank expression as "disabled" so the activity completes without scheduling,
+        // mirroring the trigger-indexing behavior, instead of throwing a CronFormatException at runtime.
+        if (string.IsNullOrWhiteSpace(cronExpression))
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+
         var cronParser = context.GetRequiredService<ICronParser>();
-        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression)!;
         var executeAt = cronParser.GetNextOccurrence(cronExpression);
         
         context.JournalData.Add("ExecuteAt", executeAt);
@@ -53,10 +62,17 @@ public class Cron : EventGenerator
     }
 
     /// <inheritdoc />
-    protected override object GetTriggerPayload(TriggerIndexingContext context)
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
     {
-        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression)!;
-        return new CronTriggerPayload(cronExpression);
+        // Treat a blank CRON expression as "no trigger" so the workflow can still be published
+        // (e.g. to temporarily disable the schedule) instead of failing validation. A non-blank but
+        // malformed expression still produces a payload and is caught by CronTriggerPayloadValidator.
+        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression);
+
+        if (string.IsNullOrWhiteSpace(cronExpression))
+            return [];
+
+        return [new CronTriggerPayload(cronExpression)];
     }
 
     /// <summary>
