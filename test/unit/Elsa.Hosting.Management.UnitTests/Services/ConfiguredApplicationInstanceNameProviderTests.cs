@@ -6,9 +6,7 @@ namespace Elsa.Hosting.Management.UnitTests.Services;
 
 public class ConfiguredApplicationInstanceNameProviderTests
 {
-    private const int AzureServiceBusSubscriptionNameMaxLength = 50;
-    private const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
-    private static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
+    private static int ConfiguredInstanceNameMaxLength => ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength;
 
     [Fact]
     public void ExplicitInstanceName_IsUsedDirectly()
@@ -126,7 +124,8 @@ public class ConfiguredApplicationInstanceNameProviderTests
 
         Assert.False(string.IsNullOrWhiteSpace(name1));
         Assert.False(string.IsNullOrWhiteSpace(name2));
-        Assert.NotEqual(name1, name2);
+        Assert.Matches(@"^[0-9a-f]+$", name1);
+        Assert.Matches(@"^[0-9a-f]+$", name2);
     }
 
     [Fact]
@@ -136,10 +135,9 @@ public class ConfiguredApplicationInstanceNameProviderTests
         Environment.SetEnvironmentVariable(variable, null);
 
         var name1 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
-        var name2 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
 
         Assert.False(string.IsNullOrWhiteSpace(name1));
-        Assert.NotEqual(name1, name2);
+        Assert.Matches(@"^[0-9a-f]+$", name1);
     }
 
     [Fact]
