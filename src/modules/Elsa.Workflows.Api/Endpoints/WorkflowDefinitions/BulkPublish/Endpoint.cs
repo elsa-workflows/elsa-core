@@ -41,6 +41,7 @@ internal class BulkPublish(
         var alreadyPublished = new List<string>();
         var skipped = new List<string>();
         var updatedConsumers = new List<string>();
+        var failed = new List<string>();
         var publishableDefinitions = new List<(string DefinitionId, WorkflowDefinition Definition)>();
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
@@ -88,13 +89,20 @@ internal class BulkPublish(
         foreach (var (definitionId, definition) in publishableDefinitions)
         {
             var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+
+            if (!result.Succeeded)
+            {
+                failed.Add(definitionId);
+                continue;
+            }
+
             published.Add(definitionId);
             
             if (result.AffectedWorkflows.WorkflowDefinitions.Count > 0) 
                 updatedConsumers.AddRange(result.AffectedWorkflows.WorkflowDefinitions.Select(x => x.DefinitionId));
         }
 
-        return new(published, alreadyPublished, notFound, skipped, updatedConsumers);
+        return new(published, alreadyPublished, notFound, skipped, updatedConsumers, failed);
     }
 
 }
