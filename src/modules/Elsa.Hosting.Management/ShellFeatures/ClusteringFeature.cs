@@ -22,9 +22,14 @@ public class ClusteringFeature : IShellFeature
     /// <summary>
     /// A factory that instantiates an <see cref="IApplicationInstanceNameProvider"/>.
     /// </summary>
+    /// <remarks>
+    /// Defaults to <see cref="ConfiguredApplicationInstanceNameProvider"/>, which honors
+    /// <see cref="ApplicationInstanceOptions"/> for a stable instance name and falls back to a random
+    /// name when none is configured (preserving the previous default behaviour).
+    /// </remarks>
     public Func<IServiceProvider, IApplicationInstanceNameProvider> InstanceNameProvider { get; set; } = sp =>
     {
-        return ActivatorUtilities.CreateInstance<RandomApplicationInstanceNameProvider>(sp);
+        return ActivatorUtilities.CreateInstance<ConfiguredApplicationInstanceNameProvider>(sp);
     };
 
     /// <summary>
@@ -32,13 +37,19 @@ public class ClusteringFeature : IShellFeature
     /// </summary>
     public Action<HeartbeatOptions> HeartbeatOptions { get; set; } = _ => { };
 
+    /// <summary>
+    /// Configures how the application instance name is determined. Set a stable name (for example from
+    /// the pod name) to avoid accumulating orphaned per-instance transport entities across restarts.
+    /// </summary>
+    public Action<ApplicationInstanceOptions> ApplicationInstanceOptions { get; set; } = _ => { };
+
     public void ConfigureServices(IServiceCollection services)
     {
         services.Configure(HeartbeatOptions)
+            .Configure(ApplicationInstanceOptions)
             .AddSingleton(InstanceNameProvider)
             .AddSingleton<RandomIntIdentityGenerator>()
             .AddHostedService<InstanceHeartbeatService>()
             .AddHostedService<InstanceHeartbeatMonitorService>();
     }
 }
-
