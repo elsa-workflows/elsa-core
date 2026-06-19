@@ -44,8 +44,17 @@ public class Cron : EventGenerator
             return;
         }
         
+        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression);
+
+        // Treat a blank expression as "disabled" so the activity completes without scheduling,
+        // mirroring the trigger-indexing behavior, instead of throwing a CronFormatException at runtime.
+        if (string.IsNullOrWhiteSpace(cronExpression))
+        {
+            await context.CompleteActivityAsync();
+            return;
+        }
+
         var cronParser = context.GetRequiredService<ICronParser>();
-        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression)!;
         var executeAt = cronParser.GetNextOccurrence(cronExpression);
         
         context.JournalData.Add("ExecuteAt", executeAt);
