@@ -193,11 +193,13 @@ public class TriggerIndexer : ITriggerIndexer
         
         var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(triggerDescriptor, _serviceProvider, context, _expressionEvaluator, _logger);
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
-        var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
+        var (succeeded, triggerData) = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
         var triggerName = triggerIndexingContext.TriggerName;
 
-        // If no trigger payloads were returned, create a null payload.
-        if (!triggerData.Any()) triggerData.Add(null!);
+        // If trigger data generation failed, create a null payload so the problem surfaces during validation.
+        // When generation succeeded but returned no payloads, the activity intentionally produced no trigger
+        // (e.g. an unconfigured Cron with a blank expression), so we leave the result empty and index nothing.
+        if (!succeeded && triggerData.Count == 0) triggerData.Add(null!);
 
         var triggers = triggerData.Select(payload => new StoredTrigger
         {
@@ -213,17 +215,17 @@ public class TriggerIndexer : ITriggerIndexer
         return triggers.ToList();
     }
 
-    private async Task<List<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
+    private async Task<(bool Succeeded, List<object> Payloads)> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
     {
         try
         {
-            return (await trigger.GetTriggerPayloadsAsync(context)).ToList();
+            return (true, (await trigger.GetTriggerPayloadsAsync(context)).ToList());
         }
         catch (Exception e)
         {
             _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
-        return new(0);
+        return (false, new(0));
     }
 }

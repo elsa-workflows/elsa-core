@@ -53,10 +53,17 @@ public class Cron : EventGenerator
     }
 
     /// <inheritdoc />
-    protected override object GetTriggerPayload(TriggerIndexingContext context)
+    protected override IEnumerable<object> GetTriggerPayloads(TriggerIndexingContext context)
     {
-        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression)!;
-        return new CronTriggerPayload(cronExpression);
+        // Treat a blank CRON expression as "no trigger" so the workflow can still be published
+        // (e.g. to temporarily disable the schedule) instead of failing validation. A non-blank but
+        // malformed expression still produces a payload and is caught by CronTriggerPayloadValidator.
+        var cronExpression = context.ExpressionExecutionContext.Get(CronExpression);
+
+        if (string.IsNullOrWhiteSpace(cronExpression))
+            return [];
+
+        return [new CronTriggerPayload(cronExpression)];
     }
 
     /// <summary>
