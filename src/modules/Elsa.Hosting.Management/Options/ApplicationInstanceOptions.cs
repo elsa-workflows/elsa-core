@@ -23,6 +23,12 @@ public class ApplicationInstanceOptions
     /// An explicit, stable, unique-per-instance name. When set, this value is used directly and takes
     /// precedence over <see cref="InstanceNameEnvironmentVariable"/>.
     /// </summary>
+    /// <remarks>
+    /// Keep this value short enough for downstream transport entity names. For Azure Service Bus, the
+    /// change-token subscription name must fit in 50 characters, leaving 17 characters for this prefix.
+    /// Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a
+    /// letter or number.
+    /// </remarks>
     public string? InstanceName { get; set; }
 
     /// <summary>
@@ -31,5 +37,9 @@ public class ApplicationInstanceOptions
     /// restarts when running as a StatefulSet). When <see langword="null"/> or empty, no environment
     /// variable is read and a random name is generated instead.
     /// </summary>
+    /// <remarks>
+    /// The environment variable name is trimmed before lookup. The value it contains follows the same
+    /// transport entity-name length constraints as <see cref="InstanceName"/>.
+    /// </remarks>
     public string? InstanceNameEnvironmentVariable { get; set; }
 }

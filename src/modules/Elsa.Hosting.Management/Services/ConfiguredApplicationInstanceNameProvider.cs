@@ -21,6 +21,10 @@ namespace Elsa.Hosting.Management.Services;
 /// </remarks>
 public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNameProvider
 {
+    private const int AzureServiceBusSubscriptionNameMaxLength = 50;
+    private const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
+    private static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
+
     private readonly string _instanceName;
 
     /// <summary>
@@ -35,17 +39,18 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
         if (!string.IsNullOrWhiteSpace(value.InstanceName))
         {
-            _instanceName = value.InstanceName.Trim();
+            _instanceName = ValidateConfiguredInstanceName(value.InstanceName, $"{nameof(ApplicationInstanceOptions)}.{nameof(ApplicationInstanceOptions.InstanceName)}");
             return;
         }
 
         if (!string.IsNullOrWhiteSpace(value.InstanceNameEnvironmentVariable))
         {
-            var fromEnvironment = Environment.GetEnvironmentVariable(value.InstanceNameEnvironmentVariable);
+            var environmentVariable = value.InstanceNameEnvironmentVariable.Trim();
+            var fromEnvironment = Environment.GetEnvironmentVariable(environmentVariable);
 
             if (!string.IsNullOrWhiteSpace(fromEnvironment))
             {
-                _instanceName = fromEnvironment.Trim();
+                _instanceName = ValidateConfiguredInstanceName(fromEnvironment, $"environment variable '{environmentVariable}'");
                 return;
             }
 
@@ -53,7 +58,7 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
                 "The configured instance-name environment variable '{EnvironmentVariable}' is not set or empty. Falling back to a random instance name. " +
                 "A random name causes per-instance transport entities (such as the Azure Service Bus change-token subscription) to be recreated on every restart, " +
                 "which can accumulate until the transport's per-topic limit is reached.",
-                value.InstanceNameEnvironmentVariable);
+                environmentVariable);
         }
 
         _instanceName = randomIdentityGenerator.GenerateId();
@@ -61,4 +66,34 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
     /// <inheritdoc />
     public string GetName() => _instanceName;
+
+    private static string ValidateConfiguredInstanceName(string value, string source)
+    {
+        var instanceName = value.Trim();
+
+        if (instanceName.Length <= ConfiguredInstanceNameMaxLength)
+        {
+            if (IsValidConfiguredInstanceName(instanceName))
+                return instanceName;
+
+            throw new InvalidOperationException(
+                $"The configured application instance name from {source} contains invalid characters. " +
+                "Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a letter or number.");
+        }
+
+        throw new InvalidOperationException(
+            $"The configured application instance name from {source} is {instanceName.Length} characters long, but it must be {ConfiguredInstanceNameMaxLength} characters or fewer. " +
+            $"The value is used to create per-instance transport entities such as '{instanceName}{TriggerChangeTokenSignalEndpointNameSuffix}', which must fit within Azure Service Bus's {AzureServiceBusSubscriptionNameMaxLength}-character subscription name limit. " +
+            "Configure a shorter stable name that is still unique for each concurrently running instance.");
+    }
+
+    private static bool IsValidConfiguredInstanceName(string instanceName)
+    {
+        return IsAsciiLetterOrDigit(instanceName[0])
+            && IsAsciiLetterOrDigit(instanceName[^1])
+            && instanceName.All(c => IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');
+    }
+
+    private static bool IsAsciiLetterOrDigit(char value) =>
+        value is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
 }
