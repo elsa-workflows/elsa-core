@@ -1,17 +1,20 @@
+using Elsa.Features.Services;
 using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
 using Elsa.Hosting.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
+using ClusteringFeature = Elsa.Hosting.Management.Features.ClusteringFeature;
 using ShellClusteringFeature = Elsa.Hosting.Management.ShellFeatures.ClusteringFeature;
 
 namespace Elsa.Hosting.Management.UnitTests.Services;
 
 public class ConfiguredApplicationInstanceNameProviderTests
 {
-    private const int AzureServiceBusSubscriptionNameMaxLength = 50;
-    private const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
-    private static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
+    private static int AzureServiceBusSubscriptionNameMaxLength => ConfiguredApplicationInstanceNameProvider.AzureServiceBusSubscriptionNameMaxLength;
+    private static string TriggerChangeTokenSignalEndpointNameSuffix => ConfiguredApplicationInstanceNameProvider.TriggerChangeTokenSignalEndpointNameSuffix;
+    private static int ConfiguredInstanceNameMaxLength => ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength;
 
     [Fact]
     public void ExplicitInstanceName_IsUsedDirectly()
@@ -208,6 +211,29 @@ public class ConfiguredApplicationInstanceNameProviderTests
 
         services.AddLogging();
         feature.ConfigureServices(services);
+
+        using var serviceProvider = services.BuildServiceProvider();
+
+        var provider = serviceProvider.GetRequiredService<IApplicationInstanceNameProvider>();
+
+        Assert.IsType<ConfiguredApplicationInstanceNameProvider>(provider);
+        Assert.Equal("pod-0", provider.GetName());
+    }
+
+    [Fact]
+    public void ClusteringFeature_UsesConfiguredInstanceNameProvider()
+    {
+        var services = new ServiceCollection();
+        var module = Substitute.For<IModule>();
+        module.Services.Returns(services);
+
+        var feature = new ClusteringFeature(module)
+        {
+            ApplicationInstanceOptions = options => options.InstanceName = "pod-0"
+        };
+
+        services.AddLogging();
+        feature.Apply();
 
         using var serviceProvider = services.BuildServiceProvider();
 

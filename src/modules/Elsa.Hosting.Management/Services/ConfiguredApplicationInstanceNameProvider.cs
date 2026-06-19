@@ -21,9 +21,9 @@ namespace Elsa.Hosting.Management.Services;
 /// </remarks>
 public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNameProvider
 {
-    private const int AzureServiceBusSubscriptionNameMaxLength = 50;
-    private const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
-    private static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
+    internal const int AzureServiceBusSubscriptionNameMaxLength = 50;
+    internal const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
+    internal static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
 
     private readonly string _instanceName;
 
@@ -89,6 +89,9 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
     private static bool IsValidConfiguredInstanceName(string instanceName)
     {
+        if (instanceName.Length == 0)
+            return false;
+
         return IsAsciiLetterOrDigit(instanceName[0])
             && IsAsciiLetterOrDigit(instanceName[^1])
             && instanceName.All(c => IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');
