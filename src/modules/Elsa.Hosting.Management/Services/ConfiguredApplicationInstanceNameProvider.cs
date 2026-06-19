@@ -21,9 +21,9 @@ namespace Elsa.Hosting.Management.Services;
 /// </remarks>
 public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNameProvider
 {
-    private const int AzureServiceBusSubscriptionNameMaxLength = 50;
-    private const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
-    private static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
+    internal const int AzureServiceBusSubscriptionNameMaxLength = 50;
+    internal const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
+    internal static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
 
     private readonly string _instanceName;
 
@@ -70,26 +70,36 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
     private static string ValidateConfiguredInstanceName(string value, string source)
     {
         var instanceName = value.Trim();
+        var isTooLong = instanceName.Length > ConfiguredInstanceNameMaxLength;
+        var hasInvalidCharacters = !IsValidConfiguredInstanceName(instanceName);
 
-        if (instanceName.Length <= ConfiguredInstanceNameMaxLength)
+        if (!isTooLong && !hasInvalidCharacters)
+            return instanceName;
+
+        var errors = new List<string>();
+
+        if (hasInvalidCharacters)
         {
-            if (IsValidConfiguredInstanceName(instanceName))
-                return instanceName;
-
-            throw new InvalidOperationException(
+            errors.Add(
                 $"The configured application instance name from {source} contains invalid characters. " +
                 "Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a letter or number.");
         }
 
-        throw new InvalidOperationException(
-            $"The configured application instance name from {source} is {instanceName.Length} characters long, but it must be {ConfiguredInstanceNameMaxLength} characters or fewer. " +
-            $"The value is used to create per-instance transport entities such as '{instanceName}{TriggerChangeTokenSignalEndpointNameSuffix}', which must fit within Azure Service Bus's {AzureServiceBusSubscriptionNameMaxLength}-character subscription name limit. " +
-            "Configure a shorter stable name that is still unique for each concurrently running instance.");
+        if (isTooLong)
+        {
+            errors.Add(
+                $"The configured application instance name from {source} is {instanceName.Length} characters long, but it must be {ConfiguredInstanceNameMaxLength} characters or fewer. " +
+                $"The value is used to create per-instance transport entities such as '{instanceName}{TriggerChangeTokenSignalEndpointNameSuffix}', which must fit within Azure Service Bus's {AzureServiceBusSubscriptionNameMaxLength}-character subscription name limit. " +
+                "Configure a shorter stable name that is still unique for each concurrently running instance.");
+        }
+
+        throw new InvalidOperationException(string.Join(" ", errors));
     }
 
     private static bool IsValidConfiguredInstanceName(string instanceName)
     {
-        return IsAsciiLetterOrDigit(instanceName[0])
+        return instanceName.Length > 0
+            && IsAsciiLetterOrDigit(instanceName[0])
             && IsAsciiLetterOrDigit(instanceName[^1])
             && instanceName.All(c => IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');
     }

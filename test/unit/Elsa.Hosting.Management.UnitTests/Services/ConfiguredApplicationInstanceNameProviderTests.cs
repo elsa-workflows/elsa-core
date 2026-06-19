@@ -6,10 +6,6 @@ namespace Elsa.Hosting.Management.UnitTests.Services;
 
 public class ConfiguredApplicationInstanceNameProviderTests
 {
-    private const int AzureServiceBusSubscriptionNameMaxLength = 50;
-    private const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
-    private static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
-
     [Fact]
     public void ExplicitInstanceName_IsUsedDirectly()
     {
@@ -145,7 +141,7 @@ public class ConfiguredApplicationInstanceNameProviderTests
     [Fact]
     public void ExplicitInstanceName_AtMaximumLength_IsAccepted()
     {
-        var instanceName = new string('a', ConfiguredInstanceNameMaxLength);
+        var instanceName = new string('a', ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength);
 
         var provider = CreateProvider(new() { InstanceName = instanceName });
 
@@ -155,11 +151,11 @@ public class ConfiguredApplicationInstanceNameProviderTests
     [Fact]
     public void ExplicitInstanceName_TooLong_Throws()
     {
-        var instanceName = new string('a', ConfiguredInstanceNameMaxLength + 1);
+        var instanceName = new string('a', ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength + 1);
 
         var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
 
-        Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
+        Assert.Contains($"{ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
         Assert.Contains("Azure Service Bus", exception.Message);
     }
 
@@ -176,17 +172,29 @@ public class ConfiguredApplicationInstanceNameProviderTests
     }
 
     [Fact]
+    public void ExplicitInstanceName_InvalidCharactersAndTooLong_ReportsBothProblems()
+    {
+        var instanceName = new string('a', ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength) + " b";
+
+        var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
+
+        Assert.Contains("contains invalid characters", exception.Message);
+        Assert.Contains($"{ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
+        Assert.Contains("Azure Service Bus", exception.Message);
+    }
+
+    [Fact]
     public void EnvironmentVariableValue_TooLong_Throws()
     {
         var variable = NewVariableName();
-        Environment.SetEnvironmentVariable(variable, new string('a', ConfiguredInstanceNameMaxLength + 1));
+        Environment.SetEnvironmentVariable(variable, new string('a', ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength + 1));
 
         try
         {
             var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceNameEnvironmentVariable = variable }));
 
             Assert.Contains(variable, exception.Message);
-            Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
+            Assert.Contains($"{ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
         }
         finally
         {
