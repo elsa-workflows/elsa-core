@@ -55,8 +55,9 @@ internal class Publish(IWorkflowDefinitionStore store, IWorkflowDefinitionPublis
             return;
         }
 
+        var validationErrors = result?.ValidationErrors.Select(e => e.Message).ToList() ?? [];
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
-        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0);
+        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0, validationErrors);
         await Send.OkAsync(response, cancellationToken);
     }
 }

@@ -35,6 +35,7 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
         var skipped = new List<string>();
         var updatedConsumers = new List<string>();
         var failed = new List<string>();
+        var warnings = new Dictionary<string, ICollection<string>>();
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
         {
@@ -73,11 +74,14 @@ internal class BulkPublish(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
             }
 
             published.Add(definitionId);
+
+            if (result.ValidationErrors.Count > 0)
+                warnings[definitionId] = result.ValidationErrors.Select(x => x.Message).ToList();
             
             if (result.AffectedWorkflows.WorkflowDefinitions.Count > 0) 
                 updatedConsumers.AddRange(result.AffectedWorkflows.WorkflowDefinitions.Select(x => x.DefinitionId));
         }
 
-        return new(published, alreadyPublished, notFound, skipped, updatedConsumers, failed);
+        return new(published, alreadyPublished, notFound, skipped, updatedConsumers, failed, warnings);
     }
 }
