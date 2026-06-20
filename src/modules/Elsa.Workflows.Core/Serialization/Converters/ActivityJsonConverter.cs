@@ -42,7 +42,11 @@ public class ActivityJsonConverter(
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
         {
-            var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
+            var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>();
+
+            if (notFoundActivityDescriptor == null)
+                throw new JsonException($"Could not deserialize activity type '{activityTypeName}' because the '{nameof(NotFoundActivity)}' descriptor is not registered.");
+
             var notFoundActivityResult = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
             LogExceptionsIfAny(notFoundActivityResult);
 

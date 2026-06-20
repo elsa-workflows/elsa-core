@@ -40,7 +40,6 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         IHttpWorkflowLookupService httpWorkflowLookupService)
     {
         var path = httpContext.Request.Path.Value!.NormalizeRoute();
-        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
         // If the request path does not match the configured base path to handle workflows, then skip.
@@ -53,6 +52,12 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             }
 
             // Strip the base path.
+        }
+
+        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
+
+        if (!string.IsNullOrWhiteSpace(basePath))
+        {
             matchingPath = matchingPath[basePath.Length..];
         }
 
@@ -252,13 +257,16 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         // Replace the original cancellation token with the combined one.
         httpContext.RequestAborted = combinedTokenSource.Token;
 
-        // Execute the action.
-        var result = await action(httpContext.RequestAborted);
-
-        // Restore the original cancellation token.
-        httpContext.RequestAborted = originalCancellationToken;
-
-        return result;
+        try
+        {
+            // Execute the action.
+            return await action(httpContext.RequestAborted);
+        }
+        finally
+        {
+            // Restore the original cancellation token.
+            httpContext.RequestAborted = originalCancellationToken;
+        }
     }
 
     private HttpRouteData GetMatchingRoute(IServiceProvider serviceProvider, string path)
@@ -359,8 +367,9 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
-        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
+        var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken);
+        var workflowState = workflowInstance?.WorkflowState ?? workflowExecutionResult.WorkflowState;
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState, cancellationToken));
         return true;
     }
 
