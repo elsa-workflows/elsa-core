@@ -5,6 +5,8 @@ namespace Elsa.Secrets.UnitTests;
 
 public class DefaultSecretNameValidatorTests
 {
+    private const string FormatError = "Secret name must be 2-200 characters, start with a letter, and contain only letters, numbers, dots, dashes, underscores, and colons.";
+
     private readonly DefaultSecretNameValidator _validator = new();
 
     [Theory]
@@ -41,7 +43,7 @@ public class DefaultSecretNameValidatorTests
         var isValid = _validator.IsValid(name, out var error);
 
         Assert.False(isValid);
-        Assert.Equal("Secret name must be 2-200 characters, start with a letter, and contain only letters, numbers, dots, dashes, underscores, and colons.", error);
+        Assert.Equal(FormatError, error);
     }
 
     [Fact]
@@ -65,7 +67,7 @@ public class DefaultSecretNameValidatorTests
         Assert.True(isValid);
         Assert.Null(validError);
         Assert.False(isInvalid);
-        Assert.NotNull(invalidError);
+        Assert.Equal(FormatError, invalidError);
     }
 
     [Fact]
