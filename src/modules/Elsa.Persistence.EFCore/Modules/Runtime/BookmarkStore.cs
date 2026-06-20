@@ -1,3 +1,5 @@
+using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -34,6 +36,14 @@ public class EFCoreBookmarkStore(Store<RuntimeElsaDbContext, StoredBookmark> sto
     public async ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
         return await store.QueryAsync(filter.Apply, OnLoadAsync, filter.TenantAgnostic, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = await store.CountAsync(filter.Apply, filter.TenantAgnostic, cancellationToken);
+        var results = (await store.QueryAsync(query => filter.Apply(query).OrderBy(x => x.Id).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken)).ToList();
+        return Page.Of(results, count);
     }
 
     /// <inheritdoc />
