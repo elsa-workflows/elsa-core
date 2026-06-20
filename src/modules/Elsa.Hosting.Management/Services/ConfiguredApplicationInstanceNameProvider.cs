@@ -2,6 +2,7 @@ using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography;
 
 namespace Elsa.Hosting.Management.Services;
 
@@ -22,7 +23,8 @@ namespace Elsa.Hosting.Management.Services;
 public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNameProvider
 {
     internal const int AzureServiceBusSubscriptionNameMaxLength = 50;
-    internal const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-trigger-change-token-signal";
+    internal const string TriggerChangeTokenSignalEndpointNameSuffix = "-elsa-tct";
+    private const int ShortenedNameHashLength = 16;
     internal static readonly int ConfiguredInstanceNameMaxLength = AzureServiceBusSubscriptionNameMaxLength - TriggerChangeTokenSignalEndpointNameSuffix.Length;
 
     private readonly string _instanceName;
@@ -39,7 +41,7 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
         if (!string.IsNullOrWhiteSpace(value.InstanceName))
         {
-            _instanceName = ValidateConfiguredInstanceName(value.InstanceName, $"{nameof(ApplicationInstanceOptions)}.{nameof(ApplicationInstanceOptions.InstanceName)}");
+            _instanceName = ResolveConfiguredInstanceName(value.InstanceName, $"{nameof(ApplicationInstanceOptions)}.{nameof(ApplicationInstanceOptions.InstanceName)}", logger);
             return;
         }
 
@@ -50,7 +52,7 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
             if (!string.IsNullOrWhiteSpace(fromEnvironment))
             {
-                _instanceName = ValidateConfiguredInstanceName(fromEnvironment, $"environment variable '{environmentVariable}'");
+                _instanceName = ResolveConfiguredInstanceName(fromEnvironment, $"environment variable '{environmentVariable}'", logger);
                 return;
             }
 
@@ -67,24 +69,29 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
     /// <inheritdoc />
     public string GetName() => _instanceName;
 
-    private static string ValidateConfiguredInstanceName(string value, string source)
+    private static string ResolveConfiguredInstanceName(string value, string source, ILogger logger)
     {
         var instanceName = value.Trim();
 
-        if (instanceName.Length <= ConfiguredInstanceNameMaxLength)
-        {
-            if (IsValidConfiguredInstanceName(instanceName))
-                return instanceName;
-
+        if (!IsValidConfiguredInstanceName(instanceName))
             throw new InvalidOperationException(
                 $"The configured application instance name from {source} contains invalid characters. " +
                 "Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a letter or number.");
-        }
 
-        throw new InvalidOperationException(
-            $"The configured application instance name from {source} is {instanceName.Length} characters long, but it must be {ConfiguredInstanceNameMaxLength} characters or fewer. " +
-            $"The value is used to create per-instance transport entities such as '{instanceName}{TriggerChangeTokenSignalEndpointNameSuffix}', which must fit within Azure Service Bus's {AzureServiceBusSubscriptionNameMaxLength}-character subscription name limit. " +
-            "Configure a shorter stable name that is still unique for each concurrently running instance.");
+        if (instanceName.Length <= ConfiguredInstanceNameMaxLength)
+            return instanceName;
+
+        var shortenedName = ShortenConfiguredInstanceName(instanceName);
+
+        logger.LogWarning(
+            "The configured application instance name from {Source} is {Length} characters long, exceeding the {MaxLength}-character limit required for Azure Service Bus transport entities. " +
+            "Using deterministic shortened instance name '{ShortenedName}' instead.",
+            source,
+            instanceName.Length,
+            ConfiguredInstanceNameMaxLength,
+            shortenedName);
+
+        return shortenedName;
     }
 
     private static bool IsValidConfiguredInstanceName(string instanceName)
@@ -99,4 +106,13 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
     private static bool IsAsciiLetterOrDigit(char value) =>
         value is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
+
+    private static string ShortenConfiguredInstanceName(string instanceName)
+    {
+        var hash = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(instanceName))).ToLowerInvariant()[..ShortenedNameHashLength];
+        var prefixLength = ConfiguredInstanceNameMaxLength - hash.Length - 1;
+        var prefix = instanceName[..prefixLength];
+
+        return $"{prefix}-{hash}";
+    }
 }

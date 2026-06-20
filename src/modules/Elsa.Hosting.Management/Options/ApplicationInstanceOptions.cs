@@ -5,7 +5,7 @@ namespace Elsa.Hosting.Management.Options;
 /// </summary>
 /// <remarks>
 /// The instance name is used to name per-instance transport entities, such as the Azure Service Bus
-/// change-token subscription and queue (<c>{instanceName}-elsa-trigger-change-token-signal</c>).
+/// change-token subscription and queue (<c>{instanceName}-elsa-tct</c>).
 /// By default a random name is generated for every process start, which means a new entity is created
 /// on every restart. Under transports with a per-topic entity limit (for example Azure Service Bus,
 /// which caps a topic at 2,000 subscriptions), these orphaned entities can accumulate across restarts
@@ -24,10 +24,10 @@ public class ApplicationInstanceOptions
     /// precedence over <see cref="InstanceNameEnvironmentVariable"/>.
     /// </summary>
     /// <remarks>
-    /// Keep this value short enough for downstream transport entity names. For Azure Service Bus, the
-    /// change-token subscription name must fit in 50 characters, leaving 17 characters for this prefix.
     /// Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a
-    /// letter or number.
+    /// letter or number. Values that are too long for downstream transport entity names are shortened
+    /// deterministically so the same configured value resolves to the same application instance name
+    /// across restarts.
     /// </remarks>
     public string? InstanceName { get; set; }
 
@@ -39,7 +39,7 @@ public class ApplicationInstanceOptions
     /// </summary>
     /// <remarks>
     /// The environment variable name is trimmed before lookup. The value it contains follows the same
-    /// transport entity-name length constraints as <see cref="InstanceName"/>.
+    /// character rules and deterministic shortening behavior as <see cref="InstanceName"/>.
     /// </remarks>
     public string? InstanceNameEnvironmentVariable { get; set; }
 }

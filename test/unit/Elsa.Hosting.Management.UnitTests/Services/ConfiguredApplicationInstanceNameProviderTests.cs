@@ -159,14 +159,17 @@ public class ConfiguredApplicationInstanceNameProviderTests
     }
 
     [Fact]
-    public void ExplicitInstanceName_TooLong_Throws()
+    public void ExplicitInstanceName_TooLong_IsShortenedDeterministically()
     {
-        var instanceName = new string('a', ConfiguredInstanceNameMaxLength + 1);
+        var instanceName = "nexxbiz-executor-api-v3-1-extra-long-replica-0001";
 
-        var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
+        var name1 = CreateProvider(new() { InstanceName = instanceName }).GetName();
+        var name2 = CreateProvider(new() { InstanceName = instanceName }).GetName();
 
-        Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
-        Assert.Contains("Azure Service Bus", exception.Message);
+        Assert.Equal(name1, name2);
+        Assert.True(name1.Length <= ConfiguredInstanceNameMaxLength);
+        Assert.StartsWith(instanceName[..8], name1);
+        Assert.NotEqual(instanceName, name1);
     }
 
     [Theory]
@@ -182,17 +185,20 @@ public class ConfiguredApplicationInstanceNameProviderTests
     }
 
     [Fact]
-    public void EnvironmentVariableValue_TooLong_Throws()
+    public void EnvironmentVariableValue_TooLong_IsShortenedDeterministically()
     {
         var variable = NewVariableName();
-        Environment.SetEnvironmentVariable(variable, new string('a', ConfiguredInstanceNameMaxLength + 1));
+        var instanceName = "nexxbiz-executor-api-v3-1-extra-long-replica-0001";
+        Environment.SetEnvironmentVariable(variable, instanceName);
 
         try
         {
-            var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceNameEnvironmentVariable = variable }));
+            var name1 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
+            var name2 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
 
-            Assert.Contains(variable, exception.Message);
-            Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
+            Assert.Equal(name1, name2);
+            Assert.True(name1.Length <= ConfiguredInstanceNameMaxLength);
+            Assert.NotEqual(instanceName, name1);
         }
         finally
         {
