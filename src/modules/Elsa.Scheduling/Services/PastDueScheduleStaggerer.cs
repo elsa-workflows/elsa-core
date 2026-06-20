@@ -23,7 +23,12 @@ public class PastDueScheduleStaggerer(IOptions<SchedulingOptions> options)
         if (staggerInterval <= TimeSpan.Zero || staggerWindow <= TimeSpan.Zero)
             return minimumDelay;
 
-        var slotCount = Math.Max(1, staggerWindow.Ticks / staggerInterval.Ticks);
+        var availableWindow = staggerWindow - minimumDelay;
+
+        if (availableWindow <= TimeSpan.Zero)
+            return minimumDelay;
+
+        var slotCount = Math.Max(1, availableWindow.Ticks / staggerInterval.Ticks + 1);
         var sequence = Interlocked.Increment(ref _sequence) - 1;
         var slot = (sequence & long.MaxValue) % slotCount;
 

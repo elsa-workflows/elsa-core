@@ -41,14 +41,10 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
         foreach (var trigger in startAtTriggers)
         {
             var executeAt = trigger.GetPayload<StartAtPayload>().ExecuteAt;
-            
-            // If the trigger is in the past, log info and skip scheduling.
+
             if (executeAt < now)
-            {
-                logger.LogInformation("StartAt trigger is in the past. TriggerId: {TriggerId}. ExecuteAt: {ExecuteAt}. Skipping scheduling", trigger.Id, executeAt);
-                continue;
-            }
-            
+                logger.LogInformation("StartAt trigger is in the past. TriggerId: {TriggerId}. ExecuteAt: {ExecuteAt}. Scheduling catch-up", trigger.Id, executeAt);
+
             var input = new { ExecuteAt = executeAt }.ToDictionary();
             var request = new ScheduleNewWorkflowInstanceRequest
             {
