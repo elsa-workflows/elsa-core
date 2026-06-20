@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 
@@ -33,6 +34,26 @@ public interface IBookmarkStore
     /// Returns a set of bookmarks matching the specified filter.
     /// </summary>
     ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a page of bookmarks matching the specified filter.
+    /// </summary>
+    /// <remarks>
+    /// The default implementation materializes all matching bookmarks and pages them in memory. Stores backed by external persistence should override this method.
+    /// </remarks>
+    async ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var records = (await FindManyAsync(filter, cancellationToken)).OrderBy(x => x.Id).ToList();
+        IEnumerable<StoredBookmark> page = records;
+
+        if (pageArgs.Offset.HasValue)
+            page = page.Skip(pageArgs.Offset.Value);
+
+        if (pageArgs.Limit.HasValue)
+            page = page.Take(pageArgs.Limit.Value);
+
+        return Page.Of(page.ToList(), records.Count);
+    }
 
     /// <summary>
     /// Deletes a set of bookmarks matching the specified filter.
