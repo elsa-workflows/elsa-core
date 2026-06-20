@@ -9,6 +9,11 @@
         <Threshold>25</Threshold>
     </PropertyGroup>
 
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <VSTestTestCaseFilter>FullyQualifiedName=__SkipComponentTestsInGitHubActions__</VSTestTestCaseFilter>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" />
     </ItemGroup>
