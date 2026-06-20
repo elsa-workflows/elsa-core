@@ -54,14 +54,18 @@ public class DefaultSecretNameValidatorTests
     }
 
     [Fact]
-    public void IsValid_RejectsNamesLongerThanTwoHundredCharacters()
+    public void IsValid_EnforcesTwoHundredCharacterMaximum()
     {
-        var name = $"a{new string('b', 200)}";
+        var validName = $"a{new string('b', 199)}";
+        var invalidName = $"a{new string('b', 200)}";
 
-        var isValid = _validator.IsValid(name, out var error);
+        var isValid = _validator.IsValid(validName, out var validError);
+        var isInvalid = _validator.IsValid(invalidName, out var invalidError);
 
-        Assert.False(isValid);
-        Assert.NotNull(error);
+        Assert.True(isValid);
+        Assert.Null(validError);
+        Assert.False(isInvalid);
+        Assert.NotNull(invalidError);
     }
 
     [Fact]
