@@ -39,21 +39,9 @@ public interface IBookmarkStore
     /// Returns a page of bookmarks matching the specified filter.
     /// </summary>
     /// <remarks>
-    /// The default implementation materializes all matching bookmarks and pages them in memory. Stores backed by external persistence should override this method.
+    /// Startup backlog catch-up depends on store-backed paging. Implementations should page at the persistence layer instead of materializing all matches in memory.
     /// </remarks>
-    async ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
-    {
-        var records = (await FindManyAsync(filter, cancellationToken)).OrderBy(x => x.Id).ToList();
-        IEnumerable<StoredBookmark> page = records;
-
-        if (pageArgs.Offset.HasValue)
-            page = page.Skip(pageArgs.Offset.Value);
-
-        if (pageArgs.Limit.HasValue)
-            page = page.Take(pageArgs.Limit.Value);
-
-        return Page.Of(page.ToList(), records.Count);
-    }
+    ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a set of bookmarks matching the specified filter.
