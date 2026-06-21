@@ -74,8 +74,23 @@ public class PublishEventTests : AppComponentTest
 
         // Verify the payload structure and content
         using var payloadDocument = JsonDocument.Parse(JsonSerializer.Serialize(receivedPayload));
-        Assert.True(payloadDocument.RootElement.TryGetProperty("Status", out var status), "Received payload should contain a Status property");
+        Assert.True(TryGetProperty(payloadDocument.RootElement, "Status", out var status), "Received payload should contain a Status property");
         Assert.Equal("Shipped", status.GetString());
+    }
+
+    private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement value)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
