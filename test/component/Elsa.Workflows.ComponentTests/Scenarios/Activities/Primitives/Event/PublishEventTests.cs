@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
@@ -80,17 +81,17 @@ public class PublishEventTests : AppComponentTest
 
     private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement property)
     {
-        foreach (var candidate in element.EnumerateObject())
+        var candidate = element.EnumerateObject()
+            .Where(candidate => candidate.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+            .FirstOrDefault();
+        if (candidate.Value.ValueKind == JsonValueKind.Undefined)
         {
-            if (candidate.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
-            {
-                property = candidate.Value;
-                return true;
-            }
+            property = default;
+            return false;
         }
 
-        property = default;
-        return false;
+        property = candidate.Value;
+        return true;
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
