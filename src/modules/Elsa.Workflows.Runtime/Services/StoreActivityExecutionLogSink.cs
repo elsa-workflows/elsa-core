@@ -24,11 +24,6 @@ public class StoreActivityExecutionLogSink(
 
         var records = await Task.WhenAll(activityExecutionContexts.Select(x => x.GetOrMapCapturedActivityExecutionRecordAsync()));
         await activityExecutionStore.SaveManyAsync(records, cancellationToken);
-
-        // Untaint activity execution contexts.
-        foreach (var activityExecutionContext in activityExecutionContexts)
-            activityExecutionContext.ClearTaint();
-
         await notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, records), cancellationToken);
     }
 }

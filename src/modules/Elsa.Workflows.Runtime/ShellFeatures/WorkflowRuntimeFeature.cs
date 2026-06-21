@@ -285,6 +285,10 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
+            .AddScoped<WorkflowCommitNotificationBuffer>()
+            .AddScoped<IWorkflowCommitNotificationBuffer>(sp => sp.GetRequiredService<WorkflowCommitNotificationBuffer>())
+            .AddScoped<INotificationSender, WorkflowCommitNotificationSender>()
+            .AddScoped<IWorkflowCommitTransaction, NoopWorkflowCommitTransaction>()
             .AddScoped<DefaultCommitStateHandler>()
             // Decorator: disposes the execution cycle handle AFTER the workflow runner's terminal commit has persisted state,
             // so the drain orchestrator's force-cancel path can sequence its Interrupted write to land last.

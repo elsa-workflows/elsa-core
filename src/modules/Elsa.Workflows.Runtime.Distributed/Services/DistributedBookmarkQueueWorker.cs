@@ -16,7 +16,8 @@ public class DistributedBookmarkQueueWorker(
 
         if (handle == null)
         {
-            logger.LogInformation("Could not acquire lock for distributed bookmark queue worker. This is usually an indication that another application instance is already processing.");
+            logger.LogDebug("Could not acquire lock for distributed bookmark queue worker. Another application instance is already processing; scheduling a local retry.");
+            await Signaler.TriggerAsync(cancellationToken);
             return;
         }
 
