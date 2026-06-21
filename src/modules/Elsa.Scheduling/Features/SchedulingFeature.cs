@@ -6,6 +6,7 @@ using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Scheduling.Handlers;
+using Elsa.Scheduling.Options;
 using Elsa.Scheduling.Services;
 using Elsa.Scheduling.StartupTasks;
 using Elsa.Scheduling.TriggerPayloadValidators;
@@ -44,6 +45,7 @@ public class SchedulingFeature : FeatureBase
             .AddSingleton<UpdateTenantSchedules>()
             .AddSingleton<ITenantDeletedEvent>(sp => sp.GetRequiredService<UpdateTenantSchedules>())
             .AddSingleton<IScheduler, LocalScheduler>()
+            .AddSingleton<PastDueScheduleStaggerer>()
             .AddSingleton<CronosCronParser>()
             .AddSingleton(CronParser)
             .AddScoped<ITriggerScheduler, DefaultTriggerScheduler>()
@@ -59,6 +61,7 @@ public class SchedulingFeature : FeatureBase
             // Graceful shutdown: register scheduled-trigger ingress for diagnostic visibility (FR-006).
             .AddSingleton<Elsa.Workflows.Runtime.IIngressSource, Elsa.Scheduling.IngressSources.ScheduledTriggerIngressSource>();
 
+        Services.Configure<SchedulingOptions>(_ => { });
         Services.Configure<SerializationTypeOptions>(options =>
         {
             options.RegisterTypeAlias(typeof(CronBookmarkPayload), nameof(CronBookmarkPayload));

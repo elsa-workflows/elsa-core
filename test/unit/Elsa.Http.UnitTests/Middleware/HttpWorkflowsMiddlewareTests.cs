@@ -10,6 +10,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Common.Models;
 using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -237,6 +238,13 @@ public class HttpWorkflowsMiddlewareTests
             LastFilter = filter;
             _ = Filter(filter).ToList();
             return new([]);
+        }
+
+        public ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+        {
+            LastFilter = filter;
+            var results = Filter(filter).ToList();
+            return new(Page.Of(results, results.Count));
         }
 
         public ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
