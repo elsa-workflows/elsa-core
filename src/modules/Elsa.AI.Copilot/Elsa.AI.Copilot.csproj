@@ -9,7 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="GitHub.Copilot.SDK" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.8" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.9" />
         <PackageReference Include="Microsoft.Extensions.Options" />
     </ItemGroup>
 
