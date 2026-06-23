@@ -81,17 +81,19 @@ public class PublishEventTests : AppComponentTest
 
     private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement property)
     {
-        var candidate = element.EnumerateObject()
-            .Where(candidate => candidate.Name.Equals(propertyName, StringComparison.OrdinalIgnoreCase))
+        var matchingProperty = element
+            .EnumerateObject()
+            .Where(x => string.Equals(x.Name, propertyName, StringComparison.OrdinalIgnoreCase))
             .FirstOrDefault();
-        if (candidate.Value.ValueKind == JsonValueKind.Undefined)
+
+        if (matchingProperty.Name != null)
         {
-            property = default;
-            return false;
+            property = matchingProperty.Value;
+            return true;
         }
 
-        property = candidate.Value;
-        return true;
+        property = default;
+        return false;
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
