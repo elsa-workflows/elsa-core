@@ -62,6 +62,23 @@ public class WorkflowCommitNotificationBufferTests
         await mediator.Received(1).SendAsync(succeedingNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task FlushAsync_WhenNotificationIsCanceled_PropagatesCancellation()
+    {
+        var mediator = Substitute.For<IMediator>();
+        var buffer = CreateBuffer(mediator);
+        var sender = new WorkflowCommitNotificationSender(mediator, buffer);
+        var notification = new TestNotification();
+        mediator
+            .SendAsync(notification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new OperationCanceledException());
+
+        using var scope = buffer.Begin();
+        await sender.SendAsync(notification);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => scope.FlushAsync());
+    }
+
     private static WorkflowCommitNotificationBuffer CreateBuffer(IMediator mediator) => new(mediator, Substitute.For<ILogger<WorkflowCommitNotificationBuffer>>());
 
     private class TestNotification : INotification;

@@ -91,6 +91,47 @@ public class DefaultCommitStateHandlerTests
         await notificationSender.DidNotReceive().SendAsync(Arg.Any<WorkflowStateCommitted>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task CommitAsync_WhenBufferedNotificationFlushFails_PublishesCommittedNotification()
+    {
+        var (workflowExecutionContext, _) = await CreateWorkflowExecutionContextAsync();
+        var workflowState = new WorkflowState { Id = workflowExecutionContext.Id };
+        var workflowInstance = new WorkflowInstance { Id = workflowExecutionContext.Id };
+        var workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
+        var bookmarkPersister = Substitute.For<IBookmarksPersister>();
+        var variablePersistenceManager = Substitute.For<IVariablePersistenceManager>();
+        var mediator = Substitute.For<IMediator>();
+        var notificationBuffer = CreateBuffer(mediator);
+        var bufferedNotificationSender = new WorkflowCommitNotificationSender(mediator, notificationBuffer);
+        var notificationSender = Substitute.For<INotificationSender>();
+        var activityExecutionLogSink = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
+        var workflowExecutionLogSink = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
+        var transaction = new RecordingWorkflowCommitTransaction();
+        var bufferedNotification = new TestNotification();
+        workflowInstanceManager.SaveAsync(workflowState, Arg.Any<CancellationToken>()).Returns(workflowInstance);
+        activityExecutionLogSink
+            .PersistExecutionLogsAsync(workflowExecutionContext, Arg.Any<CancellationToken>())
+            .Returns(_ => bufferedNotificationSender.SendAsync(bufferedNotification));
+        mediator
+            .SendAsync(bufferedNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>())
+            .Returns<Task>(_ => throw new InvalidOperationException("Buffered handler failed"));
+        var handler = new DefaultCommitStateHandler(
+            workflowInstanceManager,
+            bookmarkPersister,
+            variablePersistenceManager,
+            transaction,
+            notificationBuffer,
+            notificationSender,
+            activityExecutionLogSink,
+            workflowExecutionLogSink);
+
+        await Assert.ThrowsAsync<AggregateException>(() => handler.CommitAsync(workflowExecutionContext, workflowState));
+
+        await notificationSender.Received(1).SendAsync(
+            Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == workflowInstance && x.WorkflowState == workflowState),
+            Arg.Any<CancellationToken>());
+    }
+
     private static async Task<(WorkflowExecutionContext WorkflowExecutionContext, ActivityExecutionContext DirtyActivityExecutionContext)> CreateWorkflowExecutionContextAsync()
     {
         var fixture = new ActivityTestFixture(new WriteLine("Test"));
@@ -102,6 +143,8 @@ public class DefaultCommitStateHandlerTests
     }
 
     private static WorkflowCommitNotificationBuffer CreateBuffer(IMediator mediator) => new(mediator, Substitute.For<ILogger<WorkflowCommitNotificationBuffer>>());
+
+    private class TestNotification : INotification;
 
     private class RecordingWorkflowCommitTransaction : IWorkflowCommitTransaction
     {

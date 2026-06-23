@@ -50,7 +50,7 @@ public class WorkflowCommitNotificationBuffer(IMediator mediator, ILogger<Workfl
                 {
                     await owner._mediator.SendAsync(entry.Notification, entry.Strategy, cancellationToken);
                 }
-                catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
+                catch (Exception ex) when (ex is not OperationCanceledException and not OutOfMemoryException and not StackOverflowException)
                 {
                     owner._logger.LogError(ex, "Failed to publish buffered workflow commit notification {NotificationType}", entry.Notification.GetType().FullName);
                     exceptions ??= [];

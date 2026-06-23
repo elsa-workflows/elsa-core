@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Management;
@@ -42,9 +43,19 @@ public class DefaultCommitStateHandler(
         ClearActivityExecutionContextTaint(workflowExecutionContext);
         workflowExecutionContext.ExecutionLog.Clear();
         workflowExecutionContext.ClearCompletedActivityExecutionContexts();
-        await notificationScope.FlushAsync(cancellationToken);
+        ExceptionDispatchInfo? flushException = null;
+        try
+        {
+            await notificationScope.FlushAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException and not OutOfMemoryException)
+        {
+            flushException = ExceptionDispatchInfo.Capture(ex);
+        }
+
         await workflowExecutionContext.ExecuteDeferredTasksAsync();
         await notificationSender.SendAsync(new WorkflowStateCommitted(workflowExecutionContext, workflowState, workflowInstance!), cancellationToken);
+        flushException?.Throw();
     }
 
     private static void ClearActivityExecutionContextTaint(WorkflowExecutionContext workflowExecutionContext)
