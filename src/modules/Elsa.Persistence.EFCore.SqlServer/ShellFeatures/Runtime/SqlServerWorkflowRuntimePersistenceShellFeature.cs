@@ -2,10 +2,12 @@ using System.Reflection;
 using CShells.Features;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.ShellFeatures;
 using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 
@@ -27,5 +29,12 @@ public class SqlServerWorkflowRuntimePersistenceShellFeature
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
         builder.UseElsaSqlServer(migrationsAssembly, connectionString, options);
+    }
+
+    /// <inheritdoc />
+    protected override void OnConfiguring(IServiceCollection services)
+    {
+        base.OnConfiguring(services);
+        services.AddScoped<IWorkflowCommitTransaction, EFCoreWorkflowCommitTransaction>();
     }
 }
