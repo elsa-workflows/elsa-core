@@ -24,6 +24,7 @@ public class StoreActivityExecutionLogSink(
 
         var records = await Task.WhenAll(activityExecutionContexts.Select(x => x.GetOrMapCapturedActivityExecutionRecordAsync()));
         await activityExecutionStore.SaveManyAsync(records, cancellationToken);
+        // DefaultCommitStateHandler clears taint after the commit transaction succeeds.
         await notificationSender.SendAsync(new ActivityExecutionLogUpdated(context, records), cancellationToken);
     }
 }

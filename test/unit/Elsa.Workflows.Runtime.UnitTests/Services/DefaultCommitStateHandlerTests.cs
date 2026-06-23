@@ -17,129 +17,103 @@ public class DefaultCommitStateHandlerTests
     [Fact]
     public async Task CommitAsync_ExecutesPersistenceInsideCommitTransaction()
     {
-        var (workflowExecutionContext, dirtyActivityExecutionContext) = await CreateWorkflowExecutionContextAsync();
-        dirtyActivityExecutionContext.Taint();
-        var workflowState = new WorkflowState { Id = workflowExecutionContext.Id };
-        var workflowInstance = new WorkflowInstance { Id = workflowExecutionContext.Id };
-        var workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
-        var bookmarkPersister = Substitute.For<IBookmarksPersister>();
-        var variablePersistenceManager = Substitute.For<IVariablePersistenceManager>();
-        var mediator = Substitute.For<IMediator>();
-        var notificationBuffer = CreateBuffer(mediator);
-        var notificationSender = Substitute.For<INotificationSender>();
-        var activityExecutionLogSink = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
-        var workflowExecutionLogSink = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
-        var transaction = new RecordingWorkflowCommitTransaction();
-        workflowInstanceManager.SaveAsync(workflowState, Arg.Any<CancellationToken>()).Returns(workflowInstance);
-        bookmarkPersister.When(x => x.PersistBookmarksAsync(Arg.Any<UpdateBookmarksRequest>())).Do(_ => Assert.True(transaction.IsExecuting));
-        activityExecutionLogSink.When(x => x.PersistExecutionLogsAsync(workflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => Assert.True(transaction.IsExecuting));
-        workflowExecutionLogSink.When(x => x.PersistExecutionLogsAsync(workflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => Assert.True(transaction.IsExecuting));
-        variablePersistenceManager.When(x => x.SaveVariablesAsync(workflowExecutionContext)).Do(_ => Assert.True(transaction.IsExecuting));
-        workflowInstanceManager.When(x => x.SaveAsync(workflowState, Arg.Any<CancellationToken>())).Do(_ => Assert.True(transaction.IsExecuting));
-        var handler = new DefaultCommitStateHandler(
-            workflowInstanceManager,
-            bookmarkPersister,
-            variablePersistenceManager,
-            transaction,
-            notificationBuffer,
-            notificationSender,
-            activityExecutionLogSink,
-            workflowExecutionLogSink);
+        var fixture = await CommitTestFixture.CreateAsync();
+        fixture.WorkflowInstanceManager.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>()).Returns(fixture.WorkflowInstance);
+        fixture.BookmarkPersister.When(x => x.PersistBookmarksAsync(Arg.Any<UpdateBookmarksRequest>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
+        fixture.ActivityExecutionLogSink.When(x => x.PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
+        fixture.WorkflowExecutionLogSink.When(x => x.PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
+        fixture.VariablePersistenceManager.When(x => x.SaveVariablesAsync(fixture.WorkflowExecutionContext)).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
+        fixture.WorkflowInstanceManager.When(x => x.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
 
-        await handler.CommitAsync(workflowExecutionContext, workflowState);
+        await fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState);
 
-        Assert.True(transaction.Completed);
-        Assert.False(dirtyActivityExecutionContext.IsDirty);
-        await notificationSender.Received(1).SendAsync(
-            Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == workflowInstance && x.WorkflowState == workflowState),
+        Assert.True(fixture.Transaction.Completed);
+        Assert.False(fixture.ActivityExecutionContext.IsDirty);
+        await fixture.NotificationSender.Received(1).SendAsync(
+            Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == fixture.WorkflowInstance && x.WorkflowState == fixture.WorkflowState),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task CommitAsync_WhenPersistenceFails_DoesNotClearExecutionLogOrPublishCommittedNotification()
     {
-        var (workflowExecutionContext, dirtyActivityExecutionContext) = await CreateWorkflowExecutionContextAsync();
-        dirtyActivityExecutionContext.Taint();
-        workflowExecutionContext.AddExecutionLogEntry("Started");
-        var workflowState = new WorkflowState { Id = workflowExecutionContext.Id };
-        var workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
-        var bookmarkPersister = Substitute.For<IBookmarksPersister>();
-        var variablePersistenceManager = Substitute.For<IVariablePersistenceManager>();
-        var mediator = Substitute.For<IMediator>();
-        var notificationBuffer = CreateBuffer(mediator);
-        var notificationSender = Substitute.For<INotificationSender>();
-        var activityExecutionLogSink = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
-        var workflowExecutionLogSink = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
-        var transaction = new RecordingWorkflowCommitTransaction();
-        workflowInstanceManager.SaveAsync(workflowState, Arg.Any<CancellationToken>()).Returns<Task<WorkflowInstance>>(_ => throw new InvalidOperationException("state save failed"));
-        var handler = new DefaultCommitStateHandler(
-            workflowInstanceManager,
-            bookmarkPersister,
-            variablePersistenceManager,
-            transaction,
-            notificationBuffer,
-            notificationSender,
-            activityExecutionLogSink,
-            workflowExecutionLogSink);
+        var fixture = await CommitTestFixture.CreateAsync();
+        fixture.WorkflowExecutionContext.AddExecutionLogEntry("Started");
+        fixture.WorkflowInstanceManager.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>()).Returns<Task<WorkflowInstance>>(_ => throw new InvalidOperationException("state save failed"));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => handler.CommitAsync(workflowExecutionContext, workflowState));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState));
 
-        Assert.True(transaction.Executed);
-        Assert.False(transaction.Completed);
-        Assert.True(dirtyActivityExecutionContext.IsDirty);
-        Assert.NotEmpty(workflowExecutionContext.ExecutionLog);
-        await notificationSender.DidNotReceive().SendAsync(Arg.Any<WorkflowStateCommitted>(), Arg.Any<CancellationToken>());
+        Assert.True(fixture.Transaction.Executed);
+        Assert.False(fixture.Transaction.Completed);
+        Assert.True(fixture.ActivityExecutionContext.IsDirty);
+        Assert.NotEmpty(fixture.WorkflowExecutionContext.ExecutionLog);
+        await fixture.NotificationSender.DidNotReceive().SendAsync(Arg.Any<WorkflowStateCommitted>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task CommitAsync_WhenBufferedNotificationFlushFails_PublishesCommittedNotification()
     {
-        var (workflowExecutionContext, _) = await CreateWorkflowExecutionContextAsync();
-        var workflowState = new WorkflowState { Id = workflowExecutionContext.Id };
-        var workflowInstance = new WorkflowInstance { Id = workflowExecutionContext.Id };
-        var workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
-        var bookmarkPersister = Substitute.For<IBookmarksPersister>();
-        var variablePersistenceManager = Substitute.For<IVariablePersistenceManager>();
-        var mediator = Substitute.For<IMediator>();
-        var notificationBuffer = CreateBuffer(mediator);
-        var bufferedNotificationSender = new WorkflowCommitNotificationSender(mediator, notificationBuffer);
-        var notificationSender = Substitute.For<INotificationSender>();
-        var activityExecutionLogSink = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
-        var workflowExecutionLogSink = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
-        var transaction = new RecordingWorkflowCommitTransaction();
+        var fixture = await CommitTestFixture.CreateAsync();
+        var bufferedNotificationSender = new WorkflowCommitNotificationSender(fixture.Mediator, fixture.NotificationBuffer);
         var bufferedNotification = new TestNotification();
-        workflowInstanceManager.SaveAsync(workflowState, Arg.Any<CancellationToken>()).Returns(workflowInstance);
-        activityExecutionLogSink
-            .PersistExecutionLogsAsync(workflowExecutionContext, Arg.Any<CancellationToken>())
+        fixture.WorkflowInstanceManager.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>()).Returns(fixture.WorkflowInstance);
+        fixture.ActivityExecutionLogSink
+            .PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())
             .Returns(_ => bufferedNotificationSender.SendAsync(bufferedNotification));
-        mediator
+        fixture.Mediator
             .SendAsync(bufferedNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("Buffered handler failed"));
-        var handler = new DefaultCommitStateHandler(
-            workflowInstanceManager,
-            bookmarkPersister,
-            variablePersistenceManager,
-            transaction,
-            notificationBuffer,
-            notificationSender,
-            activityExecutionLogSink,
-            workflowExecutionLogSink);
 
-        await Assert.ThrowsAsync<AggregateException>(() => handler.CommitAsync(workflowExecutionContext, workflowState));
+        await Assert.ThrowsAsync<AggregateException>(() => fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState));
 
-        await notificationSender.Received(1).SendAsync(
-            Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == workflowInstance && x.WorkflowState == workflowState),
+        await fixture.NotificationSender.Received(1).SendAsync(
+            Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == fixture.WorkflowInstance && x.WorkflowState == fixture.WorkflowState),
             Arg.Any<CancellationToken>());
     }
 
-    private static async Task<(WorkflowExecutionContext WorkflowExecutionContext, ActivityExecutionContext DirtyActivityExecutionContext)> CreateWorkflowExecutionContextAsync()
+    private class CommitTestFixture
     {
-        var fixture = new ActivityTestFixture(new WriteLine("Test"));
-        var activityExecutionContext = await fixture.BuildAsync();
-        activityExecutionContext.Taint();
-        var workflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
-        workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
-        return (workflowExecutionContext, activityExecutionContext);
+        private CommitTestFixture(ActivityExecutionContext activityExecutionContext)
+        {
+            ActivityExecutionContext = activityExecutionContext;
+            ActivityExecutionContext.Taint();
+            WorkflowExecutionContext = activityExecutionContext.WorkflowExecutionContext;
+            WorkflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
+            WorkflowState = new() { Id = WorkflowExecutionContext.Id };
+            WorkflowInstance = new() { Id = WorkflowExecutionContext.Id };
+            NotificationBuffer = CreateBuffer(Mediator);
+            Handler = new(
+                WorkflowInstanceManager,
+                BookmarkPersister,
+                VariablePersistenceManager,
+                Transaction,
+                NotificationBuffer,
+                NotificationSender,
+                ActivityExecutionLogSink,
+                WorkflowExecutionLogSink);
+        }
+
+        public WorkflowExecutionContext WorkflowExecutionContext { get; }
+        public ActivityExecutionContext ActivityExecutionContext { get; }
+        public WorkflowState WorkflowState { get; }
+        public WorkflowInstance WorkflowInstance { get; }
+        public IWorkflowInstanceManager WorkflowInstanceManager { get; } = Substitute.For<IWorkflowInstanceManager>();
+        public IBookmarksPersister BookmarkPersister { get; } = Substitute.For<IBookmarksPersister>();
+        public IVariablePersistenceManager VariablePersistenceManager { get; } = Substitute.For<IVariablePersistenceManager>();
+        public IMediator Mediator { get; } = Substitute.For<IMediator>();
+        public WorkflowCommitNotificationBuffer NotificationBuffer { get; }
+        public INotificationSender NotificationSender { get; } = Substitute.For<INotificationSender>();
+        public ILogRecordSink<ActivityExecutionRecord> ActivityExecutionLogSink { get; } = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
+        public ILogRecordSink<WorkflowExecutionLogRecord> WorkflowExecutionLogSink { get; } = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
+        public RecordingWorkflowCommitTransaction Transaction { get; } = new();
+        public DefaultCommitStateHandler Handler { get; }
+
+        public static async Task<CommitTestFixture> CreateAsync()
+        {
+            var fixture = new ActivityTestFixture(new WriteLine("Test"));
+            var activityExecutionContext = await fixture.BuildAsync();
+            return new(activityExecutionContext);
+        }
     }
 
     private static WorkflowCommitNotificationBuffer CreateBuffer(IMediator mediator) => new(mediator, Substitute.For<ILogger<WorkflowCommitNotificationBuffer>>());
