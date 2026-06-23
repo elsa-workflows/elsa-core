@@ -1,11 +1,13 @@
 using Elsa.Mediator.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class WorkflowCommitNotificationBuffer(IMediator mediator) : IWorkflowCommitNotificationBuffer
+public class WorkflowCommitNotificationBuffer(IMediator mediator, ILogger<WorkflowCommitNotificationBuffer> logger) : IWorkflowCommitNotificationBuffer
 {
     private readonly IMediator _mediator = mediator;
+    private readonly ILogger<WorkflowCommitNotificationBuffer> _logger = logger;
     private readonly AsyncLocal<Scope?> _currentScope = new();
 
     /// <inheritdoc />
@@ -40,11 +42,26 @@ public class WorkflowCommitNotificationBuffer(IMediator mediator) : IWorkflowCom
         {
             ThrowIfDisposed();
             owner._currentScope.Value = parent;
+            List<Exception>? exceptions = null;
 
             foreach (var entry in _entries)
-                await owner._mediator.SendAsync(entry.Notification, entry.Strategy, cancellationToken);
+            {
+                try
+                {
+                    await owner._mediator.SendAsync(entry.Notification, entry.Strategy, cancellationToken);
+                }
+                catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
+                {
+                    owner._logger.LogError(ex, "Failed to publish buffered workflow commit notification {NotificationType}", entry.Notification.GetType().FullName);
+                    exceptions ??= [];
+                    exceptions.Add(ex);
+                }
+            }
 
             _entries.Clear();
+
+            if (exceptions is { Count: > 0 })
+                throw new AggregateException("One or more workflow commit notifications failed.", exceptions);
         }
 
         public void Dispose()

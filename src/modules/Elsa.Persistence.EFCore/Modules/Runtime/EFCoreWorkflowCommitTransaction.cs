@@ -13,7 +13,8 @@ public class EFCoreWorkflowCommitTransaction : IWorkflowCommitTransaction
     {
         var transactionOptions = new TransactionOptions
         {
-            IsolationLevel = IsolationLevel.ReadCommitted
+            IsolationLevel = IsolationLevel.ReadCommitted,
+            Timeout = TransactionManager.MaximumTimeout
         };
 
         using var scope = new TransactionScope(TransactionScopeOption.Required, transactionOptions, TransactionScopeAsyncFlowOption.Enabled);

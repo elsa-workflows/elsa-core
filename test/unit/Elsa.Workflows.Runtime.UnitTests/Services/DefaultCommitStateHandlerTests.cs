@@ -7,6 +7,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
@@ -24,7 +25,7 @@ public class DefaultCommitStateHandlerTests
         var bookmarkPersister = Substitute.For<IBookmarksPersister>();
         var variablePersistenceManager = Substitute.For<IVariablePersistenceManager>();
         var mediator = Substitute.For<IMediator>();
-        var notificationBuffer = new WorkflowCommitNotificationBuffer(mediator);
+        var notificationBuffer = CreateBuffer(mediator);
         var notificationSender = Substitute.For<INotificationSender>();
         var activityExecutionLogSink = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
         var workflowExecutionLogSink = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
@@ -65,7 +66,7 @@ public class DefaultCommitStateHandlerTests
         var bookmarkPersister = Substitute.For<IBookmarksPersister>();
         var variablePersistenceManager = Substitute.For<IVariablePersistenceManager>();
         var mediator = Substitute.For<IMediator>();
-        var notificationBuffer = new WorkflowCommitNotificationBuffer(mediator);
+        var notificationBuffer = CreateBuffer(mediator);
         var notificationSender = Substitute.For<INotificationSender>();
         var activityExecutionLogSink = Substitute.For<ILogRecordSink<ActivityExecutionRecord>>();
         var workflowExecutionLogSink = Substitute.For<ILogRecordSink<WorkflowExecutionLogRecord>>();
@@ -99,6 +100,8 @@ public class DefaultCommitStateHandlerTests
         workflowExecutionContext.AddActivityExecutionContext(activityExecutionContext);
         return (workflowExecutionContext, activityExecutionContext);
     }
+
+    private static WorkflowCommitNotificationBuffer CreateBuffer(IMediator mediator) => new(mediator, Substitute.For<ILogger<WorkflowCommitNotificationBuffer>>());
 
     private class RecordingWorkflowCommitTransaction : IWorkflowCommitTransaction
     {
