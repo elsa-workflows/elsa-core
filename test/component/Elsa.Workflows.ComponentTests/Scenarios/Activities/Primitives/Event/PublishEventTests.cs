@@ -79,21 +79,15 @@ public class PublishEventTests : AppComponentTest
         Assert.Equal("Shipped", status.GetString());
     }
 
-    private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement property)
+    private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement value)
     {
-        var matchingProperty = element
+        value = element
             .EnumerateObject()
-            .Where(x => string.Equals(x.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            .Where(property => string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            .Select(property => property.Value)
             .FirstOrDefault();
 
-        if (matchingProperty.Name != null)
-        {
-            property = matchingProperty.Value;
-            return true;
-        }
-
-        property = default;
-        return false;
+        return value.ValueKind != JsonValueKind.Undefined;
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
