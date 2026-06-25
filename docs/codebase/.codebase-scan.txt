@@ -1,0 +1,395 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.DS_Store
+.agents
+.agents/skills
+.agents/skills/elsa-release-announcements
+.agents/skills/elsa-release-announcements/SKILL.md
+.agents/skills/elsa-release-announcements/agents
+.agents/skills/elsa-release-announcements/scripts
+.claude
+.claude/worktrees
+.config
+.config/dotnet-tools.json
+.editorconfig
+.github
+.github/ISSUE_TEMPLATE
+.github/ISSUE_TEMPLATE/bug_report.md
+.github/ISSUE_TEMPLATE/documentation.md
+.github/ISSUE_TEMPLATE/feature_request.md
+.github/ISSUE_TEMPLATE/improvement.md
+.github/ISSUE_TEMPLATE/performance.md
+.github/ISSUE_TEMPLATE/task.md
+.github/agents
+.github/agents/copilot-instructions.md
+.github/agents/release-notes.agent.md
+.github/agents/speckit.analyze.agent.md
+.github/agents/speckit.checklist.agent.md
+.github/agents/speckit.clarify.agent.md
+.github/agents/speckit.constitution.agent.md
+.github/agents/speckit.implement.agent.md
+.github/agents/speckit.plan.agent.md
+.github/agents/speckit.specify.agent.md
+.github/agents/speckit.tasks.agent.md
+.github/agents/speckit.taskstoissues.agent.md
+.github/copilot-instructions.md
+.github/copilot-release-notes-playbook.md
+.github/dependabot.yml
+.github/prompts
+.github/prompts/speckit.analyze.prompt.md
+.github/prompts/speckit.checklist.prompt.md
+.github/prompts/speckit.clarify.prompt.md
+.github/prompts/speckit.constitution.prompt.md
+.github/prompts/speckit.implement.prompt.md
+.github/prompts/speckit.plan.prompt.md
+.github/prompts/speckit.specify.prompt.md
+.github/prompts/speckit.tasks.prompt.md
+.github/prompts/speckit.taskstoissues.prompt.md
+.github/pull_request_template.md
+.github/workflows
+.github/workflows/bounty.yml
+.github/workflows/claude-code-review.yml
+.github/workflows/claude.yml
+.github/workflows/copilot-setup-steps.yml
+.github/workflows/docker-ca.yml
+.github/workflows/packages.yml
+.github/workflows/pr.yml
+.github/workflows/stale.yml
+.gitignore
+.idea
+.idea/.idea.Elsa
+.idea/.idea.Elsa/.idea
+.idea/.idea.Elsa/.idea/.gitignore
+.idea/.idea.Elsa/.idea/.name
+.idea/.idea.Elsa/.idea/copilotDiffState.xml
+.idea/.idea.Elsa/.idea/dataSources
+.idea/.idea.Elsa/.idea/dataSources.local.xml
+.idea/.idea.Elsa/.idea/dataSources.xml
+.idea/.idea.Elsa/.idea/db-forest-config.xml
+.idea/.idea.Elsa/.idea/encodings.xml
+.idea/.idea.Elsa/.idea/indexLayout.xml
+.idea/.idea.Elsa/.idea/projectSettingsUpdater.xml
+.idea/.idea.Elsa/.idea/vcs.xml
+.idea/.idea.Elsa/.idea/workspace.xml
+.nuke
+.nuke/build.schema.json
+.nuke/parameters.json
+.specify
+.specify/memory
+.specify/memory/constitution.md
+.specify/scripts
+.specify/scripts/bash
+.specify/scripts/bash/check-prerequisites.sh
+.specify/scripts/bash/common.sh
+.specify/scripts/bash/create-new-feature.sh
+.specify/scripts/bash/setup-plan.sh
+.specify/scripts/bash/update-agent-context.sh
+.specify/templates
+.specify/templates/agent-file-template.md
+.specify/templates/checklist-template.md
+.specify/templates/constitution-template.md
+.specify/templates/plan-template.md
+.specify/templates/spec-template.md
+.specify/templates/tasks-template.md
+.vscode
+.vscode/settings.json
+CONTRIBUTING.md
+Directory.Build.props
+Directory.Build.targets
+Directory.Packages.props
+Elsa.sln
+Elsa.sln.DotSettings
+Elsa.sln.DotSettings.user
+LICENSE
+NuGet.Config
+README.md
+announcements
+announcements/discord-3.6.3.md
+announcements/discord-3.7.1.md
+announcements/elsa-3.6.3-announcement-pack.md
+announcements/elsa-3.7.1-announcement-pack.md
+artifacts
+artifacts/.DS_Store
+artifacts/package-manifest-check
+artifacts/package-manifest-check/Elsa.Caching.1.0.0.nupkg
+artifacts/package-manifest-check/Elsa.Caching.1.0.0.snupkg
+artifacts/tls-smoke
+artifacts/tls-smoke/TlsSmoke
+artifacts/tls-smoke/TlsSmoke.deps.json
+artifacts/tls-smoke/TlsSmoke.dll
+artifacts/tls-smoke/TlsSmoke.pdb
+artifacts/tls-smoke/TlsSmoke.runtimeconfig.json
+artifacts/tls-smoke/TlsSmoke.xml
+build.cmd
+build.ps1
+build.sh
+design
+design/.DS_Store
+design/artwork
+design/artwork/android-elsa-portrait.png
+design/artwork/creative-elsa-animation.gif
+design/artwork/elsa-3.1-art.png
+design/artwork/elsa-logo-art.png
+design/artwork/elsa-logo-art.psd
+design/artwork/elsa-v3-avatar.png
+design/artwork/elsa-waves.mp4
+design/artwork/glass.ai
+design/custom
+design/custom/1x
+design/custom/1x/Artboard 1.png
+design/custom/2x
+design/custom/2x/Artboard 1@2x.png
+design/custom/2x/elsa-logo.png
+design/custom/icon.ai
+design/custom/icon.png
+design/custom/icon.psd
+design/elsa-workflows-workflow-engine-for-dotnet.png
+design/github-social-preview-banner-for-elsa.psd
+design/icon
+design/icon/dark
+design/icon/dark/android-icon-144x144.png
+design/icon/dark/android-icon-192x192.png
+design/icon/dark/android-icon-36x36.png
+design/icon/dark/android-icon-48x48.png
+design/icon/dark/android-icon-72x72.png
+design/icon/dark/android-icon-96x96.png
+design/icon/dark/apple-icon-114x114.png
+design/icon/dark/apple-icon-120x120.png
+design/icon/dark/apple-icon-144x144.png
+design/icon/dark/apple-icon-152x152.png
+design/icon/dark/apple-icon-180x180.png
+design/icon/dark/apple-icon-57x57.png
+design/icon/dark/apple-icon-60x60.png
+design/icon/dark/apple-icon-72x72.png
+design/icon/dark/apple-icon-76x76.png
+design/icon/dark/apple-icon-precomposed.png
+design/icon/dark/apple-icon.png
+design/icon/dark/browserconfig.xml
+design/icon/dark/favicon-16x16.png
+design/icon/dark/favicon-32x32.png
+design/icon/dark/favicon-96x96.png
+design/icon/dark/favicon.ico
+design/icon/dark/manifest.json
+design/icon/dark/ms-icon-144x144.png
+design/icon/dark/ms-icon-150x150.png
+design/icon/dark/ms-icon-310x310.png
+design/icon/dark/ms-icon-70x70.png
+design/icon/light
+design/icon/light/android-icon-144x144.png
+design/icon/light/android-icon-192x192.png
+design/icon/light/android-icon-36x36.png
+design/icon/light/android-icon-48x48.png
+design/icon/light/android-icon-72x72.png
+design/icon/light/android-icon-96x96.png
+design/icon/light/apple-icon-114x114.png
+design/icon/light/apple-icon-120x120.png
+design/icon/light/apple-icon-144x144.png
+design/icon/light/apple-icon-152x152.png
+design/icon/light/apple-icon-180x180.png
+design/icon/light/apple-icon-57x57.png
+design/icon/light/apple-icon-60x60.png
+design/icon/light/apple-icon-72x72.png
+design/icon/light/apple-icon-76x76.png
+design/icon/light/apple-icon-precomposed.png
+design/icon/light/apple-icon.png
+design/icon/light/browserconfig.xml
+design/icon/light/favicon-16x16.png
+design/icon/light/favicon-32x32.png
+design/icon/light/favicon-96x96.png
+design/icon/light/favicon.ico
+design/icon/light/manifest.json
+design/icon/light/ms-icon-144x144.png
+design/icon/light/ms-icon-150x150.png
+
+=== STACK DETECTION (manifest files) ===
+
+--- Elsa.sln ---
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34003.232
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{61017E64-6D00-49CB-9E81-5002DC8F7D5F}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{C6658DE0-2B2F-47F0-BB61-2CA66D435C09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D21EB5E-D6B4-48A5-A9BC-A26387A65F0B}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		icon.png = icon.png
+		NuGet.Config = NuGet.Config
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.Build.props = test\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Api", "src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj", "{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core", "src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj", "{169E2C9B-6687-427F-A278-30BF849BFEDC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Management", "src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj", "{2DD5D66B-85E9-4AF9-911C-C9F963234159}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime", "src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj", "{8A050229-DB79-4E0B-9AFF-7565E87F2954}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Features", "src\common\Elsa.Features\Elsa.Features.csproj", "{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Expressions", "src\modules\Elsa.Expressions\Elsa.Expressions.csproj", "{80529478-A383-4FEA-B744-C71264969E9A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Identity", "src\modules\Elsa.Identity\Elsa.Identity.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Common", "src\modules\Elsa.Common\Elsa.Common.csproj", "{D229105F-6879-4452-9189-75DE060C0F4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
+	ProjectSection(SolutionItems) = preProject
+		docker\.dockerignore = docker\.dockerignore
+		docker\docker-compose.yml = docker\docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
+	ProjectSection(SolutionItems) = preProject
+		test\unit\Directory.Build.props = test\unit\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{1B8D5897-902E-4632-8698-E89CAF3DDF54}"
+	ProjectSection(SolutionItems) = preProject
+		test\integration\Directory.Build.props = test\integration\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}"
+	ProjectSection(SolutionItems) = preProject
+		test\component\Directory.Build.props = test\component\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.IntegrationTests", "test\integration\Elsa.Workflows.IntegrationTests\Elsa.Workflows.IntegrationTests.csproj", "{E9652738-2B3D-4357-B84B-54F0EA161382}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{89608AA5-5ADE-4832-AC7B-871C4AE64210}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Client", "src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "expressions", "expressions", "{6EF07978-A6D2-40EB-891D-7D70C5F37E76}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "security", "security", "{5948B0A5-7873-4DBB-BA03-EB283D6EA91B}"
+
+[TRUNCATED] Showing first 80 of 1336 lines.
+
+=== ENTRY POINTS ===
+No common entry points found. Check 'main' or 'scripts.start' in manifest files above.
+
+=== LINTING AND FORMATTING CONFIG ===
+Found: .editorconfig
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+No .env.example or .env.template found. Identify required environment variables by searching the code and config for environment variable reads.
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+src/common/Elsa.Mediator/Middleware/Notification/Components/NotificationLoggingMiddleware.cs:20: // TODO: Log notification.
+src/modules/Elsa.Alterations/Services/DefaultAlterationRunner.cs:91: // TODO: Importing back into the workflow runtime makes sense, but this also causes another SAVE ction of the workflow instance in the DB, which also happens in the previous step during the commit action.
+src/modules/Elsa.Expressions.Liquid/Services/LiquidTemplateManager.cs:61: // TODO: add signal based cache invalidation.
+src/modules/Elsa.Http/Parsers/TextHtmlHttpContentParser.cs:8: // TODO: found a library to use a Html Content Parser and use a complexe object Type, until this, this class allow to accept request send using text/html content-type
+src/modules/Elsa.Http/DownloadableContentHandlers/UrlDownloadableContentHandler.cs:35: // TODO: Uncomment the next two lines if we implement file caching for this handler.
+src/modules/Elsa.Http/Activities/WriteFileHttpResponse.cs:153: // TODO: Delete the cached file after the workflow completes.
+src/modules/Elsa.Workflows.Core/Contexts/WorkflowExecutionContext.cs:704: // TODO: Check if we should not use the target subStatus here instead.
+src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.InputEvaluation.cs:150: // TODO: Disable filtering for now until we redesign log sanitization.
+src/modules/Elsa.Workflows.Core/Activities/ParallelForEachT.cs:73: // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
+src/modules/Elsa.Workflows.Core/Services/WorkflowStateExtractor.cs:79: // TODO: This is a temporary solution. We need to find a better way to handle this.
+src/modules/Elsa.Workflows.Management/Mappers/WorkflowDefinitionMapper.cs:96: // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
+src/modules/Elsa.Workflows.Management/Mappers/VariableDefinitionMapper.cs:105: // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.
+
+=== GIT RECENT COMMITS (last 20) ===
+c7a97c641 Shorten configured application instance names
+0028604ca Merge pull request #7742 from elsa-workflows/sfmskywalker-port-asb-stable-instance-371
+1aef08381 fix: address greptile stable instance feedback
+fc48af062 fix: add stable application instance name option
+d8d7eae20 Merge branch 'release/3.6.2' into release/3.7.0
+a76e7a666 chore(packages): add Snappier
+b88af1e02 fix: handle arrays of generic types in GetFriendlyTypeName (issue - #7369) (#7400)
+8ee0b43b3 Add Claude Code GitHub Workflow (#7411)
+ad90e81af Enhance logging configuration, update HttpFeature dependencies, and add new identity persistence options
+e7eaa4b1f Integrate `Elsa.Workflows.Runtime.Distributed` into `Elsa.ModularServer.Web` and configure shell features for enhanced distributed runtime support.
+3d8d3b7de Merge remote-tracking branch 'origin/release/3.6.1'
+9f8423932 Handle null activities in `RunWorkflowResultAssertions`
+632d1a383 Refactor shells setup and clean up NuGet package source mapping.
+29d8a64a9 Update package versions: CShells to 0.0.14 and Nuplane to 0.0.1 in props file.
+6ff391745 Remove unused `Elsa.Workflows.Api.Contracts` import from `WorkflowsApiFeature`.
+3decb1268 feat: extend shells integration and modular server support (#7399)
+8d7d1a986 Fix BulkDispatchWorkflows sharing input dictionary across dispatches (#7284)
+a459904e1 refactor | Added a new property to expose the ability to disable the sorting (#7360)
+793ae15bf Fix tenant scope for interrupted workflow restarts (#7389)
+3a3766861 fix: correct workflow summary pagination on release 3.6.1 (#7392)
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+   4 Directory.Packages.props
+   3 src/modules/Elsa.Hosting.Management/Services/ConfiguredApplicationInstanceNameProvider.cs
+   3 test/unit/Elsa.Hosting.Management.UnitTests/Services/ConfiguredApplicationInstanceNameProviderTests.cs
+   3 src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj
+   3 src/apps/Elsa.ModularServer.Web/Program.cs
+   2 src/modules/Elsa.Hosting.Management/Options/ApplicationInstanceOptions.cs
+   2 Elsa.sln
+   2 src/modules/Elsa.Common/Elsa.Common.csproj
+   2 src/apps/Elsa.ModularServer.Web/appsettings.Development.json
+   2 src/apps/Elsa.ModularServer.Web/appsettings.json
+   2 NuGet.Config
+   2 src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs
+   2 README.md
+   1 src/modules/Elsa.Hosting.Management/AssemblyInfo.cs
+   1 src/modules/Elsa.Hosting.Management/Features/ClusteringFeature.cs
+   1 test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj
+   1 src/modules/Elsa.Expressions/Extensions/TypeExtensions.cs
+   1 test/unit/Elsa.Expressions.UnitTests/Extensions/TypeExtensionsTests.cs
+   1 .github/workflows/claude-code-review.yml
+   1 .github/workflows/claude.yml
+
+=== MONOREPO SIGNALS ===
+No monorepo signals detected.
+
+=== CODE METRICS ===
+Total files scanned: 3908
+Total lines of code: 217582
+
+Files by language:
+  C#: 3265
+  Other: 631
+  Java: 6
+  JavaScript: 4
+  Python: 2
+
+Top 10 largest files:
+design/artwork/elsa-logo-art.psd: 13979.6KB
+src/apps/Elsa.ModularServer.Web/elsa_logs.db: 9796.0KB
+design/artwork/elsa-v3-avatar.png: 5827.9KB
+design/artwork/creative-elsa-animation.gif: 3461.2KB
+design/artwork/elsa-waves.mp4: 3178.4KB
+design/logo/Esla_Source.ai: 2043.9KB
+src/apps/Elsa.ModularServer.Web/console-log-streaming-vanilla-sample.db: 1532.0KB
+src/apps/Elsa.ModularServer.Web/elsa_workflows.db: 1416.0KB
+design/logo/Elsa.ai: 914.8KB
+design/logo/Esla-13.png: 429.9KB
+
+=== CI/CD PIPELINES ===
+CI/CD: GitHub Actions
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===
