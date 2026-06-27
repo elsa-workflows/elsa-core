@@ -59,6 +59,44 @@ public class AIContextResolverTests
         Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
     }
 
+    [Fact(DisplayName = "Context resolver redacts nested context payloads")]
+    public async Task ContextResolverRedactsNestedContextPayloads()
+    {
+        using var provider = CreateProvider(services => services.AddSingleton<IAIContextProvider, NestedSensitiveContextProvider>());
+        var resolver = provider.GetRequiredService<AIContextResolver>();
+
+        var result = await resolver.ResolveAsync(new AIChatRequest
+        {
+            UserId = "user-1",
+            Attachments = [new AIContextAttachment { Kind = "NestedSensitive" }]
+        });
+
+        var context = Assert.Single(result);
+        var profile = Assert.IsType<JsonObject>(context.Data["profile"]);
+        var history = Assert.IsType<JsonArray>(context.Data["history"]);
+
+        Assert.Equal("[redacted]", profile["password"]!.GetValue<string>());
+        Assert.Equal("visible", profile["displayName"]!.GetValue<string>());
+        Assert.Equal("[redacted]", history[0]!.GetValue<string>());
+        Assert.Equal(42, history[1]!.GetValue<int>());
+        Assert.True(history[2]!.GetValue<bool>());
+    }
+
+    [Fact(DisplayName = "Context resolver ignores attachments without providers")]
+    public async Task ContextResolverIgnoresAttachmentsWithoutProviders()
+    {
+        using var provider = CreateProvider(_ => { });
+        var resolver = provider.GetRequiredService<AIContextResolver>();
+
+        var result = await resolver.ResolveAsync(new AIChatRequest
+        {
+            UserId = "user-1",
+            Attachments = [new AIContextAttachment { Kind = "Unknown" }]
+        });
+
+        Assert.Empty(result);
+    }
+
     [Fact(DisplayName = "Context resolver uses the last provider for duplicate provider kinds")]
     public async Task ContextResolverUsesTheLastProviderForDuplicateProviderKinds()
     {
@@ -143,6 +181,28 @@ public class AIContextResolverTests
                 Metadata = new JsonObject
                 {
                     ["apiKey"] = "key-value"
+                }
+            });
+        }
+    }
+
+    private class NestedSensitiveContextProvider : IAIContextProvider
+    {
+        public string Kind => "NestedSensitive";
+
+        public ValueTask<AIResolvedContext> ResolveAsync(AIContextResolutionRequest request, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new AIResolvedContext
+            {
+                Kind = Kind,
+                Data = new JsonObject
+                {
+                    ["profile"] = new JsonObject
+                    {
+                        ["password"] = "secret-value",
+                        ["displayName"] = "visible"
+                    },
+                    ["history"] = new JsonArray("Bearer abcdefgh", 42, true)
                 }
             });
         }

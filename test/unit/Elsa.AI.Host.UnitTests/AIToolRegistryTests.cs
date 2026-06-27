@@ -253,6 +253,25 @@ public class AIToolRegistryTests
         Assert.True(enablement.IsEnabled(definition));
     }
 
+    [Fact(DisplayName = "Tool enablement disables administrative tools by name")]
+    public void ToolEnablementDisablesAdministrativeToolsByName()
+    {
+        var enablement = new AIToolEnablementService();
+        var definition = new AIToolDefinition
+        {
+            Name = "admin",
+            DisplayName = "Admin",
+            Mutability = AIToolMutability.Administrative
+        };
+
+        enablement.EnableAdministrative("ADMIN");
+        Assert.True(enablement.IsEnabled(definition));
+
+        enablement.Disable("admin");
+
+        Assert.False(enablement.IsEnabled(definition));
+    }
+
     [Fact(DisplayName = "Tool registry filters agent-scoped tools by agent")]
     public async Task ToolRegistryFiltersAgentScopedToolsByAgent()
     {
