@@ -37,11 +37,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
     {
         // Arrange
         var tenantId = "test-tenant-123";
-        var tenant = new Tenant
-        {
-            Id = tenantId
-        };
-        _tenantAccessor.Tenant.Returns(tenant);
+        _tenantAccessor.TenantId.Returns(tenantId);
 
         var dispatcher = CreateDispatcher();
         var request = new DispatchCancelWorkflowRequest();
@@ -60,10 +56,10 @@ public class BackgroundWorkflowCancellationDispatcherTests
     }
 
     [Fact]
-    public async Task DispatchAsync_DoesNotIncludeTenantIdInHeaders_WhenTenantIsNull()
+    public async Task DispatchAsync_IncludesEmptyTenantIdInHeaders_WhenDefaultTenant()
     {
-        // Arrange
-        _tenantAccessor.Tenant.Returns((Tenant?)null);
+        // Arrange - default tenant normalizes to empty string, not null
+        _tenantAccessor.TenantId.Returns(string.Empty);
 
         var dispatcher = CreateDispatcher();
         var request = new DispatchCancelWorkflowRequest();
@@ -76,7 +72,8 @@ public class BackgroundWorkflowCancellationDispatcherTests
             Arg.Any<CancelWorkflowsCommand>(),
             CommandStrategy.Background,
             Arg.Is<IDictionary<object, object>>(headers =>
-                !headers.ContainsKey(TenantHeaders.TenantIdKey)),
+                headers.ContainsKey(TenantHeaders.TenantIdKey) &&
+                headers[TenantHeaders.TenantIdKey].ToString() == string.Empty),
             Arg.Any<CancellationToken>());
     }
 
