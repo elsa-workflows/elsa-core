@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Persistence.EFCore]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Oracle.EntityFrameworkCore" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
+    </ItemGroup>
+
+</Project>
