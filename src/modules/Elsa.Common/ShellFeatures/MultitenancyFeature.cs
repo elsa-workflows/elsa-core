@@ -1,5 +1,5 @@
 using CShells.Features;
-using CShells.Hosting;
+using CShells.Lifecycle;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.Multitenancy.HostedServices;
@@ -35,8 +35,8 @@ public class MultitenancyFeature : IShellFeature
             .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
             .AddScoped(_tenantsProviderFactory)
             
-            .AddSingleton<IShellActivatedHandler, ActivateShellTenants>()
-            .AddSingleton<IShellDeactivatingHandler, ActivateShellTenants>()
+            .AddTransient<IShellInitializer, ActivateShellTenants>()
+            .AddTransient<IDrainHandler, ActivateShellTenants>()
             ;
     }
 }

@@ -1,18 +1,18 @@
-using CShells.Hosting;
+using CShells.Lifecycle;
 using Elsa.Common.Multitenancy;
 using JetBrains.Annotations;
 
 namespace Elsa.Common.ShellHandlers;
 
 [UsedImplicitly]
-public class ActivateShellTenants(ITenantService tenantService) : IShellActivatedHandler, IShellDeactivatingHandler
+public class ActivateShellTenants(ITenantService tenantService) : IShellInitializer, IDrainHandler
 {
-    public Task OnActivatedAsync(CancellationToken cancellationToken = default)
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         return tenantService.ActivateTenantsAsync(cancellationToken);
     }
 
-    public Task OnDeactivatingAsync(CancellationToken cancellationToken = default)
+    public Task DrainAsync(IDrainExtensionHandle _, CancellationToken cancellationToken)
     {
         return tenantService.DeactivateTenantsAsync(cancellationToken);
     }

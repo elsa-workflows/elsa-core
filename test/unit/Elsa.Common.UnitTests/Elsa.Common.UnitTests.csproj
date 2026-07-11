@@ -6,6 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="CShells.Abstractions" VersionOverride="0.0.21" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Common\Elsa.Common.csproj" />
     </ItemGroup>

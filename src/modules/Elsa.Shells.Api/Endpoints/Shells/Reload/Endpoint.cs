@@ -1,4 +1,4 @@
-using CShells.Management;
+using CShells.Lifecycle;
 using Elsa.Abstractions;
 using Elsa.Shells.Api.Endpoints.Shells;
 using Elsa.Workflows;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 namespace Elsa.Shells.Api.Endpoints.Shells.Reload;
 
 [PublicAPI]
-internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
+internal class Reload(IShellRegistry shellRegistry, IApiSerializer apiSerializer) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -20,13 +20,14 @@ internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) 
     {
         var shellId = Route<string>("shellId")!;
 
+        ReloadResult result;
+
         try
         {
-            await shellManager.ReloadShellAsync(shellId, cancellationToken);
+            result = await shellRegistry.ReloadAsync(shellId, cancellationToken);
         }
-        catch (InvalidOperationException ex)
+        catch (ShellBlueprintNotFoundException ex)
         {
-            // Shell not found by the provider.
             var notFoundResponse = new ShellReloadResponse
             {
                 Status = ShellReloadStatus.NotFound,
@@ -35,6 +36,31 @@ internal class Reload(IShellManager shellManager, IApiSerializer apiSerializer) 
                 Message = ex.Message
             };
             await SendResponseAsync(notFoundResponse, StatusCodes.Status404NotFound, cancellationToken);
+            return;
+        }
+        catch (ShellBlueprintUnavailableException ex)
+        {
+            var unavailableResponse = new ShellReloadResponse
+            {
+                Status = ShellReloadStatus.Failed,
+                RequestedShellId = shellId,
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = ex.Message
+            };
+            await SendResponseAsync(unavailableResponse, StatusCodes.Status503ServiceUnavailable, cancellationToken);
+            return;
+        }
+
+        if (result.Error is not null)
+        {
+            var failedResponse = new ShellReloadResponse
+            {
+                Status = ShellReloadStatus.Failed,
+                RequestedShellId = shellId,
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = result.Error.Message
+            };
+            await SendResponseAsync(failedResponse, StatusCodes.Status503ServiceUnavailable, cancellationToken);
             return;
         }
 
