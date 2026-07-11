@@ -1,8 +1,9 @@
+using System.Linq.Expressions;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore.Extensions;
@@ -337,7 +338,7 @@ public static class BulkUpsertExtensions
         return (sb.ToString(), parameters.ToArray());
     }
 
-    private static (string, object[]) GenerateOracleUpsert<TEntity>(
+    internal static (string, object[]) GenerateOracleUpsert<TEntity>(
         DbContext dbContext,
         IList<TEntity> entities,
         Expression<Func<TEntity, string>> keySelector)
@@ -347,12 +348,8 @@ public static class BulkUpsertExtensions
         var schema = entityType.GetSchema();
         var tableName = entityType.GetTableName()!;
         var storeObject = StoreObjectIdentifier.Table(tableName, schema);
-    
-        // Both schema and table must be quoted so Oracle treats them as case-sensitive
-        // identifiers, matching what EF Core migrations create.
-        var fullName = !string.IsNullOrEmpty(schema)
-            ? $"\"{schema}\".\"{tableName}\""
-            : $"\"{tableName}\"";
+        var sqlGenerationHelper = dbContext.GetService<ISqlGenerationHelper>();
+        var fullName = sqlGenerationHelper.DelimitIdentifier(tableName, schema);
 
         var props = entityType.GetProperties().ToList();
 
@@ -361,9 +358,9 @@ public static class BulkUpsertExtensions
 
         // Pre-build quoted column names once and reuse throughout all clauses.
         var quotedColumnNames = props
-            .Select(p => $"\"{p.GetColumnName(storeObject)}\"")
+            .Select(p => sqlGenerationHelper.DelimitIdentifier(p.GetColumnName(storeObject)!))
             .ToList();
-        var quotedKeyColumnName = $"\"{keyColumnName}\"";
+        var quotedKeyColumnName = sqlGenerationHelper.DelimitIdentifier(keyColumnName);
 
         var sb = new StringBuilder();
         var parameters = new List<object>();
@@ -390,23 +387,23 @@ public static class BulkUpsertExtensions
                     value = converter.ConvertToProvider(value);
 
                 parameters.Add(value!);
-                
+
                 // Aliases must be quoted so Oracle preserves their case, matching
                 // the quoted references in ON, UPDATE SET, and INSERT/VALUES below.
-                var quotedAlias = $"\"{property.GetColumnName(storeObject)}\"";
-    
+                var quotedAlias = sqlGenerationHelper.DelimitIdentifier(property.GetColumnName(storeObject)!);
+
                 // In a SELECT … FROM DUAL subquery, ODP.NET has no target column to
                 // derive bind parameter types from and defaults to VARCHAR2 for .NET
                 // strings. Elsa's Oracle migrations define string columns as NVARCHAR2,
                 // so an explicit CAST is required to avoid a datatype mismatch error.
-                // The full EF Core column type string (e.g. "NVARCHAR2(450 CHAR)") is
+                // The full EF Core column type string (e.g. "NVARCHAR2(450)") is
                 // used directly in the CAST so all Oracle type variants are handled
                 // correctly without any string parsing.
                 var columnType = property.GetColumnType() ?? string.Empty;
                 var expr = columnType.StartsWith("NVARCHAR2", StringComparison.OrdinalIgnoreCase)
                     ? $"CAST({paramName} AS {columnType})"
                     : paramName;
-    
+
                 lineParts.Add($"{expr} AS {quotedAlias}");
             }
 
