@@ -8,11 +8,11 @@
     ".claude/skills/speckit-clarify/SKILL.md": "1a77bd8c24d8dcfa8a883185480ef8a1ee0b68e4059ebe6dac3e66e872407ea5",
     ".claude/skills/speckit-constitution/SKILL.md": "86fd32ace9f5e99b44c6247629f2ef2ddec707459182870b65541e9def309f98",
     ".claude/skills/speckit-implement/SKILL.md": "bba51e30382cdfab8ef97ba924b7a7b879e0a5ac6733e97f14234e5e188ee42b",
-    ".claude/skills/speckit-plan/SKILL.md": "e4b7e372a06a987bb20d2142aea40460525363c2ad89a65fc050a67d6bb45eec",
+    ".claude/skills/speckit-plan/SKILL.md": "f75c339c468a12eeca8ba4a3a3bcc9b3466c2f48e3de25d9c23abdd7bcab4f45",
     ".claude/skills/speckit-specify/SKILL.md": "69ac96ba89ae6832c67e4c8c75393b7d50ef5a75c766e0261205040e9d3a4850",
     ".claude/skills/speckit-tasks/SKILL.md": "67c4419fc40299c9ebd68f677fad362dac7de1041df1bfe14b1d4e5e0adade9d",
     ".claude/skills/speckit-taskstoissues/SKILL.md": "8a8052fd7489424f9d62cc809042b2a2968ccb231466757aeca5bf47d5747222",
-    ".specify/integrations/claude/scripts/update-context.ps1": "8bce5081fe27ebf414d4eaf127d91b5540b00d24dde4fe1e303e8eb26ad5211a",
-    ".specify/integrations/claude/scripts/update-context.sh": "21a5aa3fc644f693a29d35975ce21e5a949cdc1d0258b11c21940754c3644fa6"
+    ".specify/integrations/claude/scripts/update-context.ps1": "e97ba404738b7f5da9f7912b6392e53ac28afa51cf4f925f6c67e01d29b1dde5",
+    ".specify/integrations/claude/scripts/update-context.sh": "c11f50a2744b0339cc21b886c7bd10e916fbfe876123eb99ec903af083145f43"
   }
 }

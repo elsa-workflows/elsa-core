@@ -85,3 +85,4 @@ Before handing off changes, verify the following when applicable:
 
 - Keep this file limited to stable, repository-wide guidance. Feature-specific plans and historical change summaries belong in `specs/`, not here.
 - Agent-specific instruction files should defer to this file instead of duplicating or generating plan-derived content.
+- Follow the global Codex workroom model and fallback policy for orchestration and delegation. That policy is authoritative for model order and for distinguishing model unavailability from delegation timeout or failure; do not duplicate its details here.
