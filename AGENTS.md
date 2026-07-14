@@ -81,28 +81,7 @@ Before handing off changes, verify the following when applicable:
 - New code follows nullable annotations and existing style.
 - No unrelated files were changed.
 
-<!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/008-weaver-ai-copilot/plan.md`.
-<!-- SPECKIT END -->
+## Instruction Maintenance
 
-## Active Technologies
-- C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization features. (003-live-server-logs)
-- Bounded in-memory ring buffer for MVP; no EF Core schema changes. Provider abstraction allows external/shared log backends later. (003-live-server-logs)
-- C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, CShells shell feature infrastructure. (004-diagnostics-structured-logs)
-- Existing bounded in-memory ring buffer; no EF Core schema changes. Provider abstraction remains available for future shared backends. (004-diagnostics-structured-logs)
-- C# latest, nullable reference types enabled, implicit usings enabled. + Existing `Elsa.Diagnostics.StructuredLogs`, `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, FluentMigrator runner packages, SQLite ADO.NET provider, and optionally Dapper for relational operations. (005-structured-log-persistence)
-- Bounded in-memory store by default; opt-in SQLite durable store through shared relational persistence. SQLite stores `Timestamp` and `ReceivedAt` as UTC ISO-8601 text and stores exception, scope, and property payloads as JSON text. (005-structured-log-persistence)
-- C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, Elsa shell feature infrastructure, and existing Elsa identity/authorization patterns. (006-diagnostics-console-logs)
-- Bounded in-memory recent buffer and bounded subscriber queues by default; no durable database schema. Providers receive redacted content only. (006-diagnostics-console-logs)
-- C# latest, nullable reference types enabled, implicit usings enabled. + Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization patterns, Elsa workflow input metadata, `Microsoft.Extensions.Configuration`, `Microsoft.AspNetCore.DataProtection`, EF Core persistence infrastructure, mediator notifications, and optional JavaScript expression integration. (007-secrets-module)
-- In-memory store for tests/development; Elsa-managed encrypted store with EF Core persistence for production; configuration-backed read-only store for deployment-managed values. No cloud vault or OS certificate store provider in v1. (007-secrets-module)
-- C# latest, nullable reference types enabled, implicit usings enabled; paired Studio Blazor/Razor module work in the Studio repository. + Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing identity/authorization and tenancy services, workflow definition/instance abstractions, diagnostics/log abstractions, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Logging`, OpenTelemetry, `System.Text.Json`, SignalR or SSE streaming, GitHub Copilot SDK isolated behind `Elsa.AI.Copilot`, and headless Copilot CLI JSON-RPC integration. (008-weaver-ai-copilot)
-- Configurable conversation/session retention with in-memory support for development and tests; durable proposal and audit stores required for MVP using Elsa persistence provider abstractions and an EF Core provider package for production. (008-weaver-ai-copilot)
-
-## Recent Changes
-- 008-weaver-ai-copilot: Captures Weaver as a server-hosted, provider-isolated AI copilot platform with Studio chat, governed tools, proposal-only workflow mutations, audit, and extensibility.
-- 006-diagnostics-console-logs: Plans raw stdout/stderr console capture with redaction-before-provider boundaries, bounded in-memory recent/live buffers, REST backfill/source endpoints, and a SignalR live hub.
-- 005-structured-log-persistence: Plans pluggable structured log storage with in-memory default and opt-in SQLite persistence using FluentMigrator.
-- 004-diagnostics-structured-logs: Refactors the unpublished server logs module into diagnostics structured logs and preserves bounded structured `ILogger` capture.
-- 003-live-server-logs: Added C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization features.
+- Keep this file limited to stable, repository-wide guidance. Feature-specific plans and historical change summaries belong in `specs/`, not here.
+- Agent-specific instruction files should defer to this file instead of duplicating or generating plan-derived content.
