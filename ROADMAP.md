@@ -1,6 +1,6 @@
 # Elsa Roadmap
 
-Last refreshed: 2026-07-01
+Last refreshed: 2026-07-22
 
 This roadmap is a product direction document, not a fixed release calendar. Elsa is developed through a mix of core maintainer work, customer-funded work, and community contributions, so sequencing can change when real-world demand changes. The intent is stable: make Elsa the most productive, dependable, and extensible workflow platform for the .NET ecosystem.
 
@@ -40,6 +40,7 @@ Legend: `[x]` shipped foundation, `[~]` partially shipped or needs productizatio
 - [x] Console logs
 - [x] Studio structured-log, console-log, and OpenTelemetry diagnostics foundations
 - [x] Durable structured log persistence
+- [~] Operational dashboard API and Studio dashboard productization
 - [~] Scheduler and message-bus foundations through Quartz, Hangfire, MassTransit, Kafka, and Azure Service Bus
 - [~] OpenTelemetry diagnostics backend and default workflow metrics
 - [ ] Scheduler/message reliability hardening for clustered production workloads
@@ -73,6 +74,7 @@ Legend: `[x]` shipped foundation, `[~]` partially shipped or needs productizatio
 - [x] HTTP, scheduling, scripting, and persistence provider foundations
 - [x] Connections and Secrets foundations
 - [x] Extension packages for SQL, CSV, Email, Slack, Telnyx, GitHub DevOps, Azure Storage, Azure Service Bus, Kafka, MassTransit/RabbitMQ, Quartz, Hangfire, Dapper, MongoDB, Elasticsearch, OpenTelemetry, Logging, Agents, OpenAPI, Webhooks, OrchardCore, IO, compression, and ProtoActor-backed runtime/caching
+- [~] MQTT publish and message-trigger foundation (main-only; release and production hardening pending)
 - [~] Modular package loading and manifest metadata
 - [~] OpenAPI activity/provider foundations
 - [ ] Connector SDK
@@ -101,6 +103,7 @@ These are already present in the codebase and should be treated as foundations f
 - Structured diagnostics with recent/live capture plus SQLite persistence in [`Elsa.Diagnostics.StructuredLogs`](src/modules/Elsa.Diagnostics.StructuredLogs) and [`Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite`](src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite).
 - Raw stdout/stderr console diagnostics in [`Elsa.Diagnostics.ConsoleLogs`](src/modules/Elsa.Diagnostics.ConsoleLogs), with the post-3.7 console pipeline now carrying workflow and activity execution context through [PR #7536](https://github.com/elsa-workflows/elsa-core/pull/7536).
 - Core `main` now includes `Elsa.Diagnostics.OpenTelemetry`, which provides OTLP ingestion, bounded in-memory storage, REST APIs, SignalR live updates, collector configuration, permissions, and tests in [`src/modules/Elsa.Diagnostics.OpenTelemetry`](src/modules/Elsa.Diagnostics.OpenTelemetry). The productization gap is no longer "does a backend exist?" but rather release packaging, default workflow semantic metrics, and diagnostics correlation.
+- Core `main` includes [`Elsa.Dashboard.Api`](src/modules/Elsa.Dashboard.Api), a read-only operational-dashboard backend with overview, trends, attention, recent-activity, and workflow-hotspot endpoints plus independent diagnostics capability states ([#7529](https://github.com/elsa-workflows/elsa-core/pull/7529), [#7532](https://github.com/elsa-workflows/elsa-core/pull/7532)). Its remaining product work is a released, polished Studio dashboard with robust deep links and unavailable-state handling.
 - Core `main` now includes `Elsa.AI.Abstractions`, `Elsa.AI.Host`, `Elsa.AI.Copilot`, and `Elsa.AI.Persistence.EFCore` through [PR #7523](https://github.com/elsa-workflows/elsa-core/pull/7523), and Studio `main` now includes `Elsa.Studio.AI` through [elsa-studio#900](https://github.com/elsa-workflows/elsa-studio/pull/900). That gives Weaver both server and Studio workspace foundations, while proposal actions, broader authoring contracts, and polished product UX remain roadmap work.
 - State machine core activity support in [`Elsa.Workflows.Core/Activities/StateMachine`](src/modules/Elsa.Workflows.Core/Activities/StateMachine).
 - ElsaScript DSL and blob storage integration in [`Elsa.Dsl.ElsaScript`](src/modules/Elsa.Dsl.ElsaScript) and [`Elsa.WorkflowProviders.BlobStorage.ElsaScript`](src/modules/Elsa.WorkflowProviders.BlobStorage.ElsaScript).
@@ -112,6 +115,7 @@ These are already present in the codebase and should be treated as foundations f
 - Elsa Extensions is an active modular integration repository with 70+ module projects in [elsa-workflows/elsa-extensions](https://github.com/elsa-workflows/elsa-extensions), targeting `net8.0`, `net9.0`, and `net10.0`.
 - Extensions already provide broad integration foundations: Connections, Secrets, Agents, OpenAPI, SQL/CSV/data tooling, messaging, schedulers, cloud storage, logging, webhooks, persistence providers, LDAP, and external system activities.
 - Extensions `3.7.0` adds package manifest metadata, infrastructure attributes, shell features for MassTransit/Quartz/Webhooks, Dapper and MongoDB activity execution-chain lookups, Dapper bookmark queue filtering, Kafka multitenancy/schema-trigger work, Quartz lifecycle/job cleanup fixes, and other operational hardening.
+- Extensions `main` now includes an MQTT module with publish and message-received trigger activities, broker/TLS/QoS configuration, Studio UI hints, and focused tests ([elsa-extensions#157](https://github.com/elsa-workflows/elsa-extensions/pull/157)). It remains a main-only foundation; its documented MQTT 5, advanced TLS, binary-payload, and error/DLQ gaps keep release and operational productization on the roadmap.
 
 The public roadmap issue remains useful history: [elsa-workflows/elsa-core#3232](https://github.com/elsa-workflows/elsa-core/issues/3232). Several items in that issue are now done in code but still open in the issue body, so this file should be considered the current working roadmap.
 
@@ -145,7 +149,7 @@ Recommended success measures:
 High-value items:
 
 - Ship workflow organization as a coherent feature: labels/categories, folder-like views, search/filter by metadata, and Studio support. This consolidates [#5872](https://github.com/elsa-workflows/elsa-core/issues/5872), [#6307](https://github.com/elsa-workflows/elsa-core/issues/6307), the existing `Elsa.Labels` module, and workflow definition `CustomProperties`.
-- Make designer reliability a visible workstream. Recent Studio issues show expression/input rendering regressions after 3.6 ([elsa-studio#791](https://github.com/elsa-workflows/elsa-studio/issues/791), [elsa-studio#781](https://github.com/elsa-workflows/elsa-studio/issues/781), [elsa-studio#795](https://github.com/elsa-workflows/elsa-studio/issues/795)); these should drive a regression harness for designer rendering, property editors, expression descriptors, drag/drop, and WASM/Server parity.
+- Make designer reliability a visible workstream. Recent Studio issues show expression/input rendering regressions after 3.6 ([elsa-studio#791](https://github.com/elsa-workflows/elsa-studio/issues/791), [elsa-studio#781](https://github.com/elsa-workflows/elsa-studio/issues/781), [elsa-studio#795](https://github.com/elsa-workflows/elsa-studio/issues/795)), persistent browser/JS failures ([elsa-studio#903](https://github.com/elsa-workflows/elsa-studio/issues/903)), and fragile Playwright automation ([elsa-studio#919](https://github.com/elsa-workflows/elsa-studio/issues/919)). These should drive a regression harness for designer rendering, property editors, expression descriptors, drag/drop, stable test identifiers, deterministic canvas state, and WASM/Server parity.
 - Make workflow progress visible to application users: a current-state/step API, timeline model, and embeddable progress component. This responds to [discussion #6012](https://github.com/elsa-workflows/elsa-core/discussions/6012) and should reuse execution logs, activity records, call-stack tracking, and real-time workflow updates.
 - Finish the state machine product surface. The core activity exists, but [#5085](https://github.com/elsa-workflows/elsa-core/issues/5085) should be closed only when JSON serialization, Studio authoring, docs, and examples make state machines approachable.
 - Build first-class workflow testing and debugging: test runners for full workflows, breakpoint-like inspection, replay from execution logs where feasible, better failed-activity retry flows, child/descendant workflow instance navigation, and Studio affordances for fault investigation. The Studio `3.7.0` activity call-stack viewer is a useful foundation, but requests for child workflow visibility ([elsa-studio#152](https://github.com/elsa-workflows/elsa-studio/issues/152)) and breakpoint debugging ([elsa-studio discussion #662](https://github.com/elsa-workflows/elsa-studio/discussions/662)) still need a coherent debugging experience.
