@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Elsa.Http.ContentWriters;
 using Xunit;
 
@@ -111,5 +112,78 @@ public class ContentFactoryTests
         // Content length should match the actual UTF-8 byte count
         Assert.Equal(Encoding.UTF8.GetByteCount(content), bytes.Length);
         Assert.Equal(httpContent.Headers.ContentLength, bytes.Length);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="MultipartFormDataHttpContentFactory"/> reports support for the multipart/form-data content type.
+    /// </summary>
+    [Fact]
+    public void MultipartFormDataHttpContentFactory_ShouldSupportMultipartFormData()
+    {
+        // Arrange
+        var factory = new MultipartFormDataHttpContentFactory();
+
+        // Assert
+        Assert.Contains("multipart/form-data", factory.SupportedContentTypes);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="MultipartFormDataHttpContentFactory"/> produces multipart/form-data content with a boundary.
+    /// </summary>
+    [Fact]
+    public void MultipartFormDataHttpContentFactory_ShouldSetMultipartContentType()
+    {
+        // Arrange
+        var content = new Dictionary<string, object> { ["field1"] = "value1", ["field2"] = "value2" };
+        var factory = new MultipartFormDataHttpContentFactory();
+
+        // Act
+        var httpContent = factory.CreateHttpContent(content, "multipart/form-data");
+
+        // Assert
+        Assert.IsType<MultipartFormDataContent>(httpContent);
+        Assert.Equal("multipart/form-data", httpContent.Headers.ContentType?.MediaType);
+        // A boundary parameter is required for multipart content.
+        Assert.Contains(httpContent.Headers.ContentType!.Parameters, p => p.Name == "boundary");
+    }
+
+    /// <summary>
+    /// Tests that <see cref="MultipartFormDataHttpContentFactory"/> writes one part per dictionary entry.
+    /// </summary>
+    [Fact]
+    public async Task MultipartFormDataHttpContentFactory_ShouldWriteEachFieldAsPart()
+    {
+        // Arrange
+        var content = new Dictionary<string, object> { ["name"] = "Alice", ["role"] = "admin" };
+        var factory = new MultipartFormDataHttpContentFactory();
+
+        // Act
+        var httpContent = factory.CreateHttpContent(content, "multipart/form-data");
+        var body = await httpContent.ReadAsStringAsync();
+
+        // Assert
+        // Each entry becomes a form-data section carrying its value.
+        Assert.Contains("form-data", body);
+        Assert.Contains("Alice", body);
+        Assert.Contains("admin", body);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="MultipartFormDataHttpContentFactory"/> accepts a <see cref="JsonObject"/> payload.
+    /// </summary>
+    [Fact]
+    public async Task MultipartFormDataHttpContentFactory_ShouldSupportJsonObjectContent()
+    {
+        // Arrange
+        var content = new JsonObject { ["field1"] = "value1", ["field2"] = "value2" };
+        var factory = new MultipartFormDataHttpContentFactory();
+
+        // Act
+        var httpContent = factory.CreateHttpContent(content, "multipart/form-data");
+        var body = await httpContent.ReadAsStringAsync();
+
+        // Assert
+        Assert.Contains("value1", body);
+        Assert.Contains("value2", body);
     }
 }
