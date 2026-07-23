@@ -12,7 +12,7 @@ namespace Elsa.Server.Api.Extensions.DocumentFilters
     /// Removes any top-level tag definitions from the OpenAPI document that aren't actually assigned to any endpoint operations.
     /// This helps to keep the generated documentation clean and focused on relevant tags.
     /// </summary>
-    /// /// <remarks>
+    /// <remarks>
     /// <para>
     /// <b>Root Cause:</b> Swashbuckle's annotation engine bypasses its custom tag selection rules 
     /// when using <c>[SwaggerOperation(Tags = ...)]</c>. This leaves behind "ghost" controller-named tags 

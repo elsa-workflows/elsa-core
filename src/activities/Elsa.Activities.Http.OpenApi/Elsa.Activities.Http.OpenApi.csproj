@@ -31,7 +31,7 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
-      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.1.7" />
+      <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="10.2.3" />
       <PackageReference Include="System.Linq.Async" Version="6.0.1">
           <ExcludeAssets>compile</ExcludeAssets>
       </PackageReference>
