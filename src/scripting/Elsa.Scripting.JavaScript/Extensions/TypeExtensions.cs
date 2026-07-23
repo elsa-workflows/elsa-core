@@ -29,5 +29,16 @@ namespace Elsa.Scripting.JavaScript.Extensions
         {
             return type == typeof(object);
         }
+
+
+        /// <summary>
+        /// Determines whether the specified type is a nullable value type (e.g., Nullable&lt;T&gt;).
+        /// </summary>
+        /// <param name="type">The type to check.</param>
+        /// <returns>True if the type is a nullable value type; otherwise, false.</returns>
+        public static bool IsNullableType(this Type type)
+        {
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+        }
     }
 }

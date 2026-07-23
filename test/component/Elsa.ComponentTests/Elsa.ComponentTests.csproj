@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -8,7 +8,7 @@
     
     <ItemGroup>
         <PackageReference Include="AutoFixture" Version="4.18.1" />
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.16" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
         <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
         <PackageReference Include="xunit" Version="2.9.3" />

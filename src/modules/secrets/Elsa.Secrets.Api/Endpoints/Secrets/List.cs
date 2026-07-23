@@ -15,6 +15,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/secrets")]
     [Produces(MediaTypeNames.Application.Json)]
+    [Tags("Secrets")]
     public class List : Controller
     {
         private readonly ISecretsManager _secretsManager;

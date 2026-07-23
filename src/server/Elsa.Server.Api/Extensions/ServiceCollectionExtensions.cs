@@ -3,6 +3,7 @@ using Elsa;
 using Elsa.Models;
 using Elsa.Server.Api;
 using Elsa.Server.Api.Extensions;
+using Elsa.Server.Api.Extensions.DocumentFilters;
 using Elsa.Server.Api.Extensions.SchemaFilters;
 using Elsa.Server.Api.Mapping;
 using Elsa.Server.Api.Services;
@@ -103,6 +104,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
                     //Allow enums to be displayed
                     c.SchemaFilter<XEnumNamesSchemaFilter>();
+                    c.DocumentFilter<RemoveEmptyControllerTagsFilter>();
                     configure?.Invoke(c);
                 });
     }

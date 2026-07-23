@@ -33,11 +33,11 @@
     </ItemGroup>
 
     <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Oracle.EntityFrameworkCore" Version="10.0.0" />
+        <PackageReference Include="Oracle.EntityFrameworkCore" Version="10.23.26000" />
     </ItemGroup>
 
 </Project>

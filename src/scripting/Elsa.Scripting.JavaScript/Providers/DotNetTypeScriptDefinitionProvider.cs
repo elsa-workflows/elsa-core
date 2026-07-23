@@ -5,9 +5,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper.Internal;
 using Elsa.Models;
 using Elsa.Scripting.JavaScript.Events;
+using Elsa.Scripting.JavaScript.Extensions;
 using Elsa.Scripting.JavaScript.Models;
 using Elsa.Scripting.JavaScript.Services;
 using MediatR;
@@ -113,9 +113,9 @@ namespace Elsa.Scripting.JavaScript.Providers
             var symbol = type switch
             {
                 { IsInterface: true } => "interface",
+                { IsEnum: true } => "enum", // This must come before IsValueType as IsValueType will also be true for enums
                 { IsClass: true } => "class",
                 { IsValueType: true } => "class",
-                { IsEnum: true } => "enum",
                 _ => "interface"
             };
 
@@ -125,11 +125,40 @@ namespace Elsa.Scripting.JavaScript.Providers
         private void RenderTypeDeclaration(TypeDefinitionContext context, string symbol, Type type, ISet<Type> collectedTypes, StringBuilder output)
         {
             var typeName = GetTypeScriptType(context, type, collectedTypes);
+
+            // Render enum members only if this is an enum, enums do not support properties/methods in TypeScript
+            if (symbol == "enum")
+            {
+                output.AppendLine($"declare enum {typeName} {{");
+                var names = Enum.GetNames(type);
+                var values = Enum.GetValues(type);
+
+                for (int i = 0; i < names.Length; i++)
+                {
+                    var value = Convert.ChangeType(values.GetValue(i), Enum.GetUnderlyingType(type));
+                    output.AppendLine($"  {names[i]} = {value},");
+                }
+
+                output.AppendLine("}");
+                return;
+            }
+
             var properties = type.GetProperties();
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Where(x => !x.IsSpecialName).ToList();
 
-
             output.AppendLine($"declare {symbol} {typeName} {{");
+            
+            // Add constructors for classes only
+            if (symbol == "class")
+            {
+                var constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance);
+                foreach (var ctor in constructors)
+                {
+                    var parameters = ctor.GetParameters()
+                        .Select(p => $"{p.Name}: {GetTypeScriptType(context, p.ParameterType, collectedTypes)}");
+                    output.AppendLine($"constructor({string.Join(", ", parameters)});");
+                }
+            }
 
             foreach (var property in properties)
             {
