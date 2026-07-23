@@ -12,13 +12,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.16"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1"/>
         <PackageReference Include="AutoFixture" Version="4.18.1"/>
         <PackageReference Include="Autofixture.AutoMoq" Version="4.18.1"/>
         <PackageReference Include="AutoFixture.Xunit2" Version="4.18.1"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.1"/>        
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.16"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.16"/>        
         <PackageReference Include="NodaTime" Version="3.2.0"/>
         <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0"/>
         <PackageReference Include="xunit.extensibility.core" Version="2.9.1"/>

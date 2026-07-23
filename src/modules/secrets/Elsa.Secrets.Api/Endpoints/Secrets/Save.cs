@@ -1,10 +1,11 @@
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Secrets.Api.Models;
 using Elsa.Secrets.Manager;
 using Elsa.Secrets.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Secrets.Api.Endpoints.Secrets
 {
@@ -12,6 +13,7 @@ namespace Elsa.Secrets.Api.Endpoints.Secrets
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/secrets")]
     [Produces("application/json")]
+    [Tags("Secrets")]
     public class Save : Controller
     {
         private readonly ISecretsManager _secretsManager;

@@ -1,10 +1,16 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture.Xunit2;
+using Elsa.Scripting.JavaScript.Converters.Jint;
 using Elsa.Scripting.JavaScript.Messages;
 using Elsa.Services.Models;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.AutoFixture.Attributes;
+using Jint;
+using Jint.Native;
 using MediatR;
 using Moq;
 using Xunit;
@@ -128,6 +134,100 @@ namespace Elsa.Scripting.JavaScript.Services
             var result = await sut.EvaluateAsync("duration1.Plus(duration2)", typeof(NodaTime.Duration), context1);
 
             Assert.Equal(NodaTime.Duration.FromHours(36), result);
+        }
+
+        [Theory(DisplayName = "ByteArrayConverter: The EvaluateAsync method should expose a byte array as an ArrayBuffer and preserve its values"), AutoMoqData]
+        public async Task EvaluateAsync_ShouldExposeByteArrayAsArrayBufferWithCorrectValues(
+            [Frozen] IMediator mediator,
+            [JintEvaluatorWithConverter] JintJavaScriptEvaluator sut,
+            [StubActivityExecutionContext] ActivityExecutionContext context1)
+        {
+            var bytes = new byte[] { 1, 2, 3, 4 };
+            object returnedValue = null;
+
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context1), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => { expression.Engine.SetValue("MyVariable", returnedValue); });
+
+            returnedValue = bytes;
+
+            // Check length
+            var lengthResult = await sut.EvaluateAsync("MyVariable.byteLength", typeof(object), context1);
+            Assert.Equal((double)bytes.Length, lengthResult);
+
+            // Check values
+            var jsArray = await sut.EvaluateAsync("Array.from(new Uint8Array(MyVariable))", typeof(object), context1);
+            var resultArray = ((IEnumerable<object>)jsArray).Select(Convert.ToByte).ToArray();
+            Assert.Equal(bytes, resultArray);
+        }
+
+        [Fact(DisplayName = "ByteArrayConverter: Should return false and JsValue.Null for null input")]
+        public void TryConvert_ShouldReturnFalse_ForNull()
+        {
+            var converter = new ByteArrayConverter();
+            var engine = new Engine();
+            var result = JsValue.Undefined;
+
+            var success = converter.TryConvert(engine, null, out result);
+
+            Assert.False(success);
+            Assert.Equal(JsValue.Null, result);
+        }
+
+        [Fact(DisplayName = "ByteArrayConverter: Should return false for non-byte array input")]
+        public void TryConvert_ShouldReturnFalse_ForNonByteArray()
+        {
+            var converter = new ByteArrayConverter();
+            var engine = new Engine();
+            var result = JsValue.Undefined;
+
+            var success = converter.TryConvert(engine, new int[] { 1, 2, 3 }, out result);
+
+            Assert.False(success);
+            Assert.Equal(JsValue.Null, result);
+        }
+
+        [Theory(DisplayName = "ByteArrayConverter: Should roundtrip a byte array from .NET to JS and back"), AutoMoqData]
+        public async Task EvaluateAsync_ShouldRoundtripByteArray(
+            [Frozen] IMediator mediator,
+            [JintEvaluatorWithConverter] JintJavaScriptEvaluator sut,
+            [StubActivityExecutionContext] ActivityExecutionContext context1)
+        {
+            var bytes = new byte[] { 10, 20, 30, 40 };
+            object returnedValue = null;
+
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context1), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => { expression.Engine.SetValue("MyVariable", returnedValue); });
+
+            returnedValue = bytes;
+            var jsArray = await sut.EvaluateAsync("Array.from(new Uint8Array(MyVariable))", typeof(object), context1);
+
+            var resultArray = ((IEnumerable<object>)jsArray).Select(x => Convert.ToByte(x)).ToArray();
+            Assert.Equal(bytes, resultArray);
+        }
+
+        [Theory(DisplayName = "ByteArrayConverter: Should reflect mutation of ArrayBuffer in JS when read back in .NET"), AutoMoqData]
+        public async Task EvaluateAsync_ShouldReflectJsMutation(
+            [Frozen] IMediator mediator,
+            [JintEvaluatorWithConverter] JintJavaScriptEvaluator sut,
+            [StubActivityExecutionContext] ActivityExecutionContext context1)
+        {
+            var bytes = new byte[] { 1, 2, 3, 4 };
+            object returnedValue = null;
+
+            Mock.Get(mediator)
+                .Setup(x => x.Publish(It.Is<EvaluatingJavaScriptExpression>(e => e.ActivityExecutionContext == context1), It.IsAny<CancellationToken>()))
+                .Callback((EvaluatingJavaScriptExpression expression, CancellationToken t) => { expression.Engine.SetValue("MyVariable", returnedValue); });
+            
+            returnedValue = bytes;
+
+            await sut.EvaluateAsync("new Uint8Array(MyVariable)[0] = 99", typeof(object), context1);
+            var jsArray = await sut.EvaluateAsync("Array.from(new Uint8Array(MyVariable))", typeof(object), context1);
+
+            var resultArray = ((IEnumerable<object>)jsArray).Select(x => Convert.ToByte(x)).ToArray();
+            var expected = new byte[] { 99, 2, 3, 4 };
+            Assert.Equal(expected, resultArray);
         }
     }
 }
