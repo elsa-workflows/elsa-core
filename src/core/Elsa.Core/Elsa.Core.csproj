@@ -23,12 +23,11 @@
         <PackageReference Include="MediatR" Version="12.4.1" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="9.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-        <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.1" />
         <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.16" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.1" />
         <PackageReference Include="Microsoft.Extensions.Localization" Version="9.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
@@ -36,8 +35,8 @@
         <PackageReference Include="netbox" Version="2.5.3" />
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.0.0" />
         <PackageReference Include="Open.Linq.AsyncExtensions" Version="1.2.0" />
-        <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="5.1.0" />
-        <PackageReference Include="Rebus.ServiceProvider" Version="10.3.0" />
+        <PackageReference Include="Rebus.Microsoft.Extensions.Logging" Version="5.2.0" />
+        <PackageReference Include="Rebus.ServiceProvider" Version="10.7.2" />
         <PackageReference Include="Scrutor" Version="3.3.0" />
         <PackageReference Include="System.Linq.Async" Version="5.1.0" />
         <PackageReference Include="System.Threading.Channels" Version="9.0.0" />

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
@@ -7,8 +7,8 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.SqlClient" Version="3.1.7" />
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.1" />
-        <PackageReference Include="System.Text.Encodings.Web" Version="9.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.16" />
+        <PackageReference Include="System.Text.Encodings.Web" Version="10.0.8" />
     </ItemGroup>
 
     <ItemGroup>

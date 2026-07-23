@@ -1,11 +1,12 @@
-using System.Threading;
-using System.Threading.Tasks;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Http.Services;
 using Elsa.Secrets.Manager;
 using Elsa.Secrets.Persistence;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Elsa.Secrets.Api.Endpoints.OAuth2
 {
@@ -13,6 +14,7 @@ namespace Elsa.Secrets.Api.Endpoints.OAuth2
     [ApiVersion("1")]
     [Route("v{apiVersion:apiVersion}/oauth2/callback")]
     [Produces("application/json")]
+    [Tags("Secrets")]
     public class SetAuthCodeCallback : Controller
     {
         private readonly ISecretsManager _secretsManager;
