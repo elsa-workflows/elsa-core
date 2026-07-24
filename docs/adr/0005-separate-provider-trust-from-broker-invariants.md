@@ -1,0 +1,3 @@
+# Separate provider trust from broker invariants
+
+Connection secrets are represented by non-secret bindings resolved through a pluggable abstraction, never stored in connection documents or returned to Studio. Authorized administrators may override provider endpoints and validation behavior, including explicitly unsafe Provider Trust Settings when deployment policy permits, but cannot weaken Elsa-owned callback allowlists, state and correlation protection, one-time-code behavior, Studio-to-Elsa PKCE, or secret redaction. Unsafe trust overrides require separate permission, confirmation, persistent warning, and redacted security notification.

@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="..\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj" />
         <ProjectReference Include="..\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\Elsa.Labels\Elsa.Labels.csproj" />
         <ProjectReference Include="..\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
