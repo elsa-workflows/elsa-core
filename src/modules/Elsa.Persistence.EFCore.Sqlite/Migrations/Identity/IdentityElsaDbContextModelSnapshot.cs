@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12");
+                .HasAnnotation("ProductVersion", "9.0.17");
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
@@ -106,11 +106,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT");
 
                     b.Property<string>("HashedPassword")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("HashedPasswordSalt")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -135,6 +133,495 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                         .HasDatabaseName("IX_User_TenantId");
 
                     b.ToTable("Users", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.ExternalAuthenticationRegistryVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExternalAuthenticationRegistryVersions", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedAuthenticationClient", b =>
+                {
+                    b.Property<string>("ClientId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AllowedOriginsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AllowedReturnPathPrefixesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CallbackUrisJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ClientType")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LogoutCallbackUrisJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecretBindingJson")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ClientId");
+
+                    b.ToTable("ExternalAuthenticationClients", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedAuthorizationGrant", b =>
+                {
+                    b.Property<string>("CodeHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CallbackUri")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConsumedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalSessionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PkceChallenge")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("CodeHash");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_ExternalAuthenticationAuthorizationGrant_ExpiresAt");
+
+                    b.ToTable("ExternalAuthenticationAuthorizationGrants", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedBrokerTransaction", b =>
+                {
+                    b.Property<string>("Purpose")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HandleHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CallbackUri")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClientState")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionMaterialRevision")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConsumedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PkceChallenge")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<byte[]>("ProtectedPayload")
+                        .IsRequired()
+                        .HasColumnType("BLOB");
+
+                    b.Property<string>("ProviderNonce")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReturnPath")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecretGenerationFingerprint")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Purpose", "HandleHash");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_ExternalAuthenticationBrokerTransaction_ExpiresAt");
+
+                    b.ToTable("ExternalAuthenticationBrokerTransactions", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedConnectionObservation", b =>
+                {
+                    b.Property<string>("ConnectionId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CorrelationId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("DurationTicks")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ObservedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TestedMaterialRevision")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WarningsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("ConnectionId");
+
+                    b.ToTable("ExternalAuthenticationConnectionObservations", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedExternalAuthenticationSession", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AuthenticationClientId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionMaterialRevision")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CurrentRefreshTokenHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExternalGrantsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Issuer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastRefreshedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RefreshExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("RefreshGeneration")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RevocationReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RevokedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecretGenerationFingerprint")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StartedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SubjectHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConnectionId")
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionId");
+
+                    b.HasIndex("CurrentRefreshTokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_RefreshTokenHash");
+
+                    b.HasIndex("TenantId", "UserId")
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_TenantId_UserId");
+
+                    b.ToTable("ExternalAuthenticationSessions", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedExternalIdentityLink", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Issuer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastSignedInAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SubjectHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SubjectHint")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("TenantId", "UserId")
+                        .HasDatabaseName("IX_ExternalIdentityLink_TenantId_UserId");
+
+                    b.HasIndex("TenantId", "ConnectionId", "Issuer", "SubjectHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ExternalIdentityLink_Identity");
+
+                    b.ToTable("ExternalIdentityLinks", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedIdentityProviderConnection", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AdapterSettingsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("AdapterSettingsVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AdapterType")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ArchivedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClaimProjectionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("IconId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MaterialRevision")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PermissionGrantSourcesJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SecretBindingsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UnlinkedPolicyJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UpdatedAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("UpstreamLogoutMode")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialRevision")
+                        .HasDatabaseName("IX_IdentityProviderConnection_MaterialRevision");
+
+                    b.HasIndex("TenantId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("IX_IdentityProviderConnection_TenantId_Key");
+
+                    b.ToTable("IdentityProviderConnections", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedPreviewResult", b =>
+                {
+                    b.Property<string>("HandleHash")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AdministratorId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConnectionId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ConsumedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ExpiresAt")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Issuer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MaskedSubject")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MaterialRevision")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PermissionProjectionJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PolicyDecision")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProjectedClaimsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TenantId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WarningsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("HandleHash");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_ExternalAuthenticationPreviewResult_ExpiresAt");
+
+                    b.ToTable("ExternalAuthenticationPreviewResults", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.Persistence.EFCore.Modules.ExternalAuthentication.PersistedExternalIdentityLink", b =>
+                {
+                    b.HasOne("Elsa.Identity.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

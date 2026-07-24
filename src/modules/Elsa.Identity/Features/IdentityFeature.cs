@@ -212,6 +212,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped<IRoleManager, RoleManager>()
             .AddScoped<IRoleAuthorizationService, RoleAuthorizationService>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
+            .AddScoped<IElsaTokenService, DefaultElsaTokenService>()
             .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
             .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()

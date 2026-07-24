@@ -1,0 +1,3 @@
+# Bind sessions to shared state and connection revisions
+
+Broker correlation, PKCE material, one-time codes, and runtime connection changes use shared protected state so a flow may cross Elsa nodes and database-managed updates propagate without restart. Sign-in state is bound to an immutable Connection ID and material revision, and callbacks reject disabled, archived, or changed connections rather than completing against different trust settings. External claims are a bounded session snapshot; disabling a connection stops new flows and refreshes while existing short-lived access tokens expire naturally unless an explicit revocation facility is used.

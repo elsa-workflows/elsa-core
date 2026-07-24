@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.ExternalAuthentication]*</Include>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.ExternalAuthentication.OpenIdConnect\Elsa.ExternalAuthentication.OpenIdConnect.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore\Elsa.Persistence.EFCore.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
+    </ItemGroup>
+
+</Project>
