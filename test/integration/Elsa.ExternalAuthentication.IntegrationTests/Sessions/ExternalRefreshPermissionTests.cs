@@ -91,7 +91,7 @@ public class ExternalRefreshPermissionTests
         registry.FindByKeyAsync("tenant-a", "contoso", Arg.Any<CancellationToken>())
             .Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
         var user = new User { Id = "user-a", Name = "alice", TenantId = "tenant-a", Roles = ["role-a"] };
-        var role = new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a", Permissions = ["workflows:read"] };
+        var role = new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a", Permissions = ["*"] };
         var users = Substitute.For<IUserProvider>();
         users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<User?>(user));
         var roles = Substitute.For<IRoleProvider>();
@@ -129,9 +129,9 @@ public class ExternalRefreshPermissionTests
         await issuer.RefreshAsync("studio", refreshToken);
 
         Assert.Equal(2, issuanceContexts.Count);
-        Assert.Equal(["workflows:read", "reports:view"], issuanceContexts[0].Permissions);
+        Assert.Equal(["*", "reports:view"], issuanceContexts[0].Permissions);
         Assert.Equal(["workflows:manage", "reports:view"], issuanceContexts[1].Permissions);
-        Assert.DoesNotContain("workflows:read", issuanceContexts[1].Permissions);
+        Assert.DoesNotContain("*", issuanceContexts[1].Permissions);
         Assert.Equal("session-a", issuanceContexts[1].ExternalAuthenticationSessionId);
     }
 

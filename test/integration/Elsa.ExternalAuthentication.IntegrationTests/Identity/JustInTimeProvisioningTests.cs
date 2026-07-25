@@ -117,6 +117,21 @@ public class JustInTimeProvisioningTests
     }
 
     [Fact]
+    public async Task InMemoryProvisionerAssignsConfiguredDefaultRolesToNewUser()
+    {
+        var userStore = new MemoryUserStore(new MemoryStore<User>());
+        var roleStore = new MemoryRoleStore(new MemoryStore<Role>());
+        await roleStore.AddAsync(new Role { Id = "admin", Name = "Administrator", TenantId = "tenant-a", Permissions = ["*"] });
+        var provisioner = CreateInMemoryProvisioner(userStore, roleProvider: new StoreBasedRoleProvider(roleStore));
+
+        var result = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(defaultRoleIds: ["admin"]));
+        var user = await userStore.FindAsync(new Elsa.Identity.Models.UserFilter { Id = result.UserId });
+
+        Assert.NotNull(user);
+        Assert.Equal(["admin"], user.Roles);
+    }
+
+    [Fact]
     public async Task InMemoryProvisionerTreatsEachExternalIdentityTupleAsDistinct()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>());
@@ -165,20 +180,27 @@ public class JustInTimeProvisioningTests
         [policy],
         Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()));
 
-    private static InMemoryExternalIdentityProvisioner CreateInMemoryProvisioner(IUserStore userStore, IIdentityGenerator? identityGenerator = null) => new(
+    private static InMemoryExternalIdentityProvisioner CreateInMemoryProvisioner(
+        IUserStore userStore,
+        IIdentityGenerator? identityGenerator = null,
+        IRoleProvider? roleProvider = null) => new(
         userStore,
         new StoreBasedUserProvider(userStore),
-        NSubstitute.Substitute.For<IRoleProvider>(),
+        roleProvider ?? NSubstitute.Substitute.For<IRoleProvider>(),
         identityGenerator ?? new Elsa.Workflows.GuidIdentityGenerator(),
         new Elsa.Common.Services.SystemClock(),
         new HmacExternalAuthenticationHandleHasher(),
         new InMemoryExternalIdentityProvisionerState());
 
-    private static ProvisioningRequest CreateProvisioningRequest(string? existingUserId = null, string connectionKey = "contoso", string issuer = "https://issuer.example") => new(
+    private static ProvisioningRequest CreateProvisioningRequest(
+        string? existingUserId = null,
+        string connectionKey = "contoso",
+        string issuer = "https://issuer.example",
+        IReadOnlyCollection<string>? defaultRoleIds = null) => new(
         "tenant-a",
         connectionKey,
         new ExternalIdentity(issuer, "subject-a", new Dictionary<string, IReadOnlyCollection<string>>()),
-        existingUserId is null ? new UserCreationProposal("external") : null,
+        existingUserId is null ? new UserCreationProposal("external", DefaultRoleIds: defaultRoleIds) : null,
         existingUserId);
 
     private static ExternalIdentityResolutionContext CreateContext(string policyType = "create-user", IReadOnlyDictionary<string, IReadOnlyCollection<string>>? claims = null)
