@@ -38,8 +38,8 @@ internal class Create(IUserManager userManager, IRoleAuthorizationService roleAu
             result.Password,
             result.User.Roles,
             result.User.TenantId,
-            result.User.HashedPassword,
-            result.User.HashedPasswordSalt);
+            result.User.HashedPassword!,
+            result.User.HashedPasswordSalt!);
 
         await Send.OkAsync(response, cancellationToken);
     }
