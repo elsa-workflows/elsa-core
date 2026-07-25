@@ -2,11 +2,45 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Validation;
+using Microsoft.Extensions.Configuration;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationOptionsTests
 {
+    [Fact]
+    public void BindsAuthenticationClientsFromConfiguration()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ExternalAuthentication:AuthenticationClients:0:ClientId"] = "elsa-studio-server",
+                ["ExternalAuthentication:AuthenticationClients:0:DisplayName"] = "Elsa Studio Server",
+                ["ExternalAuthentication:AuthenticationClients:0:ClientType"] = "Confidential",
+                ["ExternalAuthentication:AuthenticationClients:0:CallbackUris:0"] = "https://localhost:7113/authentication/external/callback",
+                ["ExternalAuthentication:AuthenticationClients:0:LogoutCallbackUris:0"] = "https://localhost:7113/authentication/external/logout-callback",
+                ["ExternalAuthentication:AuthenticationClients:0:AllowedReturnPathPrefixes:0"] = "/",
+                ["ExternalAuthentication:AuthenticationClients:0:SecretBinding:Ownership"] = "External",
+                ["ExternalAuthentication:AuthenticationClients:0:SecretBinding:ResolverType"] = "configuration",
+                ["ExternalAuthentication:AuthenticationClients:0:SecretBinding:Reference"] = "ExternalAuthentication:Secrets:StudioServerClientSecret",
+                ["ExternalAuthentication:AuthenticationClients:0:IsEnabled"] = "true"
+            })
+            .Build();
+        var options = new ExternalAuthenticationOptions();
+
+        configuration.GetSection("ExternalAuthentication").Bind(options);
+
+        var client = Assert.Single(options.Clients);
+        Assert.Equal("elsa-studio-server", client.ClientId);
+        Assert.Equal(AuthenticationClientType.Confidential, client.ClientType);
+        Assert.Contains(new Uri("https://localhost:7113/authentication/external/callback"), client.CallbackUris);
+        Assert.Contains(new Uri("https://localhost:7113/authentication/external/logout-callback"), client.LogoutCallbackUris);
+        Assert.Contains("/", client.AllowedReturnPathPrefixes);
+        Assert.Equal("configuration", client.SecretBinding?.ResolverType);
+        Assert.Equal("ExternalAuthentication:Secrets:StudioServerClientSecret", client.SecretBinding?.Reference);
+        Assert.True(client.IsEnabled);
+    }
+
     [Fact]
     public void DefaultsFavorTheMostRestrictiveOperationalSettings()
     {

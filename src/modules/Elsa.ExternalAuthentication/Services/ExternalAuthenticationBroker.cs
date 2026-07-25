@@ -38,14 +38,19 @@ public sealed class ExternalAuthenticationBroker(
 {
     private ValueTask RecordOutcomeAsync(string flow, string stage, SecurityEventOutcome outcome, BrokerErrorCategory? category, string? tenantId, string? connectionId, string? userId, CancellationToken cancellationToken) =>
         RecordOutcomeCategoryAsync(flow, stage, outcome, category is { } value ? BrokerErrorFactory.Create(value).Error : "success", tenantId, connectionId, userId, cancellationToken);
-    private ValueTask RecordOutcomeCategoryAsync(string flow, string stage, SecurityEventOutcome outcome, string category, string? tenantId, string? connectionId, string? userId, CancellationToken cancellationToken) =>
-        notifier is null ? ValueTask.CompletedTask : notifier.PublishAsync(new ExternalAuthenticationOutcomeRecorded(
-            ExternalAuthenticationSecurityNotifier.Context(null, tenantId, connectionId, userId, outcome, "External authentication broker operation completed."), flow, stage, category), cancellationToken);
+    
+    private ValueTask RecordOutcomeCategoryAsync(string flow, string stage, SecurityEventOutcome outcome, string category, string? tenantId, string? connectionId, string? userId, CancellationToken cancellationToken)
+    {
+        return notifier?.PublishAsync(new ExternalAuthenticationOutcomeRecorded(
+            ExternalAuthenticationSecurityNotifier.Context(null, tenantId, connectionId, userId, outcome, "External authentication broker operation completed."), flow, stage, category), cancellationToken) ?? ValueTask.CompletedTask;
+    }
+
     private async ValueTask<BrokerCallbackResult> CallbackOutcomeAsync(BrokerCallbackResult result, string flow, string stage, string? tenantId, string? connectionId, CancellationToken cancellationToken)
     {
         await RecordOutcomeCategoryAsync(flow, stage, result.Error is null ? SecurityEventOutcome.Succeeded : SecurityEventOutcome.Rejected, result.Error?.Error ?? "success", tenantId, connectionId, null, cancellationToken);
         return result;
     }
+    
     private async ValueTask<BrokerTokenResult> TokenOutcomeAsync(BrokerTokenResult result, string flow, string stage, CancellationToken cancellationToken)
     {
         await RecordOutcomeCategoryAsync(flow, stage, result.Error is null ? SecurityEventOutcome.Succeeded : SecurityEventOutcome.Rejected, result.Error?.Error ?? "success", null, null, null, cancellationToken);
@@ -261,7 +266,7 @@ public sealed class ExternalAuthenticationBroker(
         {
             return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.ServerError)), "local", "initiate", targetTenantId, null, cancellationToken);
         }
-        if (user is null || !string.Equals(user.TenantId, targetTenantId, StringComparison.Ordinal))
+        if (user is null || !string.Equals(user.TenantId.NormalizeTenantId(), targetTenantId.NormalizeTenantId(), StringComparison.Ordinal))
             return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AuthenticationFailed)), "local", "initiate", targetTenantId, null, cancellationToken);
 
         var code = CreateOpaqueValue();

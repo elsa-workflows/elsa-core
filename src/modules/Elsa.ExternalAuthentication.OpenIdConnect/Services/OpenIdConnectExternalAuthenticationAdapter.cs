@@ -49,7 +49,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         var validationErrors = errors.ToList();
         var redirects = options.Value.Redirects;
         if (!ExternalCallbackBaseUriValidator.IsValid(redirects.ExternalCallbackBaseUri, redirects.AllowDevelopmentLoopbackCallbacks))
-            validationErrors.Add(new ConnectionValidationError("redirects.externalCallbackBaseUri", "invalid", ExternalCallbackBaseUriValidator.ErrorMessage));
+            validationErrors.Add(new("redirects.externalCallbackBaseUri", "invalid", ExternalCallbackBaseUriValidator.ErrorMessage));
 
         return ValueTask.FromResult(new ConnectionValidationResult(parsed && validationErrors.Count == 0, validationErrors, []));
     }
@@ -68,13 +68,12 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
             ["redirect_uri"] = GetCallbackUri(context.Connection, context.Transaction.Purpose).AbsoluteUri,
             ["scope"] = string.Join(' ', settings.Scopes),
             ["state"] = context.CorrelationState,
-            ["nonce"] = nonce
+            ["nonce"] = nonce,
+            ["code_challenge"] = CreateCodeChallenge(verifier),
+            ["code_challenge_method"] = "S256"
         };
 
-        query["code_challenge"] = CreateCodeChallenge(verifier);
-        query["code_challenge_method"] = "S256";
-
-        return new ExternalAuthorizationRequest(WithQuery(metadata.AuthorizationEndpoint, query), state);
+        return new(WithQuery(metadata.AuthorizationEndpoint, query), state);
     }
 
     public async ValueTask<ExternalAuthenticationResult> AuthenticateCallbackAsync(ExternalCallbackContext context, CancellationToken cancellationToken = default)
@@ -104,14 +103,14 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
             throw new OpenIdConnectAuthenticationException("The identity provider response did not contain a subject.");
 
         var projectedClaims = ProjectClaims(principal, context.Connection.Connection.ClaimProjection);
-        return new ExternalAuthenticationResult(new ExternalIdentity(issuer, subject, projectedClaims), projectedClaims, [], new SensitiveString(idToken));
+        return new(new(issuer, subject, projectedClaims), projectedClaims, [], new(idToken));
     }
 
     public async ValueTask<ConnectionTestResult> TestAsync(ConnectionTestContext context, CancellationToken cancellationToken = default)
     {
         var settings = await GetSettingsAsync(context.Connection.Connection.AdapterSettings, cancellationToken);
         _ = await ResolveMetadataAsync(settings, cancellationToken);
-        return new ConnectionTestResult(ConnectionObservationStatus.Succeeded, "reachable", "Provider metadata was resolved.", []);
+        return new(ConnectionObservationStatus.Succeeded, "reachable", "Provider metadata was resolved.", []);
     }
 
     public async ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default)
@@ -123,7 +122,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         var query = new Dictionary<string, string> { ["post_logout_redirect_uri"] = GetLogoutCallbackUri(context.Connection).AbsoluteUri, ["state"] = context.CorrelationState };
         if (context.UpstreamLogoutHint is not null)
             query["id_token_hint"] = context.UpstreamLogoutHint.Reveal();
-        return new ExternalLogoutRequest(WithQuery(metadata.EndSessionEndpoint, query), []);
+        return new(WithQuery(metadata.EndSessionEndpoint, query), []);
     }
 
     private async Task<OpenIdConnectConnectionSettings> GetSettingsAsync(JsonElement settings, CancellationToken cancellationToken)
@@ -137,7 +136,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
     private async Task<ProviderMetadata> ResolveMetadataAsync(OpenIdConnectConnectionSettings settings, CancellationToken cancellationToken)
     {
         if (settings.TrustMode == OpenIdConnectTrustMode.Manual)
-            return new ProviderMetadata(settings.Issuer!, settings.AuthorizationEndpoint!, settings.TokenEndpoint!, settings.UserInfoEndpoint, settings.EndSessionEndpoint, settings.JwksUri, settings.SigningKeys);
+            return new(settings.Issuer!, settings.AuthorizationEndpoint!, settings.TokenEndpoint!, settings.UserInfoEndpoint, settings.EndSessionEndpoint, settings.JwksUri, settings.SigningKeys);
 
         var address = settings.DiscoveryUrl ?? throw new OpenIdConnectAuthenticationException("The OpenID Connect discovery URL is required.");
         var response = await providerHttpClient.GetAsync(address, ProviderResponseKind.Discovery, cancellationToken);
@@ -148,7 +147,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         var issuer = GetRequiredHttpsUri(root, "issuer").AbsoluteUri.TrimEnd('/');
         var authorizationEndpoint = GetRequiredHttpsUri(root, "authorization_endpoint");
         var tokenEndpoint = GetRequiredHttpsUri(root, "token_endpoint");
-        return new ProviderMetadata(issuer, authorizationEndpoint, tokenEndpoint, GetOptionalHttpsUri(root, "userinfo_endpoint"), GetOptionalHttpsUri(root, "end_session_endpoint"), GetOptionalHttpsUri(root, "jwks_uri"), default);
+        return new(issuer, authorizationEndpoint, tokenEndpoint, GetOptionalHttpsUri(root, "userinfo_endpoint"), GetOptionalHttpsUri(root, "end_session_endpoint"), GetOptionalHttpsUri(root, "jwks_uri"), default);
     }
 
     private async Task<string> ExchangeCodeAsync(OpenIdConnectConnectionSettings settings, ProviderMetadata metadata, ExternalCallbackContext context, string? verifier, CancellationToken cancellationToken)
@@ -191,7 +190,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         var signingKeys = metadata.SigningKeys.ValueKind == JsonValueKind.Object
             ? new JsonWebKeySet(metadata.SigningKeys.GetRawText()).Keys
             : await GetSigningKeysAsync(metadata.JwksUri, cancellationToken);
-        var validation = await new JsonWebTokenHandler { MapInboundClaims = false }.ValidateTokenAsync(idToken, new TokenValidationParameters
+        var validation = await new JsonWebTokenHandler { MapInboundClaims = false }.ValidateTokenAsync(idToken, new()
         {
             ValidateIssuer = true,
             ValidIssuer = metadata.Issuer,
@@ -209,7 +208,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         var audiences = validation.ClaimsIdentity.FindAll("aud").Select(x => x.Value).Distinct(StringComparer.Ordinal).ToArray();
         if (audiences.Length > 1 && !string.Equals(validation.ClaimsIdentity.FindFirst("azp")?.Value, settings.ClientId, StringComparison.Ordinal))
             throw new OpenIdConnectAuthenticationException("The identity provider ID token was not authorized for this client.");
-        return new System.Security.Claims.ClaimsPrincipal(validation.ClaimsIdentity);
+        return new(validation.ClaimsIdentity);
     }
 
     private Uri GetCallbackUri(EffectiveIdentityProviderConnection connection, BrokerTransactionPurpose purpose)

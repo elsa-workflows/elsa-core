@@ -54,7 +54,49 @@ The separately registered health check is tagged `external-authentication` and `
 
 ## Secret bindings
 
-The foundation deliberately does not provide a plaintext configuration secret resolver. A secret binding names a resolver type and a reference; a deployment must install a matching `ISecretBindingResolver`. The optional Elsa bridge uses resolver type `elsa-secrets` and resolves active Elsa Secrets by name. Public responses expose only configured/resolvable state.
+The foundation includes the `configuration` resolver, which reads deployment-owned secrets from standard .NET configuration. It is registered automatically by `AddExternalAuthenticationServices`; no additional package or custom `ISecretBindingResolver` is required. A binding contains only the configuration key, never the secret value:
+
+```json
+{
+  "ExternalAuthentication": {
+    "AuthenticationClients": [
+      {
+        "clientId": "elsa-studio-server",
+        "displayName": "Elsa Studio Server",
+        "clientType": "confidential",
+        "callbackUris": [
+          "https://localhost:7113/authentication/external/callback"
+        ],
+        "logoutCallbackUris": [
+          "https://localhost:7113/authentication/external/logout-callback"
+        ],
+        "allowedReturnPathPrefixes": ["/"],
+        "secretBinding": {
+          "ownership": "external",
+          "resolverType": "configuration",
+          "reference": "Secrets:ExternalAuthentication:StudioServerClientSecret"
+        },
+        "isEnabled": true
+      }
+    ]
+  },
+  "Secrets": {
+    "ExternalAuthentication": {
+      "StudioServerClientSecret": "<development-secret>"
+    }
+  }
+}
+```
+
+The equivalent environment variable is:
+
+```text
+Secrets__ExternalAuthentication__StudioServerClientSecret=<deployment-secret>
+```
+
+Any standard `IConfiguration` provider can supply the referenced value, including environment variables, Kubernetes-mounted configuration, and cloud secret providers. In a CShells feature block, feature settings are exposed under the feature name; for example, a value nested at `Features:ExternalAuthentication:Secrets:StudioServerClientSecret` is referenced as `ExternalAuthentication:Secrets:StudioServerClientSecret`. After removing the value from `appsettings.json`, its environment-variable equivalent is `ExternalAuthentication__Secrets__StudioServerClientSecret`.
+
+Configuration bindings use `ownership: external`: their values and lifecycle remain deployment-owned and read-only in Studio. The optional Elsa Secrets bridge instead uses `ownership: managed` with resolver type `elsa-secrets`; it resolves active Elsa Secrets by name and allows authorized administrators to manage their lifecycle through Elsa. Public responses expose only configured/resolvable state for either binding type and never return secret values.
 
 ## Operations
 

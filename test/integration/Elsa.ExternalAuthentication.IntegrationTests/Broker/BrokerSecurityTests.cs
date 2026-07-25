@@ -96,6 +96,23 @@ public class BrokerSecurityTests
     }
 
     [Fact]
+    public async Task LocalInitiationTreatsNullUserTenantAsTheDefaultTenant()
+    {
+        var credentials = Substitute.For<IUserCredentialsValidator>();
+        credentials.ValidateAsync("admin", "password", Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult<User?>(new User { Id = "admin", Name = "admin" }));
+        var broker = CreateBroker(new RecordingAdapter(), credentialsValidator: credentials);
+        var request = new LocalBrokerAuthorizationRequest(
+            "studio", new Uri("https://studio.example/authentication/external/callback"), "code", "challenge", "S256", "/workflows", "admin", "password", "state");
+
+        var result = await broker.InitiateLocalAsync(request, Tenant.DefaultTenantId);
+
+        Assert.Null(result.Error);
+        Assert.StartsWith("https://studio.example/authentication/external/callback?code=", result.RedirectUri?.AbsoluteUri);
+        Assert.Contains("state=state", result.RedirectUri?.Query);
+    }
+
+    [Fact]
     public async Task ExternalInitiationUsesExactlyOneOpaqueProviderStateAndPersistsAdapterPayload()
     {
         var adapter = new RecordingAdapter();

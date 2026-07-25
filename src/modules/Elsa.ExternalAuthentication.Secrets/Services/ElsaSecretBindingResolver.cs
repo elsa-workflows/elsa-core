@@ -30,7 +30,7 @@ public sealed class ElsaSecretBindingResolver(
         // that reference with the connection CAS and removes it on CAS failure,
         // so a stale request can never rotate material used by the live binding.
         var name = $"external-authentication-{request.ConnectionId.ToLowerInvariant()}-{fieldName}-{Guid.NewGuid():N}";
-        var secret = await secretManager.CreateAsync(new CreateSecretRequest
+        var secret = await secretManager.CreateAsync(new()
         {
             Name = name,
             DisplayName = $"External authentication {request.FieldName}",
@@ -39,7 +39,7 @@ public sealed class ElsaSecretBindingResolver(
             Value = request.Value.Reveal()
         }, cancellationToken);
 
-        return new SecretBinding(ResolverType, secret.Name, Ownership: SecretBindingOwnership.Managed);
+        return new(ResolverType, secret.Name, Ownership: SecretBindingOwnership.Managed);
     }
 
     public async ValueTask RemoveAsync(SecretBinding binding, CancellationToken cancellationToken = default)
@@ -55,14 +55,14 @@ public sealed class ElsaSecretBindingResolver(
         EnsureResolverType(binding);
         var secret = await secretManager.GetAsync(binding.Reference, cancellationToken);
         if (secret is null)
-            return new SecretBindingState(false, false);
+            return new(false, false);
 
-        var configured = secret.Status == SecretStatus.Active && secret.LatestActiveVersion is not null;
+        var configured = secret is { Status: SecretStatus.Active, LatestActiveVersion: not null };
         if (!configured || !IsCompatible(secret, binding))
-            return new SecretBindingState(configured, false);
+            return new(configured, false);
 
         var test = await secretManager.TestAsync(secret.Name, cancellationToken);
-        return new SecretBindingState(true, test.Succeeded);
+        return new(true, test.Succeeded);
     }
 
     public async ValueTask<ResolvedSecretBinding> ResolveAsync(SecretBinding binding, CancellationToken cancellationToken = default)
@@ -72,7 +72,7 @@ public sealed class ElsaSecretBindingResolver(
             ?? throw new InvalidOperationException("The configured secret binding could not be resolved.");
         if (!IsCompatible(secret, binding))
             throw new InvalidOperationException("The configured secret binding is incompatible with the required type or scope.");
-        if (secret.Status != SecretStatus.Active || secret.LatestActiveVersion is not { } version)
+        if (secret is not { Status: SecretStatus.Active, LatestActiveVersion: { } version })
             throw new InvalidOperationException("The configured secret binding is not active.");
 
         var payload = await secretManager.ResolvePayloadAsync(secret, cancellationToken);
@@ -80,7 +80,7 @@ public sealed class ElsaSecretBindingResolver(
             throw new InvalidOperationException("The configured secret binding could not be resolved.");
 
         var fingerprint = handleHasher.Hash($"{ResolverType}:{secret.Id}:{version.Version}:{version.CreatedAt.ToUnixTimeMilliseconds()}");
-        return new ResolvedSecretBinding(new SensitiveString(payload.Value), fingerprint);
+        return new(new(payload.Value), fingerprint);
     }
 
     private static void EnsureResolverType(SecretBinding binding)

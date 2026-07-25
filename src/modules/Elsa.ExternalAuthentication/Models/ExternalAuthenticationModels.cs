@@ -134,16 +134,66 @@ public sealed class IdentityProviderConnection
 
 public sealed record ExternalIdentity(string Issuer, string Subject, IReadOnlyDictionary<string, IReadOnlyCollection<string>> Claims);
 
-public sealed record AuthenticationClient(
-    string ClientId,
-    string DisplayName,
-    AuthenticationClientType ClientType,
-    IReadOnlySet<Uri> CallbackUris,
-    IReadOnlySet<Uri> LogoutCallbackUris,
-    IReadOnlySet<string> AllowedOrigins,
-    IReadOnlySet<string> AllowedReturnPathPrefixes,
-    SecretBinding? SecretBinding,
-    bool IsEnabled);
+public sealed record AuthenticationClient
+{
+    public AuthenticationClient()
+    {
+    }
+
+    public AuthenticationClient(
+        string ClientId,
+        string DisplayName,
+        AuthenticationClientType ClientType,
+        IReadOnlySet<Uri> CallbackUris,
+        IReadOnlySet<Uri> LogoutCallbackUris,
+        IReadOnlySet<string> AllowedOrigins,
+        IReadOnlySet<string> AllowedReturnPathPrefixes,
+        SecretBinding? SecretBinding,
+        bool IsEnabled)
+    {
+        this.ClientId = ClientId;
+        this.DisplayName = DisplayName;
+        this.ClientType = ClientType;
+        this.CallbackUris = CallbackUris.ToHashSet();
+        this.LogoutCallbackUris = LogoutCallbackUris.ToHashSet();
+        this.AllowedOrigins = AllowedOrigins.ToHashSet(StringComparer.Ordinal);
+        this.AllowedReturnPathPrefixes = AllowedReturnPathPrefixes.ToHashSet(StringComparer.Ordinal);
+        this.SecretBinding = SecretBinding;
+        this.IsEnabled = IsEnabled;
+    }
+
+    public string ClientId { get; init; } = "";
+    public string DisplayName { get; init; } = "";
+    public AuthenticationClientType ClientType { get; init; }
+    public HashSet<Uri> CallbackUris { get; init; } = new();
+    public HashSet<Uri> LogoutCallbackUris { get; init; } = new();
+    public HashSet<string> AllowedOrigins { get; init; } = new(StringComparer.Ordinal);
+    public HashSet<string> AllowedReturnPathPrefixes { get; init; } = new(StringComparer.Ordinal);
+    public SecretBinding? SecretBinding { get; init; }
+    public bool IsEnabled { get; init; }
+
+    public void Deconstruct(
+        out string ClientId,
+        out string DisplayName,
+        out AuthenticationClientType ClientType,
+        out IReadOnlySet<Uri> CallbackUris,
+        out IReadOnlySet<Uri> LogoutCallbackUris,
+        out IReadOnlySet<string> AllowedOrigins,
+        out IReadOnlySet<string> AllowedReturnPathPrefixes,
+        out SecretBinding? SecretBinding,
+        out bool IsEnabled)
+    {
+        ClientId = this.ClientId;
+        DisplayName = this.DisplayName;
+        ClientType = this.ClientType;
+        CallbackUris = this.CallbackUris;
+        LogoutCallbackUris = this.LogoutCallbackUris;
+        AllowedOrigins = this.AllowedOrigins;
+        AllowedReturnPathPrefixes = this.AllowedReturnPathPrefixes;
+        SecretBinding = this.SecretBinding;
+        IsEnabled = this.IsEnabled;
+    }
+}
 
 public sealed class BrokerTransaction
 {

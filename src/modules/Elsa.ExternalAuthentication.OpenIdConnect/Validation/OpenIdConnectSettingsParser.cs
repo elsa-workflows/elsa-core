@@ -13,7 +13,7 @@ public sealed class OpenIdConnectSettingsParser
 
         if (settings.ValueKind != JsonValueKind.Object)
         {
-            validationErrors.Add(new ConnectionValidationError("settings", "invalid", "OpenID Connect settings must be a JSON object."));
+            validationErrors.Add(new("settings", "invalid", "OpenID Connect settings must be a JSON object."));
             errors = validationErrors;
             return false;
         }
@@ -21,21 +21,21 @@ public sealed class OpenIdConnectSettingsParser
         var mode = GetString(settings, "mode") ?? "discovery";
         var trustMode = mode.Equals("manual", StringComparison.OrdinalIgnoreCase) ? OpenIdConnectTrustMode.Manual : OpenIdConnectTrustMode.Discovery;
         if (!mode.Equals("discovery", StringComparison.OrdinalIgnoreCase) && trustMode != OpenIdConnectTrustMode.Manual)
-            validationErrors.Add(new ConnectionValidationError("mode", "invalid", "Mode must be discovery or manual."));
+            validationErrors.Add(new("mode", "invalid", "Mode must be discovery or manual."));
 
         var discoveryUrl = GetHttpsUri(settings, "discoveryUrl", validationErrors, trustMode == OpenIdConnectTrustMode.Discovery);
         var clientId = GetString(settings, "clientId");
         if (string.IsNullOrWhiteSpace(clientId))
-            validationErrors.Add(new ConnectionValidationError("clientId", "required", "Client ID is required."));
+            validationErrors.Add(new("clientId", "required", "Client ID is required."));
 
         var clientAuthentication = GetString(settings, "clientAuthenticationMethod") ?? "client_secret_basic";
         var clientAuthenticationMethod = clientAuthentication.Equals("client_secret_post", StringComparison.OrdinalIgnoreCase)
             ? OpenIdConnectClientAuthenticationMethod.ClientSecretPost
             : OpenIdConnectClientAuthenticationMethod.ClientSecretBasic;
         if (!clientAuthentication.Equals("client_secret_basic", StringComparison.OrdinalIgnoreCase) && clientAuthenticationMethod != OpenIdConnectClientAuthenticationMethod.ClientSecretPost)
-            validationErrors.Add(new ConnectionValidationError("clientAuthenticationMethod", "invalid", "Client authentication must be client_secret_basic or client_secret_post."));
+            validationErrors.Add(new("clientAuthenticationMethod", "invalid", "Client authentication must be client_secret_basic or client_secret_post."));
         if (string.Equals(GetString(settings, "providerPkce"), "disabled", StringComparison.OrdinalIgnoreCase))
-            validationErrors.Add(new ConnectionValidationError("providerPkce", "invalid", "Upstream PKCE is always required."));
+            validationErrors.Add(new("providerPkce", "invalid", "Upstream PKCE is always required."));
 
         var issuer = GetString(settings, "issuer");
         var authorizationEndpoint = GetHttpsUri(settings, "authorizationEndpoint", validationErrors, trustMode == OpenIdConnectTrustMode.Manual);
@@ -48,10 +48,10 @@ public sealed class OpenIdConnectSettingsParser
         if (trustMode == OpenIdConnectTrustMode.Manual)
         {
             if (string.IsNullOrWhiteSpace(issuer))
-                validationErrors.Add(new ConnectionValidationError("issuer", "required", "Manual trust requires an issuer."));
+                validationErrors.Add(new("issuer", "required", "Manual trust requires an issuer."));
 
             if (signingKeys.ValueKind is not JsonValueKind.Object && jwksUri is null)
-                validationErrors.Add(new ConnectionValidationError("signingKeys", "required", "Manual trust requires signing keys or a JWKS URI."));
+                validationErrors.Add(new("signingKeys", "required", "Manual trust requires signing keys or a JWKS URI."));
         }
 
         var scopes = GetStringArray(settings, "scopes");
@@ -62,7 +62,7 @@ public sealed class OpenIdConnectSettingsParser
         if (validationErrors.Count != 0 || string.IsNullOrWhiteSpace(clientId))
             return false;
 
-        result = new OpenIdConnectConnectionSettings(
+        result = new(
             trustMode,
             discoveryUrl,
             clientId,
@@ -87,13 +87,13 @@ public sealed class OpenIdConnectSettingsParser
         if (string.IsNullOrWhiteSpace(value))
         {
             if (required)
-                errors.Add(new ConnectionValidationError(propertyName, "required", $"{propertyName} is required."));
+                errors.Add(new(propertyName, "required", $"{propertyName} is required."));
             return null;
         }
 
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(uri.UserInfo) || !string.IsNullOrEmpty(uri.Fragment))
         {
-            errors.Add(new ConnectionValidationError(propertyName, "invalid", $"{propertyName} must be an absolute HTTPS URI without user info or a fragment."));
+            errors.Add(new(propertyName, "invalid", $"{propertyName} must be an absolute HTTPS URI without user info or a fragment."));
             return null;
         }
 
