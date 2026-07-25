@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
+using Elsa.ExternalAuthentication.Policies;
 using Elsa.ExternalAuthentication.Services;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Extensibility;
@@ -78,6 +79,23 @@ public class ExtensionConformanceTests
         Assert.Contains("Secret-binding field", exception.Message);
         Assert.Contains("visibility condition", exception.Message);
         Assert.Contains("custom-editor", exception.Message);
+    }
+
+    [Fact]
+    public void DescriptorValidatorAcceptsLowerCamelCaseSettingFieldNames()
+    {
+        var descriptor = new ExtensionDescriptorValidator().Validate(new CreateUserUnlinkedIdentityPolicy());
+
+        Assert.Contains(descriptor.Fields, field => field.Name == "defaultRoleIds");
+    }
+
+    [Fact]
+    public void DescriptorValidatorKeepsExtensionTypesLowercaseAndStable()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new ExtensionDescriptorValidator().Validate(new ConformanceAdapter("InvalidType")));
+
+        Assert.Contains("stable identifier", exception.Message);
     }
 
     [Fact]

@@ -10,6 +10,7 @@ namespace Elsa.ExternalAuthentication.Services;
 public sealed class ExtensionDescriptorValidator
 {
     private static readonly Regex IdentifierPattern = new("^[a-z][a-z0-9]*(?:[-.][a-z0-9]+)*$", RegexOptions.CultureInvariant);
+    private static readonly Regex SettingFieldNamePattern = new("^[a-z][A-Za-z0-9]*$", RegexOptions.CultureInvariant);
     private static readonly HashSet<string> SupportedValueTypes = new(StringComparer.Ordinal)
     {
         "string", "secret", "boolean", "integer", "number", "uri", "string-array", "json"
@@ -79,7 +80,7 @@ public sealed class ExtensionDescriptorValidator
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var field in fields)
         {
-            if (!IsIdentifier(field.Name))
+            if (!IsSettingFieldName(field.Name))
                 failures.Add($"Extension '{extensionType}' has invalid field name '{field.Name}'.");
             else if (!names.Add(field.Name))
                 failures.Add($"Extension '{extensionType}' defines field '{field.Name}' more than once.");
@@ -123,4 +124,7 @@ public sealed class ExtensionDescriptorValidator
 
     private static bool IsIdentifier(string? value) =>
         !string.IsNullOrWhiteSpace(value) && IdentifierPattern.IsMatch(value);
+
+    private static bool IsSettingFieldName(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && SettingFieldNamePattern.IsMatch(value);
 }
