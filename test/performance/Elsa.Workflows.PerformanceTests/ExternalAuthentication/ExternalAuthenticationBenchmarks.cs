@@ -1,6 +1,7 @@
 using System.Text.Json;
 using BenchmarkDotNet.Attributes;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
@@ -73,6 +74,7 @@ public class ExternalAuthenticationBenchmarks
             unused,
             unused,
             unused,
+            new DefaultTenantAccessor(),
             clock,
             options);
     }

@@ -36,6 +36,7 @@ public class DefaultElsaTokenServiceTests
         var token = new JsonWebTokenHandler().ReadJsonWebToken(result.Token);
 
         Assert.Equal(clock.UtcNow.AddMinutes(15), result.ExpiresAt);
+        Assert.Contains(token.Claims, x => x.Type == JwtRegisteredClaimNames.Sub && x.Value == user.Id);
         Assert.Contains(token.Claims, x => x.Type == JwtRegisteredClaimNames.Name && x.Value == user.Name);
         Assert.Contains(token.Claims, x => x.Type == options.Value.TenantIdClaimsType && x.Value == user.TenantId);
         Assert.Contains(token.Claims, x => x.Type == ClaimTypes.Role && x.Value == "operator");

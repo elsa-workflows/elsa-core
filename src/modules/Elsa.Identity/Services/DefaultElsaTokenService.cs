@@ -45,6 +45,7 @@ public sealed class DefaultElsaTokenService(ISystemClock systemClock, IOptions<I
 
         var claims = new List<Claim>
         {
+            new(JwtRegisteredClaimNames.Sub, context.User.Id),
             new(JwtRegisteredClaimNames.Name, context.User.Name)
         };
         claims.AddRange(context.AdditionalClaims);

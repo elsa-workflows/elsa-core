@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.IntegrationTests.Broker;
 using Elsa.ExternalAuthentication.Models;
@@ -92,18 +93,20 @@ public class ExternalRefreshPermissionTests
             .Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
         var user = new User { Id = "user-a", Name = "alice", TenantId = "tenant-a", Roles = ["role-a"] };
         var role = new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a", Permissions = ["*"] };
+        var tenantAccessor = new DefaultTenantAccessor();
         var users = Substitute.For<IUserProvider>();
-        users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<User?>(user));
+        users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(tenantAccessor.TenantId == "tenant-a" ? user : null));
         var roles = Substitute.For<IRoleProvider>();
         roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>())
-            .Returns(_ => ValueTask.FromResult<IEnumerable<Role>>([role]));
+            .Returns(_ => ValueTask.FromResult<IEnumerable<Role>>(tenantAccessor.TenantId == "tenant-a" ? [role] : []));
         var issuanceContexts = new List<TokenIssuanceContext>();
         var tokenService = Substitute.For<IElsaTokenService>();
         tokenService.IssueAccessTokenAsync(
                 Arg.Do<TokenIssuanceContext>(context => issuanceContexts.Add(context)),
                 Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.FromResult(new IssuedAccessToken($"access-{issuanceContexts.Count}", clock.UtcNow.AddHours(1))));
-        var issuer = new DefaultExternalAuthenticationTokenIssuer(sessionStore, registry, [], users, roles, tokenService, clock);
+        var issuer = new DefaultExternalAuthenticationTokenIssuer(sessionStore, registry, [], users, roles, tokenService, tenantAccessor, clock);
         var externalGrant = new PermissionGrant("reports:view", "claim-mapping", "department:engineering");
         var session = new ExternalAuthenticationSession
         {
@@ -123,10 +126,15 @@ public class ExternalRefreshPermissionTests
             RefreshExpiresAt = clock.UtcNow.AddHours(8)
         };
 
-        var initial = await issuer.IssueAsync(session);
-        role.Permissions = ["workflows:manage"];
-        using var refreshToken = new SensitiveString(initial.RefreshToken);
-        await issuer.RefreshAsync("studio", refreshToken);
+        using (tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
+        {
+            var initial = await issuer.IssueAsync(session);
+            role.Permissions = ["workflows:manage"];
+            using var refreshToken = new SensitiveString(initial.RefreshToken);
+            await issuer.RefreshAsync("studio", refreshToken);
+
+            Assert.Equal("tenant-b", tenantAccessor.TenantId);
+        }
 
         Assert.Equal(2, issuanceContexts.Count);
         Assert.Equal(["*", "reports:view"], issuanceContexts[0].Permissions);

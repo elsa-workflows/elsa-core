@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
@@ -30,6 +31,7 @@ public sealed class ExternalAuthenticationBroker(
     IUserProvider userProvider,
     IRoleProvider roleProvider,
     IElsaTokenService elsaTokenService,
+    ITenantAccessor tenantAccessor,
     ISystemClock clock,
     IOptions<ExternalAuthenticationOptions> options,
     ExternalAuthenticationSecurityNotifier? notifier = null) : IExternalAuthenticationBroker
@@ -322,6 +324,7 @@ public sealed class ExternalAuthenticationBroker(
             }
         }
 
+        using var tenantContext = tenantAccessor.PushContext(new Tenant { Id = grant.TenantId, Name = grant.TenantId });
         var user = await userProvider.FindAsync(new UserFilter { Id = grant.UserId }, cancellationToken);
         if (user is null)
             return await TokenOutcomeAsync(BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AccessDenied)), "token_exchange", "resolve_user", cancellationToken);

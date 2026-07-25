@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
@@ -16,6 +17,7 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
     IUserProvider userProvider,
     IRoleProvider roleProvider,
     IElsaTokenService tokenService,
+    ITenantAccessor tenantAccessor,
     ISystemClock clock) : IExternalAuthenticationTokenIssuer
 {
     public async ValueTask<ExternalTokenResponse> IssueAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default)
@@ -53,6 +55,7 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
 
     private async ValueTask<ExternalTokenResponse> IssueResponseAsync(ExternalAuthenticationSession session, string refreshToken, CancellationToken cancellationToken)
     {
+        using var tenantContext = tenantAccessor.PushContext(new Tenant { Id = session.TenantId, Name = session.TenantId });
         var user = await userProvider.FindAsync(new UserFilter { Id = session.UserId }, cancellationToken)
             ?? throw new InvalidOperationException("The external authentication session user no longer exists.");
         var roles = (await roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToArray();
