@@ -214,7 +214,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped<IRoleDeletionCoordinator, RoleDeletionCoordinator>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
             .AddScoped<IElsaTokenService, DefaultElsaTokenService>()
-            .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
+            .AddScoped<IAccessTokenIssuer>(sp => ActivatorUtilities.CreateInstance<DefaultAccessTokenIssuer>(sp))
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
             .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
             .AddScoped<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())

@@ -1,4 +1,5 @@
 using Elsa.ExternalAuthentication.Contracts;
+using Elsa.ExternalAuthentication.Services;
 using Elsa.Persistence.EFCore.Modules.ExternalAuthentication;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -10,6 +11,7 @@ public static class ExternalAuthenticationPersistenceServiceCollectionExtensions
     public static IServiceCollection AddExternalAuthenticationEntityFrameworkCore(this IServiceCollection services)
     {
         services.TryAddSingleton<ExternalAuthenticationDbContextFactory>();
+        services.TryAddSingleton<IExternalAuthenticationHandleHasher, HmacExternalAuthenticationHandleHasher>();
         services.Replace(ServiceDescriptor.Scoped<IIdentityProviderConnectionStore, EFCoreIdentityProviderConnectionStore>());
         services.Replace(ServiceDescriptor.Scoped(typeof(EFCoreExternalIdentityProvisioner), typeof(EFCoreExternalIdentityProvisioner)));
         services.Replace(ServiceDescriptor.Scoped<IExternalIdentityProvisioner>(serviceProvider => serviceProvider.GetRequiredService<EFCoreExternalIdentityProvisioner>()));
