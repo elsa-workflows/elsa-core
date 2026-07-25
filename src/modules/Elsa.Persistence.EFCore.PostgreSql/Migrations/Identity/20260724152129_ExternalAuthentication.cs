@@ -43,6 +43,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     ExternalSessionId = table.Column<string>(type: "text", nullable: true),
                     PkceChallenge = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
@@ -69,6 +70,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     ProviderNonce = table.Column<string>(type: "text", nullable: true),
                     ProtectedPayload = table.Column<byte[]>(type: "bytea", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
@@ -133,6 +135,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     PermissionProjectionJson = table.Column<string>(type: "text", nullable: false),
                     WarningsJson = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>

@@ -18,7 +18,7 @@ public sealed class ElsaSecretBindingResolver(
     string IManagedSecretBindingWriter.ResolverType => ResolverType;
     string IManagedSecretBindingWriter.DisplayName => "Elsa Secrets";
 
-    public async ValueTask<SecretBinding> ReplaceAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default)
+    public async ValueTask<SecretBinding> StageAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ConnectionId);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.FieldName);
@@ -26,19 +26,18 @@ public sealed class ElsaSecretBindingResolver(
         if (fieldName.Length == 0)
             throw new ArgumentException("The secret field name must contain a letter or digit.", nameof(request));
 
-        var name = $"external-authentication-{request.ConnectionId.ToLowerInvariant()}-{fieldName}";
-        var secret = await secretManager.GetAsync(name, cancellationToken);
-        if (secret is null)
-            secret = await secretManager.CreateAsync(new CreateSecretRequest
-            {
-                Name = name,
-                DisplayName = $"External authentication {request.FieldName}",
-                TypeName = SecretTypeNames.Text,
-                StoreName = SecretStoreNames.Encrypted,
-                Value = request.Value.Reveal()
-            }, cancellationToken);
-        else
-            secret = await secretManager.RotateAsync(secret.Name, new RotateSecretRequest { Value = request.Value.Reveal() }, cancellationToken);
+        // Stage every replacement under a new reference. The caller publishes
+        // that reference with the connection CAS and removes it on CAS failure,
+        // so a stale request can never rotate material used by the live binding.
+        var name = $"external-authentication-{request.ConnectionId.ToLowerInvariant()}-{fieldName}-{Guid.NewGuid():N}";
+        var secret = await secretManager.CreateAsync(new CreateSecretRequest
+        {
+            Name = name,
+            DisplayName = $"External authentication {request.FieldName}",
+            TypeName = SecretTypeNames.Text,
+            StoreName = SecretStoreNames.Encrypted,
+            Value = request.Value.Reveal()
+        }, cancellationToken);
 
         return new SecretBinding(ResolverType, secret.Name, Ownership: SecretBindingOwnership.Managed);
     }

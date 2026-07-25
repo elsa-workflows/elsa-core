@@ -26,7 +26,8 @@ Manual trust additionally requires `issuer`, `authorizationEndpoint`, and `token
 For a callback with the default Elsa API prefix:
 
 ```text
-https://elsa.example/elsa/api/external-authentication/callback/{connection-id}
+https://elsa.example/elsa/api/external-authentication/callback/{connection-key}
+https://elsa.example/elsa/api/external-authentication/previews/callback/{connection-id}
 ```
 
-The callback is derived from the deployment-owned `Redirects:ExternalCallbackBaseUri` and connection record ID; it is not editable per connection. The derived URI must be registered upstream exactly.
+The normal callback uses the immutable logical connection key; the administrator-preview callback uses the stable connection record ID. Both are derived from the deployment-owned `Redirects:ExternalCallbackBaseUri`, are not editable per connection, and must be registered upstream exactly when Preview is enabled for administrators. Management responses and Studio display both derived values.

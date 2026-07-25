@@ -184,6 +184,8 @@ Shared, protected, short-lived provider/local/preview correlation state.
 | `ExpiresAt` | DateTimeOffset | Default 10 minutes |
 | `ConsumedAt` | DateTimeOffset? | Atomic single-use marker |
 
+EF persistence also stores the normalized `ExpiresAtUtcTicks` companion used in the same compare-and-swap predicate as `ConsumedAt`, because not every supported provider can order `DateTimeOffset` values directly.
+
 The public handle contains no protected payload. Atomic take transitions pending to consumed; expired or mismatched state is never revived.
 
 ## AuthorizationGrant
@@ -201,6 +203,8 @@ Single-use Elsa completion code record.
 | `PkceChallenge` | string | S256 |
 | `ExpiresAt` | DateTimeOffset | Default 60 seconds |
 | `ConsumedAt` | DateTimeOffset? | Atomic single use |
+
+EF persistence uses the same normalized `ExpiresAtUtcTicks` companion for the atomic consume predicate.
 
 ## ExternalAuthenticationSession
 
@@ -261,6 +265,8 @@ An observation is stale when its tested revision differs from the current effect
 | `Warnings` | list<string> | Safe bounded warnings |
 | `ExpiresAt` | DateTimeOffset | Default 10 minutes |
 | `ConsumedAt` | DateTimeOffset? | One-time read |
+
+EF persistence uses the same normalized `ExpiresAtUtcTicks` companion for the atomic consume predicate.
 
 ## OpenIdConnectAdapterSettings v2
 

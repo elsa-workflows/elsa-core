@@ -79,7 +79,7 @@ public class ElsaSecretBindingResolverTests
     }
 
     [Fact]
-    public async Task ManagedReplaceCreatesDeterministicManagedBindingWithoutExposingTheValue()
+    public async Task ManagedReplaceStagesUniqueManagedBindingWithoutExposingTheValue()
     {
         var manager = Substitute.For<ISecretManager>();
         manager.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Secret?>(null));
@@ -87,13 +87,14 @@ public class ElsaSecretBindingResolverTests
         var resolver = new ElsaSecretBindingResolver(manager, new TestHasher());
 
         using var value = new SensitiveString("super-secret");
-        var binding = await resolver.ReplaceAsync(new ManagedSecretBindingWriteRequest("connection-a", "clientSecret", value));
+        var binding = await resolver.StageAsync(new ManagedSecretBindingWriteRequest("connection-a", "clientSecret", value));
 
         Assert.Equal(SecretBindingOwnership.Managed, binding.Ownership);
         Assert.Equal(ElsaSecretBindingResolver.ResolverType, binding.ResolverType);
-        Assert.Equal("external-authentication-connection-a-clientsecret", binding.Reference);
+        Assert.StartsWith("external-authentication-connection-a-clientsecret-", binding.Reference, StringComparison.Ordinal);
         Assert.DoesNotContain("super-secret", binding.Reference, StringComparison.Ordinal);
         await manager.Received(1).CreateAsync(Arg.Is<CreateSecretRequest>(x => x.Value == "super-secret"), Arg.Any<CancellationToken>());
+        await manager.DidNotReceive().RotateAsync(Arg.Any<string>(), Arg.Any<RotateSecretRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

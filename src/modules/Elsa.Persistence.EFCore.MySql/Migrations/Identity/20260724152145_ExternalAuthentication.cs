@@ -54,6 +54,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     PkceChallenge = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
@@ -93,6 +94,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ProtectedPayload = table.Column<byte[]>(type: "longblob", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
@@ -184,6 +186,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     WarningsJson = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>

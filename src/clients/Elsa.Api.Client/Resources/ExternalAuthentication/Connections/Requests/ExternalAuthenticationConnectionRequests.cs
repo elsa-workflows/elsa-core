@@ -25,7 +25,6 @@ public sealed class SaveExternalAuthenticationConnectionRequest
     public string AdapterType { get; set; } = "";
     public int AdapterSettingsVersion { get; set; }
     public JsonElement AdapterSettings { get; set; }
-    public Dictionary<string, SaveExternalAuthenticationSecretBindingRequest> SecretBindings { get; set; } = new(StringComparer.Ordinal);
     public string DisplayName { get; set; } = "";
     public string? IconId { get; set; }
     public int Order { get; set; }
@@ -36,12 +35,12 @@ public sealed class SaveExternalAuthenticationConnectionRequest
     public ExternalAuthenticationClaimProjection ClaimProjection { get; set; } = new();
     public string UpstreamLogoutMode { get; set; } = "disabled";
     public bool ConfirmUnsafeSettings { get; set; }
+    public bool ConfirmFinalLoginPathOverride { get; set; }
 }
 
-public sealed class SaveExternalAuthenticationSecretBindingRequest
+/// <summary>Write-only request for staging managed secret material.</summary>
+public sealed class SaveManagedExternalAuthenticationSecretRequest
 {
     public string ResolverType { get; set; } = "";
-    public string Reference { get; set; } = "";
-    public string? ExpectedType { get; set; }
-    public string? ExpectedScope { get; set; }
+    public string Value { get; set; } = "";
 }

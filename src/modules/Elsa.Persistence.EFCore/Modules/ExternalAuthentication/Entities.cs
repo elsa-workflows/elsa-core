@@ -72,6 +72,7 @@ public sealed class PersistedBrokerTransaction
     public string? ProviderNonce { get; set; }
     public byte[] ProtectedPayload { get; set; } = [];
     public DateTimeOffset ExpiresAt { get; set; }
+    public long ExpiresAtUtcTicks { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
 }
 
@@ -85,6 +86,7 @@ public sealed class PersistedAuthorizationGrant
     public string? ExternalSessionId { get; set; }
     public string PkceChallenge { get; set; } = null!;
     public DateTimeOffset ExpiresAt { get; set; }
+    public long ExpiresAtUtcTicks { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
 }
 
@@ -138,6 +140,7 @@ public sealed class PersistedPreviewResult
     public string PermissionProjectionJson { get; set; } = null!;
     public string WarningsJson { get; set; } = null!;
     public DateTimeOffset ExpiresAt { get; set; }
+    public long ExpiresAtUtcTicks { get; set; }
     public DateTimeOffset? ConsumedAt { get; set; }
 }
 

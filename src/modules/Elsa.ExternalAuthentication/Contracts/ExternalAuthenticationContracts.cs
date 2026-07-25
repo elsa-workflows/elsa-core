@@ -87,12 +87,16 @@ public interface ISecretBindingResolver
     ValueTask<ResolvedSecretBinding> ResolveAsync(SecretBinding binding, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Optionally accepts a secret value once and stores it through a managed secret backend.</summary>
+/// <summary>Optionally accepts a secret value once and stages it through a managed secret backend.</summary>
 public interface IManagedSecretBindingWriter
 {
     string ResolverType { get; }
     string DisplayName { get; }
-    ValueTask<SecretBinding> ReplaceAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Stores the value under a fresh reference that is not used by any live binding.
+    /// Implementations must not rotate or overwrite an existing reference.
+    /// </summary>
+    ValueTask<SecretBinding> StageAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default);
     ValueTask RemoveAsync(SecretBinding binding, CancellationToken cancellationToken = default);
 }
 

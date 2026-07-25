@@ -33,6 +33,10 @@ public class ConnectionManagementTests : IAsyncLifetime
     private InMemoryConnectionRegistryVersionStore _registryVersions = null!;
     private InMemoryConnectionObservationStore _observations = null!;
     private TestAdapterSettingsMigrationService _settingsMigrations = null!;
+    private TestAdapter _adapter = null!;
+    private TestRoleAuthorizationService _roleAuthorizationService = null!;
+    private TestManagedSecretBindingWriter _managedSecretWriter = null!;
+    private IExternalAuthenticationSessionStore _sessions = null!;
     private INotificationSender _notifications = null!;
     private bool _unsafePermissionGranted = true;
     private string _tenantId = "tenant-a";
@@ -54,7 +58,10 @@ public class ConnectionManagementTests : IAsyncLifetime
             options.EnableDatabaseConnections = true;
             options.AllowedAdapterTypes = [];
             options.AllowedUnlinkedIdentityPolicyTypes = [];
+            options.AllowedExternalUserMatcherTypes = ["allowed-matcher"];
             options.AllowedPermissionGrantSourceTypes = [];
+            options.UnlinkedIdentityPolicy.AllowDatabaseConnectionOverride = true;
+            options.Redirects.ExternalCallbackBaseUri = new Uri("https://elsa.example/elsa/api/");
         });
         _store = new InMemoryIdentityProviderConnectionStore();
         _registryVersions = new InMemoryConnectionRegistryVersionStore();
@@ -65,18 +72,23 @@ public class ConnectionManagementTests : IAsyncLifetime
         builder.Services.AddSingleton<IConnectionRegistryVersionStore>(_registryVersions);
         builder.Services.AddSingleton<IConnectionObservationStore>(_observations);
         builder.Services.AddSingleton<ConnectionRevisionCalculator>();
-        builder.Services.AddSingleton<IExternalAuthenticationAdapterRegistry>(new TestAdapterRegistry());
+        _adapter = new TestAdapter();
+        builder.Services.AddSingleton<IExternalAuthenticationAdapterRegistry>(new TestAdapterRegistry(_adapter));
         _settingsMigrations = new TestAdapterSettingsMigrationService();
         builder.Services.AddSingleton<IAdapterSettingsMigrationService>(_settingsMigrations);
-        builder.Services.AddSingleton(Substitute.For<IUnlinkedIdentityPolicyRegistry>());
-        builder.Services.AddSingleton<IExternalUserMatcherRegistry>(Substitute.For<IExternalUserMatcherRegistry>());
+        builder.Services.AddSingleton<IUnlinkedIdentityPolicyRegistry>(new TestUnlinkedIdentityPolicyRegistry());
+        builder.Services.AddSingleton<IExternalUserMatcherRegistry>(new TestExternalUserMatcherRegistry("allowed-matcher", "disallowed-matcher"));
         builder.Services.AddScoped(_ => Substitute.For<IPermissionGrantSourceRegistry>());
         builder.Services.AddSingleton<IPermissionDelegationAuthorizer>(Substitute.For<IPermissionDelegationAuthorizer>());
-        builder.Services.AddSingleton(Substitute.For<IRoleAuthorizationService>());
+        _roleAuthorizationService = new TestRoleAuthorizationService();
+        builder.Services.AddSingleton<IRoleAuthorizationService>(_roleAuthorizationService);
         _notifications = Substitute.For<INotificationSender>();
         builder.Services.AddSingleton(_notifications);
         builder.Services.AddSingleton<ISystemClock, SystemClock>();
-        builder.Services.AddSingleton<IExternalAuthenticationSessionStore, InMemoryExternalAuthenticationSessionStore>();
+        _sessions = Substitute.For<IExternalAuthenticationSessionStore>();
+        builder.Services.AddSingleton(_sessions);
+        _managedSecretWriter = new TestManagedSecretBindingWriter();
+        builder.Services.AddSingleton<IManagedSecretBindingWriter>(_managedSecretWriter);
         var tenant = Substitute.For<ITenantAccessor>();
         tenant.TenantId.Returns(_ => _tenantId);
         builder.Services.AddSingleton(tenant);
@@ -113,14 +125,22 @@ public class ConnectionManagementTests : IAsyncLifetime
         Assert.True(create.StatusCode == HttpStatusCode.Created, await create.Content.ReadAsStringAsync());
         Assert.Equal("\"1\"", create.Headers.ETag?.Tag);
         var createdDocument = Assert.IsType<ConnectionDocument>(created);
+        Assert.Equal("https://elsa.example/elsa/api/external-authentication/callback/contoso", createdDocument.CallbackUri);
+        Assert.Equal($"https://elsa.example/elsa/api/external-authentication/previews/callback/{createdDocument.Id}", createdDocument.PreviewCallbackUri);
 
-        var update = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso-renamed", displayName: "Updated")) };
+        var immutableKeyUpdate = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso-renamed", displayName: "Updated")) };
+        immutableKeyUpdate.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+        var immutableKeyResponse = await _client!.SendAsync(immutableKeyUpdate);
+        Assert.Equal(HttpStatusCode.Conflict, immutableKeyResponse.StatusCode);
+        Assert.Contains("connection_key_immutable", await immutableKeyResponse.Content.ReadAsStringAsync());
+
+        var update = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso", displayName: "Updated")) };
         update.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         var updated = await _client!.SendAsync(update);
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
         Assert.Equal("\"2\"", updated.Headers.ETag?.Tag);
 
-        var stale = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso-stale")) };
+        var stale = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso", displayName: "Stale")) };
         stale.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         Assert.Equal(HttpStatusCode.PreconditionFailed, (await _client.SendAsync(stale)).StatusCode);
 
@@ -170,9 +190,40 @@ public class ConnectionManagementTests : IAsyncLifetime
         lifecycle.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         Assert.Equal(HttpStatusCode.Forbidden, (await _client.SendAsync(lifecycle)).StatusCode);
 
-        var secret = new HttpRequestMessage(HttpMethod.Put, "/external-authentication/connections/configuration-contoso/secret-bindings/clientSecret") { Content = JsonContent.Create(new { resolverType = "test", reference = "secret" }) };
+        var secret = new HttpRequestMessage(HttpMethod.Put, "/external-authentication/connections/configuration-contoso/secret-bindings/clientSecret/managed") { Content = JsonContent.Create(new { resolverType = "test-managed", value = "secret" }) };
         secret.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         Assert.Equal(HttpStatusCode.Forbidden, (await _client.SendAsync(secret)).StatusCode);
+    }
+
+    [Fact]
+    public async Task ConnectionResponsesRedactDescriptorDeclaredSecretsInSettings()
+    {
+        var connection = DatabaseConnection("legacy-secret", ConnectionScope.HostTenantId, "legacy-secret");
+        connection.AdapterSettings = JsonDocument.Parse("{\"valid\":true,\"clientSecret\":\"must-not-leave-the-server\"}").RootElement.Clone();
+        await _store.CreateAsync(connection);
+
+        var response = await _client!.GetAsync("/external-authentication/connections/legacy-secret");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("must-not-leave-the-server", body, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED]", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ConnectionResponsesOmitSettingsWhenAdapterIsUnavailable()
+    {
+        var connection = DatabaseConnection("removed-adapter", ConnectionScope.HostTenantId, "removed-adapter");
+        connection.AdapterType = "removed";
+        connection.AdapterSettings = JsonDocument.Parse("{\"clientSecret\":\"must-not-leave-the-server\",\"issuer\":\"https://issuer.example\"}").RootElement.Clone();
+        await _store.CreateAsync(connection);
+
+        var response = await _client!.GetAsync("/external-authentication/connections/removed-adapter");
+        var body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.DoesNotContain("must-not-leave-the-server", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("issuer.example", body, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -194,7 +245,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         update.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(update)).StatusCode);
 
-        var secret = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{host.Id}/secret-bindings/clientSecret") { Content = JsonContent.Create(new { resolverType = "test", reference = "secret" }) };
+        var secret = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{host.Id}/secret-bindings/clientSecret/managed") { Content = JsonContent.Create(new { resolverType = "test-managed", value = "secret" }) };
         secret.Headers.TryAddWithoutValidation("If-Match", "\"2\"");
         Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(secret)).StatusCode);
 
@@ -283,13 +334,196 @@ public class ConnectionManagementTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, validate.StatusCode);
         Assert.Contains("\"valid\":true", await validate.Content.ReadAsStringAsync());
 
-        var secret = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret") { Content = JsonContent.Create(new { resolverType = "test", reference = "secret" }) };
+        var secret = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret/managed") { Content = JsonContent.Create(new { resolverType = "test-managed", value = "secret" }) };
         secret.Headers.TryAddWithoutValidation("If-Match", "\"2\"");
         Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(secret)).StatusCode);
-        await _notifications.Received().SendAsync(Arg.Is<IdentityProviderConnectionSecretBindingChanged>(x => x.FieldName == "clientSecret" && x.ResolverType == "test" && !x.IsConfigured), Arg.Any<CancellationToken>());
+        await _notifications.Received().SendAsync(Arg.Is<IdentityProviderConnectionSecretBindingChanged>(x => x.FieldName == "clientSecret" && x.ResolverType == "test-managed" && !x.IsConfigured), Arg.Any<CancellationToken>());
     }
 
-    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false) => new
+    [Fact]
+    public async Task ManagedSecretReplacementCleansUpStagedMaterialWhenConnectionCasLoses()
+    {
+        var client = _client!;
+        var create = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("managed-secret-race"));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+        _managedSecretWriter.BeforeReturn = async () =>
+        {
+            var concurrent = Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connection.Id));
+            concurrent.DisplayName = "Concurrent update";
+            Assert.IsType<ConnectionMutationResult.Updated>(await _store.UpdateAsync(concurrent, concurrent.Revision));
+        };
+
+        var replace = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret/managed")
+        {
+            Content = JsonContent.Create(new { resolverType = "test-managed", value = "replacement" })
+        };
+        replace.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+
+        Assert.Equal(HttpStatusCode.PreconditionFailed, (await client.SendAsync(replace)).StatusCode);
+        Assert.Single(_managedSecretWriter.RemovedReferences);
+        Assert.Empty(Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connection.Id)).SecretBindings);
+    }
+
+    [Fact]
+    public async Task ManagedSecretReplacementCleansUpStagedMaterialWhenValidationThrows()
+    {
+        var create = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("managed-secret-exception", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+        _managedSecretWriter.BeforeReturn = () =>
+        {
+            _roleAuthorizationService.ThrowOnAssignRoles = true;
+            return Task.CompletedTask;
+        };
+        var replace = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret/managed")
+        {
+            Content = JsonContent.Create(new { resolverType = "test-managed", value = "replacement" })
+        };
+        replace.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _client!.SendAsync(replace));
+
+        Assert.Equal(new[] { "staged-1" }, _managedSecretWriter.RemovedReferences);
+        Assert.Empty(Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connection.Id)).SecretBindings);
+    }
+
+    [Fact]
+    public async Task DisablingWithSessionRevocationRequiresPermissionAndEmitsAggregateNotification()
+    {
+        var connection = DatabaseConnection("disable-with-revoke", ConnectionScope.HostTenantId, "disable-with-revoke");
+        connection.IsEnabled = true;
+        await _store.CreateAsync(connection);
+        _sessions.RevokeActiveForConnectionAsync("disable-with-revoke", "connection_disabled", Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>()).Returns(2);
+        _unsafePermissionGranted = false;
+
+        var forbidden = new HttpRequestMessage(HttpMethod.Post, "/external-authentication/connections/disable-with-revoke/disable?revokeActiveSessions=true");
+        forbidden.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+        Assert.Equal(HttpStatusCode.Forbidden, (await _client!.SendAsync(forbidden)).StatusCode);
+        await _sessions.DidNotReceive().RevokeActiveForConnectionAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>());
+
+        _unsafePermissionGranted = true;
+        var allowed = new HttpRequestMessage(HttpMethod.Post, "/external-authentication/connections/disable-with-revoke/disable?revokeActiveSessions=true");
+        allowed.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+        Assert.Equal(HttpStatusCode.OK, (await _client.SendAsync(allowed)).StatusCode);
+        await _notifications.Received().SendAsync(
+            Arg.Is<ExternalAuthenticationConnectionSessionsRevoked>(x => x.SessionCount == 2 && x.Reason == "connection_disabled"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ManagedSecretReplacementRemainsPublishedWhenPostCommitNotificationFails()
+    {
+        var client = _client!;
+        var create = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("managed-secret-notification"));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+        _notifications
+            .SendAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromException(new InvalidOperationException("Notification failure")));
+
+        var replace = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret/managed")
+        {
+            Content = JsonContent.Create(new { resolverType = "test-managed", value = "replacement" })
+        };
+        replace.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(replace)).StatusCode);
+        var persisted = Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connection.Id));
+        Assert.Equal("staged-1", persisted.SecretBindings["clientSecret"].Reference);
+        Assert.Empty(_managedSecretWriter.RemovedReferences);
+    }
+
+    [Fact]
+    public async Task ManagedSecretWriterMustStageAReferenceDistinctFromTheLiveBinding()
+    {
+        var client = _client!;
+        var create = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("managed-secret-distinct"));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+        var first = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret/managed")
+        {
+            Content = JsonContent.Create(new { resolverType = "test-managed", value = "first" })
+        };
+        first.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(first)).StatusCode);
+
+        _managedSecretWriter.ReferenceToReturn = "staged-1";
+        var invalid = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}/secret-bindings/clientSecret/managed")
+        {
+            Content = JsonContent.Create(new { resolverType = "test-managed", value = "second" })
+        };
+        invalid.Headers.TryAddWithoutValidation("If-Match", "\"2\"");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => client.SendAsync(invalid));
+        Assert.Equal("staged-1", Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connection.Id)).SecretBindings["clientSecret"].Reference);
+        Assert.Empty(_managedSecretWriter.RemovedReferences);
+    }
+
+    [Fact]
+    public async Task GeneralConnectionPayloadCannotInjectOrClearSecretBindings()
+    {
+        var client = _client!;
+        var injectedCreate = await client.PostAsJsonAsync("/external-authentication/connections", new
+        {
+            key = "injected-secret",
+            scope = new { kind = "host" },
+            adapterType = "test",
+            adapterSettingsVersion = 1,
+            adapterSettings = new { valid = true },
+            displayName = "Injected",
+            secretBindings = new { clientSecret = new { resolverType = "configuration", reference = "ConnectionStrings:Production" } },
+            claimProjection = new { },
+            upstreamLogoutMode = "disabled"
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, injectedCreate.StatusCode);
+        Assert.Contains("secret_bindings_mutation_not_allowed", await injectedCreate.Content.ReadAsStringAsync());
+
+        var create = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("cannot-clear-secret"));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+        var clear = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connection.Id}")
+        {
+            Content = JsonContent.Create(new
+            {
+                key = "cannot-clear-secret",
+                scope = new { kind = "host" },
+                adapterType = "test",
+                adapterSettingsVersion = 2,
+                adapterSettings = new { valid = true },
+                displayName = "Cannot clear",
+                secretBindings = new { },
+                claimProjection = new { },
+                upstreamLogoutMode = "disabled"
+            })
+        };
+        clear.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.SendAsync(clear)).StatusCode);
+    }
+
+    [Fact]
+    public async Task MatcherPolicyRejectsAMatcherDisallowedByDeployment()
+    {
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("disallowed-matcher", unlinkedPolicy: CreateMatcherPolicy("disallowed-matcher", "reject")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("validation_failed", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task MatcherCreateUserFallbackRequiresRoleDelegation()
+    {
+        _roleAuthorizationService.CanAssignRoles = false;
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("matcher-roles", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("validation_failed", await response.Content.ReadAsStringAsync());
+        Assert.Equal(new[] { "workflow-user" }, _roleAuthorizationService.LastRequestedRoleIds);
+    }
+
+    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null) => new
     {
         key,
         scope = scope ?? new { kind = "host" },
@@ -300,12 +534,25 @@ public class ConnectionManagementTests : IAsyncLifetime
         order = 10,
         claimProjection = new { allowedClaimTypes = Array.Empty<string>(), redactedClaimTypes = Array.Empty<string>(), maximumClaimCount = 0, maximumValueLength = 0, maximumTotalBytes = 0 },
         upstreamLogoutMode = "disabled",
-        confirmUnsafeSettings
+        confirmUnsafeSettings,
+        unlinkedPolicy
     };
+
+    private static PolicySelection CreateMatcherPolicy(string matcherType, string noMatchAction) => new(
+        "match-user",
+        1,
+        JsonSerializer.SerializeToElement(new
+        {
+            matcher = new { type = matcherType, settingsVersion = 1, settings = new { } },
+            noMatchAction,
+            defaultRoleIds = new[] { "workflow-user" }
+        }));
 
     private sealed class ConnectionDocument
     {
         public string Id { get; set; } = null!;
+        public string? CallbackUri { get; set; }
+        public string? PreviewCallbackUri { get; set; }
         public bool EnabledIntent { get; set; }
         public int AdapterSettingsVersion { get; set; }
     }
@@ -342,14 +589,13 @@ public class ConnectionManagementTests : IAsyncLifetime
         Revision = 1
     };
 
-    private sealed class TestAdapterRegistry : IExternalAuthenticationAdapterRegistry
+    private sealed class TestAdapterRegistry(IExternalAuthenticationAdapter registeredAdapter) : IExternalAuthenticationAdapterRegistry
     {
-        private readonly IExternalAuthenticationAdapter _adapter = new TestAdapter();
-        public IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor> ListDescriptors() => [_adapter.Describe()];
+        public IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor> ListDescriptors() => [registeredAdapter.Describe()];
         public bool TryGet(string type, out IExternalAuthenticationAdapter adapter)
         {
-            adapter = _adapter;
-            return string.Equals(type, _adapter.Type, StringComparison.Ordinal);
+            adapter = registeredAdapter;
+            return string.Equals(type, registeredAdapter.Type, StringComparison.Ordinal);
         }
     }
 
@@ -385,6 +631,87 @@ public class ConnectionManagementTests : IAsyncLifetime
                 throw new InvalidOperationException("No compatible settings migration is available.");
 
             return ValueTask.FromResult(new AdapterSettingsMigrationResult(2, settings.Clone(), settingsVersion == 1));
+        }
+    }
+
+    private sealed class TestUnlinkedIdentityPolicyRegistry : IUnlinkedIdentityPolicyRegistry
+    {
+        private readonly IUnlinkedIdentityPolicy _matchUser = new TestUnlinkedIdentityPolicy("match-user");
+
+        public IReadOnlyCollection<UnlinkedIdentityPolicyDescriptor> ListDescriptors() => [];
+        public bool TryGet(string type, out IUnlinkedIdentityPolicy policy)
+        {
+            policy = _matchUser;
+            return string.Equals(type, policy.Type, StringComparison.Ordinal);
+        }
+    }
+
+    private sealed class TestUnlinkedIdentityPolicy(string type) : IUnlinkedIdentityPolicy
+    {
+        public string Type => type;
+        public UnlinkedIdentityPolicyDescriptor Describe() => new(Type, Type, Type, 1, [], null);
+        public ValueTask<UnlinkedIdentityDecision> EvaluateAsync(UnlinkedIdentityContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class TestExternalUserMatcherRegistry : IExternalUserMatcherRegistry
+    {
+        private readonly IReadOnlyDictionary<string, IExternalUserMatcher> _items;
+
+        public TestExternalUserMatcherRegistry(params string[] types) => _items = types
+            .Select(type => (IExternalUserMatcher)new TestExternalUserMatcher(type))
+            .ToDictionary(x => x.Type, StringComparer.Ordinal);
+
+        public IReadOnlyCollection<ExternalUserMatcherDescriptor> ListDescriptors() => _items.Values.Select(x => x.Describe()).ToArray();
+        public bool TryGet(string type, out IExternalUserMatcher matcher) => _items.TryGetValue(type, out matcher!);
+    }
+
+    private sealed class TestExternalUserMatcher(string type) : IExternalUserMatcher
+    {
+        public string Type => type;
+        public ExternalUserMatcherDescriptor Describe() => new(Type, Type, Type, 1, [], null);
+        public ValueTask<ExternalUserMatchResult> MatchAsync(ExternalUserMatcherContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class TestRoleAuthorizationService : IRoleAuthorizationService
+    {
+        public bool CanAssignRoles { get; set; } = true;
+        public bool ThrowOnAssignRoles { get; set; }
+        public IReadOnlyCollection<string> LastRequestedRoleIds { get; private set; } = [];
+
+        public Task<bool> CanAssignRolesAsync(ClaimsPrincipal user, IEnumerable<string>? roleIds, CancellationToken cancellationToken = default)
+        {
+            if (ThrowOnAssignRoles)
+                throw new InvalidOperationException("Test role authorization failure.");
+            LastRequestedRoleIds = (roleIds ?? []).ToArray();
+            return Task.FromResult(CanAssignRoles);
+        }
+
+        public bool CanCreateRoleWithPermissions(ClaimsPrincipal user, IEnumerable<string>? permissions) => true;
+        public bool CanMutateRole(ClaimsPrincipal user, Elsa.Identity.Entities.Role role, IEnumerable<string>? replacementPermissions = null) => true;
+    }
+
+    private sealed class TestManagedSecretBindingWriter : IManagedSecretBindingWriter
+    {
+        private int _sequence;
+
+        public string ResolverType => "test-managed";
+        public string DisplayName => "Test managed secrets";
+        public Func<Task>? BeforeReturn { get; set; }
+        public string? ReferenceToReturn { get; set; }
+        public List<string> RemovedReferences { get; } = [];
+
+        public async ValueTask<SecretBinding> StageAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default)
+        {
+            if (BeforeReturn is not null)
+                await BeforeReturn();
+            var reference = ReferenceToReturn ?? $"staged-{Interlocked.Increment(ref _sequence)}";
+            return new SecretBinding(ResolverType, reference, Ownership: SecretBindingOwnership.Managed);
+        }
+
+        public ValueTask RemoveAsync(SecretBinding binding, CancellationToken cancellationToken = default)
+        {
+            RemovedReferences.Add(binding.Reference);
+            return ValueTask.CompletedTask;
         }
     }
 

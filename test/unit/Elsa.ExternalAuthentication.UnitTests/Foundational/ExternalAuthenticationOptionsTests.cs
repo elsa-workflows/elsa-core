@@ -116,7 +116,8 @@ public class ExternalAuthenticationOptionsTests
         var result = CreateValidator().Validate(null, options);
 
         Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("collides with an inherited host-wide connection", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("must use the host scope", StringComparison.Ordinal));
+        Assert.Contains(result.Failures!, failure => failure.Contains("configured more than once", StringComparison.Ordinal));
         Assert.Contains(result.Failures!, failure => failure.Contains("selects adapter type 'saml', which is not installed", StringComparison.Ordinal));
     }
 

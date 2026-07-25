@@ -27,6 +27,7 @@ public sealed class EFCoreExternalAuthenticationStateStore(ExternalAuthenticatio
             };
         persisted.HandleHash = handleHash;
         persisted.ExpiresAt = expiresAt;
+        persisted.ExpiresAtUtcTicks = expiresAt.UtcTicks;
         dbContext.ExternalAuthenticationBrokerTransactions.Add(persisted);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -38,14 +39,13 @@ public sealed class EFCoreExternalAuthenticationStateStore(ExternalAuthenticatio
         var entry = await dbContext.ExternalAuthenticationBrokerTransactions.AsNoTracking().SingleOrDefaultAsync(x => x.Purpose == purpose && x.HandleHash == handleHash, cancellationToken);
         if (entry is null)
             return new TakeResult<T>.NotFound();
-        if (entry.ExpiresAt <= clock.UtcNow)
-            return new TakeResult<T>.Expired();
 
+        var consumedAt = clock.UtcNow;
         var consumed = await dbContext.ExternalAuthenticationBrokerTransactions
-            .Where(x => x.Purpose == purpose && x.HandleHash == handleHash && x.ConsumedAt == null)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.ConsumedAt, clock.UtcNow), cancellationToken);
+            .Where(x => x.Purpose == purpose && x.HandleHash == handleHash && x.ConsumedAt == null && x.ExpiresAtUtcTicks > consumedAt.UtcTicks)
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.ConsumedAt, consumedAt), cancellationToken);
         if (consumed == 0)
-            return new TakeResult<T>.AlreadyConsumed();
+            return entry.ExpiresAtUtcTicks <= consumedAt.UtcTicks ? new TakeResult<T>.Expired() : new TakeResult<T>.AlreadyConsumed();
 
         var value = typeof(T) == typeof(BrokerTransaction)
             ? (T)(object)entry.ToModel()
@@ -71,13 +71,16 @@ public sealed class EFCoreAuthorizationGrantStore(ExternalAuthenticationDbContex
         var grant = await dbContext.ExternalAuthenticationAuthorizationGrants.AsNoTracking().SingleOrDefaultAsync(x => x.CodeHash == codeHash, cancellationToken);
         if (grant is null)
             return new TakeResult<AuthorizationGrant>.NotFound();
-        if (grant.ExpiresAt <= clock.UtcNow)
-            return new TakeResult<AuthorizationGrant>.Expired();
 
+        var consumedAt = clock.UtcNow;
         var consumed = await dbContext.ExternalAuthenticationAuthorizationGrants
-            .Where(x => x.CodeHash == codeHash && x.ConsumedAt == null)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.ConsumedAt, clock.UtcNow), cancellationToken);
-        return consumed == 1 ? new TakeResult<AuthorizationGrant>.Taken(grant.ToModel()) : new TakeResult<AuthorizationGrant>.AlreadyConsumed();
+            .Where(x => x.CodeHash == codeHash && x.ConsumedAt == null && x.ExpiresAtUtcTicks > consumedAt.UtcTicks)
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.ConsumedAt, consumedAt), cancellationToken);
+        return consumed == 1
+            ? new TakeResult<AuthorizationGrant>.Taken(grant.ToModel())
+            : grant.ExpiresAtUtcTicks <= consumedAt.UtcTicks
+                ? new TakeResult<AuthorizationGrant>.Expired()
+                : new TakeResult<AuthorizationGrant>.AlreadyConsumed();
     }
 }
 
@@ -98,13 +101,16 @@ public sealed class EFCorePreviewResultStore(ExternalAuthenticationDbContextFact
         var result = await dbContext.ExternalAuthenticationPreviewResults.AsNoTracking().SingleOrDefaultAsync(x => x.HandleHash == handleHash && x.AdministratorId == administratorId, cancellationToken);
         if (result is null)
             return new TakeResult<PreviewResult>.NotFound();
-        if (result.ExpiresAt <= clock.UtcNow)
-            return new TakeResult<PreviewResult>.Expired();
 
+        var consumedAt = clock.UtcNow;
         var consumed = await dbContext.ExternalAuthenticationPreviewResults
-            .Where(x => x.HandleHash == handleHash && x.AdministratorId == administratorId && x.ConsumedAt == null)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.ConsumedAt, clock.UtcNow), cancellationToken);
-        return consumed == 1 ? new TakeResult<PreviewResult>.Taken(result.ToModel()) : new TakeResult<PreviewResult>.AlreadyConsumed();
+            .Where(x => x.HandleHash == handleHash && x.AdministratorId == administratorId && x.ConsumedAt == null && x.ExpiresAtUtcTicks > consumedAt.UtcTicks)
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.ConsumedAt, consumedAt), cancellationToken);
+        return consumed == 1
+            ? new TakeResult<PreviewResult>.Taken(result.ToModel())
+            : result.ExpiresAtUtcTicks <= consumedAt.UtcTicks
+                ? new TakeResult<PreviewResult>.Expired()
+                : new TakeResult<PreviewResult>.AlreadyConsumed();
     }
 }
 

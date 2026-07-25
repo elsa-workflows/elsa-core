@@ -30,6 +30,7 @@ public sealed record IdentityProviderConnectionTested(SecurityEventContext Conte
 public sealed record IdentityProviderConnectionPreviewed(SecurityEventContext Context, string MaterialRevision) : INotification;
 public sealed record ExternalIdentityLinkChanged(SecurityEventContext Context, string Operation, string LinkId) : INotification;
 public sealed record ExternalAuthenticationSessionRevoked(SecurityEventContext Context, string SessionId, string Reason) : INotification;
+public sealed record ExternalAuthenticationConnectionSessionsRevoked(SecurityEventContext Context, int SessionCount, string Reason) : INotification;
 public sealed record ExternalSignInCompleted(SecurityEventContext Context, string? SessionId, string? AdapterType) : INotification;
 /// <summary>Safe terminal broker outcome. Flow and stage are fixed internal vocabulary; no provider detail is included.</summary>
 public sealed record ExternalAuthenticationOutcomeRecorded(SecurityEventContext Context, string Flow, string Stage, string Category) : INotification;

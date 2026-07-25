@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
+using Elsa.ExternalAuthentication.Services;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Connections;
 
@@ -17,6 +18,8 @@ internal sealed class ConnectionRequest
     public string? AdapterType { get; set; }
     public int AdapterSettingsVersion { get; set; }
     public JsonElement AdapterSettings { get; set; }
+    // Accepted only to return a precise error for clients attempting to mutate
+    // secret references through the general connection document.
     public Dictionary<string, SecretBinding>? SecretBindings { get; set; }
     public string? DisplayName { get; set; }
     public string? IconId { get; set; }
@@ -40,7 +43,7 @@ internal sealed class ConnectionRequest
         AdapterType = AdapterType ?? string.Empty,
         AdapterSettingsVersion = AdapterSettingsVersion,
         AdapterSettings = AdapterSettings.ValueKind == JsonValueKind.Undefined ? default : AdapterSettings.Clone(),
-        SecretBindings = SecretBindings?.ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal) ?? new Dictionary<string, SecretBinding>(StringComparer.Ordinal),
+        SecretBindings = new Dictionary<string, SecretBinding>(StringComparer.Ordinal),
         DisplayName = DisplayName ?? string.Empty,
         IconId = IconId,
         DisplayOrder = Order,
@@ -79,16 +82,6 @@ internal sealed class ClaimProjectionRequest
 
 internal sealed record ConnectionSecretBindingResponse(string Ownership, string? ResolverType, string? Reference, bool IsConfigured, bool IsResolvable);
 
-internal sealed class SecretBindingRequest
-{
-    public string? ResolverType { get; set; }
-    public string? Reference { get; set; }
-    public string? ExpectedType { get; set; }
-    public string? ExpectedScope { get; set; }
-
-    public SecretBinding ToBinding() => new(ResolverType ?? string.Empty, Reference ?? string.Empty, ExpectedType, ExpectedScope, SecretBindingOwnership.External);
-}
-
 internal sealed class ManagedSecretBindingRequest
 {
     public string? ResolverType { get; set; }
@@ -105,6 +98,7 @@ internal sealed class ConnectionResponse
     public ConnectionScopeResponse Scope { get; init; } = null!;
     public string AdapterType { get; init; } = null!;
     public Uri? CallbackUri { get; init; }
+    public Uri? PreviewCallbackUri { get; init; }
     public int AdapterSettingsVersion { get; init; }
     public JsonElement AdapterSettings { get; init; }
     public IReadOnlyDictionary<string, ConnectionSecretBindingResponse> SecretBindings { get; init; } = null!;
@@ -127,9 +121,14 @@ internal sealed class ConnectionResponse
     public string MaterialRevision { get; init; } = null!;
     public ConnectionObservationResponse? LatestObservation { get; init; }
 
-    public static async ValueTask<ConnectionResponse> FromAsync(EffectiveIdentityProviderConnection effective, Services.IdentityProviderConnectionManagementService management, ConnectionObservation? observation, CancellationToken cancellationToken)
+    public static async ValueTask<ConnectionResponse> FromAsync(EffectiveIdentityProviderConnection effective, Services.IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ConnectionObservation? observation, CancellationToken cancellationToken)
     {
         var states = await management.GetSecretBindingStatesAsync(effective.Connection, cancellationToken);
+        var adapterSettings = effective.Connection.AdapterSettings.ValueKind == JsonValueKind.Undefined
+            ? default
+            : adapters.TryGet(effective.Connection.AdapterType, out var adapter)
+                ? AdapterSettingsSecretFieldGuard.RedactDeclaredSecrets(effective.Connection.AdapterSettings, adapter.Describe())
+                : JsonSerializer.SerializeToElement(new Dictionary<string, object?>());
         return new ConnectionResponse
         {
             Id = effective.Connection.Id,
@@ -138,8 +137,9 @@ internal sealed class ConnectionResponse
             Scope = new ConnectionScopeResponse(effective.Scope.Kind switch { ConnectionScopeKind.Host => "host", ConnectionScopeKind.DefaultTenant => "defaultTenant", _ => "tenant" }, effective.Scope.TenantId),
             AdapterType = effective.Connection.AdapterType,
             CallbackUri = management.GetProviderCallbackUri(effective.Connection),
+            PreviewCallbackUri = management.GetProviderPreviewCallbackUri(effective.Connection),
             AdapterSettingsVersion = effective.Connection.AdapterSettingsVersion,
-            AdapterSettings = effective.Connection.AdapterSettings.ValueKind == JsonValueKind.Undefined ? default : effective.Connection.AdapterSettings.Clone(),
+            AdapterSettings = adapterSettings,
             SecretBindings = effective.Connection.SecretBindings.ToDictionary(x => x.Key, x =>
             {
                 states.TryGetValue(x.Key, out var state);

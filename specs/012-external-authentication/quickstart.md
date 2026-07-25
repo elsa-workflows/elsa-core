@@ -106,10 +106,13 @@ Authentication__ExternalAuthentication__ClientSecret={strong-random-value}
 ```json
 {
   "ExternalAuthentication": {
+    "Redirects": {
+      "ExternalCallbackBaseUri": "https://elsa.example/elsa/api/"
+    },
     "Connections": [
       {
         "id": "01JZCONTOSOOIDC000000000001",
-        "connectionKey": "contoso-workforce",
+        "key": "contoso-workforce",
         "adapterType": "openid-connect",
         "displayName": "Contoso",
         "iconId": "building",
@@ -135,9 +138,10 @@ Authentication__ExternalAuthentication__ClientSecret={strong-random-value}
         "unlinkedPolicy": {
           "type": "create-user",
           "settingsVersion": 1,
-          "settings": {}
+          "settings": {
+            "defaultRoleIds": ["workflow-user"]
+          }
         },
-        "defaultRoleIds": ["workflow-user"],
         "claimProjection": {
           "allowedClaimTypes": ["name", "email", "groups"],
           "redactedClaimTypes": ["email"],
@@ -173,9 +177,10 @@ Elsa derives the provider callback from its deployment-owned external base addre
 
 ```text
 https://elsa.example/elsa/api/external-authentication/callback/contoso-workforce
+https://elsa.example/elsa/api/external-authentication/previews/callback/01JZCONTOSOOIDC000000000001
 ```
 
-Register that exact callback with the provider. The callback, confidential-client requirement, S256 PKCE, and validation steps are immutable. Discovery-derived issuer, authorization/token endpoints, and signing keys appear only under **Advanced** when deployment policy enables unsafe provider trust and the caller has the dedicated permission; saving them requires explicit confirmation and leaves a persistent warning. The configuration-first example intentionally uses discovery without overrides.
+Register both exact callbacks with the provider when administrators will use Preview. The first handles normal user sign-in and is keyed by the immutable logical Connection Key; the second handles administrator previews and is keyed by the stable connection record ID. Both are shown read-only in management responses and Studio. The callbacks, confidential-client requirement, S256 PKCE, and validation steps are immutable. Discovery-derived issuer, authorization/token endpoints, and signing keys appear only under **Advanced** when deployment policy enables unsafe provider trust and the caller has the dedicated permission; saving them requires explicit confirmation and leaves a persistent warning. The configuration-first example intentionally uses discovery without overrides.
 
 The role IDs in `defaultRoleIds` must exist, and the actor applying persisted equivalents must be authorized to assign them. They apply only when `create-user` creates a new user. The optional matcher-based policy selects one deployed `IExternalUserMatcher`; v1 ships no Elsa verified-email matcher, and matchers never select roles or permissions.
 

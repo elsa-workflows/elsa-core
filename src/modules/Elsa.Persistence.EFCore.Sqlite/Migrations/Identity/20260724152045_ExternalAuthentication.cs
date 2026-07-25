@@ -41,6 +41,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     ExternalSessionId = table.Column<string>(type: "TEXT", nullable: true),
                     PkceChallenge = table.Column<string>(type: "TEXT", nullable: false),
                     ExpiresAt = table.Column<string>(type: "TEXT", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "INTEGER", nullable: false),
                     ConsumedAt = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -67,6 +68,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     ProviderNonce = table.Column<string>(type: "TEXT", nullable: true),
                     ProtectedPayload = table.Column<byte[]>(type: "BLOB", nullable: false),
                     ExpiresAt = table.Column<string>(type: "TEXT", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "INTEGER", nullable: false),
                     ConsumedAt = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
@@ -131,6 +133,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     PermissionProjectionJson = table.Column<string>(type: "TEXT", nullable: false),
                     WarningsJson = table.Column<string>(type: "TEXT", nullable: false),
                     ExpiresAt = table.Column<string>(type: "TEXT", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "INTEGER", nullable: false),
                     ConsumedAt = table.Column<string>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>

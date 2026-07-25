@@ -12,7 +12,8 @@ namespace Elsa.ExternalAuthentication.Providers;
 /// </summary>
 public sealed class ConfigurationIdentityProviderConnectionSource(
     IOptionsMonitor<ExternalAuthenticationOptions> options,
-    ConnectionRevisionCalculator revisionCalculator) : IIdentityProviderConnectionSource
+    ConnectionRevisionCalculator revisionCalculator,
+    IExternalAuthenticationAdapterRegistry adapters) : IIdentityProviderConnectionSource
 {
     public const string SourceName = "configuration";
 
@@ -35,6 +36,9 @@ public sealed class ConfigurationIdentityProviderConnectionSource(
 
     private IdentityProviderConnection Materialize(IdentityProviderConnection configuredConnection, ConnectionScope scope)
     {
+        if (adapters.TryGet(configuredConnection.AdapterType, out var adapter))
+            AdapterSettingsSecretFieldGuard.ThrowIfContainsDeclaredSecret(configuredConnection.AdapterSettings, adapter.Describe(), configuredConnection.Key);
+
         var connection = new IdentityProviderConnection
         {
             Id = string.IsNullOrWhiteSpace(configuredConnection.Id)

@@ -214,6 +214,9 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("ExternalSessionId")
                         .HasColumnType("nvarchar(max)");
 
@@ -267,6 +270,9 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("PkceChallenge")
                         .IsRequired()
@@ -576,6 +582,9 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Issuer")
                         .IsRequired()

@@ -214,6 +214,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("ExternalSessionId")
                         .HasColumnType("text");
 
@@ -267,6 +270,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("PkceChallenge")
                         .IsRequired()
@@ -576,6 +582,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Issuer")
                         .IsRequired()

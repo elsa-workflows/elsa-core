@@ -42,6 +42,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     ExternalSessionId = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PkceChallenge = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
@@ -68,6 +69,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     ProviderNonce = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProtectedPayload = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
@@ -132,6 +134,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     PermissionProjectionJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     WarningsJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "bigint", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>

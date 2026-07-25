@@ -26,10 +26,19 @@ public interface IExternalAuthenticationConnectionsApi
     Task<ExternalAuthenticationConnection> EnableAsync(string connectionId, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
 
     [Post("/external-authentication/connections/{connectionId}/disable")]
-    Task<ExternalAuthenticationConnection> DisableAsync(string connectionId, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
+    Task<ExternalAuthenticationConnection> DisableAsync(
+        string connectionId,
+        [Header("If-Match")] string ifMatch,
+        [Query] bool confirmFinalLoginPathOverride = false,
+        [Query] bool revokeActiveSessions = false,
+        CancellationToken cancellationToken = default);
 
     [Delete("/external-authentication/connections/{connectionId}")]
-    Task<ExternalAuthenticationConnection> ArchiveAsync(string connectionId, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
+    Task<ExternalAuthenticationConnection> ArchiveAsync(
+        string connectionId,
+        [Header("If-Match")] string ifMatch,
+        [Query] bool confirmFinalLoginPathOverride = false,
+        CancellationToken cancellationToken = default);
 
     [Post("/external-authentication/connections/{connectionId}/restore")]
     Task<ExternalAuthenticationConnection> RestoreAsync(string connectionId, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
@@ -37,8 +46,17 @@ public interface IExternalAuthenticationConnectionsApi
     [Post("/external-authentication/connections/{connectionId}/validate")]
     Task<ValidateExternalAuthenticationConnectionResponse> ValidateAsync(string connectionId, CancellationToken cancellationToken = default);
 
-    [Put("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}")]
-    Task<ExternalAuthenticationConnection> ReplaceSecretBindingAsync(string connectionId, string fieldName, [Body] SaveExternalAuthenticationSecretBindingRequest request, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
+    [Post("/external-authentication/connections/{connectionId}/test")]
+    Task<TestExternalAuthenticationConnectionResponse> TestAsync(string connectionId, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
+
+    [Post("/external-authentication/connections/{connectionId}/preview")]
+    Task<InitiateExternalAuthenticationPreviewResponse> InitiatePreviewAsync(string connectionId, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
+
+    [Get("/external-authentication/previews/{previewHandle}")]
+    Task<ExternalAuthenticationPreviewResult> GetPreviewResultAsync(string previewHandle, CancellationToken cancellationToken = default);
+
+    [Put("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}/managed")]
+    Task<ExternalAuthenticationConnection> ReplaceManagedSecretAsync(string connectionId, string fieldName, [Body] SaveManagedExternalAuthenticationSecretRequest request, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);
 
     [Delete("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}")]
     Task<ExternalAuthenticationConnection> RemoveSecretBindingAsync(string connectionId, string fieldName, [Header("If-Match")] string ifMatch, CancellationToken cancellationToken = default);

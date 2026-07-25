@@ -10,6 +10,7 @@ using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Providers;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Services;
@@ -35,7 +36,8 @@ public sealed partial class IdentityProviderConnectionManagementService(
     IOptions<ExternalAuthenticationOptions> options,
     Elsa.Identity.Contracts.IRoleAuthorizationService roleAuthorizationService,
     IExternalAuthenticationSessionStore sessions,
-    IServiceProvider services)
+    IServiceProvider services,
+    ILogger<IdentityProviderConnectionManagementService> logger)
 {
     private readonly IReadOnlyDictionary<string, ISecretBindingResolver> _secretBindingResolvers = secretBindingResolvers.ToDictionary(x => x.Type, StringComparer.Ordinal);
     private readonly IReadOnlyDictionary<string, IManagedSecretBindingWriter> _managedSecretBindingWriters = managedSecretBindingWriters.ToDictionary(x => x.ResolverType, StringComparer.Ordinal);
@@ -55,7 +57,12 @@ public sealed partial class IdentityProviderConnectionManagementService(
 
     /// <summary>Returns the deployment-derived read-only upstream callback URI for management display.</summary>
     public Uri? GetProviderCallbackUri(IdentityProviderConnection connection) => options.Value.Redirects.ExternalCallbackBaseUri is { } baseUri
-        ? new Uri(baseUri, $"external-authentication/callback/{Uri.EscapeDataString(ConnectionRevisionCalculator.NormalizeKey(connection.Key))}")
+        ? ExternalAuthenticationCallbackUris.GetAuthorizationCallbackUri(baseUri, connection, BrokerTransactionPurpose.ExternalSignIn)
+        : null;
+
+    /// <summary>Returns the deployment-derived read-only callback URI used by provider preview sign-ins.</summary>
+    public Uri? GetProviderPreviewCallbackUri(IdentityProviderConnection connection) => options.Value.Redirects.ExternalCallbackBaseUri is { } baseUri
+        ? ExternalAuthenticationCallbackUris.GetAuthorizationCallbackUri(baseUri, connection, BrokerTransactionPurpose.Preview)
         : null;
 
     public async ValueTask<IReadOnlyCollection<EffectiveIdentityProviderConnection>> ListAsync(string targetTenantId, ConnectionFilter filter, CancellationToken cancellationToken = default)
@@ -103,15 +110,14 @@ public sealed partial class IdentityProviderConnectionManagementService(
         NormalizeForUpdate(candidate, existing);
         if (!CanMutate(candidate.TenantId, targetTenantId))
             return new ManagementConnectionMutationResult.Forbidden();
+        if (!string.Equals(existing.Key, candidate.Key, StringComparison.Ordinal))
+            return new ManagementConnectionMutationResult.Conflict("connection_key_immutable");
         var requireUnsafeConfirmation = adapters.TryGet(candidate.AdapterType, out var candidateAdapter) &&
             UnsafeSettingsChanged(existing.AdapterSettings, candidate.AdapterSettings, candidateAdapter.Describe());
         var validation = await ValidateAsync(candidate, actor, targetTenantId, requireCompleteConfiguration: candidate.IsEnabled, confirmUnsafeSettings, requireUnsafeConfirmation, allowIncompleteDraft: !candidate.IsEnabled, cancellationToken: cancellationToken);
         if (!validation.IsValid)
             return new ManagementConnectionMutationResult.ValidationFailed(validation);
 
-        var keyOrScopeChanged = !string.Equals(existing.Key, candidate.Key, StringComparison.Ordinal) || !string.Equals(existing.TenantId, candidate.TenantId, StringComparison.Ordinal);
-        if (keyOrScopeChanged && await CollidesWithConfigurationOrHostAsync(candidate, existing.Id, targetTenantId, cancellationToken))
-            return new ManagementConnectionMutationResult.Conflict("connection_key_conflict");
         if (await IsBlockedByFinalLoginPathGuardAsync(existing, candidate, targetTenantId, actor, confirmFinalLoginPathOverride, cancellationToken))
             return new ManagementConnectionMutationResult.Conflict("final_login_path_guard");
 
@@ -185,7 +191,8 @@ public sealed partial class IdentityProviderConnectionManagementService(
         if (processed is ManagementConnectionMutationResult.Success && action == ConnectionLifecycle.Disabled && revokeActiveSessions)
         {
             var connectionKey = ConnectionRevisionCalculator.NormalizeKey(candidate.Key);
-            await sessions.RevokeActiveForConnectionAsync(connectionKey, "connection_disabled", clock.UtcNow, cancellationToken);
+            var revokedCount = await sessions.RevokeActiveForConnectionAsync(connectionKey, "connection_disabled", clock.UtcNow, cancellationToken);
+            await PublishBulkSessionRevocationAsync(candidate, actor, revokedCount);
         }
         return processed;
     }
@@ -264,12 +271,10 @@ public sealed partial class IdentityProviderConnectionManagementService(
         switch (result)
         {
             case ConnectionMutationResult.Created(var createdConnection):
-                await registryVersions.AdvanceAsync(cancellationToken);
-                await PublishAsync(createdConnection, actor, operation, previousLifecycle, previousConnection, cancellationToken);
+                await RunPostCommitActionsAsync(createdConnection, actor, operation, previousLifecycle, previousConnection);
                 return new ManagementConnectionMutationResult.Success(createdConnection);
             case ConnectionMutationResult.Updated(var updatedConnection):
-                await registryVersions.AdvanceAsync(cancellationToken);
-                await PublishAsync(updatedConnection, actor, operation, previousLifecycle, previousConnection, cancellationToken);
+                await RunPostCommitActionsAsync(updatedConnection, actor, operation, previousLifecycle, previousConnection);
                 return new ManagementConnectionMutationResult.Success(updatedConnection);
             case ConnectionMutationResult.NotFound:
                 return new ManagementConnectionMutationResult.NotFound();
@@ -279,6 +284,55 @@ public sealed partial class IdentityProviderConnectionManagementService(
                 return new ManagementConnectionMutationResult.PreconditionFailed(currentRevision);
             default:
                 throw new InvalidOperationException("The connection store returned an unknown mutation result.");
+        }
+    }
+
+    private async ValueTask RunPostCommitActionsAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, string operation, ConnectionLifecycle? previousLifecycle, IdentityProviderConnection? previousConnection)
+    {
+        try
+        {
+            await registryVersions.AdvanceAsync(CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.LogCritical(exception, "Connection {ConnectionId} was committed, but advancing the external-authentication registry version failed.", connection.Id);
+        }
+
+        try
+        {
+            await PublishAsync(connection, actor, operation, previousLifecycle, previousConnection, CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Connection {ConnectionId} was committed, but publishing external-authentication security notifications failed.", connection.Id);
+        }
+    }
+
+    private async ValueTask PublishBulkSessionRevocationAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, int revokedCount)
+    {
+        if (revokedCount == 0)
+            return;
+
+        var notificationSender = services.GetService<INotificationSender>();
+        if (notificationSender is null)
+            return;
+
+        try
+        {
+            var context = new SecurityEventContext(
+                actor.FindFirstValue(ClaimTypes.NameIdentifier) ?? actor.FindFirstValue("sub"),
+                connection.TenantId,
+                connection.Id,
+                null,
+                clock.UtcNow,
+                SecurityEventOutcome.Succeeded,
+                Guid.NewGuid().ToString("N"),
+                "Active external authentication sessions were revoked when the connection was disabled.");
+            await notificationSender.SendAsync(new ExternalAuthenticationConnectionSessionsRevoked(context, revokedCount, "connection_disabled"), CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Connection {ConnectionId} sessions were revoked, but publishing the aggregate security notification failed.", connection.Id);
         }
     }
 
@@ -464,13 +518,25 @@ public sealed partial class IdentityProviderConnectionManagementService(
             errors.Add(new ConnectionValidationError("unlinkedPolicy", "not_allowed", "This deployment does not allow database connection policy overrides."));
         else if (policy.SettingsVersion <= 0 || !policies.TryGet(policy.Type, out _) || !IsAllowed(configuredOptions.AllowedUnlinkedIdentityPolicyTypes, policy.Type))
             errors.Add(new ConnectionValidationError("unlinkedPolicy", "unavailable", "The selected unlinked identity policy is not installed or allowed."));
-        else if (string.Equals(policy.Type, Policies.CreateUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
-            !await roleAuthorizationService.CanAssignRolesAsync(actor, Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings), cancellationToken))
-            errors.Add(new ConnectionValidationError("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
-        else if (string.Equals(policy.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
-            (!TryGetMatcherSelection(policy.Settings, out var matcherType, out var matcherSettingsVersion) || !matchers.TryGet(matcherType, out _) || matchers.ListDescriptors().All(x => !string.Equals(x.Type, matcherType, StringComparison.Ordinal) || x.SettingsVersion != matcherSettingsVersion)))
-            errors.Add(new ConnectionValidationError("unlinkedPolicy.matcher", "unavailable", "The selected external user matcher is not installed or allowed."));
+        else
+        {
+            if (UsesCreateUserFallback(policy) &&
+                !await roleAuthorizationService.CanAssignRolesAsync(actor, Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings), cancellationToken))
+                errors.Add(new ConnectionValidationError("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
+
+            if (string.Equals(policy.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
+                (!TryGetMatcherSelection(policy.Settings, out var matcherType, out var matcherSettingsVersion) ||
+                 !IsAllowed(configuredOptions.AllowedExternalUserMatcherTypes, matcherType) ||
+                 !matchers.TryGet(matcherType, out _) ||
+                 matchers.ListDescriptors().All(x => !string.Equals(x.Type, matcherType, StringComparison.Ordinal) || x.SettingsVersion != matcherSettingsVersion)))
+                errors.Add(new ConnectionValidationError("unlinkedPolicy.matcher", "unavailable", "The selected external user matcher is not installed or allowed."));
+        }
     }
+
+    private static bool UsesCreateUserFallback(PolicySelection policy) =>
+        string.Equals(policy.Type, Policies.CreateUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) ||
+        string.Equals(policy.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
+        string.Equals(ReadString(policy.Settings, "noMatchAction"), "create-user", StringComparison.OrdinalIgnoreCase);
 
     private static bool TryGetMatcherSelection(JsonElement settings, out string matcherType, out int settingsVersion)
     {
@@ -482,6 +548,13 @@ public sealed partial class IdentityProviderConnectionManagementService(
         matcherType = type.GetString() ?? string.Empty;
         return !string.IsNullOrWhiteSpace(matcherType) && matcher.TryGetProperty("settingsVersion", out var version) && version.TryGetInt32(out settingsVersion) && settingsVersion > 0;
     }
+
+    private static string? ReadString(JsonElement settings, string propertyName) =>
+        settings.ValueKind == JsonValueKind.Object &&
+        settings.TryGetProperty(propertyName, out var value) &&
+        value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
 
     private void ValidateGrantSources(IdentityProviderConnection connection, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors)
     {

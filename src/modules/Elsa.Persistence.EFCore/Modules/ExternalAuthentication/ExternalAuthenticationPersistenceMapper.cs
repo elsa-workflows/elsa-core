@@ -74,6 +74,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         ProviderNonce = transaction.ProviderNonce,
         ProtectedPayload = transaction.ProtectedPayload,
         ExpiresAt = transaction.ExpiresAt,
+        ExpiresAtUtcTicks = transaction.ExpiresAt.UtcTicks,
         ConsumedAt = transaction.ConsumedAt
     };
 
@@ -107,6 +108,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         ExternalSessionId = grant.ExternalSessionId,
         PkceChallenge = grant.PkceChallenge,
         ExpiresAt = grant.ExpiresAt,
+        ExpiresAtUtcTicks = grant.ExpiresAt.UtcTicks,
         ConsumedAt = grant.ConsumedAt
     };
 
@@ -183,6 +185,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         PermissionProjectionJson = ExternalAuthenticationJsonSerializer.Serialize(result.PermissionProjection),
         WarningsJson = ExternalAuthenticationJsonSerializer.Serialize(result.Warnings),
         ExpiresAt = result.ExpiresAt,
+        ExpiresAtUtcTicks = result.ExpiresAt.UtcTicks,
         ConsumedAt = result.ConsumedAt
     };
 

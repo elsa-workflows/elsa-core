@@ -214,6 +214,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("NUMBER(19)");
+
                     b.Property<string>("ExternalSessionId")
                         .HasColumnType("NVARCHAR2(2000)");
 
@@ -267,6 +270,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("PkceChallenge")
                         .IsRequired()
@@ -576,6 +582,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
 
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("Issuer")
                         .IsRequired()

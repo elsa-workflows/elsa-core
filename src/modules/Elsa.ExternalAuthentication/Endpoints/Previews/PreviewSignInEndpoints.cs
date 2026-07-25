@@ -1,9 +1,12 @@
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
+using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Services;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Previews;
 
@@ -26,7 +29,7 @@ internal sealed class InitiatePreview(PreviewSignInService previews, ITenantAcce
         switch (result)
         {
             case PreviewInitiationResult.Started(var handle, var expiresAt):
-                await HttpContext.Response.WriteAsJsonAsync(new PreviewInitiationResponse($"/external-authentication/previews/{Uri.EscapeDataString(handle)}/authorize", expiresAt), cancellationToken);
+                await HttpContext.Response.WriteAsJsonAsync(new PreviewInitiationResponse(BuildAuthorizePath(HttpContext.Request.PathBase, HttpContext.Request.Path, handle), expiresAt), cancellationToken);
                 return;
             case PreviewInitiationResult.PreconditionFailed(var currentRevision):
                 HttpContext.Response.StatusCode = StatusCodes.Status412PreconditionFailed;
@@ -40,19 +43,30 @@ internal sealed class InitiatePreview(PreviewSignInService previews, ITenantAcce
                 return;
         }
     }
+
+    internal static string BuildAuthorizePath(PathString pathBase, PathString requestPath, string handle)
+    {
+        const string routeMarker = "/external-authentication/connections/";
+        var requestPathValue = requestPath.Value ?? string.Empty;
+        var markerIndex = requestPathValue.LastIndexOf(routeMarker, StringComparison.OrdinalIgnoreCase);
+        var routePrefix = markerIndex >= 0 ? requestPathValue[..markerIndex].TrimEnd('/') : string.Empty;
+        var applicationPrefix = pathBase.Value?.TrimEnd('/') ?? string.Empty;
+        return $"{applicationPrefix}{routePrefix}/external-authentication/previews/{Uri.EscapeDataString(handle)}/authorize";
+    }
 }
 
-internal sealed class AuthorizePreview(PreviewSignInService previews, ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest
+internal sealed class AuthorizePreview(PreviewSignInService previews) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
     {
         Get("/external-authentication/previews/{previewHandle}/authorize");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsPreview);
+        AllowAnonymous();
+        Options(x => x.RequireRateLimiting(ExternalAuthenticationRateLimitPolicyNames.ExternalInitiation));
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        var result = await previews.AuthorizeAsync(Route<string>("previewHandle")!, tenantAccessor.TenantId, User, cancellationToken);
+        var result = await previews.AuthorizeAsync(Route<string>("previewHandle")!, cancellationToken);
         if (result is PreviewAuthorizeResult.Redirect(var navigationUri))
         {
             HttpContext.Response.Redirect(navigationUri.ToString());
@@ -64,7 +78,12 @@ internal sealed class AuthorizePreview(PreviewSignInService previews, ITenantAcc
 
 internal sealed class CompletePreview(PreviewSignInService previews) : ElsaEndpointWithoutRequest
 {
-    public override void Configure() => Get("/external-authentication/previews/callback/{connectionId}");
+    public override void Configure()
+    {
+        Get("/external-authentication/previews/callback/{connectionId}");
+        AllowAnonymous();
+        Options(x => x.RequireRateLimiting(ExternalAuthenticationRateLimitPolicyNames.ProviderCallback));
+    }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {

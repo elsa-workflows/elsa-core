@@ -42,6 +42,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     ExternalSessionId = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
                     PkceChallenge = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "NUMBER(19)", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true)
                 },
                 constraints: table =>
@@ -68,6 +69,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     ProviderNonce = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
                     ProtectedPayload = table.Column<byte[]>(type: "RAW(2000)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "NUMBER(19)", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true)
                 },
                 constraints: table =>
@@ -132,6 +134,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     PermissionProjectionJson = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     WarningsJson = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: false),
+                    ExpiresAtUtcTicks = table.Column<long>(type: "NUMBER(19)", nullable: false),
                     ConsumedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true)
                 },
                 constraints: table =>

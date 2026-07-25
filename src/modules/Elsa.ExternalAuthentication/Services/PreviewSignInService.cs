@@ -51,13 +51,16 @@ public sealed class PreviewSignInService(
         return new PreviewInitiationResult.Started(handle, transaction.ExpiresAt);
     }
 
-    public async ValueTask<PreviewAuthorizeResult> AuthorizeAsync(string previewHandle, string tenantId, ClaimsPrincipal administrator, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Continues a preview from the opaque, one-time browser handle created by an authorized administrator.
+    /// The browser navigation is anonymous because it cannot carry Studio's bearer credential.
+    /// </summary>
+    public async ValueTask<PreviewAuthorizeResult> AuthorizeAsync(string previewHandle, CancellationToken cancellationToken = default)
     {
-        var adminId = ActorId(administrator);
         var taken = await stateStore.TryTakeAsync<BrokerTransaction>(StartPurpose, handles.Hash(previewHandle), cancellationToken);
-        if (adminId is null || taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction } || !string.Equals(transaction.ClientId, adminId, StringComparison.Ordinal) || !string.Equals(transaction.TenantId, tenantId, StringComparison.Ordinal))
+        if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction } || string.IsNullOrWhiteSpace(transaction.ClientId))
             return new PreviewAuthorizeResult.Invalid();
-        var lookup = await management.FindAsync(transaction.ConnectionId!, tenantId, cancellationToken);
+        var lookup = await management.FindAsync(transaction.ConnectionId!, transaction.TenantId, cancellationToken);
         if (lookup is not ManagementConnectionLookupResult.Found(var connection) || !string.Equals(connection.Connection.MaterialRevision, transaction.ConnectionMaterialRevision, StringComparison.Ordinal) || !adapters.TryGet(connection.Connection.AdapterType, out var adapter))
             return new PreviewAuthorizeResult.Invalid();
 

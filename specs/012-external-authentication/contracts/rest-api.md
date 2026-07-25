@@ -293,7 +293,7 @@ Adapter descriptor:
 ```http
 GET /external-authentication/connections
     ?search=
-    &source=configuration|studio|studioOverride
+    &source=configuration|database
     &adapterType=
     &enabled=
     &valid=
@@ -311,9 +311,11 @@ Requires `external-authentication:connections:read`. Maximum `pageSize` is 100.
     {
       "id": "01JZCONNECTION",
       "key": "contoso",
-      "source": "studioOverride",
-      "overridesConfiguration": true,
+      "source": "database",
+      "overridesConfigurationConnection": true,
       "adapterType": "openid-connect",
+      "callbackUri": "https://elsa.example/elsa/api/external-authentication/callback/contoso",
+      "previewCallbackUri": "https://elsa.example/elsa/api/external-authentication/previews/callback/01JZCONNECTION",
       "displayName": "Contoso",
       "iconId": "building",
       "order": 10,
@@ -350,6 +352,7 @@ Requires `external-authentication:connections:create`.
 ```json
 {
   "key": "contoso",
+  "scope": {"kind":"host"},
   "adapterType": "openid-connect",
   "displayName": "Contoso",
   "iconId": "building",
@@ -357,10 +360,9 @@ Requires `external-authentication:connections:create`.
   "isPreferred": false,
   "adapterSettingsVersion": 1,
   "adapterSettings": {},
-  "secretBindings": {},
+  "overridesConfigurationConnection": false,
   "unlinkedPolicy": {"type":"reject","settingsVersion":1,"settings":{}},
-  "defaultRoleIds": [],
-  "matcherPolicy": null,
+  "permissionGrantSources": [],
   "claimProjection": {
     "allowedClaimTypes": ["name", "email", "groups"],
     "redactedClaimTypes": ["email"]
@@ -371,13 +373,13 @@ Requires `external-authentication:connections:create`.
 
 Creates a disabled draft. Success: `201`, `Location` header, `ETag: "1"`, and detail body.
 
-### Create Studio Override
+### Create Database Override
 
 ```http
-POST /external-authentication/connections/{connectionId}/override
+POST /external-authentication/connections
 ```
 
-Requires create/update authorization and an explicit confirmation payload. The server returns a complete editable copy with `source=studioOverride`; subsequent saves send the whole document. No inherited field markers or partial patch semantics exist. A disabled override continues shadowing. Archiving it reveals configuration; restoring it resumes shadowing in disabled state.
+Requires `external-authentication:connections:create`. Studio starts with a complete editable copy of the configuration-owned connection, preserves its immutable logical `key`, and submits the ordinary create document with `"overridesConfigurationConnection": true`. The server creates a distinct database record with `source=database`; subsequent saves send the whole document to the ordinary update endpoint. No inherited field markers or partial patch semantics exist. A disabled database override continues shadowing the configuration-owned connection. Archiving it reveals configuration; restoring it resumes shadowing in disabled state.
 
 ### Detail and Update
 
@@ -388,15 +390,15 @@ PUT /external-authentication/connections/{connectionId}
 
 Read requires `external-authentication:connections:read`; update requires `external-authentication:connections:update` and `If-Match`.
 
-Detail includes the create fields plus lifecycle, validation, shadow/conflict diagnostics, effective policy, resolved extension availability, and secret binding state:
+Detail includes the create fields plus lifecycle, validation, shadow/conflict diagnostics, effective policy, resolved extension availability, and secret binding state. `callbackUri` and `previewCallbackUri` are deployment-derived, read-only values that must be registered exactly with strict providers when their respective normal and administrator-preview flows are used:
 
 ```json
 {
   "secretBindings": {
     "clientSecret": {
-      "resolverType": "elsa-secrets",
       "ownership": "managed",
-      "reference": "contoso-oidc-secret",
+      "resolverType": null,
+      "reference": null,
       "isConfigured": true,
       "isResolvable": true
     }
@@ -423,14 +425,14 @@ For an OpenID Connect connection, `adapterSettings` MAY include explicit overrid
 }
 ```
 
-The safe default is to omit `advancedTrustOverrides` and use the exact `discoveryUrl`. Creating or updating a connection with any advanced trust override requires both the normal create/update permission and `external-authentication:provider-trust:unsafe`; deployment policy must also allow the operation. The command MUST include the non-persisted field `"confirmUnsafeProviderTrust": true`; omission or `false` is rejected. Acceptance emits a security notification containing the connection identity, changed field names, actor, and revision, but not signing-key bodies or secret material. Authorized detail responses return the configured override values and identify that Advanced trust is active so Studio can keep its warning visible; `confirmUnsafeProviderTrust` is never returned or persisted.
+The safe default is to omit `advancedTrustOverrides` and use the exact `discoveryUrl`. Creating or updating a connection with any advanced trust override requires both the normal create/update permission and `external-authentication:provider-trust:unsafe`; deployment policy must also allow the operation. The command MUST include the non-persisted field `"confirmUnsafeSettings": true`; omission or `false` is rejected. Acceptance emits a security notification containing the connection identity, changed field names, actor, and revision, but not signing-key bodies or secret material. Authorized detail responses return the configured override values and identify that Advanced trust is active so Studio can keep its warning visible; `confirmUnsafeSettings` is never returned or persisted.
 
 These fields replace only the corresponding discovery-derived inputs. They cannot change Elsa-owned callback routing, confidential-client requirements, mandatory S256 PKCE, or state, correlation, nonce, signature, issuer, audience/authorized-party, expiry, and callback-error validation.
 
 ### Secret Binding Replacement/Removal
 
 ```http
-PUT /external-authentication/connections/{connectionId}/secret-bindings/{fieldName}
+PUT /external-authentication/connections/{connectionId}/secret-bindings/{fieldName}/managed
 DELETE /external-authentication/connections/{connectionId}/secret-bindings/{fieldName}
 ```
 
@@ -438,26 +440,27 @@ Requires `external-authentication:connections:update` and `If-Match`.
 
 ```json
 {
-  "ownership": "managed",
   "resolverType": "elsa-secrets",
-  "reference": "contoso-oidc-secret",
-  "expectedType": "text",
-  "expectedScope": "external-authentication"
+  "value": "write-only-secret-value"
 }
 ```
 
-If the Elsa Secrets bridge supports inline creation/replacement, its secret value is submitted to the Secrets API, not returned or embedded in the connection response. External bindings use `ownership=external` and a deployment resolver such as `configuration`; their value cannot be replaced or removed through these endpoints.
+The managed writer stages a new secret reference, publishes it only if the connection revision compare-and-swap succeeds, and removes staged material after any definitive failure. If a store failure has an ambiguous commit outcome and the persisted binding cannot be verified, Elsa retains the staged material rather than risk deleting a live secret and records an operational warning. Neither the value nor the managed reference is returned. General create/update connection documents cannot supply secret bindings.
+
+External bindings use `ownership=external` and a deployment resolver such as `configuration`. They are deployment-owned, may be declared only by configuration connections, and cannot be created, replaced, or removed through management endpoints.
 
 ### Lifecycle Actions
 
 ```http
 POST /external-authentication/connections/{connectionId}/enable
-POST /external-authentication/connections/{connectionId}/disable?confirmFinalLoginPathOverride=false
+POST /external-authentication/connections/{connectionId}/disable?confirmFinalLoginPathOverride=false&revokeActiveSessions=false
 DELETE /external-authentication/connections/{connectionId}?confirmFinalLoginPathOverride=false
 POST /external-authentication/connections/{connectionId}/restore
 ```
 
 All require `If-Match`.
+
+`revokeActiveSessions=true` additionally requires `external-authentication:sessions:revoke` and emits an aggregate, redacted session-revocation security notification.
 
 Disabling or archiving the final normal login method is rejected with `409 conflict` and `details.code` set to `final_login_path_guard` unless another normal/local method or deployment-owned break-glass method remains. A caller holding the deployment-configured privileged override permission may repeat the operation with `confirmFinalLoginPathOverride=true`; Studio requires a separate explicit recovery confirmation before sending it.
 
@@ -513,6 +516,8 @@ Requires `external-authentication:connections:preview`. POST requires `If-Match`
 ```
 
 The authorize route consumes the administrator-bound start state and redirects to the provider. The provider callback stores only a redacted result and returns safe completion status. Result GET is one-time, bound to the initiating administrator session, and returns the allowlisted Preview Result. It returns `410` after expiry/consumption and never produces a normal completion code.
+
+The provider registration must include the exact read-only `previewCallbackUri` returned on the connection resource. This is distinct from the normal `callbackUri` because preview completion is isolated from user sign-in and cannot create a user, link, credential, or session.
 
 ## External Identity Links
 

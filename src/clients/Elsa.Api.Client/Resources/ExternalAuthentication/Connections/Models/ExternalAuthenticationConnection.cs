@@ -13,6 +13,7 @@ public sealed class ExternalAuthenticationConnection
     public ExternalAuthenticationConnectionScope Scope { get; set; } = new();
     public string AdapterType { get; set; } = "";
     public Uri? CallbackUri { get; set; }
+    public Uri? PreviewCallbackUri { get; set; }
     public int AdapterSettingsVersion { get; set; }
     public JsonElement AdapterSettings { get; set; }
     public Dictionary<string, ExternalAuthenticationSecretBindingState> SecretBindings { get; set; } = new(StringComparer.Ordinal);
@@ -21,6 +22,7 @@ public sealed class ExternalAuthenticationConnection
     public int Order { get; set; }
     public bool IsPreferred { get; set; }
     public bool OverridesConfigurationConnection { get; set; }
+    public bool CanCreateOverride { get; set; }
     public bool EnabledIntent { get; set; }
     public bool EffectivelyEnabled { get; set; }
     public string Validity { get; set; } = "";
@@ -37,16 +39,15 @@ public sealed class ExternalAuthenticationConnection
 
 public sealed class ExternalAuthenticationConnectionScope
 {
-    public string Kind { get; set; } = "tenant";
+    public string Kind { get; set; } = "host";
     public string? TenantId { get; set; }
 }
 
 public sealed class ExternalAuthenticationSecretBindingState
 {
-    public string ResolverType { get; set; } = "";
-    public string Reference { get; set; } = "";
-    public string? ExpectedType { get; set; }
-    public string? ExpectedScope { get; set; }
+    public string Ownership { get; set; } = "";
+    public string? ResolverType { get; set; }
+    public string? Reference { get; set; }
     public bool IsConfigured { get; set; }
     public bool IsResolvable { get; set; }
 }

@@ -208,6 +208,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ExternalSessionId")
                         .HasColumnType("TEXT");
 
@@ -262,6 +265,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.Property<string>("ExpiresAt")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("PkceChallenge")
                         .IsRequired()
@@ -580,6 +586,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.Property<string>("ExpiresAt")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<long>("ExpiresAtUtcTicks")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Issuer")
                         .IsRequired()

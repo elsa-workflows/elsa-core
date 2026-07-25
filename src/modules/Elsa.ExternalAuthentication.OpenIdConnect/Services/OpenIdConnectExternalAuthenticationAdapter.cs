@@ -65,7 +65,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         {
             ["response_type"] = "code",
             ["client_id"] = settings.ClientId,
-            ["redirect_uri"] = GetCallbackUri(context.Connection).AbsoluteUri,
+            ["redirect_uri"] = GetCallbackUri(context.Connection, context.Transaction.Purpose).AbsoluteUri,
             ["scope"] = string.Join(' ', settings.Scopes),
             ["state"] = context.CorrelationState,
             ["nonce"] = nonce
@@ -160,7 +160,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         {
             ["grant_type"] = "authorization_code",
             ["code"] = code,
-            ["redirect_uri"] = GetCallbackUri(context.Connection).AbsoluteUri
+            ["redirect_uri"] = GetCallbackUri(context.Connection, context.Transaction.Purpose).AbsoluteUri
         };
         if (verifier is not null)
             values["code_verifier"] = verifier;
@@ -212,16 +212,16 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         return new System.Security.Claims.ClaimsPrincipal(validation.ClaimsIdentity);
     }
 
-    private Uri GetCallbackUri(EffectiveIdentityProviderConnection connection)
+    private Uri GetCallbackUri(EffectiveIdentityProviderConnection connection, BrokerTransactionPurpose purpose)
     {
         var baseUri = options.Value.Redirects.ExternalCallbackBaseUri ?? throw new OpenIdConnectAuthenticationException("The deployment callback base URI is not configured.");
-        return new Uri(baseUri, $"external-authentication/callback/{Uri.EscapeDataString(ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key))}");
+        return ExternalAuthenticationCallbackUris.GetAuthorizationCallbackUri(baseUri, connection.Connection, purpose);
     }
 
     private Uri GetLogoutCallbackUri(EffectiveIdentityProviderConnection connection)
     {
         var baseUri = options.Value.Redirects.ExternalCallbackBaseUri ?? throw new OpenIdConnectAuthenticationException("The deployment callback base URI is not configured.");
-        return new Uri(baseUri, $"external-authentication/logout/callback/{Uri.EscapeDataString(ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key))}");
+        return ExternalAuthenticationCallbackUris.GetLogoutCallbackUri(baseUri, connection.Connection.Key);
     }
 
     private async Task<IEnumerable<SecurityKey>> GetSigningKeysAsync(Uri? jwksUri, CancellationToken cancellationToken)

@@ -13,7 +13,8 @@ public class SecurityNotificationTests
             typeof(IdentityProviderConnectionChanged), typeof(IdentityProviderConnectionLifecycleChanged),
             typeof(IdentityProviderConnectionSecretBindingChanged), typeof(IdentityProviderConnectionTested),
             typeof(IdentityProviderConnectionPreviewed), typeof(ExternalIdentityLinkChanged),
-            typeof(ExternalAuthenticationSessionRevoked), typeof(ExternalSignInCompleted), typeof(ExternalAuthenticationOutcomeRecorded)
+            typeof(ExternalAuthenticationSessionRevoked), typeof(ExternalAuthenticationConnectionSessionsRevoked),
+            typeof(ExternalSignInCompleted), typeof(ExternalAuthenticationOutcomeRecorded)
         };
 
         Assert.All(notificationTypes, type =>

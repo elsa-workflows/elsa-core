@@ -110,6 +110,32 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task DurableSingleUseStoresRejectExpiredEntriesInTheAtomicConsumePredicate()
+    {
+        var durableDbContexts = new ExternalAuthenticationDbContextFactory(_services.GetRequiredService<IServiceScopeFactory>());
+        var beforeExpiry = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var afterExpiry = beforeExpiry.AddMinutes(2);
+        var expiresAt = beforeExpiry.AddMinutes(1);
+
+        var stateStore = new EFCoreExternalAuthenticationStateStore(durableDbContexts, new SteppingSystemClock(afterExpiry));
+        await stateStore.PutAsync("state", "state", new BrokerTransaction { HandleHash = "state", Purpose = BrokerTransactionPurpose.ExternalSignIn, ClientId = "studio", CallbackUri = new Uri("https://studio.example/callback"), ReturnPath = "/", TenantId = "tenant-a", PkceChallenge = "challenge", ExpiresAt = expiresAt }, expiresAt);
+        Assert.IsType<TakeResult<BrokerTransaction>.Expired>(await stateStore.TryTakeAsync<BrokerTransaction>("state", "state"));
+
+        var grantStore = new EFCoreAuthorizationGrantStore(durableDbContexts, new SteppingSystemClock(afterExpiry));
+        await grantStore.SaveAsync(new AuthorizationGrant { CodeHash = "grant", ClientId = "studio", CallbackUri = new Uri("https://studio.example/callback"), TenantId = "tenant-a", UserId = "user-a", PkceChallenge = "challenge", ExpiresAt = expiresAt });
+        Assert.IsType<TakeResult<AuthorizationGrant>.Expired>(await grantStore.TryTakeAsync("grant"));
+
+        var previewStore = new EFCorePreviewResultStore(durableDbContexts, new SteppingSystemClock(afterExpiry));
+        await previewStore.SaveAsync(new PreviewResult("preview", "admin-a", "tenant-a", "connection-a", "revision-a", "https://issuer.example", "subject", new Dictionary<string, IReadOnlyCollection<string>>(), "allowed", [], [], expiresAt, null));
+        Assert.IsType<TakeResult<PreviewResult>.Expired>(await previewStore.TryTakeAsync("preview", "admin-a"));
+
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        Assert.Null((await dbContext.ExternalAuthenticationBrokerTransactions.SingleAsync(x => x.HandleHash == "state")).ConsumedAt);
+        Assert.Null((await dbContext.ExternalAuthenticationAuthorizationGrants.SingleAsync(x => x.CodeHash == "grant")).ConsumedAt);
+        Assert.Null((await dbContext.ExternalAuthenticationPreviewResults.SingleAsync(x => x.HandleHash == "preview")).ConsumedAt);
+    }
+
+    [Fact]
     public async Task ProvisionerCreatesCredentiallessUserAndOneDurableLinkPerIdentityTuple()
     {
         using var hasher = new HmacExternalAuthenticationHandleHasher();
@@ -153,5 +179,11 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     {
         public IdentityElsaDbContext CreateDbContext() => new(options, serviceProvider);
         public Task<IdentityElsaDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => Task.FromResult(CreateDbContext());
+    }
+
+    private sealed class SteppingSystemClock(params DateTimeOffset[] instants) : ISystemClock
+    {
+        private int _index;
+        public DateTimeOffset UtcNow => instants[Math.Min(_index++, instants.Length - 1)];
     }
 }

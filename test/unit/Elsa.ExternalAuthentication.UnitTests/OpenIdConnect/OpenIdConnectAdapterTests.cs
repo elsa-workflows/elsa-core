@@ -180,6 +180,51 @@ public class OpenIdConnectAdapterTests
     }
 
     [Theory]
+    [InlineData("https://elsa.example/gateway")]
+    [InlineData("https://elsa.example/gateway/")]
+    public async Task UsesPurposeSpecificCallbacksWithoutDiscardingTheDeploymentBasePath(string callbackBaseUri)
+    {
+        var adapter = CreateAdapter(new StaticResponseHandler(), new Uri(callbackBaseUri));
+        var connection = CreateConnection(CreateManualSettings());
+        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
+        var clock = new TestSystemClock(DateTimeOffset.UtcNow);
+        var signIn = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), CreateTransaction(), "sign-in-state", clock));
+        var previewTransaction = CreateTransaction();
+        previewTransaction.Purpose = BrokerTransactionPurpose.Preview;
+        var preview = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), previewTransaction, "preview-state", clock));
+        var logout = await adapter.CreateLogoutRequestAsync(new ExternalLogoutContext(effective, new Dictionary<string, ResolvedSecretBinding>(), new BrokerTransaction { Purpose = BrokerTransactionPurpose.UpstreamLogout }, "logout-state", clock));
+
+        Assert.Equal("https://elsa.example/gateway/external-authentication/callback/contoso", ParseQuery(signIn.NavigationUri)["redirect_uri"]);
+        Assert.Equal("https://elsa.example/gateway/external-authentication/previews/callback/connection", ParseQuery(preview.NavigationUri)["redirect_uri"]);
+        Assert.Equal("https://elsa.example/gateway/external-authentication/logout/callback/contoso", ParseQuery(Assert.IsType<ExternalLogoutRequest>(logout).NavigationUri)["post_logout_redirect_uri"]);
+    }
+
+    [Fact]
+    public async Task UsesThePreviewCallbackAgainForTheTokenExchange()
+    {
+        var handler = new CapturingTokenResponseHandler(CreateToken());
+        var adapter = CreateAdapter(handler);
+        var connection = CreateConnection(CreateManualSettings());
+        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
+        var transaction = CreateTransaction();
+        transaction.Purpose = BrokerTransactionPurpose.Preview;
+        var authorization = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), transaction, "provider-state", new TestSystemClock(DateTimeOffset.UtcNow)));
+        transaction.ProtectedPayload = authorization.ProtectedAdapterState;
+        var secret = new SensitiveString("secret");
+
+        try
+        {
+            await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding> { ["clientSecret"] = new(secret, "generation") }, transaction, "provider-state", new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = ["provider-state"], ["code"] = ["provider-code"] }, new TestSystemClock(DateTimeOffset.UtcNow)));
+
+            Assert.Contains("redirect_uri=https%3A%2F%2Felsa.example%2Fexternal-authentication%2Fpreviews%2Fcallback%2Fconnection", handler.Body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            secret.Dispose();
+        }
+    }
+
+    [Theory]
     [InlineData("http://issuer.example")]
     [InlineData("https://issuer.example", "http://issuer.example/authorize")]
     public async Task RejectsNonHttpsDiscoveryMetadata(string issuer, string? authorizationEndpoint = null)
@@ -195,9 +240,9 @@ public class OpenIdConnectAdapterTests
 
     private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement.Clone();
 
-    private static OpenIdConnectExternalAuthenticationAdapter CreateAdapter(HttpMessageHandler handler)
+    private static OpenIdConnectExternalAuthenticationAdapter CreateAdapter(HttpMessageHandler handler, Uri? externalCallbackBaseUri = null)
     {
-        var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions { Redirects = new RedirectValidationOptions { ExternalCallbackBaseUri = new Uri("https://elsa.example/") } });
+        var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions { Redirects = new RedirectValidationOptions { ExternalCallbackBaseUri = externalCallbackBaseUri ?? new Uri("https://elsa.example/") } });
         var validator = new OutboundDestinationValidator(options, new StaticPublicDnsResolver());
         return new OpenIdConnectExternalAuthenticationAdapter(new ProviderHttpClient(new HttpMessageInvoker(handler), validator, options), new OpenIdConnectSettingsParser(), options);
     }
@@ -249,6 +294,7 @@ public class OpenIdConnectAdapterTests
         issuer = "https://issuer.example",
         authorizationEndpoint = "https://issuer.example/authorize",
         tokenEndpoint = "https://issuer.example/token",
+        endSessionEndpoint = "https://issuer.example/logout",
         clientId = "elsa",
         clientAuthenticationMethod = "client_secret_basic",
         signingKeys = new
