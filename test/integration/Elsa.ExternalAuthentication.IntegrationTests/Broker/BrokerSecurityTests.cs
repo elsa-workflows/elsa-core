@@ -25,7 +25,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Broker;
 public class BrokerSecurityTests
 {
     [Fact]
-    public async Task LocalAuthorizationCodeExchangeResolvesPermissionsInTheGrantTenant()
+    public async Task LocalAuthorizationCodeExchangeAndRefreshResolveCurrentPermissionsInTheTokenTenant()
     {
         const string verifier = "local-login-code-verifier";
         var challenge = Convert.ToBase64String(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)))
@@ -44,18 +44,25 @@ public class BrokerSecurityTests
         var roles = Substitute.For<IRoleProvider>();
         roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.FromResult<IEnumerable<Role>>(tenantAccessor.TenantId == "tenant-a" ? [role] : []));
-        var tokens = new DefaultElsaTokenService(new TestClock(), Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
+        var tokenOptions = Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
         {
             SigningKey = "local-external-authentication-test-signing-key",
             Issuer = "https://elsa.test",
             Audience = "elsa-api"
-        }));
+        });
+        var tokens = new DefaultElsaTokenService(new CurrentTestClock(), tokenOptions);
+        var refreshTokens = new DefaultIdentityRefreshTokenService(users, new DefaultAccessTokenIssuer(roles, tokens), tenantAccessor, tokenOptions);
+        var externalTokenIssuer = Substitute.For<IExternalAuthenticationTokenIssuer>();
+        externalTokenIssuer.RefreshAsync("studio", Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromException<ExternalTokenResponse>(new InvalidOperationException("A local refresh token must not use the external-session issuer.")));
         var broker = CreateBroker(
             new RecordingAdapter(),
+            tokenIssuer: externalTokenIssuer,
             credentialsValidator: credentials,
             userProvider: users,
             roleProvider: roles,
             tokenService: tokens,
+            identityRefreshTokenService: refreshTokens,
             tenantAccessor: tenantAccessor);
         BrokerCallbackResult authorization;
         using (tenantAccessor.PushContext(new Tenant { Id = "tenant-a", Name = "Tenant A" }))
@@ -93,6 +100,25 @@ public class BrokerSecurityTests
         var accessToken = new JsonWebTokenHandler().ReadJsonWebToken(exchange.Token!.AccessToken);
         Assert.Contains(accessToken.Claims, claim => claim.Type == JwtRegisteredClaimNames.Sub && claim.Value == user.Id);
         Assert.Contains(accessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
+
+        role.Permissions = ["workflows:manage"];
+        var refresh = await broker.ExchangeAsync(new BrokerTokenRequest(
+            "refresh_token",
+            "studio",
+            null,
+            null,
+            null,
+            exchange.Token.RefreshToken,
+            "https://studio.example"));
+
+        Assert.Null(refresh.Error);
+        Assert.NotNull(refresh.Token);
+        Assert.True(exchange.Token.RefreshExpiresIn > 0);
+        Assert.True(refresh.Token.RefreshExpiresIn > 0);
+        var refreshedAccessToken = new JsonWebTokenHandler().ReadJsonWebToken(refresh.Token.AccessToken);
+        Assert.Contains(refreshedAccessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "workflows:manage");
+        Assert.DoesNotContain(refreshedAccessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
+        await externalTokenIssuer.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -110,6 +136,32 @@ public class BrokerSecurityTests
         Assert.Null(result.Error);
         Assert.StartsWith("https://studio.example/authentication/external/callback?code=", result.RedirectUri?.AbsoluteUri);
         Assert.Contains("state=state", result.RedirectUri?.Query);
+    }
+
+    [Fact]
+    public async Task OpaqueRefreshTokensContinueToUseTheExternalSessionIssuer()
+    {
+        var expected = new ExternalTokenResponse("access", "Bearer", 300, "session.rotated", 600, 600);
+        var externalTokenIssuer = Substitute.For<IExternalAuthenticationTokenIssuer>();
+        externalTokenIssuer.RefreshAsync("studio", Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>()).Returns(expected);
+        var identityRefreshTokenService = Substitute.For<IIdentityRefreshTokenService>();
+        var broker = CreateBroker(
+            new RecordingAdapter(),
+            tokenIssuer: externalTokenIssuer,
+            identityRefreshTokenService: identityRefreshTokenService);
+
+        var result = await broker.ExchangeAsync(new BrokerTokenRequest(
+            "refresh_token",
+            "studio",
+            null,
+            null,
+            null,
+            "session.random",
+            "https://studio.example"));
+
+        Assert.Null(result.Error);
+        Assert.Same(expected, result.Token);
+        await identityRefreshTokenService.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -326,10 +378,12 @@ public class BrokerSecurityTests
         IExternalIdentityResolver? identityResolver = null,
         IPermissionGrantResolver? permissionGrantResolver = null,
         IExternalAuthenticationSessionStore? sessionStore = null,
+        IExternalAuthenticationTokenIssuer? tokenIssuer = null,
         IUserCredentialsValidator? credentialsValidator = null,
         IUserProvider? userProvider = null,
         IRoleProvider? roleProvider = null,
         IElsaTokenService? tokenService = null,
+        IIdentityRefreshTokenService? identityRefreshTokenService = null,
         ITenantAccessor? tenantAccessor = null,
         ExternalAuthenticationSecurityNotifier? notifier = null)
     {
@@ -350,13 +404,14 @@ public class BrokerSecurityTests
                 new HashSet<Uri> { new("https://studio.example/authentication/external/callback") }, new HashSet<Uri>(), new HashSet<string> { "https://studio.example" }, new HashSet<string> { "/workflows" }, null, true)]
         });
         var clock = new TestClock();
-        return new ExternalAuthenticationBroker(registry, [adapter], resolvers ?? [], hasher ?? new HmacExternalAuthenticationHandleHasher(), new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider(), identityResolver ?? Substitute.For<IExternalIdentityResolver>(), permissionGrantResolver ?? Substitute.For<IPermissionGrantResolver>(), new InMemoryExternalAuthenticationStateStore(clock), grants ?? new InMemoryAuthorizationGrantStore(clock), sessionStore ?? new InMemoryExternalAuthenticationSessionStore(clock), Substitute.For<IExternalAuthenticationTokenIssuer>(), credentialsValidator ?? Substitute.For<IUserCredentialsValidator>(), userProvider ?? Substitute.For<IUserProvider>(), roleProvider ?? Substitute.For<IRoleProvider>(), tokenService ?? Substitute.For<IElsaTokenService>(), tenantAccessor ?? new DefaultTenantAccessor(), clock, options, notifier);
+        return new ExternalAuthenticationBroker(registry, [adapter], resolvers ?? [], hasher ?? new HmacExternalAuthenticationHandleHasher(), new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider(), identityResolver ?? Substitute.For<IExternalIdentityResolver>(), permissionGrantResolver ?? Substitute.For<IPermissionGrantResolver>(), new InMemoryExternalAuthenticationStateStore(clock), grants ?? new InMemoryAuthorizationGrantStore(clock), sessionStore ?? new InMemoryExternalAuthenticationSessionStore(clock), tokenIssuer ?? Substitute.For<IExternalAuthenticationTokenIssuer>(), credentialsValidator ?? Substitute.For<IUserCredentialsValidator>(), userProvider ?? Substitute.For<IUserProvider>(), roleProvider ?? Substitute.For<IRoleProvider>(), tokenService ?? Substitute.For<IElsaTokenService>(), identityRefreshTokenService ?? Substitute.For<IIdentityRefreshTokenService>(), tenantAccessor ?? new DefaultTenantAccessor(), clock, options, notifier);
     }
 
     private static BrokerAuthorizationRequest Request(string returnPath) => new("studio", new Uri("https://studio.example/authentication/external/callback"), "code", "challenge", "S256", returnPath, "contoso");
     private static string? Query(Uri uri, string key) => System.Web.HttpUtility.ParseQueryString(uri.Query)[key];
 
     private sealed class TestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.Parse("2026-01-01T00:00:00Z"); }
+    private sealed class CurrentTestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.UtcNow; }
 
     internal sealed class RecordingAdapter : IExternalAuthenticationAdapter
     {

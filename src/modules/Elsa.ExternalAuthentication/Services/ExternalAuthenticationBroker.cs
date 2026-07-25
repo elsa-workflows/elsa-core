@@ -12,6 +12,7 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Elsa.ExternalAuthentication.Services;
 
@@ -31,6 +32,7 @@ public sealed class ExternalAuthenticationBroker(
     IUserProvider userProvider,
     IRoleProvider roleProvider,
     IElsaTokenService elsaTokenService,
+    IIdentityRefreshTokenService identityRefreshTokenService,
     ITenantAccessor tenantAccessor,
     ISystemClock clock,
     IOptions<ExternalAuthenticationOptions> options,
@@ -296,7 +298,16 @@ public sealed class ExternalAuthenticationBroker(
         if (string.Equals(request.GrantType, "refresh_token", StringComparison.Ordinal))
         {
             using var refreshToken = new SensitiveString(request.RefreshToken ?? string.Empty);
-            try { return await TokenOutcomeAsync(BrokerTokenResult.Success(await tokenIssuer.RefreshAsync(request.ClientId, refreshToken, cancellationToken)), "refresh", "exchange", cancellationToken); }
+            try
+            {
+                var token = refreshToken.Reveal();
+                var response = IsJwt(token)
+                    ? await RefreshLocalAsync(token, cancellationToken)
+                    : await tokenIssuer.RefreshAsync(request.ClientId, refreshToken, cancellationToken);
+                return await TokenOutcomeAsync(response is null
+                    ? BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AccessDenied))
+                    : BrokerTokenResult.Success(response), "refresh", "exchange", cancellationToken);
+            }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch { return await TokenOutcomeAsync(BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AccessDenied)), "refresh", "exchange", cancellationToken); }
         }
@@ -339,7 +350,13 @@ public sealed class ExternalAuthenticationBroker(
             var context = new TokenIssuanceContext(user, roles.Select(x => x.Name).ToArray(), roles.SelectMany(x => x.Permissions).Distinct().ToArray(), []);
             var access = await elsaTokenService.IssueAccessTokenAsync(context, cancellationToken);
             var refresh = await elsaTokenService.IssueRefreshTokenAsync(context, cancellationToken);
-            return await TokenOutcomeAsync(BrokerTokenResult.Success(new ExternalTokenResponse(access.Token, "Bearer", (long)(access.ExpiresAt - clock.UtcNow).TotalSeconds, refresh.Token, 0, 0)), "token_exchange", "issue", cancellationToken);
+            return await TokenOutcomeAsync(BrokerTokenResult.Success(new ExternalTokenResponse(
+                access.Token,
+                "Bearer",
+                SecondsUntil(access.ExpiresAt),
+                refresh.Token,
+                SecondsUntil(refresh.ExpiresAt),
+                0)), "token_exchange", "issue", cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -350,6 +367,30 @@ public sealed class ExternalAuthenticationBroker(
             return await TokenOutcomeAsync(BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.ServerError)), "token_exchange", "issue", cancellationToken);
         }
     }
+
+    private async ValueTask<ExternalTokenResponse?> RefreshLocalAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        var tokens = await identityRefreshTokenService.RefreshAsync(refreshToken, cancellationToken);
+
+        if (tokens is null)
+            return null;
+
+        return new ExternalTokenResponse(
+            tokens.AccessToken,
+            "Bearer",
+            SecondsUntil(GetExpiresAt(tokens.AccessToken)),
+            tokens.RefreshToken,
+            SecondsUntil(GetExpiresAt(tokens.RefreshToken)),
+            0);
+    }
+
+    private long SecondsUntil(DateTimeOffset? expiresAt) =>
+        expiresAt is null ? 0 : Math.Max(0, (long)(expiresAt.Value - clock.UtcNow).TotalSeconds);
+
+    private static DateTimeOffset GetExpiresAt(string token) =>
+        new(new JsonWebTokenHandler().ReadJsonWebToken(token).ValidTo, TimeSpan.Zero);
+
+    private static bool IsJwt(string token) => token.Count(x => x == '.') == 2;
 
     public async ValueTask<BrokerLogoutResult> LogoutAsync(BrokerLogoutRequest request, string externalSessionId, CancellationToken cancellationToken = default)
     {

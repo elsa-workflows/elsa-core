@@ -74,6 +74,7 @@ public class ExternalAuthenticationBenchmarks
             unused,
             unused,
             unused,
+            unused,
             new DefaultTenantAccessor(),
             clock,
             options);
@@ -145,7 +146,8 @@ public class ExternalAuthenticationBenchmarks
         IUserCredentialsValidator,
         IUserProvider,
         IRoleProvider,
-        IElsaTokenService
+        IElsaTokenService,
+        IIdentityRefreshTokenService
     {
         public ValueTask<ExternalIdentityResolution> ResolveAsync(ExternalIdentityResolutionContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public ValueTask<PermissionGrantResult> ResolveAsync(PermissionGrantResolutionContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
@@ -156,6 +158,7 @@ public class ExternalAuthenticationBenchmarks
         public ValueTask<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public ValueTask<IssuedAccessToken> IssueAccessTokenAsync(TokenIssuanceContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public ValueTask<IssuedAccessToken> IssueRefreshTokenAsync(TokenIssuanceContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public ValueTask<IssuedTokens?> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
     private sealed class FixedClock : ISystemClock

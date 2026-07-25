@@ -215,6 +215,7 @@ public class IdentityFeature : FeatureBase
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
             .AddScoped<IElsaTokenService, DefaultElsaTokenService>()
             .AddScoped<IAccessTokenIssuer>(sp => ActivatorUtilities.CreateInstance<DefaultAccessTokenIssuer>(sp))
+            .AddScoped<IIdentityRefreshTokenService, DefaultIdentityRefreshTokenService>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
             .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
             .AddScoped<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())
