@@ -1,10 +1,10 @@
 # PRD: External Authentication and Identity Provider Connections
 
-**Status**: Draft for review
+**Status**: Approved — revised 2026-07-24
 
 **Delivery boundary**: Elsa Core and Elsa Studio
 
-**Initial protocol scope**: OpenID Connect
+**Initial protocol scope**: Host-wide, brokered OpenID Connect
 
 **Domain language**: [`CONTEXT.md`](../../CONTEXT.md)
 
@@ -46,12 +46,12 @@ Without a server-owned broker and a connection registry, Studio would need provi
 - Support a merged registry of configuration-owned and database-owned connections.
 - Let database-managed connection changes take effect without restart.
 - Keep provider secrets outside connection records and read APIs.
-- Support host-wide and tenant-scoped connections.
+- Make SSO connection administration host-wide within the currently connected Elsa server environment without persisting an environment/target field.
 - Preserve Elsa Users, permissions, and tenant context as the authorization authority.
 - Support external-only Elsa Users without generated local passwords.
-- Provide extensible Protocol Adapters, Unlinked Identity Policies, and Permission Grant Sources.
+- Provide extensible Protocol Adapters, Unlinked Identity Policies, and External User Matchers.
 - Provide a descriptor-driven Studio UI with optional custom editors.
-- Unify local, enterprise, and future social authentication as Login Methods.
+- Unify local, enterprise, and future social authentication as Login Methods without automatically redirecting past the chooser.
 - Support both Blazor Server and Blazor WebAssembly Studio hosts.
 - Preserve existing direct Studio OIDC behavior during adoption.
 - Emit audit-ready security notifications without requiring an audit persistence module.
@@ -61,7 +61,7 @@ Without a server-owned broker and a connection registry, Studio would need provi
 - SAML support in the first release.
 - Provider-specific OAuth adapters in the first release.
 - Self-service identity linking by end users.
-- Full Elsa User and Role management UI.
+- Full Elsa User and Role management UI. This feature supplies the backend Role-deletion guard and remediation contract only; a future Roles UI MAY integrate it, but External Authentication MUST NOT add a separate Settings page for Role deletion.
 - Studio management of Authentication Clients.
 - An audit database, audit search UI, or retention engine.
 - A health-monitoring scheduler or health-history store.
@@ -70,6 +70,9 @@ Without a server-owned broker and a connection registry, Studio would need provi
 - Automatic migration of existing OIDC secrets or settings.
 - Removal of Studio's existing direct OIDC modules.
 - Import/export of Identity Provider Connections in the first release.
+- Tenant-targeted Identity Provider Connections in the first release.
+- IdP-initiated sign-in or logout.
+- Claim-to-permission, group-to-permission, wildcard, or permission pass-through configuration in Studio.
 
 ## Users
 
@@ -85,10 +88,10 @@ Without a server-owned broker and a connection registry, Studio would need provi
 1. **Elsa owns the broker**: Provider interaction, account resolution, and Elsa credential issuance happen on Elsa Server.
 2. **External identity is not Elsa authorization**: External authentication resolves an Elsa User before Elsa permissions are issued.
 3. **Code is deployed; connection data is live**: New adapter code may require deployment and restart. Connections for installed adapters do not.
-4. **Safe by default, flexible by explicit choice**: Discovery, validation, and restrictive policies are defaults; authorized administrators may override provider-trust behavior where deployment policy permits.
-5. **Broker protections are invariants**: Connection administrators cannot disable Elsa-owned callback, correlation, PKCE, one-time-code, or secret-redaction protections.
+4. **Safe by default, flexible by explicit choice**: Exact discovery documents and restrictive policies are defaults; adapters may expose safe protocol-specific settings without making broker invariants editable.
+5. **Broker protections are invariants**: Connection administrators cannot edit Elsa-owned callback derivation, correlation, S256 PKCE, one-time-code, or secret-redaction protections.
 6. **No implicit account matching**: Email and user name never establish identity links by default.
-7. **No implicit external authorization**: Provider claims grant Elsa permissions only through configured Permission Grant Sources and boundaries.
+7. **No external permission authority**: External User Matchers may propose an existing user but never roles or permissions; Elsa alone expands Roles into permissions.
 8. **Sources retain ownership**: Configuration-owned connections are deployer-owned and read-only in Studio.
 9. **Operational state is explicit**: Enabled intent, validity, and observed health are separate concepts.
 10. **Extension metadata is helpful, not authoritative**: Permission Descriptors improve authoring but do not define the validity of Elsa's open string permission vocabulary.
@@ -117,13 +120,13 @@ Without a server-owned broker and a connection registry, Studio would need provi
 
 ### Connection Administration
 
-1. An authorized administrator opens **Security → Identity Provider Connections**.
-2. Studio lists configuration-owned and database-owned connections together.
-3. Source, tenant scope, adapter type, enabled state, validity, last observed health, default-login state, and revision are visible.
-4. Configuration-owned connections are read-only.
-5. The administrator creates a disabled database draft and selects an installed Protocol Adapter.
+1. An authorized administrator opens **Settings → SSO** at `/settings/sso-connections`.
+2. Studio lists configuration-owned connections, Studio-owned connections, and explicit Studio Overrides for the currently connected Elsa server environment.
+3. Record ID, logical Connection Key, source, override relationship, adapter type, enabled state, validity, latest on-demand test, preferred-login state, and revision are visible.
+4. Configuration-owned connections are read-only until the administrator explicitly creates a complete Studio Override.
+5. The administrator creates a disabled Studio-owned draft or an explicit full-shadow override and selects an installed Protocol Adapter.
 6. Studio renders common fields and adapter settings from the Adapter Descriptor.
-7. Secret fields show configured state and allow replacement or removal without revealing values.
+7. Secret fields distinguish Managed Secrets from External Secrets. Managed values can be replaced or removed without reveal; External values remain deployment-owned and expose only configured/resolvable state.
 8. The administrator runs a non-interactive connection test and may run an interactive Preview Sign-in.
 9. Preview shows a redacted normalized identity, tenant, policy decision, and effective Elsa permissions without provisioning a user or opening a normal session.
 10. The administrator enables the connection after structural validation and required Secret Binding resolution succeed.
@@ -131,20 +134,22 @@ Without a server-owned broker and a connection registry, Studio would need provi
 
 ### User Sign-in
 
-1. Studio resolves the target Elsa tenant.
-2. Studio discovers the applicable Login Methods anonymously.
+1. Studio requests the Login Methods applicable to the deployment.
+2. Elsa returns the environment's host-wide enabled methods.
 3. The chooser displays local Elsa login when enabled and applicable external connections.
-4. If an administrator configured automatic redirect, Studio redirects to the default external connection while preserving a chooser escape route.
+4. A preferred method is ordered and emphasized, but the chooser remains visible and never automatically redirects.
 5. Studio initiates brokered sign-in using its registered Authentication Client and a PKCE challenge.
-6. Elsa loads the selected enabled connection and its exact revision.
+6. Elsa resolves the selected Login Method to its connection record ID and exact material revision.
 7. The Protocol Adapter performs provider authentication and returns a normalized External Identity.
-8. Elsa resolves an External Identity Link by target tenant, immutable Connection ID, issuer namespace, and stable subject.
+8. Elsa resolves an External Identity Link by immutable Connection Key, issuer namespace, and stable subject.
 9. If no link exists, the connection's effective Unlinked Identity Policy denies access, creates a user, or returns an explicitly configured target-user resolution. A target-user resolution must identify the user and authorization basis; it may not silently infer a link from email or user name.
-10. Elsa applies the result atomically, evaluates configured Permission Grant Sources, and establishes an External Authentication Session.
+10. The Unlinked Identity Policy rejects, creates a user with static authorized `defaultRoleIds`, or invokes one configured External User Matcher to propose an existing user. Claims required for matching remain ephemeral.
 11. Elsa redirects Studio with a short-lived, single-use Elsa authorization code.
 12. Studio exchanges the code using the PKCE verifier and establishes its Elsa session.
 
 Local Elsa credentials use the same broker-completion contract: Studio submits credentials to an Elsa-owned local-login endpoint, Elsa validates them without exposing whether an account lacks a Local Credential, and successful authentication returns the same Authentication Client-, callback-, tenant-, and PKCE-bound completion code. Local authentication remains a Login Method, not an Identity Provider Connection.
+
+The v1 OpenID Connect adapter accepts one exact HTTPS `discoveryUrl`, uses a deployment-derived provider callback, requires a confidential upstream client and authorization-code flow with S256 PKCE, and supports `client_secret_basic` or `client_secret_post`. The normal path trusts discovery. An authorized administrator may open **Advanced** and explicitly override discovery-derived issuer, endpoints, or signing keys when deployment policy permits; these settings require warning, confirmation, and notification. Callback derivation and all broker validation invariants remain immutable.
 
 ### Studio Hosting Profiles
 
@@ -155,7 +160,7 @@ Local Elsa credentials use the same broker-completion contract: Studio submits c
 
 The broker must allow only exact registered callback and logout URIs. Public-client exchange must use an exact-origin CORS allowlist. A Studio host selects either **Direct OIDC** or **Brokered External Authentication** at deployment time; enabling both modes is a startup configuration error. Switching back to Direct OIDC is the supported rollback path.
 
-All return targets—after local or external login, automatic-redirect recovery, chooser escape, preview, and logout—must resolve to an allowlisted client-local path. User-controlled absolute or protocol-relative URLs are rejected.
+All return targets—after local or external login, preview, and logout—must resolve to an allowlisted client-local path. User-controlled absolute or protocol-relative URLs are rejected.
 
 ### Identity Link Administration
 
@@ -181,13 +186,13 @@ The user picker uses a tenant-scoped, permission-guarded, paginated lookup that 
 - External authentication module and registries.
 - OIDC Protocol Adapter.
 - Configuration-owned connections.
-- Host-wide and tenant-scoped registry semantics.
+- Host-wide administration within the connected environment plus record-ID/logical-key semantics.
 - Authentication Clients and exact callback allowlists.
 - PKCE broker initiation and completion.
 - External Identity normalization, linking, and Elsa User resolution.
 - External-only Elsa Users.
 - Built-in reject and JIT Unlinked Identity Policies.
-- Permission Grant Source pipeline.
+- Matcher-based existing-user resolution and static privilege-safe `defaultRoleIds` for newly created users.
 - Anonymous Login Method discovery.
 - Studio login support for Blazor Server and WebAssembly.
 
@@ -204,10 +209,10 @@ The user picker uses a tenant-scoped, permission-guarded, paginated lookup that 
 
 ### Milestone 3: Enterprise Hardening
 
-- Tenant-isolation and collision hardening across host-wide and tenant-scoped connections.
+- Host-wide environment, Connection Key, full-shadow override, and discovery hardening.
 - Cluster-wide invalidation and shared broker state.
 - External Identity Link administration.
-- Permission Descriptors and Studio permission authoring.
+- External User Matcher descriptors, static create-user roles, and Studio admission-policy authoring.
 - Fine-grained administration permissions.
 - Audit-ready security notifications.
 - Break-glass and final-login-path guardrails.
@@ -231,33 +236,33 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-008**: Adapter-owned connection settings MUST be stored as versioned JSON within a protocol-neutral connection envelope.
 - **FR-009**: Adapters MUST own settings deserialization, validation, and version migration.
 - **FR-010**: Studio MUST render descriptor-defined settings with its standard UI-hint system.
-- **FR-011**: A Studio module MAY register a custom editor for an adapter type and override the generic renderer.
+- **FR-011**: A Studio module MAY register a custom editor for an adapter type, but the generic renderer MUST remain sufficient to configure every adapter-declared field.
 
 ### Connection Registry and Ownership
 
 - **FR-012**: Elsa MUST expose one effective Connection Registry composed from configuration-owned and optional database-owned connections.
-- **FR-013**: Configuration-owned connections MUST be visible but read-only through Studio and management APIs.
-- **FR-014**: Database-owned connections MUST support create, read, update, enable, disable, archive, restore, and test operations.
-- **FR-015**: Configuration-owned connections MUST take precedence over database entries with the same `(Connection Scope, Connection Key)`.
-- **FR-016**: Database creation or key changes that collide with configuration MUST be rejected.
-- **FR-017**: A later configuration collision MUST make the database entry inactive and visible as shadowed.
-- **FR-018**: Every connection MUST have an immutable internal Connection ID.
-- **FR-019**: Every connection MUST have a stable presentation key unique within each tenant's effective registry.
-- **FR-020**: Different tenants MAY reuse the same connection key.
-- **FR-021**: A tenant-scoped connection MUST NOT collide with an inherited host-wide connection in that tenant's effective registry.
+- **FR-013**: Configuration-owned connections MUST be visible but read-only unless an administrator explicitly creates a full Studio Override.
+- **FR-014**: Studio-owned connections and Studio Overrides MUST support create, read, update, enable, disable, archive, restore, test, and Preview Sign-in operations.
+- **FR-015**: Configuration MUST provide the baseline for an immutable host-wide Connection Key. An explicit active or disabled Studio Override for that key MUST completely shadow the baseline.
+- **FR-016**: Overrides MUST be whole connection documents; no field-level merge across configuration and persistence is permitted.
+- **FR-017**: A disabled override MUST continue shadowing and therefore disable the logical connection. Archiving or removing the override MUST deliberately reveal the configuration baseline; restoring it MUST resume the full shadow.
+- **FR-018**: Every connection MUST have a stable record ID for management/transient broker correlation and an immutable logical Connection Key for durable links and long-lived sessions.
+- **FR-019**: A Connection Key MUST be unique across logical connections and sources within the currently connected Elsa server environment.
+- **FR-020**: Creating a new Studio-owned connection with a configuration-owned key MUST require the explicit override operation.
+- **FR-021**: Tenant-specific SSO connection administration and tenant-local key reuse are deferred beyond v1.
 - **FR-022**: Connection deletion MUST logically archive the connection, preserve identity links, and emit an audit-ready notification. Audit history is retained only when an external subscriber persists those notifications.
-- **FR-023**: Restoring an archived connection MUST preserve its Connection ID.
-- **FR-024**: A genuinely new connection MUST receive a new Connection ID and MUST NOT inherit archived identity links.
+- **FR-023**: Restoring an archived connection or override MUST preserve its Connection Key and identity links.
+- **FR-024**: A genuinely different trust relationship MUST use a new Connection Key and MUST NOT inherit archived identity links.
 - **FR-025**: Database-managed mutations MUST use optimistic concurrency with a revision or ETag.
 - **FR-026**: Material connection changes MUST advance the revision.
 
-### Tenancy
+### Server Environment and Tenancy
 
-- **FR-027**: Connections MUST support host-wide scope and tenant scope from the first data-model version. Host-wide scope MUST use Elsa's tenant-agnostic identifier (`*`); the empty identifier MUST continue to mean only Elsa's default tenant.
-- **FR-028**: Anonymous discovery with a resolved tenant MUST return applicable tenant connections plus host-wide connections.
-- **FR-029**: Anonymous discovery without a tenant MUST return host-wide connections only.
-- **FR-030**: The target tenant MUST be resolved before external redirection and protected in broker state.
-- **FR-031**: External Identity Links MUST include the target tenant so one provider identity can link to distinct tenant-scoped Elsa Users.
+- **FR-027**: SSO connection administration MUST apply host-wide to the currently connected Elsa server environment. No persisted or editable Deployment Target/Server Environment field is part of v1.
+- **FR-028**: Anonymous discovery MUST return that environment's host-wide methods only.
+- **FR-029**: Provider tenant, issuer tenant, and current Studio tenant MUST NOT select a different SSO administration environment.
+- **FR-030**: Connection record ID, target Elsa tenant, and material revision MUST be protected in broker state before external redirection.
+- **FR-031**: External Identity Links MUST use the durable tuple `(target tenant, connectionKey, issuer namespace, stable subject)` in v1.
 
 ### Connection Settings and Secrets
 
@@ -265,10 +270,10 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-033**: Adapter-specific fields MUST NOT require new connection columns or tables.
 - **FR-034**: Connection settings MUST contain Secret Bindings rather than secret values.
 - **FR-035**: The module MUST resolve Secret Bindings through a pluggable resolver abstraction.
-- **FR-036**: The initial implementation MUST integrate with Elsa Secrets for database-managed secret values.
-- **FR-037**: Configuration-owned connections MAY resolve secrets through standard .NET configuration providers.
+- **FR-036**: The initial implementation MUST integrate with Elsa Secrets for Managed Secrets and support replace/remove without reveal.
+- **FR-037**: The initial implementation MUST provide an External Secret resolver for standard .NET configuration keys; those values and their lifecycle remain deployment-owned and read-only in Studio.
 - **FR-038**: Management APIs MUST expose only secret configured state.
-- **FR-039**: Studio MUST support secret replacement and removal but MUST NOT reveal current values.
+- **FR-039**: Studio MUST support replacement and removal only for Managed Secrets. External Secrets expose configured/resolvable state and reference metadata but no value-management actions.
 - **FR-040**: Secrets, tokens, and unrestricted claims MUST NOT appear in responses, redirects, logs, health details, preview reports, or audit notifications.
 
 ### Connection Lifecycle
@@ -287,12 +292,12 @@ V1 is complete when all three milestones meet their acceptance criteria.
 ### OIDC Adapter
 
 - **FR-051**: V1 MUST include an OpenID Connect Protocol Adapter.
-- **FR-052**: Discovery mode MUST be the safe default.
-- **FR-053**: The OIDC adapter MUST support discovery, discovery with selected overrides, and fully manual Provider Trust Settings.
-- **FR-054**: Studio MUST clearly label unsafe settings, require a dedicated permission and confirmation, show persistent warnings, and emit audit notifications.
-- **FR-055**: Deployment policy MUST be able to restrict unsafe settings.
-- **FR-056**: Connection administrators MUST NOT be able to weaken Broker Security Invariants.
-- **FR-057**: The adapter MUST support standard authorization-code authentication, provider-facing PKCE where configured, issuer/signature/nonce/state validation according to effective Provider Trust Settings, and declared upstream-logout capability.
+- **FR-052**: The OIDC adapter MUST accept one exact absolute HTTPS `discoveryUrl`.
+- **FR-053**: Elsa MUST derive the provider callback URI from deployment-owned external base-address configuration, the fixed adapter callback route, and immutable Connection Key so ownership changes do not alter it; Studio MUST NOT edit it.
+- **FR-054**: Studio MUST expose discovery-derived issuer, authorization/token endpoints, and signing-key material as Advanced overrides when deployment policy permits and the caller holds the unsafe-provider-trust permission. Save MUST require explicit confirmation, persistent warning, and a redacted security notification.
+- **FR-055**: The upstream OIDC client MUST be confidential and use authorization-code flow with S256 PKCE.
+- **FR-056**: Connection administrators MUST NOT be able to weaken state, nonce, correlation, signature validation, audience, lifetime, deployment-derived callback, confidential-client, S256 PKCE, or secret-redaction invariants. Advanced values change trusted inputs, not whether validation runs.
+- **FR-057**: The adapter MUST support `client_secret_basic` and `client_secret_post`, validate the full OIDC response, and declare upstream-logout capability.
 - **FR-058**: Provider-specific OAuth and SAML adapters MUST be addable later without changing the connection envelope or broker completion protocol.
 
 ### Broker and Authentication Clients
@@ -303,10 +308,10 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-062**: The completion code MUST be bound to an Authentication Client, exact callback URI, target tenant, and PKCE challenge.
 - **FR-063**: Authentication Clients MUST be distinct from Elsa API Applications and MUST grant no Elsa permissions.
 - **FR-064**: V1 Authentication Clients MUST be deployment-configured rather than Studio-managed.
-- **FR-065**: Broker state MUST include the immutable Connection ID and material revision.
+- **FR-065**: Broker state MUST include the connection record ID and material revision.
 - **FR-066**: Callback processing MUST reject a flow when the connection was disabled, archived, or materially revised after initiation.
 - **FR-067**: Broker state, PKCE material, correlation state, and completion codes MUST work when initiation and completion occur on different Elsa nodes.
-- **FR-068**: Material revision MUST cover adapter type and settings, Provider Trust Settings, Connection Scope, Secret Binding identity or generation, Unlinked Identity Policy, and Permission Grant Source configuration. Display name, icon, and display order MAY use a presentation-only revision that does not invalidate an in-flight flow.
+- **FR-068**: Material revision MUST cover adapter settings, Secret Binding identity/generation, Unlinked Identity Policy, matcher-policy settings, static `defaultRoleIds`, and override lifecycle. Display name, icon, and display order MAY use a presentation-only revision.
 - **FR-069**: Initiation, callback, code exchange, and external-session refresh MUST verify authoritative enabled, archive, and effective material-revision state. Cache invalidation MAY improve freshness but MUST NOT be the security boundary.
 
 ### Elsa Users and Identity Links
@@ -319,54 +324,65 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-075**: Elsa's User persistence model MUST be migrated so Local Credentials are absent or separate rather than represented by placeholder password hashes.
 - **FR-076**: Local login for a credential-less user MUST fail with the same public result as other invalid credentials.
 - **FR-077**: JIT provisioning MUST atomically create a globally unique Elsa user name under the current identity-store contract; mutable provider profile attributes MUST NOT become identity keys. A future tenant-scoped user-name migration is outside this feature unless separately specified.
-- **FR-078**: External Identity Links MUST be resolved by target tenant, immutable Connection ID, validated issuer namespace, and provider-stable subject.
+- **FR-078**: External Identity Links MUST be resolved by target tenant, immutable Connection Key, validated issuer namespace, and provider-stable subject.
 - **FR-079**: Built-in behavior MUST NOT link by email or user name.
 - **FR-080**: A custom Unlinked Identity Policy MAY deliberately implement deployment-specific linking behavior.
 - **FR-081**: V1 MUST provide built-in reject and just-in-time creation policies.
 - **FR-082**: Custom Unlinked Identity Policies MUST be deployable trusted modules with versioned settings descriptors.
-- **FR-083**: Deployment configuration MUST define the default policy, allowed policy types, and whether database connections may override it.
-- **FR-084**: Studio MUST show the effective policy and permit overrides only when deployment policy and caller permissions allow.
+- **FR-083**: Each connection MUST select its Unlinked Identity Policy; deployment configuration MUST define the default and allowed policy types.
+- **FR-084**: Studio MUST show the effective per-connection policy and permit changes only when deployment policy and caller permissions allow.
+- **FR-084A**: V1 MUST provide a generic matcher-based Unlinked Identity Policy that selects exactly one installed `IExternalUserMatcher` and declares a no-match action of `Reject` or `CreateUser`.
+- **FR-084B**: A matcher MUST receive only its declared required normalized claims, those claims MUST remain ephemeral, and a single match MAY propose an existing Elsa User. No match follows the configured fallback; ambiguous results or errors reject.
+- **FR-084C**: V1 MUST NOT ship an Elsa first-party verified-email matcher. Email/name matching remains unavailable unless a trusted deployment extension explicitly provides it.
 - **FR-085**: V1 MUST support administrator-managed pre-linking and unlinking.
 - **FR-086**: V1 MUST NOT support end-user self-service linking.
 - **FR-087**: Complete external claim sets MUST NOT be persisted by default.
 
-### Permission Resolution
+### User Matching, Role Provisioning, and Permission Resolution
 
-- **FR-088**: Elsa MUST remain authoritative for the `permissions` claims placed in Elsa-issued credentials.
-- **FR-089**: Effective permissions MUST be composed from configured Permission Grant Sources.
-- **FR-090**: V1 MUST support Elsa User role permissions as a grant source.
-- **FR-091**: V1 MUST support explicit external claim-to-permission and external group-to-permission mappings.
-- **FR-092**: Provider claims MUST NOT grant permissions without an explicit mapping or pass-through boundary.
-- **FR-093**: External pass-through MUST grant nothing when no permission boundary is configured.
-- **FR-094**: Permission Grant Sources MUST be extensible through trusted deployed modules and descriptor-defined settings.
-- **FR-095**: An actor configuring literal, wildcard, or pass-through grants MUST possess every permission that can be delegated, unless the actor holds a distinct unrestricted permission-delegation capability. Deployment allow/deny boundaries MUST apply even to that capability.
-- **FR-096**: Modules MAY advertise Permission Descriptors containing names, descriptions, and categories.
-- **FR-097**: Permission Descriptors MUST be optional and non-authoritative.
-- **FR-098**: Unknown permission strings MUST remain valid values but match no endpoint unless a module requires them.
-- **FR-099**: External claims and effective external grants MUST be snapshotted at full external sign-in.
-- **FR-100**: Elsa token refreshes within the same External Authentication Session MUST retain that external snapshot.
-- **FR-101**: External refresh credentials MUST reference an External Authentication Session and MUST check its connection, maximum age, and revocation state; existing local refresh credentials MUST remain distinguishable and compatible.
-- **FR-102**: On external-session refresh, external mapped grants MUST come from the session snapshot while current Elsa-owned user and role grants MUST be re-evaluated.
-- **FR-103**: A configurable maximum external session age MUST require fresh provider authentication.
-- **FR-104**: V1 MUST NOT retain provider tokens solely to continuously re-query external claims.
+- **FR-088**: Elsa MUST remain authoritative for the `permissions` claims placed in Elsa-issued credentials and MUST derive them through Elsa Roles.
+- **FR-089**: Each connection MAY define static `defaultRoleIds` used only when `CreateUser` creates a new Elsa User, including the matcher policy's create-user no-match fallback.
+- **FR-090**: External User Matchers MUST NOT select, derive, or mutate roles or permissions.
+- **FR-091**: Saving `defaultRoleIds` MUST authorize the actor to assign every selected Role using Elsa's role-delegation rules.
+- **FR-092**: JIT provisioning MUST atomically assign authorized static default roles with user and link creation.
+- **FR-093**: Matching an existing user MUST NOT change that user's roles.
+- **FR-094**: Existing linked users MUST retain their Elsa-managed role assignments; ordinary sign-in MUST NOT mutate their roles.
+- **FR-095**: V1 Studio MUST NOT expose claim-to-permission, group-to-permission, wildcard, pass-through, or claim-to-role mapping UI.
+- **FR-096**: External User Matcher types MUST be trusted deployed extensions with stable IDs, versioned settings, descriptors, declared required claims, and deployment allowlists.
+- **FR-097**: Missing/deleted default roles or unavailable matcher extensions MUST produce validation errors or warnings and MUST NOT broaden access.
+- **FR-097A**: Deleting an Elsa Role MUST inspect every database- and configuration-owned `defaultRoleIds` reference in CreateUser and matcher no-match CreateUser policies, including disabled, archived, shadowed, and currently ineffective definitions, and MUST block ordinary deletion while any reference remains.
+- **FR-097B**: A configuration-owned blocker MUST identify its sanitized configuration path and policy branch. Elsa MUST NOT rewrite deployment configuration automatically.
+- **FR-097C**: The administration API MUST provide an authorized, prevalidated command that removes the Role from every editable database-owned JIT policy and deletes the Role only after no reference remains. The actor MUST be authorized to delete the Role and update every affected connection/policy.
+- **FR-097D**: The remediation MUST be atomic when the Role and connection stores can share a transaction. Otherwise it MUST use the documented best-effort protocol: prevalidate the complete dependency set and revisions, remove editable references before attempting Role deletion, never delete the Role after an incomplete removal, return structured partial-progress diagnostics, and support safe idempotent retry.
+- **FR-097E**: Preflight and remediation MUST warn when removal leaves a CreateUser path with no default Role and MUST require explicit confirmation. A changed dependency set or stale connection revision MUST prevent Role deletion.
+- **FR-097F**: V1 MUST expose this backend guard/remediation contract without adding a Role-management or Role-deletion page to External Authentication Settings. A future Elsa Roles UI MAY consume the contract.
+- **FR-098**: Role expansion into permission strings MUST remain the responsibility of Elsa Identity and installed modules.
+- **FR-099**: The normalized identity used during linking/JIT MAY retain only the explicitly allowed redacted provenance; matcher-required claims and complete external claims MUST NOT be persisted.
+- **FR-100**: Elsa token refreshes MUST re-evaluate the user's current Elsa Role assignments.
+- **FR-101**: External refresh credentials MUST reference an External Authentication Session and MUST check its connection key, maximum age, and revocation state; existing local refresh credentials remain compatible.
+- **FR-102**: A configurable maximum external session age MUST require fresh provider authentication.
+- **FR-103**: Upstream tokens MUST be retained only when required for the configured Elsa-initiated upstream logout, protected server-side, and no longer than the external session.
+- **FR-104**: Provider access and refresh tokens MUST otherwise be discarded after callback processing and optional user-info retrieval.
 
 ### Login Discovery and Studio
 
-- **FR-105**: Elsa MUST expose anonymous tenant-aware Login Method discovery.
+- **FR-105**: Elsa MUST expose anonymous host-wide Login Method discovery.
 - **FR-106**: Login Methods MUST unify local Elsa credentials and external connections without modeling local login as an Identity Provider Connection.
-- **FR-107**: Anonymous discovery MUST return only method identifier/key, local-or-external kind, display name, server-hosted icon identifier, display order, default state, and Elsa-owned initiation URL.
+- **FR-107**: Anonymous discovery MUST return only method identifier/key, local-or-external kind, display name, server-hosted icon identifier, display order, preferred state, and Elsa-owned initiation URL.
 - **FR-108**: Anonymous discovery MUST NOT expose adapter settings, authority, client ID, tenant internals, health details, or remote icon URLs.
 - **FR-109**: Studio MUST show a chooser by default.
-- **FR-110**: Administrators MAY select one external connection for automatic redirect.
-- **FR-111**: Local Login Method availability and automatic-default selection MUST be deployment-controlled and resolved per Connection Scope. Tenant-specific configuration takes precedence over host-wide defaults without exposing tenant existence.
-- **FR-112**: Automatic redirect MUST fall back to the chooser on failure and MUST provide an explicit chooser escape URL.
+- **FR-110**: Administrators MAY select one enabled connection as preferred.
+- **FR-111**: Preference MUST affect deterministic ordering and emphasis only; Studio MUST NOT automatically redirect past the chooser.
+- **FR-112**: An unavailable preferred method MUST leave the chooser usable and show a safe status.
 - **FR-113**: The initial Studio module MUST support Blazor Server and Blazor WebAssembly.
 - **FR-114**: Blazor Server MUST use a confidential Authentication Client; the Studio host MUST perform exchange, keep Elsa refresh credentials server-side, and establish a secure HTTP-only browser session.
 - **FR-115**: Blazor WebAssembly MUST use a public Authentication Client with no client secret, mandatory PKCE, exact-origin CORS, and an explicit token-storage policy that defaults to in-memory storage.
 - **FR-116**: Studio MUST distinguish the connection's Upstream Client Registration from the deployment-owned Elsa Authentication Client in labels, help text, validation, and prerequisites.
-- **FR-117**: Studio MUST provide a dedicated External Identity Links page with an Elsa User picker and a reusable user-link panel.
+- **FR-117**: Studio MUST provide a dedicated External Identity Links page with an Elsa User picker and a reusable user-link panel under Security.
 - **FR-118**: Link administration MUST include a tenant-scoped, permission-guarded, paginated Elsa User lookup returning only minimal selection data.
 - **FR-119**: Full user and role CRUD UI MUST remain outside this feature.
+- **FR-119A**: `Elsa.Studio.Authentication.UI` MUST own the generic login/logout shell and contribution contracts; the External Authentication module MUST contribute behavior without owning the shell.
+- **FR-119B**: Settings MUST be a Studio composition/navigation surface only. SSO connection administration belongs at one-level **Settings → SSO** (`/settings/sso-connections`); External Identity Links and External Authentication Sessions remain separate Security pages.
 
 ### Logout and Session Control
 
@@ -376,6 +392,7 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-123**: Disabling or archiving a connection MUST reject new sign-ins, in-flight callbacks, and further Elsa token refreshes associated with it.
 - **FR-124**: Existing short-lived access tokens MUST remain valid until expiry unless an explicit supported revocation action invalidates them.
 - **FR-125**: Session revocation MUST be a separate audited action when server-side revocation support is enabled.
+- **FR-125A**: V1 MUST support only Elsa-initiated sign-in and logout. Unsolicited IdP-initiated login and front-channel/back-channel provider-initiated logout are out of scope.
 
 ### Administration, Recovery, and Audit
 
@@ -386,7 +403,7 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-130**: Break-glass Authentication MUST NOT appear in normal Login Method discovery.
 - **FR-131**: The module MUST publish typed, immutable, redacted security notifications through `INotificationSender`.
 - **FR-132**: Notifications MUST cover connection and policy changes, secret replacement/removal, enable/disable/archive/restore, tests, previews, link changes, session revocation, and sign-in outcomes.
-- **FR-133**: Notifications SHOULD contain actor, tenant, Connection ID, Elsa User ID when known, timestamp, outcome, correlation ID, and a redacted change summary.
+- **FR-133**: Notifications SHOULD contain actor, Connection Key, Elsa User ID when known, timestamp, outcome, correlation ID, and a redacted change summary.
 - **FR-134**: The module MUST NOT require or own an audit persistence store.
 
 ### Errors and Abuse Protection
@@ -401,11 +418,11 @@ V1 is complete when all three milestones meet their acceptance criteria.
 
 - **FR-140**: Local credential authentication MUST complete through the same Authentication Client-, callback-, tenant-, and PKCE-bound code contract as external authentication.
 - **FR-141**: Every user-controlled return target MUST be validated as an allowlisted client-local path; absolute, protocol-relative, and unregistered targets MUST be rejected.
-- **FR-142**: A Studio deployment MUST select either Direct OIDC or Brokered External Authentication. Startup MUST reject ambiguous mixed-mode configuration and migration guidance MUST document rollback.
-- **FR-143**: When tenant context is absent, Studio MUST show only host-wide Login Methods and MUST NOT offer an anonymous tenant picker or reveal whether a tenant exists. Deployments MAY establish tenant context through a trusted host, route, invitation, or preconfigured client context.
+- **FR-142**: A Studio host MUST select one active authentication mode. Direct OIDC and Brokered External Authentication may coexist as installed modules but MUST NOT both own login routes in one host.
+- **FR-143**: Studio MUST show host-wide Login Methods only in v1 and MUST NOT offer an anonymous tenant picker.
 - **FR-144**: Adapter outbound HTTP used for discovery, testing, preview, and callbacks MUST apply deployment egress policy, HTTPS-by-default, bounded time and response size, controlled redirects, DNS and resolved-address checks, and redacted exception handling.
 - **FR-145**: Deployment policy MUST be able to deny private, loopback, link-local, reserved, or unapproved provider destinations and to route adapter traffic through an approved proxy.
-- **FR-146**: Preview MUST use separate short-lived, one-time state and result records bound to administrator, tenant, Connection ID, draft revision, and preview callback.
+- **FR-146**: Preview MUST use separate short-lived, one-time state and result records bound to administrator, connection record ID, draft revision, and preview callback.
 - **FR-147**: Preview results MUST use an explicit field allowlist, be readable once by the initiating authorized administrator, and be discarded if that administrator's Studio session is lost or expires.
 - **FR-148**: Management APIs and Studio routes MUST enforce operation permissions independently of menu visibility. The UI MUST accurately disable or hide unauthorized actions without treating that presentation as the security boundary.
 - **FR-149**: Studio MUST explain configuration-owned, shadowed, archived, invalid, and stale-test states and show only the actions valid for the caller and current revision.
@@ -419,35 +436,35 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-154**: Server-brokered External Authentication MUST be the recommended path for multiple and runtime-managed providers.
 - **FR-155**: Migration documentation MUST map existing direct OIDC settings to one configuration-owned broker connection.
 - **FR-156**: Migration MUST NOT silently move client secrets or change authentication mode.
+- **FR-157**: Direct OIDC MAY be marked deprecated only after broker parity and migration tooling are available; it MUST remain supported throughout Elsa 3.x.
+- **FR-158**: Removal of Direct OIDC MUST require a future major release, advance notice, and a tested rollback/migration guide.
 
 ## Conceptual Data Model
 
 | Concept | Purpose | Important characteristics |
 | --- | --- | --- |
-| Identity Provider Connection | Elsa's trust relationship with an external provider | Immutable ID, key unique within Connection Scope, source, tenant scope (`*` for host-wide; empty for default tenant), adapter type, common presentation, enabled/archive state, revision, versioned settings, secret bindings |
+| Identity Provider Connection | Elsa's trust relationship with an external provider | Stable management record ID, immutable host-wide Connection Key, source/override provenance, adapter type, presentation, preferred/enabled/archive state, revision, versioned settings, secret bindings, policy and static create-user roles |
 | Adapter Descriptor | Describes an installed adapter | Type, version, fields, validation, UI hints, secret fields, capabilities, optional custom editor key |
-| External Identity Link | Associates external identity with Elsa authorization | Target tenant, Connection ID, issuer, subject, Elsa User ID, timestamps |
+| External Identity Link | Associates external identity with Elsa authorization | Target tenant, Connection Key, issuer, subject, Elsa User ID, timestamps |
 | Elsa User | Owns Elsa authorization | Tenant context, optional Local Credential, roles and other Elsa-specific data |
 | Unlinked Identity Policy Selection | Decides what to do with an unknown identity | Policy type, settings version, settings, inherited or connection override |
-| Permission Grant Source Selection | Contributes Elsa permissions | Source type, settings version, settings, explicit boundaries |
+| External User Matcher Selection | Proposes an existing user for an unlinked identity | One matcher type, versioned settings, declared required ephemeral claims, no-match fallback |
 | Authentication Client | Safe broker return target | Client ID, exact callback URIs, client type, PKCE requirement, optional logout callbacks |
-| External Authentication Session | Bounded Elsa session created from external claims | User, tenant, connection, claim/grant snapshot, maximum age, refresh/revocation state |
-| Secret Binding | Resolves sensitive adapter values | Resolver type and non-secret lookup reference |
-| Permission Descriptor | Optional permission authoring metadata | Permission name, description, category, contributing module |
+| External Authentication Session | Bounded Elsa session created from external authentication | User, Connection Key, minimal normalized identity provenance, maximum age, refresh/revocation state, optional protected logout artifact |
+| Secret Binding | Resolves sensitive adapter values | Managed or External ownership, resolver type, non-secret reference, configured/resolvable state |
 
 ## Management Capabilities
 
 The specification should define exact routes and schemas for:
 
 - Connection list, detail, create, update, enable, disable, archive, and restore.
-- Connection shadow/conflict reporting.
+- Explicit full-shadow override creation, reporting, archive/reveal, restore, and removal.
 - Installed Adapter Descriptor discovery.
-- Effective policy and Permission Grant Source descriptor discovery.
+- Effective policy, Role option, and External User Matcher descriptor discovery.
 - Secret configured state, replacement, and removal.
 - Structural validation and non-interactive testing.
 - Interactive Preview Sign-in initiation and redacted result retrieval.
 - Identity Link list, create, and unlink, plus bounded tenant-scoped user lookup.
-- Permission Descriptor discovery.
 - Session list/revocation where enabled.
 - Anonymous Login Method discovery.
 - Local-login initiation and normalized completion.
@@ -456,21 +473,23 @@ The specification should define exact routes and schemas for:
 ## Studio Information Architecture
 
 ```text
+Settings
+└── SSO
+    ├── Connections
+    ├── Create/Edit or Override
+    ├── Test
+    └── Preview Sign-in
+
 Security
-├── Identity Provider Connections
-│   ├── Connections
-│   ├── Create/Edit
-│   ├── Test
-│   └── Preview Sign-in
 ├── External Identity Links
-└── Future
-    ├── Users
-    └── Roles
+└── External Authentication Sessions
 ```
 
-The connection list should support filtering by source, scope, adapter type, enabled state, validity, shadow/conflict state, and archived state.
+Settings is a Studio UI composition and navigation surface only. It does not introduce server-side Settings entities or generic Settings persistence. `Elsa.Studio.Authentication.UI` owns the clean login/logout shell and accepts contributions from local, external, and future authentication modules.
 
-Configuration-owned connections are inspect-only. Every page and API independently enforces authorization; menu visibility is only an affordance. The connection editor labels provider-issued fields as **Upstream Client Registration** and displays the eligible deployment-owned **Elsa Authentication Client** only as a redacted prerequisite.
+The connection list should support filtering by source, adapter type, enabled state, validity, override/shadow state, and archived state. The currently connected server environment supplies the host-wide context; no target field is rendered.
+
+Configuration-owned connections are inspect-only until the administrator explicitly chooses **Create Studio Override**. Every page and API independently enforces authorization; menu visibility is only an affordance. The connection editor labels provider-issued fields as **Upstream Client Registration**, shows the deployment-derived callback as read-only, and displays the eligible deployment-owned **Elsa Authentication Client** only as a redacted prerequisite.
 
 ## Security and Privacy Requirements
 
@@ -482,7 +501,7 @@ Configuration-owned connections are inspect-only. Every page and API independent
 - Reject open redirects by allowing only registered callbacks and client-local return paths.
 - Never reveal stored secrets.
 - Never auto-link by mutable profile attributes.
-- Never trust external permission claims without explicit configuration.
+- Never map external claims directly to Elsa permissions in v1.
 - Require dedicated permissions and audit notifications for unsafe settings and privileged actions.
 - Avoid account enumeration in public errors.
 - Do not persist complete external claim sets.
@@ -511,25 +530,25 @@ Given a deployment-defined enabled OIDC connection, when Studio discovers Login 
 
 Given an installed OIDC adapter and writable persistence, when an authorized administrator creates a disabled draft, supplies settings and a Secret Binding, previews sign-in, and enables it, then the method becomes available without restarting any Elsa node.
 
-### C. Configuration/database collision
+### C. Explicit Studio Override
 
-Given a database connection and a later configuration connection with the same effective key, when the registry resolves connections, then configuration wins and Studio marks the database record shadowed rather than silently using it.
+Given a configuration connection, when an authorized administrator creates a Studio Override for its immutable key, then the complete override shadows configuration without field merging. Disabling the override keeps the logical connection disabled; archiving it reveals configuration; restoring it resumes the shadow.
 
 ### D. JIT external-only user
 
-Given a successful external identity with no link and an effective JIT policy, when the broker completes sign-in, then Elsa creates an Elsa User without local password material, creates the tenant-scoped link, composes permissions, and issues Elsa credentials.
+Given a successful external identity with no link and an effective JIT policy, when the broker completes sign-in, then Elsa creates an Elsa User without local password material, creates the link, atomically assigns authorized default/matcher roles, and issues Elsa credentials from Elsa role permissions.
 
 ### E. Pre-provisioned-only user
 
 Given an effective reject-unlinked policy, when an unlinked identity authenticates, then Elsa returns a safe denial. After an authorized administrator pre-links the identity, the same external sign-in succeeds.
 
-### F. Permission grants
+### F. Matcher-based admission and static create-user roles
 
-Given local Elsa role permissions plus explicitly mapped external claims, when sign-in completes, then the Elsa token contains their allowed effective union and contains no unbounded provider permissions.
+Given the matcher-based policy, when its one `IExternalUserMatcher` returns one user, Elsa links that user without changing roles. No match rejects or creates a new user according to configuration; create-user assigns only authorized static `defaultRoleIds`. Ambiguous/error results reject, and matcher claims are not retained.
 
-### G. Tenant isolation
+### G. Host-wide connected environment
 
-Given one host-wide connection and two tenant contexts, when the same external subject signs in to each tenant, then Elsa resolves distinct tenant-scoped links and users without exposing tenant-local connections across tenants.
+Given Studio is connected to an Elsa server environment, when SSO connections are administered or discovered, then they apply host-wide to that environment without a target entity or editable environment field.
 
 ### H. Connection revision change
 
@@ -555,9 +574,9 @@ Given an active external session, when its connection is disabled or archived, t
 
 Given an adapter supports upstream logout, when the connection mode is `UserChoice`, then Studio offers local logout and a separate provider logout action. When mode is `Always`, normal logout also initiates provider logout.
 
-### N. Automatic redirect failure
+### N. Preferred method
 
-Given an automatic default connection, when external authentication fails, then Studio returns to the chooser with a safe message and correlation ID and does not loop.
+Given a preferred enabled connection, when Studio renders login, then that method is ordered and emphasized while the complete chooser remains visible and no automatic redirect occurs.
 
 ### O. Administrator lockout
 
@@ -575,9 +594,9 @@ Given a Blazor Server client, when brokered login completes, then the server exc
 
 Given an attacker supplies an absolute or protocol-relative return target to login, chooser recovery, preview, or logout, when Elsa or Studio validates it, then the target is rejected rather than followed.
 
-### S. Permission delegation boundary
+### S. Role delegation boundary
 
-Given a connection administrator lacks an Elsa permission and lacks unrestricted permission delegation, when they map any external claim, group, wildcard, or pass-through source that could grant it, then Elsa rejects the change.
+Given a connection administrator may not assign an Elsa Role, when they add it directly or make it reachable through a matcher, then Elsa rejects the change. No claim-permission mapping controls are present.
 
 ### T. External session refresh
 
@@ -599,6 +618,10 @@ Given an anonymous Studio client has no trusted tenant context, when it discover
 
 Given an external-only Elsa User has no Local Credential, when local login is attempted, then it fails like any invalid credential. External sign-in and tenant-scoped identity resolution continue to work.
 
+### Y. Role deletion dependency guard
+
+Given an Elsa Role is referenced by any CreateUser or matcher no-match CreateUser `defaultRoleIds`, when ordinary Role deletion is requested, then deletion is blocked and all safe database/configuration reference diagnostics are returned. Configuration references include their sanitized configuration paths and remain untouched. When only editable database references remain and an authorized administrator confirms all empty-default-role and best-effort warnings, remediation removes the Role from every referenced policy and deletes the Role only after revalidation proves no dependency remains; any incomplete best-effort run leaves the Role intact and reports safe retry state.
+
 ## Success Criteria
 
 - An integrator can configure one OIDC connection entirely through deployment configuration.
@@ -611,6 +634,7 @@ Given an external-only Elsa User has no Local Credential, when local login is at
 - No test, management, preview, discovery, redirect, error, log, or notification path reveals secrets or tokens.
 - Tenant-scoped login discovery and links remain isolated.
 - Ordinary connection administrators cannot delegate Elsa permissions they do not possess.
+- Role-lifecycle tests prove ordinary deletion is blocked by every persisted or configured JIT-policy reference, configuration paths are actionable but never mutated, and remediation cannot delete the Role after incomplete reference removal.
 - Sign-in initiation and completion work across nodes.
 - Existing direct OIDC deployments remain supported.
 

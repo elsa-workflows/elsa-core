@@ -17,7 +17,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
 
     public async ValueTask<EffectiveConnectionRegistry> GetAsync(string targetTenantId, CancellationToken cancellationToken = default)
     {
-        var scopes = GetApplicableScopes(targetTenantId);
+        var scopes = GetApplicableScopes();
         var snapshots = new List<(IIdentityProviderConnectionSource Source, ConnectionSourceSnapshot Snapshot)>();
 
         foreach (var scope in scopes)
@@ -35,7 +35,6 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
             .Where(x => IsInScope(x.Connection, x.Scope))
             .OrderBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
             .ThenBy(x => GetOwnershipPriority(x.Source.Ownership))
-            .ThenBy(x => GetScopePriority(x.Scope, targetTenantId))
             .ThenBy(x => x.Source.Name, StringComparer.Ordinal)
             .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
             .ToArray();
@@ -46,6 +45,9 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
             var candidatesForKey = group.ToArray();
             var hasInheritedScopeCollision = candidatesForKey.Select(x => x.Scope).Distinct().Skip(1).Any();
 
+            var explicitOverride = candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Database && x.Connection.OverridesConfigurationConnection && !x.Connection.ArchivedAt.HasValue);
+            var preferred = explicitOverride ?? candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Configuration) ?? candidatesForKey.First();
+
             for (var index = 0; index < candidatesForKey.Length; index++)
             {
                 var candidate = candidatesForKey[index];
@@ -54,20 +56,19 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
                     candidate.Source.Ownership,
                     candidate.Scope,
                     hasInheritedScopeCollision ? ConnectionValidity.Invalid : ConnectionValidity.Unknown,
-                    !hasInheritedScopeCollision && index > 0,
+                    !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred),
                     candidate.Source.Name));
             }
         }
 
         var orderedConnections = connections
-            .OrderBy(x => GetScopePriority(x.Scope, targetTenantId))
-            .ThenBy(x => x.Connection.DisplayOrder)
+            .OrderBy(x => x.Connection.DisplayOrder)
             .ThenBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
             .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
             .ToArray();
 
         var version = revisionCalculator.CalculateRegistryVersion(snapshots.Select(x => (x.Source.Name, x.Source.Ownership, x.Snapshot)));
-        var loginMethods = CreateLoginMethods(orderedConnections, targetTenantId);
+        var loginMethods = CreateLoginMethods(orderedConnections);
         return new EffectiveConnectionRegistry(orderedConnections, loginMethods, version);
     }
 
@@ -87,24 +88,32 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
         return registry.Connections.FirstOrDefault(x => string.Equals(x.Connection.Id, connectionId, StringComparison.Ordinal));
     }
 
-    private static IReadOnlyCollection<LoginMethod> CreateLoginMethods(IReadOnlyCollection<EffectiveIdentityProviderConnection> connections, string targetTenantId)
+    private static IReadOnlyCollection<LoginMethod> CreateLoginMethods(IReadOnlyCollection<EffectiveIdentityProviderConnection> connections)
     {
         var available = connections
             .Where(x => !x.IsShadowed && x.Validity != ConnectionValidity.Invalid && x.Connection.IsEnabled && !x.Connection.ArchivedAt.HasValue)
             .ToArray();
-        var targetScope = GetTargetScope(targetTenantId);
-        var defaultScope = available.Any(x => x.Scope == targetScope && x.Connection.IsDefault)
-            ? targetScope
-            : ConnectionScope.Host;
-        var defaultConnectionId = available
-            .Where(x => x.Scope == defaultScope && x.Connection.IsDefault)
+        var configuredPreferred = available
+            .Where(x => x.Ownership == ConnectionSourceOwnership.Configuration && x.Connection.IsPreferred)
+            .OrderBy(x => x.Connection.DisplayOrder)
+            .ThenBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
+            .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (configuredPreferred is not null)
+            return ToLoginMethods(available, configuredPreferred.Connection.Id);
+
+        var preferredConnectionId = available
+            .Where(x => x.Connection.IsPreferred)
             .OrderBy(x => x.Connection.DisplayOrder)
             .ThenBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
             .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
             .Select(x => x.Connection.Id)
             .FirstOrDefault();
 
-        return available
+        return ToLoginMethods(available, preferredConnectionId);
+    }
+
+    private static IReadOnlyCollection<LoginMethod> ToLoginMethods(IEnumerable<EffectiveIdentityProviderConnection> connections, string? preferredConnectionId) => connections
             .OrderBy(x => x.Connection.DisplayOrder)
             .ThenBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
             .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
@@ -115,33 +124,14 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
                 x.Connection.DisplayName,
                 x.Connection.IconId,
                 x.Connection.DisplayOrder,
-                string.Equals(x.Connection.Id, defaultConnectionId, StringComparison.Ordinal),
+                string.Equals(x.Connection.Id, preferredConnectionId, StringComparison.Ordinal),
                 new Uri($"/external-authentication/authorize/{Uri.EscapeDataString(x.Connection.Key)}", UriKind.Relative)))
             .ToArray();
-    }
 
-    private static IReadOnlyList<ConnectionScope> GetApplicableScopes(string? targetTenantId)
-    {
-        if (targetTenantId is null)
-            return [ConnectionScope.Host];
-
-        var targetScope = GetTargetScope(targetTenantId);
-        return targetScope == ConnectionScope.Host ? [ConnectionScope.Host] : [targetScope, ConnectionScope.Host];
-    }
-
-    private static ConnectionScope GetTargetScope(string targetTenantId)
-    {
-        if (targetTenantId == ConnectionScope.HostTenantId)
-            return ConnectionScope.Host;
-
-        return targetTenantId.Length == 0
-            ? ConnectionScope.DefaultTenant
-            : new ConnectionScope(ConnectionScopeKind.Tenant, targetTenantId);
-    }
+    private static IReadOnlyList<ConnectionScope> GetApplicableScopes() => [ConnectionScope.Host];
 
     private static bool IsInScope(IdentityProviderConnection connection, ConnectionScope scope) => string.Equals(connection.TenantId, scope.TenantId, StringComparison.Ordinal);
     private static int GetOwnershipPriority(ConnectionSourceOwnership ownership) => ownership == ConnectionSourceOwnership.Configuration ? 0 : 1;
-    private static int GetScopePriority(ConnectionScope scope, string? targetTenantId) => targetTenantId is not null && scope.TenantId == targetTenantId ? 0 : 1;
 
     private sealed record Candidate(IIdentityProviderConnectionSource Source, ConnectionScope Scope, IdentityProviderConnection Connection);
 }

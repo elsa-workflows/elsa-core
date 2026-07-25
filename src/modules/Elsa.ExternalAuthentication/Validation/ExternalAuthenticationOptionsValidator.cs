@@ -1,6 +1,7 @@
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
+using Elsa.ExternalAuthentication.Policies;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Validation;
@@ -18,10 +19,16 @@ public sealed class ExternalAuthenticationOptionsValidator(
         var installedAdapterTypes = ValidateExtensionTypes(registrations.Where(x => x.Kind == ExternalAuthenticationExtensionKind.Adapter).Select(x => x.Type), "adapter", failures);
         var installedPolicyTypes = ValidateExtensionTypes(registrations.Where(x => x.Kind == ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy).Select(x => x.Type), "unlinked identity policy", failures);
         var installedGrantSourceTypes = ValidateExtensionTypes(registrations.Where(x => x.Kind == ExternalAuthenticationExtensionKind.PermissionGrantSource).Select(x => x.Type), "permission grant source", failures);
+        var installedMatcherTypes = ValidateExtensionTypes(registrations.Where(x => x.Kind == ExternalAuthenticationExtensionKind.ExternalUserMatcher).Select(x => x.Type), "external user matcher", failures);
 
         ValidateAllowedTypes(options.AllowedAdapterTypes, installedAdapterTypes, "adapter", failures);
         ValidateAllowedTypes(options.AllowedUnlinkedIdentityPolicyTypes, installedPolicyTypes, "unlinked identity policy", failures);
         ValidateAllowedTypes(options.AllowedPermissionGrantSourceTypes, installedGrantSourceTypes, "permission grant source", failures);
+        ValidateAllowedTypes(options.AllowedExternalUserMatcherTypes, installedMatcherTypes, "external user matcher", failures);
+        if (string.Equals(options.UnlinkedIdentityPolicy.DefaultType, MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
+            (installedMatcherTypes.Count == 0 || options.AllowedExternalUserMatcherTypes.Count > 0 && !installedMatcherTypes.Any(type => options.AllowedExternalUserMatcherTypes.Contains(type, StringComparer.Ordinal))))
+            failures.Add("The default unlinked identity policy 'match-user' requires at least one installed and allowed external user matcher.");
+        ValidateExternalCallbackBaseUri(options.Redirects, failures);
         ValidateClients(options, failures);
         ValidateConfigurationConnections(options, installedAdapterTypes, installedPolicyTypes, installedGrantSourceTypes, failures);
         ValidateRateLimits(options.RateLimits, failures);
@@ -29,6 +36,15 @@ public sealed class ExternalAuthenticationOptionsValidator(
         ValidateHandleHashing(options.HandleHashing, failures);
 
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
+    }
+
+    private static void ValidateExternalCallbackBaseUri(RedirectValidationOptions? redirects, ICollection<string> failures)
+    {
+        if (redirects?.ExternalCallbackBaseUri is null)
+            return;
+
+        if (!ExternalCallbackBaseUriValidator.IsValid(redirects.ExternalCallbackBaseUri, redirects.AllowDevelopmentLoopbackCallbacks))
+            failures.Add(ExternalCallbackBaseUriValidator.ErrorMessage);
     }
 
     private static void ValidateHandleHashing(ExternalAuthenticationHandleHashingOptions? handleHashing, ICollection<string> failures)
@@ -268,34 +284,28 @@ public sealed class ExternalAuthenticationOptionsValidator(
         IReadOnlySet<string> installedGrantSourceTypes,
         ICollection<string> failures)
     {
-        var connectionKeys = new HashSet<(string TenantId, string Key)>();
-        var inheritedHostKeys = new HashSet<string>(StringComparer.Ordinal);
+        var connectionKeys = new HashSet<string>(StringComparer.Ordinal);
         var configuredConnectionIds = new HashSet<string>(StringComparer.Ordinal);
-        var configuredDefaultScopes = new HashSet<string>(StringComparer.Ordinal);
+        var hasPreferredConnection = false;
 
         foreach (var connection in options.ConfigurationConnections ?? [])
         {
-            var tenantId = connection.TenantId ?? string.Empty;
+            var tenantId = string.IsNullOrWhiteSpace(connection.TenantId) ? ConnectionScope.HostTenantId : connection.TenantId.Trim();
+            if (tenantId != ConnectionScope.HostTenantId)
+                failures.Add($"Configuration connection '{connection.Key}' must use the host scope in this version.");
             var key = connection.Key?.Trim().ToLowerInvariant() ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(tenantId) && connection.TenantId is not "")
-                failures.Add("Configuration connection tenant identifiers must not contain whitespace.");
 
             if (string.IsNullOrWhiteSpace(key))
                 failures.Add("Configuration connection keys must not be empty.");
-            else if (!connectionKeys.Add((tenantId, key)))
-                failures.Add($"Configuration connection key '{connection.Key}' is configured more than once for tenant '{tenantId}'.");
-
-            if (tenantId == ConnectionScope.HostTenantId)
-                inheritedHostKeys.Add(key);
-            else if (!string.IsNullOrWhiteSpace(key) && inheritedHostKeys.Contains(key))
-                failures.Add($"Configuration connection key '{connection.Key}' collides with an inherited host-wide connection.");
+            else if (!connectionKeys.Add(key))
+                failures.Add($"Configuration connection key '{connection.Key}' is configured more than once.");
 
             if (!string.IsNullOrWhiteSpace(connection.Id) && !configuredConnectionIds.Add(connection.Id))
                 failures.Add($"Configuration connection ID '{connection.Id}' is configured more than once.");
 
-            if (connection.IsDefault && !configuredDefaultScopes.Add(tenantId))
-                failures.Add($"Configuration connections define more than one automatic default for scope '{tenantId}'.");
+            if (connection.IsPreferred && hasPreferredConnection)
+                failures.Add("Configuration connections define more than one preferred sign-in method.");
+            hasPreferredConnection |= connection.IsPreferred;
 
             if (string.IsNullOrWhiteSpace(connection.AdapterType) || !installedAdapterTypes.Contains(connection.AdapterType))
                 failures.Add($"Configuration connection '{connection.Key}' selects adapter type '{connection.AdapterType}', which is not installed.");
@@ -312,11 +322,6 @@ public sealed class ExternalAuthenticationOptionsValidator(
             ValidateGrantSources(connection, options, installedGrantSourceTypes, failures);
         }
 
-        foreach (var hostKey in inheritedHostKeys)
-        {
-            if (connectionKeys.Any(x => x.TenantId != ConnectionScope.HostTenantId && x.Key == hostKey))
-                failures.Add($"Configuration connection key '{hostKey}' collides with an inherited host-wide connection.");
-        }
     }
 
     private static void ValidatePolicy(IdentityProviderConnection connection, ExternalAuthenticationOptions options, IReadOnlySet<string> installedPolicyTypes, ICollection<string> failures)

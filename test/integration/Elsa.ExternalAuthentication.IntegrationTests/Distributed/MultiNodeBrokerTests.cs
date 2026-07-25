@@ -100,7 +100,7 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
 
     private ExternalAuthenticationSession Session() => new()
     {
-        Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionId = "connection-a", ConnectionMaterialRevision = "revision-a",
+        Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionKey = "contoso", ConnectionMaterialRevision = "revision-a",
         Issuer = "https://issuer.example", SubjectHash = "subject-hash", StartedAt = _clock.UtcNow, LastRefreshedAt = _clock.UtcNow, ExpiresAt = _clock.UtcNow.AddHours(1), RefreshExpiresAt = _clock.UtcNow.AddHours(1), CurrentRefreshTokenHash = "refresh-a"
     };
 

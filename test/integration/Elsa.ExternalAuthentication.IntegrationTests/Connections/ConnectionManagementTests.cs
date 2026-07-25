@@ -69,11 +69,14 @@ public class ConnectionManagementTests : IAsyncLifetime
         _settingsMigrations = new TestAdapterSettingsMigrationService();
         builder.Services.AddSingleton<IAdapterSettingsMigrationService>(_settingsMigrations);
         builder.Services.AddSingleton(Substitute.For<IUnlinkedIdentityPolicyRegistry>());
+        builder.Services.AddSingleton<IExternalUserMatcherRegistry>(Substitute.For<IExternalUserMatcherRegistry>());
         builder.Services.AddScoped(_ => Substitute.For<IPermissionGrantSourceRegistry>());
         builder.Services.AddSingleton<IPermissionDelegationAuthorizer>(Substitute.For<IPermissionDelegationAuthorizer>());
+        builder.Services.AddSingleton(Substitute.For<IRoleAuthorizationService>());
         _notifications = Substitute.For<INotificationSender>();
         builder.Services.AddSingleton(_notifications);
         builder.Services.AddSingleton<ISystemClock, SystemClock>();
+        builder.Services.AddSingleton<IExternalAuthenticationSessionStore, InMemoryExternalAuthenticationSessionStore>();
         var tenant = Substitute.For<ITenantAccessor>();
         tenant.TenantId.Returns(_ => _tenantId);
         builder.Services.AddSingleton(tenant);
@@ -145,7 +148,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         _registry.ConfigurationConnection = new IdentityProviderConnection
         {
             Id = "configuration-contoso",
-            TenantId = "tenant-a",
+            TenantId = ConnectionScope.HostTenantId,
             Key = "contoso",
             AdapterType = "test",
             AdapterSettingsVersion = 1,
@@ -173,31 +176,32 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task TenantCannotCreateOrMutateConnectionsOutsideItsExactScope()
+    public async Task ConnectionsAreManagedHostWideRegardlessOfCurrentTenant()
     {
         var client = _client!;
-        foreach (var scope in new[] { new { kind = "host", tenantId = (string?)null }, new { kind = "default", tenantId = (string?)null }, new { kind = "tenant", tenantId = (string?)"tenant-b" } })
+        foreach (var scope in new[] { new { kind = "default", tenantId = (string?)null }, new { kind = "tenant", tenantId = (string?)"tenant-b" } })
         {
             var response = await _client!.PostAsJsonAsync("/external-authentication/connections", CreateRequest("scope-" + scope.kind, scope));
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Contains("host_scope_required", await response.Content.ReadAsStringAsync());
         }
 
-        var host = DatabaseConnection("host-connection", ConnectionScope.HostTenantId, "host-connection");
-        await _store.CreateAsync(host);
-        var update = new HttpRequestMessage(HttpMethod.Put, "/external-authentication/connections/host-connection") { Content = JsonContent.Create(CreateRequest("host-updated")) };
+        var create = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("host-connection"));
+        Assert.Equal(HttpStatusCode.Created, create.StatusCode);
+        var host = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+
+        var update = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{host.Id}") { Content = JsonContent.Create(CreateRequest("host-connection", displayName: "Updated")) };
         update.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
-        Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(update)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(update)).StatusCode);
 
-        var lifecycle = new HttpRequestMessage(HttpMethod.Post, "/external-authentication/connections/host-connection/disable");
-        lifecycle.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
-        Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(lifecycle)).StatusCode);
+        var secret = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{host.Id}/secret-bindings/clientSecret") { Content = JsonContent.Create(new { resolverType = "test", reference = "secret" }) };
+        secret.Headers.TryAddWithoutValidation("If-Match", "\"2\"");
+        Assert.Equal(HttpStatusCode.OK, (await client.SendAsync(secret)).StatusCode);
 
-        var secret = new HttpRequestMessage(HttpMethod.Put, "/external-authentication/connections/host-connection/secret-bindings/clientSecret") { Content = JsonContent.Create(new { resolverType = "test", reference = "secret" }) };
-        secret.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
-        Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(secret)).StatusCode);
+        await _store.CreateAsync(DatabaseConnection("legacy-tenant", "tenant-a", "legacy-tenant"));
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/external-authentication/connections/legacy-tenant")).StatusCode);
 
         await _store.CreateAsync(DatabaseConnection("tenant-inherited-key", "tenant-a", "tenant-inherited-key"));
-        _tenantId = ConnectionScope.HostTenantId;
         var hostCollision = await client.PostAsJsonAsync("/external-authentication/connections", CreateRequest("tenant-inherited-key", new { kind = "host", tenantId = (string?)null }));
         Assert.Equal(HttpStatusCode.Conflict, hostCollision.StatusCode);
     }
@@ -206,10 +210,10 @@ public class ConnectionManagementTests : IAsyncLifetime
     public async Task ListSupportsDeterministicPagingFiltersAndStaleObservations()
     {
         var client = _client!;
-        await _store.CreateAsync(DatabaseConnection("list-a", "tenant-a", "alpha", 1));
-        await _store.CreateAsync(DatabaseConnection("list-b", "tenant-a", "bravo", 2));
-        await _store.CreateAsync(DatabaseConnection("list-c", "tenant-a", "charlie", 3));
-        await _store.CreateAsync(DatabaseConnection("other-tenant", "tenant-b", "not-enumerable", 4));
+        await _store.CreateAsync(DatabaseConnection("list-a", ConnectionScope.HostTenantId, "alpha", 1));
+        await _store.CreateAsync(DatabaseConnection("list-b", ConnectionScope.HostTenantId, "bravo", 2));
+        await _store.CreateAsync(DatabaseConnection("list-c", ConnectionScope.HostTenantId, "charlie", 3));
+        await _store.CreateAsync(DatabaseConnection("legacy-tenant", "tenant-b", "not-enumerable", 4));
         await _observations.SaveLatestAsync(new ConnectionObservation("list-a", "old-material", DateTimeOffset.UtcNow, ConnectionObservationStatus.Succeeded, "connectivity", TimeSpan.Zero, "OK", [], "test"));
 
         var first = await client.GetFromJsonAsync<ListDocument>("/external-authentication/connections?source=database&valid=true&shadowed=false&pageSize=1");
@@ -244,7 +248,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         enable.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         Assert.Equal(HttpStatusCode.BadRequest, (await client.SendAsync(enable)).StatusCode);
 
-        var future = await client.PostAsJsonAsync("/external-authentication/connections", new { key = "future", scope = new { kind = "tenant", tenantId = "tenant-a" }, adapterType = "test", adapterSettingsVersion = 3, adapterSettings = new { valid = true }, displayName = "Future", claimProjection = new { }, upstreamLogoutMode = "disabled" });
+        var future = await client.PostAsJsonAsync("/external-authentication/connections", new { key = "future", scope = new { kind = "host" }, adapterType = "test", adapterSettingsVersion = 3, adapterSettings = new { valid = true }, displayName = "Future", claimProjection = new { }, upstreamLogoutMode = "disabled" });
         Assert.Equal(HttpStatusCode.BadRequest, future.StatusCode);
         Assert.Contains("migration_unavailable", await future.Content.ReadAsStringAsync());
 
@@ -288,7 +292,7 @@ public class ConnectionManagementTests : IAsyncLifetime
     private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false) => new
     {
         key,
-        scope = scope ?? new { kind = "tenant", tenantId = "tenant-a" },
+        scope = scope ?? new { kind = "host" },
         adapterType = "test",
         adapterSettingsVersion = 1,
         adapterSettings = settings ?? new { valid = true },

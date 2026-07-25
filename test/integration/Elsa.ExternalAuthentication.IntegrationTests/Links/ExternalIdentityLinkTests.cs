@@ -52,6 +52,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         builder.Services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
         builder.Services.AddScoped<IUserStore, MemoryUserStore>();
         builder.Services.AddScoped<IUserProvider, StoreBasedUserProvider>();
+        builder.Services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
         builder.Services.AddScoped<InMemoryExternalIdentityProvisioner>();
         builder.Services.AddScoped<IExternalIdentityProvisioner>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
         builder.Services.AddScoped<IExternalIdentityLinkManagementStore>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
@@ -113,7 +114,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
 
         _connections.Archived = true;
-        var archived = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionId=connection-a");
+        var archived = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
         Assert.NotNull(archived);
         var archivedLinks = Assert.IsType<LinkList>(archived);
         Assert.Equal(2, archivedLinks.Items.Count);
@@ -126,7 +127,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
             [new RejectUnlinkedIdentityPolicy()],
             Microsoft.Extensions.Options.Options.Create(new Elsa.ExternalAuthentication.Options.ExternalAuthenticationOptions()));
         var identity = new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>());
-        var connection = await _connections.FindByIdAsync("tenant-a", "connection-a");
+        var connection = await _connections.FindByKeyAsync("tenant-a", "contoso");
         await Assert.ThrowsAsync<ExternalIdentityUnlinkedException>(() => resolver.ResolveAsync(new ExternalIdentityResolutionContext("tenant-a", connection!, identity, identity.Claims)).AsTask());
     }
 
@@ -148,7 +149,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
     {
         var responses = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => PrelinkAsync("concurrent-subject")));
         Assert.All(responses, response => Assert.True(response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK));
-        var links = await _client!.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionId=connection-a");
+        var links = await _client!.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
         Assert.NotNull(links);
         Assert.Single(links!.Items);
         Assert.Equal("user-a", Assert.Single(links.Items).UserId);
@@ -173,7 +174,7 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.NotFound, (await PrelinkAsync("other-tenant-subject", "user-b")).StatusCode);
     }
 
-    private async Task<HttpResponseMessage> PrelinkAsync(string subject, string userId = "user-a") => await _client!.PostAsJsonAsync("/external-authentication/identity-links", new { userId, connectionId = "connection-a", issuer = "https://issuer.example/", subject });
+    private async Task<HttpResponseMessage> PrelinkAsync(string subject, string userId = "user-a") => await _client!.PostAsJsonAsync("/external-authentication/identity-links", new { userId, connectionKey = "contoso", issuer = "https://issuer.example/", subject });
 
     protected async Task SeedUserAsync(string id, string name, string tenantId)
     {

@@ -78,6 +78,38 @@ public class ElsaSecretBindingResolverTests
         }
     }
 
+    [Fact]
+    public async Task ManagedReplaceCreatesDeterministicManagedBindingWithoutExposingTheValue()
+    {
+        var manager = Substitute.For<ISecretManager>();
+        manager.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<Secret?>(null));
+        manager.CreateAsync(Arg.Any<CreateSecretRequest>(), Arg.Any<CancellationToken>()).Returns(call => Task.FromResult(new Secret { Name = call.Arg<CreateSecretRequest>().Name }));
+        var resolver = new ElsaSecretBindingResolver(manager, new TestHasher());
+
+        using var value = new SensitiveString("super-secret");
+        var binding = await resolver.ReplaceAsync(new ManagedSecretBindingWriteRequest("connection-a", "clientSecret", value));
+
+        Assert.Equal(SecretBindingOwnership.Managed, binding.Ownership);
+        Assert.Equal(ElsaSecretBindingResolver.ResolverType, binding.ResolverType);
+        Assert.Equal("external-authentication-connection-a-clientsecret", binding.Reference);
+        Assert.DoesNotContain("super-secret", binding.Reference, StringComparison.Ordinal);
+        await manager.Received(1).CreateAsync(Arg.Is<CreateSecretRequest>(x => x.Value == "super-secret"), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RemovingManagedBindingDeletesOnlyStudioOwnedSecretMaterial()
+    {
+        var manager = Substitute.For<ISecretManager>();
+        manager.DeleteAsync("managed-secret", Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        var resolver = new ElsaSecretBindingResolver(manager, new TestHasher());
+
+        await resolver.RemoveAsync(new SecretBinding(ElsaSecretBindingResolver.ResolverType, "managed-secret", Ownership: SecretBindingOwnership.Managed));
+
+        await manager.Received(1).DeleteAsync("managed-secret", Arg.Any<CancellationToken>());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.RemoveAsync(new SecretBinding(ElsaSecretBindingResolver.ResolverType, "deployment-secret")).AsTask());
+        await manager.DidNotReceive().DeleteAsync("deployment-secret", Arg.Any<CancellationToken>());
+    }
+
     private static Secret CreateSecret() => new()
     {
         Id = "secret-id",

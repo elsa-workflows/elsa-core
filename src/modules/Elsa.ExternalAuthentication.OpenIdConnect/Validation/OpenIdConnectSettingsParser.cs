@@ -23,16 +23,19 @@ public sealed class OpenIdConnectSettingsParser
         if (!mode.Equals("discovery", StringComparison.OrdinalIgnoreCase) && trustMode != OpenIdConnectTrustMode.Manual)
             validationErrors.Add(new ConnectionValidationError("mode", "invalid", "Mode must be discovery or manual."));
 
-        var authority = GetHttpsUri(settings, "authority", validationErrors, true);
+        var discoveryUrl = GetHttpsUri(settings, "discoveryUrl", validationErrors, trustMode == OpenIdConnectTrustMode.Discovery);
         var clientId = GetString(settings, "clientId");
         if (string.IsNullOrWhiteSpace(clientId))
             validationErrors.Add(new ConnectionValidationError("clientId", "required", "Client ID is required."));
 
-        var callbackUri = GetHttpsUri(settings, "callbackUri", validationErrors, true);
-        var providerPkce = GetString(settings, "providerPkce") ?? "required";
-        var pkceMode = providerPkce.Equals("disabled", StringComparison.OrdinalIgnoreCase) ? OpenIdConnectProviderPkceMode.Disabled : OpenIdConnectProviderPkceMode.Required;
-        if (!providerPkce.Equals("required", StringComparison.OrdinalIgnoreCase) && pkceMode != OpenIdConnectProviderPkceMode.Disabled)
-            validationErrors.Add(new ConnectionValidationError("providerPkce", "invalid", "Provider PKCE must be required or disabled."));
+        var clientAuthentication = GetString(settings, "clientAuthenticationMethod") ?? "client_secret_basic";
+        var clientAuthenticationMethod = clientAuthentication.Equals("client_secret_post", StringComparison.OrdinalIgnoreCase)
+            ? OpenIdConnectClientAuthenticationMethod.ClientSecretPost
+            : OpenIdConnectClientAuthenticationMethod.ClientSecretBasic;
+        if (!clientAuthentication.Equals("client_secret_basic", StringComparison.OrdinalIgnoreCase) && clientAuthenticationMethod != OpenIdConnectClientAuthenticationMethod.ClientSecretPost)
+            validationErrors.Add(new ConnectionValidationError("clientAuthenticationMethod", "invalid", "Client authentication must be client_secret_basic or client_secret_post."));
+        if (string.Equals(GetString(settings, "providerPkce"), "disabled", StringComparison.OrdinalIgnoreCase))
+            validationErrors.Add(new ConnectionValidationError("providerPkce", "invalid", "Upstream PKCE is always required."));
 
         var issuer = GetString(settings, "issuer");
         var authorizationEndpoint = GetHttpsUri(settings, "authorizationEndpoint", validationErrors, trustMode == OpenIdConnectTrustMode.Manual);
@@ -56,24 +59,23 @@ public sealed class OpenIdConnectSettingsParser
             scopes = ["openid", .. scopes];
 
         errors = validationErrors;
-        if (validationErrors.Count != 0 || authority is null || callbackUri is null || string.IsNullOrWhiteSpace(clientId))
+        if (validationErrors.Count != 0 || string.IsNullOrWhiteSpace(clientId))
             return false;
 
         result = new OpenIdConnectConnectionSettings(
             trustMode,
-            authority,
+            discoveryUrl,
             clientId,
-            callbackUri,
+            clientAuthenticationMethod,
             scopes,
-            pkceMode,
+            OpenIdConnectProviderPkceMode.Required,
             issuer,
             authorizationEndpoint,
             tokenEndpoint,
             userInfoEndpoint,
             endSessionEndpoint,
             jwksUri,
-            signingKeys,
-            settings.TryGetProperty("useUserInfo", out var useUserInfo) && useUserInfo.ValueKind == JsonValueKind.True);
+            signingKeys);
         return true;
     }
 

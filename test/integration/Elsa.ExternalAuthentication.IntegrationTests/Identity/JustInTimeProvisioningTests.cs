@@ -22,7 +22,7 @@ public class JustInTimeProvisioningTests
     public async Task ExistingLinkResolvesWithoutApplyingTheUnlinkedPolicy()
     {
         var provisioner = new AtomicProvisioner();
-        provisioner.Seed("tenant-a", "tenant-a", "connection-a", "https://issuer.example", "subject-a", "user-a");
+        provisioner.Seed("tenant-a", "tenant-a", "contoso", "https://issuer.example", "subject-a", "user-a");
         var resolver = CreateResolver(provisioner, new RejectUnlinkedIdentityPolicy());
 
         var resolution = await resolver.ResolveAsync(CreateContext());
@@ -65,7 +65,7 @@ public class JustInTimeProvisioningTests
     public async Task ResolverRejectsALinkForAnotherTenant()
     {
         var provisioner = new AtomicProvisioner();
-        provisioner.Seed("tenant-a", "tenant-b", "connection-a", "https://issuer.example", "subject-a", "user-b");
+        provisioner.Seed("tenant-a", "tenant-b", "contoso", "https://issuer.example", "subject-a", "user-b");
         var resolver = CreateResolver(provisioner, new RejectUnlinkedIdentityPolicy());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.ResolveAsync(CreateContext()).AsTask());
@@ -123,7 +123,7 @@ public class JustInTimeProvisioningTests
         var provisioner = CreateInMemoryProvisioner(userStore);
         var first = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest());
         var differentIssuer = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(issuer: "https://issuer-two.example"));
-        var differentConnection = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(connectionId: "connection-b"));
+        var differentConnection = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(connectionKey: "fabrikam"));
 
         Assert.Equal(3, new[] { first.Link.Id, differentIssuer.Link.Id, differentConnection.Link.Id }.Distinct().Count());
         Assert.Equal(3, new[] { first.UserId, differentIssuer.UserId, differentConnection.UserId }.Distinct().Count());
@@ -140,6 +140,7 @@ public class JustInTimeProvisioningTests
         services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
         services.AddScoped<IUserStore, MemoryUserStore>();
         services.AddScoped<IUserProvider, StoreBasedUserProvider>();
+        services.AddSingleton<IRoleProvider>(NSubstitute.Substitute.For<IRoleProvider>());
         services.AddScoped<IExternalIdentityProvisioner, InMemoryExternalIdentityProvisioner>();
         await using var provider = services.BuildServiceProvider();
         var request = CreateProvisioningRequest();
@@ -151,7 +152,7 @@ public class JustInTimeProvisioningTests
         await using var secondScope = provider.CreateAsyncScope();
         var provisioner = secondScope.ServiceProvider.GetRequiredService<IExternalIdentityProvisioner>();
         var converged = await provisioner.CreateLinkOrGetExistingAsync(request);
-        var resolved = await provisioner.FindLinkAsync(request.TenantId, request.ConnectionId, request.Identity);
+        var resolved = await provisioner.FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity);
 
         Assert.Equal(created.Link.Id, converged.Link.Id);
         Assert.False(converged.WasCreated);
@@ -167,14 +168,15 @@ public class JustInTimeProvisioningTests
     private static InMemoryExternalIdentityProvisioner CreateInMemoryProvisioner(IUserStore userStore, IIdentityGenerator? identityGenerator = null) => new(
         userStore,
         new StoreBasedUserProvider(userStore),
+        NSubstitute.Substitute.For<IRoleProvider>(),
         identityGenerator ?? new Elsa.Workflows.GuidIdentityGenerator(),
         new Elsa.Common.Services.SystemClock(),
         new HmacExternalAuthenticationHandleHasher(),
         new InMemoryExternalIdentityProvisionerState());
 
-    private static ProvisioningRequest CreateProvisioningRequest(string? existingUserId = null, string connectionId = "connection-a", string issuer = "https://issuer.example") => new(
+    private static ProvisioningRequest CreateProvisioningRequest(string? existingUserId = null, string connectionKey = "contoso", string issuer = "https://issuer.example") => new(
         "tenant-a",
-        connectionId,
+        connectionKey,
         new ExternalIdentity(issuer, "subject-a", new Dictionary<string, IReadOnlyCollection<string>>()),
         existingUserId is null ? new UserCreationProposal("external") : null,
         existingUserId);
@@ -201,40 +203,40 @@ public class JustInTimeProvisioningTests
     private sealed class AtomicProvisioner : IExternalIdentityProvisioner
     {
         private readonly object _syncRoot = new();
-        private readonly Dictionary<(string TenantId, string ConnectionId, string Issuer, string Subject), ProvisioningResult> _links = new();
+        private readonly Dictionary<(string TenantId, string ConnectionKey, string Issuer, string Subject), ProvisioningResult> _links = new();
         private readonly List<User> _users = [];
 
         public IReadOnlyCollection<User> Users => _users;
 
-        public ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionId, ExternalIdentity identity, CancellationToken cancellationToken = default)
+        public ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default)
         {
             lock (_syncRoot)
-                return ValueTask.FromResult(_links.GetValueOrDefault((tenantId, connectionId, identity.Issuer, identity.Subject))?.Link);
+                return ValueTask.FromResult(_links.GetValueOrDefault((tenantId, connectionKey, identity.Issuer, identity.Subject))?.Link);
         }
 
         public ValueTask<ProvisioningResult> CreateLinkOrGetExistingAsync(ProvisioningRequest request, CancellationToken cancellationToken = default)
         {
             lock (_syncRoot)
             {
-                var key = (request.TenantId, request.ConnectionId, request.Identity.Issuer, request.Identity.Subject);
+                var key = (request.TenantId, request.ConnectionKey, request.Identity.Issuer, request.Identity.Subject);
                 if (_links.TryGetValue(key, out var existing))
                     return ValueTask.FromResult(existing with { WasCreated = false });
 
                 var user = new User { Id = $"user-{_users.Count + 1}", Name = $"external-{_users.Count + 1}", TenantId = request.TenantId };
                 _users.Add(user);
-                var link = new ExternalIdentityLink($"link-{_users.Count}", request.TenantId, request.ConnectionId, request.Identity.Issuer, "subject-hash", null, user.Id, DateTimeOffset.UtcNow, null);
+                var link = new ExternalIdentityLink($"link-{_users.Count}", request.TenantId, request.ConnectionKey, request.Identity.Issuer, "subject-hash", null, user.Id, DateTimeOffset.UtcNow, null);
                 var result = new ProvisioningResult(user.Id, link, true, true);
                 _links[key] = result;
                 return ValueTask.FromResult(result);
             }
         }
 
-        public void Seed(string lookupTenantId, string linkTenantId, string connectionId, string issuer, string subject, string userId)
+        public void Seed(string lookupTenantId, string linkTenantId, string connectionKey, string issuer, string subject, string userId)
         {
             lock (_syncRoot)
             {
-                var link = new ExternalIdentityLink("link-seeded", linkTenantId, connectionId, issuer, "subject-hash", null, userId, DateTimeOffset.UtcNow, null);
-                _links[(lookupTenantId, connectionId, issuer, subject)] = new ProvisioningResult(userId, link, false);
+                var link = new ExternalIdentityLink("link-seeded", linkTenantId, connectionKey, issuer, "subject-hash", null, userId, DateTimeOffset.UtcNow, null);
+                _links[(lookupTenantId, connectionKey, issuer, subject)] = new ProvisioningResult(userId, link, false);
             }
         }
     }

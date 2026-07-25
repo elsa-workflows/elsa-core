@@ -49,7 +49,7 @@ public class ExternalRefreshPermissionTests
         await broker.InitiateExternalAsync(request, "tenant-a");
 
         var result = await broker.CompleteCallbackAsync(
-            "connection-a",
+            "contoso",
             adapter.CorrelationState!,
             new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
@@ -88,7 +88,7 @@ public class ExternalRefreshPermissionTests
             false,
             "configuration");
         var registry = Substitute.For<IIdentityProviderConnectionRegistry>();
-        registry.FindByIdAsync("tenant-a", "connection-a", Arg.Any<CancellationToken>())
+        registry.FindByKeyAsync("tenant-a", "contoso", Arg.Any<CancellationToken>())
             .Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
         var user = new User { Id = "user-a", Name = "alice", TenantId = "tenant-a", Roles = ["role-a"] };
         var role = new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a", Permissions = ["workflows:read"] };
@@ -111,7 +111,7 @@ public class ExternalRefreshPermissionTests
             AuthenticationClientId = "studio",
             TenantId = "tenant-a",
             UserId = "user-a",
-            ConnectionId = "connection-a",
+            ConnectionKey = "contoso",
             ConnectionMaterialRevision = "revision-a",
             SecretGenerationFingerprint = Convert.ToHexString(SHA256.HashData([])),
             Issuer = "https://issuer.example",

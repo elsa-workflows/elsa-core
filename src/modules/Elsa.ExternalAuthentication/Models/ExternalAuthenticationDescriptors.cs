@@ -39,4 +39,6 @@ public sealed record UnlinkedIdentityPolicyDescriptor(string Type, string Displa
 
 public sealed record PermissionGrantSourceDescriptor(string Type, string DisplayName, string Description, int SettingsVersion, IReadOnlyList<SettingFieldDescriptor> Fields, CustomEditorContract? CustomEditor);
 
+public sealed record ExternalUserMatcherDescriptor(string Type, string DisplayName, string Description, int SettingsVersion, IReadOnlyList<SettingFieldDescriptor> Fields, CustomEditorContract? CustomEditor, IReadOnlyCollection<string>? RequiredClaimTypes = null);
+
 public sealed record PermissionDescriptor(string Name, string DisplayName, string Description, string Category);

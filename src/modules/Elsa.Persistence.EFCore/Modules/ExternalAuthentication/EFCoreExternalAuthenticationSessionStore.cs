@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
+using Elsa.ExternalAuthentication.Services;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,8 +17,8 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
             .Where(x => x.TenantId == filter.TenantId);
         if (!string.IsNullOrWhiteSpace(filter.UserId))
             query = query.Where(x => x.UserId == filter.UserId);
-        if (!string.IsNullOrWhiteSpace(filter.ConnectionId))
-            query = query.Where(x => x.ConnectionId == filter.ConnectionId);
+        if (!string.IsNullOrWhiteSpace(filter.ConnectionKey))
+            query = query.Where(x => x.ConnectionKey == ConnectionRevisionCalculator.NormalizeKey(filter.ConnectionKey));
         if (string.Equals(filter.Status, "active", StringComparison.OrdinalIgnoreCase))
             query = query.Where(x => x.RevokedAt == null);
         else if (string.Equals(filter.Status, "revoked", StringComparison.OrdinalIgnoreCase))
@@ -63,7 +64,7 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
         if (session.ExpiresAt <= clock.UtcNow || session.RefreshExpiresAt <= clock.UtcNow)
         {
             await dbContext.ExternalAuthenticationSessions.Where(x => x.Id == sessionId && x.RevokedAt == null)
-                .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, clock.UtcNow).SetProperty(y => y.RevocationReason, "expired"), cancellationToken);
+                .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, clock.UtcNow).SetProperty(y => y.RevocationReason, "expired").SetProperty(y => y.ProtectedUpstreamLogoutHint, (byte[]?)null), cancellationToken);
             return new ExternalAuthenticationSessionRotationResult.Expired();
         }
 
@@ -77,7 +78,7 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
             return new ExternalAuthenticationSessionRotationResult.Rotated((await FindByIdAsync(sessionId, cancellationToken))!);
 
         var revoked = await dbContext.ExternalAuthenticationSessions.Where(x => x.Id == sessionId && x.RevokedAt == null)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, clock.UtcNow).SetProperty(y => y.RevocationReason, "refresh_token_reuse"), cancellationToken);
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, clock.UtcNow).SetProperty(y => y.RevocationReason, "refresh_token_reuse").SetProperty(y => y.ProtectedUpstreamLogoutHint, (byte[]?)null), cancellationToken);
         return revoked == 1 ? new ExternalAuthenticationSessionRotationResult.Reused() : new ExternalAuthenticationSessionRotationResult.Revoked();
     }
 
@@ -86,6 +87,15 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
         await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
         var dbContext = lease.DbContext;
         return await dbContext.ExternalAuthenticationSessions.Where(x => x.Id == sessionId && x.RevokedAt == null)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, revokedAt).SetProperty(y => y.RevocationReason, reason), cancellationToken) == 1;
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, revokedAt).SetProperty(y => y.RevocationReason, reason).SetProperty(y => y.ProtectedUpstreamLogoutHint, (byte[]?)null), cancellationToken) == 1;
+    }
+
+    public async ValueTask<int> RevokeActiveForConnectionAsync(string connectionKey, string reason, DateTimeOffset revokedAt, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionKey);
+        await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
+        return await lease.DbContext.ExternalAuthenticationSessions
+            .Where(x => x.ConnectionKey == ConnectionRevisionCalculator.NormalizeKey(connectionKey) && x.RevokedAt == null)
+            .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, revokedAt).SetProperty(y => y.RevocationReason, reason).SetProperty(y => y.ProtectedUpstreamLogoutHint, (byte[]?)null), cancellationToken);
     }
 }

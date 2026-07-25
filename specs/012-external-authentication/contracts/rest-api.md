@@ -76,25 +76,24 @@ The server derives tenant context from trusted host middleware, route context, i
       "displayName": "Elsa account",
       "iconId": "elsa",
       "order": 0,
-      "isDefault": false,
+      "isPreferred": false,
       "initiationUrl": "/elsa/api/external-authentication/local/authorize"
     },
     {
-      "id": "01JZCONNECTION",
       "key": "contoso",
       "kind": "external",
       "displayName": "Contoso",
       "iconId": "building",
       "order": 10,
-      "isDefault": true,
+      "isPreferred": true,
       "initiationUrl": "/elsa/api/external-authentication/authorize/contoso"
     }
-  ],
-  "automaticMethodKey": "contoso"
+  ]
 }
 ```
 
 Response contains no authority, adapter type, upstream client identifier, tenant identifier, health, secret, or remote asset URL. `Cache-Control: no-store`.
+`isPreferred` affects ordering/emphasis only; clients MUST NOT automatically redirect.
 
 ### Initiate External Sign-in
 
@@ -147,10 +146,10 @@ This route is additive. Existing `/identity/login` remains unchanged.
 ### Provider Callback
 
 ```http
-GET /external-authentication/callback/{connectionId}?code={providerCode}&state={opaqueState}
+GET /external-authentication/callback/{connectionKey}?code={providerCode}&state={opaqueState}
 ```
 
-Adapters MAY register a POST callback variant when their protocol requires it. The fixed Connection ID is checked against protected state. Success: `302` to the exact Authentication Client callback:
+Adapters MAY register a POST callback variant when their protocol requires it. The route's immutable Connection Key resolves to the record ID protected in broker state; both must match. Success: `302` to the exact Authentication Client callback:
 
 ```text
 https://studio.example/authentication/external/callback?code={elsaCode}&state={clientState}
@@ -233,7 +232,7 @@ Content-Type: application/json
 When local logout is complete with no provider navigation, `completed` is `true` and `redirectUri` is the exact registered post-logout callback. The one-time continuation owns provider redirect. Provider callback:
 
 ```http
-GET /external-authentication/logout/callback/{connectionId}?state={opaqueState}
+GET /external-authentication/logout/callback/{connectionKey}?state={opaqueState}
 ```
 
 It redirects only to the exact registered post-logout callback.
@@ -245,17 +244,17 @@ All descriptor APIs require `external-authentication:connections:read`.
 ```http
 GET /external-authentication/descriptors/adapters
 GET /external-authentication/descriptors/policies
-GET /external-authentication/descriptors/permission-sources
-GET /external-authentication/descriptors/permissions
+GET /external-authentication/descriptors/user-matchers
+GET /external-authentication/role-options?search=&cursor=&pageSize=50
 ```
 
 Field descriptor:
 
 ```json
 {
-  "name": "authority",
-  "displayName": "Authority",
-  "description": "Base provider authority.",
+  "name": "discoveryUrl",
+  "displayName": "Discovery URL",
+  "description": "Exact OpenID Connect discovery-document URL.",
   "valueType": "uri",
   "uiHint": "uri",
   "isRequired": true,
@@ -294,8 +293,7 @@ Adapter descriptor:
 ```http
 GET /external-authentication/connections
     ?search=
-    &source=configuration|database
-    &scope=
+    &source=configuration|studio|studioOverride
     &adapterType=
     &enabled=
     &valid=
@@ -311,15 +309,15 @@ Requires `external-authentication:connections:read`. Maximum `pageSize` is 100.
 {
   "items": [
     {
-      "id": "01JZ...",
+      "id": "01JZCONNECTION",
       "key": "contoso",
-      "source": "database",
-      "scope": {"kind": "tenant", "tenantId": "tenant-a"},
+      "source": "studioOverride",
+      "overridesConfiguration": true,
       "adapterType": "openid-connect",
       "displayName": "Contoso",
       "iconId": "building",
       "order": 10,
-      "isDefault": true,
+      "isPreferred": true,
       "enabledIntent": true,
       "effectivelyEnabled": true,
       "validity": "valid",
@@ -352,17 +350,17 @@ Requires `external-authentication:connections:create`.
 ```json
 {
   "key": "contoso",
-  "scope": {"kind": "tenant", "tenantId": "tenant-a"},
   "adapterType": "openid-connect",
   "displayName": "Contoso",
   "iconId": "building",
   "order": 10,
-  "isDefault": false,
+  "isPreferred": false,
   "adapterSettingsVersion": 1,
   "adapterSettings": {},
   "secretBindings": {},
-  "unlinkedPolicy": null,
-  "permissionGrantSources": [],
+  "unlinkedPolicy": {"type":"reject","settingsVersion":1,"settings":{}},
+  "defaultRoleIds": [],
+  "matcherPolicy": null,
   "claimProjection": {
     "allowedClaimTypes": ["name", "email", "groups"],
     "redactedClaimTypes": ["email"]
@@ -372,6 +370,14 @@ Requires `external-authentication:connections:create`.
 ```
 
 Creates a disabled draft. Success: `201`, `Location` header, `ETag: "1"`, and detail body.
+
+### Create Studio Override
+
+```http
+POST /external-authentication/connections/{connectionId}/override
+```
+
+Requires create/update authorization and an explicit confirmation payload. The server returns a complete editable copy with `source=studioOverride`; subsequent saves send the whole document. No inherited field markers or partial patch semantics exist. A disabled override continues shadowing. Archiving it reveals configuration; restoring it resumes shadowing in disabled state.
 
 ### Detail and Update
 
@@ -389,6 +395,7 @@ Detail includes the create fields plus lifecycle, validation, shadow/conflict di
   "secretBindings": {
     "clientSecret": {
       "resolverType": "elsa-secrets",
+      "ownership": "managed",
       "reference": "contoso-oidc-secret",
       "isConfigured": true,
       "isResolvable": true
@@ -398,6 +405,27 @@ Detail includes the create fields plus lifecycle, validation, shadow/conflict di
 ```
 
 No generation fingerprint or value is returned.
+
+### Advanced OpenID Connect Provider Trust
+
+For an OpenID Connect connection, `adapterSettings` MAY include explicit overrides for discovery-derived trust inputs:
+
+```json
+{
+  "advancedTrustOverrides": {
+    "issuer": "https://login.contoso.example",
+    "authorizationEndpoint": "https://login.contoso.example/oauth2/authorize",
+    "tokenEndpoint": "https://login.contoso.example/oauth2/token",
+    "signingKeys": {
+      "keys": []
+    }
+  }
+}
+```
+
+The safe default is to omit `advancedTrustOverrides` and use the exact `discoveryUrl`. Creating or updating a connection with any advanced trust override requires both the normal create/update permission and `external-authentication:provider-trust:unsafe`; deployment policy must also allow the operation. The command MUST include the non-persisted field `"confirmUnsafeProviderTrust": true`; omission or `false` is rejected. Acceptance emits a security notification containing the connection identity, changed field names, actor, and revision, but not signing-key bodies or secret material. Authorized detail responses return the configured override values and identify that Advanced trust is active so Studio can keep its warning visible; `confirmUnsafeProviderTrust` is never returned or persisted.
+
+These fields replace only the corresponding discovery-derived inputs. They cannot change Elsa-owned callback routing, confidential-client requirements, mandatory S256 PKCE, or state, correlation, nonce, signature, issuer, audience/authorized-party, expiry, and callback-error validation.
 
 ### Secret Binding Replacement/Removal
 
@@ -410,6 +438,7 @@ Requires `external-authentication:connections:update` and `If-Match`.
 
 ```json
 {
+  "ownership": "managed",
   "resolverType": "elsa-secrets",
   "reference": "contoso-oidc-secret",
   "expectedType": "text",
@@ -417,7 +446,7 @@ Requires `external-authentication:connections:update` and `If-Match`.
 }
 ```
 
-If the Elsa Secrets bridge supports inline creation/replacement, its secret value is submitted to the Secrets API, not returned or embedded in the connection response.
+If the Elsa Secrets bridge supports inline creation/replacement, its secret value is submitted to the Secrets API, not returned or embedded in the connection response. External bindings use `ownership=external` and a deployment resolver such as `configuration`; their value cannot be replaced or removed through these endpoints.
 
 ### Lifecycle Actions
 
@@ -509,7 +538,7 @@ No password, role, permission, external-link, or cross-tenant data is returned.
 ### List/Create/Delete
 
 ```http
-GET /external-authentication/identity-links?userId=&connectionId=&cursor=&pageSize=100
+GET /external-authentication/identity-links?userId=&connectionKey=&cursor=&pageSize=100
 POST /external-authentication/identity-links
 DELETE /external-authentication/identity-links/{linkId}
 ```
@@ -521,7 +550,7 @@ Create:
 ```json
 {
   "userId": "user-1",
-  "connectionId": "01JZ...",
+  "connectionKey": "contoso",
   "issuer": "https://login.contoso.example",
   "subject": "00u1abcd..."
 }
@@ -529,16 +558,81 @@ Create:
 
 The subject is accepted only over TLS, normalized and immediately transformed to the stored keyed hash; it is never returned. Duplicate tuple-to-same-user is idempotent `200`; tuple-to-different-user is `409 conflict`. Delete requires explicit Studio confirmation and returns `204`.
 
+## Role Lifecycle Guard
+
+Elsa Identity remains the owner of Role deletion. Its ordinary endpoint:
+
+```http
+DELETE /identity/roles/{roleId}
+```
+
+MUST consult installed Role-deletion dependency contributors. If any CreateUser or matcher no-match CreateUser `defaultRoleIds` reference remains, including in disabled, archived, shadowed, or ineffective definitions, it returns `409 conflict` with `details.code=role_referenced_by_jit_policy`, includes the current deletion-impact model in `details.deletionImpact`, and does not delete the Role.
+
+Authorized clients can inspect the same stable dependency snapshot:
+
+```http
+GET /identity/roles/{roleId}/deletion-impact
+```
+
+```json
+{
+  "roleId": "workflow-user",
+  "dependencyVersion": "opaque-role-dependencies-17",
+  "executionMode": "bestEffort",
+  "canDelete": false,
+  "canRemediate": false,
+  "configurationReferences": [
+    {
+      "connectionKey": "contoso-workforce",
+      "policyBranch": "matcher-no-match-create-user",
+      "configurationPath": "Elsa:ExternalAuthentication:Connections:0:DefaultRoleIds:0",
+      "removesLastDefaultRole": false
+    }
+  ],
+  "editableReferences": [
+    {
+      "connectionId": "01JZCONNECTION",
+      "connectionKey": "partner-login",
+      "policyBranch": "create-user",
+      "revision": 17,
+      "removesLastDefaultRole": true
+    }
+  ],
+  "warnings": ["removes_last_default_role"]
+}
+```
+
+Configuration paths are sanitized metadata, never values. Configuration references make `canRemediate=false` and cannot be auto-mutated. The response includes every database/configuration definition, not only the effective registry entry.
+
+When preflight reports only editable references, the client MAY invoke:
+
+```http
+POST /identity/roles/{roleId}/remove-from-jit-policies-and-delete
+```
+
+```json
+{
+  "expectedDependencyVersion": "opaque-role-dependencies-17",
+  "confirmRemoveFromEditableJitPolicies": true,
+  "confirmEmptyDefaultRoles": true,
+  "confirmBestEffort": false
+}
+```
+
+Both endpoints require `delete:role`; remediation additionally requires `external-authentication:connections:update` and `external-authentication:roles:assign`, with authorization against every affected connection. The confirmation to remove references is always required. `confirmEmptyDefaultRoles=true` is required if any affected CreateUser branch would retain no default Role. Preflight returns `executionMode=bestEffort` when the stores cannot share a transaction, in which case `confirmBestEffort=true` is also required.
+
+The command revalidates the dependency version, connection revisions, permissions, and configuration blockers before mutation. Atomic mode removes all editable references and deletes the Role in one unit of work. Best-effort mode removes references first and deletes the Role only after current reinspection reports zero dependencies. If any removal or reinspection fails, the Role remains; the API returns `409 conflict` with `details.code=role_remediation_incomplete`, changed/remaining connection IDs, current dependency version, and no policy values. The operation is idempotently retryable. Success returns `204` and emits a redacted security notification.
+
 ## External Sessions
 
 Available only when session administration is enabled.
 
 ```http
-GET /external-authentication/sessions?userId=&connectionId=&status=&cursor=&pageSize=100
+GET /external-authentication/sessions?userId=&connectionKey=&status=&cursor=&pageSize=100
 DELETE /external-authentication/sessions/{sessionId}
 ```
 
-Read requires `external-authentication:sessions:read`; revoke requires `external-authentication:sessions:revoke`. Responses contain session ID, user ID, tenant, connection ID, started/last refreshed/expires/revoked times, and safe status—never token hashes, subject, or claim snapshot.
+Read requires `external-authentication:sessions:read`; revoke requires `external-authentication:sessions:revoke`. Responses contain session ID, user ID, tenant, Connection Key, started/last refreshed/expires/revoked times, and safe status—never token hashes, subject, or claim snapshot.
 
 Revoke accepts an optional JSON body such as `{"reason":"administrator_revoked"}`. The server bounds the safe reason and returns `204`; Studio uses the stable administrator-revoked category.
 
@@ -550,12 +644,12 @@ Revoke accepts an optional JSON body such as `{"reason":"administrator_revoked"}
 - `external-authentication:connections:archive`
 - `external-authentication:connections:test`
 - `external-authentication:connections:preview`
-- `external-authentication:policies:manage`
 - `external-authentication:provider-trust:unsafe`
-- `external-authentication:permissions:delegate`
-- `external-authentication:permissions:delegate-unrestricted`
+- `external-authentication:policies:manage`
+- `external-authentication:roles:assign`
 - `external-authentication:links:manage`
 - `external-authentication:sessions:read`
 - `external-authentication:sessions:revoke`
+- `delete:role` (Identity-owned Role deletion and deletion-impact inspection)
 
 API authorization is authoritative. Studio menu and disabled-state logic are usability affordances only.

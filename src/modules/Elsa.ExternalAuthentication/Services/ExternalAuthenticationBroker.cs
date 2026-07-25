@@ -63,7 +63,7 @@ public sealed class ExternalAuthenticationBroker(
         if (!localOptions.IsEnabled)
             return externalMethods;
 
-        var local = new LoginMethod("local", "local", LoginMethodKind.Local, localOptions.DisplayName, localOptions.IconId, localOptions.DisplayOrder, localOptions.IsDefault && !externalMethods.Any(x => x.IsDefault), new Uri("/external-authentication/local/authorize", UriKind.Relative));
+        var local = new LoginMethod("local", "local", LoginMethodKind.Local, localOptions.DisplayName, localOptions.IconId, localOptions.DisplayOrder, localOptions.IsPreferred && !externalMethods.Any(x => x.IsPreferred), new Uri("/external-authentication/local/authorize", UriKind.Relative));
         return [local, .. externalMethods];
     }
 
@@ -108,6 +108,7 @@ public sealed class ExternalAuthenticationBroker(
             ClientState = request.ClientState,
             TenantId = targetTenantId,
             ConnectionId = connection.Connection.Id,
+            ConnectionKey = ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key),
             ConnectionMaterialRevision = connection.Connection.MaterialRevision,
             PkceChallenge = request.CodeChallenge,
             ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.BrokerTransactionLifetime)
@@ -140,15 +141,15 @@ public sealed class ExternalAuthenticationBroker(
         return BrokerInitiationResult.Redirect(adapterRequest.NavigationUri);
     }
 
-    public async ValueTask<BrokerCallbackResult> CompleteCallbackAsync(string connectionId, string state, IReadOnlyDictionary<string, IReadOnlyCollection<string>> parameters, CancellationToken cancellationToken = default)
+    public async ValueTask<BrokerCallbackResult> CompleteCallbackAsync(string connectionKey, string state, IReadOnlyDictionary<string, IReadOnlyCollection<string>> parameters, CancellationToken cancellationToken = default)
     {
         var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.ExternalSignIn.ToString(), Hash(state), cancellationToken);
         if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction })
-            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "external", "callback", null, connectionId, cancellationToken);
-        if (!string.Equals(transaction.ConnectionId, connectionId, StringComparison.Ordinal))
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "external", "callback", null, connectionKey, cancellationToken);
+        if (!string.Equals(transaction.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(connectionKey), StringComparison.Ordinal))
             return await FailTrustedCallbackAsync(transaction, BrokerErrorCategory.InvalidRequest, cancellationToken);
 
-        var connection = await connectionRegistry.FindByIdAsync(transaction.TenantId, connectionId, cancellationToken);
+        var connection = await connectionRegistry.FindByIdAsync(transaction.TenantId, transaction.ConnectionId!, cancellationToken);
         if (connection is null || connection.IsShadowed || !connection.Connection.IsEnabled || connection.Connection.ArchivedAt != null)
             return await FailTrustedCallbackAsync(transaction, BrokerErrorCategory.MethodUnavailable, cancellationToken);
         if (!string.Equals(connection.Connection.MaterialRevision, transaction.ConnectionMaterialRevision, StringComparison.Ordinal))
@@ -178,6 +179,7 @@ public sealed class ExternalAuthenticationBroker(
                     transaction.ProtectedPayload = originalPayload;
                 }
 
+                using var upstreamLogoutHint = authentication.UpstreamLogoutHint;
                 var resolution = await identityResolver.ResolveAsync(new ExternalIdentityResolutionContext(transaction.TenantId, connection, authentication.Identity, authentication.ProjectedClaims), cancellationToken);
                 var grantResult = await permissionGrantResolver.ResolveAsync(new PermissionGrantResolutionContext(
                     transaction.TenantId,
@@ -191,12 +193,15 @@ public sealed class ExternalAuthenticationBroker(
                     AuthenticationClientId = transaction.ClientId,
                     TenantId = transaction.TenantId,
                     UserId = resolution.UserId,
-                    ConnectionId = connection.Connection.Id,
+                    ConnectionKey = ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key),
                     ConnectionMaterialRevision = connection.Connection.MaterialRevision,
                     SecretGenerationFingerprint = transaction.SecretGenerationFingerprint,
                     Issuer = authentication.Identity.Issuer,
                     SubjectHash = Hash(authentication.Identity.Subject),
                     ExternalGrants = grantResult.Grants,
+                    ProtectedUpstreamLogoutHint = connection.Connection.UpstreamLogoutMode == UpstreamLogoutMode.Disabled || upstreamLogoutHint is null
+                        ? null
+                        : dataProtectionProvider.CreateProtector("Elsa.ExternalAuthentication.UpstreamLogoutHint.v1").Protect(Encoding.UTF8.GetBytes(upstreamLogoutHint.Reveal())),
                     StartedAt = clock.UtcNow,
                     LastRefreshedAt = clock.UtcNow,
                     ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.MaximumSessionAge),
@@ -300,7 +305,7 @@ public sealed class ExternalAuthenticationBroker(
             var session = await sessionStore.FindByIdAsync(sessionId, cancellationToken);
             if (session is null || session.RevokedAt != null || session.ExpiresAt <= clock.UtcNow || !string.Equals(session.AuthenticationClientId, client.ClientId, StringComparison.Ordinal))
                 return await TokenOutcomeAsync(BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AccessDenied)), "token_exchange", "validate_session", cancellationToken);
-            var connection = await connectionRegistry.FindByIdAsync(session.TenantId, session.ConnectionId, cancellationToken);
+            var connection = await connectionRegistry.FindByKeyAsync(session.TenantId, session.ConnectionKey, cancellationToken);
             if (connection is null || connection.IsShadowed || !connection.Connection.IsEnabled || connection.Connection.ArchivedAt != null || !string.Equals(connection.Connection.MaterialRevision, session.ConnectionMaterialRevision, StringComparison.Ordinal))
                 return await TokenOutcomeAsync(BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AccessDenied)), "token_exchange", "validate_connection", cancellationToken);
             try
@@ -361,10 +366,10 @@ public sealed class ExternalAuthenticationBroker(
         var revoked = await sessionStore.RevokeAsync(session.Id, "logout", clock.UtcNow, cancellationToken);
         if (revoked && notifier is not null)
             await notifier.PublishAsync(new ExternalAuthenticationSessionRevoked(
-                ExternalAuthenticationSecurityNotifier.Context(null, session.TenantId, session.ConnectionId, session.UserId, SecurityEventOutcome.Succeeded, "External authentication session revoked."),
+                ExternalAuthenticationSecurityNotifier.Context(null, session.TenantId, session.ConnectionKey, session.UserId, SecurityEventOutcome.Succeeded, "External authentication session revoked."),
                 session.Id,
                 "logout"), cancellationToken);
-        var connection = await connectionRegistry.FindByIdAsync(session.TenantId, session.ConnectionId, cancellationToken);
+        var connection = await connectionRegistry.FindByKeyAsync(session.TenantId, session.ConnectionKey, cancellationToken);
         var wantsUpstream = string.Equals(request.Mode, "upstream", StringComparison.OrdinalIgnoreCase)
             || connection?.Connection.UpstreamLogoutMode == UpstreamLogoutMode.Always;
         if (!wantsUpstream)
@@ -385,7 +390,8 @@ public sealed class ExternalAuthenticationBroker(
             CallbackUri = request.PostLogoutRedirectUri,
             ReturnPath = "/",
             TenantId = session.TenantId,
-            ConnectionId = session.ConnectionId,
+            ConnectionId = connection.Connection.Id,
+            ConnectionKey = ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key),
             ConnectionMaterialRevision = session.ConnectionMaterialRevision,
             PkceChallenge = string.Empty,
             ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.BrokerTransactionLifetime)
@@ -395,7 +401,10 @@ public sealed class ExternalAuthenticationBroker(
         try
         {
             logoutSecrets = await ResolveSecretsAsync(connection.Connection.SecretBindings, cancellationToken);
-            upstream = await adapter.CreateLogoutRequestAsync(new ExternalLogoutContext(connection, logoutSecrets, transaction, state, clock), cancellationToken);
+            using var upstreamLogoutHint = session.ProtectedUpstreamLogoutHint is { Length: > 0 }
+                ? new SensitiveString(Encoding.UTF8.GetString(dataProtectionProvider.CreateProtector("Elsa.ExternalAuthentication.UpstreamLogoutHint.v1").Unprotect(session.ProtectedUpstreamLogoutHint)))
+                : null;
+            upstream = await adapter.CreateLogoutRequestAsync(new ExternalLogoutContext(connection, logoutSecrets, transaction, state, clock, upstreamLogoutHint), cancellationToken);
             transaction.ProtectedPayload = dataProtectionProvider.CreateProtector("Elsa.ExternalAuthentication.AdapterPayload.v1").Protect(upstream?.ProtectedAdapterState ?? []);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -424,17 +433,17 @@ public sealed class ExternalAuthenticationBroker(
         return await LogoutOutcomeAsync(BrokerLogoutResult.Navigate(new Uri($"/external-authentication/logout/continue/{Uri.EscapeDataString(continuationHandle)}", UriKind.Relative)), "initiate", cancellationToken);
     }
 
-    public async ValueTask<BrokerCallbackResult> CompleteLogoutAsync(string connectionId, string state, CancellationToken cancellationToken = default)
+    public async ValueTask<BrokerCallbackResult> CompleteLogoutAsync(string connectionKey, string state, CancellationToken cancellationToken = default)
     {
         var taken = await stateStore.TryTakeAsync<BrokerTransaction>(BrokerTransactionPurpose.UpstreamLogout.ToString(), Hash(state), cancellationToken);
         if (taken is not TakeResult<BrokerTransaction>.Taken { Value: var transaction })
-            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "logout", "callback", null, connectionId, cancellationToken);
-        if (!string.Equals(transaction.ConnectionId, connectionId, StringComparison.Ordinal))
-            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.InvalidRequest)), "logout", "callback", transaction.TenantId, connectionId, cancellationToken);
-        var connection = await connectionRegistry.FindByIdAsync(transaction.TenantId, connectionId, cancellationToken);
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(taken is TakeResult<BrokerTransaction>.Expired ? BrokerErrorCategory.FlowExpired : BrokerErrorCategory.InvalidRequest)), "logout", "callback", null, connectionKey, cancellationToken);
+        if (!string.Equals(transaction.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(connectionKey), StringComparison.Ordinal))
+            return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.InvalidRequest)), "logout", "callback", transaction.TenantId, connectionKey, cancellationToken);
+        var connection = await connectionRegistry.FindByIdAsync(transaction.TenantId, transaction.ConnectionId!, cancellationToken);
         return connection is null || connection.IsShadowed || !connection.Connection.IsEnabled || connection.Connection.ArchivedAt is not null || !string.Equals(connection.Connection.MaterialRevision, transaction.ConnectionMaterialRevision, StringComparison.Ordinal)
-            ? await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.FlowChanged)), "logout", "callback", transaction.TenantId, connectionId, cancellationToken)
-            : await CallbackOutcomeAsync(BrokerCallbackResult.Redirect(transaction.CallbackUri), "logout", "callback", transaction.TenantId, connectionId, cancellationToken);
+            ? await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.FlowChanged)), "logout", "callback", transaction.TenantId, connectionKey, cancellationToken)
+            : await CallbackOutcomeAsync(BrokerCallbackResult.Redirect(transaction.CallbackUri), "logout", "callback", transaction.TenantId, connectionKey, cancellationToken);
     }
 
     public async ValueTask<BrokerLogoutResult> ContinueLogoutAsync(string handle, CancellationToken cancellationToken = default)
@@ -518,12 +527,12 @@ public interface IExternalAuthenticationBroker
 {
     ValueTask<IReadOnlyCollection<LoginMethod>> DiscoverAsync(string targetTenantId, string clientId, CancellationToken cancellationToken = default);
     ValueTask<BrokerInitiationResult> InitiateExternalAsync(BrokerAuthorizationRequest request, string targetTenantId, CancellationToken cancellationToken = default);
-    ValueTask<BrokerCallbackResult> CompleteCallbackAsync(string connectionId, string state, IReadOnlyDictionary<string, IReadOnlyCollection<string>> parameters, CancellationToken cancellationToken = default);
+    ValueTask<BrokerCallbackResult> CompleteCallbackAsync(string connectionKey, string state, IReadOnlyDictionary<string, IReadOnlyCollection<string>> parameters, CancellationToken cancellationToken = default);
     ValueTask<BrokerCallbackResult> InitiateLocalAsync(LocalBrokerAuthorizationRequest request, string targetTenantId, CancellationToken cancellationToken = default);
     ValueTask<BrokerTokenResult> ExchangeAsync(BrokerTokenRequest request, CancellationToken cancellationToken = default);
     ValueTask<BrokerLogoutResult> LogoutAsync(BrokerLogoutRequest request, string externalSessionId, CancellationToken cancellationToken = default);
     ValueTask<BrokerLogoutResult> ContinueLogoutAsync(string handle, CancellationToken cancellationToken = default);
-    ValueTask<BrokerCallbackResult> CompleteLogoutAsync(string connectionId, string state, CancellationToken cancellationToken = default);
+    ValueTask<BrokerCallbackResult> CompleteLogoutAsync(string connectionKey, string state, CancellationToken cancellationToken = default);
 }
 
 public record BrokerAuthorizationRequest(string ClientId, Uri RedirectUri, string ResponseType, string CodeChallenge, string CodeChallengeMethod, string ReturnPath, string ConnectionKey, string? ClientState = null);

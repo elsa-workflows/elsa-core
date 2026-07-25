@@ -17,6 +17,9 @@ public enum ExternalAuthenticationExtensionKind
     UnlinkedIdentityPolicy,
     /// <summary>An Elsa permission grant source.</summary>
     PermissionGrantSource
+    ,
+    /// <summary>A trusted deployed external-to-Elsa user matcher.</summary>
+    ExternalUserMatcher
 }
 
 /// <summary>

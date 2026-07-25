@@ -11,7 +11,7 @@ internal static class ExternalAuthenticationTestData
         string key = "oidc",
         string displayName = "OpenID Connect",
         int displayOrder = 0,
-        bool isDefault = false,
+        bool isPreferred = false,
         bool isEnabled = true) => new()
     {
         Id = id,
@@ -26,7 +26,7 @@ internal static class ExternalAuthenticationTestData
         },
         DisplayName = displayName,
         DisplayOrder = displayOrder,
-        IsDefault = isDefault,
+        IsPreferred = isPreferred,
         IsEnabled = isEnabled,
         ClaimProjection = new ClaimProjection(
             new HashSet<string>(StringComparer.Ordinal) { "email", "name" },
@@ -53,7 +53,7 @@ internal static class ExternalAuthenticationTestData
         Id = "session-a",
         TenantId = "tenant-a",
         UserId = "user-a",
-        ConnectionId = "connection-a",
+        ConnectionKey = "connection-a",
         ConnectionMaterialRevision = "revision-a",
         Issuer = "https://issuer.example",
         SubjectHash = "subject-hash",

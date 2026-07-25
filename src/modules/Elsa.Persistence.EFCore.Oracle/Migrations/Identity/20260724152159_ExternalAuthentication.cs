@@ -162,7 +162,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     AuthenticationClientId = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     TenantId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     UserId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    ConnectionId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    ConnectionKey = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     ConnectionMaterialRevision = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     SecretGenerationFingerprint = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
                     Issuer = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
@@ -175,7 +175,8 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     CurrentRefreshTokenHash = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     RefreshGeneration = table.Column<long>(type: "NUMBER(19)", nullable: false),
                     RevokedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true),
-                    RevocationReason = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true)
+                    RevocationReason = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
+                    ProtectedUpstreamLogoutHint = table.Column<byte[]>(type: "BLOB", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -189,7 +190,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                 {
                     Id = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     TenantId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
-                    ConnectionId = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
+                    ConnectionKey = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     Issuer = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     SubjectHash = table.Column<string>(type: "NVARCHAR2(450)", nullable: false),
                     SubjectHint = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
@@ -224,8 +225,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     DisplayName = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
                     IconId = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
                     DisplayOrder = table.Column<int>(type: "NUMBER(10)", nullable: false),
-                    IsDefault = table.Column<bool>(type: "BOOLEAN", nullable: false),
+                    IsPreferred = table.Column<bool>(type: "BOOLEAN", nullable: false),
                     IsEnabled = table.Column<bool>(type: "BOOLEAN", nullable: false),
+                    OverridesConfigurationConnection = table.Column<bool>(type: "BOOLEAN", nullable: false),
                     ArchivedAt = table.Column<DateTimeOffset>(type: "TIMESTAMP(7) WITH TIME ZONE", nullable: true),
                     UnlinkedPolicyJson = table.Column<string>(type: "NVARCHAR2(2000)", nullable: true),
                     PermissionGrantSourcesJson = table.Column<string>(type: "NVARCHAR2(2000)", nullable: false),
@@ -260,10 +262,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                 column: "ExpiresAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalAuthenticationSession_ConnectionId",
+                name: "IX_ExternalAuthenticationSession_ConnectionKey",
                 schema: "Elsa",
                 table: "ExternalAuthenticationSessions",
-                column: "ConnectionId");
+                column: "ConnectionKey");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExternalAuthenticationSession_RefreshTokenHash",
@@ -282,7 +284,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                 name: "IX_ExternalIdentityLink_Identity",
                 schema: "Elsa",
                 table: "ExternalIdentityLinks",
-                columns: new[] { "TenantId", "ConnectionId", "Issuer", "SubjectHash" },
+                columns: new[] { "TenantId", "ConnectionKey", "Issuer", "SubjectHash" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

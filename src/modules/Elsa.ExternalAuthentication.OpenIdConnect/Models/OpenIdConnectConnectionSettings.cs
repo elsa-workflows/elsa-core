@@ -12,16 +12,21 @@ public enum OpenIdConnectTrustMode
 /// <summary>Controls S256 PKCE on the upstream provider authorization-code flow.</summary>
 public enum OpenIdConnectProviderPkceMode
 {
-    Required,
-    Disabled
+    Required
 }
 
-/// <summary>Validated version-1 settings owned by the OpenID Connect adapter.</summary>
+public enum OpenIdConnectClientAuthenticationMethod
+{
+    ClientSecretBasic,
+    ClientSecretPost
+}
+
+/// <summary>Validated version-2 settings owned by the OpenID Connect adapter.</summary>
 public sealed record OpenIdConnectConnectionSettings(
     OpenIdConnectTrustMode TrustMode,
-    Uri Authority,
+    Uri? DiscoveryUrl,
     string ClientId,
-    Uri CallbackUri,
+    OpenIdConnectClientAuthenticationMethod ClientAuthenticationMethod,
     IReadOnlyCollection<string> Scopes,
     OpenIdConnectProviderPkceMode ProviderPkce,
     string? Issuer,
@@ -30,8 +35,7 @@ public sealed record OpenIdConnectConnectionSettings(
     Uri? UserInfoEndpoint,
     Uri? EndSessionEndpoint,
     Uri? JwksUri,
-    JsonElement SigningKeys,
-    bool UseUserInfo);
+    JsonElement SigningKeys);
 
 /// <summary>Protected provider state persisted only for one correlated authorization attempt.</summary>
 public sealed record OpenIdConnectAdapterState(string Issuer, string Nonce, string? CodeVerifier);

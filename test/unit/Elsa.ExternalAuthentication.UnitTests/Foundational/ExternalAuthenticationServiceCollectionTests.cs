@@ -40,6 +40,7 @@ public class ExternalAuthenticationServiceCollectionTests
         Assert.IsType<InMemoryConnectionObservationStore>(serviceProvider.GetRequiredService<IConnectionObservationStore>());
         Assert.IsType<InMemoryConnectionRegistryVersionStore>(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>());
         Assert.Contains(serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()), x => x.Name == ExternalAuthenticationPermissions.ConnectionsRead);
+        Assert.Contains(serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()), x => x.Name == ExternalAuthenticationPermissions.RolesAssign);
         Assert.NotNull(serviceProvider.GetRequiredService<IOptions<RateLimiterOptions>>().Value);
         Assert.Contains(serviceProvider.GetServices<IConfigureOptions<RateLimiterOptions>>(), x => x.GetType().Name == "ConfigureExternalAuthenticationRateLimiterOptions");
     }

@@ -6,7 +6,7 @@ namespace Elsa.Api.Client.Resources.ExternalAuthentication.IdentityLinks.Models;
 public record ExternalIdentityLink(
     string Id,
     string UserId,
-    string ConnectionId,
+    string ConnectionKey,
     string Issuer,
     string? SubjectHint,
     DateTimeOffset CreatedAt,

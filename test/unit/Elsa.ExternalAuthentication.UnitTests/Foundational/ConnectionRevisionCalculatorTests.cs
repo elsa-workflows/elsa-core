@@ -18,7 +18,7 @@ public class ConnectionRevisionCalculatorTests
         first.AdapterSettings = JsonSerializer.SerializeToElement(new { client = new { id = "studio" }, authority = "https://issuer.example" });
         second.DisplayName = "Corporate login";
         second.DisplayOrder = 99;
-        second.IsDefault = true;
+        second.IsPreferred = true;
 
         Assert.Equal(_calculator.CalculateMaterialRevision(first), _calculator.CalculateMaterialRevision(second));
     }

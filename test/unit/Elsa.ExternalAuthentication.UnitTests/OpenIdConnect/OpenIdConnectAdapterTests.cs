@@ -23,8 +23,8 @@ public class OpenIdConnectAdapterTests
     public void AcceptsDiscoverySettingsAndRejectsIncompleteManualTrust()
     {
         var parser = new OpenIdConnectSettingsParser();
-        var discovery = Parse("""{"mode":"discovery","authority":"https://issuer.example","clientId":"elsa","callbackUri":"https://elsa.example/external-authentication/callback/connection"}""");
-        var manual = Parse("""{"mode":"manual","authority":"https://issuer.example","clientId":"elsa","callbackUri":"https://elsa.example/external-authentication/callback/connection","issuer":"https://issuer.example"}""");
+        var discovery = Parse("""{"mode":"discovery","discoveryUrl":"https://issuer.example/.well-known/openid-configuration","clientId":"elsa"}""");
+        var manual = Parse("""{"mode":"manual","clientId":"elsa","issuer":"https://issuer.example"}""");
 
         Assert.True(parser.TryParse(discovery, out var discoverySettings, out var discoveryErrors));
         Assert.Equal(OpenIdConnectTrustMode.Discovery, discoverySettings!.TrustMode);
@@ -40,8 +40,8 @@ public class OpenIdConnectAdapterTests
     {
         var adapter = CreateAdapter(new StaticResponseHandler());
         var connection = ExternalAuthenticationTestData.CreateConnection("connection", "*", "contoso");
-        connection.AdapterSettingsVersion = 1;
-        connection.AdapterSettings = Parse("""{"mode":"manual","authority":"https://issuer.example","issuer":"https://issuer.example","authorizationEndpoint":"https://issuer.example/authorize","tokenEndpoint":"https://issuer.example/token","callbackUri":"https://elsa.example/external-authentication/callback/connection","clientId":"elsa","signingKeys":{"keys":[]},"providerPkce":"required","scopes":["openid","profile"]}""");
+        connection.AdapterSettingsVersion = 2;
+        connection.AdapterSettings = Parse("""{"mode":"manual","issuer":"https://issuer.example","authorizationEndpoint":"https://issuer.example/authorize","tokenEndpoint":"https://issuer.example/token","clientId":"elsa","clientAuthenticationMethod":"client_secret_basic","signingKeys":{"keys":[]},"scopes":["openid","profile"]}""");
         var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
         var transaction = new BrokerTransaction { HandleHash = "stored-hash", ProviderNonce = "nonce", PkceChallenge = "client-pkce", CallbackUri = new Uri("https://studio.example/callback"), ClientId = "studio", ReturnPath = "/", TenantId = "tenant-a" };
 
@@ -62,9 +62,58 @@ public class OpenIdConnectAdapterTests
         var descriptor = CreateAdapter(new StaticResponseHandler()).Describe();
 
         Assert.Equal(OpenIdConnectExternalAuthenticationAdapter.AdapterType, descriptor.Type);
-        Assert.Equal(1, descriptor.SettingsVersion);
+        Assert.Equal(2, descriptor.SettingsVersion);
         Assert.Contains(descriptor.Fields, field => field.Name == "clientSecret" && field.IsSecretBinding);
         Assert.True(descriptor.Capabilities.SupportsUpstreamLogout);
+    }
+
+    [Fact]
+    public async Task ClientSecretBasicEncodesReservedCredentialsAndOmitsThemFromTheFormBody()
+    {
+        var handler = new CapturingTokenResponseHandler(CreateToken(audience: "client:id"));
+        var adapter = CreateAdapter(handler);
+        var connection = CreateConnection(JsonSerializer.SerializeToElement(new
+        {
+            mode = "manual",
+            clientId = "client:id",
+            clientAuthenticationMethod = "client_secret_basic",
+            issuer = "https://issuer.example",
+            authorizationEndpoint = "https://issuer.example/authorize",
+            tokenEndpoint = "https://issuer.example/token",
+            signingKeys = new { keys = new[] { new { kty = "oct", kid = "test-key", k = Base64UrlEncoder.Encode(SigningKey.Key) } } }
+        }));
+        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
+        var secrets = new Dictionary<string, ResolvedSecretBinding> { ["clientSecret"] = new(new SensitiveString("secret +/&"), "generation") };
+
+        try
+        {
+            await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, secrets, CreateTransaction(), "provider-state", new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = ["provider-state"], ["code"] = ["provider-code"] }, new TestSystemClock(DateTimeOffset.UtcNow)));
+
+            Assert.Equal("Basic Y2xpZW50JTNBaWQ6c2VjcmV0KyUyQiUyRiUyNg==", handler.Authorization);
+            Assert.DoesNotContain("client_id", handler.Body, StringComparison.Ordinal);
+            Assert.DoesNotContain("client_secret", handler.Body, StringComparison.Ordinal);
+        }
+        finally
+        {
+            secrets["clientSecret"].Value.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task ValidationRejectsMissingDeploymentCallbackBaseUri()
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions());
+        var adapter = new OpenIdConnectExternalAuthenticationAdapter(
+            new ProviderHttpClient(new HttpMessageInvoker(new StaticResponseHandler()), new OutboundDestinationValidator(options, new StaticPublicDnsResolver()), options),
+            new OpenIdConnectSettingsParser(),
+            options);
+        var connection = CreateConnection(CreateManualSettings());
+        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
+
+        var result = await adapter.ValidateAsync(new ConnectionValidationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), new TestSystemClock(DateTimeOffset.UtcNow)));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, error => error.Field == "redirects.externalCallbackBaseUri");
     }
 
     [Fact]
@@ -122,13 +171,12 @@ public class OpenIdConnectAdapterTests
     }
 
     [Fact]
-    public async Task SupportsBothUpstreamPkceModes()
+    public async Task AlwaysUsesS256UpstreamPkce()
     {
-        var required = await CreateAuthorizationRequestAsync("required");
-        var disabled = await CreateAuthorizationRequestAsync("disabled");
+        var request = await CreateAuthorizationRequestAsync();
 
-        Assert.Contains("code_challenge_method=S256", required.NavigationUri.Query);
-        Assert.DoesNotContain("code_challenge", disabled.NavigationUri.Query);
+        Assert.Contains("code_challenge_method=S256", request.NavigationUri.Query);
+        Assert.Contains("code_challenge=", request.NavigationUri.Query);
     }
 
     [Theory]
@@ -137,7 +185,7 @@ public class OpenIdConnectAdapterTests
     public async Task RejectsNonHttpsDiscoveryMetadata(string issuer, string? authorizationEndpoint = null)
     {
         var metadata = $$"""{"issuer":"{{issuer}}","authorization_endpoint":"{{authorizationEndpoint ?? "https://issuer.example/authorize"}}","token_endpoint":"https://issuer.example/token","jwks_uri":"https://issuer.example/keys"}""";
-        var connection = CreateConnection(Parse("""{"mode":"discovery","authority":"https://issuer.example","clientId":"elsa","callbackUri":"https://elsa.example/external-authentication/callback/connection"}"""));
+        var connection = CreateConnection(Parse("""{"mode":"discovery","discoveryUrl":"https://issuer.example/.well-known/openid-configuration","clientId":"elsa","clientAuthenticationMethod":"client_secret_basic"}"""));
         var adapter = CreateAdapter(new TokenResponseHandler("", metadata));
         var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
         var transaction = CreateTransaction();
@@ -149,9 +197,9 @@ public class OpenIdConnectAdapterTests
 
     private static OpenIdConnectExternalAuthenticationAdapter CreateAdapter(HttpMessageHandler handler)
     {
-        var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions());
+        var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions { Redirects = new RedirectValidationOptions { ExternalCallbackBaseUri = new Uri("https://elsa.example/") } });
         var validator = new OutboundDestinationValidator(options, new StaticPublicDnsResolver());
-        return new OpenIdConnectExternalAuthenticationAdapter(new ProviderHttpClient(new HttpMessageInvoker(handler), validator, options), new OpenIdConnectSettingsParser());
+        return new OpenIdConnectExternalAuthenticationAdapter(new ProviderHttpClient(new HttpMessageInvoker(handler), validator, options), new OpenIdConnectSettingsParser(), options);
     }
 
     private static readonly SymmetricSecurityKey SigningKey = new(Encoding.UTF8.GetBytes("test-signing-key-must-be-at-least-32-bytes")) { KeyId = "test-key" };
@@ -165,12 +213,21 @@ public class OpenIdConnectAdapterTests
         var parameters = new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = ["provider-state"] };
         if (includeCode)
             parameters["code"] = ["provider-code"];
-        return await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding>(), CreateTransaction(), "provider-state", parameters, new TestSystemClock(DateTimeOffset.UtcNow)));
+        var secret = new SensitiveString("test-secret");
+        try
+        {
+            var secrets = new Dictionary<string, ResolvedSecretBinding> { ["clientSecret"] = new(secret, "generation") };
+            return await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, secrets, CreateTransaction(), "provider-state", parameters, new TestSystemClock(DateTimeOffset.UtcNow)));
+        }
+        finally
+        {
+            secret.Dispose();
+        }
     }
 
-    private static async Task<ExternalAuthorizationRequest> CreateAuthorizationRequestAsync(string pkce)
+    private static async Task<ExternalAuthorizationRequest> CreateAuthorizationRequestAsync()
     {
-        var connection = CreateConnection(CreateManualSettings(pkce));
+        var connection = CreateConnection(CreateManualSettings());
         var adapter = CreateAdapter(new StaticResponseHandler());
         var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
         return await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), CreateTransaction(), "provider-state", new TestSystemClock(DateTimeOffset.UtcNow)));
@@ -179,14 +236,29 @@ public class OpenIdConnectAdapterTests
     private static IdentityProviderConnection CreateConnection(JsonElement settings)
     {
         var connection = ExternalAuthenticationTestData.CreateConnection("connection", "*", "contoso");
-        connection.AdapterSettingsVersion = 1;
+        connection.AdapterSettingsVersion = 2;
         connection.AdapterSettings = settings;
         return connection;
     }
 
     private static BrokerTransaction CreateTransaction() => new() { HandleHash = "stored-hash", ProviderNonce = "nonce", PkceChallenge = "client-pkce", CallbackUri = new Uri("https://studio.example/callback"), ClientId = "studio", ReturnPath = "/", TenantId = "tenant-a" };
 
-    private static JsonElement CreateManualSettings(string pkce = "disabled") => Parse($$"""{"mode":"manual","authority":"https://issuer.example","issuer":"https://issuer.example","authorizationEndpoint":"https://issuer.example/authorize","tokenEndpoint":"https://issuer.example/token","callbackUri":"https://elsa.example/external-authentication/callback/connection","clientId":"elsa","signingKeys":{"keys":[{"kty":"oct","kid":"test-key","k":"{{Base64UrlEncoder.Encode(SigningKey.Key)}}"}]},"providerPkce":"{{pkce}}"}""");
+    private static JsonElement CreateManualSettings() => JsonSerializer.SerializeToElement(new
+    {
+        mode = "manual",
+        issuer = "https://issuer.example",
+        authorizationEndpoint = "https://issuer.example/authorize",
+        tokenEndpoint = "https://issuer.example/token",
+        clientId = "elsa",
+        clientAuthenticationMethod = "client_secret_basic",
+        signingKeys = new
+        {
+            keys = new[]
+            {
+                new { kty = "oct", kid = "test-key", k = Base64UrlEncoder.Encode(SigningKey.Key) }
+            }
+        }
+    });
 
     private static string CreateToken(IEnumerable<Claim>? claims = null, SymmetricSecurityKey? signingKey = null, string issuer = "https://issuer.example", string audience = "elsa", string nonce = "nonce", DateTimeOffset? expires = null, IReadOnlyCollection<string>? audiences = null, string? azp = null)
     {
@@ -221,6 +293,19 @@ public class OpenIdConnectAdapterTests
                 return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent(discovery) });
 
             return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK) { Content = new StringContent($"{{\"id_token\":\"{token}\"}}") });
+        }
+    }
+
+    private sealed class CapturingTokenResponseHandler(string token) : HttpMessageHandler
+    {
+        public string? Authorization { get; private set; }
+        public string Body { get; private set; } = string.Empty;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            Authorization = request.Headers.Authorization?.ToString();
+            Body = request.Content is null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent($"{{\"id_token\":\"{token}\"}}") };
         }
     }
 

@@ -37,7 +37,7 @@ internal sealed class ListExternalAuthenticationSessions(
             return new ExternalAuthenticationSessionListResponse([], null);
         }
         var pageSize = request.PageSize ?? 100;
-        var rows = (await sessions.FindAsync(new Models.ExternalAuthenticationSessionFilter { TenantId = tenantAccessor.TenantId, UserId = request.UserId, ConnectionId = request.ConnectionId, Status = request.Status }, cancellationToken))
+        var rows = (await sessions.FindAsync(new Models.ExternalAuthenticationSessionFilter { TenantId = tenantAccessor.TenantId, UserId = request.UserId, ConnectionKey = request.ConnectionKey, Status = request.Status }, cancellationToken))
             .OrderBy(x => x.StartedAt).ThenBy(x => x.Id, StringComparer.Ordinal)
             .Where(x => cursor is null || Compare(new SessionCursor(x.StartedAt, x.Id), cursor) > 0)
             .Take(pageSize + 1).ToArray();
@@ -96,7 +96,7 @@ internal sealed class RevokeExternalAuthenticationSession(
             return;
         }
         await notifier.PublishAsync(new ExternalAuthenticationSessionRevoked(
-            ExternalAuthenticationSecurityNotifier.Context(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value, tenantAccessor.TenantId, session.ConnectionId, session.UserId, SecurityEventOutcome.Succeeded, "External authentication session revoked."),
+            ExternalAuthenticationSecurityNotifier.Context(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value, tenantAccessor.TenantId, session.ConnectionKey, session.UserId, SecurityEventOutcome.Succeeded, "External authentication session revoked."),
             session.Id,
             "administrator_revoked"), cancellationToken);
         HttpContext.Response.StatusCode = StatusCodes.Status204NoContent;
@@ -106,7 +106,7 @@ internal sealed class RevokeExternalAuthenticationSession(
 internal sealed class ExternalAuthenticationSessionListRequest
 {
     public string? UserId { get; set; }
-    public string? ConnectionId { get; set; }
+    public string? ConnectionKey { get; set; }
     public string? Status { get; set; }
     public string? Cursor { get; set; }
     public int? PageSize { get; set; }
@@ -114,7 +114,7 @@ internal sealed class ExternalAuthenticationSessionListRequest
 internal sealed class RevokeExternalAuthenticationSessionRequest { public string? Reason { get; set; } }
 internal sealed record SessionCursor(DateTimeOffset StartedAt, string Id);
 internal sealed record ExternalAuthenticationSessionListResponse(IReadOnlyCollection<ExternalAuthenticationSessionDocument> Items, string? NextCursor);
-internal sealed record ExternalAuthenticationSessionDocument(string Id, string UserId, string TenantId, string ConnectionId, DateTimeOffset StartedAt, DateTimeOffset LastRefreshedAt, DateTimeOffset ExpiresAt, DateTimeOffset? RevokedAt, string Status)
+internal sealed record ExternalAuthenticationSessionDocument(string Id, string UserId, string TenantId, string ConnectionKey, DateTimeOffset StartedAt, DateTimeOffset LastRefreshedAt, DateTimeOffset ExpiresAt, DateTimeOffset? RevokedAt, string Status)
 {
-    public static ExternalAuthenticationSessionDocument From(Models.ExternalAuthenticationSession value) => new(value.Id, value.UserId, value.TenantId, value.ConnectionId, value.StartedAt, value.LastRefreshedAt, value.ExpiresAt, value.RevokedAt, value.RevokedAt is null ? "active" : "revoked");
+    public static ExternalAuthenticationSessionDocument From(Models.ExternalAuthenticationSession value) => new(value.Id, value.UserId, value.TenantId, value.ConnectionKey, value.StartedAt, value.LastRefreshedAt, value.ExpiresAt, value.RevokedAt, value.RevokedAt is null ? "active" : "revoked");
 }

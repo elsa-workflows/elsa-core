@@ -26,6 +26,7 @@ public class ConformanceExtensionTests
             Microsoft.Extensions.Options.Options.Create(options));
         var policyRegistry = new DefaultUnlinkedIdentityPolicyRegistry(
             [new ConformanceUnlinkedIdentityPolicy()],
+            [],
             validator,
             Microsoft.Extensions.Options.Options.Create(options));
         var grantRegistry = new DefaultPermissionGrantSourceRegistry(
@@ -42,7 +43,7 @@ public class ConformanceExtensionTests
         var connection = new IdentityProviderConnection
         {
             Id = "connection-a",
-            TenantId = "tenant-a",
+            TenantId = ConnectionScope.HostTenantId,
             Key = "contoso",
             AdapterType = adapter.Type,
             AdapterSettingsVersion = migrated.SettingsVersion,
@@ -54,7 +55,7 @@ public class ConformanceExtensionTests
         var effective = new EffectiveIdentityProviderConnection(
             connection,
             ConnectionSourceOwnership.Configuration,
-            new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"),
+            ConnectionScope.Host,
             ConnectionValidity.Valid,
             false,
             "configuration");

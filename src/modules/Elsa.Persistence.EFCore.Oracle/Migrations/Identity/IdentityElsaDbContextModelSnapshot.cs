@@ -346,7 +346,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -381,6 +381,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     b.Property<string>("RevocationReason")
                         .HasColumnType("NVARCHAR2(2000)");
 
+                    b.Property<byte[]>("ProtectedUpstreamLogoutHint")
+                        .HasColumnType("BLOB");
+
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
@@ -404,8 +407,8 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ConnectionId")
-                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionId");
+                    b.HasIndex("ConnectionKey")
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
 
                     b.HasIndex("CurrentRefreshTokenHash")
                         .IsUnique()
@@ -422,7 +425,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     b.Property<string>("Id")
                         .HasColumnType("NVARCHAR2(450)");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("NVARCHAR2(450)");
 
@@ -458,7 +461,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     b.HasIndex("TenantId", "UserId")
                         .HasDatabaseName("IX_ExternalIdentityLink_TenantId_UserId");
 
-                    b.HasIndex("TenantId", "ConnectionId", "Issuer", "SubjectHash")
+                    b.HasIndex("TenantId", "ConnectionKey", "Issuer", "SubjectHash")
                         .IsUnique()
                         .HasDatabaseName("IX_ExternalIdentityLink_Identity");
 
@@ -501,10 +504,13 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Identity
                     b.Property<string>("IconId")
                         .HasColumnType("NVARCHAR2(2000)");
 
-                    b.Property<bool>("IsDefault")
+                    b.Property<bool>("IsPreferred")
                         .HasColumnType("BOOLEAN");
 
                     b.Property<bool>("IsEnabled")
+                        .HasColumnType("BOOLEAN");
+
+                    b.Property<bool>("OverridesConfigurationConnection")
                         .HasColumnType("BOOLEAN");
 
                     b.Property<string>("Key")

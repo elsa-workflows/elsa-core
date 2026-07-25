@@ -12,4 +12,4 @@ public sealed class InMemoryExternalIdentityProvisionerState
     internal ISet<string> ReservedUserNames { get; } = new HashSet<string>(StringComparer.Ordinal);
 }
 
-internal sealed record ExternalIdentityKey(string TenantId, string ConnectionId, string Issuer, string SubjectHash);
+internal sealed record ExternalIdentityKey(string TenantId, string ConnectionKey, string Issuer, string SubjectHash);

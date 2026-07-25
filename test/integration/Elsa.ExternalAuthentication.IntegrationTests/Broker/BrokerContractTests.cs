@@ -112,9 +112,9 @@ public class BrokerDiscoveryEndpointContractTests : IAsyncLifetime
     [Fact]
     public async Task ProviderCallbackReturnsTrustedClientRedirect()
     {
-        _broker.CompleteCallbackAsync("connection-a", "opaque", Arg.Any<IReadOnlyDictionary<string, IReadOnlyCollection<string>>>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/callback?code=one"))));
+        _broker.CompleteCallbackAsync("contoso", "opaque", Arg.Any<IReadOnlyDictionary<string, IReadOnlyCollection<string>>>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/callback?code=one"))));
 
-        var response = await _client!.GetAsync("/external-authentication/callback/connection-a?state=opaque&code=provider-code");
+        var response = await _client!.GetAsync("/external-authentication/callback/contoso?state=opaque&code=provider-code");
 
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
         Assert.Equal("https://studio.example/callback?code=one", response.Headers.Location?.AbsoluteUri);
@@ -150,10 +150,10 @@ public class BrokerDiscoveryEndpointContractTests : IAsyncLifetime
     public async Task LogoutAndLogoutCallbackHonorBrokerResponses()
     {
         _broker.LogoutAsync(Arg.Any<BrokerLogoutRequest>(), "session-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerLogoutResult.Complete(new Uri("https://studio.example/logout-callback"))));
-        _broker.CompleteLogoutAsync("connection-a", "opaque", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/logout-callback"))));
+        _broker.CompleteLogoutAsync("contoso", "opaque", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/logout-callback"))));
 
         var logout = await _client!.PostAsJsonAsync("/external-authentication/logout", new { clientId = "studio", postLogoutRedirectUri = "https://studio.example/logout-callback", mode = "local" });
-        var callback = await _client!.GetAsync("/external-authentication/logout/callback/connection-a?state=opaque");
+        var callback = await _client!.GetAsync("/external-authentication/logout/callback/contoso?state=opaque");
 
         Assert.Equal(HttpStatusCode.OK, logout.StatusCode);
         Assert.Contains("completed", await logout.Content.ReadAsStringAsync());

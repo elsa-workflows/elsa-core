@@ -25,7 +25,7 @@ internal sealed class DiscoverLoginMethods(IExternalAuthenticationBroker broker,
         {
             var methods = await broker.DiscoverAsync(tenantAccessor.TenantId, clientId, cancellationToken);
             HttpContext.Response.Headers.CacheControl = "no-store";
-            return new DiscoverLoginMethodsResponse(methods, methods.SingleOrDefault(x => x.IsDefault)?.Key);
+            return new DiscoverLoginMethodsResponse(methods, methods.SingleOrDefault(x => x.IsPreferred)?.Key);
         }
         catch (InvalidOperationException)
         {
@@ -35,4 +35,5 @@ internal sealed class DiscoverLoginMethods(IExternalAuthenticationBroker broker,
     }
 }
 
-internal sealed record DiscoverLoginMethodsResponse(IReadOnlyCollection<LoginMethod> Methods, string? AutomaticMethodKey);
+/// <summary>The preferred method is visual metadata only; clients must always render an explicit chooser.</summary>
+internal sealed record DiscoverLoginMethodsResponse(IReadOnlyCollection<LoginMethod> Methods, string? PreferredMethodKey);

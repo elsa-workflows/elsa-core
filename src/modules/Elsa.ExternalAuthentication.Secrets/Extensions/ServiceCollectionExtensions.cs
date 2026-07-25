@@ -12,6 +12,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddElsaSecretsExternalAuthentication(this IServiceCollection services)
     {
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretBindingResolver, ElsaSecretBindingResolver>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IManagedSecretBindingWriter, ElsaSecretBindingResolver>());
         return services;
     }
 }

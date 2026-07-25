@@ -29,12 +29,12 @@ The unified collection of configuration-owned and administrator-owned Identity P
 _Avoid_: Provider list, connection store
 
 **Connection Key**:
-A stable presentation identifier for an Identity Provider Connection, unique for a tenant scope across all connection sources. The immutable Connection ID, not this key, participates in External Identity Links.
-_Avoid_: Scheme name, display name
+A stable, immutable logical identifier for an Identity Provider Connection within the currently connected Elsa server environment. Together with target tenant, issuer namespace, and subject, it participates in the External Identity Key.
+_Avoid_: Database row ID, scheme name, display name
 
-**Connection Scope**:
-The Elsa tenant context in which an Identity Provider Connection is defined. Host-wide connections use Elsa's tenant-agnostic identifier (`*`); default-tenant connections use Elsa's default tenant identifier (the empty string); other values identify specific tenants.
-_Avoid_: Provider tenant, issuer tenant
+**Studio Override**:
+An administrator-managed connection document that explicitly and completely shadows a configuration-owned connection with the same immutable Connection Key. Overrides replace the whole effective document; fields are never merged between sources.
+_Avoid_: Partial override, configuration patch
 
 **Protocol Adapter**:
 A trusted Elsa module that implements external authentication for a particular protocol or provider family and translates its result into an External Identity.
@@ -45,7 +45,7 @@ A protocol-neutral identity asserted by an Identity Provider and identified with
 _Avoid_: Elsa User, external user
 
 **External Identity Key**:
-The immutable combination of target Elsa tenant, immutable Identity Provider Connection identity, issuer namespace, and stable subject used to distinguish an External Identity.
+The immutable combination of target Elsa tenant, Connection Key, validated issuer namespace, and stable subject used to distinguish an External Identity. Host-wide connection deployment does not collapse Elsa User tenancy.
 _Avoid_: Email address, user name
 
 **External Identity Link**:
@@ -65,11 +65,15 @@ A string-named capability required by Elsa functionality and carried by an authe
 _Avoid_: External claim, role
 
 **Permission Grant Source**:
-A configured source that contributes Elsa Permissions when Elsa establishes an authenticated session.
+A deferred extension concept for contributing Elsa Permissions. It is not a v1 External Authentication Studio configuration surface.
 _Avoid_: Role mapping, raw claim pass-through
 
+**External User Matcher**:
+A trusted deployed extension selected by the matcher-based Unlinked Identity Policy to propose an existing Elsa User from bounded, ephemeral external claims. Ambiguous results and matcher errors reject authentication.
+_Avoid_: Role matcher, permission mapper, automatic email linking
+
 **Permission Descriptor**:
-Optional module-provided metadata that describes an Elsa Permission for discovery, authoring, and diagnostics without determining whether the permission is valid.
+Optional module-provided metadata that describes an Elsa Permission without determining validity. External Authentication v1 does not use it for claim-permission mapping.
 _Avoid_: Permission catalog, permission registry
 
 **External Authentication Session**:
@@ -95,6 +99,18 @@ _Avoid_: Connection settings, custom form
 **Secret Binding**:
 A non-secret reference that tells Elsa how to resolve a sensitive connection value without storing or disclosing that value as connection data.
 _Avoid_: Client secret, secret value
+
+**Managed Secret**:
+A Secret Binding whose lifecycle is managed through an Elsa-integrated secret store. Studio may replace or remove it but never reveal it.
+_Avoid_: Inline secret, connection field
+
+**External Secret**:
+A read-only Secret Binding resolved from deployment configuration or another externally operated resolver. Studio may show its configured/resolvable state but does not own its value or lifecycle.
+_Avoid_: Managed Secret, plaintext setting
+
+**Preferred Login Method**:
+The enabled Login Method emphasized and ordered first by the chooser. Preference never causes an automatic redirect; the chooser remains visible.
+_Avoid_: Automatic login, forced provider
 
 **Connection Health**:
 The observed operational condition of an Identity Provider Connection, independent of whether administrators intend it to be enabled.

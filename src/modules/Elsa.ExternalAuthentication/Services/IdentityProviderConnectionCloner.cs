@@ -18,8 +18,9 @@ internal static class IdentityProviderConnectionCloner
         DisplayName = source.DisplayName,
         IconId = source.IconId,
         DisplayOrder = source.DisplayOrder,
-        IsDefault = source.IsDefault,
+        IsPreferred = source.IsPreferred,
         IsEnabled = source.IsEnabled,
+        OverridesConfigurationConnection = source.OverridesConfigurationConnection,
         ArchivedAt = source.ArchivedAt,
         UnlinkedPolicy = source.UnlinkedPolicy is { } policy
             ? new PolicySelection(policy.Type, policy.SettingsVersion, CloneJson(policy.Settings))

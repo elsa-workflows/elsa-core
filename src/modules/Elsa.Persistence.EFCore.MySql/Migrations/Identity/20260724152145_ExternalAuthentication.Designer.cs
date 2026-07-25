@@ -349,7 +349,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
@@ -384,6 +384,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     b.Property<string>("RevocationReason")
                         .HasColumnType("longtext");
 
+                    b.Property<byte[]>("ProtectedUpstreamLogoutHint")
+                        .HasColumnType("longblob");
+
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("datetime(6)");
 
@@ -407,8 +410,8 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ConnectionId")
-                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionId");
+                    b.HasIndex("ConnectionKey")
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
 
                     b.HasIndex("CurrentRefreshTokenHash")
                         .IsUnique()
@@ -425,7 +428,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
 
@@ -461,7 +464,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     b.HasIndex("TenantId", "UserId")
                         .HasDatabaseName("IX_ExternalIdentityLink_TenantId_UserId");
 
-                    b.HasIndex("TenantId", "ConnectionId", "Issuer", "SubjectHash")
+                    b.HasIndex("TenantId", "ConnectionKey", "Issuer", "SubjectHash")
                         .IsUnique()
                         .HasDatabaseName("IX_ExternalIdentityLink_Identity");
 
@@ -504,10 +507,13 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     b.Property<string>("IconId")
                         .HasColumnType("longtext");
 
-                    b.Property<bool>("IsDefault")
+                    b.Property<bool>("IsPreferred")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("OverridesConfigurationConnection")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Key")

@@ -23,11 +23,17 @@ public class ExternalAuthenticationOptions
     /// <summary>Enables the optional database connection source and persisted management surface.</summary>
     public bool EnableDatabaseConnections { get; set; } = true;
 
+    /// <summary>Allows a database-owned host connection to explicitly supersede a configuration-owned connection with the same key.</summary>
+    public bool AllowConfigurationConnectionOverrides { get; set; }
+
     /// <summary>Adapter types permitted by this deployment. An empty collection permits every installed adapter.</summary>
     public ICollection<string> AllowedAdapterTypes { get; set; } = new List<string>();
 
     /// <summary>Unlinked identity policy types permitted by this deployment.</summary>
     public ICollection<string> AllowedUnlinkedIdentityPolicyTypes { get; set; } = ["reject", "create-user"];
+
+    /// <summary>External user matcher types permitted by this deployment.</summary>
+    public ICollection<string> AllowedExternalUserMatcherTypes { get; set; } = new List<string>();
 
     /// <summary>Permission grant source types permitted by this deployment.</summary>
     public ICollection<string> AllowedPermissionGrantSourceTypes { get; set; } = ["elsa-roles", "claim-mapping", "group-mapping", "claim-pass-through"];
@@ -80,8 +86,8 @@ public class LocalLoginMethodOptions
     public string IconId { get; set; } = "elsa";
     /// <summary>Deterministic chooser order.</summary>
     public int DisplayOrder { get; set; }
-    /// <summary>Whether local login is the automatic method for its scope.</summary>
-    public bool IsDefault { get; set; }
+    /// <summary>Whether local login is the preferred sign-in method for its scope; this never causes automatic redirection.</summary>
+    public bool IsPreferred { get; set; }
 }
 
 /// <summary>Configures the deployment-owned default unlinked identity policy.</summary>
@@ -185,6 +191,8 @@ public class ProviderEgressOptions
 /// <summary>Controls broker-client callback and return-path validation.</summary>
 public class RedirectValidationOptions
 {
+    /// <summary>Deployment-owned public base URI used to derive upstream provider callbacks.</summary>
+    public Uri? ExternalCallbackBaseUri { get; set; }
     /// <summary>Reserved compatibility preference; the broker currently always requires S256 PKCE.</summary>
     public bool RequirePkceS256 { get; set; } = true;
     /// <summary>Allow explicit HTTP loopback callback registrations for development.</summary>

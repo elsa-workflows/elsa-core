@@ -93,7 +93,7 @@ public sealed class PreviewSignInService(
             ExternalAuthenticationResult authentication;
             try { authentication = await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(connection, secrets, transaction, state, parameters, clock), cancellationToken); }
             finally { transaction.ProtectedPayload = protectedPayload; }
-            var existingLink = await provisioner.FindLinkAsync(transaction.TenantId, connection.Connection.Id, authentication.Identity, cancellationToken);
+            var existingLink = await provisioner.FindLinkAsync(transaction.TenantId, ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key), authentication.Identity, cancellationToken);
             var decision = existingLink is null ? await DescribePolicyAsync(connection, authentication, cancellationToken) : "would_sign_in_existing_link";
             var grants = existingLink is null
                 ? new PermissionGrantResult([], [new PermissionGrantWarning("user_resolution_required", "Permission grants require an existing Elsa user link.")])

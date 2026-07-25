@@ -11,10 +11,45 @@ namespace Elsa.ExternalAuthentication.Secrets.Services;
 /// </summary>
 public sealed class ElsaSecretBindingResolver(
     ISecretManager secretManager,
-    IExternalAuthenticationHandleHasher handleHasher) : ISecretBindingResolver
+    IExternalAuthenticationHandleHasher handleHasher) : ISecretBindingResolver, IManagedSecretBindingWriter
 {
     public const string ResolverType = "elsa-secrets";
     public string Type => ResolverType;
+    string IManagedSecretBindingWriter.ResolverType => ResolverType;
+    string IManagedSecretBindingWriter.DisplayName => "Elsa Secrets";
+
+    public async ValueTask<SecretBinding> ReplaceAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.ConnectionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.FieldName);
+        var fieldName = string.Concat(request.FieldName.Where(char.IsLetterOrDigit)).ToLowerInvariant();
+        if (fieldName.Length == 0)
+            throw new ArgumentException("The secret field name must contain a letter or digit.", nameof(request));
+
+        var name = $"external-authentication-{request.ConnectionId.ToLowerInvariant()}-{fieldName}";
+        var secret = await secretManager.GetAsync(name, cancellationToken);
+        if (secret is null)
+            secret = await secretManager.CreateAsync(new CreateSecretRequest
+            {
+                Name = name,
+                DisplayName = $"External authentication {request.FieldName}",
+                TypeName = SecretTypeNames.Text,
+                StoreName = SecretStoreNames.Encrypted,
+                Value = request.Value.Reveal()
+            }, cancellationToken);
+        else
+            secret = await secretManager.RotateAsync(secret.Name, new RotateSecretRequest { Value = request.Value.Reveal() }, cancellationToken);
+
+        return new SecretBinding(ResolverType, secret.Name, Ownership: SecretBindingOwnership.Managed);
+    }
+
+    public async ValueTask RemoveAsync(SecretBinding binding, CancellationToken cancellationToken = default)
+    {
+        EnsureResolverType(binding);
+        if (binding.Ownership != SecretBindingOwnership.Managed)
+            throw new InvalidOperationException("Only managed secret bindings can remove managed secret material.");
+        await secretManager.DeleteAsync(binding.Reference, cancellationToken);
+    }
 
     public async ValueTask<SecretBindingState> GetStateAsync(SecretBinding binding, CancellationToken cancellationToken = default)
     {

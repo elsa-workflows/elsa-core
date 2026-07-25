@@ -49,8 +49,9 @@ public sealed class ConfigurationIdentityProviderConnectionSource(
             DisplayName = configuredConnection.DisplayName,
             IconId = configuredConnection.IconId,
             DisplayOrder = configuredConnection.DisplayOrder,
-            IsDefault = configuredConnection.IsDefault,
+            IsPreferred = configuredConnection.IsPreferred,
             IsEnabled = configuredConnection.IsEnabled,
+            OverridesConfigurationConnection = false,
             ArchivedAt = configuredConnection.ArchivedAt,
             UnlinkedPolicy = configuredConnection.UnlinkedPolicy is { } policy ? new PolicySelection(policy.Type, policy.SettingsVersion, CloneJson(policy.Settings)) : null,
             PermissionGrantSources = (configuredConnection.PermissionGrantSources ?? [])
@@ -67,7 +68,8 @@ public sealed class ConfigurationIdentityProviderConnectionSource(
         return connection;
     }
 
-    private static bool IsInScope(string? tenantId, ConnectionScope scope) => string.Equals(tenantId, scope.TenantId, StringComparison.Ordinal);
+    private static bool IsInScope(string? tenantId, ConnectionScope scope) =>
+        scope == ConnectionScope.Host && (string.IsNullOrWhiteSpace(tenantId) || string.Equals(tenantId, ConnectionScope.HostTenantId, StringComparison.Ordinal));
 
     private static ClaimProjection CloneClaimProjection(ClaimProjection? projection)
     {

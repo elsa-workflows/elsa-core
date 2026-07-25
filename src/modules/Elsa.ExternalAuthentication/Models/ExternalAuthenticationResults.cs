@@ -4,15 +4,22 @@ public sealed record ConnectionValidationResult(bool IsValid, IReadOnlyCollectio
 public sealed record ConnectionValidationError(string Field, string Code, string Message);
 public sealed record ConnectionTestResult(ConnectionObservationStatus Status, string Category, string Summary, IReadOnlyCollection<string> Warnings);
 public sealed record ExternalAuthorizationRequest(Uri NavigationUri, byte[] ProtectedAdapterState);
-public sealed record ExternalAuthenticationResult(ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, IReadOnlyCollection<string> Warnings);
+public sealed record ExternalAuthenticationResult(ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, IReadOnlyCollection<string> Warnings, SensitiveString? UpstreamLogoutHint = null);
 public sealed record ExternalLogoutRequest(Uri NavigationUri, byte[] ProtectedAdapterState);
 public sealed record PermissionGrant(string Permission, string SourceType, string SourceReference);
 public sealed record PermissionGrantWarning(string Code, string Message);
 public sealed record PermissionGrantResult(IReadOnlyCollection<PermissionGrant> Grants, IReadOnlyCollection<PermissionGrantWarning> Warnings);
 public sealed record PermissionDelegationResult(bool IsAuthorized, IReadOnlyCollection<string> UnauthorizedPermissions);
-public sealed record UserCreationProposal(string UserNamePrefix, string? DisplayName = null);
+public sealed record UserCreationProposal(string UserNamePrefix, string? DisplayName = null, IReadOnlyCollection<string>? DefaultRoleIds = null);
 public sealed record ExternalIdentityResolution(string UserId, bool WasProvisioned);
-public sealed record ProvisioningRequest(string TenantId, string ConnectionId, ExternalIdentity Identity, UserCreationProposal? Proposal = null, string? ExistingUserId = null);
+public abstract record ExternalUserMatchResult
+{
+    private ExternalUserMatchResult() { }
+    public sealed record Match(string UserId, string AuthorizationBasis) : ExternalUserMatchResult;
+    public sealed record NoMatch : ExternalUserMatchResult;
+    public sealed record Ambiguous : ExternalUserMatchResult;
+}
+public sealed record ProvisioningRequest(string TenantId, string ConnectionKey, ExternalIdentity Identity, UserCreationProposal? Proposal = null, string? ExistingUserId = null);
 public sealed record ProvisioningResult(string UserId, ExternalIdentityLink Link, bool WasCreated, bool WasLinkCreated = false);
 public sealed record ExternalTokenResponse(string AccessToken, string TokenType, long ExpiresIn, string RefreshToken, long RefreshExpiresIn, long ExternalSessionExpiresIn);
 public sealed record AdapterSettingsMigrationResult(int SettingsVersion, System.Text.Json.JsonElement Settings, bool WasMigrated);

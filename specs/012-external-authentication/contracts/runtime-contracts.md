@@ -70,27 +70,20 @@ public interface IIdentityProviderConnectionSource
     string Name { get; }
     ConnectionSourceOwnership Ownership { get; }
     ValueTask<ConnectionSourceSnapshot> GetSnapshotAsync(
-        ConnectionScope scope,
         CancellationToken cancellationToken = default);
 }
 
 public interface IIdentityProviderConnectionRegistry
 {
-    ValueTask<EffectiveConnectionRegistry> GetAsync(
-        string targetTenantId,
+    ValueTask<EffectiveConnectionRegistry> GetHostAsync(
         CancellationToken cancellationToken = default);
     ValueTask<EffectiveIdentityProviderConnection?> FindByKeyAsync(
-        string targetTenantId,
-        string key,
-        CancellationToken cancellationToken = default);
-    ValueTask<EffectiveIdentityProviderConnection?> FindByIdAsync(
-        string targetTenantId,
-        string connectionId,
+        string connectionKey,
         CancellationToken cancellationToken = default);
 }
 ```
 
-`EffectiveConnectionRegistry` includes active, invalid, archived, and shadowed administrative entries, the shared source version, and effective Login Methods. Public discovery maps only the safe Login Method projection.
+`EffectiveConnectionRegistry` includes active, invalid, archived, and shadowed administrative entries, the shared source version, and effective host-wide Login Methods. A dedicated override command creates a complete Studio document for a configuration key. Disabled overrides continue shadowing; archived overrides reveal configuration.
 
 ## Database Connection Store
 
@@ -136,6 +129,8 @@ public sealed record ResolvedSecretBinding(
 
 `SensitiveString` deliberately avoids meaningful `ToString()` output and is disposed/cleared where practical. Generation fingerprints are keyed and nonreversible. Management models map only `SecretBindingState.IsConfigured` and `IsResolvable`.
 
+Every binding declares `Managed` or `External` ownership. The built-in `configuration` resolver reads External values by configuration key and derives a keyed generation fingerprint. Only Managed bindings support value replacement/removal through management APIs.
+
 ## Unlinked Identity Policy
 
 ```csharp
@@ -166,6 +161,30 @@ Built-in types:
 
 - `reject`
 - `create-user`
+- `match-external-user`
+
+## External User Matchers
+
+```csharp
+public interface IExternalUserMatcher
+{
+    string Type { get; }
+    ExternalUserMatcherDescriptor Describe();
+    ValueTask<ExternalUserMatchResult> MatchAsync(
+        ExternalUserMatchContext context,
+        CancellationToken cancellationToken = default);
+}
+
+public abstract record ExternalUserMatchResult
+{
+    public sealed record NoMatch : ExternalUserMatchResult;
+    public sealed record Match(string UserId, string AuthorizationBasis) : ExternalUserMatchResult;
+    public sealed record Ambiguous : ExternalUserMatchResult;
+    public sealed record Error(string SafeCategory) : ExternalUserMatchResult;
+}
+```
+
+The matcher-based policy selects exactly one matcher. Its descriptor declares required normalized claim types; the policy passes only those claims and discards them after evaluation. One match may propose an existing same-tenant user. No match executes configured `Reject` or `CreateUser`; ambiguous/error rejects. No first-party verified-email matcher ships in v1.
 
 ## Atomic Identity Resolution
 
@@ -187,65 +206,74 @@ public interface IExternalIdentityProvisioner
 
 The provisioner owns one transaction spanning generated-name reservation, credential-less User creation, unique link creation, and cleanup/convergence after a uniqueness race.
 
-## Permission Grant Sources
+### Static Create-user Role Authorization
 
 ```csharp
-public interface IPermissionGrantSource
+public interface IExternalRoleAssignmentAuthorizer
 {
-    string Type { get; }
-    PermissionGrantSourceDescriptor Describe();
-    ValueTask<PermissionGrantResult> GetGrantsAsync(
-        PermissionGrantContext context,
-        CancellationToken cancellationToken = default);
-}
-
-public sealed record PermissionGrant(
-    string Permission,
-    string SourceType,
-    string SourceReference);
-
-public sealed record PermissionGrantResult(
-    IReadOnlyCollection<PermissionGrant> Grants,
-    IReadOnlyCollection<PermissionGrantWarning> Warnings);
-```
-
-V1 source types:
-
-- `elsa-roles`
-- `claim-mapping`
-- `group-mapping`
-
-The composition service preserves provenance for preview/diagnostics, applies deployment allow/deny boundaries, and emits distinct permission strings to token issuance.
-
-### Grant Configuration Authorization
-
-```csharp
-public interface IPermissionDelegationAuthorizer
-{
-    ValueTask<PermissionDelegationResult> AuthorizeAsync(
+    ValueTask<RoleAssignmentAuthorizationResult> AuthorizeAsync(
         ClaimsPrincipal actor,
-        IReadOnlyCollection<GrantSourceSelection> selections,
+        IReadOnlyCollection<string> defaultRoleIds,
         CancellationToken cancellationToken = default);
 }
 ```
 
-No management endpoint may persist grant settings without this authorization.
+No management endpoint may persist `defaultRoleIds` without this authorization. They apply only when CreateUser executes. User matchers never select roles. Claim-to-role/permission mapping is not a v1 contract.
 
-## Permission Descriptors
+### Role Deletion Dependencies
+
+Elsa Identity owns Role deletion and coordinates installed dependency contributors:
 
 ```csharp
-public interface IPermissionDescriptorProvider
+public interface IRoleDeletionDependencyContributor
 {
-    IEnumerable<PermissionDescriptor> GetDescriptors();
+    string Source { get; }
+
+    ValueTask<RoleDeletionDependencySnapshot> InspectAsync(
+        string roleId,
+        CancellationToken cancellationToken = default);
+
+    ValueTask<RoleReferenceRemovalResult> RemoveEditableReferencesAsync(
+        RoleReferenceRemovalRequest request,
+        CancellationToken cancellationToken = default);
 }
 
-public interface IPermissionDescriptorRegistry
-{
-    IReadOnlyCollection<PermissionDescriptor> List();
-}
+public sealed record RoleDeletionDependency(
+    string OwnerId,
+    string OwnerKey,
+    string PolicyBranch,
+    RoleReferenceOwnership Ownership,
+    string? ConfigurationPath,
+    long? ExpectedRevision,
+    bool RemovesLastDefaultRole);
 ```
 
-The registry is advisory. It never rejects an unknown permission string.
+The External Authentication contributor enumerates `defaultRoleIds` in every CreateUser and matcher no-match CreateUser definition, not only effective or enabled connections. Database-owned references carry stable connection record ID, Connection Key, and expected revision. Configuration-owned references carry a sanitized configuration path and are inspection-only.
+
+The Identity coordinator authorizes Role deletion and every affected connection/policy update before mutation. It compares an opaque dependency version plus all expected connection revisions, invokes contributors to remove editable references, re-inspects dependencies, and deletes the Role only when none remain. Configuration references always block and are never passed to removal.
+
+V1 has no shared unit of work spanning the Role store and contributor stores, so any editable dependency makes the coordinator advertise best-effort execution during preflight. It requires explicit best-effort confirmation, applies removals before Role deletion, and never deletes the Role if any removal or reinspection fails. A partial result lists changed and remaining owner IDs without policy values and supports idempotent retry. Atomic mode is reserved for a future shared transaction boundary that actually includes both reference removal and Role deletion; contributor-local atomicity is insufficient. Any dependency whose removal empties `defaultRoleIds` requires explicit empty-default-role confirmation.
+
+## OpenID Connect v2 Settings
+
+The v1 adapter's current settings contract is version 2:
+
+```csharp
+public sealed record OpenIdConnectSettings(
+    Uri DiscoveryUrl,
+    string ClientId,
+    OpenIdConnectClientAuthenticationMethod ClientAuthenticationMethod,
+    IReadOnlyCollection<string> Scopes,
+    OpenIdConnectProviderTrustOverrides? AdvancedTrustOverrides);
+
+public sealed record OpenIdConnectProviderTrustOverrides(
+    string? Issuer,
+    Uri? AuthorizationEndpoint,
+    Uri? TokenEndpoint,
+    JsonElement? SigningKeys);
+```
+
+`DiscoveryUrl` is exact and HTTPS. Advanced overrides require deployment opt-in plus unsafe-provider-trust authorization and never disable validation. Elsa derives the callback from deployment external base address, the fixed callback route, and immutable Connection Key. The upstream client is confidential, provider PKCE is always S256, and client authentication serializes exactly as `client_secret_basic` or `client_secret_post`.
 
 ## Broker State
 
@@ -323,7 +351,7 @@ It stores one redacted latest observation per connection, not history.
 
 ## Security Notifications
 
-All records implement `INotification` and contain `SecurityEventContext` with actor ID, tenant ID, Connection ID when known, Elsa User ID when known, timestamp, outcome, correlation ID, and redacted summary.
+All records implement `INotification` and contain `SecurityEventContext` with actor ID, connection record ID and logical key when known, Elsa User ID when known, timestamp, outcome, correlation ID, and redacted summary.
 
 Event families:
 

@@ -80,9 +80,16 @@ public sealed record ConnectionScope(ConnectionScopeKind Kind, string TenantId)
     public static ConnectionScope DefaultTenant { get; } = new(ConnectionScopeKind.DefaultTenant, DefaultTenantId);
 }
 
-public sealed record SecretBinding(string ResolverType, string Reference, string? ExpectedType = null, string? ExpectedScope = null);
+public enum SecretBindingOwnership
+{
+    External,
+    Managed
+}
+
+public sealed record SecretBinding(string ResolverType, string Reference, string? ExpectedType = null, string? ExpectedScope = null, SecretBindingOwnership Ownership = SecretBindingOwnership.External);
 
 public sealed record SecretBindingState(bool IsConfigured, bool IsResolvable);
+public sealed record SecretBindingPresentation(string Ownership, bool IsConfigured, bool IsResolvable);
 
 public sealed record PolicySelection(string Type, int SettingsVersion, JsonElement Settings);
 
@@ -110,8 +117,10 @@ public sealed class IdentityProviderConnection
     public string DisplayName { get; set; } = null!;
     public string? IconId { get; set; }
     public int DisplayOrder { get; set; }
-    public bool IsDefault { get; set; }
+    public bool IsPreferred { get; set; }
     public bool IsEnabled { get; set; }
+    /// <summary>When configuration-owned, explicitly shadows a database-owned connection with the same scoped key.</summary>
+    public bool OverridesConfigurationConnection { get; set; }
     public DateTimeOffset? ArchivedAt { get; set; }
     public PolicySelection? UnlinkedPolicy { get; set; }
     public ICollection<GrantSourceSelection> PermissionGrantSources { get; set; } = new List<GrantSourceSelection>();
@@ -149,6 +158,8 @@ public sealed class BrokerTransaction
     public string? ClientState { get; set; }
     public string TenantId { get; set; } = null!;
     public string? ConnectionId { get; set; }
+    /// <summary>Logical callback key, retained alongside the immutable in-flight record ID.</summary>
+    public string? ConnectionKey { get; set; }
     public string? ConnectionMaterialRevision { get; set; }
     public string? SecretGenerationFingerprint { get; set; }
     public string PkceChallenge { get; set; } = null!;
@@ -177,7 +188,8 @@ public sealed class ExternalAuthenticationSession
     public string AuthenticationClientId { get; set; } = null!;
     public string TenantId { get; set; } = null!;
     public string UserId { get; set; } = null!;
-    public string ConnectionId { get; set; } = null!;
+    /// <summary>Normalized logical connection key resolved in the session target tenant.</summary>
+    public string ConnectionKey { get; set; } = null!;
     public string ConnectionMaterialRevision { get; set; } = null!;
     public string? SecretGenerationFingerprint { get; set; }
     public string Issuer { get; set; } = null!;
@@ -191,6 +203,8 @@ public sealed class ExternalAuthenticationSession
     public long RefreshGeneration { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public string? RevocationReason { get; set; }
+    /// <summary>Data-protected upstream ID-token/logout hint retained only for enabled upstream logout.</summary>
+    public byte[]? ProtectedUpstreamLogoutHint { get; set; }
 }
 
 /// <summary>Restricts administrative session queries to a single tenant and safe metadata fields.</summary>
@@ -198,7 +212,7 @@ public sealed class ExternalAuthenticationSessionFilter
 {
     public string TenantId { get; set; } = null!;
     public string? UserId { get; set; }
-    public string? ConnectionId { get; set; }
+    public string? ConnectionKey { get; set; }
     /// <summary><c>active</c>, <c>revoked</c>, or null for both.</summary>
     public string? Status { get; set; }
 }
@@ -214,15 +228,15 @@ public sealed record ConnectionObservation(
     IReadOnlyCollection<string> Warnings,
     string CorrelationId);
 
-public sealed record LoginMethod(string Id, string Key, LoginMethodKind Kind, string DisplayName, string? IconId, int Order, bool IsDefault, Uri InitiationUri);
+public sealed record LoginMethod(string Id, string Key, LoginMethodKind Kind, string DisplayName, string? IconId, int Order, bool IsPreferred, Uri InitiationUri);
 
-public sealed record ExternalIdentityLink(string Id, string TenantId, string ConnectionId, string Issuer, string SubjectHash, string? SubjectHint, string UserId, DateTimeOffset CreatedAt, DateTimeOffset? LastSignedInAt);
+public sealed record ExternalIdentityLink(string Id, string TenantId, string ConnectionKey, string Issuer, string SubjectHash, string? SubjectHint, string UserId, DateTimeOffset CreatedAt, DateTimeOffset? LastSignedInAt);
 
 public sealed class ExternalIdentityLinkFilter
 {
     public string TenantId { get; set; } = null!;
     public string? UserId { get; set; }
-    public string? ConnectionId { get; set; }
+    public string? ConnectionKey { get; set; }
 }
 
 public sealed record PreviewResult(

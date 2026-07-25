@@ -17,8 +17,9 @@ internal static class ExternalAuthenticationPersistenceMapper
         DisplayName = connection.DisplayName,
         IconId = connection.IconId,
         DisplayOrder = connection.DisplayOrder,
-        IsDefault = connection.IsDefault,
+        IsPreferred = connection.IsPreferred,
         IsEnabled = connection.IsEnabled,
+        OverridesConfigurationConnection = connection.OverridesConfigurationConnection,
         ArchivedAt = connection.ArchivedAt,
         UnlinkedPolicyJson = connection.UnlinkedPolicy is null ? null : ExternalAuthenticationJsonSerializer.Serialize(connection.UnlinkedPolicy),
         PermissionGrantSourcesJson = ExternalAuthenticationJsonSerializer.Serialize(connection.PermissionGrantSources),
@@ -42,8 +43,9 @@ internal static class ExternalAuthenticationPersistenceMapper
         DisplayName = connection.DisplayName,
         IconId = connection.IconId,
         DisplayOrder = connection.DisplayOrder,
-        IsDefault = connection.IsDefault,
+        IsPreferred = connection.IsPreferred,
         IsEnabled = connection.IsEnabled,
+        OverridesConfigurationConnection = connection.OverridesConfigurationConnection,
         ArchivedAt = connection.ArchivedAt,
         UnlinkedPolicy = connection.UnlinkedPolicyJson is null ? null : ExternalAuthenticationJsonSerializer.Deserialize<PolicySelection>(connection.UnlinkedPolicyJson),
         PermissionGrantSources = ExternalAuthenticationJsonSerializer.Deserialize<List<GrantSourceSelection>>(connection.PermissionGrantSourcesJson),
@@ -65,6 +67,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         ClientState = transaction.ClientState,
         TenantId = transaction.TenantId,
         ConnectionId = transaction.ConnectionId,
+        ConnectionKey = transaction.ConnectionKey,
         ConnectionMaterialRevision = transaction.ConnectionMaterialRevision,
         SecretGenerationFingerprint = transaction.SecretGenerationFingerprint,
         PkceChallenge = transaction.PkceChallenge,
@@ -84,6 +87,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         ClientState = transaction.ClientState,
         TenantId = transaction.TenantId,
         ConnectionId = transaction.ConnectionId,
+        ConnectionKey = transaction.ConnectionKey,
         ConnectionMaterialRevision = transaction.ConnectionMaterialRevision,
         SecretGenerationFingerprint = transaction.SecretGenerationFingerprint,
         PkceChallenge = transaction.PkceChallenge,
@@ -125,7 +129,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         AuthenticationClientId = session.AuthenticationClientId,
         TenantId = session.TenantId,
         UserId = session.UserId,
-        ConnectionId = session.ConnectionId,
+        ConnectionKey = session.ConnectionKey,
         ConnectionMaterialRevision = session.ConnectionMaterialRevision,
         SecretGenerationFingerprint = session.SecretGenerationFingerprint,
         Issuer = session.Issuer,
@@ -139,6 +143,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         RefreshGeneration = session.RefreshGeneration,
         RevokedAt = session.RevokedAt,
         RevocationReason = session.RevocationReason
+        ,ProtectedUpstreamLogoutHint = session.ProtectedUpstreamLogoutHint
     };
 
     public static ExternalAuthenticationSession ToModel(this PersistedExternalAuthenticationSession session) => new()
@@ -147,7 +152,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         AuthenticationClientId = session.AuthenticationClientId,
         TenantId = session.TenantId,
         UserId = session.UserId,
-        ConnectionId = session.ConnectionId,
+        ConnectionKey = session.ConnectionKey,
         ConnectionMaterialRevision = session.ConnectionMaterialRevision,
         SecretGenerationFingerprint = session.SecretGenerationFingerprint,
         Issuer = session.Issuer,
@@ -161,6 +166,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         RefreshGeneration = session.RefreshGeneration,
         RevokedAt = session.RevokedAt,
         RevocationReason = session.RevocationReason
+        ,ProtectedUpstreamLogoutHint = session.ProtectedUpstreamLogoutHint
     };
 
     public static PersistedPreviewResult ToPersisted(this PreviewResult result) => new()

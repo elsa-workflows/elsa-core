@@ -4,6 +4,7 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Extensions;
 using Elsa.Identity.Models;
 using Elsa.Workflows;
 
@@ -16,6 +17,7 @@ namespace Elsa.ExternalAuthentication.Services;
 public sealed class InMemoryExternalIdentityProvisioner(
     IUserStore userStore,
     IUserProvider userProvider,
+    IRoleProvider roleProvider,
     IIdentityGenerator identityGenerator,
     ISystemClock clock,
     IExternalAuthenticationHandleHasher handleHasher,
@@ -23,10 +25,10 @@ public sealed class InMemoryExternalIdentityProvisioner(
 {
     private const int MaximumUserNameAttempts = 10;
 
-    public async ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionId, ExternalIdentity identity, CancellationToken cancellationToken = default)
+    public async ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var key = new ExternalIdentityKey(tenantId, connectionId, identity.Issuer, handleHasher.Hash(identity.Subject));
+        var key = new ExternalIdentityKey(tenantId, ConnectionRevisionCalculator.NormalizeKey(connectionKey), identity.Issuer, handleHasher.Hash(identity.Subject));
 
         await state.Mutex.WaitAsync(cancellationToken);
         try
@@ -44,7 +46,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
         var subjectHash = handleHasher.Hash(request.Identity.Subject);
-        var key = new ExternalIdentityKey(request.TenantId, request.ConnectionId, request.Identity.Issuer, subjectHash);
+        var key = new ExternalIdentityKey(request.TenantId, ConnectionRevisionCalculator.NormalizeKey(request.ConnectionKey), request.Identity.Issuer, subjectHash);
 
         await state.Mutex.WaitAsync(cancellationToken);
         try
@@ -56,7 +58,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
             var link = new ExternalIdentityLink(
                 identityGenerator.GenerateId(),
                 request.TenantId,
-                request.ConnectionId,
+                ConnectionRevisionCalculator.NormalizeKey(request.ConnectionKey),
                 request.Identity.Issuer,
                 subjectHash,
                 null,
@@ -83,7 +85,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
             var links = state.Links.Values
                 .Where(x => string.Equals(x.TenantId, filter.TenantId, StringComparison.Ordinal))
                 .Where(x => filter.UserId is null || string.Equals(x.UserId, filter.UserId, StringComparison.Ordinal))
-                .Where(x => filter.ConnectionId is null || string.Equals(x.ConnectionId, filter.ConnectionId, StringComparison.Ordinal))
+                .Where(x => filter.ConnectionKey is null || string.Equals(x.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(filter.ConnectionKey), StringComparison.Ordinal))
                 .OrderBy(x => x.CreatedAt)
                 .ThenBy(x => x.Id, StringComparer.Ordinal)
                 .ToArray();
@@ -124,6 +126,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
         }
 
         var proposal = request.Proposal ?? throw new InvalidOperationException("A user creation proposal is required for an unlinked external identity.");
+        var roleIds = await ResolveRoleIdsAsync(proposal.DefaultRoleIds, cancellationToken);
         var userNamePrefix = NormalizeUserNamePrefix(proposal.UserNamePrefix);
         for (var attempt = 0; attempt < MaximumUserNameAttempts; attempt++)
         {
@@ -137,7 +140,8 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 Name = userName,
                 TenantId = request.TenantId,
                 HashedPassword = null,
-                HashedPasswordSalt = null
+                HashedPasswordSalt = null,
+                Roles = roleIds.ToList()
             };
             await userStore.SaveAsync(user, cancellationToken);
             return (user, true);
@@ -150,6 +154,17 @@ public sealed class InMemoryExternalIdentityProvisioner(
     {
         var normalized = new string((prefix ?? string.Empty).Trim().Where(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_').ToArray());
         return string.IsNullOrEmpty(normalized) ? "external" : normalized;
+    }
+
+    private async ValueTask<IReadOnlyCollection<string>> ResolveRoleIdsAsync(IReadOnlyCollection<string>? roleIds, CancellationToken cancellationToken)
+    {
+        var requested = (roleIds ?? []).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal).ToArray();
+        if (requested.Length == 0)
+            return [];
+        var found = (await roleProvider.FindByIdsAsync(requested, cancellationToken)).Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+        if (!found.SetEquals(requested))
+            throw new InvalidOperationException("A configured default role no longer exists.");
+        return requested;
     }
 
 }

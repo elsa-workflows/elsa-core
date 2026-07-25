@@ -163,7 +163,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     AuthenticationClientId = table.Column<string>(type: "text", nullable: false),
                     TenantId = table.Column<string>(type: "text", nullable: false),
                     UserId = table.Column<string>(type: "text", nullable: false),
-                    ConnectionId = table.Column<string>(type: "text", nullable: false),
+                    ConnectionKey = table.Column<string>(type: "text", nullable: false),
                     ConnectionMaterialRevision = table.Column<string>(type: "text", nullable: false),
                     SecretGenerationFingerprint = table.Column<string>(type: "text", nullable: true),
                     Issuer = table.Column<string>(type: "text", nullable: false),
@@ -176,7 +176,8 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     CurrentRefreshTokenHash = table.Column<string>(type: "text", nullable: false),
                     RefreshGeneration = table.Column<long>(type: "bigint", nullable: false),
                     RevokedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
-                    RevocationReason = table.Column<string>(type: "text", nullable: true)
+                    RevocationReason = table.Column<string>(type: "text", nullable: true),
+                    ProtectedUpstreamLogoutHint = table.Column<byte[]>(type: "bytea", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -190,7 +191,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                 {
                     Id = table.Column<string>(type: "text", nullable: false),
                     TenantId = table.Column<string>(type: "text", nullable: false),
-                    ConnectionId = table.Column<string>(type: "text", nullable: false),
+                    ConnectionKey = table.Column<string>(type: "text", nullable: false),
                     Issuer = table.Column<string>(type: "text", nullable: false),
                     SubjectHash = table.Column<string>(type: "text", nullable: false),
                     SubjectHint = table.Column<string>(type: "text", nullable: true),
@@ -225,8 +226,9 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                     DisplayName = table.Column<string>(type: "text", nullable: false),
                     IconId = table.Column<string>(type: "text", nullable: true),
                     DisplayOrder = table.Column<int>(type: "integer", nullable: false),
-                    IsDefault = table.Column<bool>(type: "boolean", nullable: false),
+                    IsPreferred = table.Column<bool>(type: "boolean", nullable: false),
                     IsEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                    OverridesConfigurationConnection = table.Column<bool>(type: "boolean", nullable: false),
                     ArchivedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     UnlinkedPolicyJson = table.Column<string>(type: "text", nullable: true),
                     PermissionGrantSourcesJson = table.Column<string>(type: "text", nullable: false),
@@ -261,10 +263,10 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                 column: "ExpiresAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalAuthenticationSession_ConnectionId",
+                name: "IX_ExternalAuthenticationSession_ConnectionKey",
                 schema: "Elsa",
                 table: "ExternalAuthenticationSessions",
-                column: "ConnectionId");
+                column: "ConnectionKey");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExternalAuthenticationSession_RefreshTokenHash",
@@ -283,7 +285,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Identity
                 name: "IX_ExternalIdentityLink_Identity",
                 schema: "Elsa",
                 table: "ExternalIdentityLinks",
-                columns: new[] { "TenantId", "ConnectionId", "Issuer", "SubjectHash" },
+                columns: new[] { "TenantId", "ConnectionKey", "Issuer", "SubjectHash" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

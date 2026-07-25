@@ -39,6 +39,7 @@ public class ExtensionConformanceTests
 
         var policies = new DefaultUnlinkedIdentityPolicyRegistry(
             [new ConformancePolicy("hidden-policy"), new ConformancePolicy("custom-policy")],
+            [],
             validator,
             Microsoft.Extensions.Options.Options.Create(options));
         var sources = new DefaultPermissionGrantSourceRegistry(

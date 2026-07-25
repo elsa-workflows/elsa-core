@@ -35,6 +35,12 @@ public interface IPermissionGrantSourceRegistry
     bool TryGet(string type, out IPermissionGrantSource source);
 }
 
+public interface IExternalUserMatcherRegistry
+{
+    IReadOnlyCollection<ExternalUserMatcherDescriptor> ListDescriptors();
+    bool TryGet(string type, out IExternalUserMatcher matcher);
+}
+
 public interface IAdapterSettingsMigration
 {
     string AdapterType { get; }
@@ -81,6 +87,18 @@ public interface ISecretBindingResolver
     ValueTask<ResolvedSecretBinding> ResolveAsync(SecretBinding binding, CancellationToken cancellationToken = default);
 }
 
+/// <summary>Optionally accepts a secret value once and stores it through a managed secret backend.</summary>
+public interface IManagedSecretBindingWriter
+{
+    string ResolverType { get; }
+    string DisplayName { get; }
+    ValueTask<SecretBinding> ReplaceAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default);
+    ValueTask RemoveAsync(SecretBinding binding, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Write-only input for a managed connection secret. Implementations must not expose <see cref="Value"/>.</summary>
+public sealed record ManagedSecretBindingWriteRequest(string ConnectionId, string FieldName, SensitiveString Value);
+
 /// <summary>Creates keyed, non-reversible storage keys for opaque browser handles.</summary>
 public interface IExternalAuthenticationHandleHasher
 {
@@ -94,6 +112,14 @@ public interface IUnlinkedIdentityPolicy
     ValueTask<UnlinkedIdentityDecision> EvaluateAsync(UnlinkedIdentityContext context, CancellationToken cancellationToken = default);
 }
 
+/// <summary>Trusted deployed extension that may identify one Elsa user for an unlinked external identity.</summary>
+public interface IExternalUserMatcher
+{
+    string Type { get; }
+    ExternalUserMatcherDescriptor Describe();
+    ValueTask<ExternalUserMatchResult> MatchAsync(ExternalUserMatcherContext context, CancellationToken cancellationToken = default);
+}
+
 public interface IExternalIdentityResolver
 {
     ValueTask<ExternalIdentityResolution> ResolveAsync(ExternalIdentityResolutionContext context, CancellationToken cancellationToken = default);
@@ -104,7 +130,7 @@ public interface IExternalIdentityProvisioner
     /// <summary>
     /// Finds the link for a normalized external identity without exposing its persisted subject representation.
     /// </summary>
-    ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionId, ExternalIdentity identity, CancellationToken cancellationToken = default);
+    ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Atomically creates the requested link and, when requested, its credential-less user, or returns the winner of a concurrent operation.
@@ -169,6 +195,7 @@ public interface IExternalAuthenticationSessionStore
     ValueTask SaveAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default);
     ValueTask<ExternalAuthenticationSessionRotationResult> TryRotateRefreshTokenAsync(string sessionId, string refreshTokenHash, long expectedGeneration, string nextRefreshTokenHash, DateTimeOffset refreshedAt, CancellationToken cancellationToken = default);
     ValueTask<bool> RevokeAsync(string sessionId, string reason, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
+    ValueTask<int> RevokeActiveForConnectionAsync(string connectionKey, string reason, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
 }
 
 public interface IPreviewResultStore
@@ -221,9 +248,10 @@ public sealed record ExternalCallbackContext(EffectiveIdentityProviderConnection
 
 public sealed record ConnectionTestContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, ISystemClock Clock);
 
-public sealed record ExternalLogoutContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, BrokerTransaction Transaction, string CorrelationState, ISystemClock Clock);
+public sealed record ExternalLogoutContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, BrokerTransaction Transaction, string CorrelationState, ISystemClock Clock, SensitiveString? UpstreamLogoutHint = null);
 
 public sealed record UnlinkedIdentityContext(string TargetTenantId, EffectiveIdentityProviderConnection Connection, ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, JsonElement Settings);
+public sealed record ExternalUserMatcherContext(string TargetTenantId, EffectiveIdentityProviderConnection Connection, ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, JsonElement Settings);
 
 public abstract record UnlinkedIdentityDecision
 {

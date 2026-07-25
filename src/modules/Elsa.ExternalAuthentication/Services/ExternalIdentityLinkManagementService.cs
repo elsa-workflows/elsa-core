@@ -43,11 +43,11 @@ public sealed class ExternalIdentityLinkManagementService(
         return Page.Of<ExternalIdentityLinkUser>(usersInTenant, usersInTenant.Length);
     }
 
-    public async ValueTask<ExternalIdentityLinkPrelinkResult> PrelinkAsync(string tenantId, string userId, string connectionId, string issuer, string subject, ClaimsPrincipal actor, CancellationToken cancellationToken = default)
+    public async ValueTask<ExternalIdentityLinkPrelinkResult> PrelinkAsync(string tenantId, string userId, string connectionKey, string issuer, string subject, ClaimsPrincipal actor, CancellationToken cancellationToken = default)
     {
         ValidateTargetTenant(tenantId);
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(connectionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionKey);
         var normalizedIssuer = NormalizeIssuer(issuer);
         var normalizedSubject = NormalizeSubject(subject);
 
@@ -56,7 +56,7 @@ public sealed class ExternalIdentityLinkManagementService(
             return new ExternalIdentityLinkPrelinkResult.UserNotFound();
 
         // Resolve against the effective tenant registry. A host connection is valid for this tenant, while a connection from another tenant is not revealed.
-        var connection = await connections.FindByIdAsync(tenantId, connectionId, cancellationToken);
+        var connection = await connections.FindByKeyAsync(tenantId, connectionKey, cancellationToken);
         if (connection is null)
             return new ExternalIdentityLinkPrelinkResult.ConnectionNotFound();
 
@@ -64,7 +64,7 @@ public sealed class ExternalIdentityLinkManagementService(
         {
             var result = await provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest(
                 tenantId,
-                connection.Connection.Id,
+                ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key),
                 new ExternalIdentity(normalizedIssuer, normalizedSubject, new Dictionary<string, IReadOnlyCollection<string>>()),
                 null,
                 user.Id), cancellationToken);
@@ -105,7 +105,7 @@ public sealed class ExternalIdentityLinkManagementService(
         var context = new SecurityEventContext(
             actor.FindFirstValue(ClaimTypes.NameIdentifier) ?? actor.FindFirstValue("sub"),
             link.TenantId,
-            link.ConnectionId,
+            link.ConnectionKey,
             link.UserId,
             clock.UtcNow,
             SecurityEventOutcome.Succeeded,

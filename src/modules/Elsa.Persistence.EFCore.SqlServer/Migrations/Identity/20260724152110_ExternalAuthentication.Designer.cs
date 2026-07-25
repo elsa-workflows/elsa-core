@@ -349,7 +349,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
@@ -384,6 +384,9 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     b.Property<string>("RevocationReason")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<byte[]>("ProtectedUpstreamLogoutHint")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<DateTimeOffset?>("RevokedAt")
                         .HasColumnType("datetimeoffset");
 
@@ -407,8 +410,8 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ConnectionId")
-                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionId");
+                    b.HasIndex("ConnectionKey")
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
 
                     b.HasIndex("CurrentRefreshTokenHash")
                         .IsUnique()
@@ -425,7 +428,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
@@ -461,7 +464,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     b.HasIndex("TenantId", "UserId")
                         .HasDatabaseName("IX_ExternalIdentityLink_TenantId_UserId");
 
-                    b.HasIndex("TenantId", "ConnectionId", "Issuer", "SubjectHash")
+                    b.HasIndex("TenantId", "ConnectionKey", "Issuer", "SubjectHash")
                         .IsUnique()
                         .HasDatabaseName("IX_ExternalIdentityLink_Identity");
 
@@ -504,10 +507,13 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                     b.Property<string>("IconId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("IsDefault")
+                    b.Property<bool>("IsPreferred")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("OverridesConfigurationConnection")
                         .HasColumnType("bit");
 
                     b.Property<string>("Key")

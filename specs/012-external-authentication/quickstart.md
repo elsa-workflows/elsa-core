@@ -47,7 +47,7 @@ Add the optional Elsa Secrets bridge whenever an Authentication Client or identi
 services.AddElsaSecretsExternalAuthentication();
 ```
 
-The protocol-neutral foundation does not include a plaintext `configuration` secret resolver. A deployment may install its own `ISecretBindingResolver`, or provision active Elsa Secrets with the names used below.
+The protocol-neutral foundation includes a `configuration` resolver for External Secrets. It resolves a non-secret configuration key and derives a nonreversible generation fingerprint; Studio never receives the value. Use Elsa Secrets for Managed Secrets whose lifecycle is controlled through Elsa administration.
 
 ## 2. Register Authentication Clients
 
@@ -109,36 +109,35 @@ Authentication__ExternalAuthentication__ClientSecret={strong-random-value}
     "Connections": [
       {
         "id": "01JZCONTOSOOIDC000000000001",
-        "key": "contoso",
-        "tenantId": "*",
+        "connectionKey": "contoso-workforce",
         "adapterType": "openid-connect",
         "displayName": "Contoso",
         "iconId": "building",
         "displayOrder": 10,
-        "isDefault": true,
+        "isPreferred": true,
         "isEnabled": true,
         "adapterSettingsVersion": 1,
         "adapterSettings": {
-          "mode": "discovery",
-          "authority": "https://login.contoso.example",
+          "discoveryUrl": "https://login.contoso.example/.well-known/openid-configuration",
           "clientId": "elsa-server",
-          "callbackUri": "https://elsa.example/elsa/api/external-authentication/callback/01JZCONTOSOOIDC000000000001",
           "scopes": ["openid", "profile", "email", "groups"],
-          "providerPkce": "required"
+          "clientAuthenticationMethod": "client_secret_basic"
         },
         "secretBindings": {
           "clientSecret": {
-            "resolverType": "elsa-secrets",
-            "reference": "external-authentication/contoso/client-secret",
+            "ownership": "external",
+            "resolverType": "configuration",
+            "reference": "ExternalAuthentication:Providers:Contoso:ClientSecret",
             "expectedType": "text",
             "expectedScope": "external-authentication"
           }
         },
         "unlinkedPolicy": {
-          "type": "reject",
+          "type": "create-user",
           "settingsVersion": 1,
           "settings": {}
         },
+        "defaultRoleIds": ["workflow-user"],
         "claimProjection": {
           "allowedClaimTypes": ["name", "email", "groups"],
           "redactedClaimTypes": ["email"],
@@ -146,40 +145,39 @@ Authentication__ExternalAuthentication__ClientSecret={strong-random-value}
           "maximumValueLength": 2048,
           "maximumTotalBytes": 32768
         },
-        "permissionGrantSources": [
-          {
-            "type": "elsa-roles",
-            "settingsVersion": 1,
-            "order": 0,
-            "settings": {}
-          },
-          {
-            "type": "group-mapping",
-            "settingsVersion": 1,
-            "order": 10,
-            "settings": {
-              "claimType": "groups",
-              "mappings": {
-                "elsa-workflow-admins": [
-                  "read:workflow-definitions",
-                  "write:workflow-definitions"
-                ]
-              }
-            }
-          }
-        ],
         "upstreamLogoutMode": "userChoice"
       }
-    ]
+    ],
+    "Providers": {
+      "Contoso": {
+        "ClientSecret": "<deployment-secret>"
+      }
+    }
   }
 }
 ```
 
-Register this callback with the provider:
+To manage the secret through Elsa instead, change the binding to:
+
+```json
+{
+  "ownership": "managed",
+  "resolverType": "elsa-secrets",
+  "reference": "external-authentication/contoso/client-secret",
+  "expectedType": "text",
+  "expectedScope": "external-authentication"
+}
+```
+
+Elsa derives the provider callback from its deployment-owned external base address and immutable logical Connection Key:
 
 ```text
-https://elsa.example/elsa/api/external-authentication/callback/01JZCONTOSOOIDC000000000001
+https://elsa.example/elsa/api/external-authentication/callback/contoso-workforce
 ```
+
+Register that exact callback with the provider. The callback, confidential-client requirement, S256 PKCE, and validation steps are immutable. Discovery-derived issuer, authorization/token endpoints, and signing keys appear only under **Advanced** when deployment policy enables unsafe provider trust and the caller has the dedicated permission; saving them requires explicit confirmation and leaves a persistent warning. The configuration-first example intentionally uses discovery without overrides.
+
+The role IDs in `defaultRoleIds` must exist, and the actor applying persisted equivalents must be authorized to assign them. They apply only when `create-user` creates a new user. The optional matcher-based policy selects one deployed `IExternalUserMatcher`; v1 ships no Elsa verified-email matcher, and matchers never select roles or permissions.
 
 ## 4. Configure Studio Server
 
@@ -234,12 +232,12 @@ No client secret is configured. The default memory token store requires sign-in 
    GET https://elsa.example/elsa/api/external-authentication/login-methods?clientId=elsa-studio-wasm
    ```
 
-2. Confirm `contoso` is returned without authority, adapter settings, tenant identifier, client ID, health, remote icon, or secret data.
+2. Confirm `contoso-workforce` is returned as preferred without `discoveryUrl`, adapter settings, client ID, test details, remote icon, or secret data, and confirm Studio still shows the chooser.
 3. Open Studio `/login`, select Contoso, and complete provider authentication.
-4. Confirm the provider redirects only to Elsa's Connection ID callback.
+4. Confirm the provider redirects only to Elsa's deployment-derived Connection Key callback.
 5. Confirm Elsa redirects Studio with only an opaque completion code and client state.
 6. Confirm code replay fails.
-7. Confirm the Elsa access token has the resolved tenant, session ID, roles, and bounded effective `permissions`.
+7. Confirm the Elsa access token has the session ID and permissions produced by the Elsa Roles assigned to the user.
 8. Disable the connection and confirm initiation, pending callback, and external refresh fail while an already-issued access token follows its configured expiry.
 
 ## 7. Enable Persisted Administration
@@ -252,11 +250,13 @@ Enable the existing Identity EF persistence feature and apply the updated Identi
 - Broker transactions and completion grants.
 - Latest Connection Observations.
 
-Install `Elsa.Studio.ExternalAuthentication` and navigate to:
+Install `Elsa.Studio.Authentication.UI`, `Elsa.Studio.Settings`, and `Elsa.Studio.ExternalAuthentication`, then navigate to:
 
 ```text
-/security/external-authentication
+/settings/sso-connections
 ```
+
+External Identity Links and External Authentication Sessions remain separate pages under `/security`. A configuration connection can be edited only by explicitly creating a complete Studio Override. Disabling that override keeps the configuration baseline shadowed; archiving it reveals configuration; restoring it resumes the shadow.
 
 Create a disabled draft, select OpenID Connect, configure fields and Secret Bindings, validate, test, preview, and enable. Configuration-owned connections remain inspect-only.
 

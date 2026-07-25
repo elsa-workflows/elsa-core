@@ -28,7 +28,7 @@ internal sealed class Configurations :
     {
         builder.ToTable("ExternalIdentityLinks");
         builder.HasKey(x => x.Id);
-        builder.HasIndex(x => new { x.TenantId, x.ConnectionId, x.Issuer, x.SubjectHash }).IsUnique().HasDatabaseName("IX_ExternalIdentityLink_Identity");
+        builder.HasIndex(x => new { x.TenantId, x.ConnectionKey, x.Issuer, x.SubjectHash }).IsUnique().HasDatabaseName("IX_ExternalIdentityLink_Identity");
         builder.HasIndex(x => new { x.TenantId, x.UserId }).HasDatabaseName("IX_ExternalIdentityLink_TenantId_UserId");
         builder.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Restrict);
     }
@@ -59,7 +59,7 @@ internal sealed class Configurations :
         builder.HasKey(x => x.Id);
         builder.HasIndex(x => x.CurrentRefreshTokenHash).IsUnique().HasDatabaseName("IX_ExternalAuthenticationSession_RefreshTokenHash");
         builder.HasIndex(x => new { x.TenantId, x.UserId }).HasDatabaseName("IX_ExternalAuthenticationSession_TenantId_UserId");
-        builder.HasIndex(x => x.ConnectionId).HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionId");
+        builder.HasIndex(x => x.ConnectionKey).HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
     }
 
     public void Configure(EntityTypeBuilder<PersistedConnectionObservation> builder)

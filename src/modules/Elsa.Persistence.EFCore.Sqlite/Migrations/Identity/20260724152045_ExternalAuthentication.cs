@@ -161,7 +161,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     AuthenticationClientId = table.Column<string>(type: "TEXT", nullable: false),
                     TenantId = table.Column<string>(type: "TEXT", nullable: false),
                     UserId = table.Column<string>(type: "TEXT", nullable: false),
-                    ConnectionId = table.Column<string>(type: "TEXT", nullable: false),
+                    ConnectionKey = table.Column<string>(type: "TEXT", nullable: false),
                     ConnectionMaterialRevision = table.Column<string>(type: "TEXT", nullable: false),
                     SecretGenerationFingerprint = table.Column<string>(type: "TEXT", nullable: true),
                     Issuer = table.Column<string>(type: "TEXT", nullable: false),
@@ -174,7 +174,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     CurrentRefreshTokenHash = table.Column<string>(type: "TEXT", nullable: false),
                     RefreshGeneration = table.Column<long>(type: "INTEGER", nullable: false),
                     RevokedAt = table.Column<string>(type: "TEXT", nullable: true),
-                    RevocationReason = table.Column<string>(type: "TEXT", nullable: true)
+                    RevocationReason = table.Column<string>(type: "TEXT", nullable: true),
+                    ProtectedUpstreamLogoutHint = table.Column<byte[]>(type: "BLOB", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -188,7 +189,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     TenantId = table.Column<string>(type: "TEXT", nullable: false),
-                    ConnectionId = table.Column<string>(type: "TEXT", nullable: false),
+                    ConnectionKey = table.Column<string>(type: "TEXT", nullable: false),
                     Issuer = table.Column<string>(type: "TEXT", nullable: false),
                     SubjectHash = table.Column<string>(type: "TEXT", nullable: false),
                     SubjectHint = table.Column<string>(type: "TEXT", nullable: true),
@@ -223,8 +224,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     DisplayName = table.Column<string>(type: "TEXT", nullable: false),
                     IconId = table.Column<string>(type: "TEXT", nullable: true),
                     DisplayOrder = table.Column<int>(type: "INTEGER", nullable: false),
-                    IsDefault = table.Column<bool>(type: "INTEGER", nullable: false),
+                    IsPreferred = table.Column<bool>(type: "INTEGER", nullable: false),
                     IsEnabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    OverridesConfigurationConnection = table.Column<bool>(type: "INTEGER", nullable: false),
                     ArchivedAt = table.Column<string>(type: "TEXT", nullable: true),
                     UnlinkedPolicyJson = table.Column<string>(type: "TEXT", nullable: true),
                     PermissionGrantSourcesJson = table.Column<string>(type: "TEXT", nullable: false),
@@ -259,10 +261,10 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                 column: "ExpiresAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalAuthenticationSession_ConnectionId",
+                name: "IX_ExternalAuthenticationSession_ConnectionKey",
                 schema: "Elsa",
                 table: "ExternalAuthenticationSessions",
-                column: "ConnectionId");
+                column: "ConnectionKey");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExternalAuthenticationSession_RefreshTokenHash",
@@ -281,7 +283,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                 name: "IX_ExternalIdentityLink_Identity",
                 schema: "Elsa",
                 table: "ExternalIdentityLinks",
-                columns: new[] { "TenantId", "ConnectionId", "Issuer", "SubjectHash" },
+                columns: new[] { "TenantId", "ConnectionKey", "Issuer", "SubjectHash" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

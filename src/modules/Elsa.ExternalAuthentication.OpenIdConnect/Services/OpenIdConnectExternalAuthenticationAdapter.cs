@@ -4,15 +4,18 @@ using System.Text.Json;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
+using Elsa.ExternalAuthentication.Validation;
 using Elsa.ExternalAuthentication.OpenIdConnect.Models;
 using Elsa.ExternalAuthentication.OpenIdConnect.Validation;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
+using Elsa.ExternalAuthentication.Options;
 
 namespace Elsa.ExternalAuthentication.OpenIdConnect.Services;
 
 /// <summary>Implements hardened OpenID Connect authorization-code authentication for the protocol-neutral Elsa broker.</summary>
-public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClient providerHttpClient, OpenIdConnectSettingsParser settingsParser) : IExternalAuthenticationAdapter
+public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClient providerHttpClient, OpenIdConnectSettingsParser settingsParser, IOptions<ExternalAuthenticationOptions> options) : IExternalAuthenticationAdapter
 {
     public const string AdapterType = "openid-connect";
     public string Type => AdapterType;
@@ -21,12 +24,12 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         AdapterType,
         "OpenID Connect",
         "Authenticates users with an OpenID Connect authorization-code provider.",
-        1,
+        2,
         [
-            new("authority", "Authority", "Base provider authority.", "uri", true, "uri", null, [], new(1, 2048), false, false, null, null, false),
+            new("discoveryUrl", "Discovery URL", "Exact OpenID Connect discovery document URL.", "uri", true, "uri", null, [], new(1, 2048), false, false, new("mode", "discovery"), null, false),
             new("clientId", "Client ID", "Provider client registration identifier.", "string", true, "text", null, [], new(1, 512), false, false, null, null, false),
-            new("clientSecret", "Client secret", "Provider client secret binding.", "secret", false, "secret", null, [], new(), true, false, null, null, true),
-            new("callbackUri", "Callback URI", "Fixed Elsa provider callback URI.", "uri", true, "uri", null, [], new(), false, false, null, null, false),
+            new("clientSecret", "Client secret", "Required Secret Binding for the confidential upstream client.", "secret", true, "secret", null, [], new(), true, false, null, null, true),
+            new("clientAuthenticationMethod", "Client authentication", "How Elsa authenticates its confidential client to the provider token endpoint.", "string", true, "select", null, ["client_secret_basic", "client_secret_post"], new(), false, false, null, null, false),
             new("mode", "Trust mode", "Discovery is the default. Manual trust requires explicit endpoints and signing keys.", "string", true, "select", null, ["discovery", "manual"], new(), false, false, null, null, false),
             new("scopes", "Scopes", "OpenID Connect scopes requested from the provider. The openid scope is always included.", "string-array", false, "tags", null, [], new(), false, false, null, null, false),
             new("issuer", "Issuer", "Expected issuer for manually configured provider trust.", "uri", true, "uri", null, [], new(), false, false, new("mode", "manual"), null, false),
@@ -34,10 +37,8 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
             new("tokenEndpoint", "Token endpoint", "Provider token endpoint for manual trust.", "uri", true, "uri", null, [], new(), false, false, new("mode", "manual"), null, false),
             new("jwksUri", "JWKS URI", "Provider signing-key endpoint for manual trust.", "uri", false, "uri", null, [], new(), false, false, new("mode", "manual"), null, false),
             new("signingKeys", "Signing keys", "Pinned JSON Web Key Set for manual trust.", "json", false, "json", null, [], new(), false, true, new("mode", "manual"), null, true),
-            new("userInfoEndpoint", "UserInfo endpoint", "Optional provider UserInfo endpoint.", "uri", false, "uri", null, [], new(), false, false, null, null, false),
-            new("useUserInfo", "Use UserInfo", "Fetch optional UserInfo after ID-token validation.", "boolean", false, "switch", null, [], new(), false, false, null, null, false),
             new("endSessionEndpoint", "End-session endpoint", "Optional upstream logout endpoint.", "uri", false, "uri", null, [], new(), false, false, null, null, false),
-            new("providerPkce", "Provider PKCE", "Use S256 PKCE for the upstream authorization-code flow.", "string", true, "select", null, ["required", "disabled"], new(), false, true, null, null, false)
+            new("providerPkce", "Provider PKCE", "S256 PKCE is always used for the upstream authorization-code flow.", "string", false, "text", null, [], new(), false, true, null, null, false)
         ],
         new(true, true, true),
         null);
@@ -45,7 +46,12 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
     public ValueTask<ConnectionValidationResult> ValidateAsync(ConnectionValidationContext context, CancellationToken cancellationToken = default)
     {
         var parsed = settingsParser.TryParse(context.Connection.Connection.AdapterSettings, out _, out var errors);
-        return ValueTask.FromResult(new ConnectionValidationResult(parsed, errors, []));
+        var validationErrors = errors.ToList();
+        var redirects = options.Value.Redirects;
+        if (!ExternalCallbackBaseUriValidator.IsValid(redirects.ExternalCallbackBaseUri, redirects.AllowDevelopmentLoopbackCallbacks))
+            validationErrors.Add(new ConnectionValidationError("redirects.externalCallbackBaseUri", "invalid", ExternalCallbackBaseUriValidator.ErrorMessage));
+
+        return ValueTask.FromResult(new ConnectionValidationResult(parsed && validationErrors.Count == 0, validationErrors, []));
     }
 
     public async ValueTask<ExternalAuthorizationRequest> CreateAuthorizationRequestAsync(ExternalAuthorizationContext context, CancellationToken cancellationToken = default)
@@ -53,23 +59,20 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         var settings = await GetSettingsAsync(context.Connection.Connection.AdapterSettings, cancellationToken);
         var metadata = await ResolveMetadataAsync(settings, cancellationToken);
         var nonce = context.Transaction.ProviderNonce ?? CreateRandomValue();
-        var verifier = settings.ProviderPkce == OpenIdConnectProviderPkceMode.Required ? CreateRandomValue() : null;
+        var verifier = CreateRandomValue();
         var state = JsonSerializer.SerializeToUtf8Bytes(new OpenIdConnectAdapterState(metadata.Issuer, nonce, verifier));
         var query = new Dictionary<string, string>
         {
             ["response_type"] = "code",
             ["client_id"] = settings.ClientId,
-            ["redirect_uri"] = settings.CallbackUri.AbsoluteUri,
+            ["redirect_uri"] = GetCallbackUri(context.Connection).AbsoluteUri,
             ["scope"] = string.Join(' ', settings.Scopes),
             ["state"] = context.CorrelationState,
             ["nonce"] = nonce
         };
 
-        if (verifier is not null)
-        {
-            query["code_challenge"] = CreateCodeChallenge(verifier);
-            query["code_challenge_method"] = "S256";
-        }
+        query["code_challenge"] = CreateCodeChallenge(verifier);
+        query["code_challenge_method"] = "S256";
 
         return new ExternalAuthorizationRequest(WithQuery(metadata.AuthorizationEndpoint, query), state);
     }
@@ -101,7 +104,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
             throw new OpenIdConnectAuthenticationException("The identity provider response did not contain a subject.");
 
         var projectedClaims = ProjectClaims(principal, context.Connection.Connection.ClaimProjection);
-        return new ExternalAuthenticationResult(new ExternalIdentity(issuer, subject, projectedClaims), projectedClaims, []);
+        return new ExternalAuthenticationResult(new ExternalIdentity(issuer, subject, projectedClaims), projectedClaims, [], new SensitiveString(idToken));
     }
 
     public async ValueTask<ConnectionTestResult> TestAsync(ConnectionTestContext context, CancellationToken cancellationToken = default)
@@ -115,9 +118,12 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
     {
         var settings = await GetSettingsAsync(context.Connection.Connection.AdapterSettings, cancellationToken);
         var metadata = await ResolveMetadataAsync(settings, cancellationToken);
-        return metadata.EndSessionEndpoint is null
-            ? null
-            : new ExternalLogoutRequest(WithQuery(metadata.EndSessionEndpoint, new Dictionary<string, string> { ["post_logout_redirect_uri"] = context.Transaction.CallbackUri.AbsoluteUri, ["state"] = context.CorrelationState }), []);
+        if (metadata.EndSessionEndpoint is null)
+            return null;
+        var query = new Dictionary<string, string> { ["post_logout_redirect_uri"] = GetLogoutCallbackUri(context.Connection).AbsoluteUri, ["state"] = context.CorrelationState };
+        if (context.UpstreamLogoutHint is not null)
+            query["id_token_hint"] = context.UpstreamLogoutHint.Reveal();
+        return new ExternalLogoutRequest(WithQuery(metadata.EndSessionEndpoint, query), []);
     }
 
     private async Task<OpenIdConnectConnectionSettings> GetSettingsAsync(JsonElement settings, CancellationToken cancellationToken)
@@ -133,7 +139,7 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         if (settings.TrustMode == OpenIdConnectTrustMode.Manual)
             return new ProviderMetadata(settings.Issuer!, settings.AuthorizationEndpoint!, settings.TokenEndpoint!, settings.UserInfoEndpoint, settings.EndSessionEndpoint, settings.JwksUri, settings.SigningKeys);
 
-        var address = new Uri(settings.Authority.AbsoluteUri.TrimEnd('/') + "/.well-known/openid-configuration");
+        var address = settings.DiscoveryUrl ?? throw new OpenIdConnectAuthenticationException("The OpenID Connect discovery URL is required.");
         var response = await providerHttpClient.GetAsync(address, ProviderResponseKind.Discovery, cancellationToken);
         if (!response.IsSuccessStatusCode)
             throw new OpenIdConnectAuthenticationException("The identity provider metadata could not be resolved.");
@@ -154,15 +160,22 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         {
             ["grant_type"] = "authorization_code",
             ["code"] = code,
-            ["redirect_uri"] = settings.CallbackUri.AbsoluteUri,
-            ["client_id"] = settings.ClientId
+            ["redirect_uri"] = GetCallbackUri(context.Connection).AbsoluteUri
         };
         if (verifier is not null)
             values["code_verifier"] = verifier;
-        if (context.Secrets.TryGetValue("clientSecret", out var secret))
+        if (!context.Secrets.TryGetValue("clientSecret", out var secret))
+            throw new OpenIdConnectAuthenticationException("The provider client secret is unavailable.");
+        IReadOnlyDictionary<string, string>? headers = null;
+        if (settings.ClientAuthenticationMethod == OpenIdConnectClientAuthenticationMethod.ClientSecretPost)
+        {
+            values["client_id"] = settings.ClientId;
             values["client_secret"] = secret.Value.Reveal();
+        }
+        else
+            headers = new Dictionary<string, string> { ["Authorization"] = $"Basic {Convert.ToBase64String(Encoding.UTF8.GetBytes($"{FormUrlEncode(settings.ClientId)}:{FormUrlEncode(secret.Value.Reveal())}"))}" };
 
-        var response = await providerHttpClient.PostFormAsync(metadata.TokenEndpoint, values, ProviderResponseKind.Token, cancellationToken);
+        var response = await providerHttpClient.PostFormAsync(metadata.TokenEndpoint, values, headers, ProviderResponseKind.Token, cancellationToken);
         if (!response.IsSuccessStatusCode)
             throw new OpenIdConnectAuthenticationException("The identity provider token exchange failed.");
         using var payload = ParseProviderJson(response.Body, "The identity provider token response was invalid.");
@@ -170,6 +183,8 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
             throw new OpenIdConnectAuthenticationException("The identity provider token response did not contain an ID token.");
         return idToken.GetString()!;
     }
+
+    private static string FormUrlEncode(string value) => Uri.EscapeDataString(value).Replace("%20", "+", StringComparison.Ordinal);
 
     private async Task<System.Security.Claims.ClaimsPrincipal> ValidateIdTokenAsync(string idToken, OpenIdConnectConnectionSettings settings, ProviderMetadata metadata, CancellationToken cancellationToken)
     {
@@ -195,6 +210,18 @@ public sealed class OpenIdConnectExternalAuthenticationAdapter(IProviderHttpClie
         if (audiences.Length > 1 && !string.Equals(validation.ClaimsIdentity.FindFirst("azp")?.Value, settings.ClientId, StringComparison.Ordinal))
             throw new OpenIdConnectAuthenticationException("The identity provider ID token was not authorized for this client.");
         return new System.Security.Claims.ClaimsPrincipal(validation.ClaimsIdentity);
+    }
+
+    private Uri GetCallbackUri(EffectiveIdentityProviderConnection connection)
+    {
+        var baseUri = options.Value.Redirects.ExternalCallbackBaseUri ?? throw new OpenIdConnectAuthenticationException("The deployment callback base URI is not configured.");
+        return new Uri(baseUri, $"external-authentication/callback/{Uri.EscapeDataString(ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key))}");
+    }
+
+    private Uri GetLogoutCallbackUri(EffectiveIdentityProviderConnection connection)
+    {
+        var baseUri = options.Value.Redirects.ExternalCallbackBaseUri ?? throw new OpenIdConnectAuthenticationException("The deployment callback base URI is not configured.");
+        return new Uri(baseUri, $"external-authentication/logout/callback/{Uri.EscapeDataString(ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key))}");
     }
 
     private async Task<IEnumerable<SecurityKey>> GetSigningKeysAsync(Uri? jwksUri, CancellationToken cancellationToken)

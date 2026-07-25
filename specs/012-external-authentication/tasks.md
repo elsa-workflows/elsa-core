@@ -7,6 +7,8 @@
 
 **Organization**: Tasks are grouped by user story. Core paths are relative to the `elsa-core` repository; paths beginning with `/Users/sipke/Projects/Elsa/elsa-studio/` target the sibling Studio repository.
 
+**Revision note (2026-07-24)**: T001–T116 record the completed baseline against the earlier specification. They remain checked as historical evidence; they do not imply that the approved revision is complete. T117 onward is the authoritative open delta and must pass before release readiness is claimed.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel because it touches different files and has no dependency on another incomplete task in the same phase.
@@ -281,6 +283,47 @@
 
 ---
 
+## Phase 12: Approved Revision Follow-up (Implemented; Full-Solution Verification Open)
+
+**Goal**: Reconcile the completed baseline with the approved host-wide environment, record-ID/logical-key, full-shadow, user-matching, static create-user role, and Authentication.UI design.
+
+### Core model, persistence, and registry
+
+- [x] T117 [P] Add immutable logical Connection Key to durable External Identity Links and long-lived External Authentication Sessions, including their filters/DTOs and link tuple uniqueness, while retaining stable record IDs in connection management routes and broker transaction/preview/observation records; add migration and boundary tests covering FR-008, FR-037, FR-050, FR-055, FR-086, and SC-005–SC-007.
+- [x] T118 Implement explicit complete Studio Override creation and registry resolution, including no field merge, disabled-continues-shadowing, archived-reveals-configuration, and restore-resumes-shadowing; add source/lifecycle/concurrency tests covering FR-006–FR-012 and SC-002/SC-012.
+- [x] T119 [P] Make SSO administration host-wide within the currently connected Elsa server environment, remove/reject any invented DeploymentTarget/ServerEnvironment entity or editable field, and preserve existing Elsa user/link target-tenant isolation tests covering FR-009, FR-016, FR-037, and SC-005.
+
+### OIDC and secret ownership
+
+- [x] T120 Implement and migrate OpenID Connect settings v2 with exact HTTPS `discoveryUrl`, deployment-derived immutable-Connection-Key callback, confidential upstream client, mandatory S256 PKCE, exact serialized `client_secret_basic`/`client_secret_post`, and no `useUserInfo`; add permission/deployment-gated Advanced issuer/authorization/token/signing-key overrides with confirmation, persistent warning, notification, descriptor/migration/request/callback tests, and conformance tests proving validation invariants cannot be disabled, covering FR-024 and FR-029–FR-031.
+- [x] T121 [P] Implement the built-in configuration-key `ISecretBindingResolver`, add Managed/External ownership to bindings and management DTOs, restrict replace/remove to Managed Secrets, derive safe generation fingerprints for External Secrets, and test no-reveal/rotation behavior covering FR-026–FR-028 and FR-098.
+
+### Admission, roles, and sessions
+
+- [x] T122 Implement per-connection policy selection and the generic matcher-based policy with one `IExternalUserMatcher`, descriptor-declared ephemeral required claims, single-match linking, Reject/CreateUser no-match fallback, ambiguous/error rejection, and no first-party verified-email matcher; implement static `defaultRoleIds` authorization/atomic assignment only for newly created users and add policy/privilege/concurrency tests covering FR-057–FR-064 and SC-008–SC-010.
+- [x] T123 [P] Enforce Elsa-initiated login/logout only and minimal upstream token retention: discard upstream access/refresh tokens after callback/user-info, retain only protected adapter logout material when required, and purge it by external-session end; add leakage/lifecycle tests covering FR-048A–FR-048B, FR-065, FR-096, and SC-004.
+- [x] T124 Update REST/runtime/client contracts for record-ID management/transient records, Connection Key links/sessions, implicit host-wide environment, overrides, preferred state, user matcher descriptors/policy preview, static create-user roles, and Managed/External Secret state; remove v1 claim-role/permission mapping endpoints and add compatibility tests.
+
+### Studio composition and management
+
+- [x] T125 [P] Create the Studio Settings navigation/composition foundation without a Settings backend domain; contribute one-level SSO at `/settings/sso-connections` (legacy aliases may remain) and test duplicate-key/order/authorization behavior covering FR-080 and FR-084A.
+- [x] T126 [P] Create `Elsa.Studio.Authentication.UI` as the generic login/logout shell using `ILoginMethodCatalog`, `ILoginMethodComponentProvider`, and `ILoginMethodIconProvider`; move generic chooser/accessibility/return-path behavior into the shell and test local/external composition covering FR-066–FR-078 and FR-084A.
+- [x] T127 Update the External Authentication Studio contribution and editor for record ID plus immutable key, implicit host environment, exact discovery URL, read-only derived callback, basic/post client authentication, permission-gated Advanced trust overrides with warning/confirmation, explicit full-shadow overrides, Managed/External Secrets, matcher-based policy, static create-user `defaultRoleIds`, test, and Preview covering FR-004–FR-031 and FR-080–FR-088.
+- [x] T128 [P] Keep External Identity Links and External Authentication Sessions as separate capability/permission-gated Security pages, use Connection Key in their DTOs/routes, and add navigation/authorization tests covering FR-050, FR-059, FR-080–FR-085.
+- [x] T129 Remove or hide claim/group-to-permission/role, wildcard, and pass-through mapping UI from this release; replace Preview permission projection with user-match/no-match and static create-user-role projection and add absence/regression tests covering FR-060–FR-065.
+- [x] T130 Update chooser discovery/rendering so one method may be preferred for deterministic ordering/emphasis but never automatically redirects; remove redirect-loop/escape behavior and add preferred-unavailable/accessibility tests covering FR-067–FR-071 and SC-015.
+
+### Compatibility, documentation, and verification
+
+- [x] T131 Preserve Direct OIDC and broker mode as installed-compatible but route-owner-exclusive Studio modes; add startup matrix, parity, migration, warning, and rollback tests/documentation for staged deprecation with no removal before a future major release covering FR-104–FR-109 and SC-013.
+- [x] T132 Generate/update all supported EF Identity migrations and snapshots for durable link/session Connection Key, retained record IDs, override provenance, secret ownership, matcher-policy/static create-user roles, and minimal logout material; document migration and rollback.
+- [x] T133 Run targeted Core unit/integration suites for T117–T124, including configuration-first and all supported persistence providers.
+- [x] T134 Run Studio component and browser suites for T125–T131 in both Server and WebAssembly hosts.
+- [ ] T135 Run `dotnet build Elsa.sln`, `dotnet build Elsa.Studio.sln`, cross-node broker tests, sensitive-data leakage tests, and the quickstart scenario; only then mark the approved revision implemented.
+- [x] T136 Add an extensible Identity Role-deletion dependency coordinator and External Authentication contributor; enumerate all database/configuration CreateUser and matcher no-match `defaultRoleIds` references across lifecycle states, return sanitized configuration paths, block ordinary deletion, and implement authorized dependency-version/revision-prevalidated atomic-or-safe-best-effort editable-reference remediation with empty-default-role confirmation, partial-progress retry diagnostics, REST/runtime contract tests, and no new Studio page, covering FR-063A–FR-063F and SC-016.
+
+---
+
 ## Dependencies and Execution Order
 
 ### Phase Dependencies
@@ -296,6 +339,7 @@
 - **US7 (Phase 9)** depends on the atomic link contract from Foundation and integrates with the resolver from US1.
 - **US8 (Phase 10)** depends on the Studio broker mode from US4.
 - **Polish (Phase 11)** depends on every selected story.
+- **Approved Revision Follow-up (Phase 12)** depends on the completed baseline; T117–T124 and T125–T131 can proceed by repository/contracts in parallel, while T132–T135 are integration gates.
 
 ### User Story Completion Order
 

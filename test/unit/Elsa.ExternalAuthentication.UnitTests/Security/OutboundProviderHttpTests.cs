@@ -92,7 +92,7 @@ public class OutboundProviderHttpTests
         var handler = new SequenceHandler(new HttpResponseMessage(HttpStatusCode.Found) { Headers = { Location = new Uri("https://provider.example/token-two") } });
         var client = CreateClient(handler);
 
-        var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.PostFormAsync(new Uri("https://provider.example/token"), new Dictionary<string, string>(), ProviderResponseKind.Token).AsTask());
+        var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.PostFormAsync(new Uri("https://provider.example/token"), new Dictionary<string, string>(), null, ProviderResponseKind.Token).AsTask());
 
         Assert.Equal(ProviderHttpFailure.RedirectRejected, exception.Failure);
         Assert.Equal(1, handler.RequestCount);

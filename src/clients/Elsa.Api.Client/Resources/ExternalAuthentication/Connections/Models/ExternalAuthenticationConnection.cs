@@ -12,13 +12,15 @@ public sealed class ExternalAuthenticationConnection
     public string Source { get; set; } = "";
     public ExternalAuthenticationConnectionScope Scope { get; set; } = new();
     public string AdapterType { get; set; } = "";
+    public Uri? CallbackUri { get; set; }
     public int AdapterSettingsVersion { get; set; }
     public JsonElement AdapterSettings { get; set; }
     public Dictionary<string, ExternalAuthenticationSecretBindingState> SecretBindings { get; set; } = new(StringComparer.Ordinal);
     public string DisplayName { get; set; } = "";
     public string? IconId { get; set; }
     public int Order { get; set; }
-    public bool IsDefault { get; set; }
+    public bool IsPreferred { get; set; }
+    public bool OverridesConfigurationConnection { get; set; }
     public bool EnabledIntent { get; set; }
     public bool EffectivelyEnabled { get; set; }
     public string Validity { get; set; } = "";

@@ -43,39 +43,38 @@ public class ExternalAuthenticationOptionsValidatorTests
     }
 
     [Fact]
-    public void RejectsConfigurationConnectionThatCollidesWithInheritedHostKey()
+    public void RejectsNonHostConfigurationConnection()
     {
         var options = new ExternalAuthenticationOptions
         {
             ConfigurationConnections =
             [
-                RegistryTestData.Connection("host", "*", "contoso"),
-                RegistryTestData.Connection("tenant", "tenant-a", "CONTOSO")
+                RegistryTestData.Connection("tenant", "tenant-a", "contoso")
             ]
         };
 
         var result = CreateValidator().Validate(null, options);
 
         Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("collides with an inherited host-wide connection"));
+        Assert.Contains(result.Failures!, x => x.Contains("must use the host scope"));
     }
 
     [Fact]
-    public void RejectsMultipleConfiguredDefaultsWithinTheSameScope()
+    public void RejectsMultipleConfiguredPreferredConnections()
     {
         var options = new ExternalAuthenticationOptions
         {
             ConfigurationConnections =
             [
-                RegistryTestData.Connection("first", "tenant-a", "first", isDefault: true),
-                RegistryTestData.Connection("second", "tenant-a", "second", isDefault: true)
+                RegistryTestData.Connection("first", "*", "first", isPreferred: true),
+                RegistryTestData.Connection("second", "*", "second", isPreferred: true)
             ]
         };
 
         var result = CreateValidator().Validate(null, options);
 
         Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("more than one automatic default"));
+        Assert.Contains(result.Failures!, x => x.Contains("more than one preferred sign-in method"));
     }
 
     [Fact]
@@ -93,6 +92,39 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         Assert.False(result.Succeeded);
         Assert.Contains(result.Failures!, x => x.Contains("Discovery") && x.Contains("positive permit limit and window"));
+    }
+
+    [Theory]
+    [InlineData("http://elsa.example")]
+    [InlineData("https://elsa.example/?unexpected=true")]
+    public void RejectsUnsafeExternalCallbackBaseUri(string callbackBaseUri)
+    {
+        var options = new ExternalAuthenticationOptions
+        {
+            Redirects = new RedirectValidationOptions { ExternalCallbackBaseUri = new Uri(callbackBaseUri) }
+        };
+
+        var result = CreateValidator().Validate(null, options);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.Failures!, failure => failure.Contains("ExternalCallbackBaseUri"));
+    }
+
+    [Fact]
+    public void AllowsHttpLoopbackExternalCallbackBaseUriOnlyWhenDevelopmentModeIsEnabled()
+    {
+        var options = new ExternalAuthenticationOptions
+        {
+            Redirects = new RedirectValidationOptions
+            {
+                ExternalCallbackBaseUri = new Uri("http://127.0.0.1:5000"),
+                AllowDevelopmentLoopbackCallbacks = true
+            }
+        };
+
+        var result = CreateValidator().Validate(null, options);
+
+        Assert.True(result.Succeeded);
     }
 
     [Fact]

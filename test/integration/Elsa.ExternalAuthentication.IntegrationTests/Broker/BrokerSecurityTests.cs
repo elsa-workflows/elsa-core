@@ -55,7 +55,7 @@ public class BrokerSecurityTests
         var broker = CreateBroker(adapter);
         var initiated = await broker.InitiateExternalAsync(Request("/workflows"), "tenant-a");
 
-        var result = await broker.CompleteCallbackAsync("connection-a", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
+        var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
         Assert.Equal("authentication_failed", result.Error?.Error);
         Assert.StartsWith("https://studio.example/authentication/external/callback?", result.RedirectUri?.AbsoluteUri);
@@ -70,8 +70,8 @@ public class BrokerSecurityTests
         await broker.InitiateExternalAsync(Request("/workflows"), "tenant-a");
         var parameters = new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] };
 
-        _ = await broker.CompleteCallbackAsync("connection-a", adapter.CorrelationState!, parameters);
-        var replay = await broker.CompleteCallbackAsync("connection-a", adapter.CorrelationState!, parameters);
+        _ = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, parameters);
+        var replay = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, parameters);
 
         Assert.Equal("invalid_request", replay.Error?.Error);
         Assert.Null(replay.RedirectUri);
@@ -94,7 +94,7 @@ public class BrokerSecurityTests
             case "archived": connection.ArchivedAt = DateTimeOffset.UtcNow; break;
         }
 
-        var result = await broker.CompleteCallbackAsync("connection-a", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
+        var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
         Assert.Equal(change == "revision" ? "flow_changed" : "method_unavailable", result.Error?.Error);
         Assert.StartsWith("https://studio.example/authentication/external/callback?", result.RedirectUri?.AbsoluteUri);
@@ -108,7 +108,7 @@ public class BrokerSecurityTests
         var connection = new IdentityProviderConnection { Id = "connection-a", TenantId = "tenant-a", Key = "contoso", AdapterType = "fake", DisplayName = "Contoso", IsEnabled = true, MaterialRevision = "revision-a" };
         var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, new(ConnectionScopeKind.Tenant, "tenant-a"), ConnectionValidity.Valid, false, "test");
         var registry = Substitute.For<IIdentityProviderConnectionRegistry>();
-        registry.FindByIdAsync("tenant-a", "connection-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
+        registry.FindByKeyAsync("tenant-a", "contoso", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
         var users = Substitute.For<IUserProvider>();
         users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult<User?>(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" }));
         var roles = Substitute.For<IRoleProvider>();
@@ -116,7 +116,7 @@ public class BrokerSecurityTests
         var tokens = Substitute.For<IElsaTokenService>();
         tokens.IssueAccessTokenAsync(Arg.Any<TokenIssuanceContext>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(new IssuedAccessToken("access", clock.UtcNow.AddHours(1))));
         var issuer = new DefaultExternalAuthenticationTokenIssuer(store, registry, [], users, roles, tokens, clock);
-        var session = new ExternalAuthenticationSession { Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionId = "connection-a", ConnectionMaterialRevision = "revision-a", SecretGenerationFingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData([])), Issuer = "issuer", SubjectHash = "subject", StartedAt = clock.UtcNow, LastRefreshedAt = clock.UtcNow, ExpiresAt = clock.UtcNow.AddHours(1), RefreshExpiresAt = clock.UtcNow.AddHours(1) };
+        var session = new ExternalAuthenticationSession { Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionKey = "contoso", ConnectionMaterialRevision = "revision-a", SecretGenerationFingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData([])), Issuer = "issuer", SubjectHash = "subject", StartedAt = clock.UtcNow, LastRefreshedAt = clock.UtcNow, ExpiresAt = clock.UtcNow.AddHours(1), RefreshExpiresAt = clock.UtcNow.AddHours(1) };
 
         var first = await issuer.IssueAsync(session);
         var second = await issuer.RefreshAsync("studio", new SensitiveString(first.RefreshToken));
@@ -178,7 +178,7 @@ public class BrokerSecurityTests
         await broker.InitiateExternalAsync(Request("/workflows"), "tenant-a");
         resolver.Generation = "generation-2";
 
-        var result = await broker.CompleteCallbackAsync("connection-a", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
+        var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
         Assert.Equal("flow_changed", result.Error?.Error);
     }

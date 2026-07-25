@@ -19,7 +19,8 @@ public sealed class DefaultExternalIdentityResolver(
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var existingLink = await provisioner.FindLinkAsync(context.TargetTenantId, context.Connection.Connection.Id, context.Identity, cancellationToken);
+        var connectionKey = ConnectionRevisionCalculator.NormalizeKey(context.Connection.Connection.Key);
+        var existingLink = await provisioner.FindLinkAsync(context.TargetTenantId, connectionKey, context.Identity, cancellationToken);
         if (existingLink is not null)
         {
             ValidateLink(existingLink, context);
@@ -40,9 +41,9 @@ public sealed class DefaultExternalIdentityResolver(
         {
             UnlinkedIdentityDecision.Reject reject => throw new ExternalIdentityUnlinkedException(reject.SafeReason),
             UnlinkedIdentityDecision.CreateUser createUser => await provisioner.CreateLinkOrGetExistingAsync(
-                new ProvisioningRequest(context.TargetTenantId, context.Connection.Connection.Id, context.Identity, createUser.Proposal), cancellationToken),
+                new ProvisioningRequest(context.TargetTenantId, connectionKey, context.Identity, createUser.Proposal), cancellationToken),
             UnlinkedIdentityDecision.LinkExistingUser linkExistingUser => await provisioner.CreateLinkOrGetExistingAsync(
-                new ProvisioningRequest(context.TargetTenantId, context.Connection.Connection.Id, context.Identity, null, linkExistingUser.UserId), cancellationToken),
+                new ProvisioningRequest(context.TargetTenantId, connectionKey, context.Identity, null, linkExistingUser.UserId), cancellationToken),
             _ => throw new InvalidOperationException("The unlinked identity policy returned an unsupported decision.")
         };
 
@@ -63,7 +64,7 @@ public sealed class DefaultExternalIdentityResolver(
     private static void ValidateLink(ExternalIdentityLink link, ExternalIdentityResolutionContext context)
     {
         if (!string.Equals(link.TenantId, context.TargetTenantId, StringComparison.Ordinal) ||
-            !string.Equals(link.ConnectionId, context.Connection.Connection.Id, StringComparison.Ordinal) ||
+            !string.Equals(link.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(context.Connection.Connection.Key), StringComparison.Ordinal) ||
             !string.Equals(link.Issuer, context.Identity.Issuer, StringComparison.Ordinal) ||
             string.IsNullOrWhiteSpace(link.UserId))
         {

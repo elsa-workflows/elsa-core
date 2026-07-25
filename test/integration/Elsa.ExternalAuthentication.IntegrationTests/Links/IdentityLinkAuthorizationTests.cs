@@ -50,6 +50,7 @@ public class IdentityLinkAuthorizationTests : IAsyncLifetime
         builder.Services.AddSingleton(tenant);
         builder.Services.AddScoped<IUserStore, MemoryUserStore>();
         builder.Services.AddScoped<IUserProvider, StoreBasedUserProvider>();
+        builder.Services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
         builder.Services.AddScoped<InMemoryExternalIdentityProvisioner>();
         builder.Services.AddScoped<IExternalIdentityProvisioner>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
         builder.Services.AddScoped<IExternalIdentityLinkManagementStore>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());

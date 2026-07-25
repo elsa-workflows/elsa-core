@@ -27,7 +27,7 @@ internal sealed class GetIdentityLinks(ExternalIdentityLinkManagementService man
         }
 
         var pageSize = request.PageSize ?? 100;
-        var links = (await management.ListAsync(tenantAccessor.TenantId, new ExternalIdentityLinkFilter { UserId = request.UserId, ConnectionId = request.ConnectionId }, cancellationToken)).Items
+        var links = (await management.ListAsync(tenantAccessor.TenantId, new ExternalIdentityLinkFilter { UserId = request.UserId, ConnectionKey = request.ConnectionKey }, cancellationToken)).Items
             .OrderBy(x => x.CreatedAt)
             .ThenBy(x => x.Id, StringComparer.Ordinal)
             .Where(x => cursor is null || IdentityLinkPagination.Compare(new IdentityLinkCursor(x.CreatedAt, x.Id), cursor) > 0)
@@ -79,7 +79,7 @@ internal sealed class PrelinkIdentityLink(ExternalIdentityLinkManagementService 
         ExternalIdentityLinkPrelinkResult result;
         try
         {
-            result = await management.PrelinkAsync(tenantAccessor.TenantId, request.UserId, request.ConnectionId, request.Issuer, request.Subject, User, cancellationToken);
+            result = await management.PrelinkAsync(tenantAccessor.TenantId, request.UserId, request.ConnectionKey, request.Issuer, request.Subject, User, cancellationToken);
         }
         catch (ArgumentException)
         {
@@ -128,7 +128,7 @@ internal sealed class DeleteIdentityLink(ExternalIdentityLinkManagementService m
 internal sealed class IdentityLinkListRequest
 {
     public string? UserId { get; set; }
-    public string? ConnectionId { get; set; }
+    public string? ConnectionKey { get; set; }
     public string? Cursor { get; set; }
     public int? PageSize { get; set; }
 }
@@ -143,7 +143,7 @@ internal sealed class FindIdentityLinkUsersRequest
 internal sealed class PrelinkIdentityLinkRequest
 {
     public string UserId { get; set; } = null!;
-    public string ConnectionId { get; set; } = null!;
+    public string ConnectionKey { get; set; } = null!;
     public string Issuer { get; set; } = null!;
     public string Subject { get; set; } = null!;
 }
@@ -151,9 +151,9 @@ internal sealed class PrelinkIdentityLinkRequest
 internal sealed record IdentityLinkListResponse(IReadOnlyCollection<IdentityLinkDocument> Items, string? NextCursor);
 internal sealed record FindIdentityLinkUsersResponse(IReadOnlyCollection<IdentityLinkUserDocument> Items, string? NextCursor);
 internal sealed record IdentityLinkUserDocument(string Id, string DisplayName);
-internal sealed record IdentityLinkDocument(string Id, string UserId, string ConnectionId, string Issuer, string? SubjectHint, DateTimeOffset CreatedAt, DateTimeOffset? LastSignedInAt)
+internal sealed record IdentityLinkDocument(string Id, string UserId, string ConnectionKey, string Issuer, string? SubjectHint, DateTimeOffset CreatedAt, DateTimeOffset? LastSignedInAt)
 {
-    public static IdentityLinkDocument From(ExternalIdentityLink link) => new(link.Id, link.UserId, link.ConnectionId, link.Issuer, link.SubjectHint, link.CreatedAt, link.LastSignedInAt);
+    public static IdentityLinkDocument From(ExternalIdentityLink link) => new(link.Id, link.UserId, link.ConnectionKey, link.Issuer, link.SubjectHint, link.CreatedAt, link.LastSignedInAt);
 }
 internal sealed record IdentityLinkError(string Error, string Message);
 internal sealed record IdentityLinkCursor(DateTimeOffset CreatedAt, string Id);

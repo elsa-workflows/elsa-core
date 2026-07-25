@@ -342,7 +342,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -380,6 +380,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.Property<string>("RevocationReason")
                         .HasColumnType("TEXT");
 
+                    b.Property<byte[]>("ProtectedUpstreamLogoutHint")
+                        .HasColumnType("BLOB");
+
                     b.Property<string>("RevokedAt")
                         .HasColumnType("TEXT");
 
@@ -404,8 +407,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ConnectionId")
-                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionId");
+                    b.HasIndex("ConnectionKey")
+                        .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
 
                     b.HasIndex("CurrentRefreshTokenHash")
                         .IsUnique()
@@ -422,7 +425,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ConnectionId")
+                    b.Property<string>("ConnectionKey")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -459,7 +462,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.HasIndex("TenantId", "UserId")
                         .HasDatabaseName("IX_ExternalIdentityLink_TenantId_UserId");
 
-                    b.HasIndex("TenantId", "ConnectionId", "Issuer", "SubjectHash")
+                    b.HasIndex("TenantId", "ConnectionKey", "Issuer", "SubjectHash")
                         .IsUnique()
                         .HasDatabaseName("IX_ExternalIdentityLink_Identity");
 
@@ -503,10 +506,13 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                     b.Property<string>("IconId")
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsDefault")
+                    b.Property<bool>("IsPreferred")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsEnabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("OverridesConfigurationConnection")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Key")

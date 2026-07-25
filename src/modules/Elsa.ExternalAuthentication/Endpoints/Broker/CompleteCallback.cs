@@ -12,7 +12,7 @@ internal sealed class CompleteCallback(IExternalAuthenticationBroker broker) : E
 {
     public override void Configure()
     {
-        Get("/external-authentication/callback/{connectionId}");
+        Get("/external-authentication/callback/{connectionKey}");
         AllowAnonymous();
         Options(x => x.RequireRateLimiting(ExternalAuthenticationRateLimitPolicyNames.ProviderCallback));
     }
@@ -20,7 +20,7 @@ internal sealed class CompleteCallback(IExternalAuthenticationBroker broker) : E
     public override async Task HandleAsync(CompleteCallbackRequest request, CancellationToken cancellationToken)
     {
         var parameters = HttpContext.Request.Query.ToDictionary(x => x.Key, x => (IReadOnlyCollection<string>)x.Value.Where(value => value is not null).Select(value => value!).ToArray(), StringComparer.Ordinal);
-        var result = await broker.CompleteCallbackAsync(Route<string>("connectionId") ?? request.ConnectionId ?? string.Empty, Query<string>("state", false) ?? request.State ?? string.Empty, parameters, cancellationToken);
+        var result = await broker.CompleteCallbackAsync(Route<string>("connectionKey") ?? request.ConnectionKey ?? string.Empty, Query<string>("state", false) ?? request.State ?? string.Empty, parameters, cancellationToken);
         if (result.Error is { } error)
         {
             if (result.RedirectUri is not null)
@@ -38,6 +38,6 @@ internal sealed class CompleteCallback(IExternalAuthenticationBroker broker) : E
 
 internal sealed class CompleteCallbackRequest
 {
-    public string? ConnectionId { get; set; }
+    public string? ConnectionKey { get; set; }
     public string? State { get; set; }
 }

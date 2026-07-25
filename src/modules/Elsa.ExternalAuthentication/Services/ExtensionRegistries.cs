@@ -12,11 +12,17 @@ public sealed class DefaultUnlinkedIdentityPolicyRegistry : IUnlinkedIdentityPol
 
     public DefaultUnlinkedIdentityPolicyRegistry(
         IEnumerable<IUnlinkedIdentityPolicy> policies,
+        IEnumerable<IExternalUserMatcher> matchers,
         ExtensionDescriptorValidator descriptorValidator,
         IOptions<ExternalAuthenticationOptions> options)
     {
+        var matcherTypes = ExtensionRegistryBuilder.Create(
+            matchers,
+            matcher => matcher.Type,
+            options.Value.AllowedExternalUserMatcherTypes,
+            "external user matcher");
         _policies = ExtensionRegistryBuilder.Create(
-            policies,
+            policies.Where(x => !string.Equals(x.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) || matcherTypes.Count != 0),
             policy => policy.Type,
             options.Value.AllowedUnlinkedIdentityPolicyTypes,
             "unlinked identity policy");
@@ -53,6 +59,21 @@ public sealed class DefaultPermissionGrantSourceRegistry : IPermissionGrantSourc
 
     public IReadOnlyCollection<PermissionGrantSourceDescriptor> ListDescriptors() => _descriptors;
     public bool TryGet(string type, out IPermissionGrantSource source) => _sources.TryGetValue(type, out source!);
+}
+
+public sealed class DefaultExternalUserMatcherRegistry : IExternalUserMatcherRegistry
+{
+    private readonly IReadOnlyDictionary<string, IExternalUserMatcher> _matchers;
+    private readonly IReadOnlyCollection<ExternalUserMatcherDescriptor> _descriptors;
+
+    public DefaultExternalUserMatcherRegistry(IEnumerable<IExternalUserMatcher> matchers, ExtensionDescriptorValidator descriptorValidator, IOptions<ExternalAuthenticationOptions> options)
+    {
+        _matchers = ExtensionRegistryBuilder.Create(matchers, matcher => matcher.Type, options.Value.AllowedExternalUserMatcherTypes, "external user matcher");
+        _descriptors = _matchers.Values.Select(descriptorValidator.Validate).OrderBy(x => x.Type, StringComparer.Ordinal).ToArray();
+    }
+
+    public IReadOnlyCollection<ExternalUserMatcherDescriptor> ListDescriptors() => _descriptors;
+    public bool TryGet(string type, out IExternalUserMatcher matcher) => _matchers.TryGetValue(type, out matcher!);
 }
 
 internal static class ExtensionRegistryBuilder

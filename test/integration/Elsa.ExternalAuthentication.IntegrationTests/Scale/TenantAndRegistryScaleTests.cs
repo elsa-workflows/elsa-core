@@ -8,7 +8,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Scale;
 public sealed class TenantAndRegistryScaleTests
 {
     [Fact]
-    public async Task TenantFuzzingNeverLeaksAnotherTenantsConnectionAndHostCollisionsAreInvalid()
+    public async Task HostWideConnectionsAreAvailableToEveryTenantAndLegacyTenantConnectionsAreIgnored()
     {
         var source = new StaticSource("configuration", ConnectionSourceOwnership.Configuration, new Dictionary<ConnectionScope, IReadOnlyCollection<IdentityProviderConnection>>
         {
@@ -21,13 +21,15 @@ public sealed class TenantAndRegistryScaleTests
         foreach (var tenantId in new[] { "tenant-a", "tenant-b", "tenant-c", string.Empty })
         {
             var snapshot = await registry.GetAsync(tenantId);
-            Assert.DoesNotContain(snapshot.Connections, x => x.Connection.TenantId is "tenant-a" or "tenant-b" && x.Connection.TenantId != tenantId);
+            var connection = Assert.Single(snapshot.Connections);
+            Assert.Equal(ConnectionScope.HostTenantId, connection.Connection.TenantId);
+            Assert.Equal("shared", connection.Connection.Key);
         }
 
         source.Add(new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), Connection("collision", "tenant-a", "shared"));
-        var collision = await registry.GetAsync("tenant-a");
-        Assert.All(collision.Connections.Where(x => x.Connection.Key == "shared"), x => Assert.Equal(ConnectionValidity.Invalid, x.Validity));
-        Assert.DoesNotContain(collision.LoginMethods, x => x.Key == "shared");
+        var snapshotAfterLegacyCollision = await registry.GetAsync("tenant-a");
+        Assert.Equal(ConnectionValidity.Unknown, Assert.Single(snapshotAfterLegacyCollision.Connections).Validity);
+        Assert.Contains(snapshotAfterLegacyCollision.LoginMethods, x => x.Key == "shared");
     }
 
     [Fact]
@@ -45,15 +47,15 @@ public sealed class TenantAndRegistryScaleTests
         Assert.Equal(10_000, first.LoginMethods.Count);
         Assert.Equal(first.LoginMethods.Select(x => x.Id), second.LoginMethods.Select(x => x.Id));
         Assert.Equal(first.LoginMethods.OrderBy(x => x.Order).ThenBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Id), first.LoginMethods.Select(x => x.Id));
-        Assert.Equal("connection-00042", Assert.Single(first.LoginMethods, x => x.IsDefault).Id);
+        Assert.Equal("connection-00042", Assert.Single(first.LoginMethods, x => x.IsPreferred).Id);
         Assert.NotNull(await registry.FindByKeyAsync(string.Empty, "provider-00000"));
         Assert.NotNull(await registry.FindByIdAsync(string.Empty, "connection-09999"));
     }
 
-    private static IdentityProviderConnection Connection(string id, string tenantId, string key, int displayOrder = 0, bool isDefault = false) => new()
+    private static IdentityProviderConnection Connection(string id, string tenantId, string key, int displayOrder = 0, bool isPreferred = false) => new()
     {
         Id = id, TenantId = tenantId, Key = key, AdapterType = "test", AdapterSettingsVersion = 1, AdapterSettings = JsonSerializer.SerializeToElement(new { }),
-        DisplayName = key, DisplayOrder = displayOrder, IsDefault = isDefault, IsEnabled = true, MaterialRevision = $"revision-{id}"
+        DisplayName = key, DisplayOrder = displayOrder, IsPreferred = isPreferred, IsEnabled = true, MaterialRevision = $"revision-{id}"
     };
 
     private sealed class StaticSource(string name, ConnectionSourceOwnership ownership, IDictionary<ConnectionScope, IReadOnlyCollection<IdentityProviderConnection>> snapshots) : IIdentityProviderConnectionSource

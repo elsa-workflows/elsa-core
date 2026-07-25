@@ -6,24 +6,22 @@ This package installs the `openid-connect` adapter for `Elsa.ExternalAuthenticat
 services.AddOpenIdConnectExternalAuthentication();
 ```
 
-The adapter uses the authorization-code flow, validates issuer, signature, audience/authorized party, expiry, nonce, and callback state, and enables upstream S256 PKCE by default. It projects only connection-allowlisted claims and never returns provider tokens from broker or management APIs.
+The adapter uses the authorization-code flow, validates issuer, signature, audience/authorized party, expiry, nonce, and callback state, and always uses upstream S256 PKCE. It projects only connection-allowlisted claims and never returns provider tokens from broker or management APIs. An ID-token logout hint is retained only in protected server-side session state when upstream logout is enabled.
 
 ## Settings
 
 | Setting | Required | Description |
 | --- | --- | --- |
-| `authority` | Yes | Absolute HTTPS provider authority. |
+| `discoveryUrl` | Discovery mode | Exact absolute HTTPS OpenID Connect discovery document URL. |
 | `clientId` | Yes | Upstream provider client registration. |
-| `callbackUri` | Yes | Exact absolute HTTPS Elsa callback registered with the provider. |
+| `clientAuthenticationMethod` | Yes | `client_secret_basic` (default) or `client_secret_post`. |
 | `mode` | Yes | `discovery` or `manual`; discovery is the recommended default. |
 | `scopes` | No | Requested scopes; `openid` is always included. |
-| `providerPkce` | Yes | `required` (default) or privileged unsafe `disabled`. |
-| `clientSecret` | No | Secret Binding field, never a value inside adapter settings. |
-| `useUserInfo` | No | Fetch UserInfo after ID-token validation. |
-| `userInfoEndpoint` | No | Optional explicit HTTPS UserInfo endpoint. |
+| `providerPkce` | No | Compatibility marker; S256 PKCE is always required. |
+| `clientSecret` | Yes | Required Secret Binding field, never a value inside adapter settings. |
 | `endSessionEndpoint` | No | Optional explicit HTTPS upstream logout endpoint. |
 
-Manual trust additionally requires `issuer`, `authorizationEndpoint`, and `tokenEndpoint`, plus either `jwksUri` or pinned `signingKeys`. Manual trust fields and disabling provider PKCE are unsafe settings that require the corresponding privileged Studio confirmation.
+Manual trust additionally requires `issuer`, `authorizationEndpoint`, and `tokenEndpoint`, plus either `jwksUri` or pinned `signingKeys`.
 
 For a callback with the default Elsa API prefix:
 
@@ -31,4 +29,4 @@ For a callback with the default Elsa API prefix:
 https://elsa.example/elsa/api/external-authentication/callback/{connection-id}
 ```
 
-The configured `callbackUri` and the URI registered upstream must match exactly.
+The callback is derived from the deployment-owned `Redirects:ExternalCallbackBaseUri` and connection record ID; it is not editable per connection. The derived URI must be registered upstream exactly.

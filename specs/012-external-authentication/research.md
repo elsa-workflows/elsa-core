@@ -1,5 +1,19 @@
 # Research: External Authentication
 
+## Approved Revision — 2026-07-24
+
+These decisions supersede conflicting details in the original research:
+
+- V1 SSO administration is host-wide in the connected server environment; no target entity/field exists. Record IDs identify management and transient broker state; Connection Keys identify durable links and long-lived sessions.
+- Configuration is the baseline. A Studio Override is explicit and complete: no field merge. Disabled continues shadowing; archived reveals configuration; restore resumes shadowing.
+- OIDC accepts an exact HTTPS `discoveryUrl`; discovery-derived trust is the safe default. Permission-gated Advanced settings may override issuer, authorization/token endpoints, or signing keys with confirmation/warnings. Elsa derives callback from deployment external base address plus fixed route and immutable Connection Key. The upstream client is confidential, always uses S256 PKCE, and supports `client_secret_basic` or `client_secret_post`.
+- Secret Bindings declare Managed or External ownership. Managed uses Elsa Secrets; External uses the built-in configuration-key resolver and is value-read-only in Studio.
+- Each connection selects an Unlinked Identity Policy. The matcher-based policy selects one `IExternalUserMatcher`; required claims are ephemeral; single match links, no-match rejects or creates, and ambiguous/error rejects. Static `defaultRoleIds` apply only to newly created users.
+- The preferred Login Method is ordered/emphasized only; the chooser never auto-redirects.
+- `Elsa.Studio.Authentication.UI` owns login/logout shell through `ILoginMethodCatalog`, `ILoginMethodComponentProvider`, and `ILoginMethodIconProvider`. Settings is UI composition/navigation only; SSO Connections live at `/settings/sso-connections`, while Links and Sessions remain under Security.
+- Only Elsa-initiated login/logout is supported. Upstream tokens are transient except the minimum protected artifact required by configured logout.
+- Direct OIDC remains supported through Elsa 3.x. Brokered mode is recommended; removal is a future-major decision after parity, migration tooling, and notice.
+
 ## 1. Module and Package Boundaries
 
 **Decision**: Add `Elsa.ExternalAuthentication` as the focused Core/server module containing protocol-neutral contracts, configuration sources, the effective registry, broker services, FastEndpoints endpoints, security notifications, and in-memory development stores. Add `Elsa.ExternalAuthentication.OpenIdConnect` as the startup-installed v1 adapter and `Elsa.ExternalAuthentication.Secrets` as the optional Elsa Secrets binding bridge. Add `Elsa.ExternalAuthentication.UnitTests` and `Elsa.ExternalAuthentication.IntegrationTests`.
@@ -23,7 +37,7 @@ Persisted external-authentication entities live in the existing `IdentityElsaDbC
 
 ## 2. Effective Connection Registry
 
-**Decision**: Compose `IIdentityProviderConnectionSource` implementations into `IIdentityProviderConnectionRegistry`. V1 sources are deployment configuration and an optional store source. The registry resolves host-wide plus target-tenant connections, rejects database create/update collisions with existing configuration, and reports later configuration collisions as shadowed database records.
+**Decision**: Compose `IIdentityProviderConnectionSource` implementations into `IIdentityProviderConnectionRegistry`. V1 sources are deployment configuration and an optional store source for the connected server environment. Records retain stable IDs; the logical key is immutable. Ordinary duplicates are rejected; a dedicated override operation creates a complete persisted shadow. Disabled shadows; archived reveals configuration.
 
 Registry reads remain read-through for v1: discovery and initiation read the current source versions instead of relying on an unbounded local cache. A shared monotonic registry version supports efficient conditional refresh later without becoming a security boundary.
 
@@ -39,8 +53,8 @@ Registry reads remain read-through for v1: discovery and initiation read the cur
 **Decision**: Define store contracts around required atomic operations rather than generic unconditional saves:
 
 - Compare-and-swap connection mutation by revision.
-- Unique `(TenantId, Key)` connection creation.
-- Unique `(TargetTenantId, ConnectionId, Issuer, Subject)` External Identity Link creation.
+- Unique host-wide logical Connection Key creation or explicit override creation.
+- Unique `(TargetTenantId, ConnectionKey, Issuer, Subject)` External Identity Link creation.
 - Atomic JIT `CreateLinkOrGetExistingAsync`.
 - Atomic single-use `TryTakeAsync` for state, completion codes, preview results, and refresh-token rotation.
 
@@ -79,7 +93,7 @@ External access tokens remain Elsa JWTs and include an External Authentication S
 
 ## 5. Token Issuance Refactoring
 
-**Decision**: Extract the JWT construction portion of `DefaultAccessTokenIssuer` into a shared token issuance service accepting a `TokenIssuanceContext` with user, claims, roles, permissions, token use, and optional session identity. Keep `IAccessTokenIssuer.IssueTokensAsync(User)` unchanged and delegate its existing local behavior to the shared service. Add an external issuer that evaluates Permission Grant Sources and issues the external access token plus opaque refresh token.
+**Decision**: Extract the JWT construction portion of `DefaultAccessTokenIssuer` into a shared token issuance service accepting a `TokenIssuanceContext` with user, claims, roles, permissions, token use, and optional session identity. Keep `IAccessTokenIssuer.IssueTokensAsync(User)` unchanged and delegate its existing local behavior to the shared service. External issuance reads the Elsa User's current Roles; external authentication never supplies permission strings directly.
 
 **Rationale**: This avoids ambient session state and keeps the existing public Identity contract stable while removing duplicate JWT construction.
 
@@ -90,15 +104,16 @@ External access tokens remain Elsa JWTs and include an External Authentication S
 
 ## 6. OpenID Connect Adapter
 
-**Decision**: Implement the adapter against Microsoft IdentityModel OpenID Connect protocol primitives rather than dynamically adding ASP.NET Core authentication schemes per connection. The adapter owns discovery/manual metadata, authorization request construction, code exchange, ID-token validation, optional user-info retrieval, claim projection, test, preview, and upstream logout.
+**Decision**: Implement the adapter against Microsoft IdentityModel OpenID Connect protocol primitives rather than dynamically adding ASP.NET Core authentication schemes per connection. The adapter owns exact discovery, authorization request construction, code exchange, ID-token validation, optional user-info retrieval, claim projection, test, preview, and Elsa-initiated upstream logout.
 
-The adapter follows OpenID Connect Core and OAuth 2.0 Security BCP:
+The adapter accepts one exact HTTPS `discoveryUrl`; callback is deployment-derived and not stored in connection settings. Discovery is the normal trust source. When deployment policy and the caller's unsafe-provider-trust permission allow it, Advanced settings may replace the discovered issuer, authorization/token endpoints, or signing keys. Overrides change validation inputs but cannot disable validation. The adapter follows OpenID Connect Core and OAuth 2.0 Security BCP:
 
 - Authorization-code flow only.
 - Exact provider callback URI.
 - State/correlation and nonce validation.
 - Signature, issuer, audience/authorized-party, lifetime, and subject validation.
-- PKCE to the provider by default; an unsafe override can disable it only when deployment policy permits.
+- Confidential upstream client with mandatory S256 PKCE.
+- `client_secret_basic` and `client_secret_post` client authentication.
 - No implicit flow or password grant.
 - Mix-up protection by binding and validating issuer.
 - Refresh/provider tokens discarded after normalized identity creation unless needed transiently for configured user-info retrieval.
@@ -124,7 +139,7 @@ Use OAuth-shaped broker endpoints under `/external-authentication` while keeping
 
 - Login Method discovery.
 - External and local broker initiation.
-- Fixed provider callback per immutable Connection ID.
+- Fixed provider callback per immutable Connection Key.
 - Authorization-code and external-refresh exchange.
 - Session logout and optional upstream logout callback.
 
@@ -170,21 +185,19 @@ JIT uses an internal collision-resistant user name derived from the tenant and l
 
 ## 10. Identity Links and Unlinked Policies
 
-**Decision**: Persist External Identity Links separately with a durable unique identity tuple. Built-in policies are `Reject` and `CreateUser`. Custom policies may return a target-user decision only through a typed result containing the user ID and authorization basis; the broker still enforces tenant match and link uniqueness.
+**Decision**: Persist External Identity Links separately with durable unique `(targetTenantId, connectionKey, issuer, subject)` identity. Built-in policies are `Reject` and `CreateUser`; selection is per connection with a deployment default/allowlist.
 
 Administrator prelinking uses the same atomic link service as JIT. End-user self-linking is not implemented.
 
 **Rationale**: A distinct link keeps provider identity separate from Elsa authorization and lets one Elsa User own multiple external identities.
 
-## 11. Permission Composition
+## 11. User Matching, Role Provisioning, and Permission Composition
 
-**Decision**: Evaluate ordered `IPermissionGrantSource` implementations into a provenance-bearing result, then union distinct permission strings. V1 sources are current Elsa role permissions, claim mappings, and group mappings. Pass-through requires an explicit allowlist or pattern boundary.
+**Decision**: The generic matcher-based Unlinked Identity Policy selects one deployed `IExternalUserMatcher`. The matcher declares required normalized claims; the policy supplies them ephemerally. One match proposes an existing user, no match follows configured Reject/CreateUser fallback, and ambiguous/error results reject. V1 ships no Elsa verified-email matcher.
 
-Grant configuration authorization reuses the principle in `RoleAuthorizationService`: the actor must possess every concrete permission they may delegate, unless they have `external-authentication:permissions:delegate-unrestricted`. Deployment allow/deny boundaries apply after actor authorization.
+`defaultRoleIds` are static and apply only to users newly created by CreateUser/no-match fallback. Save authorization reuses Elsa Role assignment checks; user, link, and role assignment commit atomically. Matched/existing users are not role-mutated. V1 Studio exposes no claim-to-role or claim-to-permission mapping.
 
-`IPermissionDescriptorProvider` is optional metadata for Studio pickers and warnings. Unknown strings remain storable.
-
-**Rationale**: Elsa's permission vocabulary is open and modular; descriptors cannot become an authority.
+**Rationale**: Explicit matching enables deployment extensions without implicit email/name linking, while static create-user roles keep authorization under Elsa control.
 
 ## 12. Secret Bindings
 
@@ -192,6 +205,8 @@ Grant configuration authorization reuses the principle in `RoleAuthorizationServ
 
 - An Elsa Secrets resolver in `Elsa.ExternalAuthentication.Secrets`, using immutable secret name and latest active version.
 - A configuration resolver using a configuration key; the broker derives a keyed fingerprint from the resolved value when the provider cannot supply a version.
+
+Bindings declare `Managed` or `External`. Only Managed values have replace/remove lifecycle actions in Studio; External values expose reference and configured/resolvable state.
 
 The fingerprint participates in effective material revision but is never returned, logged, or persisted as public connection data.
 
@@ -250,7 +265,7 @@ Use an outbox only when the host/audit subscriber requires durable notification 
 
 **Decision**:
 
-- Support 10,000 persisted connections across all tenants and 50 effective Login Methods per tenant.
+- Support 10,000 persisted connections and 50 effective Login Methods in one Elsa server environment.
 - Return a 100-row management page within 500 ms p95 under normal indexed database load.
 - Return Login Method discovery within 250 ms p95 at 100 concurrent requests.
 - Add no more than 250 ms p95 Elsa processing overhead to initiation, callback completion, or token exchange, excluding provider/network latency.

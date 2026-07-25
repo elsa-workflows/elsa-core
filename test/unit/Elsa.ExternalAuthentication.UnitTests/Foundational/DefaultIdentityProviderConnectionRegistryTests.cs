@@ -9,8 +9,8 @@ public class DefaultIdentityProviderConnectionRegistryTests
     [Fact]
     public async Task ConfigurationConnectionsShadowDatabaseConnectionsWithTheSameKey()
     {
-        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc", isDefault: true);
-        var database = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC", isDefault: true);
+        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc", isPreferred: true);
+        var database = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC", isPreferred: true);
         var registry = CreateRegistry(
             new TestConnectionSource("database", ConnectionSourceOwnership.Database, [(ConnectionScope.Host, [database])]),
             new TestConnectionSource("configuration", ConnectionSourceOwnership.Configuration, [(ConnectionScope.Host, [configuration])]));
@@ -24,7 +24,21 @@ public class DefaultIdentityProviderConnectionRegistryTests
     }
 
     [Fact]
-    public async Task RegistryUsesOnlyTheTargetTenantAndHostConnections()
+    public async Task ConfigurationPreferredConnectionWinsOverDatabasePreferredConnection()
+    {
+        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration", ConnectionScope.HostTenantId, "configuration", displayOrder: 20, isPreferred: true);
+        var database = ExternalAuthenticationTestData.CreateConnection("database", ConnectionScope.HostTenantId, "database", displayOrder: 1, isPreferred: true);
+        var registry = CreateRegistry(
+            new TestConnectionSource("database", ConnectionSourceOwnership.Database, [(ConnectionScope.Host, [database])]),
+            new TestConnectionSource("configuration", ConnectionSourceOwnership.Configuration, [(ConnectionScope.Host, [configuration])]));
+
+        var result = await registry.GetAsync("tenant-a");
+
+        Assert.Equal("configuration", Assert.Single(result.LoginMethods, x => x.IsPreferred).Id);
+    }
+
+    [Fact]
+    public async Task RegistryUsesOnlyHostConnections()
     {
         var host = ExternalAuthenticationTestData.CreateConnection("host", ConnectionScope.HostTenantId, "host");
         var tenantA = ExternalAuthenticationTestData.CreateConnection("tenant-a", "tenant-a", "tenant-a");
@@ -38,12 +52,13 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var result = await registry.GetAsync("tenant-a");
 
-        Assert.Equal(["host", "tenant-a"], result.Connections.Select(x => x.Connection.Id).OrderBy(x => x));
+        Assert.Equal(["host"], result.Connections.Select(x => x.Connection.Id));
+        Assert.DoesNotContain(result.Connections, x => x.Connection.Id == "tenant-a");
         Assert.DoesNotContain(result.Connections, x => x.Connection.Id == "tenant-b");
     }
 
     [Fact]
-    public async Task DoesNotSelectAnAmbiguousTenantAndInheritedHostKey()
+    public async Task IgnoresLegacyTenantConnectionThatSharesAHostKey()
     {
         var host = ExternalAuthenticationTestData.CreateConnection("host", ConnectionScope.HostTenantId, "contoso");
         var tenant = ExternalAuthenticationTestData.CreateConnection("tenant", "tenant-a", "CONTOSO");
@@ -56,28 +71,29 @@ public class DefaultIdentityProviderConnectionRegistryTests
         var result = await registry.GetAsync("tenant-a");
         var byKey = await registry.FindByKeyAsync("tenant-a", "contoso");
 
-        Assert.All(result.Connections, x => Assert.Equal(ConnectionValidity.Invalid, x.Validity));
-        Assert.Empty(result.LoginMethods);
-        Assert.Null(byKey);
+        var effective = Assert.Single(result.Connections);
+        Assert.Equal("host", effective.Connection.Id);
+        Assert.Equal(ConnectionValidity.Unknown, effective.Validity);
+        Assert.Equal("host", Assert.Single(result.LoginMethods).Id);
+        Assert.Equal("host", Assert.IsType<EffectiveIdentityProviderConnection>(byKey).Connection.Id);
     }
 
     [Fact]
-    public async Task RegistryOrdersLoginMethodsDeterministicallyAndUsesTenantDefault()
+    public async Task RegistryOrdersHostLoginMethodsDeterministicallyAndUsesPreferredConnection()
     {
-        var hostDefault = ExternalAuthenticationTestData.CreateConnection("host-default", ConnectionScope.HostTenantId, "host", displayOrder: 20, isDefault: true);
-        var tenantDefault = ExternalAuthenticationTestData.CreateConnection("tenant-default", "tenant-a", "tenant", displayOrder: 10, isDefault: true);
-        var early = ExternalAuthenticationTestData.CreateConnection("early", "tenant-a", "early", displayOrder: 1);
-        var disabled = ExternalAuthenticationTestData.CreateConnection("disabled", "tenant-a", "disabled", displayOrder: 0, isEnabled: false);
+        var host = ExternalAuthenticationTestData.CreateConnection("host", ConnectionScope.HostTenantId, "host", displayOrder: 20);
+        var preferred = ExternalAuthenticationTestData.CreateConnection("preferred", ConnectionScope.HostTenantId, "preferred", displayOrder: 10, isPreferred: true);
+        var early = ExternalAuthenticationTestData.CreateConnection("early", ConnectionScope.HostTenantId, "early", displayOrder: 1);
+        var disabled = ExternalAuthenticationTestData.CreateConnection("disabled", ConnectionScope.HostTenantId, "disabled", displayOrder: 0, isEnabled: false);
         var registry = CreateRegistry(new TestConnectionSource("database", ConnectionSourceOwnership.Database,
         [
-            (ConnectionScope.Host, [hostDefault]),
-            (new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), [tenantDefault, early, disabled])
+            (ConnectionScope.Host, [host, preferred, early, disabled])
         ]));
 
         var result = await registry.GetAsync("tenant-a");
 
-        Assert.Equal(["early", "tenant-default", "host-default"], result.LoginMethods.Select(x => x.Id));
-        Assert.Equal("tenant-default", Assert.Single(result.LoginMethods, x => x.IsDefault).Id);
+        Assert.Equal(["early", "preferred", "host"], result.LoginMethods.Select(x => x.Id));
+        Assert.Equal("preferred", Assert.Single(result.LoginMethods, x => x.IsPreferred).Id);
         Assert.DoesNotContain(result.LoginMethods, x => x.Id == "disabled");
         Assert.Equal("/external-authentication/authorize/early", result.LoginMethods.First().InitiationUri.OriginalString);
     }

@@ -6,6 +6,7 @@ using Elsa.ExternalAuthentication.Providers;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Stores.InMemory;
 using Elsa.ExternalAuthentication.Validation;
+using Elsa.Identity.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
@@ -33,6 +34,7 @@ public static class ServiceCollectionExtensions
 
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, RejectUnlinkedIdentityPolicy.PolicyType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, CreateUserUnlinkedIdentityPolicy.PolicyType);
+        services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, MatchExternalUserUnlinkedIdentityPolicy.PolicyType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.PermissionGrantSource, ElsaRolePermissionGrantSource.SourceType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.PermissionGrantSource, ClaimMappingPermissionGrantSource.SourceType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.PermissionGrantSource, GroupMappingPermissionGrantSource.SourceType);
@@ -60,6 +62,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ExtensionDescriptorValidator>();
         services.TryAddSingleton<IExternalAuthenticationAdapterRegistry, DefaultExternalAuthenticationAdapterRegistry>();
         services.TryAddSingleton<IUnlinkedIdentityPolicyRegistry, DefaultUnlinkedIdentityPolicyRegistry>();
+        services.TryAddSingleton<IExternalUserMatcherRegistry, DefaultExternalUserMatcherRegistry>();
         services.TryAddScoped<IPermissionGrantSourceRegistry, DefaultPermissionGrantSourceRegistry>();
         services.TryAddSingleton<IAdapterSettingsMigrationService, AdapterSettingsMigrationService>();
 
@@ -78,9 +81,11 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IExternalIdentityResolver, DefaultExternalIdentityResolver>();
         services.TryAddScoped<IPermissionGrantResolver, DefaultPermissionGrantResolver>();
         services.TryAddScoped<IPermissionDelegationAuthorizer, DefaultPermissionDelegationAuthorizer>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretBindingResolver, ConfigurationSecretBindingResolver>());
         services.TryAddScoped<IPermissionDescriptorRegistry, DefaultPermissionDescriptorRegistry>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IUnlinkedIdentityPolicy, RejectUnlinkedIdentityPolicy>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IUnlinkedIdentityPolicy, CreateUserUnlinkedIdentityPolicy>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IUnlinkedIdentityPolicy, MatchExternalUserUnlinkedIdentityPolicy>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IPermissionGrantSource, ElsaRolePermissionGrantSource>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IPermissionGrantSource, ClaimMappingPermissionGrantSource>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IPermissionGrantSource, GroupMappingPermissionGrantSource>());
@@ -88,6 +93,7 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IExternalAuthenticationTokenIssuer, DefaultExternalAuthenticationTokenIssuer>();
         services.TryAddScoped<IExternalAuthenticationBroker, ExternalAuthenticationBroker>();
         services.TryAddScoped<IdentityProviderConnectionManagementService>();
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IRoleDeletionDependencyContributor, ExternalAuthenticationRoleDeletionDependencyContributor>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IPermissionDescriptorProvider, ExternalAuthenticationPermissionDescriptorProvider>());
 
         return services;

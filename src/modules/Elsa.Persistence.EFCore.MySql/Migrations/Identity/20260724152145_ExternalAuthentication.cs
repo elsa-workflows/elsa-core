@@ -220,7 +220,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     UserId = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ConnectionId = table.Column<string>(type: "varchar(255)", nullable: false)
+                    ConnectionKey = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ConnectionMaterialRevision = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -240,7 +240,8 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     RefreshGeneration = table.Column<long>(type: "bigint", nullable: false),
                     RevokedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
-                    RevocationReason = table.Column<string>(type: "longtext", nullable: true)
+                    RevocationReason = table.Column<string>(type: "longtext", nullable: true),
+                    ProtectedUpstreamLogoutHint = table.Column<byte[]>(type: "longblob", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
@@ -258,7 +259,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     TenantId = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ConnectionId = table.Column<string>(type: "varchar(255)", nullable: false)
+                    ConnectionKey = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Issuer = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -307,8 +308,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                     IconId = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
-                    IsDefault = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsPreferred = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    OverridesConfigurationConnection = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     ArchivedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     UnlinkedPolicyJson = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -348,10 +350,10 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                 column: "ExpiresAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalAuthenticationSession_ConnectionId",
+                name: "IX_ExternalAuthenticationSession_ConnectionKey",
                 schema: "Elsa",
                 table: "ExternalAuthenticationSessions",
-                column: "ConnectionId");
+                column: "ConnectionKey");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ExternalAuthenticationSession_RefreshTokenHash",
@@ -370,7 +372,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                 name: "IX_ExternalIdentityLink_Identity",
                 schema: "Elsa",
                 table: "ExternalIdentityLinks",
-                columns: new[] { "TenantId", "ConnectionId", "Issuer", "SubjectHash" },
+                columns: new[] { "TenantId", "ConnectionKey", "Issuer", "SubjectHash" },
                 unique: true);
 
             migrationBuilder.CreateIndex(

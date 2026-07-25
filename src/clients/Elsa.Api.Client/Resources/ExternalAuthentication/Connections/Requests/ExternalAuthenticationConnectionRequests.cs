@@ -29,7 +29,8 @@ public sealed class SaveExternalAuthenticationConnectionRequest
     public string DisplayName { get; set; } = "";
     public string? IconId { get; set; }
     public int Order { get; set; }
-    public bool IsDefault { get; set; }
+    public bool IsPreferred { get; set; }
+    public bool OverridesConfigurationConnection { get; set; }
     public ExternalAuthenticationPolicySelection? UnlinkedPolicy { get; set; }
     public ICollection<ExternalAuthenticationGrantSourceSelection> PermissionGrantSources { get; set; } = [];
     public ExternalAuthenticationClaimProjection ClaimProjection { get; set; } = new();

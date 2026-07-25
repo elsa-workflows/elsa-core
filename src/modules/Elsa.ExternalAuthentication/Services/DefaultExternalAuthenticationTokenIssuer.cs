@@ -37,7 +37,7 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
         var session = await sessionStore.FindByIdAsync(sessionId, cancellationToken);
         if (session is null || !string.Equals(session.AuthenticationClientId, clientId, StringComparison.Ordinal))
             throw new InvalidOperationException("The external refresh token is invalid.");
-        var connection = await connectionRegistry.FindByIdAsync(session.TenantId, session.ConnectionId, cancellationToken);
+        var connection = await connectionRegistry.FindByKeyAsync(session.TenantId, session.ConnectionKey, cancellationToken);
         if (session.RevokedAt != null || session.ExpiresAt <= clock.UtcNow || connection is null || connection.IsShadowed || !connection.Connection.IsEnabled || connection.Connection.ArchivedAt is not null || !string.Equals(connection.Connection.MaterialRevision, session.ConnectionMaterialRevision, StringComparison.Ordinal))
             throw new InvalidOperationException("The external authentication session is no longer valid.");
         if (!string.Equals(session.SecretGenerationFingerprint, await GetSecretFingerprintAsync(connection.Connection.SecretBindings, cancellationToken), StringComparison.Ordinal))

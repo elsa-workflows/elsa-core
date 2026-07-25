@@ -2,7 +2,9 @@ using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
+using Elsa.ExternalAuthentication.Services;
 using Elsa.Identity.Entities;
+using Elsa.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using Elsa.Workflows;
 using Microsoft.EntityFrameworkCore;
@@ -12,23 +14,25 @@ namespace Elsa.Persistence.EFCore.Modules.ExternalAuthentication;
 /// <summary>Creates users and external links in one database transaction, converging safely on the durable unique link.</summary>
 public sealed class EFCoreExternalIdentityProvisioner(
     IDbContextFactory<IdentityElsaDbContext> dbContextFactory,
+    Elsa.Identity.Contracts.IRoleProvider roleProvider,
     IExternalAuthenticationHandleHasher handleHasher,
     IIdentityGenerator identityGenerator,
     ISystemClock clock) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore
 {
     private const int MaximumUserNameAttempts = 10;
 
-    public async ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionId, ExternalIdentity identity, CancellationToken cancellationToken = default)
+    public async ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default)
     {
         var subjectHash = handleHasher.Hash(identity.Subject);
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        var link = await dbContext.ExternalIdentityLinks.AsNoTracking().SingleOrDefaultAsync(x => x.TenantId == tenantId && x.ConnectionId == connectionId && x.Issuer == identity.Issuer && x.SubjectHash == subjectHash, cancellationToken);
+        var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(connectionKey);
+        var link = await dbContext.ExternalIdentityLinks.AsNoTracking().SingleOrDefaultAsync(x => x.TenantId == tenantId && x.ConnectionKey == normalizedKey && x.Issuer == identity.Issuer && x.SubjectHash == subjectHash, cancellationToken);
         return link is null ? null : ToModel(link);
     }
 
     public async ValueTask<ProvisioningResult> CreateLinkOrGetExistingAsync(ProvisioningRequest request, CancellationToken cancellationToken = default)
     {
-        var existing = await FindLinkAsync(request.TenantId, request.ConnectionId, request.Identity, cancellationToken);
+        var existing = await FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity, cancellationToken);
         if (existing is not null)
             return new ProvisioningResult(existing.UserId, existing, false);
 
@@ -41,7 +45,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
             {
                 Id = identityGenerator.GenerateId(),
                 TenantId = request.TenantId,
-                ConnectionId = request.ConnectionId,
+                ConnectionKey = ConnectionRevisionCalculator.NormalizeKey(request.ConnectionKey),
                 Issuer = request.Identity.Issuer,
                 SubjectHash = handleHasher.Hash(request.Identity.Subject),
                 UserId = user.User.Id,
@@ -54,7 +58,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
         }
         catch (DbUpdateException)
         {
-            existing = await FindLinkAsync(request.TenantId, request.ConnectionId, request.Identity, cancellationToken);
+            existing = await FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity, cancellationToken);
             if (existing is not null)
                 return new ProvisioningResult(existing.UserId, existing, false);
             throw;
@@ -69,10 +73,10 @@ public sealed class EFCoreExternalIdentityProvisioner(
             .Where(x => x.TenantId == filter.TenantId);
         if (filter.UserId is not null)
             query = query.Where(x => x.UserId == filter.UserId);
-        if (filter.ConnectionId is not null)
-            query = query.Where(x => x.ConnectionId == filter.ConnectionId);
+        if (filter.ConnectionKey is not null)
+            query = query.Where(x => x.ConnectionKey == ConnectionRevisionCalculator.NormalizeKey(filter.ConnectionKey));
 
-        var links = await query.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Select(x => new ExternalIdentityLink(x.Id, x.TenantId, x.ConnectionId, x.Issuer, x.SubjectHash, x.SubjectHint, x.UserId, x.CreatedAt, x.LastSignedInAt)).ToArrayAsync(cancellationToken);
+        var links = await query.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id).Select(x => new ExternalIdentityLink(x.Id, x.TenantId, x.ConnectionKey, x.Issuer, x.SubjectHash, x.SubjectHint, x.UserId, x.CreatedAt, x.LastSignedInAt)).ToArrayAsync(cancellationToken);
         return Page.Of<ExternalIdentityLink>(links, links.Length);
     }
 
@@ -96,24 +100,36 @@ public sealed class EFCoreExternalIdentityProvisioner(
         }
 
         var proposal = request.Proposal ?? throw new InvalidOperationException("A user creation proposal is required for an unlinked external identity.");
+        var roleIds = await ResolveRoleIdsAsync(proposal.DefaultRoleIds, cancellationToken);
         var prefix = NormalizeUserNamePrefix(proposal.UserNamePrefix);
         for (var attempt = 0; attempt < MaximumUserNameAttempts; attempt++)
         {
             var name = $"{prefix}-{identityGenerator.GenerateId()}";
             if (await dbContext.Users.AnyAsync(x => x.Name == name, cancellationToken))
                 continue;
-            var user = new User { Id = identityGenerator.GenerateId(), Name = name, TenantId = request.TenantId };
+            var user = new User { Id = identityGenerator.GenerateId(), Name = name, TenantId = request.TenantId, Roles = roleIds.ToList() };
             dbContext.Users.Add(user);
             return (user, true);
         }
         throw new InvalidOperationException("A unique Elsa user name could not be reserved for the external identity.");
     }
 
-    private static ExternalIdentityLink ToModel(PersistedExternalIdentityLink link) => new(link.Id, link.TenantId, link.ConnectionId, link.Issuer, link.SubjectHash, link.SubjectHint, link.UserId, link.CreatedAt, link.LastSignedInAt);
+    private static ExternalIdentityLink ToModel(PersistedExternalIdentityLink link) => new(link.Id, link.TenantId, link.ConnectionKey, link.Issuer, link.SubjectHash, link.SubjectHint, link.UserId, link.CreatedAt, link.LastSignedInAt);
 
     private static string NormalizeUserNamePrefix(string prefix)
     {
         var normalized = new string((prefix ?? string.Empty).Trim().Where(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_').ToArray());
         return string.IsNullOrEmpty(normalized) ? "external" : normalized;
+    }
+
+    private async ValueTask<IReadOnlyCollection<string>> ResolveRoleIdsAsync(IReadOnlyCollection<string>? roleIds, CancellationToken cancellationToken)
+    {
+        var requested = (roleIds ?? []).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal).ToArray();
+        if (requested.Length == 0)
+            return [];
+        var found = (await roleProvider.FindByIdsAsync(requested, cancellationToken)).Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+        if (!found.SetEquals(requested))
+            throw new InvalidOperationException("A configured default role no longer exists.");
+        return requested;
     }
 }

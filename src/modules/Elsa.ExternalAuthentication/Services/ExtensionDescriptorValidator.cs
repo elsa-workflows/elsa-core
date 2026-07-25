@@ -36,6 +36,13 @@ public sealed class ExtensionDescriptorValidator
         return descriptor;
     }
 
+    public ExternalUserMatcherDescriptor Validate(IExternalUserMatcher extension)
+    {
+        var descriptor = extension.Describe();
+        ValidateDescriptor(extension.Type, descriptor.Type, descriptor.DisplayName, descriptor.Description, descriptor.SettingsVersion, descriptor.Fields, descriptor.CustomEditor);
+        return descriptor;
+    }
+
     private static void ValidateDescriptor(
         string extensionType,
         string descriptorType,

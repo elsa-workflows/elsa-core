@@ -63,7 +63,7 @@ internal static class RegistryTestData
         string displayName = "Contoso",
         int displayOrder = 0,
         bool enabled = true,
-        bool isDefault = false) => new()
+        bool isPreferred = false) => new()
     {
         Id = id,
         TenantId = tenantId,
@@ -73,7 +73,7 @@ internal static class RegistryTestData
         DisplayName = displayName,
         DisplayOrder = displayOrder,
         IsEnabled = enabled,
-        IsDefault = isDefault,
+        IsPreferred = isPreferred,
         MaterialRevision = "test"
     };
 

@@ -10,6 +10,7 @@ using Elsa.Workflows;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Persistence;
 
@@ -63,7 +64,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         Assert.True(connection.FindProperty(nameof(PersistedIdentityProviderConnection.Revision))!.IsConcurrencyToken);
         Assert.Contains(connection.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedIdentityProviderConnection.TenantId), nameof(PersistedIdentityProviderConnection.Key)]));
         var link = model.FindEntityType(typeof(PersistedExternalIdentityLink))!;
-        Assert.Contains(link.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalIdentityLink.TenantId), nameof(PersistedExternalIdentityLink.ConnectionId), nameof(PersistedExternalIdentityLink.Issuer), nameof(PersistedExternalIdentityLink.SubjectHash)]));
+        Assert.Contains(link.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalIdentityLink.TenantId), nameof(PersistedExternalIdentityLink.ConnectionKey), nameof(PersistedExternalIdentityLink.Issuer), nameof(PersistedExternalIdentityLink.SubjectHash)]));
     }
 
     [Fact]
@@ -112,7 +113,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     public async Task ProvisionerCreatesCredentiallessUserAndOneDurableLinkPerIdentityTuple()
     {
         using var hasher = new HmacExternalAuthenticationHandleHasher();
-        var provisioner = new EFCoreExternalIdentityProvisioner(_dbContextFactory, hasher, new GuidIdentityGenerator(), _clock);
+        var provisioner = new EFCoreExternalIdentityProvisioner(_dbContextFactory, Substitute.For<Elsa.Identity.Contracts.IRoleProvider>(), hasher, new GuidIdentityGenerator(), _clock);
         var request = new ProvisioningRequest("tenant-a", "connection-a", new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>()), new UserCreationProposal("external"));
 
         var created = await provisioner.CreateLinkOrGetExistingAsync(request);
@@ -145,7 +146,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
     private ExternalAuthenticationSession CreateSession() => new()
     {
-        Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionId = "connection-a", ConnectionMaterialRevision = "revision-a", Issuer = "https://issuer.example", SubjectHash = "subject", ExternalGrants = [], StartedAt = _clock.UtcNow, LastRefreshedAt = _clock.UtcNow, ExpiresAt = _clock.UtcNow.AddHours(1), RefreshExpiresAt = _clock.UtcNow.AddHours(1), CurrentRefreshTokenHash = "refresh-a"
+        Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionKey = "contoso", ConnectionMaterialRevision = "revision-a", Issuer = "https://issuer.example", SubjectHash = "subject", ExternalGrants = [], StartedAt = _clock.UtcNow, LastRefreshedAt = _clock.UtcNow, ExpiresAt = _clock.UtcNow.AddHours(1), RefreshExpiresAt = _clock.UtcNow.AddHours(1), CurrentRefreshTokenHash = "refresh-a"
     };
 
     private sealed class TestDbContextFactory(DbContextOptions<IdentityElsaDbContext> options, IServiceProvider serviceProvider) : IDbContextFactory<IdentityElsaDbContext>

@@ -21,9 +21,9 @@ internal sealed class ListConnections(IdentityProviderConnectionManagementServic
     public override async Task<ConnectionListResponse> ExecuteAsync(ConnectionListRequest request, CancellationToken cancellationToken)
     {
         var requestedScope = request.Scope ?? request.ScopeKind;
-        var scope = ToScope(requestedScope, request.TenantId);
-        if ((!string.IsNullOrWhiteSpace(requestedScope) && scope is null) ||
-            !IsAllowedScope(scope, tenantAccessor.TenantId) ||
+        var scope = ConnectionScope.Host;
+        if ((!string.IsNullOrWhiteSpace(requestedScope) && !requestedScope.Equals("host", StringComparison.OrdinalIgnoreCase)) ||
+            !string.IsNullOrWhiteSpace(request.TenantId) ||
             request.PageSize is < 1 or > 100 ||
             !IsKnownSource(request.Source) ||
             !TryDecodeCursor(request.Cursor, out var cursor))
@@ -58,22 +58,6 @@ internal sealed class ListConnections(IdentityProviderConnectionManagementServic
         var items = await Task.WhenAll(page.Select((x, index) => ConnectionResponse.FromAsync(x, management, observationResults[index], cancellationToken).AsTask()));
         return new ConnectionListResponse(items, hasNextPage ? EncodeCursor(CursorFor(page[^1])) : null);
     }
-
-    private static ConnectionScope? ToScope(string? kind, string? tenantId) => kind?.ToLowerInvariant() switch
-    {
-        "host" => ConnectionScope.Host,
-        "defaulttenant" or "default-tenant" or "default" => ConnectionScope.DefaultTenant,
-        "tenant" when tenantId is not null => new ConnectionScope(ConnectionScopeKind.Tenant, tenantId),
-        _ => null
-    };
-
-    private static bool IsAllowedScope(ConnectionScope? scope, string tenantId) => scope is null || scope.Kind switch
-    {
-        ConnectionScopeKind.Host => true,
-        ConnectionScopeKind.DefaultTenant => tenantId.Length == 0,
-        ConnectionScopeKind.Tenant => string.Equals(scope.TenantId, tenantId, StringComparison.Ordinal),
-        _ => false
-    };
 
     private static bool IsKnownSource(string? source) => string.IsNullOrWhiteSpace(source) ||
         source.Equals("configuration", StringComparison.OrdinalIgnoreCase) ||
@@ -146,13 +130,18 @@ internal sealed class CreateConnection(IdentityProviderConnectionManagementServi
 
     public override async Task HandleAsync(ConnectionRequest request, CancellationToken cancellationToken)
     {
+        if (!request.HasOnlyHostScope())
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "host_scope_required", "Identity provider connections are managed host-wide in this version.", cancellationToken);
+            return;
+        }
         if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.PoliciesManage))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "The caller may not configure policies or permission grants.", cancellationToken);
             return;
         }
 
-        var result = await management.CreateAsync(request.ToConnection(tenantAccessor.TenantId), User, tenantAccessor.TenantId, request.ConfirmUnsafeSettings, cancellationToken);
+        var result = await management.CreateAsync(request.ToConnection(), User, tenantAccessor.TenantId, request.ConfirmUnsafeSettings, cancellationToken);
         if (result is not ManagementConnectionMutationResult.Success(var connection))
         {
             await ConnectionEndpointSupport.SendMutationResultAsync(HttpContext, result, management, cancellationToken);
@@ -179,6 +168,11 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
 
     public override async Task HandleAsync(ConnectionRequest request, CancellationToken cancellationToken)
     {
+        if (!request.HasOnlyHostScope())
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "host_scope_required", "Identity provider connections are managed host-wide in this version.", cancellationToken);
+            return;
+        }
         if (!ConnectionEndpointSupport.TryGetExpectedRevision(HttpContext, out var revision))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status428PreconditionRequired, "precondition_required", "If-Match with the current connection revision is required.", cancellationToken);
@@ -202,7 +196,11 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
             return;
         }
 
-        var result = await management.UpdateAsync(effective.Connection.Id, request.ToConnection(effective.Connection.TenantId), revision, User, tenantAccessor.TenantId, request.ConfirmUnsafeSettings, request.ConfirmFinalLoginPathOverride, cancellationToken);
+        var candidate = request.ToConnection();
+        if (request.SecretBindings is null)
+            candidate.SecretBindings = IdentityProviderConnectionCloner.Clone(effective.Connection).SecretBindings;
+
+        var result = await management.UpdateAsync(effective.Connection.Id, candidate, revision, User, tenantAccessor.TenantId, request.ConfirmUnsafeSettings, request.ConfirmFinalLoginPathOverride, cancellationToken);
         if (result is not ManagementConnectionMutationResult.Success(var connection))
         {
             await ConnectionEndpointSupport.SendMutationResultAsync(HttpContext, result, management, cancellationToken);
@@ -247,7 +245,8 @@ internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionMa
         }
 
         var confirmOverride = string.Equals(HttpContext.Request.Query["confirmFinalLoginPathOverride"], "true", StringComparison.OrdinalIgnoreCase);
-        var result = await management.ChangeLifecycleAsync(effective.Connection.Id, Action, revision, User, tenantAccessor.TenantId, confirmOverride, cancellationToken);
+        var revokeActiveSessions = string.Equals(HttpContext.Request.Query["revokeActiveSessions"], "true", StringComparison.OrdinalIgnoreCase);
+        var result = await management.ChangeLifecycleAsync(effective.Connection.Id, Action, revision, User, tenantAccessor.TenantId, confirmOverride, revokeActiveSessions, cancellationToken);
         if (result is not ManagementConnectionMutationResult.Success(var connection))
         {
             await ConnectionEndpointSupport.SendMutationResultAsync(HttpContext, result, management, cancellationToken);
@@ -351,8 +350,81 @@ internal sealed class ReplaceSecretBinding(IdentityProviderConnectionManagementS
     }
 }
 
-internal sealed class RemoveSecretBinding(IdentityProviderConnectionManagementService management, ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest
+/// <summary>Stores a write-only secret through an installed managed secret writer.</summary>
+internal sealed class ReplaceManagedSecretBinding(
+    IdentityProviderConnectionManagementService management,
+    IExternalAuthenticationAdapterRegistry adapters,
+    IEnumerable<IManagedSecretBindingWriter> managedSecretBindingWriters,
+    ITenantAccessor tenantAccessor) : ElsaEndpoint<ManagedSecretBindingRequest>
 {
+    private readonly IReadOnlyDictionary<string, IManagedSecretBindingWriter> _writers = managedSecretBindingWriters.ToDictionary(x => x.ResolverType, StringComparer.Ordinal);
+
+    public override void Configure()
+    {
+        Put("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}/managed");
+        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+    }
+
+    public override async Task HandleAsync(ManagedSecretBindingRequest request, CancellationToken cancellationToken)
+    {
+        if (!ConnectionEndpointSupport.TryGetExpectedRevision(HttpContext, out var revision))
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status428PreconditionRequired, "precondition_required", "If-Match with the current connection revision is required.", cancellationToken);
+            return;
+        }
+
+        var fieldName = Route<string>("fieldName")!;
+        if (string.IsNullOrWhiteSpace(request.Value) || string.IsNullOrWhiteSpace(request.ResolverType) || !_writers.TryGetValue(request.ResolverType, out var writer))
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "invalid_managed_secret", "A non-empty value and an installed managed secret resolver type are required.", cancellationToken);
+            return;
+        }
+
+        var lookup = await management.FindAsync(Route<string>("connectionId")!, tenantAccessor.TenantId, cancellationToken);
+        if (lookup is not ManagementConnectionLookupResult.Found(var effective))
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status404NotFound, "not_found", "The connection was not found.", cancellationToken);
+            return;
+        }
+        if (!ConnectionEndpointSupport.IsDatabaseOwned(effective))
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "Configuration-owned connections are read-only.", cancellationToken);
+            return;
+        }
+        if (effective.Connection.Revision != revision)
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status412PreconditionFailed, "revision_conflict", "The connection has changed; reload it before replacing its secret.", cancellationToken);
+            return;
+        }
+        if (!adapters.TryGet(effective.Connection.AdapterType, out var adapter) || !adapter.Describe().Fields.Any(x => x.IsSecretBinding && string.Equals(x.Name, fieldName, StringComparison.Ordinal)))
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "undeclared_secret_field", "The adapter does not declare this secret field.", cancellationToken);
+            return;
+        }
+
+        using var value = new SensitiveString(request.Value);
+        var binding = await writer.ReplaceAsync(new ManagedSecretBindingWriteRequest(effective.Connection.Id, fieldName, value), cancellationToken);
+        var candidate = IdentityProviderConnectionCloner.Clone(effective.Connection);
+        candidate.SecretBindings[fieldName] = binding;
+        var result = await management.UpdateAsync(candidate.Id, candidate, revision, User, tenantAccessor.TenantId, false, cancellationToken: cancellationToken);
+        if (result is not ManagementConnectionMutationResult.Success(var connection))
+        {
+            await ConnectionEndpointSupport.SendMutationResultAsync(HttpContext, result, management, cancellationToken);
+            return;
+        }
+
+        ConnectionEndpointSupport.SetEtag(HttpContext, connection.Revision);
+        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, null, cancellationToken), cancellationToken);
+    }
+}
+
+internal sealed class RemoveSecretBinding(
+    IdentityProviderConnectionManagementService management,
+    IEnumerable<IManagedSecretBindingWriter> managedSecretBindingWriters,
+    ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest
+{
+    private readonly IReadOnlyDictionary<string, IManagedSecretBindingWriter> _writers = managedSecretBindingWriters.ToDictionary(x => x.ResolverType, StringComparer.Ordinal);
+
     public override void Configure()
     {
         Delete("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}");
@@ -377,14 +449,22 @@ internal sealed class RemoveSecretBinding(IdentityProviderConnectionManagementSe
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "Configuration-owned connections are read-only.", cancellationToken);
             return;
         }
+        var fieldName = Route<string>("fieldName")!;
+        if (!effective.Connection.SecretBindings.TryGetValue(fieldName, out var existingBinding))
+        {
+            await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status404NotFound, "not_found", "The secret binding was not found.", cancellationToken);
+            return;
+        }
         var candidate = Elsa.ExternalAuthentication.Services.IdentityProviderConnectionCloner.Clone(effective.Connection);
-        candidate.SecretBindings.Remove(Route<string>("fieldName")!);
+        candidate.SecretBindings.Remove(fieldName);
         var result = await management.UpdateAsync(candidate.Id, candidate, revision, User, tenantAccessor.TenantId, false, cancellationToken: cancellationToken);
         if (result is not ManagementConnectionMutationResult.Success(var connection))
         {
             await ConnectionEndpointSupport.SendMutationResultAsync(HttpContext, result, management, cancellationToken);
             return;
         }
+        if (existingBinding.Ownership == SecretBindingOwnership.Managed && _writers.TryGetValue(existingBinding.ResolverType, out var writer))
+            await writer.RemoveAsync(existingBinding, cancellationToken);
         ConnectionEndpointSupport.SetEtag(HttpContext, connection.Revision);
         await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, null, cancellationToken), cancellationToken);
     }

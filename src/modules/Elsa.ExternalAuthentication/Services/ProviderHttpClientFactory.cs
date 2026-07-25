@@ -61,15 +61,24 @@ public interface IProviderHttpClientFactory
 public interface IProviderHttpClient
 {
     ValueTask<ProviderHttpResponse> GetAsync(Uri uri, ProviderResponseKind kind, CancellationToken cancellationToken = default);
-    ValueTask<ProviderHttpResponse> PostFormAsync(Uri uri, IReadOnlyDictionary<string, string> values, ProviderResponseKind kind, CancellationToken cancellationToken = default);
+    ValueTask<ProviderHttpResponse> PostFormAsync(Uri uri, IReadOnlyDictionary<string, string> values, IReadOnlyDictionary<string, string>? headers, ProviderResponseKind kind, CancellationToken cancellationToken = default);
 }
 
 public sealed class ProviderHttpClient(HttpMessageInvoker invoker, OutboundDestinationValidator destinationValidator, IOptions<ExternalAuthenticationOptions> options) : IProviderHttpClient
 {
     public ValueTask<ProviderHttpResponse> GetAsync(Uri uri, ProviderResponseKind kind, CancellationToken cancellationToken = default) => SendAsync(uri, kind, address => new HttpRequestMessage(HttpMethod.Get, address), cancellationToken);
 
-    public ValueTask<ProviderHttpResponse> PostFormAsync(Uri uri, IReadOnlyDictionary<string, string> values, ProviderResponseKind kind, CancellationToken cancellationToken = default) =>
-        SendAsync(uri, kind, address => new HttpRequestMessage(HttpMethod.Post, address) { Content = new FormUrlEncodedContent(values) }, cancellationToken);
+    public ValueTask<ProviderHttpResponse> PostFormAsync(Uri uri, IReadOnlyDictionary<string, string> values, IReadOnlyDictionary<string, string>? headers, ProviderResponseKind kind, CancellationToken cancellationToken = default) =>
+        SendAsync(uri, kind, address => CreateFormRequest(address, values, headers), cancellationToken);
+
+    private static HttpRequestMessage CreateFormRequest(Uri address, IReadOnlyDictionary<string, string> values, IReadOnlyDictionary<string, string>? headers)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, address) { Content = new FormUrlEncodedContent(values) };
+        if (headers is not null)
+            foreach (var (name, value) in headers)
+                request.Headers.TryAddWithoutValidation(name, value);
+        return request;
+    }
 
     private async ValueTask<ProviderHttpResponse> SendAsync(Uri uri, ProviderResponseKind kind, Func<Uri, HttpRequestMessage> createRequest, CancellationToken cancellationToken)
     {

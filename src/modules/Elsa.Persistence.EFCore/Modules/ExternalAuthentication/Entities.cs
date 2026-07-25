@@ -15,8 +15,9 @@ public sealed class PersistedIdentityProviderConnection
     public string DisplayName { get; set; } = null!;
     public string? IconId { get; set; }
     public int DisplayOrder { get; set; }
-    public bool IsDefault { get; set; }
+    public bool IsPreferred { get; set; }
     public bool IsEnabled { get; set; }
+    public bool OverridesConfigurationConnection { get; set; }
     public DateTimeOffset? ArchivedAt { get; set; }
     public string? UnlinkedPolicyJson { get; set; }
     public string PermissionGrantSourcesJson { get; set; } = null!;
@@ -32,7 +33,7 @@ public sealed class PersistedExternalIdentityLink
 {
     public string Id { get; set; } = null!;
     public string TenantId { get; set; } = null!;
-    public string ConnectionId { get; set; } = null!;
+    public string ConnectionKey { get; set; } = null!;
     public string Issuer { get; set; } = null!;
     public string SubjectHash { get; set; } = null!;
     public string? SubjectHint { get; set; }
@@ -64,6 +65,7 @@ public sealed class PersistedBrokerTransaction
     public string? ClientState { get; set; }
     public string TenantId { get; set; } = null!;
     public string? ConnectionId { get; set; }
+    public string? ConnectionKey { get; set; }
     public string? ConnectionMaterialRevision { get; set; }
     public string? SecretGenerationFingerprint { get; set; }
     public string PkceChallenge { get; set; } = null!;
@@ -92,7 +94,7 @@ public sealed class PersistedExternalAuthenticationSession
     public string AuthenticationClientId { get; set; } = null!;
     public string TenantId { get; set; } = null!;
     public string UserId { get; set; } = null!;
-    public string ConnectionId { get; set; } = null!;
+    public string ConnectionKey { get; set; } = null!;
     public string ConnectionMaterialRevision { get; set; } = null!;
     public string? SecretGenerationFingerprint { get; set; }
     public string Issuer { get; set; } = null!;
@@ -106,6 +108,7 @@ public sealed class PersistedExternalAuthenticationSession
     public long RefreshGeneration { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public string? RevocationReason { get; set; }
+    public byte[]? ProtectedUpstreamLogoutHint { get; set; }
 }
 
 public sealed class PersistedConnectionObservation

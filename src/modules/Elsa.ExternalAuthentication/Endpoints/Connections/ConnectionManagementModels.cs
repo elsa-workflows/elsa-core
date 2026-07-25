@@ -21,7 +21,8 @@ internal sealed class ConnectionRequest
     public string? DisplayName { get; set; }
     public string? IconId { get; set; }
     public int Order { get; set; }
-    public bool IsDefault { get; set; }
+    public bool IsPreferred { get; set; }
+    public bool OverridesConfigurationConnection { get; set; }
     public PolicySelection? UnlinkedPolicy { get; set; }
     public List<GrantSourceSelection>? PermissionGrantSources { get; set; }
     public ClaimProjectionRequest? ClaimProjection { get; set; }
@@ -29,15 +30,12 @@ internal sealed class ConnectionRequest
     public bool ConfirmUnsafeSettings { get; set; }
     public bool ConfirmFinalLoginPathOverride { get; set; }
 
-    public IdentityProviderConnection ToConnection(string fallbackTenantId) => new()
+    public bool HasOnlyHostScope() => Scope is null ||
+        (string.IsNullOrWhiteSpace(Scope.TenantId) && (string.IsNullOrWhiteSpace(Scope.Kind) || string.Equals(Scope.Kind, "host", StringComparison.OrdinalIgnoreCase)));
+
+    public IdentityProviderConnection ToConnection() => new()
     {
-        TenantId = Scope?.Kind?.ToLowerInvariant() switch
-        {
-            "host" => ConnectionScope.HostTenantId,
-            "defaulttenant" or "default-tenant" or "default" => ConnectionScope.DefaultTenantId,
-            "tenant" => Scope.TenantId ?? fallbackTenantId,
-            _ => Scope?.TenantId ?? fallbackTenantId
-        },
+        TenantId = ConnectionScope.HostTenantId,
         Key = Key ?? string.Empty,
         AdapterType = AdapterType ?? string.Empty,
         AdapterSettingsVersion = AdapterSettingsVersion,
@@ -46,7 +44,8 @@ internal sealed class ConnectionRequest
         DisplayName = DisplayName ?? string.Empty,
         IconId = IconId,
         DisplayOrder = Order,
-        IsDefault = IsDefault,
+        IsPreferred = IsPreferred,
+        OverridesConfigurationConnection = OverridesConfigurationConnection,
         UnlinkedPolicy = UnlinkedPolicy,
         PermissionGrantSources = PermissionGrantSources?.Select(x => new GrantSourceSelection(x.Type, x.SettingsVersion, x.Settings.ValueKind == JsonValueKind.Undefined ? default : x.Settings.Clone(), x.Order)).ToArray() ?? [],
         ClaimProjection = ClaimProjection?.ToProjection() ?? Elsa.ExternalAuthentication.Models.ClaimProjection.Empty,
@@ -78,7 +77,7 @@ internal sealed class ClaimProjectionRequest
         MaximumTotalBytes);
 }
 
-internal sealed record ConnectionSecretBindingResponse(string ResolverType, string Reference, string? ExpectedType, string? ExpectedScope, bool IsConfigured, bool IsResolvable);
+internal sealed record ConnectionSecretBindingResponse(string Ownership, string? ResolverType, string? Reference, bool IsConfigured, bool IsResolvable);
 
 internal sealed class SecretBindingRequest
 {
@@ -87,7 +86,13 @@ internal sealed class SecretBindingRequest
     public string? ExpectedType { get; set; }
     public string? ExpectedScope { get; set; }
 
-    public SecretBinding ToBinding() => new(ResolverType ?? string.Empty, Reference ?? string.Empty, ExpectedType, ExpectedScope);
+    public SecretBinding ToBinding() => new(ResolverType ?? string.Empty, Reference ?? string.Empty, ExpectedType, ExpectedScope, SecretBindingOwnership.External);
+}
+
+internal sealed class ManagedSecretBindingRequest
+{
+    public string? ResolverType { get; set; }
+    public string? Value { get; set; }
 }
 
 internal sealed record ConnectionScopeResponse(string Kind, string TenantId);
@@ -99,13 +104,16 @@ internal sealed class ConnectionResponse
     public string Source { get; init; } = null!;
     public ConnectionScopeResponse Scope { get; init; } = null!;
     public string AdapterType { get; init; } = null!;
+    public Uri? CallbackUri { get; init; }
     public int AdapterSettingsVersion { get; init; }
     public JsonElement AdapterSettings { get; init; }
     public IReadOnlyDictionary<string, ConnectionSecretBindingResponse> SecretBindings { get; init; } = null!;
     public string DisplayName { get; init; } = null!;
     public string? IconId { get; init; }
     public int Order { get; init; }
-    public bool IsDefault { get; init; }
+    public bool IsPreferred { get; init; }
+    public bool OverridesConfigurationConnection { get; init; }
+    public bool CanCreateOverride { get; init; }
     public bool EnabledIntent { get; init; }
     public bool EffectivelyEnabled { get; init; }
     public string Validity { get; init; } = null!;
@@ -129,17 +137,26 @@ internal sealed class ConnectionResponse
             Source = effective.Ownership == ConnectionSourceOwnership.Configuration ? "configuration" : "database",
             Scope = new ConnectionScopeResponse(effective.Scope.Kind switch { ConnectionScopeKind.Host => "host", ConnectionScopeKind.DefaultTenant => "defaultTenant", _ => "tenant" }, effective.Scope.TenantId),
             AdapterType = effective.Connection.AdapterType,
+            CallbackUri = management.GetProviderCallbackUri(effective.Connection),
             AdapterSettingsVersion = effective.Connection.AdapterSettingsVersion,
             AdapterSettings = effective.Connection.AdapterSettings.ValueKind == JsonValueKind.Undefined ? default : effective.Connection.AdapterSettings.Clone(),
             SecretBindings = effective.Connection.SecretBindings.ToDictionary(x => x.Key, x =>
             {
                 states.TryGetValue(x.Key, out var state);
-                return new ConnectionSecretBindingResponse(x.Value.ResolverType, x.Value.Reference, x.Value.ExpectedType, x.Value.ExpectedScope, state?.IsConfigured ?? false, state?.IsResolvable ?? false);
+                var presentation = management.PresentSecretBinding(x.Value, state);
+                return new ConnectionSecretBindingResponse(
+                    presentation.Ownership,
+                    x.Value.Ownership == SecretBindingOwnership.External ? x.Value.ResolverType : null,
+                    x.Value.Ownership == SecretBindingOwnership.External ? x.Value.Reference : null,
+                    presentation.IsConfigured,
+                    presentation.IsResolvable);
             }, StringComparer.Ordinal),
             DisplayName = effective.Connection.DisplayName,
             IconId = effective.Connection.IconId,
             Order = effective.Connection.DisplayOrder,
-            IsDefault = effective.Connection.IsDefault,
+            IsPreferred = effective.Connection.IsPreferred,
+            OverridesConfigurationConnection = effective.Connection.OverridesConfigurationConnection,
+            CanCreateOverride = effective.Ownership == ConnectionSourceOwnership.Configuration && management.CanCreateConfigurationOverride(),
             EnabledIntent = effective.Connection.IsEnabled,
             EffectivelyEnabled = effective.Connection.IsEnabled && !effective.Connection.ArchivedAt.HasValue && !effective.IsShadowed && effective.Validity != ConnectionValidity.Invalid,
             Validity = effective.Validity.ToString().ToLowerInvariant(),

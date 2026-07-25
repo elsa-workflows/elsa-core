@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
+using Elsa.ExternalAuthentication.Services;
 
 namespace Elsa.ExternalAuthentication.Stores.InMemory;
 
@@ -19,7 +20,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
             var sessions = _sessions.Values
                 .Where(x => string.Equals(x.TenantId, filter.TenantId, StringComparison.Ordinal))
                 .Where(x => filter.UserId is null || string.Equals(x.UserId, filter.UserId, StringComparison.Ordinal))
-                .Where(x => filter.ConnectionId is null || string.Equals(x.ConnectionId, filter.ConnectionId, StringComparison.Ordinal))
+                .Where(x => filter.ConnectionKey is null || string.Equals(x.ConnectionKey, ConnectionRevisionCalculator.NormalizeKey(filter.ConnectionKey), StringComparison.Ordinal))
                 .Where(x => filter.Status is null ||
                     filter.Status.Equals("active", StringComparison.OrdinalIgnoreCase) && x.RevokedAt is null ||
                     filter.Status.Equals("revoked", StringComparison.OrdinalIgnoreCase) && x.RevokedAt is not null)
@@ -71,6 +72,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
             {
                 session.RevokedAt = clock.UtcNow;
                 session.RevocationReason = "expired";
+                session.ProtectedUpstreamLogoutHint = null;
                 return ValueTask.FromResult<ExternalAuthenticationSessionRotationResult>(new ExternalAuthenticationSessionRotationResult.Expired());
             }
 
@@ -78,6 +80,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
             {
                 session.RevokedAt = clock.UtcNow;
                 session.RevocationReason = "refresh_token_reuse";
+                session.ProtectedUpstreamLogoutHint = null;
                 return ValueTask.FromResult<ExternalAuthenticationSessionRotationResult>(new ExternalAuthenticationSessionRotationResult.Reused());
             }
 
@@ -99,7 +102,29 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
 
             session.RevokedAt = revokedAt;
             session.RevocationReason = reason;
+            session.ProtectedUpstreamLogoutHint = null;
             return ValueTask.FromResult(true);
+        }
+    }
+
+    public ValueTask<int> RevokeActiveForConnectionAsync(string connectionKey, string reason, DateTimeOffset revokedAt, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionKey);
+        cancellationToken.ThrowIfCancellationRequested();
+        var normalizedConnectionKey = ConnectionRevisionCalculator.NormalizeKey(connectionKey);
+
+        lock (_syncRoot)
+        {
+            var count = 0;
+            foreach (var session in _sessions.Values.Where(x => x.RevokedAt is null && string.Equals(x.ConnectionKey, normalizedConnectionKey, StringComparison.Ordinal)))
+            {
+                session.RevokedAt = revokedAt;
+                session.RevocationReason = reason;
+                session.ProtectedUpstreamLogoutHint = null;
+                count++;
+            }
+
+            return ValueTask.FromResult(count);
         }
     }
 
@@ -109,7 +134,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
         AuthenticationClientId = session.AuthenticationClientId,
         TenantId = session.TenantId,
         UserId = session.UserId,
-        ConnectionId = session.ConnectionId,
+        ConnectionKey = session.ConnectionKey,
         ConnectionMaterialRevision = session.ConnectionMaterialRevision,
         SecretGenerationFingerprint = session.SecretGenerationFingerprint,
         Issuer = session.Issuer,
@@ -123,5 +148,6 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
         RefreshGeneration = session.RefreshGeneration,
         RevokedAt = session.RevokedAt,
         RevocationReason = session.RevocationReason
+        ,ProtectedUpstreamLogoutHint = session.ProtectedUpstreamLogoutHint?.ToArray()
     };
 }

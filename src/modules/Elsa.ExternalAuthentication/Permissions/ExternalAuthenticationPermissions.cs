@@ -12,6 +12,7 @@ public static class ExternalAuthenticationPermissions
     public const string ConnectionsTest = "external-authentication:connections:test";
     public const string ConnectionsPreview = "external-authentication:connections:preview";
     public const string PoliciesManage = "external-authentication:policies:manage";
+    public const string RolesAssign = "external-authentication:roles:assign";
     public const string ProviderTrustUnsafe = "external-authentication:provider-trust:unsafe";
     public const string PermissionsDelegate = "external-authentication:permissions:delegate";
     public const string PermissionsDelegateUnrestricted = "external-authentication:permissions:delegate-unrestricted";
@@ -28,6 +29,7 @@ public static class ExternalAuthenticationPermissions
         new(ConnectionsTest, "Test identity provider connections", "Run on-demand provider connection tests.", "External Authentication"),
         new(ConnectionsPreview, "Preview identity provider sign-in", "Run a redacted, non-mutating sign-in preview.", "External Authentication"),
         new(PoliciesManage, "Manage external authentication policies", "Configure unlinked identity policies and permission grant-source selections.", "External Authentication"),
+        new(RolesAssign, "Assign external authentication default roles", "Assign or remove Elsa Roles used when an external authentication policy creates a user.", "External Authentication"),
         new(ProviderTrustUnsafe, "Use privileged authentication overrides", "Confirm unsafe provider trust settings or a final-login-path recovery override.", "External Authentication"),
         new(PermissionsDelegate, "Delegate external permissions", "Configure mappings for permissions the actor may delegate.", "External Authentication"),
         new(PermissionsDelegateUnrestricted, "Delegate unrestricted external permissions", "Configure permission mappings without possessing every delegated permission.", "External Authentication"),

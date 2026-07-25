@@ -32,7 +32,7 @@ public sealed class ConnectionRevisionCalculator
                 writer.WriteString("displayName", connection.DisplayName);
                 writer.WriteString("iconId", connection.IconId);
                 writer.WriteNumber("displayOrder", connection.DisplayOrder);
-                writer.WriteBoolean("isDefault", connection.IsDefault);
+                writer.WriteBoolean("isPreferred", connection.IsPreferred);
                 writer.WriteString("materialRevision", CalculateMaterialRevision(connection));
                 writer.WriteEndObject();
             }
@@ -104,6 +104,7 @@ public sealed class ConnectionRevisionCalculator
 
         writer.WriteEndArray();
         writer.WriteBoolean("isEnabled", connection.IsEnabled);
+        writer.WriteBoolean("overridesConfigurationConnection", connection.OverridesConfigurationConnection);
         writer.WriteBoolean("isArchived", connection.ArchivedAt.HasValue);
         writer.WriteString("upstreamLogoutMode", connection.UpstreamLogoutMode.ToString());
         writer.WritePropertyName("unlinkedPolicy");

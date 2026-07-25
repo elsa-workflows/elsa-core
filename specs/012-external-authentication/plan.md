@@ -1,14 +1,18 @@
 # Implementation Plan: External Authentication
 
+**Status**: Approved baseline with open revision work
+
+**Revised**: 2026-07-24
+
 **Branch**: `codex/012-external-authentication` | **Date**: 2026-07-24 | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `/specs/012-external-authentication/spec.md`
 
 ## Summary
 
-Add a server-owned External Authentication broker to Elsa 3. The broker composes configuration-owned and optional database-owned Identity Provider Connections, dispatches to startup-installed Protocol Adapters, resolves normalized External Identities to tenant-owned Elsa Users, composes bounded Elsa permissions, and returns short-lived PKCE-bound completion codes to registered Authentication Clients.
+Add a server-owned External Authentication broker to Elsa 3. The broker composes configuration-owned connections, Studio-owned connections, and explicit full-shadow Studio Overrides host-wide within the connected environment. Record IDs identify management and transient broker state; immutable Connection Keys identify durable links and long-lived sessions. The broker dispatches to adapters, evaluates the selected unlinked policy/user matcher, assigns static authorized roles only to newly created users, and returns short-lived PKCE-bound completion codes.
 
-V1 ships OpenID Connect as a separate adapter, optional Elsa Secrets integration, EF persistence integrated with the existing Identity transaction boundary, management and broker APIs, and paired Studio Server/WebAssembly modules. Existing local Identity and direct Studio OpenID Connect contracts remain compatible.
+V1 ships OpenID Connect as a separate adapter, Managed Secrets through Elsa Secrets, External Secrets through standard configuration, EF persistence integrated with the existing Identity transaction boundary, management and broker APIs, a generic `Elsa.Studio.Authentication.UI` shell, and paired Studio Server/WebAssembly clients. Existing local Identity and direct Studio OpenID Connect contracts remain compatible throughout Elsa 3.x.
 
 ## Technical Context
 
@@ -26,9 +30,9 @@ V1 ships OpenID Connect as a separate adapter, optional Elsa Secrets integration
 
 **Performance Goals**: 250 ms p95 Login Method discovery at 100 concurrent requests; 500 ms p95 100-row management pages; no more than 250 ms p95 Elsa processing overhead for initiation/callback/exchange excluding provider latency.
 
-**Constraints**: Configuration/database ownership must remain explicit; no token/secret redirect leakage; exact callbacks; mandatory client-to-Elsa S256 PKCE; atomic single-use state; credential-less users; tenant/link uniqueness; no implicit account or permission mapping; no direct-OIDC breakage; public WebAssembly clients contain no secret.
+**Constraints**: Host-wide administration in the connected environment without a target field; record-ID/logical-key separation; complete overrides with disabled-shadow/archive-reveal semantics; exact `discoveryUrl` as the safe default with separately authorized and deployment-gated Advanced overrides for discovery-derived issuer/endpoints/signing keys; immutable deployment-derived callbacks, confidential upstream OIDC, S256 PKCE, and protocol validation; basic/post client authentication; ephemeral user-matcher claims; no direct claim-permission/role mapping; no Direct OIDC breakage.
 
-**Scale/Scope**: 10,000 persisted connections across tenants, up to 50 effective Login Methods per tenant, server and WebAssembly clients, three delivery milestones, all supported EF providers, and no continuous health/audit-history subsystem.
+**Scale/Scope**: 10,000 host-wide persisted/override records, up to 50 effective Login Methods, server and WebAssembly clients, all supported EF providers, and no continuous health/audit-history subsystem.
 
 ## Constitution Check
 
@@ -150,7 +154,7 @@ src/modules/Elsa.Studio.ExternalAuthentication.Tests/
 tests/browser/ExternalAuthentication/
 ```
 
-**Structure Decision**: The Core broker remains protocol-neutral. OpenID Connect proves the deployed-adapter seam; Secrets remains an optional bridge. EF integration extends the current Identity context to make JIT User plus External Identity Link creation atomic. Studio combines chooser and administration in one shared Razor class library with only trust-boundary-specific logic split into Server and WebAssembly packages.
+**Structure Decision**: The Core broker remains protocol-neutral. OpenID Connect proves the adapter seam; Elsa Secrets and the configuration resolver cover Managed and External ownership. EF integration extends the Identity context so JIT User, link, and authorized role assignment are atomic. `Elsa.Studio.Authentication.UI` owns the generic shell; External Authentication contributes login behavior and connection administration. Host-specific credential handling remains split into Server and WebAssembly packages.
 
 ## Phase 0: Research
 
@@ -159,14 +163,14 @@ See [research.md](research.md).
 Resolved decisions include:
 
 - Startup-installed adapter packages with runtime-managed connection settings.
-- Read-through merged registry with explicit collision/shadowing semantics.
+- Read-through merged registry with explicit full-shadow override semantics.
 - Atomic state/store contracts and EF Identity transaction integration.
 - Opaque completion/external refresh tokens with single-use/rotation.
 - Identity token issuance refactoring without breaking `IAccessTokenIssuer`.
 - OpenID Connect code-flow and validation through maintained protocol libraries.
 - BFF-style Studio Server and public-client Studio WebAssembly profiles.
 - Nullable Local Credentials with legacy login/refresh compatibility.
-- Explicit permission-delegation and Secret Binding generation boundaries.
+- Single External User Matcher policy semantics, static create-user role authorization, and Managed/External Secret Binding boundaries.
 - Secure outbound HTTP/rate-limit defaults and one latest test observation.
 
 No `NEEDS CLARIFICATION` markers remain.
@@ -186,22 +190,22 @@ No `NEEDS CLARIFICATION` markers remain.
 1. Add protocol-neutral Core module, options, descriptors, registry, in-memory atomic state, broker endpoints, and client registrations.
 2. Refactor Identity JWT construction; make Local Credentials optional while retaining legacy endpoints.
 3. Add OpenID Connect adapter, outbound HTTP policy, normalized claims, safe errors, rate limits, and fake-provider tests.
-4. Add link resolution, reject/JIT policies, grant pipeline, external session/token rotation, and notifications.
-5. Add shared Studio module, chooser, and Server/WebAssembly broker host packages.
+4. Add durable link resolution by Connection Key, reject/create/matcher policies, atomic static create-user roles, external session/token rotation, and notifications.
+5. Add the Authentication.UI shell, external-auth contributions, and Server/WebAssembly broker host packages.
 
 ### Milestone 2: Persisted Administration
 
 1. Extend Identity EF context/migrations and implement atomic connection/link/session/state/observation stores.
-2. Add management/descriptor/link/session APIs, permissions, ETags, archive/restore, and Secret Binding bridge.
+2. Add management/descriptor/link/session APIs, explicit full-shadow overrides, permissions, ETags, archive/restore, and Managed/External Secret resolvers.
 3. Add connection list/editor, descriptor forms, lifecycle, test, and Preview Sign-in UI.
 4. Verify no-restart database changes and authoritative cross-node behavior.
 
 ### Milestone 3: Enterprise Hardening
 
-1. Complete host-wide/tenant collision and discovery isolation coverage.
-2. Add permission descriptors/delegation warnings, recovery/final-login guard, upstream logout, session administration, and all security notifications.
+1. Complete host-wide environment, record-ID/logical-key, override lifecycle, and discovery coverage.
+2. Add user-matcher/fallback and static role warnings, recovery/final-login guard, minimal-token upstream logout, session administration, and notifications.
 3. Add cross-node, replay, SSRF, rate-limit, redaction, accessibility, and browser tests.
-4. Document direct OpenID Connect migration/rollback, deployment topology, secrets, and operational defaults.
+4. Document Direct OIDC staged deprecation/migration/rollback, deployment topology, secrets, and operational defaults.
 
 ## Post-Design Constitution Re-check
 

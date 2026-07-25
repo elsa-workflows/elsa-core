@@ -55,6 +55,33 @@ internal sealed class ListPermissionSourceDescriptors(IPermissionGrantSourceRegi
     }
 }
 
+internal sealed class ListExternalUserMatcherDescriptors(IExternalUserMatcherRegistry registry) : ElsaEndpointWithoutRequest<IReadOnlyCollection<ExternalUserMatcherDescriptor>>
+{
+    public override void Configure()
+    {
+        Get("/external-authentication/descriptors/user-matchers");
+        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+    }
+
+    public override Task<IReadOnlyCollection<ExternalUserMatcherDescriptor>> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(registry.ListDescriptors());
+}
+
+internal sealed record ManagedSecretResolverDescriptor(string Type, string DisplayName);
+internal sealed record ManagedSecretResolverDescriptorResponse(IReadOnlyCollection<ManagedSecretResolverDescriptor> Items);
+
+/// <summary>Lists installed managed secret writers without revealing any bound secret reference.</summary>
+internal sealed class ListManagedSecretResolverDescriptors(IEnumerable<IManagedSecretBindingWriter> writers) : ElsaEndpointWithoutRequest<ManagedSecretResolverDescriptorResponse>
+{
+    public override void Configure()
+    {
+        Get("/external-authentication/descriptors/managed-secret-resolvers");
+        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+    }
+
+    public override Task<ManagedSecretResolverDescriptorResponse> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(new ManagedSecretResolverDescriptorResponse(
+        writers.Select(x => new ManagedSecretResolverDescriptor(x.ResolverType, x.DisplayName)).OrderBy(x => x.Type, StringComparer.Ordinal).ToArray()));
+}
+
 internal sealed class ListPermissionDescriptors(IPermissionDescriptorRegistry registry) : ElsaEndpointWithoutRequest<IReadOnlyCollection<PermissionDescriptor>>
 {
     public override void Configure()
