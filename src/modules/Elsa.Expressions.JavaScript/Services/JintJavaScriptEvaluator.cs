@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
 using Acornima.Ast;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -25,6 +23,9 @@ namespace Elsa.Expressions.JavaScript.Services;
 public class JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
     : IJavaScriptEvaluator
 {
+    // The converters are stateless, so a single instance of each can serve every engine.
+    private static readonly IObjectConverter[] ObjectConverters = [new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()];
+
     private readonly JintOptions _jintOptions = scriptOptions.Value;
 
     /// <inheritdoc />
@@ -91,7 +92,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()]);
+        options.Interop.ObjectConverters.AddRange(ObjectConverters);
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
@@ -115,15 +116,24 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private Prepared<Script> GetOrCreatePrepareScript(string expression)
     {
-        var cacheKey = "jint:script:" + Hash(expression);
+        // The key type keeps these entries distinct from any other consumer of the shared cache, so the
+        // expression itself can be used as the key. A cache hit then costs a dictionary lookup rather than
+        // a hash of the entire expression plus the allocations needed to render that hash as a string.
+        var cacheKey = new ScriptCacheKey(expression);
 
-        return memoryCache.GetOrCreate(cacheKey, entry =>
-        {
-            if (_jintOptions.ScriptCacheTimeout.HasValue)
-                entry.SetSlidingExpiration(_jintOptions.ScriptCacheTimeout.Value);
+        // Looking the entry up directly rather than through GetOrCreate keeps the factory closure off the
+        // hot path: it is only needed on a miss.
+        if (memoryCache.TryGetValue(cacheKey, out Prepared<Script> cachedScript))
+            return cachedScript;
 
-            return PrepareScript(expression);
-        })!;
+        using var entry = memoryCache.CreateEntry(cacheKey);
+
+        if (_jintOptions.ScriptCacheTimeout.HasValue)
+            entry.SetSlidingExpiration(_jintOptions.ScriptCacheTimeout.Value);
+
+        var preparedScript = PrepareScript(expression);
+        entry.Value = preparedScript;
+        return preparedScript;
     }
 
     private Prepared<Script> PrepareScript(string expression)
@@ -138,10 +148,8 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         return Engine.PrepareScript(expression, options: prepareOptions);
     }
 
-    private string Hash(string input)
-    {
-        var bytes = Encoding.UTF8.GetBytes(input);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToBase64String(hash);
-    }
+    /// <summary>
+    /// Identifies a prepared script in the shared memory cache.
+    /// </summary>
+    private readonly record struct ScriptCacheKey(string Expression);
 }
