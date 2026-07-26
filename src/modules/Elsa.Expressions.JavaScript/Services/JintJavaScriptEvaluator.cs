@@ -56,6 +56,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
         ConfigureObjectConverters(engineOptions);
+        ConfigureExecutionConstraints(engineOptions, cancellationToken);
 
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
@@ -87,6 +88,25 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
             return instance;
         });
+    }
+
+    private void ConfigureExecutionConstraints(Jint.Options options, CancellationToken cancellationToken)
+    {
+        // An expression that never returns would otherwise occupy the calling thread forever.
+        if (_jintOptions.ExecutionTimeout is { } executionTimeout)
+            options.TimeoutInterval(executionTimeout);
+
+        if (_jintOptions.MaxStatements is { } maxStatements)
+            options.MaxStatements(maxStatements);
+
+        if (_jintOptions.MemoryLimit is { } memoryLimit)
+            options.LimitMemory(memoryLimit);
+
+        if (_jintOptions.MaxRecursionDepth is { } maxRecursionDepth)
+            options.LimitRecursion(maxRecursionDepth);
+
+        // Cancelling the workflow should also abort a script that is still running.
+        options.CancellationToken(cancellationToken);
     }
 
     private void ConfigureObjectConverters(Jint.Options options)

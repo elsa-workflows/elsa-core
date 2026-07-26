@@ -33,6 +33,35 @@ public class JintOptions
     public bool AllowConfigurationAccess { get; set; }
 
     /// <summary>
+    /// The maximum wall-clock time a single JavaScript expression may run for. Set to <c>null</c> to remove the limit.
+    /// </summary>
+    /// <remarks>
+    /// Without a limit, an expression such as <c>while (true) {}</c> occupies the calling thread indefinitely.
+    /// The default is deliberately generous so that legitimate expressions are unaffected; hosts that evaluate
+    /// user-defined workflows are encouraged to lower it.
+    /// </remarks>
+    public TimeSpan? ExecutionTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// The maximum number of statements a single JavaScript expression may execute. Set to <c>null</c> (the default) to remove the limit.
+    /// </summary>
+    public int? MaxStatements { get; set; }
+
+    /// <summary>
+    /// The maximum amount of memory, in bytes, a single JavaScript expression may allocate. Set to <c>null</c> (the default) to remove the limit.
+    /// </summary>
+    public long? MemoryLimit { get; set; }
+
+    /// <summary>
+    /// The maximum recursion depth allowed within a single JavaScript expression. Set to <c>null</c> (the default) to remove the limit.
+    /// </summary>
+    /// <remarks>
+    /// Unbounded recursion in a script exhausts the CLR stack, which cannot be recovered from. Hosts that evaluate
+    /// user-defined workflows are encouraged to set a limit.
+    /// </remarks>
+    public int? MaxRecursionDepth { get; set; }
+
+    /// <summary>
     /// The timeout for script caching.
     /// </summary>
     /// <remarks>
