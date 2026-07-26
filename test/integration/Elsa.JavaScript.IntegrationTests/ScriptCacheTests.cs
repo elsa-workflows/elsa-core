@@ -33,8 +33,15 @@ public class ScriptCacheTests
     [Fact(DisplayName = "An expression that fails to parse reports the failure on every evaluation")]
     public async Task ExpressionThatFailsToParseKeepsFailing()
     {
-        await Assert.ThrowsAnyAsync<Exception>(() => EvaluateAsync("return ("));
-        await Assert.ThrowsAnyAsync<Exception>(() => EvaluateAsync("return ("));
+        var first = await Assert.ThrowsAnyAsync<Exception>(() => EvaluateAsync("return ("));
+        var second = await Assert.ThrowsAnyAsync<Exception>(() => EvaluateAsync("return ("));
+
+        // Every evaluation has to report the same parse failure. Merely throwing twice would also be satisfied
+        // by a cache that stored a null or half-built entry for the failed preparation, because the second
+        // evaluation would then fail too — just with a different exception. Comparing the two exceptions rules
+        // that out. The script is identical on both evaluations, so any position the message carries is too.
+        Assert.IsType(first.GetType(), second);
+        Assert.Equal(first.Message, second.Message);
     }
 
     private async Task<string?> EvaluateAsync(string script)
