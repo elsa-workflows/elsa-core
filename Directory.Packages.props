@@ -128,7 +128,7 @@
         <PackageVersion Include="Humanizer.Core" Version="3.0.10"/>
         <PackageVersion Include="IronCompress" Version="1.7.0"/>
         <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4"/>
-        <PackageVersion Include="Jint" Version="4.4.2"/>
+        <PackageVersion Include="Jint" Version="4.15.3"/>
         <PackageVersion Include="JsonSchema.Net" Version="9.4.0"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.11"/>
         <PackageVersion Include="MailKit" Version="4.14.1"/>
