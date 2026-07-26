@@ -540,11 +540,12 @@ Requires `external-authentication:links:manage`. Tenant comes from authenticated
 
 No password, role, permission, external-link, or cross-tenant data is returned.
 
-### List/Create/Delete
+### List/Create/Replace/Delete
 
 ```http
 GET /external-authentication/identity-links?userId=&connectionKey=&cursor=&pageSize=100
 POST /external-authentication/identity-links
+POST /external-authentication/identity-links/{linkId}/replace
 DELETE /external-authentication/identity-links/{linkId}
 ```
 
@@ -561,7 +562,11 @@ Create:
 }
 ```
 
-The subject is accepted only over TLS, normalized and immediately transformed to the stored keyed hash; it is never returned. Duplicate tuple-to-same-user is idempotent `200`; tuple-to-different-user is `409 conflict`. Delete requires explicit Studio confirmation and returns `204`.
+Replace accepts the same body. It atomically removes the identified tenant-scoped link and creates a new link with a new ID and `createdAt`; `lastSignedInAt` is reset to `null`. If the original link or a requested user/connection cannot be resolved, it returns `404` with `{"error":"not_found","message":"The requested resource was not found."}`. If the requested tuple belongs to any other link, including one for the same user, it returns `409 conflict`. Validation, not-found, and conflict responses leave the original link unchanged.
+
+Manual create and replace operations accept effective, nonarchived connections even when they are disabled or invalid. Shadowed, archived, and cross-tenant definitions remain unavailable.
+
+The subject is accepted only over TLS, normalized and immediately transformed to the stored keyed hash; it is never returned. Duplicate tuple-to-same-user is idempotent `200`; tuple-to-different-user is `409 conflict`. A successful replace returns `201` with the new link resource. Delete requires explicit Studio confirmation and returns `204`.
 
 ## Role Lifecycle Guard
 

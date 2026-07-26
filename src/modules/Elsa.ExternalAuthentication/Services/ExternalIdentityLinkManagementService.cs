@@ -55,8 +55,8 @@ public sealed class ExternalIdentityLinkManagementService(
         if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
             return new ExternalIdentityLinkPrelinkResult.UserNotFound();
 
-        // Resolve against the effective tenant registry. A host connection is valid for this tenant, while a connection from another tenant is not revealed.
-        var connection = await connections.FindByKeyAsync(tenantId, connectionKey, cancellationToken);
+        // Manual administration may target disabled or invalid connections, but never archived, shadowed, or cross-tenant definitions.
+        var connection = await FindManageableConnectionAsync(tenantId, connectionKey, cancellationToken);
         if (connection is null)
             return new ExternalIdentityLinkPrelinkResult.ConnectionNotFound();
 
@@ -117,7 +117,7 @@ public sealed class ExternalIdentityLinkManagementService(
         if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
             return new ExternalIdentityLinkReplaceResult.NotFound();
 
-        var connection = await connections.FindByKeyAsync(tenantId, connectionKey, cancellationToken);
+        var connection = await FindManageableConnectionAsync(tenantId, connectionKey, cancellationToken);
         if (connection is null)
             return new ExternalIdentityLinkReplaceResult.NotFound();
 
@@ -157,6 +157,16 @@ public sealed class ExternalIdentityLinkManagementService(
         }
 
         return result;
+    }
+
+    private async ValueTask<EffectiveIdentityProviderConnection?> FindManageableConnectionAsync(string tenantId, string connectionKey, CancellationToken cancellationToken)
+    {
+        var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(connectionKey);
+        var registry = await connections.GetAsync(tenantId, cancellationToken);
+        return registry.Connections.FirstOrDefault(x =>
+            !x.IsShadowed &&
+            !x.Connection.ArchivedAt.HasValue &&
+            string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), normalizedKey, StringComparison.Ordinal));
     }
 
     private async ValueTask PublishAsync(ClaimsPrincipal actor, ExternalIdentityLink link, string operation, CancellationToken cancellationToken)

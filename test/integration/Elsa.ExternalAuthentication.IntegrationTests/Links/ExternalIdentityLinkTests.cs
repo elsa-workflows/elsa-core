@@ -185,6 +185,22 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ManualLinkManagementAllowsDisabledAndInvalidEffectiveConnections()
+    {
+        _connections.IsEnabled = false;
+        _connections.Validity = ConnectionValidity.Invalid;
+
+        var prelinked = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
+        var response = await ReplaceAsync(prelinked!.Id, "subject-new");
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.NotEqual(prelinked.Id, (await response.Content.ReadFromJsonAsync<LinkDocument>())!.Id);
+
+        _connections.Archived = true;
+        Assert.Equal(HttpStatusCode.NotFound, (await PrelinkAsync("archived-subject")).StatusCode);
+    }
+
+    [Fact]
     public async Task ReplaceCreatesANewLinkAndResetsLifecycleMetadata()
     {
         var prelinked = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
@@ -307,12 +323,17 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
     private sealed class TestConnectionRegistry : IIdentityProviderConnectionRegistry
     {
         public bool Archived { get; set; }
+        public bool IsEnabled { get; set; } = true;
         public bool UseHostConnection { get; set; }
+        public ConnectionValidity Validity { get; set; } = ConnectionValidity.Valid;
 
         public ValueTask<EffectiveConnectionRegistry> GetAsync(string targetTenantId, CancellationToken cancellationToken = default)
         {
-            var connection = CreateConnection();
-            return ValueTask.FromResult(new EffectiveConnectionRegistry([connection], [], "test"));
+            IReadOnlyCollection<EffectiveIdentityProviderConnection> effective =
+                string.Equals(targetTenantId, "tenant-a", StringComparison.Ordinal) || UseHostConnection
+                    ? [CreateConnection(), CreateConnection("fabrikam")]
+                    : [];
+            return ValueTask.FromResult(new EffectiveConnectionRegistry(effective, [], "test"));
         }
 
         public ValueTask<EffectiveIdentityProviderConnection?> FindByKeyAsync(string targetTenantId, string key, CancellationToken cancellationToken = default) => ValueTask.FromResult<EffectiveIdentityProviderConnection?>(string.Equals(targetTenantId, "tenant-a", StringComparison.Ordinal) && (string.Equals(key, "contoso", StringComparison.Ordinal) || string.Equals(key, "fabrikam", StringComparison.Ordinal)) ? CreateConnection(key) : null);
@@ -327,9 +348,9 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
             AdapterSettingsVersion = 1,
             DisplayName = "Contoso",
             ArchivedAt = Archived ? DateTimeOffset.UtcNow : null,
-            IsEnabled = !Archived,
+            IsEnabled = IsEnabled,
             ClaimProjection = ClaimProjection.Empty
-        }, ConnectionSourceOwnership.Database, new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), ConnectionValidity.Valid, false, "test");
+        }, ConnectionSourceOwnership.Database, new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), Validity, false, "test");
     }
 
     private sealed class SteppingSystemClock(params DateTimeOffset[] instants) : ISystemClock
