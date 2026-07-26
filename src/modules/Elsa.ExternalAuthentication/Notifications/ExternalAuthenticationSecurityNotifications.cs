@@ -29,6 +29,17 @@ public sealed record IdentityProviderConnectionSecretBindingChanged(SecurityEven
 public sealed record IdentityProviderConnectionTested(SecurityEventContext Context, string TestedMaterialRevision, string Status, string Category, TimeSpan Duration) : INotification;
 public sealed record IdentityProviderConnectionPreviewed(SecurityEventContext Context, string MaterialRevision) : INotification;
 public sealed record ExternalIdentityLinkChanged(SecurityEventContext Context, string Operation, string LinkId) : INotification;
+public sealed record ExternalIdentityLinkReplaced(
+    SecurityEventContext Context,
+    string OldLinkId,
+    string? NewLinkId,
+    string OldUserId,
+    string NewUserId,
+    string OldConnectionKey,
+    string NewConnectionKey,
+    string? ConflictingLinkId = null,
+    string? ConflictingUserId = null,
+    string? ConflictingConnectionKey = null) : INotification;
 public sealed record ExternalAuthenticationSessionRevoked(SecurityEventContext Context, string SessionId, string Reason) : INotification;
 public sealed record ExternalAuthenticationConnectionSessionsRevoked(SecurityEventContext Context, int SessionCount, string Reason) : INotification;
 public sealed record ExternalSignInCompleted(SecurityEventContext Context, string? SessionId, string? AdapterType) : INotification;

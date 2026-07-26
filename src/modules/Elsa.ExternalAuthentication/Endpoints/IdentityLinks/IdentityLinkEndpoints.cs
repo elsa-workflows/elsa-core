@@ -110,6 +110,57 @@ internal sealed class PrelinkIdentityLink(ExternalIdentityLinkManagementService 
     }
 }
 
+internal sealed class ReplaceIdentityLink(ExternalIdentityLinkManagementService management, ITenantAccessor tenantAccessor) : ElsaEndpoint<ReplaceIdentityLinkRequest>
+{
+    public override void Configure()
+    {
+        Post("/external-authentication/identity-links/{linkId}/replace");
+        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+    }
+
+    public override async Task HandleAsync(ReplaceIdentityLinkRequest request, CancellationToken cancellationToken)
+    {
+        ExternalIdentityLinkReplaceResult result;
+        try
+        {
+            result = await management.ReplaceAsync(
+                tenantAccessor.TenantId,
+                Route<string>("linkId")!,
+                request.UserId,
+                request.ConnectionKey,
+                request.Issuer,
+                request.Subject,
+                User,
+                cancellationToken);
+        }
+        catch (ArgumentException)
+        {
+            await SendErrorAsync(StatusCodes.Status400BadRequest, "validation_failed", "The external identity tuple is invalid.", cancellationToken);
+            return;
+        }
+
+        switch (result)
+        {
+            case ExternalIdentityLinkReplaceResult.Success success:
+                HttpContext.Response.StatusCode = StatusCodes.Status201Created;
+                await HttpContext.Response.WriteAsJsonAsync(IdentityLinkDocument.From(success.NewLink), cancellationToken);
+                return;
+            case ExternalIdentityLinkReplaceResult.Conflict:
+                await SendErrorAsync(StatusCodes.Status409Conflict, "conflict", "The external identity is already linked.", cancellationToken);
+                return;
+            default:
+                await SendErrorAsync(StatusCodes.Status404NotFound, "not_found", "The requested resource was not found.", cancellationToken);
+                return;
+        }
+    }
+
+    private Task SendErrorAsync(int status, string error, string message, CancellationToken cancellationToken)
+    {
+        HttpContext.Response.StatusCode = status;
+        return HttpContext.Response.WriteAsJsonAsync(new IdentityLinkError(error, message), cancellationToken);
+    }
+}
+
 internal sealed class DeleteIdentityLink(ExternalIdentityLinkManagementService management, ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest
 {
     public override void Configure()
@@ -141,6 +192,14 @@ internal sealed class FindIdentityLinkUsersRequest
 }
 
 internal sealed class PrelinkIdentityLinkRequest
+{
+    public string UserId { get; set; } = null!;
+    public string ConnectionKey { get; set; } = null!;
+    public string Issuer { get; set; } = null!;
+    public string Subject { get; set; } = null!;
+}
+
+internal sealed class ReplaceIdentityLinkRequest
 {
     public string UserId { get; set; } = null!;
     public string ConnectionKey { get; set; } = null!;

@@ -140,6 +140,13 @@ public interface IExternalIdentityProvisioner
     /// Atomically creates the requested link and, when requested, its credential-less user, or returns the winner of a concurrent operation.
     /// </summary>
     ValueTask<ProvisioningResult> CreateLinkOrGetExistingAsync(ProvisioningRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically removes the tenant-scoped link identified by <see cref="ExternalIdentityLinkReplaceRequest.LinkId"/>
+    /// and creates its replacement, or returns the conflicting link without changing the original.
+    /// </summary>
+    ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This external identity provisioner does not support atomic link replacement.");
 }
 
 /// <summary>

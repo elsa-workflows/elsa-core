@@ -74,6 +74,49 @@ public sealed class InMemoryExternalIdentityProvisioner(
         }
     }
 
+    public async ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        var normalizedConnectionKey = ConnectionRevisionCalculator.NormalizeKey(request.ConnectionKey);
+        var replacementKey = new ExternalIdentityKey(request.TenantId, normalizedConnectionKey, request.Identity.Issuer, handleHasher.Hash(request.Identity.Subject));
+
+        await state.Mutex.WaitAsync(cancellationToken);
+        try
+        {
+            var oldEntry = state.Links.FirstOrDefault(x =>
+                string.Equals(x.Value.Id, request.LinkId, StringComparison.Ordinal) &&
+                string.Equals(x.Value.TenantId, request.TenantId, StringComparison.Ordinal));
+            if (oldEntry.Equals(default(KeyValuePair<ExternalIdentityKey, ExternalIdentityLink>)))
+                return new ExternalIdentityLinkReplaceResult.NotFound();
+
+            if (state.Links.TryGetValue(replacementKey, out var conflictingLink) &&
+                !string.Equals(conflictingLink.Id, oldEntry.Value.Id, StringComparison.Ordinal))
+                return new ExternalIdentityLinkReplaceResult.Conflict(oldEntry.Value, conflictingLink);
+
+            var (user, _) = await ResolveUserAsync(
+                new ProvisioningRequest(request.TenantId, normalizedConnectionKey, request.Identity, null, request.UserId),
+                cancellationToken);
+            var replacement = new ExternalIdentityLink(
+                identityGenerator.GenerateId(),
+                request.TenantId,
+                normalizedConnectionKey,
+                request.Identity.Issuer,
+                replacementKey.SubjectHash,
+                null,
+                user.Id,
+                clock.UtcNow,
+                null);
+            state.Links.Remove(oldEntry.Key);
+            state.Links[replacementKey] = replacement;
+            return new ExternalIdentityLinkReplaceResult.Success(oldEntry.Value, replacement);
+        }
+        finally
+        {
+            state.Mutex.Release();
+        }
+    }
+
     public async ValueTask<Page<ExternalIdentityLink>> FindAsync(ExternalIdentityLinkFilter filter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(filter);

@@ -65,6 +65,74 @@ public sealed class EFCoreExternalIdentityProvisioner(
         }
     }
 
+    public async ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var normalizedConnectionKey = ConnectionRevisionCalculator.NormalizeKey(request.ConnectionKey);
+        var subjectHash = handleHasher.Hash(request.Identity.Subject);
+        ExternalIdentityLink? oldLink = null;
+
+        try
+        {
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            var oldEntity = await dbContext.ExternalIdentityLinks.AsNoTracking().SingleOrDefaultAsync(
+                x => x.Id == request.LinkId && x.TenantId == request.TenantId,
+                cancellationToken);
+            if (oldEntity is null)
+                return new ExternalIdentityLinkReplaceResult.NotFound();
+
+            oldLink = ToModel(oldEntity);
+            var conflictingEntity = await dbContext.ExternalIdentityLinks.AsNoTracking().SingleOrDefaultAsync(
+                x => x.Id != request.LinkId &&
+                     x.TenantId == request.TenantId &&
+                     x.ConnectionKey == normalizedConnectionKey &&
+                     x.Issuer == request.Identity.Issuer &&
+                     x.SubjectHash == subjectHash,
+                cancellationToken);
+            if (conflictingEntity is not null)
+                return new ExternalIdentityLinkReplaceResult.Conflict(oldLink, ToModel(conflictingEntity));
+
+            var user = await dbContext.Users.SingleOrDefaultAsync(
+                x => x.Id == request.UserId && x.TenantId == request.TenantId,
+                cancellationToken);
+            if (user is null)
+                throw new InvalidOperationException("The requested Elsa user does not exist or is outside the target tenant.");
+
+            var deleted = await dbContext.ExternalIdentityLinks
+                .Where(x => x.Id == request.LinkId && x.TenantId == request.TenantId)
+                .ExecuteDeleteAsync(cancellationToken);
+            if (deleted == 0)
+                return new ExternalIdentityLinkReplaceResult.NotFound();
+
+            var replacementEntity = new PersistedExternalIdentityLink
+            {
+                Id = identityGenerator.GenerateId(),
+                TenantId = request.TenantId,
+                ConnectionKey = normalizedConnectionKey,
+                Issuer = request.Identity.Issuer,
+                SubjectHash = subjectHash,
+                UserId = user.Id,
+                CreatedAt = clock.UtcNow
+            };
+            dbContext.ExternalIdentityLinks.Add(replacementEntity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return new ExternalIdentityLinkReplaceResult.Success(oldLink, ToModel(replacementEntity));
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return new ExternalIdentityLinkReplaceResult.NotFound();
+        }
+        catch (DbUpdateException) when (oldLink is not null)
+        {
+            var conflictingLink = await FindLinkAsync(request.TenantId, normalizedConnectionKey, request.Identity, cancellationToken);
+            if (conflictingLink is not null && !string.Equals(conflictingLink.Id, request.LinkId, StringComparison.Ordinal))
+                return new ExternalIdentityLinkReplaceResult.Conflict(oldLink, conflictingLink);
+            throw;
+        }
+    }
+
     public async ValueTask<Page<ExternalIdentityLink>> FindAsync(ExternalIdentityLinkFilter filter, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(filter);

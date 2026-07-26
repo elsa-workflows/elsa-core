@@ -19,6 +19,9 @@ public interface IExternalIdentityLinksApi
     [Post("/external-authentication/identity-links")]
     Task<ExternalIdentityLink> PrelinkAsync([Body] PrelinkExternalIdentityRequest request, CancellationToken cancellationToken = default);
 
+    [Post("/external-authentication/identity-links/{linkId}/replace")]
+    Task<ExternalIdentityLink> ReplaceAsync(string linkId, [Body] ReplaceExternalIdentityLinkRequest request, CancellationToken cancellationToken = default);
+
     [Delete("/external-authentication/identity-links/{linkId}")]
     Task UnlinkAsync(string linkId, CancellationToken cancellationToken = default);
 }

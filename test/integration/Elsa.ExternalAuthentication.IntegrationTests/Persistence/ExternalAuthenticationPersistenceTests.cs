@@ -4,6 +4,7 @@ using Elsa.Common.Services;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
+using Elsa.Identity.Entities;
 using Elsa.Persistence.EFCore.Modules.ExternalAuthentication;
 using Elsa.Persistence.EFCore.Modules.Identity;
 using Elsa.Workflows;
@@ -154,6 +155,93 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         Assert.Null(user.HashedPasswordSalt);
         Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
     }
+
+    [Fact]
+    public async Task ProvisionerAtomicallyReplacesLinksAndPreservesTheOldLinkOnConflict()
+    {
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var provisioner = new EFCoreExternalIdentityProvisioner(_dbContextFactory, Substitute.For<Elsa.Identity.Contracts.IRoleProvider>(), hasher, new GuidIdentityGenerator(), _clock);
+        await using (var dbContext = await _dbContextFactory.CreateDbContextAsync())
+        {
+            dbContext.Users.AddRange(
+                new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" },
+                new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+            await dbContext.SaveChangesAsync();
+        }
+
+        var old = (await provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var conflicting = (await provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-conflict", EmptyClaims), null, "user-b"))).Link;
+
+        var conflict = Assert.IsType<ExternalIdentityLinkReplaceResult.Conflict>(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-conflict", EmptyClaims))));
+        Assert.Equal(conflicting.Id, conflict.ConflictingLink.Id);
+        Assert.IsType<ExternalIdentityLinkReplaceResult.NotFound>(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-b", old.Id, "user-b", "contoso", new ExternalIdentity("https://issuer.example", "cross-tenant", EmptyClaims))));
+
+        await using (var dbContext = await _dbContextFactory.CreateDbContextAsync())
+        {
+            Assert.Contains(await dbContext.ExternalIdentityLinks.ToListAsync(), x => x.Id == old.Id);
+        }
+
+        var sameTupleReplacement = Assert.IsType<ExternalIdentityLinkReplaceResult.Success>(
+            await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims))));
+        Assert.NotEqual(old.Id, sameTupleReplacement.NewLink.Id);
+
+        var replaced = Assert.IsType<ExternalIdentityLinkReplaceResult.Success>(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", sameTupleReplacement.NewLink.Id, "user-b", "fabrikam", new ExternalIdentity("https://replacement.example", "subject-new", EmptyClaims))));
+        Assert.NotEqual(sameTupleReplacement.NewLink.Id, replaced.NewLink.Id);
+        Assert.Equal("user-b", replaced.NewLink.UserId);
+        Assert.Equal("fabrikam", replaced.NewLink.ConnectionKey);
+        Assert.Null(replaced.NewLink.LastSignedInAt);
+
+        await using (var dbContext = await _dbContextFactory.CreateDbContextAsync())
+        {
+            var links = await dbContext.ExternalIdentityLinks.ToListAsync();
+            Assert.DoesNotContain(links, x => x.Id == old.Id);
+            Assert.DoesNotContain(links, x => x.Id == sameTupleReplacement.NewLink.Id);
+            Assert.Contains(links, x => x.Id == replaced.NewLink.Id);
+            Assert.Contains(links, x => x.Id == conflicting.Id);
+        }
+    }
+
+    [Fact]
+    public async Task DurableConcurrentReplacementUsesTheOldLinkIdAsAnAtomicGuard()
+    {
+        var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-identity-links-{Guid.NewGuid():N}.db");
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        try
+        {
+            var options = new DbContextOptionsBuilder<IdentityElsaDbContext>()
+                .UseSqlite($"Data Source={databasePath};Default Timeout=30")
+                .Options;
+            var factory = new TestDbContextFactory(options, services);
+            await using (var dbContext = await factory.CreateDbContextAsync())
+            {
+                await dbContext.Database.EnsureCreatedAsync();
+                dbContext.Users.Add(new User { Id = "user-a", Name = "alice-concurrent", TenantId = "tenant-a" });
+                await dbContext.SaveChangesAsync();
+            }
+
+            using var hasher = new HmacExternalAuthenticationHandleHasher();
+            var firstNode = new EFCoreExternalIdentityProvisioner(factory, Substitute.For<Elsa.Identity.Contracts.IRoleProvider>(), hasher, new GuidIdentityGenerator(), _clock);
+            var secondNode = new EFCoreExternalIdentityProvisioner(factory, Substitute.For<Elsa.Identity.Contracts.IRoleProvider>(), hasher, new GuidIdentityGenerator(), _clock);
+            var old = (await firstNode.CreateLinkOrGetExistingAsync(
+                new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+
+            var results = await Task.WhenAll(
+                firstNode.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims))).AsTask(),
+                secondNode.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-b", EmptyClaims))).AsTask());
+
+            Assert.Single(results.OfType<ExternalIdentityLinkReplaceResult.Success>());
+            Assert.Single(results.OfType<ExternalIdentityLinkReplaceResult.NotFound>());
+            await using var verificationContext = await factory.CreateDbContextAsync();
+            Assert.Single(await verificationContext.ExternalIdentityLinks.ToListAsync());
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            File.Delete(databasePath);
+        }
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();
 
     private static IdentityProviderConnection CreateConnection(string id = "connection-a") => new()
     {
