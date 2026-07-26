@@ -37,7 +37,7 @@ public class ObjectWrappingTests
     [Fact(DisplayName = "A dictionary-like object is a plain object, not an array")]
     public async Task DictionaryLikeObjectsAreNotArrayLike()
     {
-        var expando = new ExpandoObject() as IDictionary<string, object>;
+        var expando = (IDictionary<string, object?>)new ExpandoObject();
         expando["greeting"] = "hello";
 
         Assert.Equal("undefined", await EvaluateAsync<string>("return typeof subject.map;", engine => engine.SetValue("subject", expando)));
