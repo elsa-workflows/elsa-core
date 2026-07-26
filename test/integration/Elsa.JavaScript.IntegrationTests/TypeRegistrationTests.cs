@@ -3,6 +3,8 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Jint;
+using Jint.Native;
+using Jint.Runtime.Interop;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -52,6 +54,33 @@ public class TypeRegistrationTests
     public async Task HostRegisteredTypesSurviveTheBuiltInRegistrations()
     {
         Assert.Equal("function", await EvaluateAsync("return typeof Uri;", engine => engine.RegisterType<Uri>()));
+    }
+
+    [Fact(DisplayName = "A global installed by the host wins over the built-in registration of the same name")]
+    public async Task HostGlobalsAreNotOverwrittenByTheBuiltInRegistrations()
+    {
+        // Guid is registered by both ConfigureEngineWithCommonTypes and the default variable descriptor set, and
+        // those handlers run after the configureEngine callback. The host's value has to survive them.
+        Assert.Equal("host-provided", await EvaluateAsync("return Guid;", engine => engine.SetValue("Guid", "host-provided")));
+    }
+
+    [Fact(DisplayName = "A registered type is exposed as a CLR type reference and registering it again is a no-op")]
+    public async Task RegisterTypeInstallsATypeReferenceAndIsIdempotent()
+    {
+        JsValue afterFirstRegistration = JsValue.Undefined;
+        JsValue afterSecondRegistration = JsValue.Undefined;
+
+        await EvaluateAsync("return 'done';", engine =>
+        {
+            engine.RegisterType<Uri>();
+            afterFirstRegistration = engine.GetValue("Uri");
+            engine.RegisterType<Uri>();
+            afterSecondRegistration = engine.GetValue("Uri");
+        });
+
+        var typeReference = Assert.IsType<TypeReference>(afterFirstRegistration);
+        Assert.Equal(typeof(Uri), typeReference.ReferenceType);
+        Assert.Same(afterFirstRegistration, afterSecondRegistration);
     }
 
     private async Task<string?> EvaluateAsync(string script, Action<Engine>? configureEngine = null)
