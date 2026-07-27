@@ -116,7 +116,7 @@ internal sealed class ConnectionResponse
     public PolicySelection? UnlinkedPolicy { get; init; }
     public IReadOnlyCollection<GrantSourceSelection> PermissionGrantSources { get; init; } = [];
     public ClaimProjection ClaimProjection { get; init; } = ClaimProjection.Empty;
-    public UpstreamLogoutMode UpstreamLogoutMode { get; init; }
+    public string UpstreamLogoutMode { get; init; } = null!;
     public long Revision { get; init; }
     public string MaterialRevision { get; init; } = null!;
     public ConnectionObservationResponse? LatestObservation { get; init; }
@@ -165,7 +165,7 @@ internal sealed class ConnectionResponse
             UnlinkedPolicy = effective.Connection.UnlinkedPolicy,
             PermissionGrantSources = effective.Connection.PermissionGrantSources.ToArray(),
             ClaimProjection = effective.Connection.ClaimProjection,
-            UpstreamLogoutMode = effective.Connection.UpstreamLogoutMode,
+            UpstreamLogoutMode = FormatUpstreamLogoutMode(effective.Connection.UpstreamLogoutMode),
             Revision = effective.Connection.Revision,
             MaterialRevision = effective.Connection.MaterialRevision,
             LatestObservation = observation is null
@@ -179,6 +179,14 @@ internal sealed class ConnectionResponse
                     observation.Summary)
         };
     }
+
+    private static string FormatUpstreamLogoutMode(UpstreamLogoutMode mode) => mode switch
+    {
+        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Disabled => "disabled",
+        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.UserChoice => "user-choice",
+        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Always => "always",
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "The upstream logout mode is not supported.")
+    };
 }
 
 internal sealed record ConnectionObservationResponse(string Status, DateTimeOffset ObservedAt, string TestedMaterialRevision, bool IsStale, string Category, string Summary);

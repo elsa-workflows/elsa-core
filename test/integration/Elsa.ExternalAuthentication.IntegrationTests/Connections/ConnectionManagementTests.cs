@@ -163,6 +163,19 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ConnectionResponseEmitsCanonicalUpstreamLogoutModeString()
+    {
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("user-choice-logout", upstreamLogoutMode: "user-choice"));
+        var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(JsonValueKind.String, body.RootElement.GetProperty("upstreamLogoutMode").ValueKind);
+        Assert.Equal("user-choice", body.RootElement.GetProperty("upstreamLogoutMode").GetString());
+    }
+
+    [Fact]
     public async Task ConfigurationConnectionIsReadOnlyAndBlocksSameScopeKeyCreation()
     {
         _registry.ConfigurationConnection = new IdentityProviderConnection
@@ -523,7 +536,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         Assert.Equal(new[] { "workflow-user" }, _roleAuthorizationService.LastRequestedRoleIds);
     }
 
-    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null) => new
+    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null, string upstreamLogoutMode = "disabled") => new
     {
         key,
         scope = scope ?? new { kind = "host" },
@@ -533,7 +546,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         displayName,
         order = 10,
         claimProjection = new { allowedClaimTypes = Array.Empty<string>(), redactedClaimTypes = Array.Empty<string>(), maximumClaimCount = 0, maximumValueLength = 0, maximumTotalBytes = 0 },
-        upstreamLogoutMode = "disabled",
+        upstreamLogoutMode,
         confirmUnsafeSettings,
         unlinkedPolicy
     };
