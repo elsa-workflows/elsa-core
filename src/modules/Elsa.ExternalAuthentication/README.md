@@ -12,12 +12,14 @@ services.AddElsa(elsa =>
     elsa.UseExternalAuthentication(feature =>
     {
         feature.ConfigureOptions = options =>
-            configuration.GetSection("ExternalAuthentication").Bind(options);
+            configuration.GetSection("ExternalAuthentication").BindExternalAuthenticationOptions(options);
     });
 });
 
 services.AddOpenIdConnectExternalAuthentication();
 ```
+
+Use `BindExternalAuthenticationOptions` for `IConfiguration` binding so the arbitrary JSON envelopes used by adapter, policy, and grant-source settings are reconstructed from their configuration sections. Direct programmatic option configuration is unaffected.
 
 `AddExternalAuthenticationServices` supplies in-memory stores suitable for single-node development. A multi-node deployment must replace broker state, grants, sessions, observations, registry versions, and identity links with shared durable implementations, share ASP.NET Core Data Protection keys, and configure the same `HandleHashing:SharedKeyBase64` on every node.
 

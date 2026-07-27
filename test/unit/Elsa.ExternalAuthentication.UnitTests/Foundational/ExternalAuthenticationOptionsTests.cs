@@ -2,6 +2,7 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Validation;
+using Elsa.Extensions;
 using Microsoft.Extensions.Configuration;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
@@ -39,6 +40,41 @@ public class ExternalAuthenticationOptionsTests
         Assert.Equal("configuration", client.SecretBinding?.ResolverType);
         Assert.Equal("ExternalAuthentication:Secrets:StudioServerClientSecret", client.SecretBinding?.Reference);
         Assert.True(client.IsEnabled);
+    }
+
+    [Fact]
+    public void BindsConnectionJsonSettingsFromConfiguration()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ExternalAuthentication:Connections:0:Key"] = "keycloak",
+                ["ExternalAuthentication:Connections:0:AdapterType"] = "openid-connect",
+                ["ExternalAuthentication:Connections:0:AdapterSettings:mode"] = "discovery",
+                ["ExternalAuthentication:Connections:0:AdapterSettings:discoveryUrl"] = "https://localhost:8443/realms/elsa/.well-known/openid-configuration",
+                ["ExternalAuthentication:Connections:0:AdapterSettings:clientId"] = "elsa-studio-idp",
+                ["ExternalAuthentication:Connections:0:AdapterSettings:scopes:0"] = "profile",
+                ["ExternalAuthentication:Connections:0:AdapterSettings:scopes:1"] = "email",
+                ["ExternalAuthentication:Connections:0:UnlinkedPolicy:Type"] = "create-user",
+                ["ExternalAuthentication:Connections:0:UnlinkedPolicy:SettingsVersion"] = "1",
+                ["ExternalAuthentication:Connections:0:UnlinkedPolicy:Settings:defaultRoleIds:0"] = "admin",
+                ["ExternalAuthentication:Connections:0:PermissionGrantSources:0:Type"] = "claim-mapping",
+                ["ExternalAuthentication:Connections:0:PermissionGrantSources:0:SettingsVersion"] = "1",
+                ["ExternalAuthentication:Connections:0:PermissionGrantSources:0:Order"] = "10",
+                ["ExternalAuthentication:Connections:0:PermissionGrantSources:0:Settings:claimType"] = "groups"
+            })
+            .Build();
+        var options = new ExternalAuthenticationOptions();
+
+        configuration.GetSection("ExternalAuthentication").BindExternalAuthenticationOptions(options);
+
+        var connection = Assert.Single(options.ConfigurationConnections);
+        Assert.Equal("discovery", connection.AdapterSettings.GetProperty("mode").GetString());
+        Assert.Equal("https://localhost:8443/realms/elsa/.well-known/openid-configuration", connection.AdapterSettings.GetProperty("discoveryUrl").GetString());
+        Assert.Equal("elsa-studio-idp", connection.AdapterSettings.GetProperty("clientId").GetString());
+        Assert.Equal(["profile", "email"], connection.AdapterSettings.GetProperty("scopes").EnumerateArray().Select(x => x.GetString()));
+        Assert.Equal("admin", connection.UnlinkedPolicy?.Settings.GetProperty("defaultRoleIds")[0].GetString());
+        Assert.Equal("groups", Assert.Single(connection.PermissionGrantSources).Settings.GetProperty("claimType").GetString());
     }
 
     [Fact]

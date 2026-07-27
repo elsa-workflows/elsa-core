@@ -20,7 +20,7 @@ services.AddElsa(elsa =>
     elsa.UseExternalAuthentication(feature =>
     {
         feature.ConfigureOptions = options =>
-            configuration.GetSection("ExternalAuthentication").Bind(options);
+            configuration.GetSection("ExternalAuthentication").BindExternalAuthenticationOptions(options);
     });
 });
 
@@ -119,8 +119,9 @@ Authentication__ExternalAuthentication__ClientSecret={strong-random-value}
         "displayOrder": 10,
         "isPreferred": true,
         "isEnabled": true,
-        "adapterSettingsVersion": 1,
+        "adapterSettingsVersion": 2,
         "adapterSettings": {
+          "mode": "discovery",
           "discoveryUrl": "https://login.contoso.example/.well-known/openid-configuration",
           "clientId": "elsa-server",
           "scopes": ["openid", "profile", "email", "groups"],
