@@ -1,6 +1,6 @@
 # Elsa Roadmap
 
-Last refreshed: 2026-07-22
+Last refreshed: 2026-07-29
 
 This roadmap is a product direction document, not a fixed release calendar. Elsa is developed through a mix of core maintainer work, customer-funded work, and community contributions, so sequencing can change when real-world demand changes. The intent is stable: make Elsa the most productive, dependable, and extensible workflow platform for the .NET ecosystem.
 
@@ -58,6 +58,7 @@ Legend: `[x]` shipped foundation, `[~]` partially shipped or needs productizatio
 - [~] Workflow organization with labels/categories/folders
 - [~] Workflow progress/timeline surface
 - [x] Studio OIDC and identity modules
+- [~] External-authentication broker, Studio SSO connection management, and configurable login themes (merged to `release/3.8.0`; release finalization pending)
 - [~] Studio diagnostics pages for structured logs, console logs, and OpenTelemetry
 - [~] Studio alterations module
 - [ ] Designer reliability/regression hardening
@@ -112,6 +113,7 @@ These are already present in the codebase and should be treated as foundations f
 - Elsa Studio is already a modular Blazor product shell with workflow authoring, instance browsing, designer modules, diagnostics, authentication, localization, branding, custom elements, and early React wrapper work in [elsa-workflows/elsa-studio](https://github.com/elsa-workflows/elsa-studio).
 - Studio `3.7.0` shipped the modern authentication framework, Elsa Identity and OIDC modules, activity call-stack visualization, incident count badges, pending-instance filtering, and custom theme/DataPanel extensibility.
 - Studio `3.8.0-preview1` shipped the server logs module, console logs module, structured-log storage diagnostics, the OpenTelemetry diagnostics page from [elsa-studio#834](https://github.com/elsa-workflows/elsa-studio/pull/834), sequence and state-machine designer foundations, the secrets module, and the alterations designer.
+- The unreleased `release/3.8.0` line now contains a protocol-neutral external-authentication broker with configuration- or database-backed OIDC connections, PKCE, secret handling, identity linking/JIT users, session management, persistence, and tests ([#7889](https://github.com/elsa-workflows/elsa-core/pull/7889)). Its Studio companions add Settings-based SSO connection management and a generic login-method UI ([elsa-studio#920](https://github.com/elsa-workflows/elsa-studio/pull/920)), plus configurable login themes ([elsa-studio#921](https://github.com/elsa-workflows/elsa-studio/pull/921)). This is a partially shipped foundation: the release line still needs final solution-level verification, release packaging, and operational documentation.
 - Elsa Extensions is an active modular integration repository with 70+ module projects in [elsa-workflows/elsa-extensions](https://github.com/elsa-workflows/elsa-extensions), targeting `net8.0`, `net9.0`, and `net10.0`.
 - Extensions already provide broad integration foundations: Connections, Secrets, Agents, OpenAPI, SQL/CSV/data tooling, messaging, schedulers, cloud storage, logging, webhooks, persistence providers, LDAP, and external system activities.
 - Extensions `3.7.0` adds package manifest metadata, infrastructure attributes, shell features for MassTransit/Quartz/Webhooks, Dapper and MongoDB activity execution-chain lookups, Dapper bookmark queue filtering, Kafka multitenancy/schema-trigger work, Quartz lifecycle/job cleanup fixes, and other operational hardening.
@@ -183,7 +185,7 @@ High-value items:
 - Resolve the MassTransit strategy after the v9 licensing change. [discussion #6583](https://github.com/elsa-workflows/elsa-core/discussions/6583) raises a practical ecosystem risk; Elsa should either provide a clean split or reduce dependency weight through a smaller messaging abstraction.
 - Clarify Azure Functions and worker-service hosting patterns. [discussion #4707](https://github.com/elsa-workflows/elsa-core/discussions/4707) and [discussion #7420](https://github.com/elsa-workflows/elsa-core/discussions/7420) show demand for non-traditional hosts, Windows services, and serverless-adjacent deployments.
 - Add data movement and streaming workflow primitives. [#4809](https://github.com/elsa-workflows/elsa-core/issues/4809) frames this as datasets, linked services, transforms, and stream-oriented processing inspired by Azure Data Factory and stream analytics.
-- Treat BPMN as interoperability first, not a wholesale product pivot. [#39](https://github.com/elsa-workflows/elsa-core/issues/39) has strong interest, but the pragmatic first slice is import/export or a constrained BPMN compatibility layer, not full BPMN engine parity.
+- Treat BPMN as a strategic Elsa 4.0 candidate. A maintainer now says BPMN support is coming to Elsa 4.0 and has shared an early alpha screenshot ([#39 comment](https://github.com/elsa-workflows/elsa-core/issues/39#issuecomment-5085835900)). No public implementation branch or PR is available yet, so scope, interoperability commitments, and delivery sequencing remain roadmap work rather than a shipped promise.
 
 Recommended success measures:
 
@@ -216,7 +218,7 @@ Recommended success measures:
 
 High-value items:
 
-- Publish canonical OIDC recipes for Blazor Server, WASM, separate server/studio, all-in-one hosts, and reverse-proxy sub-path deployments. Studio `3.7.0` shipped the modern authentication modules, [#7181](https://github.com/elsa-workflows/elsa-core/issues/7181) shows Core-side implementation and documentation demand, and [elsa-studio#809](https://github.com/elsa-workflows/elsa-studio/pull/809) shows sub-path redirect URI handling is still being hardened.
+- Productize the external-authentication and SSO foundation for Blazor Server, WASM, separate server/studio, all-in-one hosts, and reverse-proxy sub-path deployments. The unreleased `release/3.8.0` work adds an Elsa-owned extensible broker and OIDC adapter in Core ([#7889](https://github.com/elsa-workflows/elsa-core/pull/7889)), Settings-based SSO administration and generic login composition in Studio ([elsa-studio#920](https://github.com/elsa-workflows/elsa-studio/pull/920)), and configurable login themes ([elsa-studio#921](https://github.com/elsa-workflows/elsa-studio/pull/921)). Finish solution-level verification, operational recipes, migration/release guidance, and broad provider hardening without conflating upstream identity claims with Elsa authorization.
 - Provide a production security guide: API keys, JWT/OIDC, default admin bootstrap, scripting trust levels, C# expression risks, Docker demo boundaries, secret masking, tenant isolation, and permission design.
 - Expand authorization coverage tests around workflow instances, runtime admin, diagnostics, labels, tenants, and HTTP endpoint activities.
 - Add Studio governance controls: tenant/role-based activity visibility, granular permission-aware menus/routes, feature-gated modules, and clear behavior for hidden activities in existing workflow definitions. [elsa-studio#584](https://github.com/elsa-workflows/elsa-studio/issues/584) captures the authoring side of this enterprise need, and new issue [elsa-studio#908](https://github.com/elsa-workflows/elsa-studio/issues/908) sharpens the need for the Studio UI to honor granular permissions consistently.
@@ -271,7 +273,7 @@ Longer term:
 
 1. Native workflow-aware background execution and actor-runtime abstraction.
 2. Data pipeline/stream processing primitives.
-3. BPMN interoperability.
+3. BPMN for Elsa 4.0, with public scope and implementation evidence still to be established.
 4. AI-assisted authoring and workflow MCP tools.
 
 ## Maintainership Recommendations
