@@ -136,13 +136,23 @@ public class ConnectionManagementTests : IAsyncLifetime
         immutableKeyUpdate.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         var immutableKeyResponse = await _client!.SendAsync(immutableKeyUpdate);
         Assert.Equal(HttpStatusCode.Conflict, immutableKeyResponse.StatusCode);
-        Assert.Contains("connection_key_immutable", await immutableKeyResponse.Content.ReadAsStringAsync());
+        var immutableKeyContent = await immutableKeyResponse.Content.ReadAsStringAsync();
+        Assert.Contains("connection_key_immutable", immutableKeyContent);
+        using (var errorDocument = JsonDocument.Parse(immutableKeyContent))
+        {
+            var correlationId = errorDocument.RootElement.GetProperty("correlationId").GetString();
+            Assert.Matches("^[A-Za-z0-9_-]{1,128}$", correlationId);
+        }
 
         var update = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso", displayName: "Updated")) };
         update.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         var updated = await _client!.SendAsync(update);
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
         Assert.Equal("\"2\"", updated.Headers.ETag?.Tag);
+
+        var validate = await _client.PostAsync($"/external-authentication/connections/{createdDocument.Id}/validate", null);
+        Assert.Equal(HttpStatusCode.OK, validate.StatusCode);
+        Assert.Contains("\"valid\":true", await validate.Content.ReadAsStringAsync());
 
         var stale = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso", displayName: "Stale")) };
         stale.Headers.TryAddWithoutValidation("If-Match", "\"1\"");

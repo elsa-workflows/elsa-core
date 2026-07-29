@@ -194,4 +194,4 @@ internal sealed class ConnectionResponse
 internal sealed record ConnectionObservationResponse(string Status, DateTimeOffset ObservedAt, string TestedMaterialRevision, bool IsStale, string Category, string Summary);
 internal sealed record ConnectionValidationResponse(bool Valid, IReadOnlyCollection<ConnectionValidationError> Errors, IReadOnlyCollection<string> Warnings);
 internal sealed record ConnectionListResponse(IReadOnlyCollection<ConnectionResponse> Items, string? NextCursor);
-internal sealed record ManagementErrorResponse(string Error, string Message, object? Details = null);
+internal sealed record ManagementErrorResponse(string Error, string Message, object? Details, string CorrelationId);
