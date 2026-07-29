@@ -42,6 +42,43 @@ public class ArrayConversionTests
         Assert.Equal("14", await EvaluateAsync<string>("return '' + numbers.reduce((a, b) => a + b, 0);", engine => engine.SetValue("numbers", numbers)));
     }
 
+    [Fact(DisplayName = "A CLR array crosses into a script through the copy lane, not the live view")]
+    public async Task ArraysCrossThroughTheCopyLane()
+    {
+        // The tests above assert the behaviour a copy produces, which a live view happens to match for a value
+        // nothing mutates. Asking the engine how many conversions of each kind it performed is what pins the
+        // lane itself, so a future change of the ArrayConversion default cannot pass unnoticed.
+        var numbers = new[] { 8.0, 4.0, 2.0 };
+        Engine? engine = null;
+
+        await EvaluateAsync<double>("return numbers.length;", e =>
+        {
+            engine = e;
+            e.SetValue("numbers", numbers);
+        });
+
+        var diagnostics = engine!.Advanced.GetInteropConversionDiagnostics();
+
+        Assert.Equal(0L, diagnostics.ArrayLiveViewConversions);
+        Assert.True(diagnostics.ArrayCopyConversions > 0, "the array should have crossed through the copy lane");
+    }
+
+    [Fact(DisplayName = "An expression that touches no CLR array converts none")]
+    public async Task ExpressionsWithoutArraysConvertNothing()
+    {
+        // Elsa converts collection-valued workflow variables itself, in ObjectConverterHelper, so an ordinary
+        // evaluation never reaches Jint's array-conversion lane at all. That is what makes the ArrayConversion
+        // setting a narrow compatibility pin rather than something every evaluation depends on.
+        Engine? engine = null;
+
+        await EvaluateAsync<double>("return 1 + 1;", e => engine = e);
+
+        var diagnostics = engine!.Advanced.GetInteropConversionDiagnostics();
+
+        Assert.Equal(0L, diagnostics.ArrayLiveViewConversions);
+        Assert.Equal(0L, diagnostics.ArrayCopyConversions);
+    }
+
     private async Task<T?> EvaluateAsync<T>(string script, Action<Engine> configureEngine)
     {
         var context = new ExpressionExecutionContext(_serviceProvider, new());
