@@ -241,6 +241,31 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task CallbackCompletionPersistsTheSessionBeforeAnyRefreshTokenIsIssued()
+    {
+        var identityResolver = Substitute.For<IExternalIdentityResolver>();
+        identityResolver.ResolveAsync(Arg.Any<ExternalIdentityResolutionContext>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(new ExternalIdentityResolution("user-a", false)));
+        var permissionGrantResolver = Substitute.For<IPermissionGrantResolver>();
+        permissionGrantResolver.ResolveAsync(Arg.Any<PermissionGrantResolutionContext>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(new PermissionGrantResult([], [])));
+        var adapter = new Broker.BrokerSecurityTests.RecordingAdapter
+        {
+            AuthenticationResult = new ExternalAuthenticationResult(new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims), EmptyClaims, [])
+        };
+        var broker = Broker.BrokerSecurityTests.CreateBroker(adapter, identityResolver: identityResolver, permissionGrantResolver: permissionGrantResolver, sessionStore: new EFCoreExternalAuthenticationSessionStore(new ExternalAuthenticationDbContextFactory(_services.GetRequiredService<IServiceScopeFactory>()), _clock));
+        await broker.InitiateExternalAsync(new BrokerAuthorizationRequest("studio", new Uri("https://studio.example/authentication/external/callback"), "code", "challenge", "S256", "/workflows", "contoso"), "tenant-a");
+
+        var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
+
+        Assert.Null(result.Error);
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var session = Assert.Single(await dbContext.ExternalAuthenticationSessions.ToListAsync());
+        Assert.False(string.IsNullOrEmpty(session.CurrentRefreshTokenHash));
+        Assert.Equal("user-a", session.UserId);
+    }
+
     private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();
 
     private static IdentityProviderConnection CreateConnection(string id = "connection-a") => new()
