@@ -62,7 +62,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         HandleHash = transaction.HandleHash,
         Purpose = purpose,
         ClientId = transaction.ClientId,
-        CallbackUri = transaction.CallbackUri.AbsoluteUri,
+        CallbackUri = transaction.CallbackUri.OriginalString,
         ReturnPath = transaction.ReturnPath,
         ClientState = transaction.ClientState,
         TenantId = transaction.TenantId,
@@ -81,9 +81,9 @@ internal static class ExternalAuthenticationPersistenceMapper
     public static BrokerTransaction ToModel(this PersistedBrokerTransaction transaction) => new()
     {
         HandleHash = transaction.HandleHash,
-        Purpose = Enum.Parse<BrokerTransactionPurpose>(transaction.Purpose, ignoreCase: false),
+        Purpose = ParseTransactionPurpose(transaction.Purpose),
         ClientId = transaction.ClientId,
-        CallbackUri = new Uri(transaction.CallbackUri, UriKind.Absolute),
+        CallbackUri = new Uri(transaction.CallbackUri, UriKind.RelativeOrAbsolute),
         ReturnPath = transaction.ReturnPath,
         ClientState = transaction.ClientState,
         TenantId = transaction.TenantId,
@@ -96,6 +96,12 @@ internal static class ExternalAuthenticationPersistenceMapper
         ProtectedPayload = transaction.ProtectedPayload,
         ExpiresAt = transaction.ExpiresAt,
         ConsumedAt = transaction.ConsumedAt
+    };
+
+    private static BrokerTransactionPurpose ParseTransactionPurpose(string storagePurpose) => storagePurpose switch
+    {
+        "PreviewStart" => BrokerTransactionPurpose.Preview,
+        _ => Enum.Parse<BrokerTransactionPurpose>(storagePurpose, ignoreCase: false)
     };
 
     public static PersistedAuthorizationGrant ToPersisted(this AuthorizationGrant grant) => new()

@@ -111,6 +111,33 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task DurableStateStoreRoundTripsRelativePreviewCallbackUris()
+    {
+        var durableDbContexts = new ExternalAuthenticationDbContextFactory(_services.GetRequiredService<IServiceScopeFactory>());
+        var stateStore = new EFCoreExternalAuthenticationStateStore(durableDbContexts, _clock);
+        var transaction = new BrokerTransaction
+        {
+            HandleHash = "preview-state",
+            Purpose = BrokerTransactionPurpose.Preview,
+            ClientId = "administrator",
+            CallbackUri = new Uri("/external-authentication/previews/preview-handle/authorize", UriKind.Relative),
+            ReturnPath = "/",
+            TenantId = "tenant-a",
+            ConnectionId = "connection-a",
+            ConnectionMaterialRevision = "revision-a",
+            PkceChallenge = string.Empty,
+            ExpiresAt = _clock.UtcNow.AddMinutes(1)
+        };
+
+        await stateStore.PutAsync("PreviewStart", transaction.HandleHash, transaction, transaction.ExpiresAt);
+        var stored = Assert.IsType<TakeResult<BrokerTransaction>.Taken>(
+            await stateStore.TryTakeAsync<BrokerTransaction>("PreviewStart", transaction.HandleHash));
+
+        Assert.False(stored.Value.CallbackUri.IsAbsoluteUri);
+        Assert.Equal(transaction.CallbackUri, stored.Value.CallbackUri);
+    }
+
+    [Fact]
     public async Task DurableSingleUseStoresRejectExpiredEntriesInTheAtomicConsumePredicate()
     {
         var durableDbContexts = new ExternalAuthenticationDbContextFactory(_services.GetRequiredService<IServiceScopeFactory>());
