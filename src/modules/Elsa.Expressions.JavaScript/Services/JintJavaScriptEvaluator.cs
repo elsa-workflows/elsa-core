@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Acornima.Ast;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -59,6 +60,13 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         // object[] the way it always has. Hosts that want the live view can opt in via ConfigureEngineOptions.
         engineOptions.Interop.ArrayConversion = ArrayConversionMode.Copy;
 
+        // Expose CLR enums to script as their member name. This is what EnumToStringConverter used to do by
+        // hand for values crossing the boundary; the built-in switch also covers the direction that converter
+        // could not reach, a constant read off a registered enum type such as LogPersistenceMode.Include, which
+        // used to produce a number and therefore never compared equal to the same value held in a variable.
+        // Values going back to the CLR keep accepting both the name and the number.
+        engineOptions.Interop.EnumConversion = EnumConversionMode.String;
+
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
         ConfigureObjectConverters(engineOptions);
@@ -97,7 +105,12 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange([new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()]);
+        // Each converter declares the CLR types it handles. A converter registered without them has to be
+        // offered every value crossing the boundary, which costs Jint its compiled member-read and
+        // method-invoker lanes for every wrapped .NET object in the engine; declaring the types keeps those
+        // lanes for the members and methods no converter can observe.
+        options.AddObjectConverter(new ByteArrayConverter(), typeof(byte[]));
+        options.AddObjectConverter(new JsonElementConverter(), typeof(JsonElement));
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
