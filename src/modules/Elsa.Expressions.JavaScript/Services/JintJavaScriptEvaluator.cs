@@ -37,9 +37,13 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         Action<Engine>? configureEngine = null,
         CancellationToken cancellationToken = default)
     {
+        // The script is prepared before the engine is configured so that the identifiers the expression
+        // actually references are known while the globals are being installed. Handlers that would
+        // otherwise have to build a global speculatively can then skip the ones the expression cannot read.
+        var preparedScript = GetOrCreatePrepareScript(expression);
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
-        await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression), cancellationToken);
-        var result = await ExecuteExpressionAndGetResultAsync(engine, expression, cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression, preparedScript.ReferencedGlobals), cancellationToken);
+        var result = await ExecuteExpressionAndGetResultAsync(engine, preparedScript, cancellationToken);
         await mediator.SendAsync(new EvaluatedJavaScript(engine, context, expression, result), cancellationToken);
 
         return result.ConvertTo(returnType);
@@ -66,6 +70,12 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         // used to produce a number and therefore never compared equal to the same value held in a variable.
         // Values going back to the CLR keep accepting both the name and the number.
         engineOptions.Interop.EnumConversion = EnumConversionMode.String;
+
+        // Passing the token to EvaluateAsync only covers the awaiting part: it cannot preempt the synchronous
+        // evaluation loop, so a script that never yields would ignore it. Registering it as a constraint is what
+        // makes cancellation observable during execution, and a cancellation constraint is amortizable, so the
+        // interpreter keeps its tight-loop fast path. A default token registers nothing.
+        engineOptions.CancellationToken(cancellationToken);
 
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
@@ -125,10 +135,8 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
             engine.SetValue("getConfig", (Func<string, object?>)(name => configuration.GetSection(name).Value));
     }
 
-    private async Task<object?> ExecuteExpressionAndGetResultAsync(Engine engine, string expression, CancellationToken cancellationToken)
+    private async Task<object?> ExecuteExpressionAndGetResultAsync(Engine engine, Prepared<Script> preparedScript, CancellationToken cancellationToken)
     {
-        var preparedScript = GetOrCreatePrepareScript(expression);
-
         // EvaluateAsync awaits a returned promise instead of blocking the calling thread on it, which matters
         // for expressions that await a .NET Task, such as the ones calling getSecret().
         var result = await engine.EvaluateAsync(preparedScript, cancellationToken);
@@ -155,7 +163,12 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
             ParsingOptions = new()
             {
                 AllowReturnOutsideFunction = true
-            }
+            },
+
+            // Collected once per distinct expression, alongside the parse that is already cached, and read by
+            // the handlers that would otherwise register a global for every variable, workflow input and
+            // activity output in scope.
+            CollectReferencedGlobals = true
         };
         return Engine.PrepareScript(expression, options: prepareOptions);
     }
