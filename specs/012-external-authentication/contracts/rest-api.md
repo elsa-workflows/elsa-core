@@ -313,6 +313,8 @@ Requires `external-authentication:connections:read`. Maximum `pageSize` is 100.
       "key": "contoso",
       "source": "database",
       "overridesConfigurationConnection": true,
+      "canCreateOverride": false,
+      "canPromoteToConfigurationOverride": false,
       "adapterType": "openid-connect",
       "callbackUri": "https://elsa.example/elsa/api/external-authentication/callback/contoso",
       "previewCallbackUri": "https://elsa.example/elsa/api/external-authentication/previews/callback/01JZCONNECTION",
@@ -380,6 +382,8 @@ POST /external-authentication/connections
 ```
 
 Requires `external-authentication:connections:create`. Studio starts with a complete editable copy of the configuration-owned connection, preserves its immutable logical `key`, and submits the ordinary create document with `"overridesConfigurationConnection": true`. The server creates a distinct database record with `source=database`; subsequent saves send the whole document to the ordinary update endpoint. No inherited field markers or partial patch semantics exist. A disabled database override continues shadowing the configuration-owned connection. Archiving it reveals configuration; restoring it resumes shadowing in disabled state.
+
+Connection responses expose `canCreateOverride` for configuration-owned connections when deployment policy permits creating a database override. They expose `canPromoteToConfigurationOverride` for an unarchived, shadowed database-owned connection when the same policy permits promotion. Clients promote that existing record by updating its ordinary document with `"overridesConfigurationConnection": true`; this preserves its ID, secret bindings, and enabled lifecycle instead of creating another database record. A promotion that would remove the final normal sign-in path returns `409 conflict` with `error="conflict"` and `details.code="final_login_path_guard"`.
 
 ### Detail and Update
 

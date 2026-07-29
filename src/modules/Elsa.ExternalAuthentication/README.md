@@ -28,6 +28,7 @@ Use `BindExternalAuthenticationOptions` for `IConfiguration` binding so the arbi
 - `ExternalAuthentication:Connections` defines immutable, configuration-owned connections.
 - Database-owned connections are optional and controlled by `EnableDatabaseConnections`.
 - Configuration takes precedence over a database connection with the same effective key and scope. Studio shows the database row as shadowed instead of silently overwriting it.
+- When `AllowConfigurationConnectionOverrides` is enabled, an administrator can promote an unarchived shadowed database connection into an explicit override, preserving that record, its secret bindings, and its lifecycle. A promotion that would remove the final normal sign-in path is rejected by the final-login-path guard.
 - Authentication Clients, extension allowlists, permission boundaries, egress policy, and final-login recovery policy remain deployment-owned.
 
 An empty `AllowedAdapterTypes` collection permits every installed adapter. The built-in policy allowlist contains `reject` and `create-user`; the built-in grant-source allowlist contains `elsa-roles`, `claim-mapping`, `group-mapping`, and `claim-pass-through`.

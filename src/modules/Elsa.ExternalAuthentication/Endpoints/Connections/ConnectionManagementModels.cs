@@ -108,6 +108,7 @@ internal sealed class ConnectionResponse
     public bool IsPreferred { get; init; }
     public bool OverridesConfigurationConnection { get; init; }
     public bool CanCreateOverride { get; init; }
+    public bool CanPromoteToConfigurationOverride { get; init; }
     public bool EnabledIntent { get; init; }
     public bool EffectivelyEnabled { get; init; }
     public string Validity { get; init; } = null!;
@@ -157,6 +158,7 @@ internal sealed class ConnectionResponse
             IsPreferred = effective.Connection.IsPreferred,
             OverridesConfigurationConnection = effective.Connection.OverridesConfigurationConnection,
             CanCreateOverride = effective.Ownership == ConnectionSourceOwnership.Configuration && management.CanCreateConfigurationOverride(),
+            CanPromoteToConfigurationOverride = management.CanPromoteToConfigurationOverride(effective),
             EnabledIntent = effective.Connection.IsEnabled,
             EffectivelyEnabled = effective.Connection.IsEnabled && !effective.Connection.ArchivedAt.HasValue && !effective.IsShadowed && effective.Validity != ConnectionValidity.Invalid,
             Validity = effective.Validity.ToString().ToLowerInvariant(),

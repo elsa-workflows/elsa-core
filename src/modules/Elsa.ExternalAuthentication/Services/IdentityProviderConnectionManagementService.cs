@@ -260,10 +260,32 @@ public sealed partial class IdentityProviderConnectionManagementService(
 
     public bool CanCreateConfigurationOverride() => options.Value.AllowConfigurationConnectionOverrides;
 
+    public bool CanPromoteToConfigurationOverride(EffectiveIdentityProviderConnection connection) =>
+        connection.Ownership == ConnectionSourceOwnership.Database &&
+        connection.IsShadowed &&
+        !connection.Connection.ArchivedAt.HasValue &&
+        options.Value.AllowConfigurationConnectionOverrides;
+
     private async ValueTask<bool> IsBlockedByFinalLoginPathGuardAsync(IdentityProviderConnection existing, IdentityProviderConnection candidate, string targetTenantId, ClaimsPrincipal actor, bool confirmedOverride, CancellationToken cancellationToken)
     {
         var guard = services.GetService<FinalLoginPathGuard>();
-        return guard is not null && await guard.AuthorizeAsync(existing, candidate, targetTenantId, actor, confirmedOverride, cancellationToken) == FinalLoginPathGuardResult.Denied;
+        if (guard is null)
+            return false;
+
+        var guardExisting = existing;
+        if (!existing.OverridesConfigurationConnection && candidate.OverridesConfigurationConnection)
+        {
+            var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(candidate.Key);
+            var effective = await registry.GetAsync(targetTenantId, cancellationToken);
+            var displacedConfigurationConnection = effective.Connections.FirstOrDefault(x =>
+                x.Ownership == ConnectionSourceOwnership.Configuration &&
+                !x.IsShadowed &&
+                string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), normalizedKey, StringComparison.Ordinal));
+            if (displacedConfigurationConnection is not null)
+                guardExisting = displacedConfigurationConnection.Connection;
+        }
+
+        return await guard.AuthorizeAsync(guardExisting, candidate, targetTenantId, actor, confirmedOverride, cancellationToken) == FinalLoginPathGuardResult.Denied;
     }
 
     private async ValueTask<ManagementConnectionMutationResult> ProcessMutationAsync(ConnectionMutationResult result, ClaimsPrincipal actor, string operation, ConnectionLifecycle? previousLifecycle, CancellationToken cancellationToken, IdentityProviderConnection? previousConnection = null)
@@ -479,6 +501,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
     {
         candidate.Key = candidate.Key?.Trim() ?? string.Empty;
         candidate.TenantId = ConnectionScope.HostTenantId;
+        candidate.IsEnabled = existing.IsEnabled;
         candidate.UpdatedAt = clock.UtcNow;
         candidate.SecretBindings ??= new Dictionary<string, SecretBinding>(StringComparer.Ordinal);
         candidate.PermissionGrantSources ??= [];

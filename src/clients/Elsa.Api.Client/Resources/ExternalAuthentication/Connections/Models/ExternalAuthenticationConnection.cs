@@ -23,6 +23,7 @@ public sealed class ExternalAuthenticationConnection
     public bool IsPreferred { get; set; }
     public bool OverridesConfigurationConnection { get; set; }
     public bool CanCreateOverride { get; set; }
+    public bool CanPromoteToConfigurationOverride { get; set; }
     public bool EnabledIntent { get; set; }
     public bool EffectivelyEnabled { get; set; }
     public string Validity { get; set; } = "";
