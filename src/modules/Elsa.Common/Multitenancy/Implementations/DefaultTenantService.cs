@@ -7,7 +7,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
 {
     private readonly AsyncServiceScope _serviceScope = scopeFactory.CreateAsyncScope();
     private readonly SemaphoreSlim _initializationLock = new(1, 1);
-    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+    private readonly SemaphoreSlim _tenantMutationLock = new(1, 1);
     private IDictionary<string, Tenant>? _tenantsDictionary;
     private IDictionary<Tenant, TenantScope>? _tenantScopesDictionary;
 
@@ -60,22 +60,33 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
 
     public async Task DeactivateTenantsAsync(CancellationToken cancellationToken = default)
     {
-        var dictionary = await GetTenantsDictionaryAsync(cancellationToken);
-        var tenants = dictionary.Values.ToArray();
+        var dictionary = await GetTenantsDictionaryForMutationAsync(cancellationToken);
+        await _tenantMutationLock.WaitAsync(cancellationToken);
 
-        foreach (var tenant in tenants)
-            await UnregisterTenantAsync(tenant, false, cancellationToken);
+        try
+        {
+            var tenants = dictionary.Values.ToArray();
+
+            foreach (var tenant in tenants)
+            {
+                await UnregisterTenantAsync(tenant, false, cancellationToken);
+            }
+        }
+        finally
+        {
+            _tenantMutationLock.Release();
+        }
     }
 
     public async Task RefreshAsync(CancellationToken cancellationToken = default)
     {
-        await _refreshLock.WaitAsync(cancellationToken);
+        var currentTenants = await GetTenantsDictionaryForMutationAsync(cancellationToken);
+        await _tenantMutationLock.WaitAsync(cancellationToken);
 
         try
         {
             await using var scope = scopeFactory.CreateAsyncScope();
             var tenantsProvider = scope.ServiceProvider.GetRequiredService<ITenantsProvider>();
-            var currentTenants = await GetTenantsDictionaryAsync(cancellationToken);
             var currentTenantIds = currentTenants.Keys;
             var tenantsFromProvider = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
             var newTenants = tenantsFromProvider.Count == 0
@@ -99,8 +110,20 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         }
         finally
         {
-            _refreshLock.Release();
+            _tenantMutationLock.Release();
         }
+    }
+
+    private async Task<IDictionary<string, Tenant>> GetTenantsDictionaryForMutationAsync(CancellationToken cancellationToken)
+    {
+        var dictionary = await GetTenantsDictionaryAsync(cancellationToken);
+
+        // The dictionary is published before initialization completes so lifecycle event handlers can read it.
+        // Wait for any concurrent initializer before allowing a mutation to proceed.
+        await _initializationLock.WaitAsync(cancellationToken);
+        _initializationLock.Release();
+
+        return dictionary;
     }
 
     private async Task<IDictionary<string, Tenant>> GetTenantsDictionaryAsync(CancellationToken cancellationToken)
