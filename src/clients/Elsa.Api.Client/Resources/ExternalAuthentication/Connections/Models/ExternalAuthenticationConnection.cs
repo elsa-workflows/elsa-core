@@ -28,6 +28,8 @@ public sealed class ExternalAuthenticationConnection
     public bool EffectivelyEnabled { get; set; }
     public string Validity { get; set; } = "";
     public bool Shadowed { get; set; }
+    public ExternalAuthenticationConnectionReference? ShadowedBy { get; set; }
+    public ICollection<ExternalAuthenticationConnectionReference> Shadows { get; set; } = [];
     public bool Archived { get; set; }
     public ExternalAuthenticationPolicySelection? UnlinkedPolicy { get; set; }
     public ICollection<ExternalAuthenticationGrantSourceSelection> PermissionGrantSources { get; set; } = [];
@@ -36,6 +38,16 @@ public sealed class ExternalAuthenticationConnection
     public long Revision { get; set; }
     public string MaterialRevision { get; set; } = "";
     public ExternalAuthenticationConnectionObservation? LatestObservation { get; set; }
+}
+
+/// <summary>
+/// Identifies a connection that participates in an effective/shadowed relationship.
+/// </summary>
+public sealed class ExternalAuthenticationConnectionReference
+{
+    public string Id { get; set; } = "";
+    public string DisplayName { get; set; } = "";
+    public string Source { get; set; } = "";
 }
 
 public sealed class ExternalAuthenticationConnectionScope

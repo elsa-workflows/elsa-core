@@ -113,6 +113,8 @@ internal sealed class ConnectionResponse
     public bool EffectivelyEnabled { get; init; }
     public string Validity { get; init; } = null!;
     public bool Shadowed { get; init; }
+    public ConnectionReferenceResponse? ShadowedBy { get; init; }
+    public IReadOnlyCollection<ConnectionReferenceResponse> Shadows { get; init; } = [];
     public bool Archived { get; init; }
     public PolicySelection? UnlinkedPolicy { get; init; }
     public IReadOnlyCollection<GrantSourceSelection> PermissionGrantSources { get; init; } = [];
@@ -163,6 +165,8 @@ internal sealed class ConnectionResponse
             EffectivelyEnabled = effective.Connection.IsEnabled && !effective.Connection.ArchivedAt.HasValue && !effective.IsShadowed && effective.Validity != ConnectionValidity.Invalid,
             Validity = effective.Validity.ToString().ToLowerInvariant(),
             Shadowed = effective.IsShadowed,
+            ShadowedBy = effective.ShadowedBy is null ? null : ConnectionReferenceResponse.From(effective.ShadowedBy),
+            Shadows = effective.Shadows.Select(ConnectionReferenceResponse.From).ToArray(),
             Archived = effective.Connection.ArchivedAt.HasValue,
             UnlinkedPolicy = effective.Connection.UnlinkedPolicy,
             PermissionGrantSources = effective.Connection.PermissionGrantSources.ToArray(),
@@ -189,6 +193,15 @@ internal sealed class ConnectionResponse
         Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Always => "always",
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "The upstream logout mode is not supported.")
     };
+}
+
+internal sealed record ConnectionReferenceResponse(string Id, string DisplayName, string Source)
+{
+    public static ConnectionReferenceResponse From(IdentityProviderConnectionReference reference) =>
+        new(
+            reference.Id,
+            reference.DisplayName,
+            reference.Ownership == ConnectionSourceOwnership.Configuration ? "configuration" : "database");
 }
 
 internal sealed record ConnectionObservationResponse(string Status, DateTimeOffset ObservedAt, string TestedMaterialRevision, bool IsStale, string Category, string Summary);

@@ -47,17 +47,29 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
 
             var explicitOverride = candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Database && x.Connection.OverridesConfigurationConnection && !x.Connection.ArchivedAt.HasValue);
             var preferred = explicitOverride ?? candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Configuration) ?? candidatesForKey.First();
+            var preferredReference = ToReference(preferred);
+            var shadowedReferences = hasInheritedScopeCollision
+                ? []
+                : candidatesForKey
+                    .Where(candidate => !ReferenceEquals(candidate, preferred))
+                    .Select(ToReference)
+                    .ToArray();
 
             for (var index = 0; index < candidatesForKey.Length; index++)
             {
                 var candidate = candidatesForKey[index];
+                var isShadowed = !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred);
                 connections.Add(new EffectiveIdentityProviderConnection(
                     candidate.Connection,
                     candidate.Source.Ownership,
                     candidate.Scope,
                     hasInheritedScopeCollision ? ConnectionValidity.Invalid : ConnectionValidity.Unknown,
-                    !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred),
-                    candidate.Source.Name));
+                    isShadowed,
+                    candidate.Source.Name)
+                {
+                    ShadowedBy = isShadowed ? preferredReference : null,
+                    Shadows = isShadowed ? [] : shadowedReferences
+                });
             }
         }
 
@@ -132,6 +144,8 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
 
     private static bool IsInScope(IdentityProviderConnection connection, ConnectionScope scope) => string.Equals(connection.TenantId, scope.TenantId, StringComparison.Ordinal);
     private static int GetOwnershipPriority(ConnectionSourceOwnership ownership) => ownership == ConnectionSourceOwnership.Configuration ? 0 : 1;
+    private static IdentityProviderConnectionReference ToReference(Candidate candidate) =>
+        new(candidate.Connection.Id, candidate.Connection.DisplayName, candidate.Source.Ownership);
 
     private sealed record Candidate(IIdentityProviderConnectionSource Source, ConnectionScope Scope, IdentityProviderConnection Connection);
 }

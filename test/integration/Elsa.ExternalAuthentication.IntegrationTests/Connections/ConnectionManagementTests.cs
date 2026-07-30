@@ -217,7 +217,10 @@ public class ConnectionManagementTests : IAsyncLifetime
         _registry.ConfigurationConnection = ConfigurationConnection("contoso");
         await _store.CreateAsync(DatabaseConnection(connectionId, ConnectionScope.HostTenantId, "contoso"));
 
-        Assert.False((await GetConnectionResponseAsync(connectionId)).CanPromoteToConfigurationOverride);
+        var shadowedDatabase = await GetConnectionResponseAsync(connectionId);
+        Assert.False(shadowedDatabase.CanPromoteToConfigurationOverride);
+        Assert.Equal("configuration-contoso", shadowedDatabase.ShadowedBy?.Id);
+        Assert.Equal(connectionId, Assert.Single((await GetConnectionResponseAsync("configuration-contoso")).Shadows).Id);
 
         _app!.Services.GetRequiredService<IOptions<ExternalAuthenticationOptions>>().Value.AllowConfigurationConnectionOverrides = true;
         Assert.True((await GetConnectionResponseAsync(connectionId)).CanPromoteToConfigurationOverride);
@@ -646,6 +649,15 @@ public class ConnectionManagementTests : IAsyncLifetime
         public bool EnabledIntent { get; set; }
         public int AdapterSettingsVersion { get; set; }
         public bool CanPromoteToConfigurationOverride { get; set; }
+        public ConnectionReferenceDocument? ShadowedBy { get; set; }
+        public ICollection<ConnectionReferenceDocument> Shadows { get; set; } = [];
+    }
+
+    private sealed class ConnectionReferenceDocument
+    {
+        public string Id { get; set; } = null!;
+        public string DisplayName { get; set; } = null!;
+        public string Source { get; set; } = null!;
     }
 
     private async Task<ConnectionDocument> GetConnectionResponseAsync(string connectionId)
@@ -867,7 +879,21 @@ public class ConnectionManagementTests : IAsyncLifetime
                     var preferred = candidatesForKey.FirstOrDefault(x => x.Ownership == ConnectionSourceOwnership.Database && x.Connection.OverridesConfigurationConnection && !x.Connection.ArchivedAt.HasValue)
                         ?? candidatesForKey.FirstOrDefault(x => x.Ownership == ConnectionSourceOwnership.Configuration)
                         ?? candidatesForKey[0];
-                    return candidatesForKey.Select(x => x with { IsShadowed = !ReferenceEquals(x, preferred) });
+                    var preferredReference = ToReference(preferred);
+                    var shadowedReferences = candidatesForKey
+                        .Where(candidate => !ReferenceEquals(candidate, preferred))
+                        .Select(ToReference)
+                        .ToArray();
+                    return candidatesForKey.Select(candidate =>
+                    {
+                        var isShadowed = !ReferenceEquals(candidate, preferred);
+                        return candidate with
+                        {
+                            IsShadowed = isShadowed,
+                            ShadowedBy = isShadowed ? preferredReference : null,
+                            Shadows = isShadowed ? [] : shadowedReferences
+                        };
+                    });
                 })
                 .ToArray();
             return new EffectiveConnectionRegistry(connections, [], "test");
@@ -876,5 +902,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         public async ValueTask<EffectiveIdentityProviderConnection?> FindByKeyAsync(string targetTenantId, string key, CancellationToken cancellationToken = default) => (await GetAsync(targetTenantId, cancellationToken)).Connections.FirstOrDefault(x => string.Equals(x.Connection.Key, key, StringComparison.Ordinal));
         public async ValueTask<EffectiveIdentityProviderConnection?> FindByIdAsync(string targetTenantId, string connectionId, CancellationToken cancellationToken = default) => (await GetAsync(targetTenantId, cancellationToken)).Connections.FirstOrDefault(x => string.Equals(x.Connection.Id, connectionId, StringComparison.Ordinal));
         private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new ConnectionScope(ConnectionScopeKind.Tenant, tenantId);
+        private static IdentityProviderConnectionReference ToReference(EffectiveIdentityProviderConnection connection) =>
+            new(connection.Connection.Id, connection.Connection.DisplayName, connection.Ownership);
     }
 }

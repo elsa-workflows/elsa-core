@@ -238,13 +238,22 @@ public sealed record ResolvedSecretBinding(SensitiveString Value, string Generat
 
 public sealed record ConnectionSourceSnapshot(ConnectionScope Scope, string Version, IReadOnlyCollection<IdentityProviderConnection> Connections);
 
+public sealed record IdentityProviderConnectionReference(
+    string Id,
+    string DisplayName,
+    ConnectionSourceOwnership Ownership);
+
 public sealed record EffectiveIdentityProviderConnection(
     IdentityProviderConnection Connection,
     ConnectionSourceOwnership Ownership,
     ConnectionScope Scope,
     ConnectionValidity Validity,
     bool IsShadowed,
-    string SourceName);
+    string SourceName)
+{
+    public IdentityProviderConnectionReference? ShadowedBy { get; init; }
+    public IReadOnlyCollection<IdentityProviderConnectionReference> Shadows { get; init; } = [];
+}
 
 public sealed record EffectiveConnectionRegistry(
     IReadOnlyCollection<EffectiveIdentityProviderConnection> Connections,
