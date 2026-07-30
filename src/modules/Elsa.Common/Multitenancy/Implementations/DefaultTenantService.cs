@@ -14,7 +14,6 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
     public async ValueTask DisposeAsync()
     {
         await _serviceScope.DisposeAsync();
-        _initializationLock.Dispose();
     }
 
     public async Task<Tenant?> FindAsync(string id, CancellationToken cancellationToken = default)

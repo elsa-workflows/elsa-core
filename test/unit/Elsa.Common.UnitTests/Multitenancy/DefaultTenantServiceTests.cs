@@ -239,6 +239,27 @@ public class DefaultTenantServiceTests
         }
     }
 
+    [Fact]
+    public async Task DeactivateTenantsAsync_AfterDisposeAsync_DoesNotUseDisposedSynchronizationPrimitives()
+    {
+        var tenant = new Tenant { Id = "tenant-1", Name = "Tenant 1" };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenant]);
+
+        try
+        {
+            await tenantService.ListAsync();
+            await ((IAsyncDisposable)tenantService).DisposeAsync();
+
+            await tenantService.DeactivateTenantsAsync();
+
+            Assert.Empty(await tenantService.ListAsync());
+        }
+        finally
+        {
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
     private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null)
     {
         var tenantList = tenants.ToList();
