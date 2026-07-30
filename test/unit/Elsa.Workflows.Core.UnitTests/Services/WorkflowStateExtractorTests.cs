@@ -5,6 +5,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
@@ -96,5 +97,161 @@ public class WorkflowStateExtractorTests
         // Assert - The CallStackDepth should be parent depth + 1
         Assert.Equal(4, childContext.CallStackDepth);
         Assert.Equal(parentContext.Id, childContext.SchedulingActivityExecutionId);
+    }
+
+    [Theory]
+    [InlineData("1", 1, false, "Unexpected")]
+    [InlineData("persisted-version-id", 7, true, "MigrationCompatible")]
+    public async Task ApplyAsync_WhenActivityContextNodeIsMissing_LogsStructuredWarningAndSkipsContext(
+        string persistedDefinitionVersionId,
+        int persistedDefinitionVersion,
+        bool isMigration,
+        string expectedClassification)
+    {
+        // Arrange
+        var testContext = await CreateTestContextAsync();
+        var state = testContext.State;
+        state.DefinitionVersionId = persistedDefinitionVersionId;
+        state.DefinitionVersion = persistedDefinitionVersion;
+        state.ActivityExecutionContexts.Add(new()
+        {
+            Id = "missing-activity-context",
+            ScheduledActivityNodeId = "missing-activity-node"
+        });
+
+        // Act
+        await testContext.Extractor.ApplyAsync(testContext.TargetContext, state);
+
+        // Assert
+        Assert.Empty(testContext.TargetContext.ActivityExecutionContexts);
+        var warning = Assert.Single(testContext.Logger.Entries);
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Equal("ActivityExecutionContext", warning.Properties["WorkflowStateSkipKind"]);
+        Assert.Equal("missing-activity-context", warning.Properties["ActivityExecutionContextId"]);
+        Assert.Equal("missing-activity-node", warning.Properties["ScheduledActivityNodeId"]);
+        AssertDefinitionProperties(warning, state, testContext.TargetContext, isMigration, expectedClassification);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenCompletionCallbackOwnerIsMissing_LogsStructuredWarning()
+    {
+        // Arrange
+        var testContext = await CreateTestContextAsync();
+        var state = testContext.State;
+        state.CompletionCallbacks.Add(new("missing-owner", "child-node", null));
+
+        // Act
+        await testContext.Extractor.ApplyAsync(testContext.TargetContext, state);
+
+        // Assert
+        Assert.Empty(testContext.TargetContext.CompletionCallbacks);
+        var warning = Assert.Single(testContext.Logger.Entries);
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Equal("CompletionCallbackOwner", warning.Properties["WorkflowStateSkipKind"]);
+        Assert.Equal("missing-owner", warning.Properties["CompletionCallbackOwnerInstanceId"]);
+        Assert.Equal("child-node", warning.Properties["CompletionCallbackChildNodeId"]);
+        AssertDefinitionProperties(warning, state, testContext.TargetContext, false, "Unexpected");
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenCompletionCallbackChildIsMissing_LogsStructuredWarning()
+    {
+        // Arrange
+        var testContext = await CreateTestContextAsync(includeActivityExecutionContext: true);
+        var state = testContext.State;
+        var ownerInstanceId = Assert.Single(state.ActivityExecutionContexts).Id;
+        state.CompletionCallbacks.Add(new(ownerInstanceId, "missing-child-node", null));
+
+        // Act
+        await testContext.Extractor.ApplyAsync(testContext.TargetContext, state);
+
+        // Assert
+        Assert.Empty(testContext.TargetContext.CompletionCallbacks);
+        var warning = Assert.Single(testContext.Logger.Entries);
+        Assert.Equal(LogLevel.Warning, warning.Level);
+        Assert.Equal("CompletionCallbackChild", warning.Properties["WorkflowStateSkipKind"]);
+        Assert.Equal(ownerInstanceId, warning.Properties["CompletionCallbackOwnerInstanceId"]);
+        Assert.Equal("missing-child-node", warning.Properties["CompletionCallbackChildNodeId"]);
+        AssertDefinitionProperties(warning, state, testContext.TargetContext, false, "Unexpected");
+    }
+
+    private static async Task<TestContext> CreateTestContextAsync(bool includeActivityExecutionContext = false)
+    {
+        var fixture = new ActivityTestFixture(new WriteLine("root"));
+        var contextRoot = await fixture.BuildAsync();
+        var sourceContext = contextRoot.WorkflowExecutionContext;
+
+        if (includeActivityExecutionContext)
+            sourceContext.AddActivityExecutionContext(contextRoot);
+
+        var logger = new CapturingLogger<WorkflowStateExtractor>();
+        var extractor = new WorkflowStateExtractor(logger);
+        var state = extractor.Extract(sourceContext);
+        var targetContext = await WorkflowExecutionContext.CreateAsync(
+            sourceContext.ServiceProvider,
+            sourceContext.WorkflowGraph,
+            state.Id,
+            CancellationToken.None);
+
+        return new(extractor, logger, state, targetContext);
+    }
+
+    private static void AssertDefinitionProperties(
+        CapturedLogEntry warning,
+        WorkflowState state,
+        WorkflowExecutionContext targetContext,
+        bool isMigration,
+        string expectedClassification)
+    {
+        var targetIdentity = targetContext.Workflow.Identity;
+        Assert.Equal(state.Id, warning.Properties["WorkflowInstanceId"]);
+        Assert.Equal(state.DefinitionId, warning.Properties["PersistedWorkflowDefinitionId"]);
+        Assert.Equal(state.DefinitionVersionId, warning.Properties["PersistedWorkflowDefinitionVersionId"]);
+        Assert.Equal(state.DefinitionVersion, warning.Properties["PersistedWorkflowDefinitionVersion"]);
+        Assert.Equal(targetIdentity.DefinitionId, warning.Properties["TargetWorkflowDefinitionId"]);
+        Assert.Equal(targetIdentity.Id, warning.Properties["TargetWorkflowDefinitionVersionId"]);
+        Assert.Equal(targetIdentity.Version, warning.Properties["TargetWorkflowDefinitionVersion"]);
+        Assert.Equal(isMigration, warning.Properties["IsWorkflowDefinitionVersionMigration"]);
+        Assert.Equal(expectedClassification, warning.Properties["WorkflowStateSkipClassification"]);
+    }
+
+    private sealed record TestContext(
+        WorkflowStateExtractor Extractor,
+        CapturingLogger<WorkflowStateExtractor> Logger,
+        WorkflowState State,
+        WorkflowExecutionContext TargetContext);
+
+    private sealed record CapturedLogEntry(LogLevel Level, string Message, IReadOnlyDictionary<string, object?> Properties);
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public ICollection<CapturedLogEntry> Entries { get; } = new List<CapturedLogEntry>();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var properties = state is IEnumerable<KeyValuePair<string, object?>> values
+                ? values.ToDictionary(x => x.Key, x => x.Value)
+                : new Dictionary<string, object?>();
+
+            Entries.Add(new(logLevel, formatter(state, exception), properties));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static NullScope Instance { get; } = new();
+
+            public void Dispose()
+            {
+            }
+        }
     }
 }
