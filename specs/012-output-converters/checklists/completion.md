@@ -64,12 +64,12 @@ This checklist maps the approved requirements to implementation and automated ev
 
 ## Verification log
 
-- Core output-converter and serialization tests: 45 passed on `net10.0`.
+- Core output-converter and serialization tests: 47 passed on `net10.0`.
 - Management definition-validation tests: 3 passed on `net10.0`.
 - API endpoint tests: 6 passed on `net10.0`.
 - API-client component tests: 2 passed on `net10.0`.
 - Runtime component tests: 3 passed on `net10.0` (workflow-output scenario plus the corrected variable and missing-registration scenarios).
-- Studio output-converter tests: 8 passed on `net10.0` against this Core worktree.
+- Studio output-converter tests: 9 passed on `net10.0` against this Core worktree.
 - Core project build: passed on `net10.0` with zero warnings and errors.
 - Core, Management, API, and API-client projects built successfully for `net8.0`, `net9.0`, and `net10.0` during the solution build.
 - The complete solution build could not finish with `--no-restore` because unrelated projects had no `project.assets.json` in this worktree (`Elsa.Workflows.IntegrationTests`, `Elsa.Hosting.Management`, and `Elsa.Workflows.Runtime.UnitTests`).

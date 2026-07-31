@@ -32,8 +32,8 @@ public class OutputBindingDestinationResolver : IOutputBindingDestinationResolve
         if (referenceId == null)
             return null;
 
-        var variable = activityNode
-            .Ancestors()
+        var variable = new[] { activityNode }
+            .Concat(activityNode.Ancestors())
             .Select(x => x.Activity)
             .OfType<IVariableContainer>()
             .SelectMany(x => x.Variables)
