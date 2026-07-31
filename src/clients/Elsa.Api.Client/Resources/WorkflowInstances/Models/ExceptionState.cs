@@ -9,14 +9,18 @@ public record ExceptionState(
     string Type,
     string Message,
     string? StackTrace,
-    ExceptionState? InnerException,
-    IReadOnlyDictionary<string, string>? Metadata = null)
+    ExceptionState? InnerException)
 {
+    /// <summary>
+    /// Gets privacy-safe structured exception metadata.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Metadata { get; init; }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ExceptionState"/> class.
     /// </summary>
     [JsonConstructor]
-    public ExceptionState() : this(null!, null!, null, null, null)
+    public ExceptionState() : this(null!, null!, null, null)
     {
         
     }

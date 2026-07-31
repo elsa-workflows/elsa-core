@@ -80,6 +80,29 @@ public class OutputBindingDestinationResolverTests
         Assert.Equal(OutputBindingDestinationKind.Variable, destination.Kind);
     }
 
+    [Fact]
+    public void Resolve_StaticVariable_IncludesCurrentVariableContainer()
+    {
+        var referenceId = "local-destination";
+        var activity = new Sequence
+        {
+            Id = "activity",
+            Variables = [new Variable<string>("LocalDestination", "", referenceId)]
+        };
+        var node = new ActivityNode(activity, "Body");
+        var workflow = new Workflow { Root = activity };
+        var graph = new WorkflowGraph(workflow, node, [node]);
+        var output = new Output<int>(new MemoryBlockReference(referenceId));
+
+        var destination = _resolver.Resolve(graph, node, output);
+
+        Assert.NotNull(destination);
+        Assert.Equal(referenceId, destination.Id);
+        Assert.Equal(typeof(string), destination.Type);
+        Assert.True(destination.AllowsNull);
+        Assert.Equal(OutputBindingDestinationKind.Variable, destination.Kind);
+    }
+
     [Theory]
     [InlineData(typeof(string), true)]
     [InlineData(typeof(int?), true)]

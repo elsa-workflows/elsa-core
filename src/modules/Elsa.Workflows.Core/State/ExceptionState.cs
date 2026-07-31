@@ -11,14 +11,18 @@ public record ExceptionState(
     Type Type,
     string Message,
     string? StackTrace,
-    ExceptionState? InnerException,
-    IReadOnlyDictionary<string, string>? Metadata = null)
+    ExceptionState? InnerException)
 {
+    /// <summary>
+    /// Gets privacy-safe structured exception metadata.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Metadata { get; init; }
+
     /// <summary>
     /// Constructor
     /// </summary>
     [JsonConstructor]
-    public ExceptionState() : this(default!, default!, default, default, default)
+    public ExceptionState() : this(default!, default!, default, default)
     {
         
     }
@@ -35,6 +39,9 @@ public record ExceptionState(
         var metadata = metadataProvider?.GetSafeMetadata();
         var innerException = metadataProvider == null ? FromException(ex.InnerException) : null;
 
-        return new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, innerException, metadata);
+        return new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, innerException)
+        {
+            Metadata = metadata
+        };
     }
 }

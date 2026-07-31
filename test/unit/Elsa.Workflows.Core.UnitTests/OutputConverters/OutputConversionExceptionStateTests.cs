@@ -43,4 +43,21 @@ public class OutputConversionExceptionStateTests
         Assert.Null(state.Metadata);
         Assert.DoesNotContain("do not persist", state.Message);
     }
+
+    [Fact]
+    public void Metadata_PreservesTheOriginalFourPositionRecordContract()
+    {
+        var state = new ExceptionState(typeof(InvalidOperationException), "failure", "stack", null)
+        {
+            Metadata = new Dictionary<string, string> { ["stage"] = "Invocation" }
+        };
+
+        var (type, message, stackTrace, innerException) = state;
+
+        Assert.Equal(typeof(InvalidOperationException), type);
+        Assert.Equal("failure", message);
+        Assert.Equal("stack", stackTrace);
+        Assert.Null(innerException);
+        Assert.Equal("Invocation", state.Metadata!["stage"]);
+    }
 }
