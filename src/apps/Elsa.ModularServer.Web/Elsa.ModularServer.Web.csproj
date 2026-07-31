@@ -23,6 +23,7 @@
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs.Dashboard\Elsa.Diagnostics.StructuredLogs.Dashboard.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ExternalAuthentication.OpenIdConnect\Elsa.ExternalAuthentication.OpenIdConnect.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ExternalAuthentication.Secrets\Elsa.ExternalAuthentication.Secrets.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />

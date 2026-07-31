@@ -14,7 +14,6 @@ public abstract class EFCoreIdentityPersistenceShellFeatureBase : PersistenceShe
 {
     protected override void OnConfiguring(IServiceCollection services)
     {
-        services.AddExternalAuthenticationEntityFrameworkCore();
         services.AddScoped<IUserStore, EFCoreUserStore>();
         services.AddScoped<IApplicationStore, EFCoreApplicationStore>();
         services.AddScoped<IRoleStore, EFCoreRoleStore>();

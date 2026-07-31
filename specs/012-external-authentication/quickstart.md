@@ -27,7 +27,7 @@ services.AddElsa(elsa =>
 services.AddOpenIdConnectExternalAuthentication();
 ```
 
-Configuration-only/single-node development uses the in-memory atomic state store. A production multi-node host also enables Identity EF persistence for shared external-authentication state, configures shared ASP.NET Core Data Protection keys, and gives every node the same External Authentication handle-hashing key:
+Configuration-only/single-node development uses the in-memory atomic state store. A production multi-node host also enables the External Authentication EF persistence feature (for example `SqliteExternalAuthenticationPersistence`) for shared external-authentication state, configures shared ASP.NET Core Data Protection keys, and gives every node the same External Authentication handle-hashing key:
 
 ```json
 {
@@ -248,7 +248,7 @@ No client secret is configured. The default memory token store requires sign-in 
 
 ## 7. Enable Persisted Administration
 
-Enable the existing Identity EF persistence feature and apply the updated Identity migrations for the chosen provider. The following become shared:
+Enable the `<Provider>ExternalAuthenticationPersistence` shell feature and apply its migrations for the chosen provider. This is independent of Identity EF persistence: enabling `<Provider>IdentityPersistence` alone leaves external authentication on the in-memory stores. The following become shared:
 
 - Database-owned connections and revisions.
 - External Identity Links.
