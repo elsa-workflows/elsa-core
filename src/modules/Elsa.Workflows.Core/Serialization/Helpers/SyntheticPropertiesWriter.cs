@@ -89,16 +89,30 @@ public class SyntheticPropertiesWriter(IExpressionDescriptorRegistry expressionD
             var outputType = outputDescriptor.Type;
             var memoryReferenceId = output.MemoryBlockReference().Id;
 
-            var outputModel = new
-            {
-                TypeName = outputType,
-                MemoryReference = new
-                {
-                    Id = memoryReferenceId
-                }
-            };
+            writer.WriteStartObject();
+            writer.WritePropertyName("typeName");
+            JsonSerializer.Serialize(writer, outputType, options);
+            writer.WritePropertyName("memoryReference");
+            writer.WriteStartObject();
+            writer.WriteString("id", memoryReferenceId);
+            writer.WriteEndObject();
 
-            JsonSerializer.Serialize(writer, outputModel, outputModel.GetType(), options);
+            if (output.Converter != null)
+            {
+                writer.WritePropertyName("converter");
+                writer.WriteStartObject();
+                writer.WriteString("id", output.Converter.Id);
+
+                if (output.Converter.Settings is { } settings)
+                {
+                    writer.WritePropertyName("settings");
+                    settings.WriteTo(writer);
+                }
+
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndObject();
         }
     }
 }
