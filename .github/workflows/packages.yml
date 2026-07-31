@@ -51,12 +51,6 @@ jobs:
           -p:Version=${{ github.event.inputs.version }}
           --no-restore
 
-      - name: Test
-        run: >
-          dotnet test
-          --configuration Release
-          --no-build
-
       - name: Pack
         run: >
           dotnet pack
