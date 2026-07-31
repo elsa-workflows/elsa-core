@@ -51,14 +51,15 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
             var shadowedReferences = hasInheritedScopeCollision
                 ? []
                 : candidatesForKey
-                    .Where(candidate => !ReferenceEquals(candidate, preferred))
+                    .Where(candidate => !ReferenceEquals(candidate, preferred) && !candidate.Connection.ArchivedAt.HasValue)
                     .Select(ToReference)
                     .ToArray();
 
             for (var index = 0; index < candidatesForKey.Length; index++)
             {
                 var candidate = candidatesForKey[index];
-                var isShadowed = !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred);
+                var isArchived = candidate.Connection.ArchivedAt.HasValue;
+                var isShadowed = !isArchived && !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred);
                 connections.Add(new EffectiveIdentityProviderConnection(
                     candidate.Connection,
                     candidate.Source.Ownership,
@@ -68,7 +69,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
                     candidate.Source.Name)
                 {
                     ShadowedBy = isShadowed ? preferredReference : null,
-                    Shadows = isShadowed ? [] : shadowedReferences
+                    Shadows = isShadowed || isArchived ? [] : shadowedReferences
                 });
             }
         }
