@@ -1,368 +1,92 @@
-name: Packages
+name: Publish NuGet Packages
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'main'
-      - 'bug/*'
-      - 'perf/*'
-      - 'patch/*'
-      - 'feat/*'
-      - 'enh/*'
-      - 'rc/*'
-      - 'develop/*'
-      - 'release/*'
-      - 'codex/*'
-  release:
-    types: [prereleased, published]
+    inputs:
+      version:
+        description: 'NuGet package version (e.g. 2.0.0)'
+        required: true
+
+permissions:
+  contents: write
+  packages: write
 
 env:
-  base_version: '3.8.0'
-  feedz_feed_source: 'https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json'
-  nuget_feed_source: 'https://api.nuget.org/v3/index.json'
+  DOTNET_VERSION: "10.0.x"
+  NUGET_SOURCE: https://nuget.pkg.github.com/nectar-sistemas/index.json
 
 jobs:
-  test_unit_integration:
-    name: Test unit/integration with coverage
+  publish:
+
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up .NET SDK
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Show .NET info
+      - name: Configure GitHub Packages
         run: |
-          dotnet --info
-          dotnet --list-sdks
+          dotnet nuget add source \
+            "${{ env.NUGET_SOURCE }}" \
+            --name github \
+            --username "${{ github.actor }}" \
+            --password "${{ secrets.NUGET_PACKAGES_TOKEN }}" \
+            --store-password-in-clear-text
 
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+      - name: Restore
+        run: dotnet restore
 
-      - name: Restore solution
-        run: dotnet restore Elsa.sln --ignore-failed-sources
+      - name: Build
+        run: >
+          dotnet build
+          --configuration Release
+          -p:Version=${{ github.event.inputs.version }}
+          --no-restore
 
-      - name: Prepare coverage directory
+      - name: Test
+        run: >
+          dotnet test
+          --configuration Release
+          --no-build
+
+      - name: Pack
+        run: >
+          dotnet pack
+          --configuration Release
+          -p:PackageVersion=${{ github.event.inputs.version }}
+          --no-build
+          --output ./artifacts
+
+      - name: Publish packages
         run: |
-          rm -rf artifacts/coverage
-          mkdir -p artifacts/coverage
+          find ./artifacts \
+            -name "*.nupkg" \
+            ! -name "*.snupkg" \
+            -exec dotnet nuget push {} \
+              --source github \
+              --skip-duplicate \;
 
-      - name: Run tests with coverage
+      - name: Create Git Tag
         run: |
-          set -euo pipefail
-          dotnet --info
-          if ! dotnet --version | grep -q '^10\.'; then
-            echo "Expected .NET SDK 10.x but got $(dotnet --version)" >&2
-            exit 1
-          fi
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
 
-          # Discover unit and integration test projects. Component tests run in their own job.
-          mapfile -t projects < <(
-            find test/unit test/integration \
-              -type f -name '*.csproj' -print0 2>/dev/null \
-              | xargs -0 -n1 \
-              | sort
-          )
+          git tag "v${{ github.event.inputs.version }}"
+          git push origin "v${{ github.event.inputs.version }}"
 
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/unit or test/integration." >&2
-            exit 1
-          fi
-
-          for project in "${projects[@]}"; do
-            echo "Building test project ${project}"
-            dotnet build "$project" --configuration Release --framework net10.0
-
-            echo "Running tests with coverage for ${project}"
-            dotnet test "$project" \
-              --configuration Release \
-              --framework net10.0 \
-              --no-build \
-              --logger "GitHubActions;report-warnings=false" \
-              /p:CollectCoverage=true
-          done
-
-      - name: Dump docker logs on failure
-        if: failure()
-        run: |
-          echo "=== Docker containers ==="
-          docker ps -a || true
-          echo "=== Docker logs ==="
-          for container in $(docker ps -aq); do
-            echo "--- Logs for container $container ---"
-            docker logs "$container" 2>&1 | tail -100 || true
-          done
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: unit-integration-coverage-reports
-          path: artifacts/coverage
-
-  test_component:
-    name: Test component with coverage
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.1xx
-
-      - name: Show .NET info
-        run: |
-          dotnet --info
-          dotnet --list-sdks
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Restore solution
-        run: dotnet restore Elsa.sln --ignore-failed-sources
-
-      - name: Prepare test artifact directories
-        run: |
-          rm -rf artifacts/coverage artifacts/test-results
-          mkdir -p artifacts/coverage artifacts/test-results/component
-
-      - name: Run component tests with coverage and hang diagnostics
-        run: |
-          set -euo pipefail
-          dotnet --info
-          if ! dotnet --version | grep -q '^10\.'; then
-            echo "Expected .NET SDK 10.x but got $(dotnet --version)" >&2
-            exit 1
-          fi
-
-          mapfile -t projects < <(
-            find test/component \
-              -type f -name '*.csproj' -print0 2>/dev/null \
-              | xargs -0 -n1 \
-              | sort
-          )
-
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/component." >&2
-            exit 1
-          fi
-
-          for project in "${projects[@]}"; do
-            echo "Building component test project ${project}"
-            dotnet build "$project" --configuration Release --framework net10.0
-
-            echo "Running component tests with coverage and hang diagnostics for ${project}"
-            dotnet test "$project" \
-              --configuration Release \
-              --framework net10.0 \
-              --no-build \
-              --logger "GitHubActions;report-warnings=false" \
-              --logger "trx" \
-              --results-directory artifacts/test-results/component \
-              --verbosity detailed \
-              --blame-hang \
-              --blame-hang-timeout 2m \
-              --blame-hang-dump-type mini \
-              /p:CollectCoverage=true
-          done
-
-      - name: Dump docker logs on failure
-        if: failure()
-        run: |
-          echo "=== Docker containers ==="
-          docker ps -a || true
-          echo "=== Docker logs ==="
-          for container in $(docker ps -aq); do
-            echo "--- Logs for container $container ---"
-            docker logs "$container" 2>&1 | tail -100 || true
-          done
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: component-coverage-reports
-          path: artifacts/coverage
-
-      - name: Upload component test diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: component-test-diagnostics
-          path: artifacts/test-results
-
-  coverage_report:
-    name: Generate coverage report
-    needs:
-      - test_unit_integration
-      - test_component
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: always() && !cancelled() && needs.test_unit_integration.result == 'success' && needs.test_component.result == 'success'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.0.1xx
-
-      - name: Download coverage reports
-        uses: actions/download-artifact@v4
-        with:
-          pattern: '*-coverage-reports'
-          path: artifacts/coverage
-          merge-multiple: true
-
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
-      - name: Generate HTML coverage report
-        run: |
-          reportgenerator \
-            "-reports:./artifacts/coverage/**/coverage.cobertura.xml" \
-            "-targetdir:./artifacts/coverage-report" \
-            "-reporttypes:Html;Cobertura;TextSummary" \
-            "-verbosity:Info"
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports
-          path: artifacts/coverage
-
-      - name: Upload Pages artifact
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './artifacts/coverage-report'
-
-  build:
-    name: Build packages
-    needs:
-      - test_unit_integration
-      - test_component
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: ${{ github.event_name != 'pull_request' }}
-    steps:
-      - name: Extract branch name
-        run: |
-          BRANCH_NAME=${{ github.ref }} # e.g., refs/heads/main
-          BRANCH_NAME=${BRANCH_NAME#refs/heads/} # remove the refs/heads/ prefix
-          # Extract the last part after the last slash of the branch name, if any, e.g., feature/issue-123 -> issue-123 and use it as the version prefix.
-          PACKAGE_PREFIX=$(echo $BRANCH_NAME | rev | cut -d/ -f1 | rev | tr '_' '-')
-
-          # If the branch name is main, use the preview version. Otherwise, use the branch name as the version prefix.
-          if [[ "${BRANCH_NAME}" == "main" || "${BRANCH_NAME}" =~ ^develop/ || "${BRANCH_NAME}" =~ ^release/ ]]; then
-              PACKAGE_PREFIX="preview"
-          fi
-
-          echo "Ref: ${{ github.ref }}"
-          echo "Branch name: ${BRANCH_NAME}"
-          echo "Package prefix: ${PACKAGE_PREFIX}"
-          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
-          echo "PACKAGE_PREFIX=${PACKAGE_PREFIX}" >> $GITHUB_ENV
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Verify commit exists in branch
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
-            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep -E 'origin/(main|release/)'
-          else
-            git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
-            git branch --remote --contains | grep origin/${BRANCH_NAME}
-          fi
-
-      - name: Set VERSION variable
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* && "${{ github.event_name }}" == "release" && ("${{ github.event.action }}" == "published" || "${{ github.event.action }}" == "prereleased") ]]; then
-            TAG_NAME=${{ github.ref }} # e.g., refs/tags/3.0.0
-            TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
-            echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
-          else
-            echo "VERSION=${{env.base_version}}-preview.${{github.run_number}}" >> $GITHUB_ENV
-          fi
-
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 10.x
-
-      - name: Compile+Pack
-        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: elsa-nuget-packages
-          path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-
-  publish_preview_feedz:
-    name: Publish to feedz.io
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
-    steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: elsa-nuget-packages
-
-      - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
-
-  publish_nuget:
-    name: Publish release to nuget.org
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    if: ${{ github.event.action == 'published' }}
-    steps:
-      - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: elsa-nuget-packages
-
-      - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
-
-  deploy_coverage:
-    name: Deploy coverage to GitHub Pages
-    needs: coverage_report
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop/3.6.1' || github.ref == 'refs/heads/release/3.6.1'
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          tag_name: v${{ github.event.inputs.version }}
+          generate_release_notes: true
+          files: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
