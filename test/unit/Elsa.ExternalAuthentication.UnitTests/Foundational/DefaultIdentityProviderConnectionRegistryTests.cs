@@ -47,6 +47,25 @@ public class DefaultIdentityProviderConnectionRegistryTests
     }
 
     [Fact]
+    public async Task ArchivedDatabaseOverrideDoesNotAppearInTheEffectiveConnectionShadows()
+    {
+        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc");
+        var archivedOverride = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC");
+        archivedOverride.OverridesConfigurationConnection = true;
+        archivedOverride.ArchivedAt = DateTimeOffset.UtcNow;
+        var registry = CreateRegistry(
+            new TestConnectionSource("database", ConnectionSourceOwnership.Database, [(ConnectionScope.Host, [archivedOverride])]),
+            new TestConnectionSource("configuration", ConnectionSourceOwnership.Configuration, [(ConnectionScope.Host, [configuration])]));
+
+        var result = await registry.GetAsync("tenant-a");
+
+        var effective = Assert.Single(result.Connections, x => !x.IsShadowed);
+        Assert.Equal("configuration-oidc", effective.Connection.Id);
+        Assert.Empty(effective.Shadows);
+        Assert.Contains(result.Connections, x => x.Connection.Id == "database-oidc" && x.Connection.ArchivedAt.HasValue);
+    }
+
+    [Fact]
     public async Task ConfigurationPreferredConnectionWinsOverDatabasePreferredConnection()
     {
         var configuration = ExternalAuthenticationTestData.CreateConnection("configuration", ConnectionScope.HostTenantId, "configuration", displayOrder: 20, isPreferred: true);
