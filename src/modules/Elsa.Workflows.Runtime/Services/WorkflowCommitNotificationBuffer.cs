@@ -38,10 +38,15 @@ public class WorkflowCommitNotificationBuffer(IMediator mediator, ILogger<Workfl
             _entries.Add(new(notification, strategy));
         }
 
-        public async Task FlushAsync(CancellationToken cancellationToken = default)
+        public Task FlushAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             owner._currentScope.Value = parent;
+            return FlushEntriesAsync(cancellationToken);
+        }
+
+        private async Task FlushEntriesAsync(CancellationToken cancellationToken)
+        {
             List<Exception>? exceptions = null;
 
             foreach (var entry in _entries)
