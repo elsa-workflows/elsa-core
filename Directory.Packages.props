@@ -129,6 +129,7 @@
         <PackageVersion Include="IronCompress" Version="1.7.0"/>
         <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4"/>
         <PackageVersion Include="Jint" Version="4.4.2"/>
+        <PackageVersion Include="JsonSchema.Net" Version="9.4.0"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.11"/>
         <PackageVersion Include="MailKit" Version="4.14.1"/>
         <PackageVersion Include="MassTransit" Version="8.5.7"/>

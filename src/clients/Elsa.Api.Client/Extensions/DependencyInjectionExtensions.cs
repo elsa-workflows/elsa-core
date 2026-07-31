@@ -8,6 +8,7 @@ using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Identity.Contracts;
 using Elsa.Api.Client.Resources.IncidentStrategies.Contracts;
 using Elsa.Api.Client.Resources.LogPersistenceStrategies;
+using Elsa.Api.Client.Resources.OutputConverters.Contracts;
 using Elsa.Api.Client.Resources.Resilience.Contracts;
 using Elsa.Api.Client.Resources.Shells.Contracts;
 using Elsa.Api.Client.Resources.Scripting.Contracts;
@@ -86,6 +87,7 @@ public static class DependencyInjectionExtensions
             services.AddApi<IShellsApi>(builderOptions);
             services.AddApi<IJavaScriptApi>(builderOptions);
             services.AddApi<IExpressionDescriptorsApi>(builderOptions);
+            services.AddApi<IOutputConvertersApi>(builderOptions);
             services.AddApi<IWorkflowContextProviderDescriptorsApi>(builderOptions);
             services.AddApi<IAlterationsApi>(builderOptions);
             services.AddApi<ITasksApi>(builderOptions);
