@@ -177,6 +177,24 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ValidateRequiresCompleteConfigurationAndReturnsMissingSecretDetails()
+    {
+        _adapter.RequiresClientSecret = true;
+        var create = await _client!.PostAsJsonAsync("/external-authentication/connections", CreateRequest("missing-secret"));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+
+        var validate = await _client!.PostAsync($"/external-authentication/connections/{connection.Id}/validate", null);
+        var validation = JsonDocument.Parse(await validate.Content.ReadAsStringAsync()).RootElement;
+
+        Assert.Equal(HttpStatusCode.OK, validate.StatusCode);
+        Assert.False(validation.GetProperty("valid").GetBoolean());
+        var error = Assert.Single(validation.GetProperty("errors").EnumerateArray());
+        Assert.Equal("secretBindings.clientSecret", error.GetProperty("field").GetString());
+        Assert.Equal("required", error.GetProperty("code").GetString());
+        Assert.Equal("A required secret binding is missing.", error.GetProperty("message").GetString());
+    }
+
+    [Fact]
     public async Task ConnectionResponseEmitsCanonicalUpstreamLogoutModeString()
     {
         var response = await _client!.PostAsJsonAsync(
@@ -734,9 +752,10 @@ public class ConnectionManagementTests : IAsyncLifetime
     private sealed class TestAdapter : IExternalAuthenticationAdapter
     {
         public string Type => "test";
+        public bool RequiresClientSecret { get; set; }
         public ExternalAuthenticationAdapterDescriptor Describe() => new(Type, "Test", "Test adapter", 2,
         [
-            new SettingFieldDescriptor("clientSecret", "Client secret", "Secret", "secret", false, "secret", null, [], new SettingFieldValidation(), true, false, null, null, true),
+            new SettingFieldDescriptor("clientSecret", "Client secret", "Secret", "secret", RequiresClientSecret, "secret", null, [], new SettingFieldValidation(), true, false, null, null, true),
             new SettingFieldDescriptor("unsafeMode", "Unsafe mode", "Unsafe", "boolean", false, "toggle", null, [], new SettingFieldValidation(), false, true, null, null, false)
         ], new(false, false, false), null);
         public ValueTask<ConnectionValidationResult> ValidateAsync(ConnectionValidationContext context, CancellationToken cancellationToken = default)

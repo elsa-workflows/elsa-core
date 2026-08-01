@@ -320,7 +320,7 @@ internal sealed class ValidateConnection(IdentityProviderConnectionManagementSer
             return;
         }
 
-        var validation = await management.ValidateAsync(connection.Connection, User, tenantAccessor.TenantId, requireCompleteConfiguration: false, confirmUnsafeSettings: ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.ProviderTrustUnsafe), cancellationToken: cancellationToken);
+        var validation = await management.ValidateAsync(connection.Connection, User, tenantAccessor.TenantId, requireCompleteConfiguration: true, confirmUnsafeSettings: ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.ProviderTrustUnsafe), cancellationToken: cancellationToken);
         await HttpContext.Response.WriteAsJsonAsync(new ConnectionValidationResponse(validation.IsValid, validation.Errors, validation.Warnings), cancellationToken);
     }
 }
