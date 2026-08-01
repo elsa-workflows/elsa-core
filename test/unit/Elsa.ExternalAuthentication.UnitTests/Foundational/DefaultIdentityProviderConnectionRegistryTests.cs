@@ -49,8 +49,8 @@ public class DefaultIdentityProviderConnectionRegistryTests
     [Fact]
     public async Task ArchivedDatabaseOverrideDoesNotParticipateInActiveShadowRelationships()
     {
-        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc");
-        var archivedOverride = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC");
+        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc", displayOrder: 10);
+        var archivedOverride = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC", displayOrder: 0);
         archivedOverride.OverridesConfigurationConnection = true;
         archivedOverride.ArchivedAt = DateTimeOffset.UtcNow;
         var registry = CreateRegistry(
@@ -58,9 +58,11 @@ public class DefaultIdentityProviderConnectionRegistryTests
             new TestConnectionSource("configuration", ConnectionSourceOwnership.Configuration, [(ConnectionScope.Host, [configuration])]));
 
         var result = await registry.GetAsync("tenant-a");
+        var resolved = await registry.FindByKeyAsync("tenant-a", "oidc");
 
         var effective = Assert.Single(result.Connections, x => !x.Connection.ArchivedAt.HasValue && !x.IsShadowed);
         Assert.Equal("configuration-oidc", effective.Connection.Id);
+        Assert.Equal("configuration-oidc", Assert.IsType<EffectiveIdentityProviderConnection>(resolved).Connection.Id);
         Assert.Empty(effective.Shadows);
         var archived = Assert.Single(result.Connections, x => x.Connection.Id == "database-oidc");
         Assert.True(archived.Connection.ArchivedAt.HasValue);
