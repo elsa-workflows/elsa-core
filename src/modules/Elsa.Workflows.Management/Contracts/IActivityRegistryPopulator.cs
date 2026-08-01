@@ -10,4 +10,14 @@ public interface IActivityRegistryPopulator
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     Task PopulateRegistryAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Ensures that activity descriptors have been populated, initializing tenant-agnostic providers once.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <remarks>
+    /// The default implementation preserves the existing behavior for custom populators.
+    /// </remarks>
+    Task EnsureRegistryPopulatedAsync(CancellationToken cancellationToken = default) =>
+        PopulateRegistryAsync(cancellationToken);
 }
