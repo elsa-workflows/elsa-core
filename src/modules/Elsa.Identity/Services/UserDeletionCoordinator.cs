@@ -32,13 +32,13 @@ public sealed class UserDeletionCoordinator(
         }
         catch
         {
-            await userStore.SaveAsync(user, cancellationToken);
+            await userStore.SaveAsync(user, CancellationToken.None);
             throw;
         }
 
         if (dependencies.Count > 0)
         {
-            await userStore.SaveAsync(user, cancellationToken);
+            await userStore.SaveAsync(user, CancellationToken.None);
             return new UserDeletionOperationResult.Blocked(dependencies);
         }
 

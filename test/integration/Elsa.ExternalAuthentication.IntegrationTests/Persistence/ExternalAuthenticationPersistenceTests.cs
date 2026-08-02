@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Elsa.Common;
 using Elsa.Common.Services;
@@ -312,6 +313,27 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ProvisionerRemovesTheJustInTimeUserWhenPublicationIsCancelled()
+    {
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var users = new CancelAfterSaveUserStore(new MemoryUserStore(new MemoryStore<User>()), cancellationTokenSource);
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var provisioner = CreateProvisioner(hasher, userStore: users);
+        var request = new ProvisioningRequest(
+            "tenant-a",
+            "connection-a",
+            new ExternalIdentity("https://issuer.example", "subject-cancelled-publication", EmptyClaims),
+            new UserCreationProposal("external"));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            provisioner.CreateLinkOrGetExistingAsync(request, cancellationTokenSource.Token).AsTask());
+
+        Assert.Empty(await users.FindManyAsync(new UserFilter()));
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+    }
+
+    [Fact]
     public async Task ProvisionerFailsWhenAJustInTimeUserCannotBeCompensated()
     {
         var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
@@ -356,6 +378,30 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
 
         Assert.Empty(await users.FindManyAsync(new UserFilter()));
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+    }
+
+    [Fact]
+    public async Task ProvisionerReconcilesAmbiguousPublicationForExistingUser()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new DeleteLinkedUserAfterSaveAndThrowInterceptor(_userStore))
+            .Options;
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var provisioner = CreateProvisioner(hasher, new TestDbContextFactory(options, _services));
+        var request = new ProvisioningRequest(
+            "tenant-a",
+            "connection-a",
+            new ExternalIdentity("https://issuer.example", "subject-ambiguous-existing-user", EmptyClaims),
+            null,
+            "user-a");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+
+        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-a" }));
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
     }
@@ -451,6 +497,150 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+    }
+
+    [Fact]
+    public async Task ProvisionerPreservesRestoredLinkWhenPreviousUserLookupFails()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var originalProvisioner = CreateProvisioner(hasher);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var racingProvider = new DeleteThenThrowUserProvider(new StoreBasedUserProvider(_userStore), _userStore);
+        var racingProvisioner = CreateProvisioner(hasher, userProvider: racingProvider);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+
+        Assert.Contains("lookup failure", exception.Message, StringComparison.Ordinal);
+        Assert.NotNull(await _userStore.FindAsync(new UserFilter { Id = "user-a" }));
+        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        Assert.Equal(old.Id, durableLink.Id);
+        Assert.Equal("user-a", durableLink.UserId);
+    }
+
+    [Fact]
+    public async Task ProvisionerFallsBackWhenInvalidRestoredLinkCleanupFailsOnce()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new FailSelectedLinkDeleteInterceptor(3))
+            .Options;
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var factory = new TestDbContextFactory(options, _services);
+        var originalProvisioner = CreateProvisioner(hasher, factory);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2, 3);
+        var racingProvisioner = CreateProvisioner(hasher, factory, userProvider: racingProvider);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+    }
+
+    [Fact]
+    public async Task ProvisionerDoesNotMisclassifyPostCommitUserLookupFailureAsConflict()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var originalProvisioner = CreateProvisioner(hasher);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var failingProvider = new ThrowOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), 2);
+        var failingProvisioner = CreateProvisioner(hasher, userProvider: failingProvider);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => failingProvisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        Assert.NotEqual(old.Id, durableLink.Id);
+        Assert.Equal("user-b", durableLink.UserId);
+    }
+
+    [Fact]
+    public async Task ProvisionerReconcilesReplacementWhenCommitAcknowledgementIsLost()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var originalProvisioner = CreateProvisioner(hasher);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new ThrowAfterSelectedCommitInterceptor(1))
+            .Options;
+        var provisioner = CreateProvisioner(hasher, new TestDbContextFactory(options, _services));
+
+        var result = Assert.IsType<ExternalIdentityLinkReplaceResult.Success>(await provisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))));
+
+        Assert.NotEqual(old.Id, result.NewLink.Id);
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        Assert.Equal(result.NewLink.Id, durableLink.Id);
+        Assert.Equal("user-b", durableLink.UserId);
+    }
+
+    [Fact]
+    public async Task ProvisionerPreservesRestoredLinkWhenCompensationCommitAcknowledgementIsLost()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var originalProvisioner = CreateProvisioner(hasher);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new ThrowAfterSelectedCommitInterceptor(2))
+            .Options;
+        var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2);
+        var provisioner = CreateProvisioner(hasher, new TestDbContextFactory(options, _services), userProvider: racingProvider);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        Assert.Equal(old.Id, durableLink.Id);
+        Assert.Equal("user-a", durableLink.UserId);
     }
 
     [Fact]
@@ -597,12 +787,73 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         }
     }
 
+    private sealed class DeleteLinkedUserAfterSaveAndThrowInterceptor(IUserStore users) : SaveChangesInterceptor
+    {
+        public override async ValueTask<int> SavedChangesAsync(
+            SaveChangesCompletedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            var userId = eventData.Context!.ChangeTracker.Entries<PersistedExternalIdentityLink>()
+                .Single().Entity.UserId;
+            await users.DeleteAsync(new UserFilter { Id = userId }, CancellationToken.None);
+            throw new InvalidOperationException("Simulated ambiguous post-save failure.");
+        }
+    }
+
     private sealed class DeleteFailingUserStore(IUserStore inner) : IUserStore
     {
         public Task SaveAsync(User user, CancellationToken cancellationToken = default) => inner.SaveAsync(user, cancellationToken);
         public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Simulated user cleanup failure.");
         public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
         public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+    }
+
+    private sealed class CancelAfterSaveUserStore(IUserStore inner, CancellationTokenSource cancellationTokenSource) : IUserStore
+    {
+        public async Task SaveAsync(User user, CancellationToken cancellationToken = default)
+        {
+            await inner.SaveAsync(user, cancellationToken);
+            cancellationTokenSource.Cancel();
+        }
+
+        public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+        public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+        public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+    }
+
+    private sealed class FailSelectedLinkDeleteInterceptor(int failureCount) : DbCommandInterceptor
+    {
+        private int _deleteCount;
+
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("DELETE FROM \"ExternalIdentityLinks\"", StringComparison.Ordinal) &&
+                Interlocked.Increment(ref _deleteCount) == failureCount)
+                throw new InvalidOperationException("Simulated external identity link cleanup failure.");
+
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    private sealed class ThrowAfterSelectedCommitInterceptor(int failureCount) : DbTransactionInterceptor
+    {
+        private int _commitCount;
+
+        public override Task TransactionCommittedAsync(
+            DbTransaction transaction,
+            TransactionEndEventData eventData,
+            CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Increment(ref _commitCount) == failureCount)
+                throw new InvalidOperationException("Simulated lost transaction commit acknowledgement.");
+
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class DeleteOnSelectedFindUserProvider(IUserProvider inner, IUserStore users, params int[] deletionCounts) : IUserProvider
@@ -619,6 +870,40 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 return null;
             }
 
+            return user;
+        }
+    }
+
+    private sealed class DeleteThenThrowUserProvider(IUserProvider inner, IUserStore users) : IUserProvider
+    {
+        private int _findCount;
+
+        public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
+        {
+            var user = await inner.FindAsync(filter, cancellationToken);
+            var findCount = Interlocked.Increment(ref _findCount);
+            if (user is not null && findCount == 2)
+            {
+                await users.DeleteAsync(new UserFilter { Id = user.Id }, cancellationToken);
+                return null;
+            }
+
+            if (findCount == 3)
+                throw new InvalidOperationException("Simulated user-directory lookup failure.");
+
+            return user;
+        }
+    }
+
+    private sealed class ThrowOnSelectedFindUserProvider(IUserProvider inner, int failureCount) : IUserProvider
+    {
+        private int _findCount;
+
+        public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
+        {
+            var user = await inner.FindAsync(filter, cancellationToken);
+            if (Interlocked.Increment(ref _findCount) == failureCount)
+                throw new DbUpdateException("Simulated post-commit user-directory failure.");
             return user;
         }
     }

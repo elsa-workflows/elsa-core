@@ -66,7 +66,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 clock.UtcNow,
                 null);
             state.Links[key] = link;
-            if (!await _userProvisioningService.ExistsAsync(user, wasCreated, cancellationToken))
+            if (!await _userProvisioningService.ExistsAsync(user, wasCreated, CancellationToken.None))
             {
                 state.Links.Remove(key);
                 throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being created.");
@@ -114,10 +114,13 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 null);
             state.Links.Remove(oldEntry.Key);
             state.Links[replacementKey] = replacement;
-            if (!await _userProvisioningService.ExistsAsync(user, false, cancellationToken))
+            if (!await _userProvisioningService.ExistsAsync(user, false, CancellationToken.None))
             {
                 state.Links.Remove(replacementKey);
                 state.Links[oldEntry.Key] = oldEntry.Value;
+                var previousUser = new User { Id = oldEntry.Value.UserId, TenantId = oldEntry.Value.TenantId };
+                if (!await _userProvisioningService.ExistsAsync(previousUser, false, CancellationToken.None))
+                    state.Links.Remove(oldEntry.Key);
                 throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being replaced.");
             }
             return new ExternalIdentityLinkReplaceResult.Success(oldEntry.Value, replacement);
