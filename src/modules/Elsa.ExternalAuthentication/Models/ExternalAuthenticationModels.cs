@@ -249,7 +249,8 @@ public sealed class ExternalAuthenticationSession
     public DateTimeOffset LastRefreshedAt { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset RefreshExpiresAt { get; set; }
-    public string CurrentRefreshTokenHash { get; set; } = null!;
+    /// <summary>The hash of the currently issued refresh token, or <see langword="null"/> until one is issued.</summary>
+    public string? CurrentRefreshTokenHash { get; set; }
     public long RefreshGeneration { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public string? RevocationReason { get; set; }

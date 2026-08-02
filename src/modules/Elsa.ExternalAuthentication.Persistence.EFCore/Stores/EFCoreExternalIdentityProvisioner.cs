@@ -32,7 +32,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
     ISystemClock clock,
     ILogger<EFCoreExternalIdentityProvisioner> logger) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore
 {
-    private const int MaximumUserNameAttempts = 10;
+    private readonly ExternalIdentityUserProvisioningService _userProvisioningService = new(userStore, userProvider, roleProvider, identityGenerator);
 
     public async ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default)
     {
@@ -51,7 +51,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
             return new ProvisioningResult(existing.UserId, existing, false);
 
         // Resolved outside the try so a user resolution failure is never mistaken for a link conflict.
-        var (user, wasCreated) = await ResolveUserAsync(request, cancellationToken);
+        var (user, wasCreated) = await _userProvisioningService.ResolveAsync(request, cancellationToken: cancellationToken);
         var link = new PersistedExternalIdentityLink
         {
             Id = identityGenerator.GenerateId(),
@@ -68,16 +68,19 @@ public sealed class EFCoreExternalIdentityProvisioner(
             await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
             dbContext.ExternalIdentityLinks.Add(link);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await EnsureLinkedUserStillExistsAsync(dbContext, link, user, wasCreated, cancellationToken);
             return new ProvisioningResult(user.Id, ToModel(link), wasCreated, true);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException linkException)
         {
             // IX_ExternalIdentityLink_Identity arbitrates concurrent first sign-ins for the same identity tuple.
             var winner = await FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity, cancellationToken);
-            if (winner is null)
-                throw; // Not a uniqueness conflict, so leave any just-created user in place.
+            if (winner?.Id == link.Id)
+                return new ProvisioningResult(user.Id, winner, wasCreated, true);
             if (wasCreated)
-                await TryRemoveStrandedUserAsync(user, cancellationToken);
+                await RemoveStrandedUserAsync(user, linkException, cancellationToken);
+            if (winner is null)
+                throw;
             return new ProvisioningResult(winner.UserId, winner, false);
         }
     }
@@ -112,9 +115,9 @@ public sealed class EFCoreExternalIdentityProvisioner(
 
             // The identity aggregate lives in its own store, so the target user is verified through its contract.
             // Checked here rather than up front to preserve the "unknown link wins over unknown user" result ordering.
-            var user = await userProvider.FindAsync(new UserFilter { Id = request.UserId }, cancellationToken);
-            if (user is null || !string.Equals(user.TenantId, request.TenantId, StringComparison.Ordinal))
-                throw new InvalidOperationException("The requested Elsa user does not exist or is outside the target tenant.");
+            var (user, _) = await _userProvisioningService.ResolveAsync(
+                new ProvisioningRequest(request.TenantId, normalizedConnectionKey, request.Identity, null, request.UserId),
+                cancellationToken: cancellationToken);
 
             var deleted = await dbContext.ExternalIdentityLinks
                 .Where(x => x.Id == request.LinkId && x.TenantId == request.TenantId)
@@ -135,6 +138,11 @@ public sealed class EFCoreExternalIdentityProvisioner(
             dbContext.ExternalIdentityLinks.Add(replacementEntity);
             await dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
+            if (!await _userProvisioningService.ExistsAsync(user, false, cancellationToken))
+            {
+                await CompensateReplacementAsync(oldEntity, replacementEntity, cancellationToken);
+                throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being replaced.");
+            }
             return new ExternalIdentityLinkReplaceResult.Success(oldLink, ToModel(replacementEntity));
         }
         catch (DbUpdateConcurrencyException)
@@ -173,70 +181,91 @@ public sealed class EFCoreExternalIdentityProvisioner(
             .ExecuteDeleteAsync(cancellationToken) > 0;
     }
 
-    private async ValueTask<(User User, bool WasCreated)> ResolveUserAsync(ProvisioningRequest request, CancellationToken cancellationToken)
+    private async ValueTask EnsureLinkedUserStillExistsAsync(
+        ExternalAuthenticationElsaDbContext dbContext,
+        PersistedExternalIdentityLink link,
+        User user,
+        bool wasCreated,
+        CancellationToken cancellationToken)
     {
-        if (!string.IsNullOrWhiteSpace(request.ExistingUserId))
-        {
-            var existingUser = await userProvider.FindAsync(new UserFilter { Id = request.ExistingUserId }, cancellationToken)
-                ?? throw new InvalidOperationException("The requested Elsa user does not exist.");
-            if (!string.Equals(existingUser.TenantId, request.TenantId, StringComparison.Ordinal))
-                throw new InvalidOperationException("The requested Elsa user is outside the target tenant.");
-            return (existingUser, false);
-        }
+        if (await _userProvisioningService.ExistsAsync(user, wasCreated, cancellationToken))
+            return;
 
-        var proposal = request.Proposal ?? throw new InvalidOperationException("A user creation proposal is required for an unlinked external identity.");
-        var roleIds = await ResolveRoleIdsAsync(proposal.DefaultRoleIds, cancellationToken);
-        var prefix = NormalizeUserNamePrefix(proposal.UserNamePrefix);
-        for (var attempt = 0; attempt < MaximumUserNameAttempts; attempt++)
-        {
-            var name = $"{prefix}-{identityGenerator.GenerateId()}";
-            if (await userProvider.FindAsync(new UserFilter { Name = name }, cancellationToken) is not null)
-                continue;
-
-            var user = new User
-            {
-                Id = identityGenerator.GenerateId(),
-                Name = name,
-                TenantId = request.TenantId,
-                HashedPassword = null,
-                HashedPasswordSalt = null,
-                Roles = roleIds.ToList()
-            };
-            await userStore.SaveAsync(user, cancellationToken);
-            return (user, true);
-        }
-        throw new InvalidOperationException("A unique Elsa user name could not be reserved for the external identity.");
+        await dbContext.ExternalIdentityLinks.Where(x => x.Id == link.Id).ExecuteDeleteAsync(cancellationToken);
+        throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being created.");
     }
 
-    private async ValueTask TryRemoveStrandedUserAsync(User user, CancellationToken cancellationToken)
+    private async ValueTask CompensateReplacementAsync(
+        PersistedExternalIdentityLink oldLink,
+        PersistedExternalIdentityLink replacementLink,
+        CancellationToken cancellationToken)
     {
         try
         {
-            await userStore.DeleteAsync(new UserFilter { Id = user.Id }, cancellationToken);
+            await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+            await dbContext.ExternalIdentityLinks.Where(x => x.Id == replacementLink.Id).ExecuteDeleteAsync(cancellationToken);
+            dbContext.ExternalIdentityLinks.Add(new PersistedExternalIdentityLink
+            {
+                Id = oldLink.Id,
+                TenantId = oldLink.TenantId,
+                ConnectionKey = oldLink.ConnectionKey,
+                Issuer = oldLink.Issuer,
+                SubjectHash = oldLink.SubjectHash,
+                SubjectHint = oldLink.SubjectHint,
+                UserId = oldLink.UserId,
+                CreatedAt = oldLink.CreatedAt,
+                LastSignedInAt = oldLink.LastSignedInAt
+            });
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            var previousUser = new User { Id = oldLink.UserId, TenantId = oldLink.TenantId };
+            if (!await _userProvisioningService.ExistsAsync(previousUser, false, cancellationToken))
+            {
+                await using var cleanupContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+                await cleanupContext.ExternalIdentityLinks.Where(x => x.Id == oldLink.Id).ExecuteDeleteAsync(cancellationToken);
+            }
+        }
+        catch (Exception compensationException)
+        {
+            try
+            {
+                await using var cleanupContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+                await cleanupContext.ExternalIdentityLinks
+                    .Where(x => x.Id == replacementLink.Id || x.Id == oldLink.Id)
+                    .ExecuteDeleteAsync(cancellationToken);
+            }
+            catch (Exception cleanupException)
+            {
+                throw new AggregateException(
+                    "A replacement-compensation link refers to a deleted user and could not be removed. No credentials were issued.",
+                    compensationException,
+                    cleanupException);
+            }
+
+            throw new InvalidOperationException(
+                "The replacement link was removed after its target user was deleted, but the previous link could not be restored.",
+                compensationException);
+        }
+    }
+
+    private async ValueTask RemoveStrandedUserAsync(User user, Exception linkException, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userProvisioningService.RemoveAsync(user, cancellationToken);
         }
         catch (Exception exception)
         {
-            // A credential-less user with no link cannot authenticate, so cleanup must never fail the sign-in.
-            logger.LogWarning(exception, "Could not remove the just-in-time user {UserId} that lost the external identity link race", user.Id);
+            logger.LogError(exception, "Could not remove the just-in-time user {UserId} after its external identity link failed", user.Id);
+            throw new AggregateException(
+                "External identity provisioning failed and its just-in-time user could not be removed. No credentials were issued.",
+                linkException,
+                exception);
         }
     }
 
     private static ExternalIdentityLink ToModel(PersistedExternalIdentityLink link) => new(link.Id, link.TenantId, link.ConnectionKey, link.Issuer, link.SubjectHash, link.SubjectHint, link.UserId, link.CreatedAt, link.LastSignedInAt);
 
-    private static string NormalizeUserNamePrefix(string prefix)
-    {
-        var normalized = new string((prefix ?? string.Empty).Trim().Where(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_').ToArray());
-        return string.IsNullOrEmpty(normalized) ? "external" : normalized;
-    }
-
-    private async ValueTask<IReadOnlyCollection<string>> ResolveRoleIdsAsync(IReadOnlyCollection<string>? roleIds, CancellationToken cancellationToken)
-    {
-        var requested = (roleIds ?? []).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal).ToArray();
-        if (requested.Length == 0)
-            return [];
-        var found = (await roleProvider.FindByIdsAsync(requested, cancellationToken)).Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
-        if (!found.SetEquals(requested))
-            throw new InvalidOperationException("A configured default role no longer exists.");
-        return requested;
-    }
 }

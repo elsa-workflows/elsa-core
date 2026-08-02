@@ -42,6 +42,9 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        if (string.IsNullOrWhiteSpace(refreshTokenHash))
+            return ValueTask.FromResult<ExternalAuthenticationSession?>(null);
+
         lock (_syncRoot)
             return ValueTask.FromResult(_sessions.Values.FirstOrDefault(x => string.Equals(x.CurrentRefreshTokenHash, refreshTokenHash, StringComparison.Ordinal)) is { } session ? Clone(session) : null);
     }
@@ -76,7 +79,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
                 return ValueTask.FromResult<ExternalAuthenticationSessionRotationResult>(new ExternalAuthenticationSessionRotationResult.Expired());
             }
 
-            if (!string.Equals(session.CurrentRefreshTokenHash, refreshTokenHash, StringComparison.Ordinal) || session.RefreshGeneration != expectedGeneration)
+            if (session.CurrentRefreshTokenHash is null || !string.Equals(session.CurrentRefreshTokenHash, refreshTokenHash, StringComparison.Ordinal) || session.RefreshGeneration != expectedGeneration)
             {
                 session.RevokedAt = clock.UtcNow;
                 session.RevocationReason = "refresh_token_reuse";

@@ -204,7 +204,7 @@ public interface IExternalIdentityProvisioner
 }
 ```
 
-The provisioner owns one transaction spanning generated-name reservation, credential-less User creation, unique link creation, and cleanup/convergence after a uniqueness race.
+The provisioner owns the operation-level invariant: credential-less User creation (including roles) completes before a link is returned, the link store atomically arbitrates the identity tuple, and every observed losing or failed link write compensates the User created by that writer. An observed compensation failure fails the operation and issues no credentials. User deletion and link publication perform complementary post-write checks: if deletion observes a concurrently published link it restores the User and reports a conflict; if publication observes a concurrently deleted User it removes the link and fails. User resolution, role validation, name generation, collision retry, and compensation are provider-independent; persistence providers implement only link storage and their native uniqueness/transaction behavior.
 
 ### Static Create-user Role Authorization
 

@@ -226,8 +226,7 @@ public sealed class ExternalAuthenticationBroker(
                     StartedAt = clock.UtcNow,
                     LastRefreshedAt = clock.UtcNow,
                     ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.MaximumSessionAge),
-                    RefreshExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.MaximumSessionAge),
-                    CurrentRefreshTokenHash = CreateUnissuedRefreshTokenHash()
+                    RefreshExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.MaximumSessionAge)
                 };
                 await sessionStore.SaveAsync(session, cancellationToken);
                 var code = CreateOpaqueValue();
@@ -525,12 +524,6 @@ public sealed class ExternalAuthenticationBroker(
     private static bool VerifyPkce(string challenge, string? verifier) => !string.IsNullOrWhiteSpace(verifier) && string.Equals(challenge, Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(verifier))), StringComparison.Ordinal);
     private static string CreateOpaqueValue() => Base64Url(RandomNumberGenerator.GetBytes(32));
 
-    /// <summary>
-    /// Sessions are persisted at callback completion, before the token issuer mints the first refresh token. The column is
-    /// required and uniquely indexed, so a per-session placeholder is stored until issuance rotates the real hash in. The
-    /// prefix keeps the value outside the hex-encoded hash space, so it can never be matched by a refresh-token lookup.
-    /// </summary>
-    private static string CreateUnissuedRefreshTokenHash() => $"unissued:{CreateOpaqueValue()}";
     private string Hash(string value) => handleHasher.Hash(value);
     private static string Base64Url(byte[] value) => Convert.ToBase64String(value).TrimEnd('=').Replace('+', '-').Replace('/', '_');
     private static Uri AppendCallbackParameters(Uri uri, string code, string? clientState)

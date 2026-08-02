@@ -49,7 +49,7 @@ An Elsa user selects an enabled external Login Method, authenticates with the pr
 
 1. **Given** an enabled, valid connection and a linked identity, **When** a user completes provider authentication, **Then** Elsa resolves the link and returns a short-lived, single-use completion code to the registered client.
 2. **Given** an unknown identity and the reject policy, **When** provider authentication succeeds, **Then** Elsa denies access with a safe error and correlation identifier.
-3. **Given** an unknown identity and an allowed just-in-time policy, **When** provider authentication succeeds, **Then** Elsa atomically creates a credential-less Elsa User and link before issuing Elsa credentials.
+3. **Given** an unknown identity and an allowed just-in-time policy, **When** provider authentication succeeds, **Then** Elsa creates a credential-less Elsa User, publishes one durable identity link, compensates a failed publication, and issues no credentials until both records exist.
 4. **Given** a connection changes materially after initiation, **When** its callback arrives, **Then** Elsa rejects the flow rather than completing against the new settings.
 5. **Given** two callbacks for the same previously unknown External Identity arrive concurrently, **When** JIT provisioning runs, **Then** both converge on one tenant-scoped link and Elsa User or one safely retries after observing the winning transaction.
 
@@ -272,7 +272,7 @@ A deployment owner can keep the current direct Studio OpenID Connect mode or del
 - **FR-051**: Built-in behavior MUST NOT link by email, user name, or another mutable profile attribute.
 - **FR-052**: One Elsa User MAY have multiple links and MAY exist without Local Credentials.
 - **FR-053**: Credential-less users MUST contain no placeholder password material and local login MUST fail with the same public result as other invalid credentials.
-- **FR-054**: JIT provisioning MUST use an atomic create-link-or-get-existing contract that reserves a globally unique Elsa user name without making mutable provider attributes identity keys.
+- **FR-054**: JIT provisioning MUST use a convergent create-link-or-get-existing contract that retries generated-name collisions, compensates losing/failed link writers, and never makes mutable provider attributes identity keys.
 - **FR-055**: The External Identity Link tuple `(target tenant, connectionKey, issuer namespace, subject)` MUST have durable uniqueness. Concurrent JIT or prelink operations for the same tuple MUST converge on one link/user.
 - **FR-056**: JIT-created users MUST belong to the broker-resolved target tenant. Host-wide connection deployment does not remove Elsa User tenancy.
 - **FR-057**: The safe default Unlinked Identity Policy MUST reject access; v1 MUST also include an explicitly selectable JIT creation policy.

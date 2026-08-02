@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
@@ -29,7 +30,8 @@ internal sealed class ConnectionRequest
     public PolicySelection? UnlinkedPolicy { get; set; }
     public List<GrantSourceSelection>? PermissionGrantSources { get; set; }
     public ClaimProjectionRequest? ClaimProjection { get; set; }
-    public string? UpstreamLogoutMode { get; set; }
+    [JsonConverter(typeof(UpstreamLogoutModeJsonConverter))]
+    public UpstreamLogoutMode UpstreamLogoutMode { get; set; }
     public bool ConfirmUnsafeSettings { get; set; }
     public bool ConfirmFinalLoginPathOverride { get; set; }
 
@@ -52,15 +54,7 @@ internal sealed class ConnectionRequest
         UnlinkedPolicy = UnlinkedPolicy,
         PermissionGrantSources = PermissionGrantSources?.Select(x => new GrantSourceSelection(x.Type, x.SettingsVersion, x.Settings.ValueKind == JsonValueKind.Undefined ? default : x.Settings.Clone(), x.Order)).ToArray() ?? [],
         ClaimProjection = ClaimProjection?.ToProjection() ?? Elsa.ExternalAuthentication.Models.ClaimProjection.Empty,
-        UpstreamLogoutMode = ParseUpstreamLogoutMode(UpstreamLogoutMode)
-    };
-
-    private static UpstreamLogoutMode ParseUpstreamLogoutMode(string? value) => value?.ToLowerInvariant() switch
-    {
-        "disabled" or null => Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Disabled,
-        "userchoice" or "user-choice" or "user_choice" => Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.UserChoice,
-        "always" => Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Always,
-        _ => (Elsa.ExternalAuthentication.Models.UpstreamLogoutMode)(-1)
+        UpstreamLogoutMode = UpstreamLogoutMode
     };
 }
 
@@ -119,7 +113,8 @@ internal sealed class ConnectionResponse
     public PolicySelection? UnlinkedPolicy { get; init; }
     public IReadOnlyCollection<GrantSourceSelection> PermissionGrantSources { get; init; } = [];
     public ClaimProjection ClaimProjection { get; init; } = ClaimProjection.Empty;
-    public string UpstreamLogoutMode { get; init; } = null!;
+    [JsonConverter(typeof(UpstreamLogoutModeJsonConverter))]
+    public UpstreamLogoutMode UpstreamLogoutMode { get; init; }
     public long Revision { get; init; }
     public string MaterialRevision { get; init; } = null!;
     public ConnectionObservationResponse? LatestObservation { get; init; }
@@ -171,7 +166,7 @@ internal sealed class ConnectionResponse
             UnlinkedPolicy = effective.Connection.UnlinkedPolicy,
             PermissionGrantSources = effective.Connection.PermissionGrantSources.ToArray(),
             ClaimProjection = effective.Connection.ClaimProjection,
-            UpstreamLogoutMode = FormatUpstreamLogoutMode(effective.Connection.UpstreamLogoutMode),
+            UpstreamLogoutMode = effective.Connection.UpstreamLogoutMode,
             Revision = effective.Connection.Revision,
             MaterialRevision = effective.Connection.MaterialRevision,
             LatestObservation = observation is null
@@ -186,13 +181,32 @@ internal sealed class ConnectionResponse
         };
     }
 
-    private static string FormatUpstreamLogoutMode(UpstreamLogoutMode mode) => mode switch
+}
+
+internal sealed class UpstreamLogoutModeJsonConverter : JsonConverter<UpstreamLogoutMode>
+{
+    public override UpstreamLogoutMode Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Disabled => "disabled",
-        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.UserChoice => "user-choice",
-        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Always => "always",
-        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "The upstream logout mode is not supported.")
-    };
+        if (reader.TokenType != JsonTokenType.String)
+            throw new JsonException("The upstream logout mode must be a string.");
+
+        return reader.GetString()?.ToLowerInvariant() switch
+        {
+            "disabled" => UpstreamLogoutMode.Disabled,
+            "userchoice" or "user-choice" or "user_choice" => UpstreamLogoutMode.UserChoice,
+            "always" => UpstreamLogoutMode.Always,
+            _ => throw new JsonException("The upstream logout mode is not supported.")
+        };
+    }
+
+    public override void Write(Utf8JsonWriter writer, UpstreamLogoutMode value, JsonSerializerOptions options) =>
+        writer.WriteStringValue(value switch
+        {
+            UpstreamLogoutMode.Disabled => "disabled",
+            UpstreamLogoutMode.UserChoice => "user-choice",
+            UpstreamLogoutMode.Always => "always",
+            _ => throw new JsonException("The upstream logout mode is not supported.")
+        });
 }
 
 internal sealed record ConnectionReferenceResponse(string Id, string DisplayName, string Source)

@@ -24,14 +24,14 @@ In the Studio repository, add:
 - `Elsa.Studio.ExternalAuthentication.BlazorServer` for confidential-client exchange, server-held tokens, cookie session, callback, refresh, and logout.
 - `Elsa.Studio.ExternalAuthentication.BlazorWasm` for public-client PKCE exchange, rotating refresh, and browser token access.
 
-Persisted external-authentication entities live in a dedicated `ExternalAuthenticationElsaDbContext`, owned by `Elsa.ExternalAuthentication.Persistence.EFCore` and its provider packages, following the `Elsa.Secrets.Persistence.EFCore*` convention. JIT user creation goes through `IUserStore`/`IUserProvider` rather than a shared DbContext, so it no longer shares a database transaction with External Identity Link creation; the unique `IX_ExternalIdentityLink_Identity` index is the sole arbiter of the one-link-per-identity invariant, and a losing writer compensates by removing its stranded credential-less user.
+Persisted external-authentication entities live in a dedicated `ExternalAuthenticationElsaDbContext`, owned by `Elsa.ExternalAuthentication.Persistence.EFCore` and its provider packages, following the `Elsa.Secrets.Persistence.EFCore*` convention. JIT user creation goes through `IUserStore`/`IUserProvider` rather than a shared DbContext, so it no longer shares a database transaction with External Identity Link creation. The unique `IX_ExternalIdentityLink_Identity` index arbitrates the one-link-per-identity invariant. Provider-independent user creation and role validation live in one shared service; losing or failed link writers compensate by removing only the user they created.
 
 **Rationale**: This matches the constitution's focused-module rule and existing Identity, Secrets, and Studio authentication package conventions. A separate adapter package proves the startup-installed extension boundary. Owning persistence in its own package keeps external-authentication durability independently enable-able instead of riding on whichever Identity persistence feature happens to be on.
 
 **Alternatives considered**:
 
 - Put everything in `Elsa.Identity`: rejected because provider brokering, connection management, and extension contracts form a distinct feature boundary.
-- A standalone external-authentication EF context: rejected for v1 because it cannot atomically create the existing Identity `User` and external link without cross-context transaction plumbing.
+- Keep external-authentication entities in `IdentityElsaDbContext`: rejected because persistence could not be enabled independently and could not work with another user directory. Cross-store provisioning therefore uses explicit convergence and compensation rather than claiming a transaction that the contracts cannot provide.
 - One Studio package: rejected because Server and WebAssembly have incompatible session and token-storage responsibilities.
 - Separate shared Studio authentication and management packages: rejected as premature separation because one shared Razor class library can own both broker UI and management while host adapters remain isolated.
 
@@ -195,7 +195,7 @@ Administrator prelinking uses the same atomic link service as JIT. End-user self
 
 **Decision**: The generic matcher-based Unlinked Identity Policy selects one deployed `IExternalUserMatcher`. The matcher declares required normalized claims; the policy supplies them ephemerally. One match proposes an existing user, no match follows configured Reject/CreateUser fallback, and ambiguous/error results reject. V1 ships no Elsa verified-email matcher.
 
-`defaultRoleIds` are static and apply only to users newly created by CreateUser/no-match fallback. Save authorization reuses Elsa Role assignment checks; user, link, and role assignment commit atomically. Matched/existing users are not role-mutated. V1 Studio exposes no claim-to-role or claim-to-permission mapping.
+`defaultRoleIds` are static and apply only to users newly created by CreateUser/no-match fallback. Save authorization reuses Elsa Role assignment checks; roles commit with the User-store write, and credentials are not issued until the independently persisted link is durable. Matched/existing users are not role-mutated. V1 Studio exposes no claim-to-role or claim-to-permission mapping.
 
 **Rationale**: Explicit matching enables deployment extensions without implicit email/name linking, while static create-user roles keep authorization under Elsa control.
 

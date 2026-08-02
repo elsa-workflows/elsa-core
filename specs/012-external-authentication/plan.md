@@ -12,7 +12,7 @@
 
 Add a server-owned External Authentication broker to Elsa 3. The broker composes configuration-owned connections, Studio-owned connections, and explicit full-shadow Studio Overrides host-wide within the connected environment. Record IDs identify management and transient broker state; immutable Connection Keys identify durable links and long-lived sessions. The broker dispatches to adapters, evaluates the selected unlinked policy/user matcher, assigns static authorized roles only to newly created users, and returns short-lived PKCE-bound completion codes.
 
-V1 ships OpenID Connect as a separate adapter, Managed Secrets through Elsa Secrets, External Secrets through standard configuration, EF persistence integrated with the existing Identity transaction boundary, management and broker APIs, a generic `Elsa.Studio.Authentication.UI` shell, and paired Studio Server/WebAssembly clients. Existing local Identity and direct Studio OpenID Connect contracts remain compatible throughout Elsa 3.x.
+V1 ships OpenID Connect as a separate adapter, Managed Secrets through Elsa Secrets, External Secrets through standard configuration, independently enabled EF persistence with compensating cross-store JIT provisioning, management and broker APIs, a generic `Elsa.Studio.Authentication.UI` shell, and paired Studio Server/WebAssembly clients. Existing local Identity and direct Studio OpenID Connect contracts remain compatible throughout Elsa 3.x.
 
 ## Technical Context
 
@@ -164,7 +164,7 @@ src/modules/Elsa.Studio.ExternalAuthentication.Tests/
 tests/browser/ExternalAuthentication/
 ```
 
-**Structure Decision**: The Core broker remains protocol-neutral. OpenID Connect proves the adapter seam; Elsa Secrets and the configuration resolver cover Managed and External ownership. EF integration extends the Identity context so JIT User, link, and authorized role assignment are atomic. `Elsa.Studio.Authentication.UI` owns the generic shell; External Authentication contributes login behavior and connection administration. Host-specific credential handling remains split into Server and WebAssembly packages.
+**Structure Decision**: The Core broker remains protocol-neutral. OpenID Connect proves the adapter seam; Elsa Secrets and the configuration resolver cover Managed and External ownership. Provider-independent provisioning owns User resolution, authorized role assignment, collision handling, compensation, and cross-store convergence; persistence providers own durable unique-link arbitration. `Elsa.Studio.Authentication.UI` owns the generic shell; External Authentication contributes login behavior and connection administration. Host-specific credential handling remains split into Server and WebAssembly packages.
 
 ## Phase 0: Research
 
@@ -174,7 +174,7 @@ Resolved decisions include:
 
 - Startup-installed adapter packages with runtime-managed connection settings.
 - Read-through merged registry with explicit full-shadow override semantics.
-- Atomic state/store contracts and EF Identity transaction integration.
+- Atomic state/store contracts and convergent cross-store identity provisioning.
 - Opaque completion/external refresh tokens with single-use/rotation.
 - Identity token issuance refactoring without breaking `IAccessTokenIssuer`.
 - OpenID Connect code-flow and validation through maintained protocol libraries.
@@ -205,7 +205,7 @@ No `NEEDS CLARIFICATION` markers remain.
 
 ### Milestone 2: Persisted Administration
 
-1. Extend Identity EF context/migrations and implement atomic connection/link/session/state/observation stores.
+1. Implement the dedicated EF context/migrations and atomic connection/link/session/state/observation stores.
 2. Add management/descriptor/link/session APIs, explicit full-shadow overrides, permissions, ETags, archive/restore, and Managed/External Secret resolvers.
 3. Add connection list/editor, descriptor forms, lifecycle, test, and Preview Sign-in UI.
 4. Verify no-restart database changes and authoritative cross-node behavior.

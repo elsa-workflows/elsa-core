@@ -205,8 +205,6 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.MySql.Migrations.Extern
                     LastRefreshedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
                     RefreshExpiresAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: false),
-                    CurrentRefreshTokenHash = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     RefreshGeneration = table.Column<long>(type: "bigint", nullable: false),
                     RevokedAt = table.Column<DateTimeOffset>(type: "datetime(6)", nullable: true),
                     RevocationReason = table.Column<string>(type: "longtext", nullable: true)
@@ -216,6 +214,23 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.MySql.Migrations.Extern
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ExternalAuthenticationSessions", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "ExternalAuthenticationSessionRefreshTokens",
+                schema: _schema.Schema,
+                columns: table => new
+                {
+                    SessionId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Hash = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExternalAuthenticationSessionRefreshTokens", x => x.SessionId);
+                    table.ForeignKey("FK_ExternalAuthenticationSessionRefreshTokens_ExternalAuthenticationSessions_SessionId", x => x.SessionId, principalSchema: _schema.Schema, principalTable: "ExternalAuthenticationSessions", principalColumn: "Id", onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -318,10 +333,10 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.MySql.Migrations.Extern
                 column: "ConnectionKey");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalAuthenticationSession_RefreshTokenHash",
+                name: "IX_ExternalAuthenticationSessionRefreshToken_Hash",
                 schema: _schema.Schema,
-                table: "ExternalAuthenticationSessions",
-                column: "CurrentRefreshTokenHash",
+                table: "ExternalAuthenticationSessionRefreshTokens",
+                column: "Hash",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -378,6 +393,10 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.MySql.Migrations.Extern
 
             migrationBuilder.DropTable(
                 name: "ExternalAuthenticationRegistryVersions",
+                schema: _schema.Schema);
+
+            migrationBuilder.DropTable(
+                name: "ExternalAuthenticationSessionRefreshTokens",
                 schema: _schema.Schema);
 
             migrationBuilder.DropTable(

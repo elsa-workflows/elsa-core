@@ -92,7 +92,7 @@
 ### Tests for User Story 2
 
 - [x] T036 [P] [US2] Add CRUD, draft/enable, archive/restore, source-ownership, collision, ETag, and stale-registry contract tests in `test/integration/Elsa.ExternalAuthentication.IntegrationTests/Connections/ConnectionManagementTests.cs` covering FR-001–FR-016 and SC-002/SC-012.
-- [x] T037 [P] [US2] Add EF persistence and migration tests for all entities, unique indexes, concurrency tokens, atomic JIT/link transactions, and authoritative registry versions in `test/integration/Elsa.ExternalAuthentication.IntegrationTests/Persistence/ExternalAuthenticationPersistenceTests.cs` covering FR-011–FR-012, FR-040–FR-041, FR-055, and SC-006.
+- [x] T037 [P] [US2] Add EF persistence and migration tests for all entities, unique indexes, concurrency tokens, concurrent JIT convergence and compensation, and authoritative registry versions in `test/integration/Elsa.ExternalAuthentication.IntegrationTests/Persistence/ExternalAuthenticationPersistenceTests.cs` covering FR-011–FR-012, FR-040–FR-041, FR-055, and SC-006.
 - [x] T038 [P] [US2] Add Studio connection list/editor component tests for ownership, lifecycle, validation, secret configured-state, unsafe-setting warnings, and allowed actions in `/Users/sipke/Projects/Elsa/elsa-studio/src/modules/Elsa.Studio.ExternalAuthentication.Tests/Connections/ConnectionEditorTests.cs` covering FR-014, FR-026–FR-030, FR-082–FR-085, and SC-002.
 
 ### Implementation for User Story 2
@@ -300,7 +300,7 @@
 
 ### Admission, roles, and sessions
 
-- [x] T122 Implement per-connection policy selection and the generic matcher-based policy with one `IExternalUserMatcher`, descriptor-declared ephemeral required claims, single-match linking, Reject/CreateUser no-match fallback, ambiguous/error rejection, and no first-party verified-email matcher; implement static `defaultRoleIds` authorization/atomic assignment only for newly created users and add policy/privilege/concurrency tests covering FR-057–FR-064 and SC-008–SC-010.
+- [x] T122 Implement per-connection policy selection and the generic matcher-based policy with one `IExternalUserMatcher`, descriptor-declared ephemeral required claims, single-match linking, Reject/CreateUser no-match fallback, ambiguous/error rejection, and no first-party verified-email matcher; implement static `defaultRoleIds` authorization in the newly created User write and add policy/privilege/concurrency tests covering FR-057–FR-064 and SC-008–SC-010.
 - [x] T123 [P] Enforce Elsa-initiated login/logout only and minimal upstream token retention: discard upstream access/refresh tokens after callback/user-info, retain only protected adapter logout material when required, and purge it by external-session end; add leakage/lifecycle tests covering FR-048A–FR-048B, FR-065, FR-096, and SC-004.
 - [x] T124 Update REST/runtime/client contracts for record-ID management/transient records, Connection Key links/sessions, implicit host-wide environment, overrides, preferred state, user matcher descriptors/policy preview, static create-user roles, and Managed/External Secret state; remove v1 claim-role/permission mapping endpoints and add compatibility tests.
 

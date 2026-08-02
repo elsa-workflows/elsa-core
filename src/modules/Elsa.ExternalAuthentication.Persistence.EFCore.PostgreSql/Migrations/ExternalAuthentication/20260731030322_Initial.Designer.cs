@@ -210,10 +210,6 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("CurrentRefreshTokenHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<DateTimeOffset>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -266,14 +262,19 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
                     b.HasIndex("ConnectionKey")
                         .HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
 
-                    b.HasIndex("CurrentRefreshTokenHash")
-                        .IsUnique()
-                        .HasDatabaseName("IX_ExternalAuthenticationSession_RefreshTokenHash");
-
                     b.HasIndex("TenantId", "UserId")
                         .HasDatabaseName("IX_ExternalAuthenticationSession_TenantId_UserId");
 
                     b.ToTable("ExternalAuthenticationSessions", "Elsa");
+                });
+
+            modelBuilder.Entity("Elsa.ExternalAuthentication.Persistence.EFCore.PersistedExternalAuthenticationRefreshToken", b =>
+                {
+                    b.Property<string>("SessionId").HasColumnType("text");
+                    b.Property<string>("Hash").IsRequired().HasColumnType("text");
+                    b.HasKey("SessionId");
+                    b.HasIndex("Hash").IsUnique().HasDatabaseName("IX_ExternalAuthenticationSessionRefreshToken_Hash");
+                    b.ToTable("ExternalAuthenticationSessionRefreshTokens", "Elsa");
                 });
 
             modelBuilder.Entity("Elsa.ExternalAuthentication.Persistence.EFCore.PersistedExternalIdentityLink", b =>
@@ -473,6 +474,14 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
 
                     b.ToTable("ExternalAuthenticationPreviewResults", "Elsa");
                 });
+
+            modelBuilder.Entity("Elsa.ExternalAuthentication.Persistence.EFCore.PersistedExternalAuthenticationRefreshToken", b =>
+                {
+                    b.HasOne("Elsa.ExternalAuthentication.Persistence.EFCore.PersistedExternalAuthenticationSession", "Session").WithOne("RefreshToken").HasForeignKey("Elsa.ExternalAuthentication.Persistence.EFCore.PersistedExternalAuthenticationRefreshToken", "SessionId").OnDelete(DeleteBehavior.Cascade).IsRequired();
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("Elsa.ExternalAuthentication.Persistence.EFCore.PersistedExternalAuthenticationSession", b => b.Navigation("RefreshToken"));
 #pragma warning restore 612, 618
         }
     }

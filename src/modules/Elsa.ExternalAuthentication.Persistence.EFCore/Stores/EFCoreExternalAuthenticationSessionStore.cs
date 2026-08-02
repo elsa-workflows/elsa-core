@@ -12,7 +12,7 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
     {
         ArgumentNullException.ThrowIfNull(filter);
         await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
-        var query = lease.DbContext.ExternalAuthenticationSessions.AsNoTracking()
+        var query = lease.DbContext.ExternalAuthenticationSessions.AsNoTracking().Include(x => x.RefreshToken)
             .Where(x => x.TenantId == filter.TenantId);
         if (!string.IsNullOrWhiteSpace(filter.UserId))
             query = query.Where(x => x.UserId == filter.UserId);
@@ -29,25 +29,42 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
     {
         await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
         var dbContext = lease.DbContext;
-        return (await dbContext.ExternalAuthenticationSessions.AsNoTracking().SingleOrDefaultAsync(x => x.Id == sessionId, cancellationToken))?.ToModel();
+        return (await dbContext.ExternalAuthenticationSessions.AsNoTracking().Include(x => x.RefreshToken).SingleOrDefaultAsync(x => x.Id == sessionId, cancellationToken))?.ToModel();
     }
 
     public async ValueTask<ExternalAuthenticationSession?> FindByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(refreshTokenHash))
+            return null;
+
         await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
         var dbContext = lease.DbContext;
-        return (await dbContext.ExternalAuthenticationSessions.AsNoTracking().SingleOrDefaultAsync(x => x.CurrentRefreshTokenHash == refreshTokenHash, cancellationToken))?.ToModel();
+        var refreshToken = await dbContext.ExternalAuthenticationRefreshTokens.AsNoTracking().Include(x => x.Session).SingleOrDefaultAsync(x => x.Hash == refreshTokenHash, cancellationToken);
+        return refreshToken is null ? null : refreshToken.Session.ToModel(refreshToken.Hash);
     }
 
     public async ValueTask SaveAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default)
     {
         await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
         var dbContext = lease.DbContext;
-        var existing = await dbContext.ExternalAuthenticationSessions.SingleOrDefaultAsync(x => x.Id == session.Id, cancellationToken);
+        var existing = await dbContext.ExternalAuthenticationSessions.Include(x => x.RefreshToken).SingleOrDefaultAsync(x => x.Id == session.Id, cancellationToken);
         if (existing is null)
-            dbContext.ExternalAuthenticationSessions.Add(session.ToPersisted());
+        {
+            var persisted = session.ToPersisted();
+            if (session.CurrentRefreshTokenHash is not null)
+                persisted.RefreshToken = new PersistedExternalAuthenticationRefreshToken { SessionId = session.Id, Hash = session.CurrentRefreshTokenHash };
+            dbContext.ExternalAuthenticationSessions.Add(persisted);
+        }
         else
+        {
             dbContext.Entry(existing).CurrentValues.SetValues(session.ToPersisted());
+            if (session.CurrentRefreshTokenHash is null && existing.RefreshToken is not null)
+                dbContext.ExternalAuthenticationRefreshTokens.Remove(existing.RefreshToken);
+            else if (session.CurrentRefreshTokenHash is not null && existing.RefreshToken is null)
+                dbContext.ExternalAuthenticationRefreshTokens.Add(new PersistedExternalAuthenticationRefreshToken { SessionId = session.Id, Hash = session.CurrentRefreshTokenHash });
+            else if (session.CurrentRefreshTokenHash is not null)
+                existing.RefreshToken!.Hash = session.CurrentRefreshTokenHash;
+        }
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -67,14 +84,21 @@ public sealed class EFCoreExternalAuthenticationSessionStore(ExternalAuthenticat
             return new ExternalAuthenticationSessionRotationResult.Expired();
         }
 
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var rotated = await dbContext.ExternalAuthenticationSessions
-            .Where(x => x.Id == sessionId && x.RevokedAt == null && x.CurrentRefreshTokenHash == refreshTokenHash && x.RefreshGeneration == expectedGeneration)
+            .Where(x => x.Id == sessionId && x.RevokedAt == null && x.RefreshGeneration == expectedGeneration)
             .ExecuteUpdateAsync(x => x
-                .SetProperty(y => y.CurrentRefreshTokenHash, nextRefreshTokenHash)
                 .SetProperty(y => y.RefreshGeneration, y => y.RefreshGeneration + 1)
                 .SetProperty(y => y.LastRefreshedAt, refreshedAt), cancellationToken);
-        if (rotated == 1)
+        if (rotated == 1 && await dbContext.ExternalAuthenticationRefreshTokens
+                .Where(x => x.SessionId == sessionId && x.Hash == refreshTokenHash)
+                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Hash, nextRefreshTokenHash), cancellationToken) == 1)
+        {
+            await transaction.CommitAsync(cancellationToken);
             return new ExternalAuthenticationSessionRotationResult.Rotated((await FindByIdAsync(sessionId, cancellationToken))!);
+        }
+
+        await transaction.RollbackAsync(cancellationToken);
 
         var revoked = await dbContext.ExternalAuthenticationSessions.Where(x => x.Id == sessionId && x.RevokedAt == null)
             .ExecuteUpdateAsync(x => x.SetProperty(y => y.RevokedAt, clock.UtcNow).SetProperty(y => y.RevocationReason, "refresh_token_reuse").SetProperty(y => y.ProtectedUpstreamLogoutHint, (byte[]?)null), cancellationToken);

@@ -90,11 +90,18 @@ public sealed class PersistedExternalAuthenticationSession
     public DateTimeOffset LastRefreshedAt { get; set; }
     public DateTimeOffset ExpiresAt { get; set; }
     public DateTimeOffset RefreshExpiresAt { get; set; }
-    public string CurrentRefreshTokenHash { get; set; } = null!;
     public long RefreshGeneration { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
     public string? RevocationReason { get; set; }
     public byte[]? ProtectedUpstreamLogoutHint { get; set; }
+    public PersistedExternalAuthenticationRefreshToken? RefreshToken { get; set; }
+}
+
+public sealed class PersistedExternalAuthenticationRefreshToken
+{
+    public string SessionId { get; set; } = null!;
+    public string Hash { get; set; } = null!;
+    public PersistedExternalAuthenticationSession Session { get; set; } = null!;
 }
 
 public sealed class PersistedConnectionObservation

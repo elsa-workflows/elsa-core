@@ -2,13 +2,6 @@ using System.Text.Json;
 
 namespace Elsa.Api.Client.Resources.ExternalAuthentication.Descriptors.Models;
 
-public sealed class ExternalAuthenticationRuntimeDescriptor
-{
-    public int ManagementContractVersion { get; set; }
-    public string ProductVersion { get; set; } = "";
-    public string InformationalVersion { get; set; } = "";
-}
-
 public sealed class ExternalAuthenticationAdapterDescriptor
 {
     public string Type { get; set; } = "";

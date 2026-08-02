@@ -95,6 +95,7 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IExternalAuthenticationBroker, ExternalAuthenticationBroker>();
         services.TryAddScoped<IdentityProviderConnectionManagementService>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IRoleDeletionDependencyContributor, ExternalAuthenticationRoleDeletionDependencyContributor>());
+        services.TryAddEnumerable(ServiceDescriptor.Scoped<IUserDeletionDependencyContributor, ExternalAuthenticationUserDeletionDependencyContributor>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IPermissionDescriptorProvider, ExternalAuthenticationPermissionDescriptorProvider>());
 
         return services;

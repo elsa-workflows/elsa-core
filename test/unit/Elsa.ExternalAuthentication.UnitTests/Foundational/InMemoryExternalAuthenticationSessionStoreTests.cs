@@ -27,6 +27,21 @@ public class InMemoryExternalAuthenticationSessionStoreTests
     }
 
     [Fact]
+    public async Task SessionWithoutAnIssuedRefreshTokenCannotBeFoundByARefreshTokenHash()
+    {
+        var store = new InMemoryExternalAuthenticationSessionStore(new TestSystemClock(_now));
+        var session = ExternalAuthenticationTestData.CreateSession(_now);
+        session.CurrentRefreshTokenHash = null!;
+        await store.SaveAsync(session);
+
+        var persisted = await store.FindByIdAsync(session.Id);
+        var matched = await store.FindByRefreshTokenHashAsync(null!);
+
+        Assert.Null(persisted!.CurrentRefreshTokenHash);
+        Assert.Null(matched);
+    }
+
+    [Fact]
     public async Task ReusingASupersededRefreshTokenRevokesTheSession()
     {
         var clock = new TestSystemClock(_now);

@@ -323,7 +323,7 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-074**: JIT provisioning MUST NOT generate placeholder passwords.
 - **FR-075**: Elsa's User persistence model MUST be migrated so Local Credentials are absent or separate rather than represented by placeholder password hashes.
 - **FR-076**: Local login for a credential-less user MUST fail with the same public result as other invalid credentials.
-- **FR-077**: JIT provisioning MUST atomically create a globally unique Elsa user name under the current identity-store contract; mutable provider profile attributes MUST NOT become identity keys. A future tenant-scoped user-name migration is outside this feature unless separately specified.
+- **FR-077**: JIT provisioning MUST create a globally unique Elsa user name under the current identity-store contract, retry a detected name collision, and compensate the User created by a losing or failed link writer. Mutable provider profile attributes MUST NOT become identity keys. A future tenant-scoped user-name migration is outside this feature unless separately specified.
 - **FR-078**: External Identity Links MUST be resolved by target tenant, immutable Connection Key, validated issuer namespace, and provider-stable subject.
 - **FR-079**: Built-in behavior MUST NOT link by email or user name.
 - **FR-080**: A custom Unlinked Identity Policy MAY deliberately implement deployment-specific linking behavior.
@@ -344,7 +344,7 @@ V1 is complete when all three milestones meet their acceptance criteria.
 - **FR-089**: Each connection MAY define static `defaultRoleIds` used only when `CreateUser` creates a new Elsa User, including the matcher policy's create-user no-match fallback.
 - **FR-090**: External User Matchers MUST NOT select, derive, or mutate roles or permissions.
 - **FR-091**: Saving `defaultRoleIds` MUST authorize the actor to assign every selected Role using Elsa's role-delegation rules.
-- **FR-092**: JIT provisioning MUST atomically assign authorized static default roles with user and link creation.
+- **FR-092**: JIT provisioning MUST assign authorized static default roles in the same User-store write as credential-less User creation and MUST NOT return success until the unique external identity link is durable.
 - **FR-093**: Matching an existing user MUST NOT change that user's roles.
 - **FR-094**: Existing linked users MUST retain their Elsa-managed role assignments; ordinary sign-in MUST NOT mutate their roles.
 - **FR-095**: V1 Studio MUST NOT expose claim-to-permission, group-to-permission, wildcard, pass-through, or claim-to-role mapping UI.
@@ -536,7 +536,7 @@ Given a configuration connection, when an authorized administrator creates a Stu
 
 ### D. JIT external-only user
 
-Given a successful external identity with no link and an effective JIT policy, when the broker completes sign-in, then Elsa creates an Elsa User without local password material, creates the link, atomically assigns authorized default/matcher roles, and issues Elsa credentials from Elsa role permissions.
+Given a successful external identity with no link and an effective JIT policy, when the broker completes sign-in, then Elsa creates an Elsa User without local password material, assigns authorized default/matcher roles with that User write, publishes one durable link, compensates a failed publication, and issues Elsa credentials from Elsa role permissions only after both records exist.
 
 ### E. Pre-provisioned-only user
 
