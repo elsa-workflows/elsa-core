@@ -1,6 +1,8 @@
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Management;
+using Elsa.Persistence.EFCore.SqlServer.ShellFeatures.Runtime;
 using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures;
@@ -31,10 +33,12 @@ namespace Elsa.Persistence.EFCore.SqlServer.ShellFeatures;
 /// </code>
 /// </example>
 /// </remarks>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "SQL Server Workflow Persistence",
     Description = "Provides SQL Server persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = ["SqlServerWorkflowDefinitionPersistence", "SqlServerWorkflowInstancePersistence", "SqlServerWorkflowRuntimePersistence"])]
+    DependsOn = [typeof(SqlServerWorkflowDefinitionPersistenceShellFeature), typeof(SqlServerWorkflowInstancePersistenceShellFeature), typeof(SqlServerWorkflowRuntimePersistenceShellFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlserver-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in SQL Server.", Providers = new[] { "SQL Server" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqlServerWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase

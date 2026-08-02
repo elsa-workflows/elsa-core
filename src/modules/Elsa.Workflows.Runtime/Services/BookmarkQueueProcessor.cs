@@ -28,23 +28,29 @@ public class BookmarkQueueProcessor(
         {
             var pageArgs = PageArgs.FromRange(offset, batchSize);
             var page = await store.PageAsync(pageArgs, new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
-
-            await ProcessPageAsync(page, cancellationToken);
+            var retainedCount = await ProcessPageAsync(page, cancellationToken);
 
             if (page.Items.Count < batchSize)
                 break;
 
-            offset += batchSize;
+            offset += retainedCount;
         }
     }
 
-    private async Task ProcessPageAsync(Page<BookmarkQueueItem> page, CancellationToken cancellationToken = default)
+    private async Task<int> ProcessPageAsync(Page<BookmarkQueueItem> page, CancellationToken cancellationToken = default)
     {
-        foreach (var bookmarkQueueItem in page.Items) 
-            await ProcessItemAsync(bookmarkQueueItem, cancellationToken);
+        var retainedCount = 0;
+
+        foreach (var bookmarkQueueItem in page.Items)
+        {
+            if (await ProcessItemAsync(bookmarkQueueItem, cancellationToken))
+                retainedCount++;
+        }
+
+        return retainedCount;
     }
 
-    private async Task ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
+    private async Task<bool> ProcessItemAsync(BookmarkQueueItem item, CancellationToken cancellationToken = default)
     {
         var filter = item.CreateBookmarkFilter();
         var resumeOptions = item.Options;
@@ -63,22 +69,21 @@ public class BookmarkQueueProcessor(
         }
         catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
         {
-            await HandleFailureAsync(item, ex, cancellationToken);
-            return;
+            return await HandleFailureAsync(item, ex, cancellationToken);
         }
 
         if (responses.Count > 0)
         {
             logger.LogDebug("Successfully resumed {WorkflowCount} workflow instances using stimulus {StimulusHash} for activity type {ActivityType}", responses.Count, item.StimulusHash, item.ActivityTypeName);
             await store.DeleteAsync(item.Id, cancellationToken);
+            return false;
         }
-        else
-        {
-            logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
-        }
+
+        logger.LogDebug("No matching bookmarks found for bookmark queue item {BookmarkQueueItemId} for workflow instance {WorkflowInstanceId} for activity type {ActivityType} with stimulus {StimulusHash}", item.Id, item.WorkflowInstanceId, item.ActivityTypeName, item.StimulusHash);
+        return true;
     }
 
-    private async Task HandleFailureAsync(BookmarkQueueItem item, Exception exception, CancellationToken cancellationToken)
+    private async Task<bool> HandleFailureAsync(BookmarkQueueItem item, Exception exception, CancellationToken cancellationToken)
     {
         item.DeliveryAttempts++;
         item.LastAttemptedAt = systemClock.UtcNow;
@@ -95,7 +100,7 @@ public class BookmarkQueueProcessor(
                 options.Value.MaxDeliveryAttempts);
 
             await store.SaveAsync(item, cancellationToken);
-            return;
+            return true;
         }
 
         logger.LogError(
@@ -106,5 +111,6 @@ public class BookmarkQueueProcessor(
 
         await deadLetterManager.DeadLetterAsync(item, "Failed", exception, cancellationToken);
         await store.DeleteAsync(item.Id, cancellationToken);
+        return false;
     }
 }

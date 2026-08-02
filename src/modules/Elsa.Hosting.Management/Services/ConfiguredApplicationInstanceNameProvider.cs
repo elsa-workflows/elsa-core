@@ -96,9 +96,6 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
     private static bool IsValidConfiguredInstanceName(string instanceName)
     {
-        if (instanceName.Length == 0)
-            return false;
-
         return IsAsciiLetterOrDigit(instanceName[0])
             && IsAsciiLetterOrDigit(instanceName[^1])
             && instanceName.All(c => IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');

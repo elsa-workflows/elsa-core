@@ -61,6 +61,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
     private string CompressionAlgorithm { get; set; } = nameof(None);
     private LogPersistenceMode LogPersistenceMode { get; set; } = LogPersistenceMode.Include;
     private bool IsReadOnlyMode { get; set; }
+    private bool FailOnValidationErrors { get; set; } = true;
 
     /// <summary>
     /// A set of activity types to make available to the system. 
@@ -219,6 +220,17 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
         return this;
     }
 
+    /// <summary>
+    /// Enables or disables failing workflow publication when the workflow has validation errors.
+    /// Defaults to <c>true</c> as of 3.8.0 (publication fails when validation errors are present).
+    /// Set to <c>false</c> to allow publication to succeed, returning validation errors as warnings.
+    /// </summary>
+    public WorkflowManagementFeature UseFailOnValidationErrors(bool enabled = true)
+    {
+        FailOnValidationErrors = enabled;
+        return this;
+    }
+
     public WorkflowManagementFeature UseWorkflowDefinitionPublisher(Func<IServiceProvider, IWorkflowDefinitionPublisher> workflowDefinitionPublisher)
     {
         _workflowDefinitionPublisher = workflowDefinitionPublisher;
@@ -313,6 +325,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             options.CompressionAlgorithm = CompressionAlgorithm;
             options.LogPersistenceMode = LogPersistenceMode;
             options.IsReadOnlyMode = IsReadOnlyMode;
+            options.FailOnValidationErrors = FailOnValidationErrors;
         });
 
         Services.Configure<ExpressionOptions>(options => options.RegisterTypeAlias(typeof(ClrWorkflowMaterializerContext), nameof(ClrWorkflowMaterializerContext)));

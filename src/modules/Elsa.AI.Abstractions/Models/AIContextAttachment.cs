@@ -34,3 +34,12 @@ public record AITimeRange
     public DateTimeOffset From { get; init; }
     public DateTimeOffset To { get; init; }
 }
+
+public static class AIContextAttachmentKinds
+{
+    public const string Activity = "Activity";
+    public const string WorkflowDefinition = "WorkflowDefinition";
+    public const string WorkflowInstance = "WorkflowInstance";
+    public const string DiagnosticsScope = "DiagnosticsScope";
+    public const string TimeRange = "TimeRange";
+}

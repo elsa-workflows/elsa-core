@@ -1,4 +1,4 @@
-using Elsa.Dashboard.Api.Contracts;
+using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Api.Services;
 using Microsoft.Extensions.DependencyInjection;
 

@@ -1,6 +1,6 @@
 using Elsa.Abstractions;
-using Elsa.Dashboard.Api.Contracts;
-using Elsa.Dashboard.Api.Models;
+using Elsa.Dashboard.Abstractions.Contracts;
+using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Permissions;
 using JetBrains.Annotations;
 

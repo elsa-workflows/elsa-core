@@ -15,8 +15,8 @@ Returns:
 
 - Backend and environment names.
 - Runtime status, including whether the runtime is accepting work, active execution cycle count, ingress source count, and failed ingress source count.
-- Workflow instance metrics for running, completed, faulted, suspended, interrupted, incident-bearing, and average completed duration.
-- Structured log and console log diagnostic summaries.
+- Contributor-composed workflow instance metrics for running, completed, faulted, suspended, interrupted, incident-bearing, and average completed duration.
+- Contributor-composed structured log and console log diagnostic summaries.
 - Applied range and resolved `from`/`to` timestamps.
 
 ### `POST /dashboard/workflow-trends`
@@ -70,6 +70,87 @@ Diagnostics summaries carry a `capability` object:
 - `Unavailable`: The provider is installed but failed to produce a summary.
 
 Dashboard overview degrades each diagnostics capability independently so a structured log failure does not prevent workflow metrics, runtime status, or console diagnostics from rendering.
+
+## Extension Model
+
+Dashboard core owns the public `/dashboard/*` routes, permissions, range resolution, and contributor orchestration. Feature modules own their own dashboard data. This keeps the dependency direction open for extension:
+
+- `Elsa.Dashboard.Api` references `Elsa.Dashboard.Abstractions`.
+- Feature modules reference `Elsa.Dashboard.Abstractions` and register one or more `IDashboardContributor` implementations.
+- Dashboard core does not reference workflow, diagnostics, or future feature modules.
+
+`IDashboardContributor` is intentionally broad enough for a module to contribute only the surfaces it owns:
+
+- `GetOverviewAsync` for metric cards, panel summaries, runtime status, workflow metrics, and diagnostic summary slices.
+- `GetFindingsAsync` for priority-ordered findings.
+- `GetWorkflowTrendsAsync` for trend buckets.
+- `GetRecentActivityAsync` for compact activity rows.
+- `GetWorkflowHotspotsAsync` for hotspot rows.
+
+Contributor failures are isolated by the dashboard composer. A failed contributor does not break the whole dashboard response; request cancellation is still honored.
+
+### Backend Weather Example
+
+```csharp
+using Elsa.Dashboard.Abstractions.Contracts;
+using Elsa.Dashboard.Abstractions.Extensions;
+using Elsa.Dashboard.Abstractions.Models;
+
+public class WeatherDashboardContributor(IWeatherService weatherService) : IDashboardContributor
+{
+    public string Id => "weather";
+    public int Order => 500;
+
+    public async ValueTask<DashboardOverviewContribution?> GetOverviewAsync(DashboardContext context)
+    {
+        var forecast = await weatherService.GetForecastAsync(context.CancellationToken);
+
+        return new()
+        {
+            Panels =
+            [
+                new()
+                {
+                    Id = "weather.current",
+                    Title = "Weather",
+                    Summary = forecast.Summary,
+                    Order = 10,
+                    Navigation = new() { Kind = "Weather", Target = "current" }
+                }
+            ]
+        };
+    }
+}
+
+services.AddDashboardContributor<WeatherDashboardContributor>();
+```
+
+The example belongs in a hypothetical `Elsa.Weather.Dashboard` module or inside an existing Weather module, not in `Elsa.Dashboard.Api`.
+
+### Studio Widget Model
+
+Studio follows the same dependency direction. `Elsa.Studio.Dashboard` owns the dashboard route, refresh/range state, zone rendering, shared `DashboardWidgetContext`, and registration helpers. Feature modules register widgets into zones such as metrics, findings, primary panels, secondary panels, and diagnostics/status.
+
+Minimal Studio Weather widget registration:
+
+```csharp
+services.AddDashboardWidget<WeatherDashboardWidget>(
+    "weather.current",
+    DashboardWidgetZones.SecondaryPanels,
+    order: 500,
+    title: "Weather",
+    payloadKind: "Weather");
+```
+
+`WeatherDashboardWidget` can read the shared dashboard snapshot and navigation services from `DashboardWidgetContext`. The widget should live in `Elsa.Studio.Weather.Dashboard` or the Studio Weather module, not in `Elsa.Studio.Dashboard`.
+
+### Diagnostics Migration
+
+Structured-log and console-log dashboard behavior is diagnostics-owned:
+
+- Backend summaries and findings are contributed by the corresponding diagnostics modules.
+- Studio widgets are registered by the corresponding diagnostics Studio modules.
+- Installing Dashboard alone does not install diagnostics. Installing diagnostics plus Dashboard causes diagnostics summaries and widgets to appear.
 
 ## Studio Integration Notes
 

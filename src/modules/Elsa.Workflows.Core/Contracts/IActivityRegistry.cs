@@ -98,6 +98,17 @@ public interface IActivityRegistry : IActivityProvider
     Task RefreshDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Ensures that descriptors from a tenant-agnostic activity provider have been initialized.
+    /// </summary>
+    /// <param name="activityProvider">The activity provider used to retrieve the descriptors.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <remarks>
+    /// Tenant-sensitive providers are refreshed on every call. The default implementation refreshes every provider to preserve compatibility with custom registry implementations.
+    /// </remarks>
+    Task EnsureDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default) =>
+        RefreshDescriptorsAsync(activityProvider, cancellationToken);
+
+    /// <summary>
     /// Clears all activity descriptors from the registry.
     /// </summary>
     void Clear();
