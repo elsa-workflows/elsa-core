@@ -64,6 +64,9 @@ public sealed class ExternalIdentityUserProvisioningService(
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                var persistedUser = await userStore.FindAsync(new UserFilter { Id = user.Id }, CancellationToken.None);
+                if (persistedUser is not null)
+                    await userStore.DeleteAsync(new UserFilter { Id = user.Id }, CancellationToken.None);
                 throw;
             }
             catch

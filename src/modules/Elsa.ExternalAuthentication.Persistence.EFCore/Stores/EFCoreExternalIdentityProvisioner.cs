@@ -63,26 +63,42 @@ public sealed class EFCoreExternalIdentityProvisioner(
             CreatedAt = clock.UtcNow
         };
 
+        var saveAttempted = false;
         try
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
             dbContext.ExternalIdentityLinks.Add(link);
+            saveAttempted = true;
             await dbContext.SaveChangesAsync(cancellationToken);
-            await EnsureLinkedUserStillExistsAsync(dbContext, link, user, wasCreated, cancellationToken);
-            return new ProvisioningResult(user.Id, ToModel(link), wasCreated, true);
         }
         catch (DbUpdateException linkException)
         {
             // IX_ExternalIdentityLink_Identity arbitrates concurrent first sign-ins for the same identity tuple.
-            var winner = await FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity, cancellationToken);
+            var winner = await FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity, CancellationToken.None);
             if (winner?.Id == link.Id)
+            {
+                await EnsureLinkedUserStillExistsAsync(link, user, wasCreated, CancellationToken.None);
                 return new ProvisioningResult(user.Id, winner, wasCreated, true);
+            }
             if (wasCreated)
-                await RemoveStrandedUserAsync(user, linkException, cancellationToken);
+                await RemoveStrandedUserAsync(user, linkException, CancellationToken.None);
             if (winner is null)
                 throw;
             return new ProvisioningResult(winner.UserId, winner, false);
         }
+        catch (Exception linkException)
+        {
+            if (saveAttempted && await LinkExistsAsync(link.Id, CancellationToken.None))
+                await EnsureLinkedUserStillExistsAsync(link, user, wasCreated, CancellationToken.None);
+            else if (wasCreated)
+                await RemoveStrandedUserAsync(user, linkException, CancellationToken.None);
+
+            throw;
+        }
+
+        // Once the link is durable, cancellation must not interrupt the complementary user check and cleanup.
+        await EnsureLinkedUserStillExistsAsync(link, user, wasCreated, CancellationToken.None);
+        return new ProvisioningResult(user.Id, ToModel(link), wasCreated, true);
     }
 
     public async ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default)
@@ -91,12 +107,17 @@ public sealed class EFCoreExternalIdentityProvisioner(
         var normalizedConnectionKey = ConnectionRevisionCalculator.NormalizeKey(request.ConnectionKey);
         var subjectHash = handleHasher.Hash(request.Identity.Subject);
         ExternalIdentityLink? oldLink = null;
+        PersistedExternalIdentityLink? oldEntity = null;
+        PersistedExternalIdentityLink? replacementEntity = null;
+        User? replacementUser = null;
+        var commitAttempted = false;
+        var replacementCommitted = false;
 
         try
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            var oldEntity = await dbContext.ExternalIdentityLinks.AsNoTracking().SingleOrDefaultAsync(
+            oldEntity = await dbContext.ExternalIdentityLinks.AsNoTracking().SingleOrDefaultAsync(
                 x => x.Id == request.LinkId && x.TenantId == request.TenantId,
                 cancellationToken);
             if (oldEntity is null)
@@ -115,7 +136,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
 
             // The identity aggregate lives in its own store, so the target user is verified through its contract.
             // Checked here rather than up front to preserve the "unknown link wins over unknown user" result ordering.
-            var (user, _) = await _userProvisioningService.ResolveAsync(
+            (replacementUser, _) = await _userProvisioningService.ResolveAsync(
                 new ProvisioningRequest(request.TenantId, normalizedConnectionKey, request.Identity, null, request.UserId),
                 cancellationToken: cancellationToken);
 
@@ -125,36 +146,47 @@ public sealed class EFCoreExternalIdentityProvisioner(
             if (deleted == 0)
                 return new ExternalIdentityLinkReplaceResult.NotFound();
 
-            var replacementEntity = new PersistedExternalIdentityLink
+            replacementEntity = new PersistedExternalIdentityLink
             {
                 Id = identityGenerator.GenerateId(),
                 TenantId = request.TenantId,
                 ConnectionKey = normalizedConnectionKey,
                 Issuer = request.Identity.Issuer,
                 SubjectHash = subjectHash,
-                UserId = user.Id,
+                UserId = replacementUser.Id,
                 CreatedAt = clock.UtcNow
             };
             dbContext.ExternalIdentityLinks.Add(replacementEntity);
             await dbContext.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-            if (!await _userProvisioningService.ExistsAsync(user, false, cancellationToken))
-            {
-                await CompensateReplacementAsync(oldEntity, replacementEntity, cancellationToken);
-                throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being replaced.");
-            }
+            commitAttempted = true;
+            // The replacement write has succeeded; cancellation must not make commit outcome ambiguous.
+            await transaction.CommitAsync(CancellationToken.None);
+            replacementCommitted = true;
+
+            await EnsureReplacementUserStillExistsAsync(oldEntity, replacementEntity, replacementUser, CancellationToken.None);
             return new ExternalIdentityLinkReplaceResult.Success(oldLink, ToModel(replacementEntity));
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException) when (!commitAttempted)
         {
             return new ExternalIdentityLinkReplaceResult.NotFound();
         }
-        catch (DbUpdateException) when (oldLink is not null)
+        catch (DbUpdateException) when (!commitAttempted && oldLink is not null)
         {
-            var conflictingLink = await FindLinkAsync(request.TenantId, normalizedConnectionKey, request.Identity, cancellationToken);
+            var conflictingLink = await FindLinkAsync(request.TenantId, normalizedConnectionKey, request.Identity, CancellationToken.None);
             if (conflictingLink is not null && !string.Equals(conflictingLink.Id, request.LinkId, StringComparison.Ordinal))
                 return new ExternalIdentityLinkReplaceResult.Conflict(oldLink, conflictingLink);
             throw;
+        }
+        catch (Exception) when (commitAttempted && !replacementCommitted && oldLink is not null && oldEntity is not null && replacementEntity is not null && replacementUser is not null)
+        {
+            // The transaction scope has been disposed before this handler runs, so probing cannot contend with it.
+            var durableLink = await FindLinkAsync(request.TenantId, normalizedConnectionKey, request.Identity, CancellationToken.None);
+            if (durableLink?.Id != replacementEntity.Id)
+                throw;
+
+            replacementCommitted = true;
+            await EnsureReplacementUserStillExistsAsync(oldEntity, replacementEntity, replacementUser, CancellationToken.None);
+            return new ExternalIdentityLinkReplaceResult.Success(oldLink, durableLink);
         }
     }
 
@@ -182,7 +214,6 @@ public sealed class EFCoreExternalIdentityProvisioner(
     }
 
     private async ValueTask EnsureLinkedUserStillExistsAsync(
-        ExternalAuthenticationElsaDbContext dbContext,
         PersistedExternalIdentityLink link,
         User user,
         bool wasCreated,
@@ -191,8 +222,22 @@ public sealed class EFCoreExternalIdentityProvisioner(
         if (await _userProvisioningService.ExistsAsync(user, wasCreated, cancellationToken))
             return;
 
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
         await dbContext.ExternalIdentityLinks.Where(x => x.Id == link.Id).ExecuteDeleteAsync(cancellationToken);
         throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being created.");
+    }
+
+    private async ValueTask EnsureReplacementUserStillExistsAsync(
+        PersistedExternalIdentityLink oldLink,
+        PersistedExternalIdentityLink replacementLink,
+        User replacementUser,
+        CancellationToken cancellationToken)
+    {
+        if (await _userProvisioningService.ExistsAsync(replacementUser, false, cancellationToken))
+            return;
+
+        await CompensateReplacementAsync(oldLink, replacementLink, cancellationToken);
+        throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being replaced.");
     }
 
     private async ValueTask CompensateReplacementAsync(
@@ -200,6 +245,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
         PersistedExternalIdentityLink replacementLink,
         CancellationToken cancellationToken)
     {
+        var commitAttempted = false;
         try
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -218,35 +264,70 @@ public sealed class EFCoreExternalIdentityProvisioner(
                 LastSignedInAt = oldLink.LastSignedInAt
             });
             await dbContext.SaveChangesAsync(cancellationToken);
+            commitAttempted = true;
             await transaction.CommitAsync(cancellationToken);
-
-            var previousUser = new User { Id = oldLink.UserId, TenantId = oldLink.TenantId };
-            if (!await _userProvisioningService.ExistsAsync(previousUser, false, cancellationToken))
-            {
-                await using var cleanupContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-                await cleanupContext.ExternalIdentityLinks.Where(x => x.Id == oldLink.Id).ExecuteDeleteAsync(cancellationToken);
-            }
         }
         catch (Exception compensationException)
+        {
+            // The transaction scope has been disposed before this handler runs. A lost commit acknowledgement must
+            // not turn a successfully restored previous link into data loss.
+            var restorationCommitted = commitAttempted &&
+                                       await LinkExistsAsync(oldLink.Id, cancellationToken) &&
+                                       !await LinkExistsAsync(replacementLink.Id, cancellationToken);
+            if (!restorationCommitted)
+            {
+                await RemoveReplacementLinksOrThrowAsync(oldLink.Id, replacementLink.Id, compensationException, cancellationToken);
+                throw new InvalidOperationException(
+                    "The replacement link was removed after its target user was deleted, but the previous link could not be restored.",
+                    compensationException);
+            }
+        }
+
+        // An indeterminate user-directory failure must not be mistaken for a failed link restoration.
+        // Only remove the restored link when the directory positively reports that its user is gone.
+        var previousUser = new User { Id = oldLink.UserId, TenantId = oldLink.TenantId };
+        if (!await _userProvisioningService.ExistsAsync(previousUser, false, cancellationToken))
         {
             try
             {
                 await using var cleanupContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-                await cleanupContext.ExternalIdentityLinks
-                    .Where(x => x.Id == replacementLink.Id || x.Id == oldLink.Id)
-                    .ExecuteDeleteAsync(cancellationToken);
+                await cleanupContext.ExternalIdentityLinks.Where(x => x.Id == oldLink.Id).ExecuteDeleteAsync(cancellationToken);
             }
             catch (Exception cleanupException)
             {
-                throw new AggregateException(
-                    "A replacement-compensation link refers to a deleted user and could not be removed. No credentials were issued.",
-                    compensationException,
+                await RemoveReplacementLinksOrThrowAsync(oldLink.Id, replacementLink.Id, cleanupException, cancellationToken);
+                throw new InvalidOperationException(
+                    "The restored previous link was removed after its user was deleted, but its first cleanup attempt failed.",
                     cleanupException);
             }
+        }
+    }
 
-            throw new InvalidOperationException(
-                "The replacement link was removed after its target user was deleted, but the previous link could not be restored.",
-                compensationException);
+    private async ValueTask<bool> LinkExistsAsync(string linkId, CancellationToken cancellationToken)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        return await dbContext.ExternalIdentityLinks.AsNoTracking().AnyAsync(x => x.Id == linkId, cancellationToken);
+    }
+
+    private async ValueTask RemoveReplacementLinksOrThrowAsync(
+        string oldLinkId,
+        string replacementLinkId,
+        Exception operationException,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var cleanupContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+            await cleanupContext.ExternalIdentityLinks
+                .Where(x => x.Id == replacementLinkId || x.Id == oldLinkId)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+        catch (Exception cleanupException)
+        {
+            throw new AggregateException(
+                "A replacement-compensation link refers to a deleted user and could not be removed. No credentials were issued.",
+                operationException,
+                cleanupException);
         }
     }
 
