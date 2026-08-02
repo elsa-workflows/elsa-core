@@ -83,7 +83,7 @@ internal sealed class PrelinkIdentityLink(ExternalIdentityLinkManagementService 
         }
         catch (ArgumentException)
         {
-            await SendErrorAsync(StatusCodes.Status400BadRequest, "validation_failed", "The external identity tuple is invalid.", cancellationToken);
+            await IdentityLinkEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "validation_failed", "The external identity tuple is invalid.", cancellationToken);
             return;
         }
 
@@ -94,19 +94,58 @@ internal sealed class PrelinkIdentityLink(ExternalIdentityLinkManagementService 
                 await HttpContext.Response.WriteAsJsonAsync(IdentityLinkDocument.From(link), cancellationToken);
                 return;
             case ExternalIdentityLinkPrelinkResult.Conflict:
-                await SendErrorAsync(StatusCodes.Status409Conflict, "conflict", "The external identity is already linked to another user.", cancellationToken);
+                await IdentityLinkEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status409Conflict, "conflict", "The external identity is already linked to another user.", cancellationToken);
                 return;
             default:
                 // Do not reveal whether a user or connection exists outside the trusted tenant scope.
-                await SendErrorAsync(StatusCodes.Status404NotFound, "not_found", "The requested resource was not found.", cancellationToken);
+                await IdentityLinkEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status404NotFound, "not_found", "The requested resource was not found.", cancellationToken);
                 return;
         }
     }
+}
 
-    private Task SendErrorAsync(int status, string error, string message, CancellationToken cancellationToken)
+internal sealed class ReplaceIdentityLink(ExternalIdentityLinkManagementService management, ITenantAccessor tenantAccessor) : ElsaEndpoint<ReplaceIdentityLinkRequest>
+{
+    public override void Configure()
     {
-        HttpContext.Response.StatusCode = status;
-        return HttpContext.Response.WriteAsJsonAsync(new IdentityLinkError(error, message), cancellationToken);
+        Post("/external-authentication/identity-links/{linkId}/replace");
+        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+    }
+
+    public override async Task HandleAsync(ReplaceIdentityLinkRequest request, CancellationToken cancellationToken)
+    {
+        ExternalIdentityLinkReplaceResult result;
+        try
+        {
+            result = await management.ReplaceAsync(
+                tenantAccessor.TenantId,
+                Route<string>("linkId")!,
+                request.UserId,
+                request.ConnectionKey,
+                request.Issuer,
+                request.Subject,
+                User,
+                cancellationToken);
+        }
+        catch (ArgumentException)
+        {
+            await IdentityLinkEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "validation_failed", "The external identity tuple is invalid.", cancellationToken);
+            return;
+        }
+
+        switch (result)
+        {
+            case ExternalIdentityLinkReplaceResult.Success success:
+                HttpContext.Response.StatusCode = StatusCodes.Status201Created;
+                await HttpContext.Response.WriteAsJsonAsync(IdentityLinkDocument.From(success.NewLink), cancellationToken);
+                return;
+            case ExternalIdentityLinkReplaceResult.Conflict:
+                await IdentityLinkEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status409Conflict, "conflict", "The external identity is already linked.", cancellationToken);
+                return;
+            default:
+                await IdentityLinkEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status404NotFound, "not_found", "The requested resource was not found.", cancellationToken);
+                return;
+        }
     }
 }
 
@@ -148,6 +187,14 @@ internal sealed class PrelinkIdentityLinkRequest
     public string Subject { get; set; } = null!;
 }
 
+internal sealed class ReplaceIdentityLinkRequest
+{
+    public string UserId { get; set; } = null!;
+    public string ConnectionKey { get; set; } = null!;
+    public string Issuer { get; set; } = null!;
+    public string Subject { get; set; } = null!;
+}
+
 internal sealed record IdentityLinkListResponse(IReadOnlyCollection<IdentityLinkDocument> Items, string? NextCursor);
 internal sealed record FindIdentityLinkUsersResponse(IReadOnlyCollection<IdentityLinkUserDocument> Items, string? NextCursor);
 internal sealed record IdentityLinkUserDocument(string Id, string DisplayName);
@@ -158,6 +205,15 @@ internal sealed record IdentityLinkDocument(string Id, string UserId, string Con
 internal sealed record IdentityLinkError(string Error, string Message);
 internal sealed record IdentityLinkCursor(DateTimeOffset CreatedAt, string Id);
 internal sealed record UserCursor(string DisplayName, string Id);
+
+internal static class IdentityLinkEndpointSupport
+{
+    public static Task SendErrorAsync(HttpContext httpContext, int status, string error, string message, CancellationToken cancellationToken)
+    {
+        httpContext.Response.StatusCode = status;
+        return httpContext.Response.WriteAsJsonAsync(new IdentityLinkError(error, message), cancellationToken);
+    }
+}
 
 internal static class IdentityLinkPagination
 {

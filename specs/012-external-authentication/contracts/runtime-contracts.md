@@ -376,7 +376,7 @@ services.AddElsa(elsa =>
     elsa.UseExternalAuthentication(external =>
     {
         external.Configure(options =>
-            configuration.GetSection("ExternalAuthentication").Bind(options));
+            configuration.GetSection("ExternalAuthentication").BindExternalAuthenticationOptions(options));
 
         external.UseOpenIdConnect();
         external.UseElsaSecrets();

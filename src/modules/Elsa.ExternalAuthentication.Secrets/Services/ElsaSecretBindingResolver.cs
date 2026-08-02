@@ -22,14 +22,13 @@ public sealed class ElsaSecretBindingResolver(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(request.ConnectionId);
         ArgumentException.ThrowIfNullOrWhiteSpace(request.FieldName);
-        var fieldName = string.Concat(request.FieldName.Where(char.IsLetterOrDigit)).ToLowerInvariant();
-        if (fieldName.Length == 0)
+        if (!request.FieldName.Any(char.IsLetterOrDigit))
             throw new ArgumentException("The secret field name must contain a letter or digit.", nameof(request));
 
         // Stage every replacement under a new reference. The caller publishes
         // that reference with the connection CAS and removes it on CAS failure,
         // so a stale request can never rotate material used by the live binding.
-        var name = $"external-authentication-{request.ConnectionId.ToLowerInvariant()}-{fieldName}-{Guid.NewGuid():N}";
+        var name = $"external-authentication:{Guid.NewGuid():N}";
         var secret = await secretManager.CreateAsync(new()
         {
             Name = name,

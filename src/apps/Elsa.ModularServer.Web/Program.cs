@@ -5,6 +5,8 @@ using CShells.DependencyInjection;
 using Elsa.Dashboard.Api.ShellFeatures;
 using Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
+using Elsa.ExternalAuthentication.OpenIdConnect.ShellFeatures;
+using Elsa.ExternalAuthentication.Secrets.ShellFeatures;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.Platform.Integration.ShellFeatures;
@@ -80,6 +82,8 @@ builder.AddShells(shells => shells
             typeof(WorkflowsFeature),
             typeof(DistributedRuntimeFeature),
             typeof(ElsaPlatformIntegrationFeature),
+            typeof(OpenIdConnectExternalAuthenticationFeature),
+            typeof(ElsaSecretsExternalAuthenticationFeature),
             typeof(DashboardApiFeature),
             typeof(WorkflowRuntimeDashboardFeature),
             typeof(ConsoleLogsDashboardFeature),

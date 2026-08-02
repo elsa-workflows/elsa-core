@@ -8,6 +8,9 @@ namespace Elsa.Api.Client.Resources.ExternalAuthentication.Descriptors.Contracts
 /// </summary>
 public interface IExternalAuthenticationDescriptorsApi
 {
+    [Get("/external-authentication/descriptors/runtime")]
+    Task<ExternalAuthenticationRuntimeDescriptor> GetRuntimeDescriptorAsync(CancellationToken cancellationToken = default);
+
     [Get("/external-authentication/descriptors/adapters")]
     Task<ICollection<ExternalAuthenticationAdapterDescriptor>> ListAdaptersAsync(CancellationToken cancellationToken = default);
 

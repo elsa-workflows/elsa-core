@@ -313,6 +313,8 @@ Requires `external-authentication:connections:read`. Maximum `pageSize` is 100.
       "key": "contoso",
       "source": "database",
       "overridesConfigurationConnection": true,
+      "canCreateOverride": false,
+      "canPromoteToConfigurationOverride": false,
       "adapterType": "openid-connect",
       "callbackUri": "https://elsa.example/elsa/api/external-authentication/callback/contoso",
       "previewCallbackUri": "https://elsa.example/elsa/api/external-authentication/previews/callback/01JZCONNECTION",
@@ -380,6 +382,8 @@ POST /external-authentication/connections
 ```
 
 Requires `external-authentication:connections:create`. Studio starts with a complete editable copy of the configuration-owned connection, preserves its immutable logical `key`, and submits the ordinary create document with `"overridesConfigurationConnection": true`. The server creates a distinct database record with `source=database`; subsequent saves send the whole document to the ordinary update endpoint. No inherited field markers or partial patch semantics exist. A disabled database override continues shadowing the configuration-owned connection. Archiving it reveals configuration; restoring it resumes shadowing in disabled state.
+
+Connection responses expose `canCreateOverride` for configuration-owned connections when deployment policy permits creating a database override. They expose `canPromoteToConfigurationOverride` for an unarchived, shadowed database-owned connection when the same policy permits promotion. Clients promote that existing record by updating its ordinary document with `"overridesConfigurationConnection": true`; this preserves its ID, secret bindings, and enabled lifecycle instead of creating another database record. A promotion that would remove the final normal sign-in path returns `409 conflict` with `error="conflict"` and `details.code="final_login_path_guard"`.
 
 ### Detail and Update
 
@@ -540,11 +544,12 @@ Requires `external-authentication:links:manage`. Tenant comes from authenticated
 
 No password, role, permission, external-link, or cross-tenant data is returned.
 
-### List/Create/Delete
+### List/Create/Replace/Delete
 
 ```http
 GET /external-authentication/identity-links?userId=&connectionKey=&cursor=&pageSize=100
 POST /external-authentication/identity-links
+POST /external-authentication/identity-links/{linkId}/replace
 DELETE /external-authentication/identity-links/{linkId}
 ```
 
@@ -561,7 +566,11 @@ Create:
 }
 ```
 
-The subject is accepted only over TLS, normalized and immediately transformed to the stored keyed hash; it is never returned. Duplicate tuple-to-same-user is idempotent `200`; tuple-to-different-user is `409 conflict`. Delete requires explicit Studio confirmation and returns `204`.
+Replace accepts the same body. It atomically removes the identified tenant-scoped link and creates a new link with a new ID and `createdAt`; `lastSignedInAt` is reset to `null`. If the original link or a requested user/connection cannot be resolved, it returns `404` with `{"error":"not_found","message":"The requested resource was not found."}`. If the requested tuple belongs to any other link, including one for the same user, it returns `409 conflict`. Validation, not-found, and conflict responses leave the original link unchanged.
+
+Manual create and replace operations accept effective, nonarchived connections even when they are disabled or invalid. Shadowed, archived, and cross-tenant definitions remain unavailable.
+
+The subject is accepted only over TLS, normalized and immediately transformed to the stored keyed hash; it is never returned. Duplicate tuple-to-same-user is idempotent `200`; tuple-to-different-user is `409 conflict`. A successful replace returns `201` with the new link resource. Delete requires explicit Studio confirmation and returns `204`.
 
 ## Role Lifecycle Guard
 

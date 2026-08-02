@@ -19,8 +19,56 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var effective = Assert.Single(result.Connections, x => !x.IsShadowed);
         Assert.Equal("configuration-oidc", effective.Connection.Id);
-        Assert.Single(result.Connections, x => x.IsShadowed);
+        Assert.Equal("database-oidc", Assert.Single(effective.Shadows).Id);
+        var shadowed = Assert.Single(result.Connections, x => x.IsShadowed);
+        Assert.Equal("configuration-oidc", Assert.IsType<IdentityProviderConnectionReference>(shadowed.ShadowedBy).Id);
         Assert.Equal(["configuration-oidc"], result.LoginMethods.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task ExplicitDatabaseOverrideIdentifiesItsShadowedConfigurationConnection()
+    {
+        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc");
+        var database = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC");
+        database.OverridesConfigurationConnection = true;
+        var registry = CreateRegistry(
+            new TestConnectionSource("database", ConnectionSourceOwnership.Database, [(ConnectionScope.Host, [database])]),
+            new TestConnectionSource("configuration", ConnectionSourceOwnership.Configuration, [(ConnectionScope.Host, [configuration])]));
+
+        var result = await registry.GetAsync("tenant-a");
+
+        var effective = Assert.Single(result.Connections, x => !x.IsShadowed);
+        Assert.Equal("database-oidc", effective.Connection.Id);
+        Assert.Equal("configuration-oidc", Assert.Single(effective.Shadows).Id);
+        var shadowed = Assert.Single(result.Connections, x => x.IsShadowed);
+        var shadowedBy = Assert.IsType<IdentityProviderConnectionReference>(shadowed.ShadowedBy);
+        Assert.Equal("database-oidc", shadowedBy.Id);
+        Assert.Equal(ConnectionSourceOwnership.Database, shadowedBy.Ownership);
+    }
+
+    [Fact]
+    public async Task ArchivedDatabaseOverrideDoesNotParticipateInActiveShadowRelationships()
+    {
+        var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc", displayOrder: 10);
+        var archivedOverride = ExternalAuthenticationTestData.CreateConnection("database-oidc", ConnectionScope.HostTenantId, "OIDC", displayOrder: 0);
+        archivedOverride.OverridesConfigurationConnection = true;
+        archivedOverride.ArchivedAt = DateTimeOffset.UtcNow;
+        var registry = CreateRegistry(
+            new TestConnectionSource("database", ConnectionSourceOwnership.Database, [(ConnectionScope.Host, [archivedOverride])]),
+            new TestConnectionSource("configuration", ConnectionSourceOwnership.Configuration, [(ConnectionScope.Host, [configuration])]));
+
+        var result = await registry.GetAsync("tenant-a");
+        var resolved = await registry.FindByKeyAsync("tenant-a", "oidc");
+
+        var effective = Assert.Single(result.Connections, x => !x.Connection.ArchivedAt.HasValue && !x.IsShadowed);
+        Assert.Equal("configuration-oidc", effective.Connection.Id);
+        Assert.Equal("configuration-oidc", Assert.IsType<EffectiveIdentityProviderConnection>(resolved).Connection.Id);
+        Assert.Empty(effective.Shadows);
+        var archived = Assert.Single(result.Connections, x => x.Connection.Id == "database-oidc");
+        Assert.True(archived.Connection.ArchivedAt.HasValue);
+        Assert.False(archived.IsShadowed);
+        Assert.Null(archived.ShadowedBy);
+        Assert.Empty(archived.Shadows);
     }
 
     [Fact]

@@ -20,7 +20,7 @@ V1 ships OpenID Connect as a separate adapter, Managed Secrets through Elsa Secr
 
 **Primary Dependencies**: Elsa feature/shell infrastructure, Elsa Identity, Elsa Mediator, FastEndpoints, Microsoft IdentityModel OpenID Connect/JWT protocol libraries, ASP.NET Core Data Protection and rate limiting, EF Core Identity persistence, optional Elsa Secrets bridge, Refit, Radzen/MudBlazor, and existing Studio authentication abstractions.
 
-**Storage**: Deployment configuration and in-memory stores support configuration-first/single-node operation. Production persistence extends `IdentityElsaDbContext` for connections, links, sessions, broker transactions, completion grants, and latest observations. Provider-specific migrations cover SQL Server, PostgreSQL, MySQL, SQLite, and Oracle. Multi-node operation requires the shared EF state provider and shared Data Protection configuration.
+**Storage**: Deployment configuration and in-memory stores support configuration-first/single-node operation. Production persistence uses a dedicated `ExternalAuthenticationElsaDbContext` for connections, links, sessions, broker transactions, completion grants, and latest observations, enabled through the `<Provider>ExternalAuthenticationPersistence` shell feature. Provider-specific migrations cover SQL Server, PostgreSQL, MySQL, SQLite, and Oracle. Multi-node operation requires the shared EF state provider and shared Data Protection configuration.
 
 **Testing**: xUnit unit, EF/integration, and component tests; `WebApplicationFactory` with deterministic fake OpenID Connect provider; Studio unit/server integration tests; Playwright browser tests for WebAssembly; cross-repository contract fixtures.
 
@@ -107,8 +107,18 @@ src/modules/
 │   └── Services/DefaultUserCredentialsValidator.cs
 └── Elsa.Persistence.EFCore/
     └── Modules/
-        ├── ExternalAuthentication/
         └── Identity/
+
+src/modules/Elsa.ExternalAuthentication.Persistence.EFCore/
+├── ExternalAuthenticationElsaDbContext.cs
+├── Entities.cs
+├── Configurations.cs
+├── Stores/
+├── Features/
+└── ShellFeatures/
+
+src/modules/Elsa.ExternalAuthentication.Persistence.EFCore.{Sqlite,SqlServer,PostgreSql,MySql,Oracle}/
+└── Migrations/ExternalAuthentication/
 
 src/modules/Elsa.Persistence.EFCore.{Sqlite,SqlServer,PostgreSql,MySql,Oracle}/
 └── Migrations/Identity/

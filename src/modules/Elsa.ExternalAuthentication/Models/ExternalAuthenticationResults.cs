@@ -21,6 +21,14 @@ public abstract record ExternalUserMatchResult
 }
 public sealed record ProvisioningRequest(string TenantId, string ConnectionKey, ExternalIdentity Identity, UserCreationProposal? Proposal = null, string? ExistingUserId = null);
 public sealed record ProvisioningResult(string UserId, ExternalIdentityLink Link, bool WasCreated, bool WasLinkCreated = false);
+public sealed record ExternalIdentityLinkReplaceRequest(string TenantId, string LinkId, string UserId, string ConnectionKey, ExternalIdentity Identity);
+public abstract record ExternalIdentityLinkReplaceResult
+{
+    private ExternalIdentityLinkReplaceResult() { }
+    public sealed record Success(ExternalIdentityLink OldLink, ExternalIdentityLink NewLink) : ExternalIdentityLinkReplaceResult;
+    public sealed record Conflict(ExternalIdentityLink OldLink, ExternalIdentityLink ConflictingLink) : ExternalIdentityLinkReplaceResult;
+    public sealed record NotFound : ExternalIdentityLinkReplaceResult;
+}
 public sealed record ExternalTokenResponse(string AccessToken, string TokenType, long ExpiresIn, string RefreshToken, long RefreshExpiresIn, long ExternalSessionExpiresIn);
 public sealed record AdapterSettingsMigrationResult(int SettingsVersion, System.Text.Json.JsonElement Settings, bool WasMigrated);
 

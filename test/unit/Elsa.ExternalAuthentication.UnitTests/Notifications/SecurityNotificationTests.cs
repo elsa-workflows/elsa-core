@@ -12,7 +12,7 @@ public class SecurityNotificationTests
         {
             typeof(IdentityProviderConnectionChanged), typeof(IdentityProviderConnectionLifecycleChanged),
             typeof(IdentityProviderConnectionSecretBindingChanged), typeof(IdentityProviderConnectionTested),
-            typeof(IdentityProviderConnectionPreviewed), typeof(ExternalIdentityLinkChanged),
+            typeof(IdentityProviderConnectionPreviewed), typeof(ExternalIdentityLinkChanged), typeof(ExternalIdentityLinkReplaced),
             typeof(ExternalAuthenticationSessionRevoked), typeof(ExternalAuthenticationConnectionSessionsRevoked),
             typeof(ExternalSignInCompleted), typeof(ExternalAuthenticationOutcomeRecorded)
         };

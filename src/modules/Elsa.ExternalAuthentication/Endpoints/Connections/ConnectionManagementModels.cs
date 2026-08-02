@@ -108,15 +108,18 @@ internal sealed class ConnectionResponse
     public bool IsPreferred { get; init; }
     public bool OverridesConfigurationConnection { get; init; }
     public bool CanCreateOverride { get; init; }
+    public bool CanPromoteToConfigurationOverride { get; init; }
     public bool EnabledIntent { get; init; }
     public bool EffectivelyEnabled { get; init; }
     public string Validity { get; init; } = null!;
     public bool Shadowed { get; init; }
+    public ConnectionReferenceResponse? ShadowedBy { get; init; }
+    public IReadOnlyCollection<ConnectionReferenceResponse> Shadows { get; init; } = [];
     public bool Archived { get; init; }
     public PolicySelection? UnlinkedPolicy { get; init; }
     public IReadOnlyCollection<GrantSourceSelection> PermissionGrantSources { get; init; } = [];
     public ClaimProjection ClaimProjection { get; init; } = ClaimProjection.Empty;
-    public UpstreamLogoutMode UpstreamLogoutMode { get; init; }
+    public string UpstreamLogoutMode { get; init; } = null!;
     public long Revision { get; init; }
     public string MaterialRevision { get; init; } = null!;
     public ConnectionObservationResponse? LatestObservation { get; init; }
@@ -157,15 +160,18 @@ internal sealed class ConnectionResponse
             IsPreferred = effective.Connection.IsPreferred,
             OverridesConfigurationConnection = effective.Connection.OverridesConfigurationConnection,
             CanCreateOverride = effective.Ownership == ConnectionSourceOwnership.Configuration && management.CanCreateConfigurationOverride(),
+            CanPromoteToConfigurationOverride = management.CanPromoteToConfigurationOverride(effective),
             EnabledIntent = effective.Connection.IsEnabled,
             EffectivelyEnabled = effective.Connection.IsEnabled && !effective.Connection.ArchivedAt.HasValue && !effective.IsShadowed && effective.Validity != ConnectionValidity.Invalid,
             Validity = effective.Validity.ToString().ToLowerInvariant(),
             Shadowed = effective.IsShadowed,
+            ShadowedBy = effective.ShadowedBy is null ? null : ConnectionReferenceResponse.From(effective.ShadowedBy),
+            Shadows = effective.Shadows.Select(ConnectionReferenceResponse.From).ToArray(),
             Archived = effective.Connection.ArchivedAt.HasValue,
             UnlinkedPolicy = effective.Connection.UnlinkedPolicy,
             PermissionGrantSources = effective.Connection.PermissionGrantSources.ToArray(),
             ClaimProjection = effective.Connection.ClaimProjection,
-            UpstreamLogoutMode = effective.Connection.UpstreamLogoutMode,
+            UpstreamLogoutMode = FormatUpstreamLogoutMode(effective.Connection.UpstreamLogoutMode),
             Revision = effective.Connection.Revision,
             MaterialRevision = effective.Connection.MaterialRevision,
             LatestObservation = observation is null
@@ -179,9 +185,26 @@ internal sealed class ConnectionResponse
                     observation.Summary)
         };
     }
+
+    private static string FormatUpstreamLogoutMode(UpstreamLogoutMode mode) => mode switch
+    {
+        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Disabled => "disabled",
+        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.UserChoice => "user-choice",
+        Elsa.ExternalAuthentication.Models.UpstreamLogoutMode.Always => "always",
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "The upstream logout mode is not supported.")
+    };
+}
+
+internal sealed record ConnectionReferenceResponse(string Id, string DisplayName, string Source)
+{
+    public static ConnectionReferenceResponse From(IdentityProviderConnectionReference reference) =>
+        new(
+            reference.Id,
+            reference.DisplayName,
+            reference.Ownership == ConnectionSourceOwnership.Configuration ? "configuration" : "database");
 }
 
 internal sealed record ConnectionObservationResponse(string Status, DateTimeOffset ObservedAt, string TestedMaterialRevision, bool IsStale, string Category, string Summary);
 internal sealed record ConnectionValidationResponse(bool Valid, IReadOnlyCollection<ConnectionValidationError> Errors, IReadOnlyCollection<string> Warnings);
 internal sealed record ConnectionListResponse(IReadOnlyCollection<ConnectionResponse> Items, string? NextCursor);
-internal sealed record ManagementErrorResponse(string Error, string Message, object? Details = null);
+internal sealed record ManagementErrorResponse(string Error, string Message, object? Details, string CorrelationId);

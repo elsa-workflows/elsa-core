@@ -1,6 +1,7 @@
 using CShells.Configuration;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
+using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Options;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +22,6 @@ public sealed class ExternalAuthenticationShellFeature : IFastEndpointsShellFeat
     {
         services.AddExternalAuthenticationServices();
         services.AddOptions<ExternalAuthenticationOptions>()
-            .Configure<ShellConfiguration>((options, configuration) => configuration.GetSection(ConfigurationSectionName).Bind(options));
+            .Configure<ShellConfiguration>((options, configuration) => configuration.GetSection(ConfigurationSectionName).BindExternalAuthenticationOptions(options));
     }
 }

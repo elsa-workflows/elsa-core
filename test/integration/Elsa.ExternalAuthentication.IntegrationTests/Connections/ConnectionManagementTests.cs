@@ -19,6 +19,7 @@ using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Connections;
@@ -61,6 +62,7 @@ public class ConnectionManagementTests : IAsyncLifetime
             options.AllowedExternalUserMatcherTypes = ["allowed-matcher"];
             options.AllowedPermissionGrantSourceTypes = [];
             options.UnlinkedIdentityPolicy.AllowDatabaseConnectionOverride = true;
+            options.FinalLoginPathGuard.IsEnabled = false;
             options.Redirects.ExternalCallbackBaseUri = new Uri("https://elsa.example/elsa/api/");
         });
         _store = new InMemoryIdentityProviderConnectionStore();
@@ -69,6 +71,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         _registry = new TestConnectionRegistry(_store);
         builder.Services.AddSingleton<IIdentityProviderConnectionStore>(_store);
         builder.Services.AddSingleton<IIdentityProviderConnectionRegistry>(_registry);
+        builder.Services.AddSingleton<FinalLoginPathGuard>();
         builder.Services.AddSingleton<IConnectionRegistryVersionStore>(_registryVersions);
         builder.Services.AddSingleton<IConnectionObservationStore>(_observations);
         builder.Services.AddSingleton<ConnectionRevisionCalculator>();
@@ -76,6 +79,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         builder.Services.AddSingleton<IExternalAuthenticationAdapterRegistry>(new TestAdapterRegistry(_adapter));
         _settingsMigrations = new TestAdapterSettingsMigrationService();
         builder.Services.AddSingleton<IAdapterSettingsMigrationService>(_settingsMigrations);
+        builder.Services.AddSingleton<IIdentityProviderConnectionValidityAssessor, IdentityProviderConnectionValidityAssessor>();
         builder.Services.AddSingleton<IUnlinkedIdentityPolicyRegistry>(new TestUnlinkedIdentityPolicyRegistry());
         builder.Services.AddSingleton<IExternalUserMatcherRegistry>(new TestExternalUserMatcherRegistry("allowed-matcher", "disallowed-matcher"));
         builder.Services.AddScoped(_ => Substitute.For<IPermissionGrantSourceRegistry>());
@@ -89,6 +93,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         builder.Services.AddSingleton(_sessions);
         _managedSecretWriter = new TestManagedSecretBindingWriter();
         builder.Services.AddSingleton<IManagedSecretBindingWriter>(_managedSecretWriter);
+        builder.Services.AddSingleton<ISecretBindingResolver>(new TestSecretBindingResolver());
         var tenant = Substitute.For<ITenantAccessor>();
         tenant.TenantId.Returns(_ => _tenantId);
         builder.Services.AddSingleton(tenant);
@@ -132,13 +137,23 @@ public class ConnectionManagementTests : IAsyncLifetime
         immutableKeyUpdate.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         var immutableKeyResponse = await _client!.SendAsync(immutableKeyUpdate);
         Assert.Equal(HttpStatusCode.Conflict, immutableKeyResponse.StatusCode);
-        Assert.Contains("connection_key_immutable", await immutableKeyResponse.Content.ReadAsStringAsync());
+        var immutableKeyContent = await immutableKeyResponse.Content.ReadAsStringAsync();
+        Assert.Contains("connection_key_immutable", immutableKeyContent);
+        using (var errorDocument = JsonDocument.Parse(immutableKeyContent))
+        {
+            var correlationId = errorDocument.RootElement.GetProperty("correlationId").GetString();
+            Assert.Matches("^[A-Za-z0-9_-]{1,128}$", correlationId);
+        }
 
         var update = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso", displayName: "Updated")) };
         update.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         var updated = await _client!.SendAsync(update);
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
         Assert.Equal("\"2\"", updated.Headers.ETag?.Tag);
+
+        var validate = await _client.PostAsync($"/external-authentication/connections/{createdDocument.Id}/validate", null);
+        Assert.Equal(HttpStatusCode.OK, validate.StatusCode);
+        Assert.Contains("\"valid\":true", await validate.Content.ReadAsStringAsync());
 
         var stale = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{createdDocument.Id}") { Content = JsonContent.Create(CreateRequest("contoso", displayName: "Stale")) };
         stale.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
@@ -163,21 +178,40 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ValidateRequiresCompleteConfigurationAndReturnsMissingSecretDetails()
+    {
+        _adapter.RequiresClientSecret = true;
+        var create = await _client!.PostAsJsonAsync("/external-authentication/connections", CreateRequest("missing-secret"));
+        var connection = Assert.IsType<ConnectionDocument>(await create.Content.ReadFromJsonAsync<ConnectionDocument>());
+
+        var validate = await _client!.PostAsync($"/external-authentication/connections/{connection.Id}/validate", null);
+        var validation = JsonDocument.Parse(await validate.Content.ReadAsStringAsync()).RootElement;
+
+        Assert.Equal(HttpStatusCode.OK, validate.StatusCode);
+        Assert.False(validation.GetProperty("valid").GetBoolean());
+        var error = Assert.Single(validation.GetProperty("errors").EnumerateArray());
+        Assert.Equal("secretBindings.clientSecret", error.GetProperty("field").GetString());
+        Assert.Equal("required", error.GetProperty("code").GetString());
+        Assert.Equal("A required secret binding is missing.", error.GetProperty("message").GetString());
+    }
+
+    [Fact]
+    public async Task ConnectionResponseEmitsCanonicalUpstreamLogoutModeString()
+    {
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("user-choice-logout", upstreamLogoutMode: "user-choice"));
+        var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal(JsonValueKind.String, body.RootElement.GetProperty("upstreamLogoutMode").ValueKind);
+        Assert.Equal("user-choice", body.RootElement.GetProperty("upstreamLogoutMode").GetString());
+    }
+
+    [Fact]
     public async Task ConfigurationConnectionIsReadOnlyAndBlocksSameScopeKeyCreation()
     {
-        _registry.ConfigurationConnection = new IdentityProviderConnection
-        {
-            Id = "configuration-contoso",
-            TenantId = ConnectionScope.HostTenantId,
-            Key = "contoso",
-            AdapterType = "test",
-            AdapterSettingsVersion = 1,
-            AdapterSettings = JsonDocument.Parse("{}").RootElement.Clone(),
-            DisplayName = "Configuration Contoso",
-            ClaimProjection = ClaimProjection.Empty,
-            MaterialRevision = "m-config",
-            Revision = 1
-        };
+        _registry.ConfigurationConnection = ConfigurationConnection("contoso");
 
         var create = await _client!.PostAsJsonAsync("/external-authentication/connections", CreateRequest("contoso"));
         Assert.Equal(HttpStatusCode.Conflict, create.StatusCode);
@@ -193,6 +227,83 @@ public class ConnectionManagementTests : IAsyncLifetime
         var secret = new HttpRequestMessage(HttpMethod.Put, "/external-authentication/connections/configuration-contoso/secret-bindings/clientSecret/managed") { Content = JsonContent.Create(new { resolverType = "test-managed", value = "secret" }) };
         secret.Headers.TryAddWithoutValidation("If-Match", "\"1\"");
         Assert.Equal(HttpStatusCode.Forbidden, (await _client.SendAsync(secret)).StatusCode);
+    }
+
+    [Fact]
+    public async Task ShadowedDatabaseConnectionAdvertisesPromotionCapabilityOnlyWhenAllowedAndActive()
+    {
+        const string connectionId = "database-contoso";
+        _registry.ConfigurationConnection = ConfigurationConnection("contoso");
+        await _store.CreateAsync(DatabaseConnection(connectionId, ConnectionScope.HostTenantId, "contoso"));
+
+        var shadowedDatabase = await GetConnectionResponseAsync(connectionId);
+        Assert.False(shadowedDatabase.CanPromoteToConfigurationOverride);
+        Assert.Equal("configuration-contoso", shadowedDatabase.ShadowedBy?.Id);
+        Assert.Equal(connectionId, Assert.Single((await GetConnectionResponseAsync("configuration-contoso")).Shadows).Id);
+
+        _app!.Services.GetRequiredService<IOptions<ExternalAuthenticationOptions>>().Value.AllowConfigurationConnectionOverrides = true;
+        Assert.True((await GetConnectionResponseAsync(connectionId)).CanPromoteToConfigurationOverride);
+
+        var connection = Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connectionId));
+        connection.OverridesConfigurationConnection = true;
+        await _store.UpdateAsync(connection, connection.Revision);
+        Assert.False((await GetConnectionResponseAsync(connectionId)).CanPromoteToConfigurationOverride);
+
+        connection = Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connectionId));
+        connection.ArchivedAt = DateTimeOffset.UtcNow;
+        await _store.UpdateAsync(connection, connection.Revision);
+        Assert.False((await GetConnectionResponseAsync(connectionId)).CanPromoteToConfigurationOverride);
+    }
+
+    [Fact]
+    public async Task PromotingShadowedConnectionUpdatesTheExistingRecordAndPreservesLifecycleAndSecretBindings()
+    {
+        const string connectionId = "database-contoso";
+        _registry.ConfigurationConnection = ConfigurationConnection("contoso", isEnabled: true);
+        var databaseConnection = DatabaseConnection(connectionId, ConnectionScope.HostTenantId, "contoso");
+        databaseConnection.IsEnabled = true;
+        databaseConnection.SecretBindings["clientSecret"] = new SecretBinding("test-managed", "preserved-secret");
+        await _store.CreateAsync(databaseConnection);
+
+        var denied = await UpdateConnectionAsync(connectionId, 1, CreateRequest("contoso", overridesConfigurationConnection: true));
+        Assert.Equal(HttpStatusCode.BadRequest, denied.StatusCode);
+        Assert.False(Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connectionId)).OverridesConfigurationConnection);
+
+        _app!.Services.GetRequiredService<IOptions<ExternalAuthenticationOptions>>().Value.AllowConfigurationConnectionOverrides = true;
+        var promoted = await UpdateConnectionAsync(connectionId, 1, CreateRequest("contoso", overridesConfigurationConnection: true));
+        var promotedDocument = Assert.IsType<ConnectionDocument>(await promoted.Content.ReadFromJsonAsync<ConnectionDocument>());
+
+        Assert.Equal(HttpStatusCode.OK, promoted.StatusCode);
+        Assert.Equal(connectionId, promotedDocument.Id);
+        Assert.True(promotedDocument.EnabledIntent);
+        var persisted = Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connectionId));
+        Assert.True(persisted.OverridesConfigurationConnection);
+        Assert.True(persisted.IsEnabled);
+        Assert.Equal("preserved-secret", persisted.SecretBindings["clientSecret"].Reference);
+
+        var effective = await _registry.GetAsync(_tenantId);
+        Assert.True(effective.Connections.Single(x => x.Connection.Id == "configuration-contoso").IsShadowed);
+        Assert.False(effective.Connections.Single(x => x.Connection.Id == connectionId).IsShadowed);
+    }
+
+    [Fact]
+    public async Task PromotionOfDisabledShadowedConnectionIsBlockedWhenItWouldRemoveTheFinalLoginPath()
+    {
+        const string connectionId = "database-contoso";
+        _registry.ConfigurationConnection = ConfigurationConnection("contoso", isEnabled: true);
+        await _store.CreateAsync(DatabaseConnection(connectionId, ConnectionScope.HostTenantId, "contoso"));
+        var options = _app!.Services.GetRequiredService<IOptions<ExternalAuthenticationOptions>>().Value;
+        options.AllowConfigurationConnectionOverrides = true;
+        options.LocalLogin.IsEnabled = false;
+        options.FinalLoginPathGuard.IsEnabled = true;
+        options.FinalLoginPathGuard.RequireRecoveryMethod = true;
+        options.FinalLoginPathGuard.HasBreakGlassAuthentication = false;
+
+        var promotion = await UpdateConnectionAsync(connectionId, 1, CreateRequest("contoso", overridesConfigurationConnection: true));
+
+        Assert.Equal(HttpStatusCode.Conflict, promotion.StatusCode);
+        Assert.Contains("final_login_path_guard", await promotion.Content.ReadAsStringAsync());
+        Assert.False(Assert.IsType<IdentityProviderConnection>(await _store.FindByIdAsync(connectionId)).OverridesConfigurationConnection);
     }
 
     [Fact]
@@ -523,7 +634,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         Assert.Equal(new[] { "workflow-user" }, _roleAuthorizationService.LastRequestedRoleIds);
     }
 
-    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null) => new
+    private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null, string upstreamLogoutMode = "disabled", bool overridesConfigurationConnection = false) => new
     {
         key,
         scope = scope ?? new { kind = "host" },
@@ -533,8 +644,9 @@ public class ConnectionManagementTests : IAsyncLifetime
         displayName,
         order = 10,
         claimProjection = new { allowedClaimTypes = Array.Empty<string>(), redactedClaimTypes = Array.Empty<string>(), maximumClaimCount = 0, maximumValueLength = 0, maximumTotalBytes = 0 },
-        upstreamLogoutMode = "disabled",
+        upstreamLogoutMode,
         confirmUnsafeSettings,
+        overridesConfigurationConnection,
         unlinkedPolicy
     };
 
@@ -555,6 +667,30 @@ public class ConnectionManagementTests : IAsyncLifetime
         public string? PreviewCallbackUri { get; set; }
         public bool EnabledIntent { get; set; }
         public int AdapterSettingsVersion { get; set; }
+        public bool CanPromoteToConfigurationOverride { get; set; }
+        public ConnectionReferenceDocument? ShadowedBy { get; set; }
+        public ICollection<ConnectionReferenceDocument> Shadows { get; set; } = [];
+    }
+
+    private sealed class ConnectionReferenceDocument
+    {
+        public string Id { get; set; } = null!;
+        public string DisplayName { get; set; } = null!;
+        public string Source { get; set; } = null!;
+    }
+
+    private async Task<ConnectionDocument> GetConnectionResponseAsync(string connectionId)
+    {
+        var response = await _client!.GetAsync($"/external-authentication/connections/{connectionId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return Assert.IsType<ConnectionDocument>(await response.Content.ReadFromJsonAsync<ConnectionDocument>());
+    }
+
+    private async Task<HttpResponseMessage> UpdateConnectionAsync(string connectionId, long revision, object request)
+    {
+        var update = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{connectionId}") { Content = JsonContent.Create(request) };
+        update.Headers.TryAddWithoutValidation("If-Match", $"\"{revision}\"");
+        return await _client!.SendAsync(update);
     }
 
     private sealed class ListDocument
@@ -589,6 +725,21 @@ public class ConnectionManagementTests : IAsyncLifetime
         Revision = 1
     };
 
+    private static IdentityProviderConnection ConfigurationConnection(string key, bool isEnabled = false) => new()
+    {
+        Id = "configuration-" + key,
+        TenantId = ConnectionScope.HostTenantId,
+        Key = key,
+        AdapterType = "test",
+        AdapterSettingsVersion = 1,
+        AdapterSettings = JsonDocument.Parse("{}").RootElement.Clone(),
+        DisplayName = "Configuration " + key,
+        IsEnabled = isEnabled,
+        ClaimProjection = ClaimProjection.Empty,
+        MaterialRevision = "m-configuration-" + key,
+        Revision = 1
+    };
+
     private sealed class TestAdapterRegistry(IExternalAuthenticationAdapter registeredAdapter) : IExternalAuthenticationAdapterRegistry
     {
         public IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor> ListDescriptors() => [registeredAdapter.Describe()];
@@ -602,9 +753,10 @@ public class ConnectionManagementTests : IAsyncLifetime
     private sealed class TestAdapter : IExternalAuthenticationAdapter
     {
         public string Type => "test";
+        public bool RequiresClientSecret { get; set; }
         public ExternalAuthenticationAdapterDescriptor Describe() => new(Type, "Test", "Test adapter", 2,
         [
-            new SettingFieldDescriptor("clientSecret", "Client secret", "Secret", "secret", false, "secret", null, [], new SettingFieldValidation(), true, false, null, null, true),
+            new SettingFieldDescriptor("clientSecret", "Client secret", "Secret", "secret", RequiresClientSecret, "secret", null, [], new SettingFieldValidation(), true, false, null, null, true),
             new SettingFieldDescriptor("unsafeMode", "Unsafe mode", "Unsafe", "boolean", false, "toggle", null, [], new SettingFieldValidation(), false, true, null, null, false)
         ], new(false, false, false), null);
         public ValueTask<ConnectionValidationResult> ValidateAsync(ConnectionValidationContext context, CancellationToken cancellationToken = default)
@@ -715,6 +867,17 @@ public class ConnectionManagementTests : IAsyncLifetime
         }
     }
 
+    private sealed class TestSecretBindingResolver : ISecretBindingResolver
+    {
+        public string Type => "test-managed";
+        public ValueTask<SecretBindingState> GetStateAsync(SecretBinding binding, CancellationToken cancellationToken = default)
+        {
+            var isConfigured = string.Equals(binding.Reference, "preserved-secret", StringComparison.Ordinal);
+            return ValueTask.FromResult(new SecretBindingState(isConfigured, isConfigured));
+        }
+        public ValueTask<ResolvedSecretBinding> ResolveAsync(SecretBinding binding, CancellationToken cancellationToken = default) => ValueTask.FromResult(new ResolvedSecretBinding(new SensitiveString("secret"), "test"));
+    }
+
     private sealed class TestConnectionRegistry(IIdentityProviderConnectionStore store) : IIdentityProviderConnectionRegistry
     {
         public IdentityProviderConnection? ConfigurationConnection { get; set; }
@@ -727,12 +890,39 @@ public class ConnectionManagementTests : IAsyncLifetime
             IEnumerable<EffectiveIdentityProviderConnection> configuration = ConfigurationConnection is not null && (ConfigurationConnection.TenantId == targetTenantId || ConfigurationConnection.TenantId == ConnectionScope.HostTenantId)
                 ? [new EffectiveIdentityProviderConnection(ConfigurationConnection, ConnectionSourceOwnership.Configuration, ToScope(ConfigurationConnection.TenantId), ConnectionValidity.Unknown, false, "configuration")]
                 : Array.Empty<EffectiveIdentityProviderConnection>();
-            var connections = configuration.Concat(database).ToArray();
+            var candidates = configuration.Concat(database).ToArray();
+            var connections = candidates
+                .GroupBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
+                .SelectMany(group =>
+                {
+                    var candidatesForKey = group.ToArray();
+                    var preferred = candidatesForKey.FirstOrDefault(x => x.Ownership == ConnectionSourceOwnership.Database && x.Connection.OverridesConfigurationConnection && !x.Connection.ArchivedAt.HasValue)
+                        ?? candidatesForKey.FirstOrDefault(x => x.Ownership == ConnectionSourceOwnership.Configuration)
+                        ?? candidatesForKey[0];
+                    var preferredReference = ToReference(preferred);
+                    var shadowedReferences = candidatesForKey
+                        .Where(candidate => !ReferenceEquals(candidate, preferred))
+                        .Select(ToReference)
+                        .ToArray();
+                    return candidatesForKey.Select(candidate =>
+                    {
+                        var isShadowed = !ReferenceEquals(candidate, preferred);
+                        return candidate with
+                        {
+                            IsShadowed = isShadowed,
+                            ShadowedBy = isShadowed ? preferredReference : null,
+                            Shadows = isShadowed ? [] : shadowedReferences
+                        };
+                    });
+                })
+                .ToArray();
             return new EffectiveConnectionRegistry(connections, [], "test");
         }
 
         public async ValueTask<EffectiveIdentityProviderConnection?> FindByKeyAsync(string targetTenantId, string key, CancellationToken cancellationToken = default) => (await GetAsync(targetTenantId, cancellationToken)).Connections.FirstOrDefault(x => string.Equals(x.Connection.Key, key, StringComparison.Ordinal));
         public async ValueTask<EffectiveIdentityProviderConnection?> FindByIdAsync(string targetTenantId, string connectionId, CancellationToken cancellationToken = default) => (await GetAsync(targetTenantId, cancellationToken)).Connections.FirstOrDefault(x => string.Equals(x.Connection.Id, connectionId, StringComparison.Ordinal));
         private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new ConnectionScope(ConnectionScopeKind.Tenant, tenantId);
+        private static IdentityProviderConnectionReference ToReference(EffectiveIdentityProviderConnection connection) =>
+            new(connection.Connection.Id, connection.Connection.DisplayName, connection.Ownership);
     }
 }

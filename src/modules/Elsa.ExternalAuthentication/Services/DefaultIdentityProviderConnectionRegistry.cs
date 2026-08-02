@@ -47,17 +47,30 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
 
             var explicitOverride = candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Database && x.Connection.OverridesConfigurationConnection && !x.Connection.ArchivedAt.HasValue);
             var preferred = explicitOverride ?? candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Configuration) ?? candidatesForKey.First();
+            var preferredReference = ToReference(preferred);
+            var shadowedReferences = hasInheritedScopeCollision
+                ? []
+                : candidatesForKey
+                    .Where(candidate => !ReferenceEquals(candidate, preferred) && !candidate.Connection.ArchivedAt.HasValue)
+                    .Select(ToReference)
+                    .ToArray();
 
             for (var index = 0; index < candidatesForKey.Length; index++)
             {
                 var candidate = candidatesForKey[index];
+                var isArchived = candidate.Connection.ArchivedAt.HasValue;
+                var isShadowed = !isArchived && !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred);
                 connections.Add(new EffectiveIdentityProviderConnection(
                     candidate.Connection,
                     candidate.Source.Ownership,
                     candidate.Scope,
                     hasInheritedScopeCollision ? ConnectionValidity.Invalid : ConnectionValidity.Unknown,
-                    !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred),
-                    candidate.Source.Name));
+                    isShadowed,
+                    candidate.Source.Name)
+                {
+                    ShadowedBy = isShadowed ? preferredReference : null,
+                    Shadows = isShadowed || isArchived ? [] : shadowedReferences
+                });
             }
         }
 
@@ -77,8 +90,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
         var registry = await GetAsync(targetTenantId, cancellationToken);
         var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(key);
         return registry.Connections.FirstOrDefault(x =>
-            !x.IsShadowed &&
-            x.Validity != ConnectionValidity.Invalid &&
+            IsAvailableForAuthentication(x) &&
             string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), normalizedKey, StringComparison.Ordinal));
     }
 
@@ -91,7 +103,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
     private static IReadOnlyCollection<LoginMethod> CreateLoginMethods(IReadOnlyCollection<EffectiveIdentityProviderConnection> connections)
     {
         var available = connections
-            .Where(x => !x.IsShadowed && x.Validity != ConnectionValidity.Invalid && x.Connection.IsEnabled && !x.Connection.ArchivedAt.HasValue)
+            .Where(IsAvailableForAuthentication)
             .ToArray();
         var configuredPreferred = available
             .Where(x => x.Ownership == ConnectionSourceOwnership.Configuration && x.Connection.IsPreferred)
@@ -131,7 +143,14 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
     private static IReadOnlyList<ConnectionScope> GetApplicableScopes() => [ConnectionScope.Host];
 
     private static bool IsInScope(IdentityProviderConnection connection, ConnectionScope scope) => string.Equals(connection.TenantId, scope.TenantId, StringComparison.Ordinal);
+    private static bool IsAvailableForAuthentication(EffectiveIdentityProviderConnection connection) =>
+        !connection.IsShadowed &&
+        connection.Validity != ConnectionValidity.Invalid &&
+        connection.Connection.IsEnabled &&
+        !connection.Connection.ArchivedAt.HasValue;
     private static int GetOwnershipPriority(ConnectionSourceOwnership ownership) => ownership == ConnectionSourceOwnership.Configuration ? 0 : 1;
+    private static IdentityProviderConnectionReference ToReference(Candidate candidate) =>
+        new(candidate.Connection.Id, candidate.Connection.DisplayName, candidate.Source.Ownership);
 
     private sealed record Candidate(IIdentityProviderConnectionSource Source, ConnectionScope Scope, IdentityProviderConnection Connection);
 }

@@ -32,7 +32,9 @@ internal static class ConnectionEndpointSupport
     public static Task SendErrorAsync(HttpContext context, int statusCode, string error, string message, object? details, CancellationToken cancellationToken)
     {
         context.Response.StatusCode = statusCode;
-        return context.Response.WriteAsJsonAsync(new ManagementErrorResponse(error, message, details), cancellationToken);
+        return context.Response.WriteAsJsonAsync(
+            new ManagementErrorResponse(error, message, details, BrokerErrorFactory.CreateCorrelationId()),
+            cancellationToken);
     }
 
     public static Task SendErrorAsync(HttpContext context, int statusCode, string error, string message, CancellationToken cancellationToken) => SendErrorAsync(context, statusCode, error, message, null, cancellationToken);

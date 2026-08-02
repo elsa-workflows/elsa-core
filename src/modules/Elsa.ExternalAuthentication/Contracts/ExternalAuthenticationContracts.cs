@@ -72,6 +72,13 @@ public interface IIdentityProviderConnectionRegistry
     ValueTask<EffectiveIdentityProviderConnection?> FindByIdAsync(string targetTenantId, string connectionId, CancellationToken cancellationToken = default);
 }
 
+public interface IIdentityProviderConnectionValidityAssessor
+{
+    ValueTask<EffectiveIdentityProviderConnection> AssessAsync(
+        EffectiveIdentityProviderConnection connection,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IIdentityProviderConnectionStore
 {
     ValueTask<Page<IdentityProviderConnection>> FindAsync(ConnectionFilter filter, CancellationToken cancellationToken = default);
@@ -140,6 +147,13 @@ public interface IExternalIdentityProvisioner
     /// Atomically creates the requested link and, when requested, its credential-less user, or returns the winner of a concurrent operation.
     /// </summary>
     ValueTask<ProvisioningResult> CreateLinkOrGetExistingAsync(ProvisioningRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically removes the tenant-scoped link identified by <see cref="ExternalIdentityLinkReplaceRequest.LinkId"/>
+    /// and creates its replacement, or returns the conflicting link without changing the original.
+    /// </summary>
+    ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This external identity provisioner does not support atomic link replacement.");
 }
 
 /// <summary>
@@ -231,13 +245,22 @@ public sealed record ResolvedSecretBinding(SensitiveString Value, string Generat
 
 public sealed record ConnectionSourceSnapshot(ConnectionScope Scope, string Version, IReadOnlyCollection<IdentityProviderConnection> Connections);
 
+public sealed record IdentityProviderConnectionReference(
+    string Id,
+    string DisplayName,
+    ConnectionSourceOwnership Ownership);
+
 public sealed record EffectiveIdentityProviderConnection(
     IdentityProviderConnection Connection,
     ConnectionSourceOwnership Ownership,
     ConnectionScope Scope,
     ConnectionValidity Validity,
     bool IsShadowed,
-    string SourceName);
+    string SourceName)
+{
+    public IdentityProviderConnectionReference? ShadowedBy { get; init; }
+    public IReadOnlyCollection<IdentityProviderConnectionReference> Shadows { get; init; } = [];
+}
 
 public sealed record EffectiveConnectionRegistry(
     IReadOnlyCollection<EffectiveIdentityProviderConnection> Connections,

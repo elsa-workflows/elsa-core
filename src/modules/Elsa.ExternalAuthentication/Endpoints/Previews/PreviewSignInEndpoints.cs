@@ -69,10 +69,10 @@ internal sealed class AuthorizePreview(PreviewSignInService previews) : ElsaEndp
         var result = await previews.AuthorizeAsync(Route<string>("previewHandle")!, cancellationToken);
         if (result is PreviewAuthorizeResult.Redirect(var navigationUri))
         {
-            HttpContext.Response.Redirect(navigationUri.ToString());
+            await Send.RedirectAsync(navigationUri.ToString(), allowRemoteRedirects: true);
             return;
         }
-        HttpContext.Response.StatusCode = StatusCodes.Status410Gone;
+        await Send.StatusCodeAsync(StatusCodes.Status410Gone, cancellationToken);
     }
 }
 
@@ -110,7 +110,8 @@ internal sealed class GetPreviewResult(PreviewSignInService previews, ITenantAcc
             await HttpContext.Response.WriteAsJsonAsync(PreviewResultDocument.From(preview), cancellationToken);
             return;
         }
-        HttpContext.Response.StatusCode = result is TakeResult<PreviewResult>.Expired or TakeResult<PreviewResult>.AlreadyConsumed ? StatusCodes.Status410Gone : StatusCodes.Status404NotFound;
+        var statusCode = result is TakeResult<PreviewResult>.Expired or TakeResult<PreviewResult>.AlreadyConsumed ? StatusCodes.Status410Gone : StatusCodes.Status404NotFound;
+        await Send.StatusCodeAsync(statusCode, cancellationToken);
     }
 }
 

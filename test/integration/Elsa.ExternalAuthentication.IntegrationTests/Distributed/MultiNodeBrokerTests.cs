@@ -2,8 +2,8 @@ using System.Text.Json;
 using Elsa.Common;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
-using Elsa.Persistence.EFCore.Modules.ExternalAuthentication;
-using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.ExternalAuthentication.Persistence.EFCore;
+using Elsa.ExternalAuthentication.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,20 +18,20 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
 {
     private SqliteConnection _connection = null!;
     private ServiceProvider _services = null!;
-    private ExternalAuthenticationDbContextFactory _contexts = null!;
+    private ExternalAuthenticationDbContextLeaseFactory _contexts = null!;
     private readonly ISystemClock _clock = new FixedClock();
 
     public async Task InitializeAsync()
     {
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
-        var options = new DbContextOptionsBuilder<IdentityElsaDbContext>()
-            .UseSqlite(_connection, sqlite => sqlite.MigrationsAssembly(typeof(Elsa.Persistence.EFCore.Sqlite.IdentityDbContextFactory).Assembly.FullName))
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection, sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName))
             .Options;
         _services = new ServiceCollection()
-            .AddSingleton<IDbContextFactory<IdentityElsaDbContext>>(services => new TestDbContextFactory(options, services))
+            .AddSingleton<IDbContextFactory<ExternalAuthenticationElsaDbContext>>(services => new TestDbContextFactory(options, services))
             .BuildServiceProvider();
-        _contexts = new ExternalAuthenticationDbContextFactory(_services.GetRequiredService<IServiceScopeFactory>());
+        _contexts = new ExternalAuthenticationDbContextLeaseFactory(_services.GetRequiredService<IServiceScopeFactory>());
         await using var dbContext = await _contexts.CreateAsync();
         await dbContext.DbContext.Database.EnsureCreatedAsync();
     }
@@ -105,9 +105,9 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
     };
 
     private sealed class FixedClock : ISystemClock { public DateTimeOffset UtcNow => new(2026, 7, 24, 0, 0, 0, TimeSpan.Zero); }
-    private sealed class TestDbContextFactory(DbContextOptions<IdentityElsaDbContext> options, IServiceProvider services) : IDbContextFactory<IdentityElsaDbContext>
+    private sealed class TestDbContextFactory(DbContextOptions<ExternalAuthenticationElsaDbContext> options, IServiceProvider services) : IDbContextFactory<ExternalAuthenticationElsaDbContext>
     {
-        public IdentityElsaDbContext CreateDbContext() => new(options, services);
-        public Task<IdentityElsaDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => Task.FromResult(CreateDbContext());
+        public ExternalAuthenticationElsaDbContext CreateDbContext() => new(options, services);
+        public Task<ExternalAuthenticationElsaDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => Task.FromResult(CreateDbContext());
     }
 }

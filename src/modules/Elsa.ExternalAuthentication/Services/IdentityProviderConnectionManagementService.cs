@@ -22,6 +22,7 @@ namespace Elsa.ExternalAuthentication.Services;
 public sealed partial class IdentityProviderConnectionManagementService(
     IIdentityProviderConnectionStore store,
     IIdentityProviderConnectionRegistry registry,
+    IIdentityProviderConnectionValidityAssessor validityAssessor,
     IConnectionRegistryVersionStore registryVersions,
     IExternalAuthenticationAdapterRegistry adapters,
     IAdapterSettingsMigrationService settingsMigrations,
@@ -46,13 +47,13 @@ public sealed partial class IdentityProviderConnectionManagementService(
     {
         var effective = await registry.FindByIdAsync(targetTenantId, id, cancellationToken);
         if (effective is not null && effective.Scope == ConnectionScope.Host)
-            return new ManagementConnectionLookupResult.Found(await AssessValidityAsync(effective, cancellationToken));
+            return new ManagementConnectionLookupResult.Found(await validityAssessor.AssessAsync(effective, cancellationToken));
 
         var connection = await store.FindByIdAsync(id, cancellationToken);
         if (connection is null || connection.TenantId != ConnectionScope.HostTenantId)
             return new ManagementConnectionLookupResult.NotFound();
 
-        return new ManagementConnectionLookupResult.Found(await AssessValidityAsync(ToEffective(connection), cancellationToken));
+        return new ManagementConnectionLookupResult.Found(await validityAssessor.AssessAsync(ToEffective(connection), cancellationToken));
     }
 
     /// <summary>Returns the deployment-derived read-only upstream callback URI for management display.</summary>
@@ -76,7 +77,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
             .ThenBy(x => x.Connection.Key, StringComparer.Ordinal)
             .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
             .ToArray();
-        return await Task.WhenAll(matches.Select(x => AssessValidityAsync(x, cancellationToken).AsTask()));
+        return await Task.WhenAll(matches.Select(x => validityAssessor.AssessAsync(x, cancellationToken).AsTask()));
     }
 
     public async ValueTask<ManagementConnectionMutationResult> CreateAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, string targetTenantId, bool confirmUnsafeSettings, CancellationToken cancellationToken = default)
@@ -260,10 +261,32 @@ public sealed partial class IdentityProviderConnectionManagementService(
 
     public bool CanCreateConfigurationOverride() => options.Value.AllowConfigurationConnectionOverrides;
 
+    public bool CanPromoteToConfigurationOverride(EffectiveIdentityProviderConnection connection) =>
+        connection.Ownership == ConnectionSourceOwnership.Database &&
+        connection.IsShadowed &&
+        !connection.Connection.ArchivedAt.HasValue &&
+        options.Value.AllowConfigurationConnectionOverrides;
+
     private async ValueTask<bool> IsBlockedByFinalLoginPathGuardAsync(IdentityProviderConnection existing, IdentityProviderConnection candidate, string targetTenantId, ClaimsPrincipal actor, bool confirmedOverride, CancellationToken cancellationToken)
     {
         var guard = services.GetService<FinalLoginPathGuard>();
-        return guard is not null && await guard.AuthorizeAsync(existing, candidate, targetTenantId, actor, confirmedOverride, cancellationToken) == FinalLoginPathGuardResult.Denied;
+        if (guard is null)
+            return false;
+
+        var guardExisting = existing;
+        if (!existing.OverridesConfigurationConnection && candidate.OverridesConfigurationConnection)
+        {
+            var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(candidate.Key);
+            var effective = await registry.GetAsync(targetTenantId, cancellationToken);
+            var displacedConfigurationConnection = effective.Connections.FirstOrDefault(x =>
+                x.Ownership == ConnectionSourceOwnership.Configuration &&
+                !x.IsShadowed &&
+                string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), normalizedKey, StringComparison.Ordinal));
+            if (displacedConfigurationConnection is not null)
+                guardExisting = displacedConfigurationConnection.Connection;
+        }
+
+        return await guard.AuthorizeAsync(guardExisting, candidate, targetTenantId, actor, confirmedOverride, cancellationToken) == FinalLoginPathGuardResult.Denied;
     }
 
     private async ValueTask<ManagementConnectionMutationResult> ProcessMutationAsync(ConnectionMutationResult result, ClaimsPrincipal actor, string operation, ConnectionLifecycle? previousLifecycle, CancellationToken cancellationToken, IdentityProviderConnection? previousConnection = null)
@@ -410,44 +433,6 @@ public sealed partial class IdentityProviderConnectionManagementService(
         return states;
     }
 
-    // Registry composition deliberately leaves adapter-specific structural validity as Unknown.
-    // Management reads resolve that state without invoking provider test endpoints or persisting migrations.
-    private async ValueTask<EffectiveIdentityProviderConnection> AssessValidityAsync(EffectiveIdentityProviderConnection effective, CancellationToken cancellationToken)
-    {
-        if (effective.Validity == ConnectionValidity.Invalid)
-            return effective;
-
-        var connection = IdentityProviderConnectionCloner.Clone(effective.Connection);
-        if (!adapters.TryGet(connection.AdapterType, out var adapter))
-            return effective with { Validity = ConnectionValidity.Invalid };
-
-        try
-        {
-            var migration = await settingsMigrations.MigrateAsync(connection.AdapterType, connection.AdapterSettingsVersion, connection.AdapterSettings, cancellationToken);
-            connection.AdapterSettingsVersion = migration.SettingsVersion;
-            connection.AdapterSettings = migration.Settings;
-        }
-        catch (InvalidOperationException)
-        {
-            return effective with { Validity = ConnectionValidity.Invalid };
-        }
-
-        var descriptor = adapter.Describe();
-        var declaredSecrets = descriptor.Fields.Where(x => x.IsSecretBinding).ToDictionary(x => x.Name, StringComparer.Ordinal);
-        if (connection.SecretBindings.Keys.Any(x => !declaredSecrets.ContainsKey(x)))
-            return effective with { Validity = ConnectionValidity.Invalid };
-
-        var states = await GetSecretStatesAsync(connection, cancellationToken);
-        if (declaredSecrets.Values.Where(x => x.IsRequired).Any(field => !states.TryGetValue(field.Name, out var state) || !state.IsConfigured || !state.IsResolvable))
-            return effective with { Validity = ConnectionValidity.Invalid };
-
-        var validation = await adapter.ValidateAsync(new ConnectionValidationContext(
-            new EffectiveIdentityProviderConnection(connection, effective.Ownership, effective.Scope, ConnectionValidity.Unknown, effective.IsShadowed, effective.SourceName),
-            new Dictionary<string, ResolvedSecretBinding>(),
-            clock), cancellationToken);
-        return effective with { Validity = validation.IsValid ? ConnectionValidity.Valid : ConnectionValidity.Invalid };
-    }
-
     private async ValueTask ApplySettingsMigrationAsync(IdentityProviderConnection connection, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
     {
         try
@@ -479,6 +464,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
     {
         candidate.Key = candidate.Key?.Trim() ?? string.Empty;
         candidate.TenantId = ConnectionScope.HostTenantId;
+        candidate.IsEnabled = existing.IsEnabled;
         candidate.UpdatedAt = clock.UtcNow;
         candidate.SecretBindings ??= new Dictionary<string, SecretBinding>(StringComparer.Ordinal);
         candidate.PermissionGrantSources ??= [];

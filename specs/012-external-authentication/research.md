@@ -24,9 +24,9 @@ In the Studio repository, add:
 - `Elsa.Studio.ExternalAuthentication.BlazorServer` for confidential-client exchange, server-held tokens, cookie session, callback, refresh, and logout.
 - `Elsa.Studio.ExternalAuthentication.BlazorWasm` for public-client PKCE exchange, rotating refresh, and browser token access.
 
-Persisted external-authentication entities live in the existing `IdentityElsaDbContext` and provider-specific Identity migrations. The persistence integration stays in `Elsa.Persistence.EFCore/Modules/Identity` so JIT user creation and External Identity Link creation share one database transaction.
+Persisted external-authentication entities live in a dedicated `ExternalAuthenticationElsaDbContext`, owned by `Elsa.ExternalAuthentication.Persistence.EFCore` and its provider packages, following the `Elsa.Secrets.Persistence.EFCore*` convention. JIT user creation goes through `IUserStore`/`IUserProvider` rather than a shared DbContext, so it no longer shares a database transaction with External Identity Link creation; the unique `IX_ExternalIdentityLink_Identity` index is the sole arbiter of the one-link-per-identity invariant, and a losing writer compensates by removing its stranded credential-less user.
 
-**Rationale**: This matches the constitution's focused-module rule and existing Identity, Secrets, and Studio authentication package conventions. A separate adapter package proves the startup-installed extension boundary. Colocating Identity and external-link persistence is the smallest reliable way to make JIT atomic.
+**Rationale**: This matches the constitution's focused-module rule and existing Identity, Secrets, and Studio authentication package conventions. A separate adapter package proves the startup-installed extension boundary. Owning persistence in its own package keeps external-authentication durability independently enable-able instead of riding on whichever Identity persistence feature happens to be on.
 
 **Alternatives considered**:
 

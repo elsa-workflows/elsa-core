@@ -88,12 +88,15 @@ public class ElsaSecretBindingResolverTests
 
         using var value = new SensitiveString("super-secret");
         var binding = await resolver.StageAsync(new ManagedSecretBindingWriteRequest("connection-a", "clientSecret", value));
+        var replacementBinding = await resolver.StageAsync(new ManagedSecretBindingWriteRequest("connection-a", "clientSecret", value));
 
         Assert.Equal(SecretBindingOwnership.Managed, binding.Ownership);
         Assert.Equal(ElsaSecretBindingResolver.ResolverType, binding.ResolverType);
-        Assert.StartsWith("external-authentication-connection-a-clientsecret-", binding.Reference, StringComparison.Ordinal);
+        Assert.StartsWith("external-authentication:", binding.Reference, StringComparison.Ordinal);
+        Assert.True(Guid.TryParseExact(binding.Reference["external-authentication:".Length..], "N", out _));
+        Assert.NotEqual(binding.Reference, replacementBinding.Reference);
         Assert.DoesNotContain("super-secret", binding.Reference, StringComparison.Ordinal);
-        await manager.Received(1).CreateAsync(Arg.Is<CreateSecretRequest>(x => x.Value == "super-secret"), Arg.Any<CancellationToken>());
+        await manager.Received(2).CreateAsync(Arg.Is<CreateSecretRequest>(x => x.Value == "super-secret"), Arg.Any<CancellationToken>());
         await manager.DidNotReceive().RotateAsync(Arg.Any<string>(), Arg.Any<RotateSecretRequest>(), Arg.Any<CancellationToken>());
     }
 

@@ -29,7 +29,6 @@ public class EFCoreIdentityPersistenceFeature(IModule module) : PersistenceFeatu
     public override void Apply()
     {
         base.Apply();
-        Services.AddExternalAuthenticationEntityFrameworkCore();
         AddEntityStore<User, EFCoreUserStore>();
         AddEntityStore<Application, EFCoreApplicationStore>();
         AddEntityStore<Role, EFCoreRoleStore>();
