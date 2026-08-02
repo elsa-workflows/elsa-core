@@ -11,9 +11,11 @@ using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using Elsa.Persistence.EFCore;
 using Elsa.Workflows;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -35,9 +37,10 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         _connection = new SqliteConnection("Data Source=:memory:");
         await _connection.OpenAsync();
         _clock = new SystemClock();
-        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
-            .UseSqlite(_connection, sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName))
-            .Options;
+        var optionsBuilder = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>();
+        optionsBuilder.UseElsaDbContextOptions(null);
+        optionsBuilder.UseSqlite(_connection, sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName));
+        var options = optionsBuilder.Options;
         _services = new ServiceCollection()
             .AddSingleton<IDbContextFactory<ExternalAuthenticationElsaDbContext>>(serviceProvider => new TestDbContextFactory(options, serviceProvider))
             .BuildServiceProvider();
@@ -55,10 +58,14 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         await _connection.DisposeAsync();
     }
 
-    private EFCoreExternalIdentityProvisioner CreateProvisioner(IExternalAuthenticationHandleHasher hasher, IDbContextFactory<ExternalAuthenticationElsaDbContext>? dbContextFactory = null, IUserStore? userStore = null) =>
+    private EFCoreExternalIdentityProvisioner CreateProvisioner(
+        IExternalAuthenticationHandleHasher hasher,
+        IDbContextFactory<ExternalAuthenticationElsaDbContext>? dbContextFactory = null,
+        IUserStore? userStore = null,
+        IUserProvider? userProvider = null) =>
         new(dbContextFactory ?? _dbContextFactory,
             userStore ?? _userStore,
-            new StoreBasedUserProvider(userStore ?? _userStore),
+            userProvider ?? new StoreBasedUserProvider(userStore ?? _userStore),
             Substitute.For<IRoleProvider>(),
             hasher,
             new GuidIdentityGenerator(),
@@ -78,6 +85,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedBrokerTransaction));
         Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedAuthorizationGrant));
         Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedExternalAuthenticationSession));
+        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedExternalAuthenticationRefreshToken));
         Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedConnectionObservation));
         Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedPreviewResult));
         Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(ExternalAuthenticationRegistryVersion));
@@ -87,6 +95,30 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         Assert.Contains(connection.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedIdentityProviderConnection.TenantId), nameof(PersistedIdentityProviderConnection.Key)]));
         var link = model.FindEntityType(typeof(PersistedExternalIdentityLink))!;
         Assert.Contains(link.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalIdentityLink.TenantId), nameof(PersistedExternalIdentityLink.ConnectionKey), nameof(PersistedExternalIdentityLink.Issuer), nameof(PersistedExternalIdentityLink.SubjectHash)]));
+        var refreshToken = model.FindEntityType(typeof(PersistedExternalAuthenticationRefreshToken))!;
+        Assert.Contains(refreshToken.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalAuthenticationRefreshToken.Hash)]));
+    }
+
+    [Fact]
+    public async Task SqliteInitialMigrationCreatesTheOptionalRefreshTokenTable()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var optionsBuilder = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>();
+        optionsBuilder.UseElsaDbContextOptions(null);
+        optionsBuilder.UseSqlite(connection, sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName));
+        var options = optionsBuilder.Options;
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        await using var dbContext = new ExternalAuthenticationElsaDbContext(options, services);
+
+        await dbContext.Database.MigrateAsync();
+
+        Assert.Single(await dbContext.Database.GetAppliedMigrationsAsync());
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'ExternalAuthenticationSessionRefreshTokens'";
+        Assert.Equal(1L, (long)(await command.ExecuteScalarAsync())!);
+        command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('ExternalAuthenticationSessions') WHERE name = 'CurrentRefreshTokenHash'";
+        Assert.Equal(0L, (long)(await command.ExecuteScalarAsync())!);
     }
 
     [Fact]
@@ -134,6 +166,8 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var sessionStore = new EFCoreExternalAuthenticationSessionStore(durableDbContexts, _clock);
         await sessionStore.SaveAsync(CreateSession());
         Assert.IsType<ExternalAuthenticationSessionRotationResult.Rotated>(await sessionStore.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-b", _clock.UtcNow));
+        Assert.Null(await sessionStore.FindByRefreshTokenHashAsync("refresh-a"));
+        Assert.Equal("session-a", (await sessionStore.FindByRefreshTokenHashAsync("refresh-b"))!.Id);
         Assert.IsType<ExternalAuthenticationSessionRotationResult.Reused>(await sessionStore.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-c", _clock.UtcNow));
 
         var firstNode = new EFCoreConnectionRegistryVersionStore(durableDbContexts);
@@ -218,23 +252,112 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     [Fact]
     public async Task ProvisionerRemovesTheJustInTimeUserThatLosesTheLinkRace()
     {
-        using var hasher = new HmacExternalAuthenticationHandleHasher();
-        var firstNode = CreateProvisioner(hasher);
-        var secondNode = CreateProvisioner(hasher);
-        var request = new ProvisioningRequest("tenant-a", "connection-a", new ExternalIdentity("https://issuer.example", "subject-race", new Dictionary<string, IReadOnlyCollection<string>>()), new UserCreationProposal("external"));
+        var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-identity-provisioning-{Guid.NewGuid():N}.db");
+        await using var services = new ServiceCollection().BuildServiceProvider();
+        try
+        {
+            var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+                .UseSqlite($"Data Source={databasePath};Default Timeout=30")
+                .Options;
+            var factory = new TestDbContextFactory(options, services);
+            await using (var dbContext = await factory.CreateDbContextAsync())
+                await dbContext.Database.EnsureCreatedAsync();
 
-        // The winning node inserts the link; the losing node must converge on it and clean up its own stranded user.
-        var winner = await firstNode.CreateLinkOrGetExistingAsync(request);
-        var loser = await secondNode.CreateLinkOrGetExistingAsync(request);
+            var durableUsers = new MemoryUserStore(new MemoryStore<User>());
+            var coordinatedUsers = new CoordinatedUserStore(durableUsers, 2);
+            using var hasher = new HmacExternalAuthenticationHandleHasher();
+            var firstNode = CreateProvisioner(hasher, factory, coordinatedUsers);
+            var secondNode = CreateProvisioner(hasher, factory, coordinatedUsers);
+            var request = new ProvisioningRequest("tenant-a", "connection-a", new ExternalIdentity("https://issuer.example", "subject-race", EmptyClaims), new UserCreationProposal("external"));
 
-        Assert.True(winner.WasCreated);
-        Assert.False(loser.WasCreated);
-        Assert.Equal(winner.Link.Id, loser.Link.Id);
-        Assert.Equal(winner.UserId, loser.UserId);
-        var user = Assert.Single(await _userStore.FindManyAsync(new UserFilter()));
-        Assert.Equal(winner.UserId, user.Id);
+            var results = await Task.WhenAll(
+                firstNode.CreateLinkOrGetExistingAsync(request).AsTask(),
+                secondNode.CreateLinkOrGetExistingAsync(request).AsTask());
+
+            Assert.Single(results, x => x.WasCreated);
+            Assert.Single(results, x => !x.WasCreated);
+            Assert.Single(results.Select(x => x.Link.Id).Distinct(StringComparer.Ordinal));
+            var user = Assert.Single(await durableUsers.FindManyAsync(new UserFilter()));
+            Assert.Equal(results[0].UserId, user.Id);
+            Assert.Equal(results[1].UserId, user.Id);
+            await using var verificationContext = await factory.CreateDbContextAsync();
+            Assert.Single(await verificationContext.ExternalIdentityLinks.ToListAsync());
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            File.Delete(databasePath);
+        }
+    }
+
+    [Fact]
+    public async Task ProvisionerRemovesTheJustInTimeUserWhenLinkPersistenceFails()
+    {
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new FailingLinkSaveInterceptor())
+            .Options;
+        var provisioner = CreateProvisioner(
+            new HmacExternalAuthenticationHandleHasher(),
+            new TestDbContextFactory(options, _services));
+        var request = new ProvisioningRequest(
+            "tenant-a",
+            "connection-a",
+            new ExternalIdentity("https://issuer.example", "subject-link-failure", EmptyClaims),
+            new UserCreationProposal("external"));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+
+        Assert.Empty(await _userStore.FindManyAsync(new UserFilter()));
+    }
+
+    [Fact]
+    public async Task ProvisionerFailsWhenAJustInTimeUserCannotBeCompensated()
+    {
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new FailingLinkSaveInterceptor())
+            .Options;
+        var userStore = new DeleteFailingUserStore(new MemoryUserStore(new MemoryStore<User>()));
+        var provisioner = CreateProvisioner(
+            new HmacExternalAuthenticationHandleHasher(),
+            new TestDbContextFactory(options, _services),
+            userStore);
+        var request = new ProvisioningRequest(
+            "tenant-a",
+            "connection-a",
+            new ExternalIdentity("https://issuer.example", "subject-compensation-failure", EmptyClaims),
+            new UserCreationProposal("external"));
+
+        var exception = await Assert.ThrowsAsync<AggregateException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+
+        Assert.Contains("No credentials were issued", exception.Message, StringComparison.Ordinal);
+        Assert.Single(await userStore.FindManyAsync(new UserFilter()));
+    }
+
+    [Fact]
+    public async Task ProvisionerRemovesTheLinkWhenUserDeletionWinsTheRace()
+    {
+        var users = new MemoryUserStore(new MemoryStore<User>());
+        var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new DeleteLinkedUserBeforeCommitInterceptor(users))
+            .Options;
+        var provisioner = CreateProvisioner(
+            new HmacExternalAuthenticationHandleHasher(),
+            new TestDbContextFactory(options, _services),
+            users);
+        var request = new ProvisioningRequest(
+            "tenant-a",
+            "connection-a",
+            new ExternalIdentity("https://issuer.example", "subject-user-deletion-race", EmptyClaims),
+            new UserCreationProposal("external"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+
+        Assert.Empty(await users.FindManyAsync(new UserFilter()));
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
     }
 
     [Fact]
@@ -275,6 +398,59 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             Assert.Contains(links, x => x.Id == replaced.NewLink.Id);
             Assert.Contains(links, x => x.Id == conflicting.Id);
         }
+    }
+
+    [Fact]
+    public async Task ProvisionerPreservesTheOldLinkWhenTargetUserDeletionWinsReplacementRace()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var originalProvisioner = CreateProvisioner(hasher);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2);
+        var racingProvisioner = CreateProvisioner(hasher, userProvider: racingProvider);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+
+        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        Assert.Equal(old.Id, durableLink.Id);
+        Assert.Equal("user-a", durableLink.UserId);
+    }
+
+    [Fact]
+    public async Task ProvisionerLeavesNoLinkWhenBothReplacementUsersAreDeletedDuringCompensation()
+    {
+        await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
+        await _userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var originalProvisioner = CreateProvisioner(hasher);
+        var old = (await originalProvisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
+        var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2, 3);
+        var racingProvisioner = CreateProvisioner(hasher, userProvider: racingProvider);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+            new ExternalIdentityLinkReplaceRequest(
+                "tenant-a",
+                old.Id,
+                "user-b",
+                "contoso",
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+
+        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-a" }));
+        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
+        await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
+        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
     }
 
     [Fact]
@@ -340,8 +516,10 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         Assert.Null(result.Error);
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         var session = Assert.Single(await dbContext.ExternalAuthenticationSessions.ToListAsync());
-        Assert.False(string.IsNullOrEmpty(session.CurrentRefreshTokenHash));
         Assert.Equal("user-a", session.UserId);
+        Assert.Empty(await dbContext.ExternalAuthenticationRefreshTokens.ToListAsync());
+        Assert.Null((await new EFCoreExternalAuthenticationSessionStore(_leaseFactory, _clock).FindByIdAsync(session.Id))!.CurrentRefreshTokenHash);
+        Assert.Null(await new EFCoreExternalAuthenticationSessionStore(_leaseFactory, _clock).FindByRefreshTokenHashAsync(null!));
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();
@@ -376,5 +554,72 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     {
         private int _index;
         public DateTimeOffset UtcNow => instants[Math.Min(_index++, instants.Length - 1)];
+    }
+
+    private sealed class CoordinatedUserStore(IUserStore inner, int participantCount) : IUserStore
+    {
+        private readonly TaskCompletionSource _participantsReady = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _participants;
+
+        public async Task SaveAsync(User user, CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Increment(ref _participants) == participantCount)
+                _participantsReady.TrySetResult();
+            await _participantsReady.Task.WaitAsync(cancellationToken);
+            await inner.SaveAsync(user, cancellationToken);
+        }
+
+        public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+        public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+        public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+    }
+
+    private sealed class FailingLinkSaveInterceptor : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default) =>
+            throw new DbUpdateException("Simulated external identity link persistence failure.");
+    }
+
+    private sealed class DeleteLinkedUserBeforeCommitInterceptor(IUserStore users) : SaveChangesInterceptor
+    {
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var userId = eventData.Context!.ChangeTracker.Entries<PersistedExternalIdentityLink>()
+                .Single(x => x.State == EntityState.Added).Entity.UserId;
+            await users.DeleteAsync(new UserFilter { Id = userId }, cancellationToken);
+            return result;
+        }
+    }
+
+    private sealed class DeleteFailingUserStore(IUserStore inner) : IUserStore
+    {
+        public Task SaveAsync(User user, CancellationToken cancellationToken = default) => inner.SaveAsync(user, cancellationToken);
+        public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => throw new InvalidOperationException("Simulated user cleanup failure.");
+        public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindManyAsync(filter, cancellationToken);
+        public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+    }
+
+    private sealed class DeleteOnSelectedFindUserProvider(IUserProvider inner, IUserStore users, params int[] deletionCounts) : IUserProvider
+    {
+        private readonly HashSet<int> _deletionCounts = deletionCounts.ToHashSet();
+        private int _findCount;
+
+        public async Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
+        {
+            var user = await inner.FindAsync(filter, cancellationToken);
+            if (user is not null && _deletionCounts.Contains(Interlocked.Increment(ref _findCount)))
+            {
+                await users.DeleteAsync(new UserFilter { Id = user.Id }, cancellationToken);
+                return null;
+            }
+
+            return user;
+        }
     }
 }

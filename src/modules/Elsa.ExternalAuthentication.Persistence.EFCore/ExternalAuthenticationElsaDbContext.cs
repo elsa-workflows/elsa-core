@@ -39,6 +39,11 @@ public class ExternalAuthenticationElsaDbContext : ElsaDbContextBase
     public DbSet<PersistedExternalAuthenticationSession> ExternalAuthenticationSessions { get; set; } = null!;
 
     /// <summary>
+    /// The refresh tokens currently issued for external authentication sessions.
+    /// </summary>
+    public DbSet<PersistedExternalAuthenticationRefreshToken> ExternalAuthenticationRefreshTokens { get; set; } = null!;
+
+    /// <summary>
     /// The latest connection test observations.
     /// </summary>
     public DbSet<PersistedConnectionObservation> ExternalAuthenticationConnectionObservations { get; set; } = null!;
@@ -62,6 +67,7 @@ public class ExternalAuthenticationElsaDbContext : ElsaDbContextBase
         modelBuilder.ApplyConfiguration<PersistedBrokerTransaction>(configurations);
         modelBuilder.ApplyConfiguration<PersistedAuthorizationGrant>(configurations);
         modelBuilder.ApplyConfiguration<PersistedExternalAuthenticationSession>(configurations);
+        modelBuilder.ApplyConfiguration<PersistedExternalAuthenticationRefreshToken>(configurations);
         modelBuilder.ApplyConfiguration<PersistedConnectionObservation>(configurations);
         modelBuilder.ApplyConfiguration<PersistedPreviewResult>(configurations);
         modelBuilder.ApplyConfiguration<ExternalAuthenticationRegistryVersion>(configurations);

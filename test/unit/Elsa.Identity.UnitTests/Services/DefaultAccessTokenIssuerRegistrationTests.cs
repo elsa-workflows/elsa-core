@@ -30,6 +30,26 @@ public class DefaultAccessTokenIssuerRegistrationTests
         AssertAccessTokenIssuerResolves(services);
     }
 
+    [Fact]
+    public void ModuleFeatureRegistersUserDeletionCoordinator()
+    {
+        var services = CreateServices();
+        var module = Substitute.For<IModule>();
+        module.Services.Returns(services);
+        new ModuleIdentityFeature(module).Apply();
+
+        AssertUserDeletionCoordinatorResolves(services);
+    }
+
+    [Fact]
+    public void ShellFeatureRegistersUserDeletionCoordinator()
+    {
+        var services = CreateServices();
+        new ShellIdentityFeature().ConfigureServices(services);
+
+        AssertUserDeletionCoordinatorResolves(services);
+    }
+
     private static ServiceCollection CreateServices()
     {
         return new ServiceCollection();
@@ -41,5 +61,12 @@ public class DefaultAccessTokenIssuerRegistrationTests
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
         Assert.IsType<DefaultAccessTokenIssuer>(scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>());
+    }
+
+    private static void AssertUserDeletionCoordinatorResolves(IServiceCollection services)
+    {
+        using var serviceProvider = services.BuildServiceProvider();
+        using var scope = serviceProvider.CreateScope();
+        Assert.IsType<UserDeletionCoordinator>(scope.ServiceProvider.GetRequiredService<IUserDeletionCoordinator>());
     }
 }

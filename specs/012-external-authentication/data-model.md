@@ -143,7 +143,7 @@ The existing `User` entity changes:
 
 Credential-less users cannot authenticate through legacy or broker-local password validation. Existing password-backed rows require no data change.
 
-JIT provisioning generates and atomically reserves a globally unique internal `User.Name`, leaves password fields null, creates the External Identity Link, and assigns authorized default/matcher roles in the same transaction.
+JIT provisioning generates a globally unique internal `User.Name`, leaves password fields null, and assigns authorized default/matcher roles in the User-store write. The link store independently arbitrates the external identity tuple; a losing or failed link writer removes only the credential-less User it created before returning or propagating the failure.
 
 ## AuthenticationClient
 
@@ -223,12 +223,12 @@ EF persistence uses the same normalized `ExpiresAtUtcTicks` companion for the at
 | `LastRefreshedAt` | DateTimeOffset | Rotation time |
 | `ExpiresAt` | DateTimeOffset | Maximum session age; default eight hours |
 | `RefreshExpiresAt` | DateTimeOffset | Inactivity bound |
-| `CurrentRefreshTokenHash` | string | Keyed hash of current opaque token |
+| `CurrentRefreshTokenHash` | string? | Keyed hash of current opaque token; absent until the first refresh token is issued |
 | `RefreshGeneration` | long | Compare-and-swap rotation counter |
 | `RevokedAt` | DateTimeOffset? | Explicit or reuse-detection revocation |
 | `RevocationReason` | string? | Safe category |
 
-Refresh atomically verifies current token hash and generation, rotates the token, and reevaluates current Elsa-owned role grants. It does not re-query upstream claims or mutate user roles. Reuse of a superseded token revokes the session.
+EF persistence stores the optional current hash in a one-to-one `ExternalAuthenticationSessionRefreshTokens` row so the unissued state requires no sentinel value. Refresh atomically verifies current token hash and generation, rotates the token, and reevaluates current Elsa-owned role grants. It does not re-query upstream claims or mutate user roles. Reuse of a superseded token revokes the session.
 
 ## ConnectionObservation
 

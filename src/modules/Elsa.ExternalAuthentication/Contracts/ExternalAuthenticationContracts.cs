@@ -137,7 +137,7 @@ public interface IExternalIdentityProvisioner
     ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Atomically creates the requested link and, when requested, its credential-less user, or returns the winner of a concurrent operation.
+    /// Creates the requested link and, when requested, its credential-less user; compensates a losing writer; or returns the winner of a concurrent operation.
     /// </summary>
     ValueTask<ProvisioningResult> CreateLinkOrGetExistingAsync(ProvisioningRequest request, CancellationToken cancellationToken = default);
 

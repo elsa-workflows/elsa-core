@@ -9,6 +9,7 @@ internal sealed class Configurations :
     IEntityTypeConfiguration<PersistedBrokerTransaction>,
     IEntityTypeConfiguration<PersistedAuthorizationGrant>,
     IEntityTypeConfiguration<PersistedExternalAuthenticationSession>,
+    IEntityTypeConfiguration<PersistedExternalAuthenticationRefreshToken>,
     IEntityTypeConfiguration<PersistedConnectionObservation>,
     IEntityTypeConfiguration<PersistedPreviewResult>,
     IEntityTypeConfiguration<ExternalAuthenticationRegistryVersion>
@@ -50,9 +51,16 @@ internal sealed class Configurations :
     {
         builder.ToTable("ExternalAuthenticationSessions");
         builder.HasKey(x => x.Id);
-        builder.HasIndex(x => x.CurrentRefreshTokenHash).IsUnique().HasDatabaseName("IX_ExternalAuthenticationSession_RefreshTokenHash");
         builder.HasIndex(x => new { x.TenantId, x.UserId }).HasDatabaseName("IX_ExternalAuthenticationSession_TenantId_UserId");
         builder.HasIndex(x => x.ConnectionKey).HasDatabaseName("IX_ExternalAuthenticationSession_ConnectionKey");
+    }
+
+    public void Configure(EntityTypeBuilder<PersistedExternalAuthenticationRefreshToken> builder)
+    {
+        builder.ToTable("ExternalAuthenticationSessionRefreshTokens");
+        builder.HasKey(x => x.SessionId);
+        builder.HasIndex(x => x.Hash).IsUnique().HasDatabaseName("IX_ExternalAuthenticationSessionRefreshToken_Hash");
+        builder.HasOne(x => x.Session).WithOne(x => x.RefreshToken).HasForeignKey<PersistedExternalAuthenticationRefreshToken>(x => x.SessionId).OnDelete(DeleteBehavior.Cascade);
     }
 
     public void Configure(EntityTypeBuilder<PersistedConnectionObservation> builder)

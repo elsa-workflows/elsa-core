@@ -150,7 +150,6 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
                     LastRefreshedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     RefreshExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    CurrentRefreshTokenHash = table.Column<string>(type: "text", nullable: false),
                     RefreshGeneration = table.Column<long>(type: "bigint", nullable: false),
                     RevokedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     RevocationReason = table.Column<string>(type: "text", nullable: true),
@@ -159,6 +158,20 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ExternalAuthenticationSessions", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ExternalAuthenticationSessionRefreshTokens",
+                schema: _schema.Schema,
+                columns: table => new
+                {
+                    SessionId = table.Column<string>(type: "text", nullable: false),
+                    Hash = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ExternalAuthenticationSessionRefreshTokens", x => x.SessionId);
+                    table.ForeignKey("FK_ExternalAuthenticationSessionRefreshTokens_ExternalAuthenticationSessions_SessionId", x => x.SessionId, principalSchema: _schema.Schema, principalTable: "ExternalAuthenticationSessions", principalColumn: "Id", onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -239,10 +252,10 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
                 column: "ConnectionKey");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ExternalAuthenticationSession_RefreshTokenHash",
+                name: "IX_ExternalAuthenticationSessionRefreshToken_Hash",
                 schema: _schema.Schema,
-                table: "ExternalAuthenticationSessions",
-                column: "CurrentRefreshTokenHash",
+                table: "ExternalAuthenticationSessionRefreshTokens",
+                column: "Hash",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -299,6 +312,10 @@ namespace Elsa.ExternalAuthentication.Persistence.EFCore.PostgreSql.Migrations.E
 
             migrationBuilder.DropTable(
                 name: "ExternalAuthenticationRegistryVersions",
+                schema: _schema.Schema);
+
+            migrationBuilder.DropTable(
+                name: "ExternalAuthenticationSessionRefreshTokens",
                 schema: _schema.Schema);
 
             migrationBuilder.DropTable(

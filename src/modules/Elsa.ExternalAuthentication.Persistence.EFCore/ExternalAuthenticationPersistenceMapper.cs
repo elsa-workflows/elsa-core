@@ -147,14 +147,15 @@ internal static class ExternalAuthenticationPersistenceMapper
         LastRefreshedAt = session.LastRefreshedAt,
         ExpiresAt = session.ExpiresAt,
         RefreshExpiresAt = session.RefreshExpiresAt,
-        CurrentRefreshTokenHash = session.CurrentRefreshTokenHash,
         RefreshGeneration = session.RefreshGeneration,
         RevokedAt = session.RevokedAt,
         RevocationReason = session.RevocationReason
         ,ProtectedUpstreamLogoutHint = session.ProtectedUpstreamLogoutHint
     };
 
-    public static ExternalAuthenticationSession ToModel(this PersistedExternalAuthenticationSession session) => new()
+    public static ExternalAuthenticationSession ToModel(this PersistedExternalAuthenticationSession session) => session.ToModel(session.RefreshToken?.Hash);
+
+    public static ExternalAuthenticationSession ToModel(this PersistedExternalAuthenticationSession session, string? currentRefreshTokenHash) => new()
     {
         Id = session.Id,
         AuthenticationClientId = session.AuthenticationClientId,
@@ -170,7 +171,7 @@ internal static class ExternalAuthenticationPersistenceMapper
         LastRefreshedAt = session.LastRefreshedAt,
         ExpiresAt = session.ExpiresAt,
         RefreshExpiresAt = session.RefreshExpiresAt,
-        CurrentRefreshTokenHash = session.CurrentRefreshTokenHash,
+        CurrentRefreshTokenHash = currentRefreshTokenHash,
         RefreshGeneration = session.RefreshGeneration,
         RevokedAt = session.RevokedAt,
         RevocationReason = session.RevocationReason

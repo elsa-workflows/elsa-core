@@ -23,7 +23,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
     IExternalAuthenticationHandleHasher handleHasher,
     InMemoryExternalIdentityProvisionerState state) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore
 {
-    private const int MaximumUserNameAttempts = 10;
+    private readonly ExternalIdentityUserProvisioningService _userProvisioningService = new(userStore, userProvider, roleProvider, identityGenerator);
 
     public async ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default)
     {
@@ -54,7 +54,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
             if (state.Links.TryGetValue(key, out var existingLink))
                 return new ProvisioningResult(existingLink.UserId, existingLink, false);
 
-            var (user, wasCreated) = await ResolveUserAsync(request, cancellationToken);
+            var (user, wasCreated) = await _userProvisioningService.ResolveAsync(request, state.ReservedUserNames.Add, cancellationToken);
             var link = new ExternalIdentityLink(
                 identityGenerator.GenerateId(),
                 request.TenantId,
@@ -66,6 +66,11 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 clock.UtcNow,
                 null);
             state.Links[key] = link;
+            if (!await _userProvisioningService.ExistsAsync(user, wasCreated, cancellationToken))
+            {
+                state.Links.Remove(key);
+                throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being created.");
+            }
             return new ProvisioningResult(user.Id, link, wasCreated, true);
         }
         finally
@@ -94,9 +99,9 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 !string.Equals(conflictingLink.Id, oldEntry.Value.Id, StringComparison.Ordinal))
                 return new ExternalIdentityLinkReplaceResult.Conflict(oldEntry.Value, conflictingLink);
 
-            var (user, _) = await ResolveUserAsync(
+            var (user, _) = await _userProvisioningService.ResolveAsync(
                 new ProvisioningRequest(request.TenantId, normalizedConnectionKey, request.Identity, null, request.UserId),
-                cancellationToken);
+                cancellationToken: cancellationToken);
             var replacement = new ExternalIdentityLink(
                 identityGenerator.GenerateId(),
                 request.TenantId,
@@ -109,6 +114,12 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 null);
             state.Links.Remove(oldEntry.Key);
             state.Links[replacementKey] = replacement;
+            if (!await _userProvisioningService.ExistsAsync(user, false, cancellationToken))
+            {
+                state.Links.Remove(replacementKey);
+                state.Links[oldEntry.Key] = oldEntry.Value;
+                throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being replaced.");
+            }
             return new ExternalIdentityLinkReplaceResult.Success(oldEntry.Value, replacement);
         }
         finally
@@ -154,60 +165,6 @@ public sealed class InMemoryExternalIdentityProvisioner(
         {
             state.Mutex.Release();
         }
-    }
-
-    private async ValueTask<(User User, bool WasCreated)> ResolveUserAsync(ProvisioningRequest request, CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrWhiteSpace(request.ExistingUserId))
-        {
-            var user = await userProvider.FindAsync(new UserFilter { Id = request.ExistingUserId }, cancellationToken)
-                ?? throw new InvalidOperationException("The requested Elsa user does not exist.");
-            if (!string.Equals(user.TenantId, request.TenantId, StringComparison.Ordinal))
-                throw new InvalidOperationException("The requested Elsa user is outside the target tenant.");
-
-            return (user, false);
-        }
-
-        var proposal = request.Proposal ?? throw new InvalidOperationException("A user creation proposal is required for an unlinked external identity.");
-        var roleIds = await ResolveRoleIdsAsync(proposal.DefaultRoleIds, cancellationToken);
-        var userNamePrefix = NormalizeUserNamePrefix(proposal.UserNamePrefix);
-        for (var attempt = 0; attempt < MaximumUserNameAttempts; attempt++)
-        {
-            var userName = $"{userNamePrefix}-{identityGenerator.GenerateId()}";
-            if (!state.ReservedUserNames.Add(userName) || await userProvider.FindAsync(new UserFilter { Name = userName }, cancellationToken) is not null)
-                continue;
-
-            var user = new User
-            {
-                Id = identityGenerator.GenerateId(),
-                Name = userName,
-                TenantId = request.TenantId,
-                HashedPassword = null,
-                HashedPasswordSalt = null,
-                Roles = roleIds.ToList()
-            };
-            await userStore.SaveAsync(user, cancellationToken);
-            return (user, true);
-        }
-
-        throw new InvalidOperationException("A unique Elsa user name could not be reserved for the external identity.");
-    }
-
-    private static string NormalizeUserNamePrefix(string prefix)
-    {
-        var normalized = new string((prefix ?? string.Empty).Trim().Where(character => char.IsAsciiLetterOrDigit(character) || character is '-' or '_').ToArray());
-        return string.IsNullOrEmpty(normalized) ? "external" : normalized;
-    }
-
-    private async ValueTask<IReadOnlyCollection<string>> ResolveRoleIdsAsync(IReadOnlyCollection<string>? roleIds, CancellationToken cancellationToken)
-    {
-        var requested = (roleIds ?? []).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.Ordinal).ToArray();
-        if (requested.Length == 0)
-            return [];
-        var found = (await roleProvider.FindByIdsAsync(requested, cancellationToken)).Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
-        if (!found.SetEquals(requested))
-            throw new InvalidOperationException("A configured default role no longer exists.");
-        return requested;
     }
 
 }

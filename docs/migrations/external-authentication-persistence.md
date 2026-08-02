@@ -25,12 +25,13 @@ Reference the matching provider package — `Elsa.ExternalAuthentication.Persist
 
 ## Schema changes
 
-The tables are unchanged in name, columns, and indexes, and still default to the `Elsa` schema — but they now belong to `ExternalAuthenticationElsaDbContext` with its own migration history. Since no release ever shipped the old migration, apply the new `Initial` migration directly; there is no baseline or history-rewriting step.
+The persistence objects still default to the `Elsa` schema, but now belong to `ExternalAuthenticationElsaDbContext` with its own migration history. Since no release ever shipped the old migration, apply the new `Initial` migration directly; there is no baseline or history-rewriting step.
 
-Three deliberate differences from the pre-release schema:
+Deliberate differences from the pre-release schema:
 
-- **`FK_ExternalIdentityLinks_Users_UserId` is gone**, along with the index EF generated for it. The two contexts can now target different databases, so a cross-aggregate foreign key is no longer expressible. `ExternalIdentityLinks.UserId` is a plain column covered by `IX_ExternalIdentityLink_TenantId_UserId`. **Consequence:** deleting a user with links is no longer blocked at the database level and leaves the links dangling. (The old constraint surfaced as an unhandled `DbUpdateException` → HTTP 500 from the user-delete endpoint, so it was never a usable guard.) A user-deletion dependency contributor, modelled on the existing `ExternalAuthenticationRoleDeletionDependencyContributor`, is the intended fix.
+- **`FK_ExternalIdentityLinks_Users_UserId` is gone**, along with the index EF generated for it. The two contexts can now target different databases, so a cross-aggregate foreign key is no longer expressible. `ExternalIdentityLinks.UserId` is a plain column covered by `IX_ExternalIdentityLink_TenantId_UserId`. User deletion is instead coordinated through `IUserDeletionDependencyContributor`; External Authentication blocks deletion while links remain and returns a conflict instead of relying on an unhandled database exception.
 - **The `ExternalAuthenticationClients` table is dropped.** It had no readers or writers; authentication clients come from `ExternalAuthenticationOptions`.
+- **An unissued refresh token is represented by no row.** `ExternalAuthenticationSessions.CurrentRefreshTokenHash` is replaced by the optional one-to-one `ExternalAuthenticationSessionRefreshTokens` table. Its non-null `Hash` remains uniquely indexed, so callback completion no longer has to persist a synthetic `unissued:*` value before the first token is minted.
 - **Oracle JSON and protected-payload columns are now `NCLOB`/`BLOB`.** They were previously inferred as `NVARCHAR2(2000)`/`RAW(2000)`, which a real OpenID Connect discovery document or a data-protected broker transaction overflows at runtime. Indexed columns are unchanged, since Oracle cannot index a LOB.
 
 The regenerated migrations also take `IElsaDbContextSchema` and honour a configured schema name. The pre-release migrations hardcoded `schema: "Elsa"`, so a non-default `SchemaName` did not work.
@@ -40,7 +41,11 @@ The regenerated migrations also take `IElsaDbContextSchema` and honour a configu
 `EFCoreExternalIdentityProvisioner` now resolves users through `IUserProvider` and writes them through `IUserStore`, matching what `InMemoryExternalIdentityProvisioner` already did. Two effects:
 
 - JIT provisioning works with any user directory, not only EF-backed Identity. It previously queried `IdentityElsaDbContext.Users` directly and failed for configuration-defined users.
-- User creation and link creation are no longer in one database transaction. The unique `IX_ExternalIdentityLink_Identity` index still guarantees at most one link per `(TenantId, ConnectionKey, Issuer, SubjectHash)`. A writer that loses that race converges on the winning link and deletes the user it had just created; cleanup failures are logged and never fail the sign-in. A process crash between the two writes can strand a credential-less user, which cannot authenticate by any path.
+- User creation and link creation are no longer represented as one database transaction. Provider-independent user resolution, role validation, generated-name collision handling, and compensation are shared by every persistence implementation. The unique `IX_ExternalIdentityLink_Identity` index guarantees at most one link per `(TenantId, ConnectionKey, Issuer, SubjectHash)`. A writer that loses the race or observes a failed link write removes the credential-less user it created; an observed cleanup failure fails the operation and issues no credentials. User deletion and link publication perform complementary post-write checks so either concurrent ordering removes the link or restores the User instead of leaving a dangling reference. Abrupt process termination between stores can leave a credential-less user, but never a usable authentication path or a second identity link.
+
+## API compatibility
+
+The unused `GET /external-authentication/descriptors/runtime` endpoint and its generated-client `ExternalAuthenticationRuntimeDescriptor` contract were removed. The endpoint duplicated deployment configuration, had no runtime consumer, and had not shipped in a stable release. Clients should use the specific adapter, policy, grant-source, matcher, and permission descriptor endpoints.
 
 JIT provisioning remains meaningful only with `StoreBasedUserProvider`. With `ConfigurationBasedUserProvider` or `AdminUserProvider`, a created user is written to a store the provider never reads — pre-existing behaviour, unchanged here.
 
