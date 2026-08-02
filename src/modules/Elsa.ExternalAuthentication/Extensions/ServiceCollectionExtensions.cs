@@ -59,6 +59,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IIdentityProviderConnectionStore, InMemoryIdentityProviderConnectionStore>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IIdentityProviderConnectionSource, DatabaseIdentityProviderConnectionSource>());
         services.TryAddSingleton<IIdentityProviderConnectionRegistry, DefaultIdentityProviderConnectionRegistry>();
+        services.TryAddSingleton<IIdentityProviderConnectionValidityAssessor, IdentityProviderConnectionValidityAssessor>();
         services.TryAddSingleton<ExtensionDescriptorValidator>();
         services.TryAddSingleton<IExternalAuthenticationAdapterRegistry, DefaultExternalAuthenticationAdapterRegistry>();
         services.TryAddSingleton<IUnlinkedIdentityPolicyRegistry, DefaultUnlinkedIdentityPolicyRegistry>();

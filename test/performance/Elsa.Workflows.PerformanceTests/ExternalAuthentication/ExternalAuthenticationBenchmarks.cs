@@ -58,8 +58,10 @@ public class ExternalAuthenticationBenchmarks
             ]
         });
         var unused = new UnusedBrokerDependencies();
+        var validityAssessor = new AssumeValidConnectionValidityAssessor();
         _broker = new ExternalAuthenticationBroker(
             _discoveryRegistry,
+            validityAssessor,
             [adapter],
             [],
             _hasher,
@@ -137,6 +139,14 @@ public class ExternalAuthenticationBenchmarks
         public ValueTask<ExternalAuthenticationResult> AuthenticateCallbackAsync(ExternalCallbackContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public ValueTask<ConnectionTestResult> TestAsync(ConnectionTestContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    }
+
+    private sealed class AssumeValidConnectionValidityAssessor : IIdentityProviderConnectionValidityAssessor
+    {
+        public ValueTask<EffectiveIdentityProviderConnection> AssessAsync(
+            EffectiveIdentityProviderConnection connection,
+            CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(connection with { Validity = ConnectionValidity.Valid });
     }
 
     private sealed class UnusedBrokerDependencies :

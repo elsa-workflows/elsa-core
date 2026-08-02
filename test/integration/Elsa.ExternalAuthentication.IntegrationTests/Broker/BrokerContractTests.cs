@@ -35,6 +35,42 @@ public class BrokerContractTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => broker.DiscoverAsync("tenant-b", "unknown").AsTask());
     }
+
+    [Fact]
+    public async Task DiscoveryDoesNotAdvertiseAnInvalidConnection()
+    {
+        var broker = BrokerSecurityTests.CreateBroker(
+            new BrokerSecurityTests.RecordingAdapter(),
+            connectionValidity: ConnectionValidity.Unknown,
+            assessedValidity: ConnectionValidity.Invalid,
+            includeLoginMethod: true);
+
+        var methods = await broker.DiscoverAsync("tenant-a", "studio");
+
+        Assert.DoesNotContain(methods, method => method.Id == "connection-a");
+    }
+
+    [Fact]
+    public async Task InitiationRejectsAConnectionThatFailsRuntimeValidityAssessment()
+    {
+        var adapter = new BrokerSecurityTests.RecordingAdapter();
+        var broker = BrokerSecurityTests.CreateBroker(
+            adapter,
+            connectionValidity: ConnectionValidity.Unknown,
+            assessedValidity: ConnectionValidity.Invalid);
+
+        var result = await broker.InitiateExternalAsync(new BrokerAuthorizationRequest(
+            "studio",
+            new Uri("https://studio.example/authentication/external/callback"),
+            "code",
+            "challenge",
+            "S256",
+            "/workflows",
+            "contoso"), "tenant-a");
+
+        Assert.Equal("method_unavailable", result.Error?.Error);
+        Assert.Null(adapter.Connection);
+    }
 }
 
 public class BrokerDiscoveryEndpointContractTests : IAsyncLifetime

@@ -46,9 +46,13 @@ public class PreviewEndpointContractTests : IAsyncLifetime
         var settingsMigrations = Substitute.For<IAdapterSettingsMigrationService>();
         settingsMigrations.MigrateAsync(adapter.Type, connection.AdapterSettingsVersion, Arg.Any<JsonElement>(), Arg.Any<CancellationToken>())
             .Returns(ValueTask.FromResult(new AdapterSettingsMigrationResult(connection.AdapterSettingsVersion, connection.AdapterSettings, false)));
+        var validityAssessor = Substitute.For<IIdentityProviderConnectionValidityAssessor>();
+        validityAssessor.AssessAsync(Arg.Any<EffectiveIdentityProviderConnection>(), Arg.Any<CancellationToken>())
+            .Returns(call => ValueTask.FromResult(call.Arg<EffectiveIdentityProviderConnection>()));
         var management = new IdentityProviderConnectionManagementService(
             null!,
             connectionRegistry,
+            validityAssessor,
             null!,
             adapters,
             settingsMigrations,

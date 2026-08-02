@@ -79,6 +79,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         builder.Services.AddSingleton<IExternalAuthenticationAdapterRegistry>(new TestAdapterRegistry(_adapter));
         _settingsMigrations = new TestAdapterSettingsMigrationService();
         builder.Services.AddSingleton<IAdapterSettingsMigrationService>(_settingsMigrations);
+        builder.Services.AddSingleton<IIdentityProviderConnectionValidityAssessor, IdentityProviderConnectionValidityAssessor>();
         builder.Services.AddSingleton<IUnlinkedIdentityPolicyRegistry>(new TestUnlinkedIdentityPolicyRegistry());
         builder.Services.AddSingleton<IExternalUserMatcherRegistry>(new TestExternalUserMatcherRegistry("allowed-matcher", "disallowed-matcher"));
         builder.Services.AddScoped(_ => Substitute.For<IPermissionGrantSourceRegistry>());

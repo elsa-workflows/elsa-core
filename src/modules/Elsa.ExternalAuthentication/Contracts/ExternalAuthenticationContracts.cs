@@ -72,6 +72,13 @@ public interface IIdentityProviderConnectionRegistry
     ValueTask<EffectiveIdentityProviderConnection?> FindByIdAsync(string targetTenantId, string connectionId, CancellationToken cancellationToken = default);
 }
 
+public interface IIdentityProviderConnectionValidityAssessor
+{
+    ValueTask<EffectiveIdentityProviderConnection> AssessAsync(
+        EffectiveIdentityProviderConnection connection,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IIdentityProviderConnectionStore
 {
     ValueTask<Page<IdentityProviderConnection>> FindAsync(ConnectionFilter filter, CancellationToken cancellationToken = default);

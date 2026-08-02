@@ -18,6 +18,7 @@ namespace Elsa.ExternalAuthentication.Services;
 
 public sealed class ExternalAuthenticationBroker(
     IIdentityProviderConnectionRegistry connectionRegistry,
+    IIdentityProviderConnectionValidityAssessor validityAssessor,
     IEnumerable<IExternalAuthenticationAdapter> adapters,
     IEnumerable<ISecretBindingResolver> secretBindingResolvers,
     IExternalAuthenticationHandleHasher handleHasher,
@@ -67,7 +68,16 @@ public sealed class ExternalAuthenticationBroker(
     public async ValueTask<IReadOnlyCollection<LoginMethod>> DiscoverAsync(string targetTenantId, string clientId, CancellationToken cancellationToken = default)
     {
         EnsureClient(clientId);
-        var externalMethods = (await connectionRegistry.GetAsync(targetTenantId, cancellationToken)).LoginMethods;
+        var registry = await connectionRegistry.GetAsync(targetTenantId, cancellationToken);
+        var advertisedIds = registry.LoginMethods.Select(method => method.Id).ToHashSet(StringComparer.Ordinal);
+        var assessments = await Task.WhenAll(registry.Connections
+            .Where(connection => advertisedIds.Contains(connection.Connection.Id))
+            .Select(connection => validityAssessor.AssessAsync(connection, cancellationToken).AsTask()));
+        var availableIds = assessments
+            .Where(connection => connection.Validity == ConnectionValidity.Valid)
+            .Select(connection => connection.Connection.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        var externalMethods = registry.LoginMethods.Where(method => availableIds.Contains(method.Id)).ToArray();
         var localOptions = options.Value.LocalLogin;
         if (!localOptions.IsEnabled)
             return externalMethods;
@@ -91,7 +101,9 @@ public sealed class ExternalAuthenticationBroker(
             return BrokerInitiationResult.Fail(error);
         }
         var connection = await connectionRegistry.FindByKeyAsync(targetTenantId, request.ConnectionKey, cancellationToken);
-        if (connection is null || connection.IsShadowed || !connection.Connection.IsEnabled || connection.Connection.ArchivedAt != null)
+        if (connection is not null)
+            connection = await validityAssessor.AssessAsync(connection, cancellationToken);
+        if (connection is null || connection.Validity != ConnectionValidity.Valid || connection.IsShadowed || !connection.Connection.IsEnabled || connection.Connection.ArchivedAt != null)
         {
             var error = BrokerErrorFactory.Create(BrokerErrorCategory.MethodUnavailable);
             await RecordOutcomeAsync("external", "initiate", SecurityEventOutcome.Rejected, BrokerErrorCategory.MethodUnavailable, targetTenantId, null, null, cancellationToken);
