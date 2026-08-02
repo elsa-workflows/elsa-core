@@ -19,6 +19,10 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
     // Tenant-agnostic activity descriptors (built-in activities, manually registered, etc.)
     private readonly TenantRegistryData _agnosticRegistry = new();
 
+    // Tracks tenant-agnostic providers initialized for this registry instance.
+    private readonly ConcurrentDictionary<Type, byte> _initializedProviders = new();
+    private readonly ConcurrentDictionary<Type, SemaphoreSlim> _providerInitializationLocks = new();
+
     /// <inheritdoc />
     public void Add(Type providerType, ActivityDescriptor descriptor)
     {
@@ -219,6 +223,36 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         }
     }
 
+    /// <inheritdoc />
+    public async Task EnsureDescriptorsAsync(IActivityProvider activityProvider, CancellationToken cancellationToken = default)
+    {
+        if (activityProvider is not ITenantAgnosticActivityProvider)
+        {
+            await RefreshDescriptorsAsync(activityProvider, cancellationToken);
+            return;
+        }
+
+        var providerType = activityProvider.GetType();
+        if (_initializedProviders.ContainsKey(providerType))
+            return;
+
+        var initializationLock = _providerInitializationLocks.GetOrAdd(providerType, _ => new(1, 1));
+        await initializationLock.WaitAsync(cancellationToken);
+
+        try
+        {
+            if (_initializedProviders.ContainsKey(providerType))
+                return;
+
+            await RefreshDescriptorsAsync(activityProvider, cancellationToken);
+            _initializedProviders.TryAdd(providerType, 0);
+        }
+        finally
+        {
+            initializationLock.Release();
+        }
+    }
+
     private void Add(ActivityDescriptor? descriptor, TenantRegistryData registry, ICollection<ActivityDescriptor> providerDescriptors)
     {
         if (descriptor is null)
@@ -256,11 +290,13 @@ public class ActivityRegistry(IActivityDescriber activityDescriber, IEnumerable<
         _agnosticRegistry.ActivityDescriptors.Clear();
         _agnosticRegistry.LatestActivityDescriptors.Clear();
         _agnosticRegistry.ProvidedActivityDescriptors.Clear();
+        _initializedProviders.Clear();
     }
 
     /// <inheritdoc />
     public void ClearProvider(Type providerType)
     {
+        _initializedProviders.TryRemove(providerType, out _);
         var currentTenantId = tenantAccessor.TenantId;
 
         // Clear from current tenant's registry
