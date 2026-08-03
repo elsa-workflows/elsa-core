@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CShells.Abstractions" VersionOverride="0.0.21" />
+      <PackageReference Include="CShells.Abstractions" />
     </ItemGroup>
 
     <ItemGroup>
