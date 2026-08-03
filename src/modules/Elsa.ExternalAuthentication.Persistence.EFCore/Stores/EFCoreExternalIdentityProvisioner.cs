@@ -30,7 +30,7 @@ public sealed class EFCoreExternalIdentityProvisioner(
     IExternalAuthenticationHandleHasher handleHasher,
     IIdentityGenerator identityGenerator,
     ISystemClock clock,
-    ILogger<EFCoreExternalIdentityProvisioner> logger) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore
+    ILogger<EFCoreExternalIdentityProvisioner> logger) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore, IExternalIdentitySignInTracker
 {
     private readonly ExternalIdentityUserProvisioningService _userProvisioningService = new(userStore, userProvider, roleProvider, identityGenerator);
 
@@ -99,6 +99,41 @@ public sealed class EFCoreExternalIdentityProvisioner(
         // Once the link is durable, cancellation must not interrupt the complementary user check and cleanup.
         await EnsureLinkedUserStillExistsAsync(link, user, wasCreated, CancellationToken.None);
         return new ProvisioningResult(user.Id, ToModel(link), wasCreated, true);
+    }
+
+    public async ValueTask<bool> RecordSuccessfulSignInAsync(
+        string tenantId,
+        string connectionKey,
+        ExternalIdentity identity,
+        string userId,
+        DateTimeOffset signedInAt,
+        CancellationToken cancellationToken = default)
+    {
+        var subjectHash = handleHasher.Hash(identity.Subject);
+        var normalizedConnectionKey = ConnectionRevisionCalculator.NormalizeKey(connectionKey);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var linkQuery = dbContext.ExternalIdentityLinks
+            .Where(x =>
+                x.TenantId == tenantId &&
+                x.ConnectionKey == normalizedConnectionKey &&
+                x.Issuer == identity.Issuer &&
+                x.SubjectHash == subjectHash &&
+                x.UserId == userId);
+        while (true)
+        {
+            var link = await linkQuery.AsNoTracking().SingleOrDefaultAsync(cancellationToken);
+            if (link is null)
+                return false;
+            if (link.LastSignedInAt >= signedInAt)
+                return true;
+
+            var previousSignedInAt = link.LastSignedInAt;
+            var updated = await linkQuery
+                .Where(x => x.LastSignedInAt == previousSignedInAt)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.LastSignedInAt, (DateTimeOffset?)signedInAt), cancellationToken);
+            if (updated > 0)
+                return true;
+        }
     }
 
     public async ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default)

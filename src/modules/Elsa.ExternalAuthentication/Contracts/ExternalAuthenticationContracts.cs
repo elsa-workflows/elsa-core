@@ -136,6 +136,22 @@ public interface IExternalIdentityResolver
     ValueTask<ExternalIdentityResolution> ResolveAsync(ExternalIdentityResolutionContext context, CancellationToken cancellationToken = default);
 }
 
+/// <summary>Optionally records completed sign-ins for an external identity resolver or provisioner.</summary>
+public interface IExternalIdentitySignInTracker
+{
+    /// <summary>
+    /// Records a completed sign-in for the tenant-scoped external identity link without changing its other metadata.
+    /// Concurrent calls must preserve the latest timestamp.
+    /// </summary>
+    ValueTask<bool> RecordSuccessfulSignInAsync(
+        string tenantId,
+        string connectionKey,
+        ExternalIdentity identity,
+        string userId,
+        DateTimeOffset signedInAt,
+        CancellationToken cancellationToken = default);
+}
+
 public interface IExternalIdentityProvisioner
 {
     /// <summary>

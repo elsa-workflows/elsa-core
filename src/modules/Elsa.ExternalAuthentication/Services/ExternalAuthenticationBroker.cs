@@ -236,7 +236,20 @@ public sealed class ExternalAuthenticationBroker(
                     ExternalAuthenticationSecurityNotifier.Context(null, transaction.TenantId, connection.Connection.Id, resolution.UserId, SecurityEventOutcome.Succeeded, "External sign-in completed."),
                     session.Id,
                     connection.Connection.AdapterType), cancellationToken);
-                return await CallbackOutcomeAsync(BrokerCallbackResult.Redirect(AppendCallbackParameters(transaction.CallbackUri, code, transaction.ClientState)), "external", "callback", transaction.TenantId, connection.Connection.Id, cancellationToken);
+                var callbackResult = await CallbackOutcomeAsync(BrokerCallbackResult.Redirect(AppendCallbackParameters(transaction.CallbackUri, code, transaction.ClientState)), "external", "callback", transaction.TenantId, connection.Connection.Id, cancellationToken);
+                if (identityResolver is IExternalIdentitySignInTracker signInTracker)
+                {
+                    var signInRecorded = await signInTracker.RecordSuccessfulSignInAsync(
+                        transaction.TenantId,
+                        connection.Connection.Key,
+                        authentication.Identity,
+                        resolution.UserId,
+                        clock.UtcNow,
+                        cancellationToken);
+                    if (!signInRecorded)
+                        throw new InvalidOperationException("The external identity link changed while sign-in was completing.");
+                }
+                return callbackResult;
             }
             finally
             {

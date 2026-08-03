@@ -3,11 +3,83 @@
 .DS_Store
 .agents
 .agents/skills
+.agents/skills/elsa-release
+.agents/skills/elsa-release/SKILL.md
+.agents/skills/elsa-release/agents
+.agents/skills/elsa-release/scripts
 .agents/skills/elsa-release-announcements
 .agents/skills/elsa-release-announcements/SKILL.md
 .agents/skills/elsa-release-announcements/agents
 .agents/skills/elsa-release-announcements/scripts
+.agents/skills/elsa-roadmap-refresh
+.agents/skills/elsa-roadmap-refresh/SKILL.md
+.agents/skills/elsa-roadmap-refresh/agents
+.agents/skills/greploop
+.agents/skills/greploop/LICENSE
+.agents/skills/greploop/SKILL.md
+.agents/skills/greploop/references
+.agents/skills/speckit-analyze
+.agents/skills/speckit-analyze/SKILL.md
+.agents/skills/speckit-checklist
+.agents/skills/speckit-checklist/SKILL.md
+.agents/skills/speckit-clarify
+.agents/skills/speckit-clarify/SKILL.md
+.agents/skills/speckit-constitution
+.agents/skills/speckit-constitution/SKILL.md
+.agents/skills/speckit-git-commit
+.agents/skills/speckit-git-commit/SKILL.md
+.agents/skills/speckit-git-feature
+.agents/skills/speckit-git-feature/SKILL.md
+.agents/skills/speckit-git-initialize
+.agents/skills/speckit-git-initialize/SKILL.md
+.agents/skills/speckit-git-remote
+.agents/skills/speckit-git-remote/SKILL.md
+.agents/skills/speckit-git-validate
+.agents/skills/speckit-git-validate/SKILL.md
+.agents/skills/speckit-implement
+.agents/skills/speckit-implement/SKILL.md
+.agents/skills/speckit-plan
+.agents/skills/speckit-plan/SKILL.md
+.agents/skills/speckit-specify
+.agents/skills/speckit-specify/SKILL.md
+.agents/skills/speckit-tasks
+.agents/skills/speckit-tasks/SKILL.md
+.agents/skills/speckit-taskstoissues
+.agents/skills/speckit-taskstoissues/SKILL.md
 .claude
+.claude/skills
+.claude/skills/greploop
+.claude/skills/greploop/LICENSE
+.claude/skills/greploop/SKILL.md
+.claude/skills/greploop/references
+.claude/skills/speckit-analyze
+.claude/skills/speckit-analyze/SKILL.md
+.claude/skills/speckit-checklist
+.claude/skills/speckit-checklist/SKILL.md
+.claude/skills/speckit-clarify
+.claude/skills/speckit-clarify/SKILL.md
+.claude/skills/speckit-constitution
+.claude/skills/speckit-constitution/SKILL.md
+.claude/skills/speckit-git-commit
+.claude/skills/speckit-git-commit/SKILL.md
+.claude/skills/speckit-git-feature
+.claude/skills/speckit-git-feature/SKILL.md
+.claude/skills/speckit-git-initialize
+.claude/skills/speckit-git-initialize/SKILL.md
+.claude/skills/speckit-git-remote
+.claude/skills/speckit-git-remote/SKILL.md
+.claude/skills/speckit-git-validate
+.claude/skills/speckit-git-validate/SKILL.md
+.claude/skills/speckit-implement
+.claude/skills/speckit-implement/SKILL.md
+.claude/skills/speckit-plan
+.claude/skills/speckit-plan/SKILL.md
+.claude/skills/speckit-specify
+.claude/skills/speckit-specify/SKILL.md
+.claude/skills/speckit-tasks
+.claude/skills/speckit-tasks/SKILL.md
+.claude/skills/speckit-taskstoissues
+.claude/skills/speckit-taskstoissues/SKILL.md
 .claude/worktrees
 .config
 .config/dotnet-tools.json
@@ -27,6 +99,11 @@
 .github/agents/speckit.checklist.agent.md
 .github/agents/speckit.clarify.agent.md
 .github/agents/speckit.constitution.agent.md
+.github/agents/speckit.git.commit.agent.md
+.github/agents/speckit.git.feature.agent.md
+.github/agents/speckit.git.initialize.agent.md
+.github/agents/speckit.git.remote.agent.md
+.github/agents/speckit.git.validate.agent.md
 .github/agents/speckit.implement.agent.md
 .github/agents/speckit.plan.agent.md
 .github/agents/speckit.specify.agent.md
@@ -40,6 +117,11 @@
 .github/prompts/speckit.checklist.prompt.md
 .github/prompts/speckit.clarify.prompt.md
 .github/prompts/speckit.constitution.prompt.md
+.github/prompts/speckit.git.commit.prompt.md
+.github/prompts/speckit.git.feature.prompt.md
+.github/prompts/speckit.git.initialize.prompt.md
+.github/prompts/speckit.git.remote.prompt.md
+.github/prompts/speckit.git.validate.prompt.md
 .github/prompts/speckit.implement.prompt.md
 .github/prompts/speckit.plan.prompt.md
 .github/prompts/speckit.specify.prompt.md
@@ -52,9 +134,11 @@
 .github/workflows/claude.yml
 .github/workflows/copilot-setup-steps.yml
 .github/workflows/docker-ca.yml
+.github/workflows/greploop.yml
 .github/workflows/packages.yml
 .github/workflows/pr.yml
 .github/workflows/stale.yml
+.github/workflows/update-wiki.yml
 .gitignore
 .idea
 .idea/.idea.Elsa
@@ -68,13 +152,36 @@
 .idea/.idea.Elsa/.idea/db-forest-config.xml
 .idea/.idea.Elsa/.idea/encodings.xml
 .idea/.idea.Elsa/.idea/indexLayout.xml
+.idea/.idea.Elsa/.idea/jsonSchemas.xml
 .idea/.idea.Elsa/.idea/projectSettingsUpdater.xml
 .idea/.idea.Elsa/.idea/vcs.xml
 .idea/.idea.Elsa/.idea/workspace.xml
 .nuke
 .nuke/build.schema.json
 .nuke/parameters.json
+.nuke/temp
+.nuke/temp/build.2026-07-14_22-59-48.log
+.nuke/temp/build.log
 .specify
+.specify/extensions
+.specify/extensions/.registry
+.specify/extensions/git
+.specify/extensions/git/README.md
+.specify/extensions/git/commands
+.specify/extensions/git/config-template.yml
+.specify/extensions/git/extension.yml
+.specify/extensions/git/git-config.yml
+.specify/extensions/git/scripts
+.specify/extensions.yml
+.specify/feature.json
+.specify/init-options.json
+.specify/integration.json
+.specify/integrations
+.specify/integrations/claude
+.specify/integrations/claude/scripts
+.specify/integrations/claude.manifest.json
+.specify/integrations/codex.manifest.json
+.specify/integrations/speckit.manifest.json
 .specify/memory
 .specify/memory/constitution.md
 .specify/scripts
@@ -83,6 +190,7 @@
 .specify/scripts/bash/common.sh
 .specify/scripts/bash/create-new-feature.sh
 .specify/scripts/bash/setup-plan.sh
+.specify/scripts/bash/setup-tasks.sh
 .specify/scripts/bash/update-agent-context.sh
 .specify/templates
 .specify/templates/agent-file-template.md
@@ -91,115 +199,7 @@
 .specify/templates/plan-template.md
 .specify/templates/spec-template.md
 .specify/templates/tasks-template.md
-.vscode
-.vscode/settings.json
-CONTRIBUTING.md
-Directory.Build.props
-Directory.Build.targets
-Directory.Packages.props
-Elsa.sln
-Elsa.sln.DotSettings
-Elsa.sln.DotSettings.user
-LICENSE
-NuGet.Config
-README.md
-announcements
-announcements/discord-3.6.3.md
-announcements/discord-3.7.1.md
-announcements/elsa-3.6.3-announcement-pack.md
-announcements/elsa-3.7.1-announcement-pack.md
-artifacts
-artifacts/.DS_Store
-artifacts/package-manifest-check
-artifacts/package-manifest-check/Elsa.Caching.1.0.0.nupkg
-artifacts/package-manifest-check/Elsa.Caching.1.0.0.snupkg
-artifacts/tls-smoke
-artifacts/tls-smoke/TlsSmoke
-artifacts/tls-smoke/TlsSmoke.deps.json
-artifacts/tls-smoke/TlsSmoke.dll
-artifacts/tls-smoke/TlsSmoke.pdb
-artifacts/tls-smoke/TlsSmoke.runtimeconfig.json
-artifacts/tls-smoke/TlsSmoke.xml
-build.cmd
-build.ps1
-build.sh
-design
-design/.DS_Store
-design/artwork
-design/artwork/android-elsa-portrait.png
-design/artwork/creative-elsa-animation.gif
-design/artwork/elsa-3.1-art.png
-design/artwork/elsa-logo-art.png
-design/artwork/elsa-logo-art.psd
-design/artwork/elsa-v3-avatar.png
-design/artwork/elsa-waves.mp4
-design/artwork/glass.ai
-design/custom
-design/custom/1x
-design/custom/1x/Artboard 1.png
-design/custom/2x
-design/custom/2x/Artboard 1@2x.png
-design/custom/2x/elsa-logo.png
-design/custom/icon.ai
-design/custom/icon.png
-design/custom/icon.psd
-design/elsa-workflows-workflow-engine-for-dotnet.png
-design/github-social-preview-banner-for-elsa.psd
-design/icon
-design/icon/dark
-design/icon/dark/android-icon-144x144.png
-design/icon/dark/android-icon-192x192.png
-design/icon/dark/android-icon-36x36.png
-design/icon/dark/android-icon-48x48.png
-design/icon/dark/android-icon-72x72.png
-design/icon/dark/android-icon-96x96.png
-design/icon/dark/apple-icon-114x114.png
-design/icon/dark/apple-icon-120x120.png
-design/icon/dark/apple-icon-144x144.png
-design/icon/dark/apple-icon-152x152.png
-design/icon/dark/apple-icon-180x180.png
-design/icon/dark/apple-icon-57x57.png
-design/icon/dark/apple-icon-60x60.png
-design/icon/dark/apple-icon-72x72.png
-design/icon/dark/apple-icon-76x76.png
-design/icon/dark/apple-icon-precomposed.png
-design/icon/dark/apple-icon.png
-design/icon/dark/browserconfig.xml
-design/icon/dark/favicon-16x16.png
-design/icon/dark/favicon-32x32.png
-design/icon/dark/favicon-96x96.png
-design/icon/dark/favicon.ico
-design/icon/dark/manifest.json
-design/icon/dark/ms-icon-144x144.png
-design/icon/dark/ms-icon-150x150.png
-design/icon/dark/ms-icon-310x310.png
-design/icon/dark/ms-icon-70x70.png
-design/icon/light
-design/icon/light/android-icon-144x144.png
-design/icon/light/android-icon-192x192.png
-design/icon/light/android-icon-36x36.png
-design/icon/light/android-icon-48x48.png
-design/icon/light/android-icon-72x72.png
-design/icon/light/android-icon-96x96.png
-design/icon/light/apple-icon-114x114.png
-design/icon/light/apple-icon-120x120.png
-design/icon/light/apple-icon-144x144.png
-design/icon/light/apple-icon-152x152.png
-design/icon/light/apple-icon-180x180.png
-design/icon/light/apple-icon-57x57.png
-design/icon/light/apple-icon-60x60.png
-design/icon/light/apple-icon-72x72.png
-design/icon/light/apple-icon-76x76.png
-design/icon/light/apple-icon-precomposed.png
-design/icon/light/apple-icon.png
-design/icon/light/browserconfig.xml
-design/icon/light/favicon-16x16.png
-design/icon/light/favicon-32x32.png
-design/icon/light/favicon-96x96.png
-design/icon/light/favicon.ico
-design/icon/light/manifest.json
-design/icon/light/ms-icon-144x144.png
-design/icon/light/ms-icon-150x150.png
+.specify/workflows
 
 === STACK DETECTION (manifest files) ===
 
@@ -212,6 +212,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{61017E64-6D00-49CB-9E81-5002DC8F7D5F}"
 	ProjectSection(SolutionItems) = preProject
 		src\Directory.Build.props = src\Directory.Build.props
+		src\PackageManifestHints.cs = src\PackageManifestHints.cs
+		src\PackageManifest.props = src\PackageManifest.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{C6658DE0-2B2F-47F0-BB61-2CA66D435C09}"
@@ -226,8 +228,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D
 		NuGet.Config = NuGet.Config
 		README.md = README.md
 	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{0354F050-3992-4DD4-B0EE-5FBA04AC72B6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}"
 EndProject
@@ -285,7 +285,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "expressions", "expressions"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "security", "security", "{5948B0A5-7873-4DBB-BA03-EB283D6EA91B}"
 
-[TRUNCATED] Showing first 80 of 1336 lines.
+[TRUNCATED] Showing first 80 of 2359 lines.
 
 === ENTRY POINTS ===
 No common entry points found. Check 'main' or 'scripts.start' in manifest files above.
@@ -298,87 +298,90 @@ No .env.example or .env.template found. Identify required environment variables 
 
 === TODO / FIXME / HACK (production code only, test dirs excluded) ===
 src/common/Elsa.Mediator/Middleware/Notification/Components/NotificationLoggingMiddleware.cs:20: // TODO: Log notification.
+src/modules/Elsa.Http.Webhooks/ShellFeatures/WebhooksFeature.cs:28: // TODO: Configure HTTP client with configurable parameters and resilience.
 src/modules/Elsa.Alterations/Services/DefaultAlterationRunner.cs:91: // TODO: Importing back into the workflow runtime makes sense, but this also causes another SAVE ction of the workflow instance in the DB, which also happens in the previous step during the commit action.
 src/modules/Elsa.Expressions.Liquid/Services/LiquidTemplateManager.cs:61: // TODO: add signal based cache invalidation.
 src/modules/Elsa.Http/Parsers/TextHtmlHttpContentParser.cs:8: // TODO: found a library to use a Html Content Parser and use a complexe object Type, until this, this class allow to accept request send using text/html content-type
 src/modules/Elsa.Http/DownloadableContentHandlers/UrlDownloadableContentHandler.cs:35: // TODO: Uncomment the next two lines if we implement file caching for this handler.
 src/modules/Elsa.Http/Activities/WriteFileHttpResponse.cs:153: // TODO: Delete the cached file after the workflow completes.
-src/modules/Elsa.Workflows.Core/Contexts/WorkflowExecutionContext.cs:704: // TODO: Check if we should not use the target subStatus here instead.
-src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.InputEvaluation.cs:150: // TODO: Disable filtering for now until we redesign log sanitization.
+src/modules/Elsa.Workflows.Core/Contexts/WorkflowExecutionContext.cs:709: // TODO: Check if we should not use the target subStatus here instead.
+src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.InputEvaluation.cs:156: // TODO: Disable filtering for now until we redesign log sanitization.
 src/modules/Elsa.Workflows.Core/Activities/ParallelForEachT.cs:73: // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
 src/modules/Elsa.Workflows.Core/Services/WorkflowStateExtractor.cs:79: // TODO: This is a temporary solution. We need to find a better way to handle this.
 src/modules/Elsa.Workflows.Management/Mappers/WorkflowDefinitionMapper.cs:96: // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
-src/modules/Elsa.Workflows.Management/Mappers/VariableDefinitionMapper.cs:105: // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.
+src/modules/Elsa.Workflows.Management/Mappers/VariableDefinitionMapper.cs:108: // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.
 
 === GIT RECENT COMMITS (last 20) ===
-c7a97c641 Shorten configured application instance names
-0028604ca Merge pull request #7742 from elsa-workflows/sfmskywalker-port-asb-stable-instance-371
-1aef08381 fix: address greptile stable instance feedback
-fc48af062 fix: add stable application instance name option
-d8d7eae20 Merge branch 'release/3.6.2' into release/3.7.0
-a76e7a666 chore(packages): add Snappier
-b88af1e02 fix: handle arrays of generic types in GetFriendlyTypeName (issue - #7369) (#7400)
-8ee0b43b3 Add Claude Code GitHub Workflow (#7411)
-ad90e81af Enhance logging configuration, update HttpFeature dependencies, and add new identity persistence options
-e7eaa4b1f Integrate `Elsa.Workflows.Runtime.Distributed` into `Elsa.ModularServer.Web` and configure shell features for enhanced distributed runtime support.
-3d8d3b7de Merge remote-tracking branch 'origin/release/3.6.1'
-9f8423932 Handle null activities in `RunWorkflowResultAssertions`
-632d1a383 Refactor shells setup and clean up NuGet package source mapping.
-29d8a64a9 Update package versions: CShells to 0.0.14 and Nuplane to 0.0.1 in props file.
-6ff391745 Remove unused `Elsa.Workflows.Api.Contracts` import from `WorkflowsApiFeature`.
-3decb1268 feat: extend shells integration and modular server support (#7399)
-8d7d1a986 Fix BulkDispatchWorkflows sharing input dictionary across dispatches (#7284)
-a459904e1 refactor | Added a new property to expose the ability to disable the sorting (#7360)
-793ae15bf Fix tenant scope for interrupted workflow restarts (#7389)
-3a3766861 fix: correct workflow summary pagination on release 3.6.1 (#7392)
+ff10a6810 refactor: update package reference configuration
+e59a0f172 Merge remote-tracking branch 'origin/release/3.8.0' into release/3.8.0
+103028452 feat: introduce HTTP webhooks module
+46b29d6ef Merge pull request #7901 from DenDeline/bugfix/7900-tenant-request-services
+c557c455a Merge release/3.8.0 into bugfix/7900-tenant-request-services
+dacad1464 Merge pull request #7905 from elsa-workflows/codex/pr-7903-review-fixes
+286a0d83d Harden external identity race compensation
+d10dbdd48 Merge branch 'codex/pr-7903-review-fixes' into release/3.8.0
+f4d749d3f Merge branch 'codex/auth-refinements' into release/3.8.0
+fe125ac33 Fix external authentication review findings
+ed50e1cc9 Merge pull request #7904 from elsa-workflows/codex/fix-7306-tenant-agnostic-registry-population
+1b74bb94c fix: validate external login methods before discovery
+542058971 Avoid repeated tenant-agnostic registry population
+a24a6fe26 Add test to validate complete configuration requirements for connections
+a60b5a36b Refine test for archived connections in shadow relationships; introduce `IsAvailableForAuthentication` helper for improved connection filtering logic.
+572cd325b Merge compact external authentication secret IDs
+119f49f7a fix: simplify external authentication secret IDs
+9f09aca3f Refine test to ensure archived connections do not participate as active shadows; update shadow relationship management to exclude archived entries.
+14f373528 Add test for handling archived database overrides in connection shadows
+6e3ed5c4e Remove migration for external authentication in EFCore.Sqlite module
 
 === HIGH-CHURN FILES (last 90 days, top 20) ===
-   4 Directory.Packages.props
-   3 src/modules/Elsa.Hosting.Management/Services/ConfiguredApplicationInstanceNameProvider.cs
-   3 test/unit/Elsa.Hosting.Management.UnitTests/Services/ConfiguredApplicationInstanceNameProviderTests.cs
-   3 src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj
-   3 src/apps/Elsa.ModularServer.Web/Program.cs
-   2 src/modules/Elsa.Hosting.Management/Options/ApplicationInstanceOptions.cs
-   2 Elsa.sln
-   2 src/modules/Elsa.Common/Elsa.Common.csproj
-   2 src/apps/Elsa.ModularServer.Web/appsettings.Development.json
-   2 src/apps/Elsa.ModularServer.Web/appsettings.json
-   2 NuGet.Config
-   2 src/modules/Elsa.Workflows.Api/Features/WorkflowsApiFeature.cs
-   2 README.md
-   1 src/modules/Elsa.Hosting.Management/AssemblyInfo.cs
-   1 src/modules/Elsa.Hosting.Management/Features/ClusteringFeature.cs
-   1 test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj
-   1 src/modules/Elsa.Expressions/Extensions/TypeExtensions.cs
-   1 test/unit/Elsa.Expressions.UnitTests/Extensions/TypeExtensionsTests.cs
-   1 .github/workflows/claude-code-review.yml
-   1 .github/workflows/claude.yml
+  35 Elsa.sln
+  28 Directory.Packages.props
+  18 src/apps/Elsa.ModularServer.Web/appsettings.json
+  15 src/apps/Elsa.Server.Web/Program.cs
+  14 src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj
+  12 AGENTS.md
+  12 src/modules/Elsa.Workflows.Runtime/HealthChecks/ElsaWorkflowPersistenceHealthCheck.cs
+  11 src/modules/Elsa.Identity/ShellFeatures/IdentityFeature.cs
+  11 src/modules/Elsa.Identity/Services/DefaultSecretHasher.cs
+  10 src/modules/Elsa.Workflows.Core/Services/ActivityRegistry.cs
+  10 src/apps/Elsa.ModularServer.Web/Program.cs
+  10 src/modules/Elsa.Workflows.Runtime/ShellFeatures/WorkflowRuntimeFeature.cs
+  10 test/unit/Elsa.Identity.UnitTests/Services/DefaultSecretHasherTests.cs
+  10 src/modules/Elsa.Workflows.Runtime/HealthChecks/ElsaDistributedLockHealthCheck.cs
+  10 test/unit/Elsa.Workflows.Runtime.UnitTests/HealthChecks/ElsaDistributedLockHealthCheckTests.cs
+   9 test/integration/Elsa.ExternalAuthentication.IntegrationTests/Persistence/ExternalAuthenticationPersistenceTests.cs
+   9 test/integration/Elsa.ExternalAuthentication.IntegrationTests/Connections/ConnectionManagementTests.cs
+   9 src/modules/Elsa.Hosting.Management/Services/ConfiguredApplicationInstanceNameProvider.cs
+   9 test/unit/Elsa.Hosting.Management.UnitTests/Services/ConfiguredApplicationInstanceNameProviderTests.cs
+   9 src/modules/Elsa.Workflows.Core/ShellFeatures/WorkflowsFeature.cs
 
 === MONOREPO SIGNALS ===
 No monorepo signals detected.
 
 === CODE METRICS ===
-Total files scanned: 3908
-Total lines of code: 217582
+Total files scanned: 5427
+Total lines of code: 319973
 
 Files by language:
-  C#: 3265
-  Other: 631
+  C#: 4365
+  Other: 1044
   Java: 6
+  Python: 4
   JavaScript: 4
-  Python: 2
+  TypeScript: 2
+  TypeScript/React: 2
 
 Top 10 largest files:
 design/artwork/elsa-logo-art.psd: 13979.6KB
-src/apps/Elsa.ModularServer.Web/elsa_logs.db: 9796.0KB
+design/video/exports/elsa-workflows-readme.gif: 10791.9KB
 design/artwork/elsa-v3-avatar.png: 5827.9KB
+design/video/exports/elsa-workflows-readme.mp4: 3582.4KB
 design/artwork/creative-elsa-animation.gif: 3461.2KB
+src/apps/Elsa.ModularServer.Web/elsa_workflows.db-wal: 3218.8KB
 design/artwork/elsa-waves.mp4: 3178.4KB
 design/logo/Esla_Source.ai: 2043.9KB
-src/apps/Elsa.ModularServer.Web/console-log-streaming-vanilla-sample.db: 1532.0KB
-src/apps/Elsa.ModularServer.Web/elsa_workflows.db: 1416.0KB
+src/apps/Elsa.ModularServer.Web/elsa_logs.db: 1516.0KB
 design/logo/Elsa.ai: 914.8KB
-design/logo/Esla-13.png: 429.9KB
 
 === CI/CD PIPELINES ===
 CI/CD: GitHub Actions

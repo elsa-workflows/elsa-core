@@ -21,7 +21,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
     IIdentityGenerator identityGenerator,
     ISystemClock clock,
     IExternalAuthenticationHandleHasher handleHasher,
-    InMemoryExternalIdentityProvisionerState state) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore
+    InMemoryExternalIdentityProvisionerState state) : IExternalIdentityProvisioner, IExternalIdentityLinkManagementStore, IExternalIdentitySignInTracker
 {
     private readonly ExternalIdentityUserProvisioningService _userProvisioningService = new(userStore, userProvider, roleProvider, identityGenerator);
 
@@ -72,6 +72,33 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being created.");
             }
             return new ProvisioningResult(user.Id, link, wasCreated, true);
+        }
+        finally
+        {
+            state.Mutex.Release();
+        }
+    }
+
+    public async ValueTask<bool> RecordSuccessfulSignInAsync(
+        string tenantId,
+        string connectionKey,
+        ExternalIdentity identity,
+        string userId,
+        DateTimeOffset signedInAt,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var key = new ExternalIdentityKey(tenantId, ConnectionRevisionCalculator.NormalizeKey(connectionKey), identity.Issuer, handleHasher.Hash(identity.Subject));
+
+        await state.Mutex.WaitAsync(cancellationToken);
+        try
+        {
+            if (!state.Links.TryGetValue(key, out var link) || !string.Equals(link.UserId, userId, StringComparison.Ordinal))
+                return false;
+
+            if (link.LastSignedInAt is null || link.LastSignedInAt < signedInAt)
+                state.Links[key] = link with { LastSignedInAt = signedInAt };
+            return true;
         }
         finally
         {

@@ -11,7 +11,7 @@ namespace Elsa.ExternalAuthentication.Services;
 public sealed class DefaultExternalIdentityResolver(
     IExternalIdentityProvisioner provisioner,
     IEnumerable<IUnlinkedIdentityPolicy> policies,
-    IOptions<ExternalAuthenticationOptions> options) : IExternalIdentityResolver
+    IOptions<ExternalAuthenticationOptions> options) : IExternalIdentityResolver, IExternalIdentitySignInTracker
 {
     private readonly IReadOnlyDictionary<string, IUnlinkedIdentityPolicy> _policies = policies.ToDictionary(x => x.Type, StringComparer.Ordinal);
 
@@ -50,6 +50,17 @@ public sealed class DefaultExternalIdentityResolver(
         ValidateLink(result.Link, context);
         return new ExternalIdentityResolution(result.UserId, result.WasCreated);
     }
+
+    public ValueTask<bool> RecordSuccessfulSignInAsync(
+        string tenantId,
+        string connectionKey,
+        ExternalIdentity identity,
+        string userId,
+        DateTimeOffset signedInAt,
+        CancellationToken cancellationToken = default) =>
+        provisioner is IExternalIdentitySignInTracker tracker
+            ? tracker.RecordSuccessfulSignInAsync(tenantId, connectionKey, identity, userId, signedInAt, cancellationToken)
+            : ValueTask.FromResult(true);
 
     private PolicySelection GetPolicySelection(EffectiveIdentityProviderConnection connection)
     {

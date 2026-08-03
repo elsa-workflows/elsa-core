@@ -3,18 +3,22 @@ using System.Text;
 using System.Text.Json;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Services;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
 using Elsa.ExternalAuthentication.Options;
+using Elsa.ExternalAuthentication.Policies;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Stores.InMemory;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
+using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -209,6 +213,69 @@ public class BrokerSecurityTests
     }
 
     [Fact]
+    public async Task SuccessfulExternalSignInRecordsTheTimestampForAnExistingIdentityLink()
+    {
+        var scenario = CreateIdentityLinkTrackingScenario();
+        var existing = await scenario.Provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", scenario.Identity, new UserCreationProposal("external")));
+        var signedInAt = new DateTimeOffset(2026, 1, 1, 0, 1, 0, TimeSpan.Zero);
+        scenario.Clock.UtcNow = signedInAt;
+
+        var result = await CompleteExternalSignInAsync(scenario);
+        var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
+
+        Assert.Null(result.Error);
+        Assert.Equal(existing.Link.Id, link?.Id);
+        Assert.Equal(signedInAt, link?.LastSignedInAt);
+    }
+
+    [Fact]
+    public async Task SuccessfulExternalSignInRecordsTheInitialTimestampForANewIdentityLink()
+    {
+        var scenario = CreateIdentityLinkTrackingScenario();
+        var signedInAt = new DateTimeOffset(2026, 1, 1, 0, 1, 0, TimeSpan.Zero);
+        scenario.Clock.UtcNow = signedInAt;
+
+        var result = await CompleteExternalSignInAsync(scenario);
+        var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
+
+        Assert.Null(result.Error);
+        Assert.NotNull(link);
+        Assert.Equal(signedInAt, link.LastSignedInAt);
+    }
+
+    [Fact]
+    public async Task RepeatSuccessfulExternalSignInReplacesTheIdentityLinkTimestamp()
+    {
+        var scenario = CreateIdentityLinkTrackingScenario();
+        await scenario.Provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", scenario.Identity, new UserCreationProposal("external")));
+        var firstSignInAt = new DateTimeOffset(2026, 1, 1, 0, 1, 0, TimeSpan.Zero);
+        scenario.Clock.UtcNow = firstSignInAt;
+        await CompleteExternalSignInAsync(scenario);
+        var secondSignInAt = firstSignInAt.AddMinutes(1);
+        scenario.Clock.UtcNow = secondSignInAt;
+
+        var result = await CompleteExternalSignInAsync(scenario);
+        var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
+
+        Assert.Null(result.Error);
+        Assert.Equal(secondSignInAt, link?.LastSignedInAt);
+    }
+
+    [Fact]
+    public async Task UnsuccessfulExternalSignInDoesNotRecordTheIdentityLinkTimestamp()
+    {
+        var scenario = CreateIdentityLinkTrackingScenario(throwOnCallback: true);
+        await scenario.Provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", scenario.Identity, new UserCreationProposal("external")));
+        scenario.Clock.UtcNow = new DateTimeOffset(2026, 1, 1, 0, 1, 0, TimeSpan.Zero);
+
+        var result = await CompleteExternalSignInAsync(scenario);
+        var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
+
+        Assert.Equal("authentication_failed", result.Error?.Error);
+        Assert.Null(link?.LastSignedInAt);
+    }
+
+    [Fact]
     public async Task ProviderCallbackStateCannotBeReplayed()
     {
         var adapter = new RecordingAdapter { ThrowOnCallback = true };
@@ -388,7 +455,8 @@ public class BrokerSecurityTests
         ExternalAuthenticationSecurityNotifier? notifier = null,
         ConnectionValidity connectionValidity = ConnectionValidity.Valid,
         ConnectionValidity? assessedValidity = null,
-        bool includeLoginMethod = false)
+        bool includeLoginMethod = false,
+        ISystemClock? clock = null)
     {
         var connection = new IdentityProviderConnection
         {
@@ -415,15 +483,62 @@ public class BrokerSecurityTests
             Clients = clients?.ToList() ?? [new AuthenticationClient("studio", "Studio", AuthenticationClientType.Public,
                 new HashSet<Uri> { new("https://studio.example/authentication/external/callback") }, new HashSet<Uri>(), new HashSet<string> { "https://studio.example" }, new HashSet<string> { "/workflows" }, null, true)]
         });
-        var clock = new TestClock();
-        return new ExternalAuthenticationBroker(registry, validityAssessor, [adapter], resolvers ?? [], hasher ?? new HmacExternalAuthenticationHandleHasher(), new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider(), identityResolver ?? Substitute.For<IExternalIdentityResolver>(), permissionGrantResolver ?? Substitute.For<IPermissionGrantResolver>(), new InMemoryExternalAuthenticationStateStore(clock), grants ?? new InMemoryAuthorizationGrantStore(clock), sessionStore ?? new InMemoryExternalAuthenticationSessionStore(clock), tokenIssuer ?? Substitute.For<IExternalAuthenticationTokenIssuer>(), credentialsValidator ?? Substitute.For<IUserCredentialsValidator>(), userProvider ?? Substitute.For<IUserProvider>(), roleProvider ?? Substitute.For<IRoleProvider>(), tokenService ?? Substitute.For<IElsaTokenService>(), identityRefreshTokenService ?? Substitute.For<IIdentityRefreshTokenService>(), tenantAccessor ?? new DefaultTenantAccessor(), clock, options, notifier);
+        var brokerClock = clock ?? new TestClock();
+        return new ExternalAuthenticationBroker(registry, validityAssessor, [adapter], resolvers ?? [], hasher ?? new HmacExternalAuthenticationHandleHasher(), new Microsoft.AspNetCore.DataProtection.EphemeralDataProtectionProvider(), identityResolver ?? Substitute.For<IExternalIdentityResolver>(), permissionGrantResolver ?? Substitute.For<IPermissionGrantResolver>(), new InMemoryExternalAuthenticationStateStore(brokerClock), grants ?? new InMemoryAuthorizationGrantStore(brokerClock), sessionStore ?? new InMemoryExternalAuthenticationSessionStore(brokerClock), tokenIssuer ?? Substitute.For<IExternalAuthenticationTokenIssuer>(), credentialsValidator ?? Substitute.For<IUserCredentialsValidator>(), userProvider ?? Substitute.For<IUserProvider>(), roleProvider ?? Substitute.For<IRoleProvider>(), tokenService ?? Substitute.For<IElsaTokenService>(), identityRefreshTokenService ?? Substitute.For<IIdentityRefreshTokenService>(), tenantAccessor ?? new DefaultTenantAccessor(), brokerClock, options, notifier);
     }
 
     private static BrokerAuthorizationRequest Request(string returnPath) => new("studio", new Uri("https://studio.example/authentication/external/callback"), "code", "challenge", "S256", returnPath, "contoso");
     private static string? Query(Uri uri, string key) => System.Web.HttpUtility.ParseQueryString(uri.Query)[key];
 
+    private static IdentityLinkTrackingScenario CreateIdentityLinkTrackingScenario(bool throwOnCallback = false)
+    {
+        var clock = new MutableClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+        var identity = new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>());
+        var users = new MemoryUserStore(new MemoryStore<User>());
+        var provisioner = new InMemoryExternalIdentityProvisioner(
+            users,
+            new StoreBasedUserProvider(users),
+            Substitute.For<IRoleProvider>(),
+            new GuidIdentityGenerator(),
+            clock,
+            new FixedHasher(),
+            new InMemoryExternalIdentityProvisionerState());
+        var identityResolver = new DefaultExternalIdentityResolver(
+            provisioner,
+            [new CreateUserUnlinkedIdentityPolicy()],
+            Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions
+            {
+                UnlinkedIdentityPolicy = new UnlinkedIdentityPolicyOptions { DefaultType = "create-user" }
+            }));
+        var permissionGrantResolver = Substitute.For<IPermissionGrantResolver>();
+        permissionGrantResolver.ResolveAsync(Arg.Any<PermissionGrantResolutionContext>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(new PermissionGrantResult([], [])));
+        var adapter = new RecordingAdapter
+        {
+            ThrowOnCallback = throwOnCallback,
+            AuthenticationResult = new ExternalAuthenticationResult(identity, identity.Claims, [])
+        };
+        var broker = CreateBroker(adapter, identityResolver: identityResolver, permissionGrantResolver: permissionGrantResolver, clock: clock);
+
+        return new IdentityLinkTrackingScenario(broker, provisioner, adapter, identity, clock);
+    }
+
+    private static async Task<BrokerCallbackResult> CompleteExternalSignInAsync(IdentityLinkTrackingScenario scenario)
+    {
+        await scenario.Broker.InitiateExternalAsync(Request("/workflows"), "tenant-a");
+        return await scenario.Broker.CompleteCallbackAsync("contoso", scenario.Adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [scenario.Adapter.CorrelationState!] });
+    }
+
     private sealed class TestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.Parse("2026-01-01T00:00:00Z"); }
     private sealed class CurrentTestClock : ISystemClock { public DateTimeOffset UtcNow => DateTimeOffset.UtcNow; }
+    private sealed class MutableClock(DateTimeOffset utcNow) : ISystemClock { public DateTimeOffset UtcNow { get; set; } = utcNow; }
+
+    private sealed record IdentityLinkTrackingScenario(
+        ExternalAuthenticationBroker Broker,
+        InMemoryExternalIdentityProvisioner Provisioner,
+        RecordingAdapter Adapter,
+        ExternalIdentity Identity,
+        MutableClock Clock);
 
     internal sealed class RecordingAdapter : IExternalAuthenticationAdapter
     {

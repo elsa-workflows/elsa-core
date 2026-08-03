@@ -155,6 +155,29 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task IdentityLinksApiReturnsTheRecordedSignInForTheCurrentTenantAndConnection()
+    {
+        var identity = new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims);
+        var prelinked = await (await PrelinkAsync(identity.Subject)).Content.ReadFromJsonAsync<LinkDocument>();
+        Assert.Null(prelinked!.LastSignedInAt);
+        var signedInAt = new DateTimeOffset(2026, 7, 26, 11, 0, 0, TimeSpan.Zero);
+        await using (var scope = _app!.Services.CreateAsyncScope())
+        {
+            var tracker = scope.ServiceProvider.GetRequiredService<InMemoryExternalIdentityProvisioner>();
+            Assert.True(await tracker.RecordSuccessfulSignInAsync("tenant-a", "contoso", identity, "user-a", signedInAt));
+        }
+
+        var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
+        var link = Assert.Single(links!.Items);
+        Assert.Equal(prelinked.Id, link.Id);
+        Assert.Equal(signedInAt, link.LastSignedInAt);
+        Assert.Empty((await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=fabrikam"))!.Items);
+
+        _tenant.TenantId.Returns("tenant-b");
+        Assert.Empty((await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso"))!.Items);
+    }
+
+    [Fact]
     public async Task ConcurrentPrelinksForTheSameTupleConvergeOnOneLinkAndUser()
     {
         var responses = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => PrelinkAsync("concurrent-subject")));

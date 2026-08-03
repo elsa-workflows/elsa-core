@@ -251,6 +251,45 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ProvisionerPersistsTheLatestSuccessfulSignInTimestamp()
+    {
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var provisioner = CreateProvisioner(hasher);
+        var identity = new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims);
+        var request = new ProvisioningRequest("tenant-a", "connection-a", identity, new UserCreationProposal("external"));
+        var created = await provisioner.CreateLinkOrGetExistingAsync(request);
+        var firstSignInAt = new DateTimeOffset(2026, 7, 26, 10, 0, 0, TimeSpan.Zero);
+        var latestSignInAt = firstSignInAt.AddMinutes(1);
+
+        Assert.True(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, firstSignInAt));
+        Assert.True(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, latestSignInAt));
+        Assert.True(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, firstSignInAt));
+
+        var persisted = await CreateProvisioner(hasher).FindLinkAsync("tenant-a", "connection-a", identity);
+        Assert.Equal(latestSignInAt, persisted!.LastSignedInAt);
+    }
+
+    [Fact]
+    public async Task ConcurrentSignInsPreserveTheLatestTimestamp()
+    {
+        using var hasher = new HmacExternalAuthenticationHandleHasher();
+        var provisioner = CreateProvisioner(hasher);
+        var identity = new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims);
+        var created = await provisioner.CreateLinkOrGetExistingAsync(
+            new ProvisioningRequest("tenant-a", "connection-a", identity, new UserCreationProposal("external")));
+        var signInTimes = Enumerable.Range(0, 8)
+            .Select(minutes => new DateTimeOffset(2026, 7, 26, 10, minutes, 0, TimeSpan.Zero))
+            .ToArray();
+
+        var results = await Task.WhenAll(signInTimes.Select(async signedInAt =>
+            await CreateProvisioner(hasher).RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, signedInAt)));
+
+        Assert.All(results, Assert.True);
+        var persisted = await CreateProvisioner(hasher).FindLinkAsync("tenant-a", "connection-a", identity);
+        Assert.Equal(signInTimes.Max(), persisted!.LastSignedInAt);
+    }
+
+    [Fact]
     public async Task ProvisionerRemovesTheJustInTimeUserThatLosesTheLinkRace()
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-identity-provisioning-{Guid.NewGuid():N}.db");
