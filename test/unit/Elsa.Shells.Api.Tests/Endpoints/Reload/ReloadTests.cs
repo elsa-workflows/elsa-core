@@ -24,11 +24,9 @@ public class ReloadTests : ShellsApiTestBase
     [Fact]
     public async Task Post_WhenShellNotFound_Returns404WithNotFoundStatus()
     {
-        // CShells 0.0.15 surfaces failures via ReloadResult.Error rather than throwing — the endpoint maps any
-        // non-null Error to a 404 (the historical "blueprint not found" response).
         ShellRegistry
             .ReloadAsync(ShellId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new ReloadResult(ShellId, null, null, new InvalidOperationException("Shell 'test-shell' not found"))));
+            .Returns(Task.FromException<ReloadResult>(new ShellBlueprintNotFoundException(ShellId)));
 
         var response = await HttpClient.PostAsync($"/shells/{ShellId}/reload", null);
 
@@ -37,6 +35,40 @@ public class ReloadTests : ShellsApiTestBase
         Assert.NotNull(body);
         Assert.Equal("NotFound", body.Status);
         Assert.Equal(ShellId, body.RequestedShellId);
-        Assert.Equal("Shell 'test-shell' not found", body.Message);
+        Assert.Contains(ShellId, body.Message);
+    }
+
+    [Fact]
+    public async Task Post_WhenReloadFails_Returns503WithFailedStatus()
+    {
+        ShellRegistry
+            .ReloadAsync(ShellId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new ReloadResult(ShellId, null, null, new InvalidOperationException("Shell reload failed"))));
+
+        var response = await HttpClient.PostAsync($"/shells/{ShellId}/reload", null);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ShellReloadResult>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal("Failed", body.Status);
+        Assert.Equal(ShellId, body.RequestedShellId);
+        Assert.Equal("Shell reload failed", body.Message);
+    }
+
+    [Fact]
+    public async Task Post_WhenBlueprintUnavailable_Returns503WithFailedStatus()
+    {
+        ShellRegistry
+            .ReloadAsync(ShellId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<ReloadResult>(new ShellBlueprintUnavailableException(ShellId, new InvalidOperationException())));
+
+        var response = await HttpClient.PostAsync($"/shells/{ShellId}/reload", null);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ShellReloadResult>(JsonOptions);
+        Assert.NotNull(body);
+        Assert.Equal("Failed", body.Status);
+        Assert.Equal(ShellId, body.RequestedShellId);
+        Assert.Contains(ShellId, body.Message);
     }
 }

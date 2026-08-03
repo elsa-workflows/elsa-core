@@ -126,6 +126,7 @@ public class ConfiguredApplicationInstanceNameProviderTests
         Assert.False(string.IsNullOrWhiteSpace(name2));
         Assert.Matches(@"^[0-9a-f]+$", name1);
         Assert.Matches(@"^[0-9a-f]+$", name2);
+        Assert.NotEqual(name1, name2);
     }
 
     [Fact]
@@ -135,9 +136,13 @@ public class ConfiguredApplicationInstanceNameProviderTests
         Environment.SetEnvironmentVariable(variable, null);
 
         var name1 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
+        var name2 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
 
         Assert.False(string.IsNullOrWhiteSpace(name1));
+        Assert.False(string.IsNullOrWhiteSpace(name2));
         Assert.Matches(@"^[0-9a-f]+$", name1);
+        Assert.Matches(@"^[0-9a-f]+$", name2);
+        Assert.NotEqual(name1, name2);
     }
 
     [Fact]
@@ -174,6 +179,18 @@ public class ConfiguredApplicationInstanceNameProviderTests
         var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
 
         Assert.Contains("contains invalid characters", exception.Message);
+    }
+
+    [Fact]
+    public void ExplicitInstanceName_InvalidCharactersAndTooLong_ReportsBothProblems()
+    {
+        var instanceName = new string('a', ConfiguredInstanceNameMaxLength) + " b";
+
+        var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
+
+        Assert.Contains("contains invalid characters", exception.Message);
+        Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
+        Assert.Contains("Azure Service Bus", exception.Message);
     }
 
     [Fact]

@@ -202,7 +202,7 @@
         <PackageVersion Include="Testcontainers.RabbitMq" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.Redis" Version="4.9.0"/>
         <PackageVersion Include="ThrottleDebounce" Version="2.0.2"/>
-        <PackageVersion Include="WebhooksCore" Version="0.0.6"/>
+        <PackageVersion Include="WebhooksCore" Version="0.0.1"/>
         <PackageVersion Include="xunit" Version="2.9.3"/>
         <PackageVersion Include="xunit.abstractions" Version="2.0.3"/>
         <PackageVersion Include="xunit.assert" Version="2.9.3"/>
