@@ -1,5 +1,6 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Signals;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Middleware.Activities;
@@ -16,7 +17,8 @@ public static class ExceptionHandlingMiddlewareExtensions
 }
 
 /// <summary>
-/// Catches any exceptions thrown by downstream components and transitions the workflow into the faulted state.
+/// Catches any exceptions thrown by downstream components and transitions the workflow into the faulted state,
+/// unless an enclosing container claims the fault by handling the <see cref="FaultSignal"/>.
 /// </summary>
 public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncidentStrategyResolver incidentStrategyResolver, ILogger<ExceptionHandlingMiddleware> logger)
     : IActivityExecutionMiddleware
@@ -32,6 +34,15 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         {
             logger.LogWarning(e, "An exception was caught from a downstream middleware component");
             context.Fault(e);
+
+            // Give the ancestor chain a chance to handle the fault. See FaultSignal for the contract: the handler owns
+            // terminalizing the faulted activity, and recovering the fault bookkeeping is ours alone to do, exactly once.
+            if (await context.TrySendSignalAsync(new FaultSignal(e, context)))
+            {
+                context.RecoverFromFault();
+                return;
+            }
+
             await HandleIncidentAsync(context);
         }
     }
