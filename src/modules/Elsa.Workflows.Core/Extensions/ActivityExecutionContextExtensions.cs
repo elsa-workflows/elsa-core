@@ -222,6 +222,18 @@ public static partial class ActivityExecutionContextExtensions
         /// </summary>
         public async ValueTask SendSignalAsync(object signal)
         {
+            await activityExecutionContext.TrySendSignalAsync(signal);
+        }
+
+        /// <summary>
+        /// Send a signal up the current hierarchy of ancestors and report whether a receiver claimed it.
+        /// </summary>
+        /// <param name="signal">The signal to send.</param>
+        /// <returns>
+        /// <c>true</c> if a receiver called <see cref="SignalContext.StopPropagation"/>; otherwise, <c>false</c>.
+        /// </returns>
+        internal async ValueTask<bool> TrySendSignalAsync(object signal)
+        {
             var receivingContexts = new[]
             {
                 activityExecutionContext
@@ -244,9 +256,11 @@ public static partial class ActivityExecutionContextExtensions
                 if (signalContext.StopPropagationRequested)
                 {
                     logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         /// <summary>
@@ -335,6 +349,12 @@ public static partial class ActivityExecutionContextExtensions
         /// <summary>
         /// Recovers the current activity from a faulted state by resetting fault counts and transitioning the activity to the running status.
         /// </summary>
+        /// <remarks>
+        /// This method is asymmetric with <c>Fault</c>: it <i>sets</i> the current context's fault count to zero, which is idempotent, but
+        /// <i>decrements</i> the count on every ancestor, which is not. Calling it more than once per fault drives ancestor counts negative.
+        /// The status transition only applies to an activity that is still <see cref="ActivityStatus.Faulted"/>, so that a
+        /// <see cref="Elsa.Workflows.Signals.FaultSignal"/> handler that already terminalized the activity does not see its decision undone.
+        /// </remarks>
         public void RecoverFromFault()
         {
             activityExecutionContext.AggregateFaultCount = 0;
@@ -344,7 +364,8 @@ public static partial class ActivityExecutionContextExtensions
             foreach (var ancestor in ancestors)
                 ancestor.AggregateFaultCount--;
 
-            activityExecutionContext.TransitionTo(ActivityStatus.Running);
+            if (activityExecutionContext.Status == ActivityStatus.Faulted)
+                activityExecutionContext.TransitionTo(ActivityStatus.Running);
         }
 
         /// <summary>
