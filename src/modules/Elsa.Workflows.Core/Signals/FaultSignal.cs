@@ -31,6 +31,15 @@ namespace Elsa.Workflows.Signals;
 /// when this signal does not exist at all.
 /// </para>
 /// <para>
+/// <b>The faulting activity is itself a receiver.</b> <c>SendSignalAsync</c> delivers to the sender before walking its
+/// ancestors, and this signal reuses that dispatch rather than introducing a variant of it. An activity that throws and
+/// also handles <see cref="FaultSignal"/> therefore sees its own fault first, and may claim it, which is what a
+/// self-retrying or self-compensating activity wants. This grants no ability to hide a failure that an activity did not
+/// already have, since one that simply catches its own exception never faults at all. A handler that wants
+/// ancestors-only semantics should check <see cref="SignalContext.IsSelf"/>, or compare <see cref="FaultedContext"/>
+/// against its own receiver context, the same way it already checks that the faulting context is one of its children.
+/// </para>
+/// <para>
 /// <b>The contract.</b> Responsibilities are split, and the split is deliberate:
 /// </para>
 /// <list type="bullet">

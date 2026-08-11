@@ -77,6 +77,33 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "The faulting activity receives its own fault before any ancestor does")]
+    public async Task FaultingActivity_ReceivesItsOwnSignalFirst()
+    {
+        // Pinning the channel's self-plus-ancestors dispatch, which this signal reuses rather than varying. It lets a
+        // self-retrying or self-compensating activity claim its own failure, and grants no ability to hide a failure
+        // that an activity did not already have: one that simply catches its own exception never faults at all.
+
+        // Arrange
+        var faultingActivity = new SelfHandlingFaultingActivity();
+        var container = ContainerAround(faultingActivity);
+
+        // Act
+        var result = await RunAsync(container, typeof(FaultStrategy));
+
+        // Assert: the activity claimed its own fault, so the walk never reached the container.
+        Assert.Equal(0, container.FaultsSeen);
+        Assert.NotEqual(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+
+        // The incident is still on record, and the fault bookkeeping was still recovered exactly once.
+        Assert.Single(result.WorkflowState.Incidents);
+
+        var faultedContext = result.GetActivityContext(faultingActivity);
+        Assert.NotNull(faultedContext);
+        Assert.Equal(0, faultedContext.AggregateFaultCount);
+        Assert.All(faultedContext.GetAncestors(), x => Assert.Equal(0, x.AggregateFaultCount));
+    }
+
     [Fact(DisplayName = "A handled fault restores the fault count on the faulting context and every ancestor")]
     public async Task HandledFault_RestoresFaultCounts()
     {
