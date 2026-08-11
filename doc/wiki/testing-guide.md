@@ -32,6 +32,10 @@ Shared helpers:
 | HTTP workflows | Component test under HTTP workflow scenarios. |
 | Structured log SQLite persistence | SQLite integration test project. |
 | Console log capture, buffering, or endpoints | `Elsa.Diagnostics.ConsoleLogs.UnitTests` or `Elsa.Diagnostics.ConsoleLogs.IntegrationTests`. |
+| OpenTelemetry diagnostics collection or endpoints | `Elsa.Diagnostics.OpenTelemetry.UnitTests` or `Elsa.Diagnostics.OpenTelemetry.IntegrationTests`. |
+| Dashboard API endpoints or aggregation logic | `Elsa.Dashboard.Api.UnitTests`. |
+| AI/Weaver abstractions or host behavior | `Elsa.AI.Abstractions.UnitTests`, `Elsa.AI.Host.UnitTests`, or `Elsa.AI.IntegrationTests`. |
+| Persistence vNext store or physicalization logic | `Elsa.Persistence.VNext.UnitTests`. |
 
 ## Useful Commands
 
