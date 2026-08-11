@@ -223,17 +223,20 @@ public class WorkflowDefinitionPublisher(
         draft = Initialize(draft);
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
-        await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
+
+        if (lastVersion is { IsLatest: true } && lastVersion.Id != draft.Id)
+        {
+            lastVersion.IsLatest = false;
+            await workflowDefinitionStore.SaveManyAsync([lastVersion, draft], cancellationToken);
+        }
+        else
+        {
+            await workflowDefinitionStore.SaveAsync(draft, cancellationToken);
+        }
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(draft), cancellationToken);
 
         if (lastVersion is null)
             await mediator.SendAsync(new WorkflowDefinitionCreated(definition), cancellationToken);
-
-        if (lastVersion is { IsPublished: true, IsLatest: true })
-        {
-            lastVersion.IsLatest = false;
-            await workflowDefinitionStore.SaveAsync(lastVersion, cancellationToken);
-        }
 
         return draft;
     }
