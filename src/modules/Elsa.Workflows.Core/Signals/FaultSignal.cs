@@ -65,6 +65,24 @@ namespace Elsa.Workflows.Signals;
 ///   </item>
 /// </list>
 /// <para>
+/// <b>Completing the faulted activity takes one extra step.</b> <c>CompleteActivityAsync</c> returns immediately unless
+/// the activity is <see cref="ActivityStatus.Running"/>, and throughout the handler it is still
+/// <see cref="ActivityStatus.Faulted"/>, because recovery runs only once the handler has returned. Completing it inline
+/// therefore does nothing at all, silently. A handler that wants to complete the activity — substituting a result for
+/// the work that failed, say — has to move it out of the faulted state first:
+/// </para>
+/// <code>
+/// context.StopPropagation();
+/// signal.FaultedContext.TransitionTo(ActivityStatus.Running);
+/// await signal.FaultedContext.CompleteActivityAsync(substituteResult);
+/// </code>
+/// <para>
+/// This is not licence to call <c>RecoverFromFault()</c>, which also rewrites the fault counts and remains the
+/// middleware's job alone. Completing this way fires the enclosing container's completion callback, so the container's
+/// normal sequencing resumes. Cancelling needs no equivalent step, because <c>CancelActivityAsync</c> already accepts a
+/// faulted activity, and rescheduling needs none either.
+/// </para>
+/// <para>
 /// That last rule is not stylistic. <c>RecoverFromFault()</c> is asymmetric: it <i>sets</i> the faulting context's
 /// <see cref="ActivityExecutionContext.AggregateFaultCount"/> to zero, which is idempotent, but <i>decrements</i> the
 /// count on every ancestor, which is not. A second call is therefore harmless for the faulting context and harmful for

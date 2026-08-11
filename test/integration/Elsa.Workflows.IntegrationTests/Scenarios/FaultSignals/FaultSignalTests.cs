@@ -145,6 +145,38 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         Assert.All(ancestors, x => Assert.Equal(-1, x.AggregateFaultCount));
     }
 
+    [Fact(DisplayName = "A handler can complete the faulted child with a substitute result")]
+    public async Task HandlerThatCompletesChildWithSubstituteResult_ResumesTheContainer()
+    {
+        // Arrange
+        var container = new FaultHandlingContainer(async (signal, context) =>
+        {
+            context.StopPropagation();
+
+            // CompleteActivityAsync no-ops on a non-Running activity, and the middleware recovers only once this
+            // handler has returned, so the faulted child has to be moved out of Faulted first. This is not the same as
+            // RecoverFromFault, which would also rewrite the fault counts.
+            signal.FaultedContext.TransitionTo(ActivityStatus.Running);
+            await signal.FaultedContext.CompleteActivityAsync("substitute");
+        })
+        {
+            Activities =
+            {
+                _faultingActivity,
+                new WriteLine("after")
+            }
+        };
+
+        // Act
+        var result = await RunAsync(container);
+
+        // Assert: completing the child fires the container's completion callback, so sequencing resumes.
+        Assert.Equal(ActivityStatus.Completed, result.GetActivityStatus(_faultingActivity));
+        Assert.Equal(new[] { "after" }, _fixture.CapturingTextWriter.Lines);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        AssertFaultCounts(result, expected: 0);
+    }
+
     [Fact(DisplayName = "A handler that cancels the faulted child leaves it Canceled, not Running")]
     public async Task HandlerThatCancelsChild_LeavesItCanceled()
     {
