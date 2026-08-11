@@ -347,13 +347,30 @@ public static partial class ActivityExecutionContextExtensions
         }
 
         /// <summary>
-        /// Recovers the current activity from a faulted state by resetting fault counts and transitioning the activity to the running status.
+        /// Recovers the current activity from a faulted state: undoes the fault counts, discards the incident and the recorded
+        /// exception, and transitions the activity back to the running status.
         /// </summary>
         /// <remarks>
-        /// This method is asymmetric with <c>Fault</c>: it <i>sets</i> the current context's fault count to zero, which is idempotent, but
-        /// <i>decrements</i> the count on every ancestor, which is not. Calling it more than once per fault drives ancestor counts negative.
-        /// The status transition only applies to an activity that is still <see cref="ActivityStatus.Faulted"/>, so that a
-        /// <see cref="Elsa.Workflows.Signals.FaultSignal"/> handler that already terminalized the activity does not see its decision undone.
+        /// <para>
+        /// This is the inverse of <c>Fault</c>, and is meant to leave no trace of a fault an enclosing container claimed. In
+        /// particular it removes the <see cref="ActivityIncident"/> that <c>Fault</c> appended. A handled fault must not remain an
+        /// incident, because plenty of code treats a non-empty <see cref="WorkflowExecutionContext.Incidents"/> as "this workflow
+        /// failed" without looking further - the HTTP endpoint fault handler is one, and it would answer a caller with a fault
+        /// response for a workflow that caught its error and completed normally. The execution log still records the failure, so
+        /// nothing is hidden from anyone reading the journal.
+        /// </para>
+        /// <para>
+        /// The incident is matched on this activity's node id, most recent first, which is the one <c>Fault</c> just appended.
+        /// Pairing that way keeps an activity that faults, recovers, and faults again correct: each recovery removes its own
+        /// incident rather than the whole activity's history.
+        /// </para>
+        /// <para>
+        /// It remains asymmetric with <c>Fault</c> in one respect: it <i>sets</i> the current context's fault count to zero, which is
+        /// idempotent, but <i>decrements</i> the count on every ancestor, which is not. Calling it more than once per fault drives
+        /// ancestor counts negative. The status transition only applies to an activity that is still
+        /// <see cref="ActivityStatus.Faulted"/>, so that a <see cref="Elsa.Workflows.Signals.FaultSignal"/> handler that already
+        /// terminalized the activity does not see its decision undone.
+        /// </para>
         /// </remarks>
         public void RecoverFromFault()
         {
@@ -363,6 +380,14 @@ public static partial class ActivityExecutionContextExtensions
 
             foreach (var ancestor in ancestors)
                 ancestor.AggregateFaultCount--;
+
+            var incidents = activityExecutionContext.WorkflowExecutionContext.Incidents;
+            var ownIncident = incidents.LastOrDefault(x => x.ActivityNodeId == activityExecutionContext.NodeId);
+
+            if (ownIncident != null)
+                incidents.Remove(ownIncident);
+
+            activityExecutionContext.Exception = null;
 
             if (activityExecutionContext.Status == ActivityStatus.Faulted)
                 activityExecutionContext.TransitionTo(ActivityStatus.Running);
