@@ -273,6 +273,26 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         AssertFaultCounts(result, expected: 1);
     }
 
+    [Fact(DisplayName = "Cancellation from a handler propagates instead of becoming an incident")]
+    public async Task HandlerThatCancels_PropagatesRatherThanFaulting()
+    {
+        // The guard above deliberately does not cover OperationCanceledException. Cancellation means the host is tearing
+        // the run down, not that the handler is broken, and this repository keeps the two apart: the workflow-level
+        // exception middleware cancels and rethrows before its general catch, and WorkflowRunner declines to record
+        // cancellation as the workflow's exception. Swallowing it here would turn a deliberate cancellation into a
+        // faulted workflow.
+
+        // Arrange
+        var container = ContainerAround(_faultingActivity, (_, _) => throw new OperationCanceledException());
+
+        // Act
+        var result = await RunAsync(container, typeof(FaultStrategy));
+
+        // Assert: the workflow-level middleware cancelled the run, so it ends Cancelled rather than Faulted. Swallowing
+        // the cancellation here would instead hand the fault to FaultStrategy and finish Faulted.
+        Assert.Equal(WorkflowSubStatus.Cancelled, result.WorkflowState.SubStatus);
+    }
+
     /// <summary>
     /// The canonical handler: claim the fault, terminalize the faulted child, and wind the container up.
     /// </summary>

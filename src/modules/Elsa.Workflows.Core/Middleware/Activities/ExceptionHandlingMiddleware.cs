@@ -59,6 +59,13 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
     /// the faulted activity in any state, and surfacing that as an incident is better than reporting success. Both
     /// exceptions are logged, the handler's at error level, because a broken fault handler is a defect in its own right
     /// rather than a workflow outcome.
+    /// <para>
+    /// Cancellation is deliberately excluded. An <see cref="OperationCanceledException"/> from a handler means the host
+    /// is tearing the run down, not that the handler is broken, and this repository consistently keeps the two apart:
+    /// the workflow-level exception middleware cancels and rethrows before its general catch, and
+    /// <c>WorkflowRunner</c> declines to record cancellation as the workflow's exception. Swallowing it here would
+    /// convert a deliberate cancellation into a faulted workflow.
+    /// </para>
     /// </remarks>
     private async Task<bool> TryHandOffToAncestorsAsync(ActivityExecutionContext context, Exception fault)
     {
@@ -66,7 +73,7 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         {
             return await context.TrySendSignalAsync(new FaultSignal(fault, context));
         }
-        catch (Exception handlerException)
+        catch (Exception handlerException) when (handlerException is not OperationCanceledException)
         {
             logger.LogError(
                 handlerException,

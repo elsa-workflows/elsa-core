@@ -74,6 +74,13 @@ namespace Elsa.Workflows.Signals;
 ///     its own right rather than a workflow outcome.
 ///     </description>
 ///   </item>
+///   <item>
+///     <description>
+///     <b>Cancellation is the exception to that.</b> An <see cref="OperationCanceledException"/> from a handler
+///     propagates, because it means the host is tearing the run down rather than that the handler is broken. Treating
+///     it as a handler failure would turn a deliberate cancellation into a faulted workflow.
+///     </description>
+///   </item>
 /// </list>
 /// <para>
 /// <b>Completing the faulted activity takes one extra step.</b> <c>CompleteActivityAsync</c> returns immediately unless
