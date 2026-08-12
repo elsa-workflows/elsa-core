@@ -33,8 +33,11 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
 
-        // The incident stays on record even though the fault was handled: caught failures remain visible to operators.
-        Assert.Single(result.WorkflowState.Incidents);
+        // A fault a container claimed is not an incident. Plenty of code reads a non-empty Incidents as "this workflow
+        // failed" without looking further - the HTTP endpoint fault handler among them - so leaving one here would
+        // answer a caller with a fault response for a workflow that caught its error and finished normally. The
+        // execution log still records the failure for anyone reading the journal.
+        Assert.Empty(result.WorkflowState.Incidents);
     }
 
     [Theory(DisplayName = "A fault nobody handles is left to the incident strategy, exactly as before")]
@@ -95,8 +98,9 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(0, container.FaultsSeen);
         Assert.NotEqual(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
 
-        // The incident is still on record, and the fault bookkeeping was still recovered exactly once.
-        Assert.Single(result.WorkflowState.Incidents);
+        // The activity claimed the fault itself, so it is not an incident either, and the fault bookkeeping was still
+        // recovered exactly once.
+        Assert.Empty(result.WorkflowState.Incidents);
 
         var faultedContext = result.GetActivityContext(faultingActivity);
         Assert.NotNull(faultedContext);
