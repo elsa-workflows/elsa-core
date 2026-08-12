@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
@@ -27,6 +28,7 @@ public class Tests
         const string definitionId = "test-definition";
         var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
         var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+
         var existingDraft = new WorkflowDefinition
         {
             Id = "v1",
@@ -35,6 +37,7 @@ public class Tests
             IsPublished = false,
             IsLatest = true
         };
+
         var newDraft = new WorkflowDefinition
         {
             Id = "v2",
@@ -45,10 +48,13 @@ public class Tests
 
         var savedDraft = await publisher.SaveDraftAsync(newDraft);
 
-        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId
-        })).ToDictionary(x => x.Id);
+        var definitions = (await store.FindManyAsync(
+            new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId
+            }
+        )).ToDictionary(x => x.Id);
+
         Assert.False(definitions["v1"].IsLatest);
         Assert.True(definitions["v2"].IsLatest);
         Assert.Single(definitions.Values, x => x.IsLatest);
@@ -62,6 +68,7 @@ public class Tests
         const string definitionId = "test-definition";
         var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
         var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+
         var existingDraft = new WorkflowDefinition
         {
             Id = "draft-1",
@@ -75,11 +82,15 @@ public class Tests
 
         var savedDraft = await publisher.SaveDraftAsync(existingDraft);
 
-        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
-        {
-            DefinitionId = definitionId
-        })).ToList();
+        var definitions = (await store.FindManyAsync(
+            new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId
+            }
+        )).ToList();
+
         var persistedDraft = Assert.Single(definitions);
+
         Assert.Equal("draft-1", persistedDraft.Id);
         Assert.Equal(1, persistedDraft.Version);
         Assert.True(persistedDraft.IsLatest);
@@ -87,23 +98,125 @@ public class Tests
         Assert.True(savedDraft.IsLatest);
     }
 
+    [Fact]
+    public async Task SaveDraftAsync_ShouldDemoteActualLatestWhenHighestVersionIsNotLatest()
+    {
+        const string definitionId = "test-definition";
+        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        await store.SaveManyAsync([
+            CreateDefinition("v1", definitionId, 1, true),
+            CreateDefinition("v2", definitionId, 2, false)
+        ]);
+
+        var savedDraft = await publisher.SaveDraftAsync(CreateDefinition("v3", definitionId, 0, false));
+
+        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
+        Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
+        Assert.False(definitions.Single(x => x.Id == "v2").IsLatest);
+        Assert.True(definitions.Single(x => x.Id == "v3").IsLatest);
+        Assert.Equal(3, savedDraft.Version);
+        Assert.Equal(3, definitions.Single(x => x.Id == "v3").Version);
+        Assert.Single(definitions, x => x.IsLatest);
+    }
+
+    [Fact]
+    public async Task SaveDraftAsync_ShouldPreserveActualLatestVersionWhenHigherVersionIsNotLatest()
+    {
+        const string definitionId = "test-definition";
+        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var latestDraft = CreateDefinition("v1", definitionId, 1, true);
+        await store.SaveManyAsync([
+            latestDraft,
+            CreateDefinition("v2", definitionId, 2, false)
+        ]);
+
+        var savedDraft = await publisher.SaveDraftAsync(latestDraft);
+
+        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
+        Assert.Equal(2, definitions.Count);
+        Assert.Equal(1, savedDraft.Version);
+        Assert.Equal(1, definitions.Single(x => x.Id == "v1").Version);
+        Assert.True(definitions.Single(x => x.Id == "v1").IsLatest);
+        Assert.False(definitions.Single(x => x.Id == "v2").IsLatest);
+        Assert.Single(definitions, x => x.IsLatest);
+    }
+
+    [Fact]
+    public async Task SaveDraftAsync_ShouldPreserveHighestVersionWhenPromotingNonLatestDraft()
+    {
+        const string definitionId = "test-definition";
+        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        await store.SaveManyAsync([
+            CreateDefinition("v1", definitionId, 1, true),
+            CreateDefinition("v2", definitionId, 2, false)
+        ]);
+        var highestDraft = await publisher.GetDraftAsync(definitionId, VersionOptions.SpecificVersion(2));
+
+        var savedDraft = await publisher.SaveDraftAsync(highestDraft!);
+
+        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
+        Assert.Equal(2, definitions.Count);
+        Assert.Equal("v2", savedDraft.Id);
+        Assert.Equal(2, savedDraft.Version);
+        Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
+        Assert.True(definitions.Single(x => x.Id == "v2").IsLatest);
+        Assert.Single(definitions, x => x.IsLatest);
+    }
+
+    [Fact]
+    public async Task SaveDraftAsync_ShouldPreservePublishedStateWhenCreatingDraftAfterPublishedLatest()
+    {
+        const string definitionId = "test-definition";
+        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var publishedDefinition = CreateDefinition("v1", definitionId, 1, true);
+        publishedDefinition.IsPublished = true;
+        await store.SaveAsync(publishedDefinition);
+
+        var savedDraft = await publisher.SaveDraftAsync(CreateDefinition("v2", definitionId, 0, false));
+
+        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
+        var persistedPublishedDefinition = definitions.Single(x => x.Id == "v1");
+        Assert.True(persistedPublishedDefinition.IsPublished);
+        Assert.False(persistedPublishedDefinition.IsLatest);
+        Assert.Equal(1, persistedPublishedDefinition.Version);
+        Assert.False(savedDraft.IsPublished);
+        Assert.True(savedDraft.IsLatest);
+        Assert.Equal(2, savedDraft.Version);
+        Assert.Single(definitions, x => x.IsLatest);
+    }
+
     [Theory]
     [InlineData(BatchFailurePoint.Replacement)]
     [InlineData(BatchFailurePoint.PreviousLatest)]
-    public async Task SaveDraftAsync_WhenReplacementBatchFails_ShouldPreserveSinglePreviousLatest(BatchFailurePoint failurePoint)
+    public async Task SaveDraftAsync_WhenReplacementBatchFails_ShouldPreserveSinglePreviousLatest(
+        BatchFailurePoint failurePoint
+    )
     {
         const string definitionId = "test-definition";
+
         var persisted = new Dictionary<string, WorkflowDefinition>
         {
             ["v1"] = CreateDefinition("v1", definitionId, 1, true)
         };
+
         var store = CreateFailingStore(persisted, failurePoint);
-        var publisher = ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(_services, store);
+        var publisher = ActivatorUtilities.CreateInstance<WorkflowDefinitionPublisher>(
+            _services,
+            store
+        );
+
         var replacement = CreateDefinition("v2", definitionId, 0, false);
 
-        await Assert.ThrowsAsync<TestPersistenceException>(() => publisher.SaveDraftAsync(replacement));
+        await Assert.ThrowsAsync<TestPersistenceException>(
+            () => publisher.SaveDraftAsync(replacement)
+        );
 
         var previous = Assert.Single(persisted.Values);
+
         Assert.Equal("v1", previous.Id);
         Assert.True(previous.IsLatest);
         Assert.Single(persisted.Values, x => x.IsLatest);
@@ -113,43 +226,147 @@ public class Tests
     public async Task SaveDraftAsync_WhenDraftSavedNotificationFails_ShouldKeepCommittedLatestStateConsistent()
     {
         const string definitionId = "test-definition";
-        var services = new TestApplicationBuilder(_services.GetRequiredService<ITestOutputHelper>())
-            .ConfigureServices(serviceCollection => serviceCollection.AddNotificationHandler<FailingDraftSavedHandler, WorkflowDefinitionDraftSaved>())
+
+        var services = new TestApplicationBuilder(
+            _services.GetRequiredService<ITestOutputHelper>()
+        )
+            .ConfigureServices(serviceCollection =>
+                serviceCollection.AddNotificationHandler<
+                    FailingDraftSavedHandler,
+                    WorkflowDefinitionDraftSaved
+                >()
+            )
             .Build();
+
         var store = services.GetRequiredService<IWorkflowDefinitionStore>();
         var publisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
+
         await store.SaveAsync(CreateDefinition("v1", definitionId, 1, true));
 
-        await Assert.ThrowsAsync<TestNotificationException>(() => publisher.SaveDraftAsync(CreateDefinition("v2", definitionId, 0, false)));
+        await Assert.ThrowsAsync<TestNotificationException>(
+            () => publisher.SaveDraftAsync(CreateDefinition("v2", definitionId, 0, false))
+        );
 
-        var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
+        var definitions = (await store.FindManyAsync(
+            new WorkflowDefinitionFilter
+            {
+                DefinitionId = definitionId
+            }
+        )).ToList();
+
         Assert.Equal(2, definitions.Count);
         Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
         Assert.True(definitions.Single(x => x.Id == "v2").IsLatest);
         Assert.Single(definitions, x => x.IsLatest);
     }
 
+    [Fact]
+    public async Task RevertVersionAsync_ShouldAllocateVersionAfterHighestStoredVersion()
+    {
+        const string definitionId = "test-definition";
+        var store = _services.GetRequiredService<IWorkflowDefinitionStore>();
+        var publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+
+        var definitions = new WorkflowDefinition[]
+        {
+            new()
+            {
+                Id = "v1",
+                DefinitionId = definitionId,
+                Version = 1,
+                IsPublished = true,
+                IsLatest = false
+            },
+            new()
+            {
+                Id = "v2",
+                DefinitionId = definitionId,
+                Version = 2,
+                IsPublished = false,
+                IsLatest = true
+            },
+            new()
+            {
+                Id = "v3",
+                DefinitionId = definitionId,
+                Version = 3,
+                IsPublished = false,
+                IsLatest = false
+            }
+        };
+
+        await store.SaveManyAsync(definitions);
+
+        var revertedDefinition = await publisher.RevertVersionAsync(definitionId, 1);
+
+        Assert.Equal(4, revertedDefinition.Version);
+    }
+
     private static IWorkflowDefinitionStore CreateFailingStore(
         IDictionary<string, WorkflowDefinition> persisted,
-        BatchFailurePoint failurePoint)
+        BatchFailurePoint failurePoint
+    )
     {
         var store = Substitute.For<IWorkflowDefinitionStore>();
-        store.FindLastVersionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
-            .Returns(_ => Task.FromResult(persisted.Values.OrderByDescending(x => x.Version).Select(Clone).FirstOrDefault()));
-        store.SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>())
+
+        store.FindLastVersionAsync(
+                Arg.Any<WorkflowDefinitionFilter>(),
+                Arg.Any<CancellationToken>()
+            )
+            .Returns(_ =>
+                Task.FromResult(
+                    persisted.Values
+                        .OrderByDescending(x => x.Version)
+                        .Select(Clone)
+                        .FirstOrDefault()
+                )
+            );
+
+        store.FindAsync(
+                Arg.Is<WorkflowDefinitionFilter>(x => x.VersionOptions!.Value.IsLatest),
+                Arg.Any<CancellationToken>()
+            )
+            .Returns(_ =>
+                Task.FromResult(
+                    persisted.Values
+                        .Where(x => x.IsLatest)
+                        .Select(Clone)
+                        .FirstOrDefault()
+                )
+            );
+
+        store.SaveManyAsync(
+                Arg.Any<IEnumerable<WorkflowDefinition>>(),
+                Arg.Any<CancellationToken>()
+            )
             .Returns(callInfo =>
             {
                 var definitions = callInfo.Arg<IEnumerable<WorkflowDefinition>>().ToList();
-                var snapshot = persisted.ToDictionary(x => x.Key, x => Clone(x.Value));
+
+                var snapshot = persisted.ToDictionary(
+                    x => x.Key,
+                    x => Clone(x.Value)
+                );
 
                 try
                 {
                     foreach (var definition in definitions)
                     {
-                        if (failurePoint == BatchFailurePoint.PreviousLatest && definition.Id == "v1")
+                        if (
+                            failurePoint == BatchFailurePoint.PreviousLatest
+                            && definition.Id == "v1"
+                        )
+                        {
                             throw new TestPersistenceException();
-                        if (failurePoint == BatchFailurePoint.Replacement && definition.Id == "v2")
+                        }
+
+                        if (
+                            failurePoint == BatchFailurePoint.Replacement
+                            && definition.Id == "v2"
+                        )
+                        {
                             throw new TestPersistenceException();
+                        }
 
                         persisted[definition.Id] = Clone(definition);
                     }
@@ -157,26 +374,38 @@ public class Tests
                 catch
                 {
                     persisted.Clear();
+
                     foreach (var item in snapshot)
+                    {
                         persisted[item.Key] = item.Value;
+                    }
+
                     throw;
                 }
 
                 return Task.CompletedTask;
             });
+
         return store;
     }
 
-    private static WorkflowDefinition CreateDefinition(string id, string definitionId, int version, bool isLatest) => new()
-    {
-        Id = id,
-        DefinitionId = definitionId,
-        Version = version,
-        IsLatest = isLatest,
-        IsPublished = false
-    };
+    private static WorkflowDefinition CreateDefinition(
+        string id,
+        string definitionId,
+        int version,
+        bool isLatest
+    ) =>
+        new()
+        {
+            Id = id,
+            DefinitionId = definitionId,
+            Version = version,
+            IsLatest = isLatest,
+            IsPublished = false
+        };
 
-    private static WorkflowDefinition Clone(WorkflowDefinition definition) => definition.ShallowClone();
+    private static WorkflowDefinition Clone(WorkflowDefinition definition) =>
+        definition.ShallowClone();
 
     public enum BatchFailurePoint
     {
@@ -184,11 +413,16 @@ public class Tests
         PreviousLatest
     }
 
-    private class FailingDraftSavedHandler : INotificationHandler<WorkflowDefinitionDraftSaved>
+    private class FailingDraftSavedHandler
+        : INotificationHandler<WorkflowDefinitionDraftSaved>
     {
-        public Task HandleAsync(WorkflowDefinitionDraftSaved notification, CancellationToken cancellationToken) => throw new TestNotificationException();
+        public Task HandleAsync(
+            WorkflowDefinitionDraftSaved notification,
+            CancellationToken cancellationToken
+        ) => throw new TestNotificationException();
     }
 
     private class TestPersistenceException : Exception;
+
     private class TestNotificationException : Exception;
 }
