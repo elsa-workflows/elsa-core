@@ -364,7 +364,15 @@ public static partial class ActivityExecutionContextExtensions
         /// a loop, retried, or run concurrently has several executions that all raise incidents under the same node id, and
         /// recovering one of them must not remove another's. Within a single execution the most recent is taken, which keeps
         /// an activity that faults, recovers, and faults again correct: each recovery removes its own incident rather than
-        /// the whole execution's history.
+        /// the whole execution's history. That last part relies on <see cref="WorkflowExecutionContext.Incidents"/> preserving
+        /// insertion order, which it does because it is list-backed; it is typed as a plain collection, so a future change to
+        /// an unordered one would silently pick an arbitrary incident of that execution rather than its newest.
+        /// </para>
+        /// <para>
+        /// Clearing the exception also clears it from the activity's execution record, which maps it from the live context.
+        /// That is intended and follows from the same reasoning as the incident: an execution whose failure a container
+        /// claimed is not a failed execution. The journal keeps the evidence either way, since the <c>Faulted</c> entry is
+        /// written by <c>ExecutionLogMiddleware</c>, which sits inside this middleware and logs on the way past.
         /// </para>
         /// <para>
         /// It remains asymmetric with <c>Fault</c> in one respect: it <i>sets</i> the current context's fault count to zero, which is
