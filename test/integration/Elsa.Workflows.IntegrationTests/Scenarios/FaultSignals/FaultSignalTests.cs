@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Activities;
@@ -5,6 +6,8 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.IntegrationTests.Scenarios.FaultSignals.Activities;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
+using Microsoft.Extensions.DependencyInjection;
 using Elsa.Workflows.Signals;
 using Xunit.Abstractions;
 
@@ -291,6 +294,34 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         // Assert: the workflow-level middleware cancelled the run, so it ends Cancelled rather than Faulted. Swallowing
         // the cancellation here would instead hand the fault to FaultStrategy and finish Faulted.
         Assert.Equal(WorkflowSubStatus.Cancelled, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A handled fault still leaves the failure in the execution log")]
+    public async Task HandledFault_StillRecordsTheFailureInTheJournal()
+    {
+        // The whole justification for dropping the incident is that the journal keeps the evidence, so that claim is
+        // asserted rather than assumed. ExecutionLogMiddleware writes the entry from a catch that rethrows, and it sits
+        // inside ExceptionHandlingMiddleware in the activity pipeline, so the entry is written before the fault is ever
+        // offered to an ancestor. Reordering those two would silently make a handled failure invisible.
+
+        // Arrange
+        var container = ContainerAround(_faultingActivity, ClaimAndCancelChildAsync);
+
+        // Act
+        var result = await RunAsync(container);
+
+        // Assert: no incident, but the failure is still on the record.
+        Assert.Empty(result.WorkflowState.Incidents);
+
+        var journal = await _fixture.Services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
+        {
+            WorkflowInstanceId = result.WorkflowState.Id,
+            ActivityId = _faultingActivity.Id,
+            EventName = "Faulted"
+        }, PageArgs.All);
+
+        var entry = Assert.Single(journal.Items);
+        Assert.Equal(_faultingActivity.Id, entry.ActivityId);
     }
 
     /// <summary>
