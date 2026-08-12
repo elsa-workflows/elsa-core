@@ -237,6 +237,42 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(ActivityStatus.Canceled, result.GetActivityStatus(_faultingActivity));
     }
 
+    [Theory(DisplayName = "A handler that throws is treated as not having handled the fault")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandlerThatThrows_FallsThroughToTheIncidentStrategy(bool stopPropagationFirst)
+    {
+        // The signal is sent from inside the catch that exists to stop exceptions escaping the activity pipeline, so a
+        // handler's failure must not escape either: it would defeat the middleware and lose the original fault with it.
+        // Both cases are covered, because a handler that already claimed the fault before throwing is the one that could
+        // plausibly have been mistaken for a successful handling.
+
+        // Arrange
+        var container = ContainerAround(_faultingActivity, (_, context) =>
+        {
+            if (stopPropagationFirst)
+                context.StopPropagation();
+
+            throw new InvalidOperationException("The handler is broken");
+        });
+
+        // Act: this must not throw. If the handler's exception escaped, it would surface here.
+        var result = await RunAsync(container, typeof(FaultStrategy));
+
+        // Assert: the fault is unhandled, so it lands exactly where it would with no handler at all.
+        Assert.Equal(1, container.FaultsSeen);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        Assert.Equal(ActivityStatus.Faulted, result.GetActivityStatus(_faultingActivity));
+
+        // The original fault is the incident, not the handler's failure: recovery never ran, so nothing removed it.
+        // Asserted on identity rather than message text, because the incident carries the thrown exception's message
+        // and a broken handler must not be able to substitute its own.
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Equal(_faultingActivity.Id, incident.ActivityId);
+        Assert.DoesNotContain("The handler is broken", incident.Message, StringComparison.Ordinal);
+        AssertFaultCounts(result, expected: 1);
+    }
+
     /// <summary>
     /// The canonical handler: claim the fault, terminalize the faulted child, and wind the container up.
     /// </summary>
