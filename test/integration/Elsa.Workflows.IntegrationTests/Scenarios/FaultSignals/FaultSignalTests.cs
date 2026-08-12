@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Activities;
@@ -5,6 +6,8 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.IntegrationTests.Scenarios.FaultSignals.Activities;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
+using Microsoft.Extensions.DependencyInjection;
 using Elsa.Workflows.Signals;
 using Xunit.Abstractions;
 
@@ -235,6 +238,90 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         // Assert
         Assert.Equal(ActivityStatus.Completed, result.GetActivityStatus(container));
         Assert.Equal(ActivityStatus.Canceled, result.GetActivityStatus(_faultingActivity));
+    }
+
+    [Theory(DisplayName = "A handler that throws is treated as not having handled the fault")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task HandlerThatThrows_FallsThroughToTheIncidentStrategy(bool stopPropagationFirst)
+    {
+        // The signal is sent from inside the catch that exists to stop exceptions escaping the activity pipeline, so a
+        // handler's failure must not escape either: it would defeat the middleware and lose the original fault with it.
+        // Both cases are covered, because a handler that already claimed the fault before throwing is the one that could
+        // plausibly have been mistaken for a successful handling.
+
+        // Arrange
+        var container = ContainerAround(_faultingActivity, (_, context) =>
+        {
+            if (stopPropagationFirst)
+                context.StopPropagation();
+
+            throw new InvalidOperationException("The handler is broken");
+        });
+
+        // Act: this must not throw. If the handler's exception escaped, it would surface here.
+        var result = await RunAsync(container, typeof(FaultStrategy));
+
+        // Assert: the fault is unhandled, so it lands exactly where it would with no handler at all.
+        Assert.Equal(1, container.FaultsSeen);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        Assert.Equal(ActivityStatus.Faulted, result.GetActivityStatus(_faultingActivity));
+
+        // The original fault is the incident, not the handler's failure: recovery never ran, so nothing removed it.
+        // Asserted on identity rather than message text, because the incident carries the thrown exception's message
+        // and a broken handler must not be able to substitute its own.
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Equal(_faultingActivity.Id, incident.ActivityId);
+        Assert.DoesNotContain("The handler is broken", incident.Message, StringComparison.Ordinal);
+        AssertFaultCounts(result, expected: 1);
+    }
+
+    [Fact(DisplayName = "Cancellation from a handler propagates instead of becoming an incident")]
+    public async Task HandlerThatCancels_PropagatesRatherThanFaulting()
+    {
+        // The guard above deliberately does not cover OperationCanceledException. Cancellation means the host is tearing
+        // the run down, not that the handler is broken, and this repository keeps the two apart: the workflow-level
+        // exception middleware cancels and rethrows before its general catch, and WorkflowRunner declines to record
+        // cancellation as the workflow's exception. Swallowing it here would turn a deliberate cancellation into a
+        // faulted workflow.
+
+        // Arrange
+        var container = ContainerAround(_faultingActivity, (_, _) => throw new OperationCanceledException());
+
+        // Act
+        var result = await RunAsync(container, typeof(FaultStrategy));
+
+        // Assert: the workflow-level middleware cancelled the run, so it ends Cancelled rather than Faulted. Swallowing
+        // the cancellation here would instead hand the fault to FaultStrategy and finish Faulted.
+        Assert.Equal(WorkflowSubStatus.Cancelled, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A handled fault still leaves the failure in the execution log")]
+    public async Task HandledFault_StillRecordsTheFailureInTheJournal()
+    {
+        // The whole justification for dropping the incident is that the journal keeps the evidence, so that claim is
+        // asserted rather than assumed. ExecutionLogMiddleware writes the entry from a catch that rethrows, and it sits
+        // inside ExceptionHandlingMiddleware in the activity pipeline, so the entry is written before the fault is ever
+        // offered to an ancestor. Reordering those two would silently make a handled failure invisible.
+
+        // Arrange
+        var container = ContainerAround(_faultingActivity, ClaimAndCancelChildAsync);
+
+        // Act
+        var result = await RunAsync(container);
+
+        // Assert: no incident, but the failure is still on the record.
+        Assert.Empty(result.WorkflowState.Incidents);
+
+        var journal = await _fixture.Services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
+        {
+            WorkflowInstanceId = result.WorkflowState.Id,
+            ActivityId = _faultingActivity.Id,
+            EventName = "Faulted"
+        }, PageArgs.All);
+
+        var entry = Assert.Single(journal.Items);
+        Assert.Equal(_faultingActivity.Id, entry.ActivityId);
     }
 
     /// <summary>

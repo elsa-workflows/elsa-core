@@ -63,6 +63,24 @@ namespace Elsa.Workflows.Signals;
 ///     <b>The handler must not</b> call <c>RecoverFromFault()</c>.
 ///     </description>
 ///   </item>
+///   <item>
+///     <description>
+///     <b>A handler that throws is treated as not having handled the fault.</b> Its exception does not escape, because
+///     this signal is sent from inside the <c>catch</c> whose whole job is to stop exceptions escaping the activity
+///     pipeline; letting a handler's failure through would defeat that and lose the original fault with it. The incident
+///     strategy then runs exactly as it would with no handler present, which is the conservative direction: a handler
+///     that failed part way through may have left the faulted activity in any state, and an incident is a better answer
+///     than silence. The handler's own exception is logged at error level, because a broken fault handler is a defect in
+///     its own right rather than a workflow outcome.
+///     </description>
+///   </item>
+///   <item>
+///     <description>
+///     <b>Cancellation is the exception to that.</b> An <see cref="OperationCanceledException"/> from a handler
+///     propagates, because it means the host is tearing the run down rather than that the handler is broken. Treating
+///     it as a handler failure would turn a deliberate cancellation into a faulted workflow.
+///     </description>
+///   </item>
 /// </list>
 /// <para>
 /// <b>Completing the faulted activity takes one extra step.</b> <c>CompleteActivityAsync</c> returns immediately unless
