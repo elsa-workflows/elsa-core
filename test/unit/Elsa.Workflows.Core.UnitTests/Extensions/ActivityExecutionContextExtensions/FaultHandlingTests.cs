@@ -143,6 +143,48 @@ public class FaultHandlingTests
     }
 
     [Fact]
+    public async Task RecoverFromFault_LeavesIncidentsFromAnotherExecutionOfTheSameNode()
+    {
+        // ActivityNodeId identifies the static workflow node, and one node can have several executions: inside a loop,
+        // retried, or run concurrently. Matching an incident on the node id alone would let one execution's recovery
+        // remove another execution's incident, so the match is on the execution id.
+
+        // Arrange: two executions of one activity, hence one shared node id and two distinct execution ids. The ids are
+        // assigned here because this fixture substitutes the identity generator, which hands every context an empty id.
+        var first = await CreateContextAsync();
+        var second = await first.WorkflowExecutionContext.CreateActivityExecutionContextAsync(first.Activity, new());
+        first.Id = "execution-1";
+        second.Id = "execution-2";
+
+        Assert.Equal(first.NodeId, second.NodeId);
+
+        first.Fault(new InvalidOperationException("First execution"));
+        second.Fault(new InvalidOperationException("Second execution"));
+
+        // Act: recover the earlier execution, whose incident is not the most recently appended.
+        first.RecoverFromFault();
+
+        // Assert: the other execution keeps its own.
+        var remaining = Assert.Single(first.WorkflowExecutionContext.Incidents);
+        Assert.Equal(second.Id, remaining.ActivityInstanceId);
+        Assert.Equal("Second execution", remaining.Message);
+    }
+
+    [Fact]
+    public async Task Fault_StampsTheIncidentWithTheExecutionThatRaisedIt()
+    {
+        // Arrange
+        var context = await CreateContextAsync();
+
+        // Act
+        context.Fault(new InvalidOperationException("Test error"));
+
+        // Assert
+        var incident = Assert.Single(context.WorkflowExecutionContext.Incidents);
+        Assert.Equal(context.Id, incident.ActivityInstanceId);
+    }
+
+    [Fact]
     public async Task RecoverFromFault_LeavesIncidentsBelongingToOtherActivities()
     {
         // Arrange

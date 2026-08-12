@@ -336,7 +336,7 @@ public static partial class ActivityExecutionContextExtensions
             var exceptionState = ExceptionState.FromException(e);
             var systemClock = activityExecutionContext.GetRequiredService<ISystemClock>();
             var now = systemClock.UtcNow;
-            var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now);
+            var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now, activityExecutionContext.Id);
             activityExecutionContext.WorkflowExecutionContext.Incidents.Add(incident);
             activityExecutionContext.AggregateFaultCount++;
         
@@ -360,9 +360,11 @@ public static partial class ActivityExecutionContextExtensions
         /// nothing is hidden from anyone reading the journal.
         /// </para>
         /// <para>
-        /// The incident is matched on this activity's node id, most recent first, which is the one <c>Fault</c> just appended.
-        /// Pairing that way keeps an activity that faults, recovers, and faults again correct: each recovery removes its own
-        /// incident rather than the whole activity's history.
+        /// The incident is matched on this <i>execution's</i> id rather than on the activity's node id, because a node inside
+        /// a loop, retried, or run concurrently has several executions that all raise incidents under the same node id, and
+        /// recovering one of them must not remove another's. Within a single execution the most recent is taken, which keeps
+        /// an activity that faults, recovers, and faults again correct: each recovery removes its own incident rather than
+        /// the whole execution's history.
         /// </para>
         /// <para>
         /// It remains asymmetric with <c>Fault</c> in one respect: it <i>sets</i> the current context's fault count to zero, which is
@@ -382,7 +384,7 @@ public static partial class ActivityExecutionContextExtensions
                 ancestor.AggregateFaultCount--;
 
             var incidents = activityExecutionContext.WorkflowExecutionContext.Incidents;
-            var ownIncident = incidents.LastOrDefault(x => x.ActivityNodeId == activityExecutionContext.NodeId);
+            var ownIncident = incidents.LastOrDefault(x => x.ActivityInstanceId == activityExecutionContext.Id);
 
             if (ownIncident != null)
                 incidents.Remove(ownIncident);
