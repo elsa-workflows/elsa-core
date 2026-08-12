@@ -120,6 +120,36 @@ When adding a new store implementation:
 5. Add unit tests for store-specific query behavior if logic is nontrivial.
 6. Add integration tests for provider behavior, migrations, and multi-target concerns where practical.
 
+## Persistence vNext
+
+Persistence vNext is a next-generation, provider-neutral persistence system being developed in parallel with the existing EF Core path. It is currently in early design and not yet used by production Elsa modules.
+
+### Design Goals
+
+- Module authors declare **storage manifests** (storage units, fields, keys, and indexes) once, without referencing any database-specific package.
+- Separate **planners** (relational and document) turn manifests into provider-specific plans.
+- A **portable document/index store** wraps provider-specific backends so simple modules do not need custom EF Core, SQL, or MongoDB code.
+- **Schema versioning** replaces per-provider EF Core migration packages.
+
+### Package Layout
+
+| Package | Role |
+| --- | --- |
+| [Elsa.Persistence.VNext](../../src/modules/Elsa.Persistence.VNext) | Core abstractions: storage manifests, document/index contracts, planner interfaces. |
+| [Elsa.Persistence.VNext.Extensions](../../src/modules/Elsa.Persistence.VNext.Extensions) | Feature registration and options. |
+| [Elsa.Persistence.VNext.Runtime](../../src/modules/Elsa.Persistence.VNext.Runtime) | Runtime-specific entity definitions and evaluation helpers. |
+| [Elsa.Persistence.VNext.Relational](../../src/modules/Elsa.Persistence.VNext.Relational) | Shared relational store behavior and SQL rendering. |
+| [Elsa.Persistence.VNext.Sqlite](../../src/modules/Elsa.Persistence.VNext.Sqlite) | SQLite physicalization: DDL renderer, type mapper, schema version runner, document store. |
+| [Elsa.Persistence.VNext.PostgreSql](../../src/modules/Elsa.Persistence.VNext.PostgreSql) | PostgreSQL physicalization. |
+| [Elsa.Persistence.VNext.SqlServer](../../src/modules/Elsa.Persistence.VNext.SqlServer) | SQL Server physicalization. |
+| [Elsa.Persistence.VNext.MongoDb](../../src/modules/Elsa.Persistence.VNext.MongoDb) | Native MongoDB physicalization using collections and indexes. |
+
+Spec: [specs/011-persistence-vnext/spec.md](../../specs/011-persistence-vnext/spec.md).
+
+### When To Use Persistence vNext
+
+Today, use the existing EF Core path for all production Elsa modules. Persistence vNext work belongs in the `011-persistence-vnext` feature branch. Consult the spec and plan before contributing to avoid duplicating EF Core infrastructure for new module entities.
+
 ## Persistence Risk Checklist
 
 - Does the change affect multiple target frameworks?
