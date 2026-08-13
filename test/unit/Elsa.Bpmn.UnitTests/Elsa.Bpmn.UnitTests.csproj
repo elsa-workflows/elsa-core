@@ -6,15 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Bpmn.Interchange"/>
-        <PackageReference Include="Bpmn.Model"/>
-        <PackageReference Include="Bpmn.Semantics"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Bpmn\Elsa.Bpmn.csproj"/>
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj"/>
     </ItemGroup>
 
 </Project>

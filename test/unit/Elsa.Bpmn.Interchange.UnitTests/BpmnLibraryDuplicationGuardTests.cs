@@ -7,7 +7,7 @@ using Bpmn.Semantics;
 using Elsa.Bpmn.Features;
 using Elsa.Bpmn.Interchange.Features;
 
-namespace Elsa.Bpmn.UnitTests;
+namespace Elsa.Bpmn.Interchange.UnitTests;
 
 /// <summary>
 /// Guards D12 (see #7909/#7934): no type under the Elsa.Bpmn* assemblies may reimplement BPMN
@@ -15,6 +15,9 @@ namespace Elsa.Bpmn.UnitTests;
 /// elsa-foundation, where a parallel BpmnElement/BpmnGraph/etc. semantics core grew alongside the
 /// shared library because only the interchange half was migrated. A review habit did not catch
 /// that; this test exists to.
+/// This guard lives in the interchange test project, not the Elsa.Bpmn one, because it is the only
+/// project that sees both Elsa.Bpmn and Elsa.Bpmn.Interchange transitively without inverting the
+/// module layering that the guard itself protects.
 /// </summary>
 public class BpmnLibraryDuplicationGuardTests
 {
@@ -85,7 +88,9 @@ public class BpmnLibraryDuplicationGuardTests
 
     private static void AssertDependsOnPackage(Assembly assembly, string expectedPackageName)
     {
-        var assemblyName = assembly.GetName().Name!;
+        // Assembly.GetName().Name is only null for an assembly loaded from a byte array with no
+        // name supplied, which never applies to the on-disk assemblies under test here.
+        var assemblyName = assembly.GetName().Name ?? throw new InvalidOperationException($"Assembly at {assembly.Location} has no name.");
         var depsPath = Path.ChangeExtension(assembly.Location, ".deps.json");
 
         Assert.True(File.Exists(depsPath), $"Expected a deps.json next to {assemblyName} to verify its package dependencies.");
