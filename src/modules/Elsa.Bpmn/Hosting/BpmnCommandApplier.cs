@@ -83,7 +83,13 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
         childContext.Taint();
         workflowExecutionContext.AddActivityExecutionContext(childContext);
 
-        // Recorded before scheduling, so the work is live from the moment anything could report against it.
+        // Recorded before scheduling, so the work is live from the moment anything could report against it. This
+        // never checks for an existing record on the same (BindingRef, IterationId): the port guarantees the
+        // interpreter never issues a second StartWork for a slot it already holds live, so a duplicate here would be
+        // an interpreter contract breach, not a host-side race. Were it to happen anyway, Records is append-only and
+        // keyed by handle rather than by slot, so nothing gets overwritten or stranded — the older record, and the
+        // context behind it, stay exactly as reachable as before. What would go wrong is the snapshot then reporting
+        // two live entries for one slot, which is the interpreter's invariant to keep, not this host's to enforce.
         memory.Work.Records.Add(new BpmnWorkRecord
         {
             Handle = memory.Work.NextHandle(),
