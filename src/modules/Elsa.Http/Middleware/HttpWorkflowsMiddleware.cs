@@ -40,21 +40,20 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         IHttpWorkflowLookupService httpWorkflowLookupService)
     {
         var path = httpContext.Request.Path.Value!.NormalizeRoute();
-        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
+        var hasBasePath = !string.IsNullOrWhiteSpace(basePath);
 
         // If the request path does not match the configured base path to handle workflows, then skip.
-        if (!string.IsNullOrWhiteSpace(basePath))
+        if (hasBasePath && !path.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
         {
-            if (!path.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
-            {
-                await next(httpContext);
-                return;
-            }
-
-            // Strip the base path.
-            matchingPath = matchingPath[basePath.Length..];
+            await next(httpContext);
+            return;
         }
+
+        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
+
+        if (hasBasePath)
+            matchingPath = matchingPath[basePath!.Length..];
 
         // Graceful-shutdown gate: when the runtime is paused or draining, we don't accept new HTTP-triggered work.
         // The ingress source registry visibility is provided by HttpTriggerIngressSource — this is the actual mechanism.
