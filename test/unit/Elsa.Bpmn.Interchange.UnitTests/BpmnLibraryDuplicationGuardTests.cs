@@ -20,6 +20,8 @@ namespace Elsa.Bpmn.Interchange.UnitTests;
 /// The dependency direction (that Elsa.Bpmn/Elsa.Bpmn.Interchange still reference the Bpmn.*
 /// packages rather than dropping them and keeping a local copy) is not asserted at runtime here;
 /// it is enforced at compile time by the typeof bindings below, see the comment there.
+/// This guard also proves its own detector: a fixture type below deliberately collides with a
+/// library type name so the suite shows the check can fail, not just pass.
 /// </summary>
 public class BpmnLibraryDuplicationGuardTests
 {
@@ -57,7 +59,25 @@ public class BpmnLibraryDuplicationGuardTests
         AssertNoTypeNameCollisions(ElsaBpmnInterchangeAssembly, BpmnModelAssembly, BpmnSemanticsAssembly, BpmnInterchangeAssembly);
     }
 
+    [Fact]
+    public void TypeNameCollisionDetection_ActuallyDetectsACollision()
+    {
+        var collisions = FindTypeNameCollisions(typeof(BpmnLibraryDuplicationGuardTests).Assembly, BpmnSemanticsAssembly);
+
+        Assert.NotEmpty(collisions);
+        Assert.Contains(collisions, message => message.Contains(nameof(BpmnGraph)));
+    }
+
     private static void AssertNoTypeNameCollisions(Assembly elsaAssembly, params Assembly[] libraryAssemblies)
+    {
+        var collisions = FindTypeNameCollisions(elsaAssembly, libraryAssemblies);
+
+        Assert.True(
+            collisions.Count == 0,
+            $"{elsaAssembly.GetName().Name} must not reimplement BPMN semantics the library already provides:{Environment.NewLine}{string.Join(Environment.NewLine, collisions)}");
+    }
+
+    private static IReadOnlyList<string> FindTypeNameCollisions(Assembly elsaAssembly, params Assembly[] libraryAssemblies)
     {
         var libraryTypesByName = libraryAssemblies
             .SelectMany(a => a.GetTypes())
@@ -65,20 +85,23 @@ public class BpmnLibraryDuplicationGuardTests
             .GroupBy(t => t.Name)
             .ToDictionary(g => g.Key, g => g.First());
 
-        var collisions = elsaAssembly
+        return elsaAssembly
             .GetTypes()
             .Where(t => !IsCompilerGenerated(t))
             .Where(t => libraryTypesByName.ContainsKey(t.Name))
             .Select(t => $"{t.FullName} (in {elsaAssembly.GetName().Name}) duplicates {libraryTypesByName[t.Name].FullName} (in {libraryTypesByName[t.Name].Assembly.GetName().Name})")
             .OrderBy(message => message)
             .ToList();
-
-        Assert.True(
-            collisions.Count == 0,
-            $"{elsaAssembly.GetName().Name} must not reimplement BPMN semantics the library already provides:{Environment.NewLine}{string.Join(Environment.NewLine, collisions)}");
     }
 
     private static bool IsCompilerGenerated(Type type) =>
         type.Name.StartsWith('<') ||
         type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false);
+
+    /// <summary>
+    /// Exists solely as this guard's own fixture: its name deliberately collides with
+    /// Bpmn.Semantics' BpmnGraph so <see cref="TypeNameCollisionDetection_ActuallyDetectsACollision"/>
+    /// can prove the detector fires. Must not be renamed.
+    /// </summary>
+    private sealed class BpmnGraph;
 }
