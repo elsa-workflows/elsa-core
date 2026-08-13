@@ -63,6 +63,60 @@ public class HttpWorkflowsMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WithConfiguredBasePathAndNonMatchingPath_SkipsRouteMatchingAndCallsNext()
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection().BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/health";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithConfiguredBasePathAndMatchingPath_StillResolvesRoute()
+    {
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        routeMatcher.Match("/workflows/colliding", "/workflows/colliding").Returns(new RouteValueDictionary());
+        var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/colliding")]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/colliding";
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await _middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        routeMatcher.Received(1).Match("/workflows/colliding", "/workflows/colliding");
+        Assert.NotNull(bookmarkStore.LastFilter);
+    }
+
+    [Fact]
     public async Task HandleWorkflowFaultAsync_UsesReloadedWorkflowState_WhenAvailable()
     {
         var workflowState = CreateFaultedWorkflowState("workflow-1");
