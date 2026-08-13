@@ -117,6 +117,15 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
 
         memory.Work.Remove(record);
 
+        // Saved here rather than left to the end-of-command save in ApplyAsync: CancelSubtreeAsync can refuse with a
+        // NotSupportedException when the subtree still has scheduled-but-not-invoked work, and under the
+        // continue-with-incidents strategy that throw is absorbed into an incident rather than left to crash the
+        // process — so the end-of-command save would never run. Saving the removal now, before the possible throw,
+        // keeps the persisted ledger from claiming work this scope just tore down, and is what lets a completion
+        // callback that later arrives for the stranded activity find no live record and be discarded (see
+        // BpmnScopeHost.OnWorkCompletedAsync) instead of being handed to the interpreter as real work.
+        memory.SaveWork();
+
         if (BpmnWorkTeardown.FindContext(scopeContext.WorkflowExecutionContext, record.ChildContextId) is not { } childContext)
             return;
 

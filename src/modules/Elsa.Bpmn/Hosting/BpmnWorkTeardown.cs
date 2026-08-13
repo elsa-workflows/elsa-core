@@ -28,9 +28,15 @@ internal static class BpmnWorkTeardown
     /// <para>
     /// What it cannot do is withdraw work whose activity is scheduled but has not been invoked yet. Such work has no
     /// running execution to cancel, and <c>IActivityScheduler</c> offers no way to remove a queued work item, so the
-    /// activity would run after BPMN destroyed the branch it belongs to — leaving two live branches where the model
-    /// says one, with nothing in the resulting state to say so. Refusing loudly is the lesser of the two evils the
-    /// library itself ranks: a fault now, rather than a silent divergence surfacing as a doubled payment weeks later.
+    /// activity runs after BPMN destroyed the branch it belongs to regardless of what this method does. Throwing
+    /// still fails loudly under <c>FaultStrategy</c>, which is the strategy that justifies it. It does not fail
+    /// loudly under <c>ContinueWithIncidentsStrategy</c>: there the throw is absorbed into an incident, execution
+    /// continues, and the stranded activity still runs. What limits the damage in that case is the caller's own
+    /// doing, not this method's: the caller removes the work's ledger record and persists that removal before
+    /// invoking this method, so an absorbed throw cannot leave the persisted ledger claiming work that was just torn
+    /// down, and the stranded activity's eventual completion callback finds no live record and is discarded rather
+    /// than handed to the interpreter as real work. That does not stop the stray activity from running, and it does
+    /// not undo whatever side effects it has — it only stops its result from being believed.
     /// </para>
     /// </remarks>
     public static async ValueTask CancelSubtreeAsync(ActivityExecutionContext childContext, string reason)
