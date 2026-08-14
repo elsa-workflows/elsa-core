@@ -169,6 +169,49 @@ internal static class BpmnTestProcesses
     }
 
     /// <summary>
+    /// A sequential multi-instance task: one instance at a time, each blocking until a test finishes it. Used to
+    /// drive many evaluations of one scope so a persisted blob that is not pruned is observable as unbounded growth.
+    /// </summary>
+    public static BpmnProcess SequentialMultiInstanceTask(BpmnTestLog log, int cardinality)
+    {
+        var definition = new BpmnProcessBuilder("sequential-multi-instance-task")
+            .StartEvent("start")
+            .Task(BpmnElementTypes.Task, "each", bindingRef: BindingRef("each"), loopCharacteristics: new BpmnLoopCharacteristics(isSequential: true, cardinality: cardinality))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .ConnectSequence("start", "each", "after", "end")
+            .Build();
+
+        return Scope("scope", definition, Blocking("each", log), Immediate("after", log));
+    }
+
+    /// <summary>
+    /// A parallel split into two branches that both block, and a join. Used to prove a scope suspends with two live
+    /// units of work outstanding and, once resumed, matches each completion back to its own binding through the
+    /// rehydrated ledger.
+    /// </summary>
+    public static BpmnProcess ParallelSplitAndJoinBlocking(BpmnTestLog log)
+    {
+        var definition = new BpmnProcessBuilder("parallel-split-and-join-blocking")
+            .StartEvent("start")
+            .ParallelGateway("split")
+            .Task("left", bindingRef: BindingRef("left"))
+            .Task("right", bindingRef: BindingRef("right"))
+            .ParallelGateway("join")
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .ConnectSequence("start", "split")
+            .Connect("split", "left")
+            .Connect("split", "right")
+            .Connect("left", "join")
+            .Connect("right", "join")
+            .ConnectSequence("join", "after", "end")
+            .Build();
+
+        return Scope("scope", definition, Blocking("left", log), Blocking("right", log), Immediate("after", log));
+    }
+
+    /// <summary>
     /// A collection-mode multi-instance task: one instance per item of a container-scoped variable, which the
     /// interpreter reads back through <c>IBpmnVariableReader</c> while it evaluates.
     /// </summary>
