@@ -150,14 +150,11 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
     /// </remarks>
     private static void RefuseUnusedDeclarations(BpmnProcessDefinition definition, ISet<string> consumed)
     {
-        foreach (var element in definition.Elements)
+        foreach (var element in definition.Elements.Where(element => BpmnActivityBindingFormat.Find(element.Extensions) is not null && !consumed.Contains(element.ElementId)))
         {
-            if (BpmnActivityBindingFormat.Find(element.Extensions) is not null && !consumed.Contains(element.ElementId))
-            {
-                throw new BpmnBindingException(
-                    $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{definition.ProcessId}' carries an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element, but its work is not an unbound task, so nothing would ever run it. "
-                    + "Only a task the document describes without implementing takes an authored activity binding.");
-            }
+            throw new BpmnBindingException(
+                $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{definition.ProcessId}' carries an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element, but its work is not an unbound task, so nothing would ever run it. "
+                + "Only a task the document describes without implementing takes an authored activity binding.");
         }
     }
 

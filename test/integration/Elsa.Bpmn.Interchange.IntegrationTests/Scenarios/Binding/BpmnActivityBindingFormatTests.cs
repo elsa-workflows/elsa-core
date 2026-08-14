@@ -60,6 +60,47 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
         Assert.Equal("getSecretMessage()", ValueOf<string>(activity.Text));
     }
 
+    [Fact(DisplayName = "A binding written then read back carries an attribute-declared input intact, not only an Input<T>-typed one")]
+    public void WriteThenRead_PreservesAnAttributeDeclaredInput()
+    {
+        // Switch.Cases is ICollection<SwitchCase>: [Input] on a plain-typed property, not one that derives from Input.
+        // Write used to enumerate only properties whose CLR type derives from Input, which silently dropped this kind
+        // of configuration from the export.
+        var activity = new Switch
+        {
+            Cases = { new SwitchCase { Label = "case one", Condition = new Expression("Literal", true) } }
+        };
+
+        var element = Format.Write(activity);
+
+        Assert.Contains(element.Children, child => AttributeOf(child, BpmnActivityBindingFormat.InputNameAttributeName) == "cases");
+
+        var read = Assert.IsType<Switch>(Format.Read(element));
+        var readCase = Assert.Single(read.Cases);
+
+        Assert.Equal("case one", readCase.Label);
+        Assert.Equal(true, readCase.Condition.Value);
+    }
+
+    [Fact(DisplayName = "A binding naming an input the activity type does not declare is refused, not silently dropped")]
+    public void Read_RefusesAnUnknownInputName()
+    {
+        // Elsa's own deserializer ignores a JSON member the target type does not declare, so a mistyped or stale
+        // input name would otherwise import as an activity quietly missing that configuration, with no diagnostic
+        // anywhere. WriteLine declares "text", not "txt".
+        var inputName = new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.InputElementName);
+        var nameAttribute = Attribute(BpmnActivityBindingFormat.InputNameAttributeName, "txt");
+
+        var element = new BpmnExtensionElement(
+            new(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.BindingElementName),
+            [Attribute(BpmnActivityBindingFormat.ActivityTypeAttributeName, "Elsa.WriteLine")],
+            [new BpmnExtensionElement(inputName, [nameAttribute], null, "{\"typeName\":\"String\",\"expression\":{\"type\":\"Literal\",\"value\":\"hello\"}}")]);
+
+        var exception = Assert.Throws<BpmnBindingException>(() => Format.Read(element));
+
+        Assert.Contains("txt", exception.Message);
+    }
+
     [Fact(DisplayName = "A binding naming an activity type nothing registered is refused, not turned into a placeholder")]
     public void Read_RefusesAnUnregisteredActivityType()
     {

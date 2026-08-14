@@ -34,13 +34,20 @@ namespace Elsa.Bpmn.Interchange.Binding;
 ///   <item>
 ///     <term><c>&lt;elsa:input name="…"&gt;</c> — child element, zero or more, <c>name</c> unique within the binding</term>
 ///     <description>
-///       One per configured activity input. <c>name</c> is the input's property name as it appears in the activity's
-///       own JSON (camelCase). The element's text is that single input serialized by Elsa's configured activity
-///       serializer, which is the identical <c>{"typeName":…,"expression":…}</c> shape a stored workflow definition
-///       uses — so every expression type Elsa knows about round-trips unchanged, and no second encoding of activity
-///       inputs has to be kept in step with Elsa's own. A second <c>&lt;elsa:input&gt;</c> naming an input already
-///       declared is refused rather than silently taking the later one, the same way an unregistered activity type or
-///       a call activity with no <c>calledElement</c> is refused elsewhere in this binder.
+///       One per configured activity input — every property <see cref="IActivityDescriber.GetInputProperties"/> reports
+///       for the activity's CLR type, which is both every <c>Input&lt;T&gt;</c>-typed property and every plain-typed
+///       property carrying <c>[Input]</c> (e.g. <c>Switch.Cases</c>); that is the same enumeration
+///       <c>ActivityDescriptor.Inputs</c> is built from, so this format writes exactly the inputs Elsa itself considers
+///       the activity to have. <c>name</c> is the input's property name as it appears in the activity's own JSON
+///       (camelCase). The element's text is that single input serialized by Elsa's configured activity serializer,
+///       which is the identical <c>{"typeName":…,"expression":…}</c> shape a stored workflow definition uses — so
+///       every expression type Elsa knows about round-trips unchanged, and no second encoding of activity inputs has
+///       to be kept in step with Elsa's own. A second <c>&lt;elsa:input&gt;</c> naming an input already declared is
+///       refused rather than silently taking the later one, and a <c>name</c> the activity type does not declare an
+///       input for is refused rather than importing an activity quietly missing that configuration — Elsa's
+///       deserializer ignores an unknown JSON member without complaint, so nothing else would ever say so. Both are
+///       refused the same way an unregistered activity type or a call activity with no <c>calledElement</c> is refused
+///       elsewhere in this binder.
 ///     </description>
 ///   </item>
 /// </list>
@@ -85,7 +92,7 @@ namespace Elsa.Bpmn.Interchange.Binding;
 /// failure only shows up as wrong behaviour after someone re-imports it.
 /// </para>
 /// </remarks>
-public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerializer)
+public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerializer, IActivityDescriber activityDescriber)
 {
     /// <summary>The namespace URI of the <c>elsa:</c> BPMN vendor extension. See the remarks on this type before changing it.</summary>
     public const string NamespaceUri = "https://elsaworkflows.io/schemas/bpmn/v1";
@@ -138,11 +145,15 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
     /// </summary>
     public BpmnExtensionElement Write(IActivity activity)
     {
+        // The same set IActivityDescriber.DescribeActivityAsync builds an ActivityDescriptor.Inputs from — every
+        // property carrying an Input<T>, and every plain-typed property carrying [Input] (e.g. Switch.Cases). Filtering
+        // on "derives from Input" alone, as this used to, silently drops the latter kind's configuration from the
+        // export.
+        //
         // Ordered by name so that exporting the same activity twice produces the same bytes, which is what makes a
         // .bpmn file diffable and a round-trip test meaningful.
-        var inputs = activity.GetType().GetProperties()
-            .Where(property => typeof(Input).IsAssignableFrom(property.PropertyType))
-            .Select(property => (Name: JsonNamingPolicy.CamelCase.ConvertName(property.Name), Value: property.GetValue(activity) as Input))
+        var inputs = activityDescriber.GetInputProperties(activity.GetType())
+            .Select(property => (Name: JsonNamingPolicy.CamelCase.ConvertName(property.Name), Value: property.GetValue(activity)))
             .Where(input => input.Value is not null)
             .OrderBy(input => input.Name, StringComparer.Ordinal)
             .Select(input => new BpmnExtensionElement(InputQName, [Attribute(InputNameAttributeName, input.Name)], null, activitySerializer.Serialize(input.Value!)))
@@ -155,7 +166,10 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
     /// The activity a binding element declares, built through Elsa's own activity serializer so that it is
     /// indistinguishable from the same activity loaded out of a stored workflow definition.
     /// </summary>
-    /// <exception cref="BpmnBindingException">The element is malformed, or names an activity type nothing registered.</exception>
+    /// <exception cref="BpmnBindingException">
+    /// The element is malformed, names an activity type nothing registered, or names an input the activity type does
+    /// not declare.
+    /// </exception>
     public IActivity Read(BpmnExtensionElement element)
     {
         var activityType = AttributeOf(element, ActivityTypeAttributeName)
@@ -166,18 +180,21 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
             ["type"] = activityType
         };
 
-        // Every name seen so far, so a second <elsa:input> with the same name is refused rather than silently
-        // overwriting activityJson[name] and leaving the earlier one's configuration invisible.
-        var seenInputNames = new HashSet<string>(StringComparer.Ordinal);
+        // Every name seen so far, in the order the document declares them, so a second <elsa:input> with the same
+        // name is refused rather than silently overwriting activityJson[name] and leaving the earlier one's
+        // configuration invisible.
+        var seenInputNames = new List<string>();
+        var seenInputNameSet = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var input in element.Children.Where(child => child.Name == InputQName))
         {
             var name = AttributeOf(input, InputNameAttributeName)
                        ?? throw new BpmnBindingException($"An <{NamespacePrefix}:{InputElementName}> element of the '{activityType}' binding declares no '{InputNameAttributeName}'.");
 
-            if (!seenInputNames.Add(name))
+            if (!seenInputNameSet.Add(name))
                 throw new BpmnBindingException($"The '{activityType}' binding declares the input '{name}' more than once. Each <{NamespacePrefix}:{InputElementName}> must name a distinct input.");
 
+            seenInputNames.Add(name);
             activityJson[name] = Parse(input.Value, name, activityType);
         }
 
@@ -198,6 +215,24 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
         // sentence naming the type, at the point where someone can still do something about it.
         if (activity is NotFoundActivity)
             throw new BpmnBindingException($"The binding names activity type '{activityType}', which is not registered in this application. Install or enable the module providing it before importing this document.");
+
+        // Elsa's own JSON deserialization ignores a member the target type does not declare, so a mistyped or
+        // stale input name would otherwise import silently as an activity missing that configuration, with no
+        // diagnostic anywhere. IActivityDescriber.GetInputProperties is the same enumeration Write reads from and
+        // ActivityDescriptor.Inputs is built from, so a name is accepted here exactly when Write could have produced
+        // it.
+        if (seenInputNames.Count > 0)
+        {
+            var declaredInputNames = activityDescriber.GetInputProperties(activity.GetType())
+                .Select(property => JsonNamingPolicy.CamelCase.ConvertName(property.Name))
+                .ToHashSet(StringComparer.Ordinal);
+
+            foreach (var name in seenInputNames)
+            {
+                if (!declaredInputNames.Contains(name))
+                    throw new BpmnBindingException($"The '{activityType}' binding declares the input '{name}', which activity type '{activityType}' does not declare.");
+            }
+        }
 
         return activity;
     }
