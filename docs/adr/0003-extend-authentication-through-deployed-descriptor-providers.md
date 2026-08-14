@@ -1,0 +1,5 @@
+# Extend authentication through deployed descriptor providers
+
+**Status**: V1 Permission Grant Source portion superseded by [0009](0009-match-unlinked-identities-with-trusted-user-matchers.md)
+
+Trusted Protocol Adapters, Unlinked Identity Policies, and Permission Grant Sources are deployed code registered when Elsa starts, while their selected instances and versioned settings are runtime connection data. Connections use a protocol-neutral envelope with adapter-owned JSON settings and Secret Bindings, and providers expose descriptors from which Studio renders standard forms with optional custom-editor overrides. New extension code may require deployment and restart, but configuration changes for installed providers take effect live without database schema changes.

@@ -3,6 +3,9 @@ using CShells.FastEndpoints.Features;
 using CShells.Features;
 using ConsoleLogStreaming.Core.Options;
 using Elsa.Diagnostics.ConsoleLogs.Extensions;
+using Elsa.ShellFeatures;
+using Elsa.Workflows.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,10 +16,11 @@ namespace Elsa.Diagnostics.ConsoleLogs.ShellFeatures;
 /// <summary>
 /// Provides live raw console log streaming over REST and SignalR.
 /// </summary>
+[ManifestFeatureCategory("Diagnostics")]
 [ShellFeature(
     DisplayName = "Console Logs",
     Description = "Provides live raw console log streaming over REST and SignalR",
-    DependsOn = ["ElsaFastEndpoints", "Workflows"])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature), typeof(WorkflowsFeature)])]
 [UsedImplicitly]
 public class ConsoleLogsFeature : IFastEndpointsShellFeature, IWebShellFeature
 {

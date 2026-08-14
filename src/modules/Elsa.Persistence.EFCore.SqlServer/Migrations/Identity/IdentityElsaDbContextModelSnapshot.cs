@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.17")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -110,11 +110,9 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Identity
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("HashedPassword")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("HashedPasswordSalt")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")

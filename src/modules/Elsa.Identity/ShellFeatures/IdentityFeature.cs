@@ -3,6 +3,7 @@ using CShells.Configuration;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -10,6 +11,7 @@ using Elsa.Identity.Multitenancy;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,10 +21,12 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Provides identity feature to authenticate &amp; authorize API requests.
 /// </summary>
+[ManifestFeatureCategory("Identity")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Identity",
     Description = "Provides identity management, authentication and authorization capabilities",
-    DependsOn = ["SystemClock"])]
+    DependsOn = [typeof(SystemClockFeature)])]
 [UsedImplicitly]
 public class IdentityFeature : IFastEndpointsShellFeature
 {
@@ -72,8 +76,12 @@ public class IdentityFeature : IFastEndpointsShellFeature
             .AddScoped<IUserManager, UserManager>()
             .AddScoped<IRoleManager, RoleManager>()
             .AddScoped<IRoleAuthorizationService, RoleAuthorizationService>()
+            .AddScoped<IRoleDeletionCoordinator, RoleDeletionCoordinator>()
+            .AddScoped<IUserDeletionCoordinator, UserDeletionCoordinator>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
-            .AddScoped<IAccessTokenIssuer, DefaultAccessTokenIssuer>()
+            .AddScoped<IElsaTokenService, DefaultElsaTokenService>()
+            .AddScoped<IAccessTokenIssuer>(sp => ActivatorUtilities.CreateInstance<DefaultAccessTokenIssuer>(sp))
+            .AddScoped<IIdentityRefreshTokenService, DefaultIdentityRefreshTokenService>()
             .AddScoped<IUserCredentialsValidator, DefaultUserCredentialsValidator>()
             .AddScoped<IApplicationCredentialsValidator, DefaultApplicationCredentialsValidator>()
             .AddScoped<IApiKeyGenerator>(sp => sp.GetRequiredService<DefaultApiKeyGeneratorAndParser>())

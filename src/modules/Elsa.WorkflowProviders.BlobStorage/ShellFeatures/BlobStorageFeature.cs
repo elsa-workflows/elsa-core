@@ -3,9 +3,11 @@ using CShells.Features;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.WorkflowProviders.BlobStorage.Handlers;
 using Elsa.WorkflowProviders.BlobStorage.Providers;
+using Elsa.Workflows.Management.ShellFeatures;
 using Elsa.Workflows.Runtime;
-using FluentStorage;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using FluentStorage.Blobs;
+using FluentStorage;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,10 +16,12 @@ namespace Elsa.WorkflowProviders.BlobStorage.ShellFeatures;
 /// <summary>
 /// A feature that enables the FluentStorage workflow definition provider.
 /// </summary>
+[ManifestFeatureCategory("Storage")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Blob Storage Workflow Provider",
     Description = "Provides workflow definitions from blob storage",
-    DependsOn = ["WorkflowManagement"])]
+    DependsOn = [typeof(WorkflowManagementFeature)])]
 [UsedImplicitly]
 public class BlobStorageFeature : IShellFeature
 {

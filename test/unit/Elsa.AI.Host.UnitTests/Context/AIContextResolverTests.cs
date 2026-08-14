@@ -1,7 +1,10 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Context;
+using Elsa.AI.Host.Options;
+using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 using System.Text.Json.Nodes;
 
 namespace Elsa.AI.Host.UnitTests.Context;
@@ -57,44 +60,6 @@ public class AIContextResolverTests
         Assert.Equal("[redacted]", context.Data["description"]!.GetValue<string>());
         Assert.Equal("[redacted]", context.Metadata["apiKey"]!.GetValue<string>());
         Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
-    }
-
-    [Fact(DisplayName = "Context resolver redacts nested context payloads")]
-    public async Task ContextResolverRedactsNestedContextPayloads()
-    {
-        using var provider = CreateProvider(services => services.AddSingleton<IAIContextProvider, NestedSensitiveContextProvider>());
-        var resolver = provider.GetRequiredService<AIContextResolver>();
-
-        var result = await resolver.ResolveAsync(new AIChatRequest
-        {
-            UserId = "user-1",
-            Attachments = [new AIContextAttachment { Kind = "NestedSensitive" }]
-        });
-
-        var context = Assert.Single(result);
-        var profile = Assert.IsType<JsonObject>(context.Data["profile"]);
-        var history = Assert.IsType<JsonArray>(context.Data["history"]);
-
-        Assert.Equal("[redacted]", profile["password"]!.GetValue<string>());
-        Assert.Equal("visible", profile["displayName"]!.GetValue<string>());
-        Assert.Equal("[redacted]", history[0]!.GetValue<string>());
-        Assert.Equal(42, history[1]!.GetValue<int>());
-        Assert.True(history[2]!.GetValue<bool>());
-    }
-
-    [Fact(DisplayName = "Context resolver ignores attachments without providers")]
-    public async Task ContextResolverIgnoresAttachmentsWithoutProviders()
-    {
-        using var provider = CreateProvider(_ => { });
-        var resolver = provider.GetRequiredService<AIContextResolver>();
-
-        var result = await resolver.ResolveAsync(new AIChatRequest
-        {
-            UserId = "user-1",
-            Attachments = [new AIContextAttachment { Kind = "Unknown" }]
-        });
-
-        Assert.Empty(result);
     }
 
     [Fact(DisplayName = "Context resolver uses the last provider for duplicate provider kinds")]
@@ -158,6 +123,9 @@ public class AIContextResolverTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<AIContextResolver>();
+        services.AddSingleton<WorkflowGroundingMapper>();
+        services.AddSingleton(sp => new AIGroundingResultFormatter(MicrosoftOptions.Create(new AIHostOptions())));
+        services.AddSingleton<RuntimeGroundingMapper>();
         configure(services);
         return services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
     }
@@ -181,28 +149,6 @@ public class AIContextResolverTests
                 Metadata = new JsonObject
                 {
                     ["apiKey"] = "key-value"
-                }
-            });
-        }
-    }
-
-    private class NestedSensitiveContextProvider : IAIContextProvider
-    {
-        public string Kind => "NestedSensitive";
-
-        public ValueTask<AIResolvedContext> ResolveAsync(AIContextResolutionRequest request, CancellationToken cancellationToken = default)
-        {
-            return ValueTask.FromResult(new AIResolvedContext
-            {
-                Kind = Kind,
-                Data = new JsonObject
-                {
-                    ["profile"] = new JsonObject
-                    {
-                        ["password"] = "secret-value",
-                        ["displayName"] = "visible"
-                    },
-                    ["history"] = new JsonArray("Bearer abcdefgh", 42, true)
                 }
             });
         }

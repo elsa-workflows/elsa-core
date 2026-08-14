@@ -142,7 +142,15 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
 
             // Activity can be null in case the workflow instance was migrated to a newer version that no longer contains this activity.
             if (activity == null)
+            {
+                LogSkippedStateReference(
+                    state,
+                    workflowExecutionContext,
+                    "ActivityExecutionContext",
+                    activityExecutionContextState.Id,
+                    activityExecutionContextState.ScheduledActivityNodeId);
                 return null;
+            }
 
             var properties = activityExecutionContextState.Properties;
             var metadata = activityExecutionContextState.Metadata;
@@ -167,24 +175,71 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
         }
     }
 
-    private static void ApplyCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
+    private void ApplyCompletionCallbacks(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)
     {
         foreach (var completionCallbackEntry in state.CompletionCallbacks)
         {
             var ownerActivityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == completionCallbackEntry.OwnerInstanceId);
-            if (ownerActivityExecutionContext != null)
+            if (ownerActivityExecutionContext == null)
             {
-                var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
-
-                if (childNode == null)
-                    continue;
-
-                var callbackName = completionCallbackEntry.MethodName;
-                var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
-                var tag = completionCallbackEntry.Tag;
-                workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate, tag);
+                LogSkippedStateReference(
+                    state,
+                    workflowExecutionContext,
+                    "CompletionCallbackOwner",
+                    completionCallbackOwnerInstanceId: completionCallbackEntry.OwnerInstanceId,
+                    completionCallbackChildNodeId: completionCallbackEntry.ChildNodeId);
+                continue;
             }
+
+            var childNode = workflowExecutionContext.FindNodeById(completionCallbackEntry.ChildNodeId);
+
+            if (childNode == null)
+            {
+                LogSkippedStateReference(
+                    state,
+                    workflowExecutionContext,
+                    "CompletionCallbackChild",
+                    completionCallbackOwnerInstanceId: completionCallbackEntry.OwnerInstanceId,
+                    completionCallbackChildNodeId: completionCallbackEntry.ChildNodeId);
+                continue;
+            }
+
+            var callbackName = completionCallbackEntry.MethodName;
+            var callbackDelegate = !string.IsNullOrEmpty(callbackName) ? ownerActivityExecutionContext.Activity.GetActivityCompletionCallback(callbackName) : default;
+            var tag = completionCallbackEntry.Tag;
+            workflowExecutionContext.AddCompletionCallback(ownerActivityExecutionContext, childNode, callbackDelegate, tag);
         }
+    }
+
+    private void LogSkippedStateReference(
+        WorkflowState state,
+        WorkflowExecutionContext workflowExecutionContext,
+        string skipKind,
+        string? activityExecutionContextId = null,
+        string? scheduledActivityNodeId = null,
+        string? completionCallbackOwnerInstanceId = null,
+        string? completionCallbackChildNodeId = null)
+    {
+        var targetIdentity = workflowExecutionContext.Workflow.Identity;
+        var isWorkflowDefinitionVersionMigration = !string.Equals(state.DefinitionVersionId, targetIdentity.Id, StringComparison.Ordinal);
+        var classification = isWorkflowDefinitionVersionMigration ? "MigrationCompatible" : "Unexpected";
+
+        logger.LogWarning(
+            "Skipping unresolved workflow state reference {WorkflowStateSkipKind} ({WorkflowStateSkipClassification}) for workflow instance {WorkflowInstanceId}. Persisted definition {PersistedWorkflowDefinitionId}/{PersistedWorkflowDefinitionVersionId}/v{PersistedWorkflowDefinitionVersion}; target definition {TargetWorkflowDefinitionId}/{TargetWorkflowDefinitionVersionId}/v{TargetWorkflowDefinitionVersion}; activity context {ActivityExecutionContextId}; scheduled activity node {ScheduledActivityNodeId}; callback owner {CompletionCallbackOwnerInstanceId}; callback child {CompletionCallbackChildNodeId}; definition version migration: {IsWorkflowDefinitionVersionMigration}.",
+            skipKind,
+            classification,
+            state.Id,
+            state.DefinitionId,
+            state.DefinitionVersionId,
+            state.DefinitionVersion,
+            targetIdentity.DefinitionId,
+            targetIdentity.Id,
+            targetIdentity.Version,
+            activityExecutionContextId,
+            scheduledActivityNodeId,
+            completionCallbackOwnerInstanceId,
+            completionCallbackChildNodeId,
+            isWorkflowDefinitionVersionMigration);
     }
 
     private void ApplyScheduledActivities(WorkflowState state, WorkflowExecutionContext workflowExecutionContext)

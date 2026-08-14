@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12");
+                .HasAnnotation("ProductVersion", "9.0.17");
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
@@ -106,11 +106,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT");
 
                     b.Property<string>("HashedPassword")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("HashedPasswordSalt")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

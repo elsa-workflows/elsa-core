@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.17")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -110,11 +110,9 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("HashedPassword")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("HashedPasswordSalt")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("Name")
