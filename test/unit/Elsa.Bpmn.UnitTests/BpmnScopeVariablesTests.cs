@@ -71,6 +71,19 @@ public class BpmnScopeVariablesTests
         Assert.False(value.HasValue);
     }
 
+    [Fact(DisplayName = "A value bare JsonSerializerDefaults cannot serialize, but Elsa's configured serializer can, reads as present")]
+    public async Task TryRead_ReturnsThePayload_ForAValueOnlyElsasSerializerCanCarry()
+    {
+        // System.Text.Json refuses to serialize a System.Type instance under bare defaults — it throws
+        // NotSupportedException. Elsa's configured serializer carries it via TypeJsonConverter. A reader using bare
+        // defaults collapses this to StoredExternally even though Elsa can hand the value over intact.
+        var variables = await ReaderForAsync(new Variable<Type>("clrType", typeof(string)));
+
+        Assert.True(variables.TryRead("clrType", out var value));
+        Assert.Equal(BpmnValuePresence.Present, value.Presence);
+        Assert.True(value.HasValue);
+    }
+
     [Fact(DisplayName = "A variable declared by an enclosing scope is visible to the scope inside it")]
     public async Task TryRead_WalksOutward_ForAVariableOfAnEnclosingScope()
     {

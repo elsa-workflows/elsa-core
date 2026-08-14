@@ -36,10 +36,12 @@ namespace Elsa.Bpmn.Hosting;
 /// </remarks>
 internal sealed class BpmnScopeVariables(ActivityExecutionContext context) : IBpmnVariableReader
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General);
-
     /// <summary>A value this host holds but cannot represent inline.</summary>
     private static readonly BpmnValue Unrepresentable = new(BpmnValuePresence.StoredExternally, BpmnValueTypes.Any, null);
+
+    // Resolved once per snapshot, not per TryRead: GetOptions() rebuilds the converter list on every call, and the
+    // interpreter calls this port once per variable it needs.
+    private readonly Lazy<JsonSerializerOptions> _serializerOptions = new(() => context.GetRequiredService<IPayloadSerializer>().GetOptions());
 
     /// <inheritdoc />
     public bool TryRead(string name, out BpmnValue value)
@@ -64,14 +66,21 @@ internal sealed class BpmnScopeVariables(ActivityExecutionContext context) : IBp
     /// anything Elsa can hold that JSON cannot carry is reported as held outside the payload rather than as absent
     /// or null.
     /// </summary>
-    private static BpmnValue Represent(object? value)
+    private BpmnValue Represent(object? value)
     {
         if (value is null)
             return BpmnValue.Null;
 
         try
         {
-            return BpmnValue.From(JsonSerializer.SerializeToElement(value, SerializerOptions), TypeHintOf(value));
+            // Serialized against the value's own runtime type, not against the declared `object`: the declared-type
+            // overload is what routes through PolymorphicObjectConverterFactory, which wraps a boxed array or scalar
+            // in Elsa's own type-tagged envelope — exactly the shape the interpreter, reading plain JSON on its own
+            // wire format, does not expect. Serializing against the runtime type keeps a plain value plain while
+            // still picking up every other converter Elsa registers (TypeJsonConverter, VariableConverterFactory,
+            // enum-as-string, and so on), and still reaches PolymorphicObjectConverterFactory for a value whose
+            // runtime type genuinely is one it claims (ExpandoObject, Dictionary<string, object>).
+            return BpmnValue.From(JsonSerializer.SerializeToElement(value, value.GetType(), _serializerOptions.Value), TypeHintOf(value));
         }
         catch (Exception exception) when (exception is JsonException or NotSupportedException)
         {

@@ -32,6 +32,21 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
     /// </remarks>
     public async ValueTask ApplyAsync(IReadOnlyList<BpmnHostCommand> commands)
     {
+        // Refused before anything in the batch is applied. Applying commands one at a time and refusing only once
+        // the offending StartWork is reached would leave earlier commands in the same batch already applied and
+        // saved via memory.SaveWork() below — and under ContinueWithIncidentsStrategy that throw is absorbed into
+        // an incident rather than surfaced, so the workflow would carry on with a half-applied batch and half-saved
+        // memory instead of the refusal stopping it clean.
+        foreach (var command in commands)
+        {
+            if (command is BpmnHostCommand.StartWork start && process.FindWorkActivity(start.BindingRef) is BpmnProcess { IsRootScope: true } nested)
+            {
+                throw new InvalidOperationException(
+                    $"BPMN element '{start.ElementId}' binds process activity '{nested.Id}' as the work of scope '{process.Id}', but that activity declares itself the workflow's root scope. "
+                    + "A nested scope's start events are internal to the process around it, not workflow entry points, so it must not be marked as able to start the workflow.");
+            }
+        }
+
         foreach (var command in commands)
         {
             switch (command)
@@ -62,18 +77,9 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
                        ?? throw new InvalidOperationException(
                            $"BPMN element '{start.ElementId}' binds work '{start.BindingRef}', which activity '{process.Id}' does not map to a child activity.");
 
-        // Starting a BPMN process as this scope's work is what makes it a nested scope, so this is where the rule
-        // that a nested scope registers no start triggers is enforced. Refusing beats quietly clearing the flag: the
-        // damage a mis-flagged subprocess does is done at publish time, when its start events were indexed as ways
-        // into the workflow, and a host that repaired the object graph at runtime would leave that trigger in place
-        // while every test went green.
-        if (activity is BpmnProcess { IsRootScope: true } nested)
-        {
-            throw new InvalidOperationException(
-                $"BPMN element '{start.ElementId}' binds process activity '{nested.Id}' as the work of scope '{process.Id}', but that activity declares itself the workflow's root scope. "
-                + "A nested scope's start events are internal to the process around it, not workflow entry points, so it must not be marked as able to start the workflow.");
-        }
-
+        // The rule that a nested scope registers no start triggers is enforced by ApplyAsync's pre-scan, before any
+        // command in the batch is applied — not here, where earlier commands in the same batch could already have
+        // been applied and persisted.
         var workflowExecutionContext = scopeContext.WorkflowExecutionContext;
 
         // The child's context is created up front so that this scope has its id before the child ever runs, and can

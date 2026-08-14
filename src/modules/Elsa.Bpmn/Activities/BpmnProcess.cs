@@ -25,6 +25,13 @@ namespace Elsa.Bpmn.Activities;
 /// Like every container, this one never auto-completes: it completes when the interpreter returns a <c>Complete</c>
 /// continuation, and its outcome is what a conditional sequence flow in the enclosing scope selects on.
 /// </para>
+/// <para>
+/// Composing this activity into a <c>Flowchart</c>: it completes with only the interpreter's outcome name (e.g.
+/// <c>BpmnInterpreter.DoneOutcomeName</c>, and <c>CancelledOutcomeName</c> where relevant) — not with
+/// <c>Outcomes.Default</c>, which an ordinary activity's null result also produces and which additionally matches a
+/// null-port connection. A <c>Connection</c> built with the default/null-port shorthand will therefore never fire
+/// from this activity; always target an explicit outcome port.
+/// </para>
 /// </remarks>
 [Activity("Elsa", "BPMN", "Executes a BPMN process scope.")]
 [System.ComponentModel.Browsable(false)]
