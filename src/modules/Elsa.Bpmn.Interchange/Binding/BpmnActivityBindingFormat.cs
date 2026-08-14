@@ -227,10 +227,14 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
                 .Select(property => JsonNamingPolicy.CamelCase.ConvertName(property.Name))
                 .ToHashSet(StringComparer.Ordinal);
 
-            foreach (var name in seenInputNames)
+            var undeclaredInputNames = seenInputNames.Where(name => !declaredInputNames.Contains(name)).ToList();
+
+            if (undeclaredInputNames.Count > 0)
             {
-                if (!declaredInputNames.Contains(name))
-                    throw new BpmnBindingException($"The '{activityType}' binding declares the input '{name}', which activity type '{activityType}' does not declare.");
+                var noun = undeclaredInputNames.Count == 1 ? "an input" : "inputs";
+                var names = string.Join(", ", undeclaredInputNames.Select(name => $"'{name}'"));
+
+                throw new BpmnBindingException($"The '{activityType}' binding declares {noun} {names}, which '{activityType}' does not have.");
             }
         }
 
