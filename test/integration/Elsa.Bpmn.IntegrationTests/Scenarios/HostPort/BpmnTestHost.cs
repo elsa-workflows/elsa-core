@@ -99,14 +99,19 @@ public sealed class BpmnTestHost
     }
 
     /// <summary>
-    /// The one BPMN scope's own memory, read straight off the current <see cref="WorkflowState"/> the way a
-    /// resumed scope itself sees it, rather than off any live <see cref="ActivityExecutionContext"/> the current
-    /// process happens to still hold. Only sound for a process with exactly one BPMN scope.
+    /// A BPMN scope's own memory, read straight off the current <see cref="WorkflowState"/> the way a resumed scope
+    /// itself sees it, rather than off any live <see cref="ActivityExecutionContext"/> the current process happens
+    /// to still hold. Sound for any process with exactly one BPMN scope; a process with a nested scope has two, so
+    /// <paramref name="nested"/> tells them apart by call-stack depth -- the nested scope's context is always
+    /// deeper than the root's.
     /// </summary>
-    internal (BpmnExecutionState? State, BpmnWorkLedger Work) PersistedScopeMemory()
+    internal (BpmnExecutionState? State, BpmnWorkLedger Work) PersistedScopeMemory(bool nested = false)
     {
         var state = _state ?? throw new InvalidOperationException("The workflow has not been run yet.");
-        var scopeState = state.ActivityExecutionContexts.Single(x => x.Properties.ContainsKey(BpmnScopeMemory.WorkLedgerPropertyKey));
+        var scopeStates = state.ActivityExecutionContexts.Where(x => x.Properties.ContainsKey(BpmnScopeMemory.WorkLedgerPropertyKey));
+        var scopeState = nested
+            ? scopeStates.OrderByDescending(x => x.CallStackDepth).First()
+            : scopeStates.OrderBy(x => x.CallStackDepth).First();
 
         var executionStateJson = scopeState.Properties.TryGetValue(BpmnScopeMemory.ExecutionStatePropertyKey, out var value) ? value as string : null;
         var workLedgerJson = (string)scopeState.Properties[BpmnScopeMemory.WorkLedgerPropertyKey];
