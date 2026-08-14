@@ -1,3 +1,5 @@
+using System.Text.Json;
+using Bpmn.Model.State;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.IntegrationTests.Scenarios.HostPort.Activities;
 using Elsa.Extensions;
@@ -81,6 +83,42 @@ public sealed class BpmnTestHost
         var ledger = BpmnScopeMemory.Read<BpmnWorkLedger>(scopeContext, BpmnScopeMemory.WorkLedgerPropertyKey) ?? new BpmnWorkLedger();
 
         return ledger.Records.Select(record => (record.BindingRef, record.IterationId)).ToList();
+    }
+
+    /// <summary>
+    /// Replaces the current <see cref="WorkflowState"/> with what a round trip through Elsa's own
+    /// <see cref="IWorkflowStateSerializer"/> hands back — what a real persistence store would return on load,
+    /// rather than the exact same in-memory object the previous run produced.
+    /// </summary>
+    public void RoundTripStateThroughJson()
+    {
+        var state = _state ?? throw new InvalidOperationException("The workflow has not been run yet.");
+        var serializer = _services.GetRequiredService<IWorkflowStateSerializer>();
+
+        _state = serializer.Deserialize(serializer.Serialize(state));
+    }
+
+    /// <summary>
+    /// A BPMN scope's own memory, read straight off the current <see cref="WorkflowState"/> the way a resumed scope
+    /// itself sees it, rather than off any live <see cref="ActivityExecutionContext"/> the current process happens
+    /// to still hold. Sound for any process with exactly one BPMN scope; a process with a nested scope has two, so
+    /// <paramref name="nested"/> tells them apart by call-stack depth -- the nested scope's context is always
+    /// deeper than the root's.
+    /// </summary>
+    internal (BpmnExecutionState? State, BpmnWorkLedger Work) PersistedScopeMemory(bool nested = false)
+    {
+        var state = _state ?? throw new InvalidOperationException("The workflow has not been run yet.");
+        var scopeStates = state.ActivityExecutionContexts.Where(x => x.Properties.ContainsKey(BpmnScopeMemory.WorkLedgerPropertyKey));
+        var scopeState = nested
+            ? scopeStates.OrderByDescending(x => x.CallStackDepth).First()
+            : scopeStates.OrderBy(x => x.CallStackDepth).First();
+
+        var executionStateJson = scopeState.Properties.TryGetValue(BpmnScopeMemory.ExecutionStatePropertyKey, out var value) ? value as string : null;
+        var workLedgerJson = (string)scopeState.Properties[BpmnScopeMemory.WorkLedgerPropertyKey];
+
+        return (
+            executionStateJson is null ? null : JsonSerializer.Deserialize<BpmnExecutionState>(executionStateJson),
+            JsonSerializer.Deserialize<BpmnWorkLedger>(workLedgerJson) ?? new BpmnWorkLedger());
     }
 
     private RunWorkflowResult Record(RunWorkflowResult result)
