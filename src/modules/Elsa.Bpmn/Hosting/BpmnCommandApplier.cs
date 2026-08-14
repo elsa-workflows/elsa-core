@@ -37,9 +37,9 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
         // saved via memory.SaveWork() below — and under ContinueWithIncidentsStrategy that throw is absorbed into
         // an incident rather than surfaced, so the workflow would carry on with a half-applied batch and half-saved
         // memory instead of the refusal stopping it clean.
-        foreach (var command in commands)
+        foreach (var start in commands.OfType<BpmnHostCommand.StartWork>())
         {
-            if (command is BpmnHostCommand.StartWork start && process.FindWorkActivity(start.BindingRef) is BpmnProcess { IsRootScope: true } nested)
+            if (process.FindWorkActivity(start.BindingRef) is BpmnProcess { IsRootScope: true } nested)
             {
                 throw new InvalidOperationException(
                     $"BPMN element '{start.ElementId}' binds process activity '{nested.Id}' as the work of scope '{process.Id}', but that activity declares itself the workflow's root scope. "
