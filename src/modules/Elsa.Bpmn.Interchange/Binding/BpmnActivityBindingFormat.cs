@@ -39,12 +39,17 @@ namespace Elsa.Bpmn.Interchange.Binding;
 ///       property carrying <c>[Input]</c> (e.g. <c>Switch.Cases</c>); that is the same enumeration
 ///       <c>ActivityDescriptor.Inputs</c> is built from, so this format writes exactly the inputs Elsa itself considers
 ///       the activity to have. <c>name</c> is the input's property name as it appears in the activity's own JSON
-///       (camelCase). The element's text is that single input serialized by Elsa's configured activity serializer,
-///       which is the identical <c>{"typeName":…,"expression":…}</c> shape a stored workflow definition uses — so
-///       every expression type Elsa knows about round-trips unchanged, and no second encoding of activity inputs has
-///       to be kept in step with Elsa's own. A second <c>&lt;elsa:input&gt;</c> naming an input already declared is
-///       refused rather than silently taking the later one, and a <c>name</c> the activity type does not declare an
-///       input for is refused rather than importing an activity quietly missing that configuration — Elsa's
+///       (camelCase). The element's text is that single input value serialized by Elsa's configured activity
+///       serializer — the same serializer a stored workflow definition is written and read through — so its shape
+///       depends on how the activity declares the input: an <c>Input&lt;T&gt;</c>-typed property carries the
+///       <c>{"typeName":…,"expression":…}</c> wrapper, which is what makes every expression type Elsa knows about
+///       round-trip unchanged, while a plain-typed property carrying <c>[Input]</c> (e.g. <c>Switch.Cases</c>) carries
+///       that value's own JSON — a collection such as <c>Switch.Cases</c> exports as a JSON array, not the wrapper.
+///       No second encoding of activity inputs has to be kept in step with Elsa's own; an implementer must not assume
+///       a single wrapper shape, only that the text is whatever Elsa's activity serializer produced for that input and
+///       that reading it back through the same serializer reconstructs it. A second <c>&lt;elsa:input&gt;</c> naming an
+///       input already declared is refused rather than silently taking the later one, and a <c>name</c> the activity
+///       type does not declare an input for is refused rather than importing an activity quietly missing that configuration — Elsa's
 ///       deserializer ignores an unknown JSON member without complaint, so nothing else would ever say so. Both are
 ///       refused the same way an unregistered activity type or a call activity with no <c>calledElement</c> is refused
 ///       elsewhere in this binder.
@@ -60,7 +65,7 @@ namespace Elsa.Bpmn.Interchange.Binding;
 /// unescape this text: <see cref="Write"/> hands the writer plain JSON, and <see cref="Read"/> reads
 /// <see cref="BpmnExtensionElement.Value"/> already decoded.
 /// </para>
-/// <para>Example:</para>
+/// <para>Example, an <c>Input&lt;T&gt;</c>-typed input wrapped as an expression:</para>
 /// <code>
 /// &lt;bpmn:serviceTask id="notify"&gt;
 ///   &lt;bpmn:extensionElements&gt;
@@ -69,6 +74,16 @@ namespace Elsa.Bpmn.Interchange.Binding;
 ///     &lt;/elsa:activityBinding&gt;
 ///   &lt;/bpmn:extensionElements&gt;
 /// &lt;/bpmn:serviceTask&gt;
+/// </code>
+/// <para>Example, an <c>[Input]</c>-attributed plain-typed input carrying its own JSON shape (here, an array):</para>
+/// <code>
+/// &lt;bpmn:exclusiveGateway id="route"&gt;
+///   &lt;bpmn:extensionElements&gt;
+///     &lt;elsa:activityBinding activityType="Elsa.Switch"&gt;
+///       &lt;elsa:input name="cases"&gt;[{"label":"case one","condition":{"type":"Literal","value":true}}]&lt;/elsa:input&gt;
+///     &lt;/elsa:activityBinding&gt;
+///   &lt;/bpmn:extensionElements&gt;
+/// &lt;/bpmn:exclusiveGateway&gt;
 /// </code>
 /// <para>
 /// <b>Position is the key.</b> The element it sits inside is the element it binds; nothing records a binding ref.
