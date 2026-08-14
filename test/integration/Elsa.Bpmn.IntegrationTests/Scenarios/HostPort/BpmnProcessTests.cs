@@ -107,6 +107,45 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]
+    public async Task CollectionMultiInstance_ReadsTheScopeVariable()
+    {
+        // Two things at once, and both fail loudly rather than quietly. If the host did not declare ScopeVariables,
+        // BpmnGraph.Build would refuse the definition outright. If it declared the capability but its reader could
+        // not answer, the interpreter would resolve an absent or null collection to an empty loop: "each" would never
+        // run, "after" would run anyway, and the workflow would finish looking perfectly healthy.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CollectionMultiInstanceTask(_host.Log));
+
+        // Assert
+        Assert.Equal(3, _host.Log.Occurrences("executed:each"));
+        Assert.Equal(1, _host.Log.Occurrences("executed:after"));
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A nested scope completing with a non-Done outcome reaches its parent's completion callback with that outcome intact")]
+    public async Task CancelledTransactionSubprocess_DeliversTheCancelledOutcomeToTheEnclosingScope()
+    {
+        // The case to write first. A nested scope's outcome is not decoration: the transaction completes 'Cancelled'
+        // instead of 'Done', and the enclosing scope routes the cancel boundary event only because that name arrives
+        // intact on the completion callback. Drop it anywhere on the way — at CompleteActivityAsync, or when the
+        // callback turns the result back into outcome names — and the parent takes the ordinary sequence flow and
+        // finishes successfully, which is the shape of failure this test exists to catch.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CancelledTransactionSubprocess(_host.Log));
+
+        // Assert: the cancellation path ran...
+        Assert.Contains("executed:unwind", _host.Log.Entries);
+
+        // ...and the ordinary path the 'Done' outcome would have taken did not.
+        Assert.DoesNotContain("executed:after", _host.Log.Entries);
+
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
     [Fact(DisplayName = "An uncaught error propagates and is left to the incident strategy")]
     public async Task UncaughtError_PropagatesToTheIncidentStrategy()
     {

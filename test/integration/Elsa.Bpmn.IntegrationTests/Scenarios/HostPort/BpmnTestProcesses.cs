@@ -2,6 +2,7 @@ using Bpmn.Model;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.IntegrationTests.Scenarios.HostPort.Activities;
 using Elsa.Workflows;
+using Elsa.Workflows.Memory;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -167,6 +168,88 @@ internal static class BpmnTestProcesses
         return Scope("scope", definition, Blocking("each", log), Immediate("after", log));
     }
 
+    /// <summary>
+    /// A collection-mode multi-instance task: one instance per item of a container-scoped variable, which the
+    /// interpreter reads back through <c>IBpmnVariableReader</c> while it evaluates.
+    /// </summary>
+    /// <remarks>
+    /// Three items rather than two, so the instance count cannot be confused with a declared cardinality. The
+    /// collection variable is declared on both sides — on the definition, because <c>BpmnGraph.Build</c> refuses a
+    /// loop naming a variable the process does not declare, and on the activity, because that is where the value
+    /// actually lives.
+    /// </remarks>
+    public static BpmnProcess CollectionMultiInstanceTask(BpmnTestLog log)
+    {
+        var definition = new BpmnProcessBuilder("collection-multi-instance-task")
+            .Variable(CollectionVariableName)
+            .StartEvent("start")
+            .Task(BpmnElementTypes.Task, "each", bindingRef: BindingRef("each"), loopCharacteristics: new BpmnLoopCharacteristics(isSequential: false, collectionVariable: CollectionVariableName))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .ConnectSequence("start", "each", "after", "end")
+            .Build();
+
+        return Scope("scope", definition, [new Variable<string[]>(CollectionVariableName, ["alpha", "beta", "gamma"])], Immediate("each", log), Immediate("after", log));
+    }
+
+    /// <summary>
+    /// A transaction subprocess that cancels itself from the inside, and a cancel boundary event on the transaction
+    /// that routes the cancellation.
+    /// </summary>
+    /// <remarks>
+    /// The nested scope completes with the <c>Cancelled</c> outcome rather than <c>Done</c>, and the enclosing scope
+    /// only reaches the boundary path if that outcome survives the trip through the parent's completion callback.
+    /// Nothing else in the process distinguishes the two: with the outcome dropped the parent simply carries on down
+    /// the ordinary sequence flow, which is a completion that looks entirely successful.
+    /// </remarks>
+    public static BpmnProcess CancelledTransactionSubprocess(BpmnTestLog log)
+    {
+        var body = new BpmnProcessBuilder("transaction-body")
+            .Transaction()
+            .StartEvent("subStart")
+            .Task("subWork", bindingRef: BindingRef("subWork"))
+            .EndEvent("subCancelled", null, Cancel())
+            .ConnectSequence("subStart", "subWork", "subCancelled")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("cancelled-transaction-subprocess")
+            .StartEvent("start")
+            .SubProcess("sub", bindingRef: BindingRef("sub"), isTransaction: true)
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .BoundaryEvent("cancelled", attachedTo: "sub", eventDefinition: Cancel())
+            .Task("unwind", bindingRef: BindingRef("unwind"))
+            .EndEvent("unwound")
+            .ConnectSequence("start", "sub", "after", "end")
+            .ConnectSequence("cancelled", "unwind", "unwound")
+            .Build();
+
+        var nested = Scope("sub", body, Immediate("subWork", log));
+
+        return Scope("scope", definition, nested, Immediate("after", log), Immediate("unwind", log));
+    }
+
+    /// <summary>An embedded subprocess with one task in it, and one task after it in the enclosing scope.</summary>
+    public static BpmnProcess NestedSubprocess(BpmnTestLog log)
+    {
+        var body = new BpmnProcessBuilder("nested-subprocess-body")
+            .StartEvent("subStart")
+            .Task("subOnly", bindingRef: BindingRef("subOnly"))
+            .EndEvent("subEnd")
+            .ConnectSequence("subStart", "subOnly", "subEnd")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("nested-subprocess")
+            .StartEvent("start")
+            .SubProcess("sub", bindingRef: BindingRef("sub"))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .ConnectSequence("start", "sub", "after", "end")
+            .Build();
+
+        return Scope("scope", definition, Scope("sub", body, Immediate("subOnly", log)), Immediate("after", log));
+    }
+
     /// <summary>A linear process: one task between a start and an end event.</summary>
     public static BpmnProcess LinearTask(BpmnTestLog log)
     {
@@ -183,15 +266,23 @@ internal static class BpmnTestProcesses
     /// <summary>The binding ref the given element's work is declared under.</summary>
     public static string BindingRef(string elementId) => $"node-{elementId}";
 
+    /// <summary>The name of the variable <see cref="CollectionMultiInstanceTask"/> loops over.</summary>
+    public const string CollectionVariableName = "items";
+
     private static BpmnEventDefinition Timer() => new(BpmnEventDefinitionTypes.Timer);
+
+    private static BpmnEventDefinition Cancel() => new(BpmnEventDefinitionTypes.Cancel);
 
     private static BpmnEventDefinition Escalation(string code) =>
         new(BpmnEventDefinitionTypes.Escalation, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Code] = code });
 
-    private static BpmnProcess Scope(string id, BpmnProcessDefinition definition, params IActivity[] work) => new()
+    private static BpmnProcess Scope(string id, BpmnProcessDefinition definition, params IActivity[] work) => Scope(id, definition, [], work);
+
+    private static BpmnProcess Scope(string id, BpmnProcessDefinition definition, Variable[] variables, params IActivity[] work) => new()
     {
         Id = id,
         Process = definition,
+        Variables = variables.ToList(),
         Activities = work.ToList(),
         WorkBindings = work.ToDictionary(activity => BindingRef(activity.Id), activity => activity.Id, StringComparer.Ordinal)
     };
