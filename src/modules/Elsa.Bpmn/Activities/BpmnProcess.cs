@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text.Json.Serialization;
 using Bpmn.Model;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Signals;
@@ -40,6 +41,33 @@ public class BpmnProcess : Container
     /// The BPMN process definition this scope executes.
     /// </summary>
     public BpmnProcessDefinition? Process { get; set; }
+
+    /// <summary>
+    /// Whether this scope is the root BPMN process of its workflow, and may therefore register the start triggers its
+    /// definition declares.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Off unless something says otherwise, which is the answer every nested scope needs: the start events of a
+    /// subprocess body, of an event subprocess body, and of a process composed into a <c>Flowchart</c> are internal
+    /// to the graph around them, not ways into the workflow. Root position cannot be recovered from a published
+    /// activity node — a node knows neither its parent nor how it was imported — so whoever builds the graph says so
+    /// explicitly and everything that nests a scope leaves it alone.
+    /// </para>
+    /// <para>
+    /// Backed by Elsa's own <see cref="Activity.CanStartWorkflow"/> rather than by a second flag, because
+    /// <c>TriggerIndexer</c> gates registration on that one: two flags could disagree, and the disagreement would
+    /// show up as a subprocess quietly registered as an entry point. Reading it here gives the BPMN meaning a name
+    /// and one place to document it. Trigger registration itself belongs to the issue that makes this activity an
+    /// <c>ITrigger</c>; this property is what that gate will read.
+    /// </para>
+    /// </remarks>
+    [JsonIgnore]
+    public bool IsRootScope
+    {
+        get => CanStartWorkflow;
+        set => CanStartWorkflow = value;
+    }
 
     /// <summary>
     /// Maps each binding ref the definition declares to the id of the activity in <see cref="Container.Activities"/>

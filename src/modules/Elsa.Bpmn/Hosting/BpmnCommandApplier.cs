@@ -62,6 +62,18 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
                        ?? throw new InvalidOperationException(
                            $"BPMN element '{start.ElementId}' binds work '{start.BindingRef}', which activity '{process.Id}' does not map to a child activity.");
 
+        // Starting a BPMN process as this scope's work is what makes it a nested scope, so this is where the rule
+        // that a nested scope registers no start triggers is enforced. Refusing beats quietly clearing the flag: the
+        // damage a mis-flagged subprocess does is done at publish time, when its start events were indexed as ways
+        // into the workflow, and a host that repaired the object graph at runtime would leave that trigger in place
+        // while every test went green.
+        if (activity is BpmnProcess { IsRootScope: true } nested)
+        {
+            throw new InvalidOperationException(
+                $"BPMN element '{start.ElementId}' binds process activity '{nested.Id}' as the work of scope '{process.Id}', but that activity declares itself the workflow's root scope. "
+                + "A nested scope's start events are internal to the process around it, not workflow entry points, so it must not be marked as able to start the workflow.");
+        }
+
         var workflowExecutionContext = scopeContext.WorkflowExecutionContext;
 
         // The child's context is created up front so that this scope has its id before the child ever runs, and can

@@ -31,14 +31,16 @@ internal sealed class BpmnScopeHost
     /// What this host promises it can do.
     /// </summary>
     /// <remarks>
-    /// <see cref="BpmnHostCapabilities.ScopeVariables"/> is deliberately absent: reading container-scoped variables
-    /// through <see cref="IBpmnVariableReader"/> needs the three-valued reader that distinguishes "no such variable"
-    /// from "stored externally, cannot tell you", which this host does not have yet. Declaring it anyway would buy a
-    /// definition that quietly iterates zero times instead of a refusal naming the element, and a capability is a
-    /// claim rather than a wish.
+    /// Each capability is a claim, honoured elsewhere in this module: subtree cancellation by
+    /// <see cref="BpmnWorkTeardown"/>, scope signalling by <see cref="BpmnScopeSignal"/>, iteration scopes by the
+    /// applier's per-instance variables, and <see cref="BpmnHostCapabilities.ScopeVariables"/> by
+    /// <see cref="BpmnScopeVariables"/>. Spelled out rather than written as <c>BpmnHostCapabilities.Full</c> on
+    /// purpose: <c>Full</c> would silently grow to include a capability a later library version adds and this host
+    /// has never implemented, which is the one way a declaration can become a lie without anyone editing it.
+    /// The same set goes to <see cref="BpmnGraph.Build"/> and to every snapshot, which the port requires.
     /// </remarks>
     public const BpmnHostCapabilities Capabilities =
-        BpmnHostCapabilities.SubtreeCancellation | BpmnHostCapabilities.ScopeSignalling | BpmnHostCapabilities.IterationScopes;
+        BpmnHostCapabilities.SubtreeCancellation | BpmnHostCapabilities.ScopeSignalling | BpmnHostCapabilities.IterationScopes | BpmnHostCapabilities.ScopeVariables;
 
     /// <summary>
     /// The property key under which a nested scope's invocation correlation is carried on its own context.
@@ -240,7 +242,7 @@ internal sealed class BpmnScopeHost
             HasEnclosingScope: invocationCorrelation.Count > 0,
             LiveWork: memory.Work.ToLiveWork(),
             InvocationCorrelation: invocationCorrelation,
-            Variables: BpmnNoVariables.Instance,
+            Variables: new BpmnScopeVariables(_context),
             Capabilities: Capabilities);
     }
 
