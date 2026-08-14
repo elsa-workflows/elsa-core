@@ -35,6 +35,9 @@ public abstract class BpmnBindingTestBase : IAsyncLifetime
 
     protected BpmnActivityBindingFormat Format { get; }
 
+    /// <summary>The application the binder is exercised in, for a test that needs to run a bound scope end to end.</summary>
+    protected IServiceProvider Services => _services;
+
     public Task InitializeAsync() => _services.PopulateRegistriesAsync();
 
     public Task DisposeAsync() => Task.CompletedTask;

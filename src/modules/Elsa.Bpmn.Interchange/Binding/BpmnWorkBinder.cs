@@ -5,6 +5,7 @@ using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Bpmn.Interchange.Binding;
@@ -69,6 +70,17 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
         {
             Process = definition
         };
+
+        // A document-declared variable is invisible to the interpreter's IBpmnVariableReader port until it resolves
+        // through Elsa's own ExpressionExecutionContext.GetVariable, which walks Container.Variables — not
+        // BpmnProcessDefinition.Variables. Declaring one here for each is what makes a collection-mode multi-instance
+        // over a document-declared collection readable instead of Absent. The declared default, when there is one,
+        // travels as the JsonElement it already is: the reader serializes whatever the memory block holds, so nothing
+        // here needs to interpret BpmnVariableDeclaration.TypeHint.
+        foreach (var declaration in definition.Variables)
+        {
+            scope.Variables.Add(new Variable(declaration.Name, declaration.DefaultValue is { } defaultValue ? (object)defaultValue : null));
+        }
 
         // Element ids whose elsa:activityBinding was actually used. A declaration nothing consumed is refused below.
         var consumed = new HashSet<string>(StringComparer.Ordinal);

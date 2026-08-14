@@ -32,16 +32,27 @@ namespace Elsa.Bpmn.Interchange.Binding;
 ///     </description>
 ///   </item>
 ///   <item>
-///     <term><c>&lt;elsa:input name="…"&gt;</c> — child element, zero or more</term>
+///     <term><c>&lt;elsa:input name="…"&gt;</c> — child element, zero or more, <c>name</c> unique within the binding</term>
 ///     <description>
 ///       One per configured activity input. <c>name</c> is the input's property name as it appears in the activity's
 ///       own JSON (camelCase). The element's text is that single input serialized by Elsa's configured activity
 ///       serializer, which is the identical <c>{"typeName":…,"expression":…}</c> shape a stored workflow definition
 ///       uses — so every expression type Elsa knows about round-trips unchanged, and no second encoding of activity
-///       inputs has to be kept in step with Elsa's own.
+///       inputs has to be kept in step with Elsa's own. A second <c>&lt;elsa:input&gt;</c> naming an input already
+///       declared is refused rather than silently taking the later one, the same way an unregistered activity type or
+///       a call activity with no <c>calledElement</c> is refused elsewhere in this binder.
 ///     </description>
 ///   </item>
 /// </list>
+/// <para>
+/// <b>Escaping.</b> An input's text is JSON, carried as ordinary XML element text — not wrapped in
+/// <c>&lt;![CDATA[…]]&gt;</c>. <c>&lt;</c>, <c>&gt;</c> and <c>&amp;</c> inside the JSON (for example, inside a string
+/// literal) are therefore XML-escaped as <c>&amp;lt;</c>, <c>&amp;gt;</c> and <c>&amp;amp;</c> the way any XML text
+/// node escapes them; <c>Bpmn.Interchange</c> reads and writes this content through <c>System.Xml.Linq</c>, whose
+/// standard text-node escaping decodes it back to the original JSON automatically. Nothing else needs to escape or
+/// unescape this text: <see cref="Write"/> hands the writer plain JSON, and <see cref="Read"/> reads
+/// <see cref="BpmnExtensionElement.Value"/> already decoded.
+/// </para>
 /// <para>Example:</para>
 /// <code>
 /// &lt;bpmn:serviceTask id="notify"&gt;
@@ -155,10 +166,17 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
             ["type"] = activityType
         };
 
+        // Every name seen so far, so a second <elsa:input> with the same name is refused rather than silently
+        // overwriting activityJson[name] and leaving the earlier one's configuration invisible.
+        var seenInputNames = new HashSet<string>(StringComparer.Ordinal);
+
         foreach (var input in element.Children.Where(child => child.Name == InputQName))
         {
             var name = AttributeOf(input, InputNameAttributeName)
                        ?? throw new BpmnBindingException($"An <{NamespacePrefix}:{InputElementName}> element of the '{activityType}' binding declares no '{InputNameAttributeName}'.");
+
+            if (!seenInputNames.Add(name))
+                throw new BpmnBindingException($"The '{activityType}' binding declares the input '{name}' more than once. Each <{NamespacePrefix}:{InputElementName}> must name a distinct input.");
 
             activityJson[name] = Parse(input.Value, name, activityType);
         }

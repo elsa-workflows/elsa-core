@@ -82,6 +82,29 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
         Assert.Throws<BpmnBindingException>(() => Format.Read(element));
     }
 
+    [Fact(DisplayName = "A binding declaring the same input name twice is refused, not resolved last-wins")]
+    public void Read_RefusesADuplicateInputName()
+    {
+        // Two <elsa:input name="text"> children for the same activity type. The second would otherwise silently win,
+        // leaving the author's first configuration in the file but never applied — exactly the quiet wrong answer
+        // this binder refuses everywhere else (an unbound task, a dead declaration, an unregistered activity type, a
+        // malformed timer duration, a call activity with no calledElement).
+        var inputName = new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.InputElementName);
+        var nameAttribute = Attribute(BpmnActivityBindingFormat.InputNameAttributeName, "text");
+
+        var element = new BpmnExtensionElement(
+            new(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.BindingElementName),
+            [Attribute(BpmnActivityBindingFormat.ActivityTypeAttributeName, "Elsa.WriteLine")],
+            [
+                new BpmnExtensionElement(inputName, [nameAttribute], null, "{\"typeName\":\"String\",\"expression\":{\"type\":\"Literal\",\"value\":\"first\"}}"),
+                new BpmnExtensionElement(inputName, [nameAttribute], null, "{\"typeName\":\"String\",\"expression\":{\"type\":\"Literal\",\"value\":\"second\"}}")
+            ]);
+
+        var exception = Assert.Throws<BpmnBindingException>(() => Format.Read(element));
+
+        Assert.Contains("text", exception.Message);
+    }
+
     [Fact(DisplayName = "Attaching a binding replaces the previous one and leaves other retained content alone")]
     public void Attach_ReplacesTheBindingAndKeepsForeignContent()
     {
@@ -106,4 +129,6 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
 
     private static string? AttributeOf(BpmnExtensionElement element, string name) =>
         element.Attributes.FirstOrDefault(attribute => attribute.Name.LocalName == name)?.Value;
+
+    private static BpmnForeignAttribute Attribute(string name, string value) => new(new(null, name), value);
 }

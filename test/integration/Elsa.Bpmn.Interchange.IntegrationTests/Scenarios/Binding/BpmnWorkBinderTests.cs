@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
@@ -7,6 +8,7 @@ using Elsa.Scheduling.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
@@ -117,6 +119,55 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
         // A nested scope's start events are internal to the process around it. The command applier refuses a nested
         // scope that says otherwise, so a binder that marked one would only fail once the process ran.
         Assert.False(nested.IsRootScope);
+    }
+
+    [Fact(DisplayName = "A document-declared variable is copied onto the bound scope, and drives a collection-mode multi-instance")]
+    public async Task DocumentDeclaredVariable_DrivesACollectionModeMultiInstance()
+    {
+        // BpmnScopeVariables.TryRead resolves purely through Elsa's own ExpressionExecutionContext.GetVariable, which
+        // walks Container.Variables — never BpmnProcessDefinition.Variables. A collection the document declares but
+        // the binder never copies onto the scope is Absent to the interpreter, and a collection-mode multi-instance
+        // over it faults the element instead of running once per item. Running the bound scope for real, rather than
+        // only inspecting its shape, is what catches that: a structural assertion on scope.Variables would still pass
+        // if the interpreter could not actually see the value.
+        const string collectionVariableName = "items";
+
+        var each = new BpmnElement(
+            "each",
+            BpmnElementTypes.ServiceTask,
+            bindingRef: Ref("each"),
+            loopCharacteristics: new BpmnLoopCharacteristics(isSequential: false, collectionVariable: collectionVariableName),
+            extensions: BpmnActivityBindingFormat.Attach(null, Format.Write(new WriteLine("iterated"))));
+        var after = BoundElement("after", BpmnElementTypes.ServiceTask, new WriteLine("after"));
+
+        var definition = new BpmnProcessBuilder(ProcessId)
+            .Variable(collectionVariableName)
+            .StartEvent("start")
+            .Element(each)
+            .Element(after)
+            .EndEvent("end")
+            .ConnectSequence("start", "each", "after", "end")
+            .Build();
+
+        // The default travels as the declaration's own JsonElement, seeded here the way an imported .bpmn would carry
+        // it: the document names the variable and gives it a value, and the binder is what makes both visible.
+        definition = definition with
+        {
+            Variables = [new BpmnVariableDeclaration(collectionVariableName, null, JsonSerializer.SerializeToElement(new[] { "alpha", "beta", "gamma" }))]
+        };
+
+        var scope = Bind(definition, Unbound("each"), Unbound("after"));
+
+        Assert.Contains(scope.Variables, variable => variable.Name == collectionVariableName);
+
+        var eachActivityId = scope.WorkBindings[Ref("each")];
+        var afterActivityId = scope.WorkBindings[Ref("after")];
+
+        var result = await Services.GetRequiredService<IWorkflowRunner>().RunAsync(scope);
+
+        Assert.Equal(3, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == eachActivityId));
+        Assert.Equal(1, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == afterActivityId));
+        Assert.Empty(result.WorkflowState.Incidents);
     }
 
     [Fact(DisplayName = "A ScopeListener binding is bound like any other, under its own binding ref")]
