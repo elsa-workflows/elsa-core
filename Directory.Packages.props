@@ -196,6 +196,7 @@
         <PackageVersion Include="System.Net.Http" Version="4.3.4"/>
 		<PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
+        <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MsSql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.PostgreSql" Version="4.9.0"/>
