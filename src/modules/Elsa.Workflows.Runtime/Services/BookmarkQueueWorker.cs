@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ThrottleDebounce;
@@ -66,9 +67,31 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
     protected virtual async Task ProcessAsync(CancellationToken cancellationToken)
     {
         _logger.LogDebug("Processing bookmark queue...");
-        using var scope = _scopeFactory.CreateScope();
-        var processor = scope.ServiceProvider.GetRequiredService<IBookmarkQueueProcessor>();
-        await processor.ProcessAsync(cancellationToken);
+        using var rootScope = _scopeFactory.CreateScope();
+        var rootServices = rootScope.ServiceProvider;
+        var tenantsProvider = rootServices.GetService<ITenantsProvider>();
+        var tenantScopeFactory = rootServices.GetService<ITenantScopeFactory>();
+
+        if (tenantsProvider == null || tenantScopeFactory == null)
+        {
+            var processor = rootServices.GetRequiredService<IBookmarkQueueProcessor>();
+            await processor.ProcessAsync(cancellationToken);
+            _logger.LogDebug("Processed bookmark queue.");
+            return;
+        }
+
+        var tenants = (await tenantsProvider.ListAsync(cancellationToken)).ToList();
+
+        foreach (var tenant in tenants.Prepend<Tenant?>(null))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            await using var tenantScope = tenantScopeFactory.CreateScope(tenant);
+            var processor = tenantScope.ServiceProvider.GetRequiredService<IBookmarkQueueProcessor>();
+            await processor.ProcessAsync(cancellationToken);
+        }
+
         _logger.LogDebug("Processed bookmark queue.");
     }
 }
