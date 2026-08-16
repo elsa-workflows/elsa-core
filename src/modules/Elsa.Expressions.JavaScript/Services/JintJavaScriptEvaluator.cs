@@ -38,7 +38,7 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
         await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression), cancellationToken);
-        var result = ExecuteExpressionAndGetResult(engine, expression);
+        var result = await ExecuteExpressionAndGetResultAsync(engine, expression, cancellationToken);
         await mediator.SendAsync(new EvaluatedJavaScript(engine, context, expression, result), cancellationToken);
 
         return result.ConvertTo(returnType);
@@ -52,6 +52,12 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         {
             ExperimentalFeatures = ExperimentalFeature.TaskInterop
         };
+
+        // Jint 4.14 changed this default to LiveView, which exposes a CLR array to script as a live view over
+        // the original array rather than as a copy. Keeping the copy semantics means a script that mutates an
+        // array does not reach back into the workflow's own data, and that an array survives a round trip as
+        // object[] the way it always has. Hosts that want the live view can opt in via ConfigureEngineOptions.
+        engineOptions.Interop.ArrayConversion = ArrayConversionMode.Copy;
 
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
@@ -106,11 +112,14 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
             engine.SetValue("getConfig", (Func<string, object?>)(name => configuration.GetSection(name).Value));
     }
 
-    private object? ExecuteExpressionAndGetResult(Engine engine, string expression)
+    private async Task<object?> ExecuteExpressionAndGetResultAsync(Engine engine, string expression, CancellationToken cancellationToken)
     {
         var preparedScript = GetOrCreatePrepareScript(expression);
-        var result = engine.Evaluate(preparedScript);
-        return result.UnwrapIfPromise().ToObject();
+
+        // EvaluateAsync awaits a returned promise instead of blocking the calling thread on it, which matters
+        // for expressions that await a .NET Task, such as the ones calling getSecret().
+        var result = await engine.EvaluateAsync(preparedScript, cancellationToken);
+        return result.ToObject();
     }
 
     private Prepared<Script> GetOrCreatePrepareScript(string expression)
