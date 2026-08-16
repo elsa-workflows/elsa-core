@@ -1,19 +1,14 @@
 using System.Collections;
 using System.Dynamic;
 using Elsa.Extensions;
-using Elsa.Expressions.JavaScript.Options;
 using Jint;
 using Jint.Native;
 using Jint.Native.Object;
-using Jint.Runtime.Descriptors;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Expressions.JavaScript.Helpers;
 
 internal static class ObjectConverterHelper
 {
-    
-    
     public static object? ProcessVariableValue(Engine engine, object? variableValue)
     {
         if (variableValue == null)
@@ -31,10 +26,9 @@ internal static class ObjectConverterHelper
 
         foreach (var kvp in expando)
         {
-            var value = kvp.Value;
-            var jsValue = ConvertToJsValue(engine, value);
-            var propertyDescriptor = new PropertyDescriptor(jsValue, true, true, true);
-            jsObject.DefineOwnProperty(kvp.Key, propertyDescriptor);
+            // CreateDataProperty defines a writable, enumerable and configurable property, which is what the
+            // explicit descriptor used to spell out, and takes the engine's fast path for doing so.
+            jsObject.CreateDataProperty(kvp.Key, ConvertToJsValue(engine, kvp.Value));
         }
 
         return jsObject;
