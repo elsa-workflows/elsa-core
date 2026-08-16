@@ -62,7 +62,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Evaluate gates (ERROR if violations unjustified)
    - Phase 0: Generate research.md (resolve all NEEDS CLARIFICATION)
    - Phase 1: Generate data-model.md, contracts/, quickstart.md
-   - Phase 1: Leave repository and agent instruction files unchanged; keep feature context in the plan artifacts
+   - Phase 1: Update agent context by running the agent script
    - Re-evaluate Constitution Check post-design
 
 4. **Stop and report**: Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generated artifacts.
@@ -137,9 +137,9 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Skip if project is purely internal (build scripts, one-off tools, etc.)
 
 3. **Agent context update**:
-   - Do not copy plan-derived context into `AGENTS.md` or agent-specific instruction files. Repository instructions are intentionally feature-neutral; feature context remains in the plan artifacts.
+   - Update the plan reference between the `<!-- SPECKIT START -->` and `<!-- SPECKIT END -->` markers in `AGENTS.md` to point to the plan file created in step 1 (the IMPL_PLAN path)
 
-**Output**: data-model.md, /contracts/*, quickstart.md
+**Output**: data-model.md, /contracts/*, quickstart.md, updated agent context file
 
 ## Key rules
 

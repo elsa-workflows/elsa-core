@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Identity.ShellFeatures;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +12,12 @@ namespace Elsa.Persistence.EFCore.Oracle.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use Oracle persistence.
 /// </summary>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Identity")]
 [ShellFeature(
     DisplayName = "Oracle Identity Persistence",
     Description = "Provides Oracle persistence for identity management",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("oracle-database", "database", Reason = "Stores identity data in Oracle Database.", Providers = new[] { "Oracle" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class OracleIdentityPersistenceShellFeature

@@ -9,13 +9,13 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
     private readonly RateLimitedFunc<CancellationToken, Task> _rateLimitedProcessAsync;
     private CancellationTokenSource _cts = null!;
     private bool _running;
-    private readonly IBookmarkQueueSignaler _signaler;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<BookmarkQueueWorker> _logger;
+    protected IBookmarkQueueSignaler Signaler { get; }
     
     public BookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory, ILogger<BookmarkQueueWorker> logger)
     {
-        _signaler = signaler;
+        Signaler = signaler;
         _scopeFactory = scopeFactory;
         _logger = logger;
         _rateLimitedProcessAsync = Throttler.Throttle<CancellationToken, Task>(ProcessAsync, TimeSpan.FromMilliseconds(500));
@@ -49,7 +49,7 @@ public class BookmarkQueueWorker : IBookmarkQueueWorker
         {
             try
             {
-                await _signaler.AwaitAsync(_cts.Token);
+                await Signaler.AwaitAsync(_cts.Token);
                 await _rateLimitedProcessAsync.InvokeAsync(_cts.Token);
             }
             catch (OperationCanceledException)

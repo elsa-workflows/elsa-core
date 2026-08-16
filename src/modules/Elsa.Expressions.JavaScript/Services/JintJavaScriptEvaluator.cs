@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Acornima.Ast;
 using Elsa.Expressions.Helpers;
@@ -71,15 +69,10 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         // Values going back to the CLR keep accepting both the name and the number.
         engineOptions.Interop.EnumConversion = EnumConversionMode.String;
 
-        // Passing the token to EvaluateAsync only covers the awaiting part: it cannot preempt the synchronous
-        // evaluation loop, so a script that never yields would ignore it. Registering it as a constraint is what
-        // makes cancellation observable during execution, and a cancellation constraint is amortizable, so the
-        // interpreter keeps its tight-loop fast path. A default token registers nothing.
-        engineOptions.CancellationToken(cancellationToken);
-
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
         ConfigureObjectConverters(engineOptions);
+        ConfigureExecutionConstraints(engineOptions, cancellationToken);
 
         await mediator.SendAsync(new CreatingJavaScriptEngine(engineOptions, context), cancellationToken);
         _jintOptions.ConfigureEngineOptionsCallback(engineOptions, context);
@@ -111,6 +104,25 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
             return instance;
         });
+    }
+
+    private void ConfigureExecutionConstraints(Jint.Options options, CancellationToken cancellationToken)
+    {
+        // An expression that never returns would otherwise occupy the calling thread forever.
+        if (_jintOptions.ExecutionTimeout is { } executionTimeout)
+            options.TimeoutInterval(executionTimeout);
+
+        if (_jintOptions.MaxStatements is { } maxStatements)
+            options.MaxStatements(maxStatements);
+
+        if (_jintOptions.MemoryLimit is { } memoryLimit)
+            options.LimitMemory(memoryLimit);
+
+        if (_jintOptions.MaxRecursionDepth is { } maxRecursionDepth)
+            options.LimitRecursion(maxRecursionDepth);
+
+        // Cancelling the workflow should also abort a script that is still running.
+        options.CancellationToken(cancellationToken);
     }
 
     private void ConfigureObjectConverters(Jint.Options options)
@@ -145,15 +157,24 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private Prepared<Script> GetOrCreatePrepareScript(string expression)
     {
-        var cacheKey = "jint:script:" + Hash(expression);
+        // The key type keeps these entries distinct from any other consumer of the shared cache, so the
+        // expression itself can be used as the key. A cache hit then costs a dictionary lookup rather than
+        // a hash of the entire expression plus the allocations needed to render that hash as a string.
+        var cacheKey = new ScriptCacheKey(expression);
 
-        return memoryCache.GetOrCreate(cacheKey, entry =>
-        {
-            if (_jintOptions.ScriptCacheTimeout.HasValue)
-                entry.SetSlidingExpiration(_jintOptions.ScriptCacheTimeout.Value);
+        // Looking the entry up directly rather than through GetOrCreate keeps the factory closure off the
+        // hot path: it is only needed on a miss.
+        if (memoryCache.TryGetValue(cacheKey, out Prepared<Script> cachedScript))
+            return cachedScript;
 
-            return PrepareScript(expression);
-        })!;
+        using var entry = memoryCache.CreateEntry(cacheKey);
+
+        if (_jintOptions.ScriptCacheTimeout.HasValue)
+            entry.SetSlidingExpiration(_jintOptions.ScriptCacheTimeout.Value);
+
+        var preparedScript = PrepareScript(expression);
+        entry.Value = preparedScript;
+        return preparedScript;
     }
 
     private Prepared<Script> PrepareScript(string expression)
@@ -173,10 +194,8 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         return Engine.PrepareScript(expression, options: prepareOptions);
     }
 
-    private string Hash(string input)
-    {
-        var bytes = Encoding.UTF8.GetBytes(input);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToBase64String(hash);
-    }
+    /// <summary>
+    /// Identifies a prepared script in the shared memory cache.
+    /// </summary>
+    private readonly record struct ScriptCacheKey(string Expression);
 }
