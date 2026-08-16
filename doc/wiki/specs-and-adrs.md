@@ -47,6 +47,8 @@ Current ADRs:
 | [010 workflow JSON hardening](../../specs/010-workflow-json-hardening/spec.md) | Workflow core | Introduces dedicated type aliases for workflow JSON, rejects unknown/unsafe CLR names, and preserves backward-compatible reads for selected legacy identifiers. |
 | [011 persistence vNext](../../specs/011-persistence-vnext/spec.md) | Persistence | Provider-neutral module-owned storage manifests, portable document/index store, relational and MongoDB physicalization, and schema versioning without per-provider migration packages. |
 | [012 output converters](../../specs/012-output-converters/spec.md) | Workflow core | Extensible, explicitly-identified output converters that transform an activity's native output at the binding boundary before writing the destination variable or workflow output. |
+| [012 external authentication](../../specs/012-external-authentication/spec.md) | Security | Server-brokered external identity providers: Identity Provider Connections, OpenID Connect adapter, linked identity resolution, configurable unlinked-identity policies, and EF Core persistence across all providers. |
+| [012 weaver grounding tools](../../specs/012-weaver-grounding-tools/spec.md) | AI | Grounds Weaver in real Elsa server data: activity registry discovery, workflow definition inspection, instance and incident investigation, and proposal-based workflow authoring with validation. |
 
 Each spec folder usually contains:
 
@@ -119,6 +121,24 @@ For runtime behavior, read in this order:
 4. `Elsa.AI.Host` feature and endpoints
 5. `Elsa.AI.Copilot` adapter and options
 6. AI unit and integration tests
+
+## Reading Order For External Authentication Work
+
+1. [specs/012-external-authentication/spec.md](../../specs/012-external-authentication/spec.md)
+2. [specs/012-external-authentication/plan.md](../../specs/012-external-authentication/plan.md)
+3. [Identity, Tenancy, And Security](identity-tenancy-security.md)
+4. `Elsa.ExternalAuthentication` feature and contracts
+5. `Elsa.ExternalAuthentication.OpenIdConnect` adapter
+6. `Elsa.ExternalAuthentication.Persistence.EFCore` and provider packages
+
+## Reading Order For BPMN Work
+
+1. [bpmn-workflows.md](bpmn-workflows.md)
+2. `Elsa.Bpmn/Activities/BpmnProcess.cs` — the scope activity
+3. `Elsa.Bpmn/Hosting/BpmnWorkLedger.cs` and `BpmnWorkBinder.cs` — work tracking and binding
+4. `Elsa.Bpmn.Interchange/Binding/BpmnActivityBindingFormat.cs` — `elsa:` vendor extension
+5. `Elsa.Bpmn.Interchange/Features/BpmnInterchangeFeature.cs` — feature registration
+6. `test/integration/Elsa.Bpmn.IntegrationTests` and `Elsa.Bpmn.Interchange.IntegrationTests`
 
 ## Reading Order For Persistence vNext Work
 
