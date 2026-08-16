@@ -1,0 +1,3 @@
+# Broker external sign-in through Elsa Server
+
+Elsa Server owns external provider discovery, authorization redirects, callbacks, secret use, identity resolution, permission resolution, and issuance of Elsa credentials. Registered Authentication Clients initiate sign-in and receive only a short-lived, single-use Elsa completion code bound to an exact callback, target tenant, and PKCE challenge; Authentication Clients remain distinct from Elsa API Applications and grant no permissions. Studio and future clients therefore share one broker contract without receiving provider credentials or tokens in redirect URLs.

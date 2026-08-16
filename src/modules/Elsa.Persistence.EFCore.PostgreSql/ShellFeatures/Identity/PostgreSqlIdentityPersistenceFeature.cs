@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Identity.ShellFeatures;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,12 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Identity;
 /// <summary>
 /// Configures the identity feature to use PostgreSql persistence.
 /// </summary>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Identity")]
 [ShellFeature(
     DisplayName = "PostgreSql Identity Persistence",
     Description = "Provides PostgreSql persistence for identity management",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(IdentityFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores identity data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlIdentityPersistenceFeature

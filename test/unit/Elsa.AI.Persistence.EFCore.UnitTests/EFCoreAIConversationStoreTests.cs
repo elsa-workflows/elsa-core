@@ -499,7 +499,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _connection.OpenAsync();
-        _dbContext = new AIDbContext(new DbContextOptionsBuilder<AIDbContext>().UseSqlite(_connection).Options);
+        _dbContext = new AIDbContext(new DbContextOptionsBuilder<AIDbContext>().UseSqliteAIMigrations(_connection).Options);
         await _dbContext.Database.MigrateAsync();
     }
 

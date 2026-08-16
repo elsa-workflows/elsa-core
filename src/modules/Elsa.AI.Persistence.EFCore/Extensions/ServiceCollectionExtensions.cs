@@ -23,7 +23,13 @@ public static class ServiceCollectionExtensions
         }
 
         services.TryAddScoped<AIDbContext>();
+        services.AddAIPersistenceStoreServices();
 
+        return services;
+    }
+
+    internal static IServiceCollection AddAIPersistenceStoreServices(this IServiceCollection services)
+    {
         services.Replace(ServiceDescriptor.Scoped<IAIConversationStore, EFCoreAIConversationStore>());
         services.Replace(ServiceDescriptor.Scoped<IAIProposalStore, EFCoreAIProposalStore>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IAIAuditEventHandler, EFCoreAIAuditSink>());

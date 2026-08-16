@@ -61,15 +61,7 @@ public class IdentityTokenOptions
     /// <param name="requiredTokenUse">The required token usage claim value.</param>
     public void ConfigureJwtBearerOptions(JwtBearerOptions options, string requiredTokenUse)
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            IssuerSigningKey = CreateSecurityKey(),
-            ValidAudience = Audience,
-            ValidIssuer = Issuer,
-            ValidateLifetime = true,
-            LifetimeValidator = ValidateLifetime,
-            NameClaimType = JwtRegisteredClaimNames.Name
-        };
+        options.TokenValidationParameters = CreateTokenValidationParameters();
         options.Events ??= new JwtBearerEvents();
         var previousOnTokenValidated = options.Events.OnTokenValidated;
         options.Events.OnTokenValidated = async context =>
@@ -85,6 +77,20 @@ public class IdentityTokenOptions
                 context.Fail($"The token is not a valid {requiredTokenUse} token.");
         };
     }
+
+    /// <summary>
+    /// Creates token validation parameters for Elsa identity tokens.
+    /// </summary>
+    public TokenValidationParameters CreateTokenValidationParameters() => new()
+    {
+        IssuerSigningKey = CreateSecurityKey(),
+        ValidAudience = Audience,
+        ValidIssuer = Issuer,
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
+        LifetimeValidator = ValidateLifetime,
+        NameClaimType = JwtRegisteredClaimNames.Name
+    };
 
     private static bool ValidateLifetime(DateTime? notBefore, DateTime? expires, SecurityToken securityToken, TokenValidationParameters validationParameters)
     {

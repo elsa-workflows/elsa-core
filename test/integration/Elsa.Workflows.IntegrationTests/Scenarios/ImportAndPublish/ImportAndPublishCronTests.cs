@@ -1,4 +1,5 @@
-﻿using Elsa.Testing.Shared;
+﻿using Elsa.Extensions;
+using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -8,10 +9,12 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.ImportAndPublish;
 public class ImportAndPublishCronTests
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly ITestOutputHelper _testOutputHelper;
     private readonly IServiceProvider _services;
 
     public ImportAndPublishCronTests(ITestOutputHelper testOutputHelper)
     {
+        _testOutputHelper = testOutputHelper;
         _services = new TestApplicationBuilder(testOutputHelper)
             .WithCapturingTextWriter(_capturingTextWriter)
             .Build();
@@ -50,6 +53,31 @@ public class ImportAndPublishCronTests
 
         // Assert.
         Assert.False(result.Succeeded);
+        Assert.Single(result.ValidationErrors);
+        Assert.Equal("Error when parsing cron expression: The given cron expression has an invalid format. Seconds: Value must be a number between 0 and 59 (all inclusive).", result.ValidationErrors.Single().Message);
+    }
+
+    [Fact(DisplayName = "Cron workflow with bad cron expression should publish successfully when FailOnValidationErrors is disabled.")]
+    public async Task ImportAndPublish_ShouldSucceed_WithBadCronExpression_WhenFailOnValidationErrorsDisabled()
+    {
+        // Opt out of strict publishing.
+        var services = new TestApplicationBuilder(_testOutputHelper)
+            .WithCapturingTextWriter(_capturingTextWriter)
+            .ConfigureElsa(elsa => elsa.UseWorkflowManagement(management => management.UseFailOnValidationErrors(false)))
+            .Build();
+
+        // Populate registries.
+        await services.PopulateRegistriesAsync();
+
+        // Import workflow.
+        var workflowDefinition = await services.ImportWorkflowDefinitionAsync($"Scenarios/ImportAndPublish/Workflows/bad-cron-expression.json");
+
+        // Publish.
+        IWorkflowDefinitionPublisher workflowDefinitionPublisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
+
+        // Assert: publishing succeeds while the validation error is surfaced as a warning.
+        Assert.True(result.Succeeded);
         Assert.Single(result.ValidationErrors);
         Assert.Equal("Error when parsing cron expression: The given cron expression has an invalid format. Seconds: Value must be a number between 0 and 59 (all inclusive).", result.ValidationErrors.Single().Message);
     }

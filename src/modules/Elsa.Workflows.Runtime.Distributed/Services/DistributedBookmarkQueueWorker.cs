@@ -10,13 +10,17 @@ public class DistributedBookmarkQueueWorker(
     IServiceScopeFactory scopeFactory,
     ILogger<DistributedBookmarkQueueWorker> logger) : BookmarkQueueWorker(signaler, scopeFactory, logger)
 {
+    private static readonly TimeSpan LockRetryDelay = TimeSpan.FromSeconds(2);
+
     protected override async Task ProcessAsync(CancellationToken cancellationToken)
     {
         await using var handle = await distributedLockProvider.TryAcquireLockAsync(nameof(DistributedBookmarkQueueWorker), TimeSpan.Zero, cancellationToken);
 
         if (handle == null)
         {
-            logger.LogInformation("Could not acquire lock for distributed bookmark queue worker. This is usually an indication that another application instance is already processing.");
+            logger.LogDebug("Could not acquire lock for distributed bookmark queue worker. Another application instance is already processing; scheduling a local retry in {RetryDelay}.", LockRetryDelay);
+            await Task.Delay(LockRetryDelay, cancellationToken);
+            await Signaler.TriggerAsync(cancellationToken);
             return;
         }
 

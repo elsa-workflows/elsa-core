@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>
+			Provides BPMN execution support by wiring the Bpmn.Model and Bpmn.Semantics libraries into Elsa.
+		</Description>
+		<PackageTags>elsa extension module bpmn</PackageTags>
+		<!-- Not packable until the Bpmn.* packages are published to nuget.org; they currently live only on the valence-works/bpmn feedz feed, so a published Elsa.Bpmn would fail to restore for consumers. -->
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Bpmn.Model" />
+		<PackageReference Include="Bpmn.Semantics" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj" />
+		<ProjectReference Include="..\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+	</ItemGroup>
+
+</Project>

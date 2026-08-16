@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+using System.Reflection;
+using Elsa.Persistence.EFCore.Modules.Runtime;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
 // ReSharper disable once CheckNamespace
@@ -51,6 +52,8 @@ public static class SqlServerProvidersExtensions
         where TFeature : PersistenceFeatureBase<TFeature, TDbContext>
     {
         feature.DbContextOptionsBuilder = (sp, db) => db.UseElsaSqlServer(migrationsAssembly, connectionStringFunc(sp), options, configure);
+        if (feature is EFCoreWorkflowRuntimePersistenceFeature runtimePersistenceFeature)
+            runtimePersistenceFeature.UseWorkflowCommitTransaction = true;
         return (TFeature)feature;
     }
 }

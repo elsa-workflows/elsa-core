@@ -1,3 +1,4 @@
+using Elsa.Common.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 
@@ -33,6 +34,14 @@ public interface IBookmarkStore
     /// Returns a set of bookmarks matching the specified filter.
     /// </summary>
     ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a page of bookmarks matching the specified filter.
+    /// </summary>
+    /// <remarks>
+    /// Startup backlog catch-up depends on store-backed paging. Implementations should page at the persistence layer instead of materializing all matches in memory.
+    /// </remarks>
+    ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a set of bookmarks matching the specified filter.

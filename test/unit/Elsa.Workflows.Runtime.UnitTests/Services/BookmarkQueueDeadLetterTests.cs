@@ -295,6 +295,24 @@ public class BookmarkQueueDeadLetterTests
     }
 
     [Fact]
+    public async Task ProcessAsync_WhenProcessedItemsAreDeleted_DoesNotSkipNextPage()
+    {
+        for (var i = 0; i < 75; i++)
+            await _queueStore.AddAsync(NewQueueItem($"queued-{i:00}", _now.AddSeconds(i)));
+        var processor = new BookmarkQueueProcessor(
+            _queueStore,
+            CreateManager(),
+            new SuccessfulWorkflowResumer(),
+            _clock,
+            Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions()),
+            NullLogger<BookmarkQueueProcessor>.Instance);
+
+        await processor.ProcessAsync();
+
+        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+    }
+
+    [Fact]
     public async Task ReplayAsync_EnqueuesItemAndPreventsSecondReplay()
     {
         await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
@@ -565,6 +583,44 @@ public class BookmarkQueueDeadLetterTests
         public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
         {
             throw new OperationCanceledException(cancellationToken);
+        }
+    }
+
+    private sealed class SuccessfulWorkflowResumer : IWorkflowResumer
+    {
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync<TActivity>(object stimulus, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<RunWorkflowInstanceResponse?> ResumeAsync(string bookmarkId, IDictionary<string, object> input, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync<TActivity>(object stimulus, string? workflowInstanceId = null, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<RunWorkflowInstanceResponse?> ResumeAsync<TActivity>(string bookmarkId, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default) where TActivity : IActivity
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(ResumeBookmarkRequest request, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<IEnumerable<RunWorkflowInstanceResponse>> ResumeAsync(BookmarkFilter filter, ResumeBookmarkOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IEnumerable<RunWorkflowInstanceResponse>>([
+                new()
+                {
+                    WorkflowInstanceId = filter.WorkflowInstanceId!
+                }
+            ]);
         }
     }
 

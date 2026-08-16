@@ -222,6 +222,18 @@ public static partial class ActivityExecutionContextExtensions
         /// </summary>
         public async ValueTask SendSignalAsync(object signal)
         {
+            await activityExecutionContext.TrySendSignalAsync(signal);
+        }
+
+        /// <summary>
+        /// Send a signal up the current hierarchy of ancestors and report whether a receiver claimed it.
+        /// </summary>
+        /// <param name="signal">The signal to send.</param>
+        /// <returns>
+        /// <c>true</c> if a receiver called <see cref="SignalContext.StopPropagation"/>; otherwise, <c>false</c>.
+        /// </returns>
+        internal async ValueTask<bool> TrySendSignalAsync(object signal)
+        {
             var receivingContexts = new[]
             {
                 activityExecutionContext
@@ -244,9 +256,11 @@ public static partial class ActivityExecutionContextExtensions
                 if (signalContext.StopPropagationRequested)
                 {
                     logger.LogDebug("Propagation of signal {SignalType} on activity {ActivityId} of type {ActivityType} was stopped", signalTypeName, ancestorContext.Activity.Id, ancestorContext.Activity.Type);
-                    return;
+                    return true;
                 }
             }
+
+            return false;
         }
 
         /// <summary>
@@ -322,7 +336,7 @@ public static partial class ActivityExecutionContextExtensions
             var exceptionState = ExceptionState.FromException(e);
             var systemClock = activityExecutionContext.GetRequiredService<ISystemClock>();
             var now = systemClock.UtcNow;
-            var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now);
+            var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, e.Message, exceptionState, now, activityExecutionContext.Id);
             activityExecutionContext.WorkflowExecutionContext.Incidents.Add(incident);
             activityExecutionContext.AggregateFaultCount++;
         
@@ -333,8 +347,41 @@ public static partial class ActivityExecutionContextExtensions
         }
 
         /// <summary>
-        /// Recovers the current activity from a faulted state by resetting fault counts and transitioning the activity to the running status.
+        /// Recovers the current activity from a faulted state: undoes the fault counts, discards the incident and the recorded
+        /// exception, and transitions the activity back to the running status.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This is the inverse of <c>Fault</c>, and is meant to leave no trace of a fault an enclosing container claimed. In
+        /// particular it removes the <see cref="ActivityIncident"/> that <c>Fault</c> appended. A handled fault must not remain an
+        /// incident, because plenty of code treats a non-empty <see cref="WorkflowExecutionContext.Incidents"/> as "this workflow
+        /// failed" without looking further - the HTTP endpoint fault handler is one, and it would answer a caller with a fault
+        /// response for a workflow that caught its error and completed normally. The execution log still records the failure, so
+        /// nothing is hidden from anyone reading the journal.
+        /// </para>
+        /// <para>
+        /// The incident is matched on this <i>execution's</i> id rather than on the activity's node id, because a node inside
+        /// a loop, retried, or run concurrently has several executions that all raise incidents under the same node id, and
+        /// recovering one of them must not remove another's. Within a single execution the most recent is taken, which keeps
+        /// an activity that faults, recovers, and faults again correct: each recovery removes its own incident rather than
+        /// the whole execution's history. That last part relies on <see cref="WorkflowExecutionContext.Incidents"/> preserving
+        /// insertion order, which it does because it is list-backed; it is typed as a plain collection, so a future change to
+        /// an unordered one would silently pick an arbitrary incident of that execution rather than its newest.
+        /// </para>
+        /// <para>
+        /// Clearing the exception also clears it from the activity's execution record, which maps it from the live context.
+        /// That is intended and follows from the same reasoning as the incident: an execution whose failure a container
+        /// claimed is not a failed execution. The journal keeps the evidence either way, since the <c>Faulted</c> entry is
+        /// written by <c>ExecutionLogMiddleware</c>, which sits inside this middleware and logs on the way past.
+        /// </para>
+        /// <para>
+        /// It remains asymmetric with <c>Fault</c> in one respect: it <i>sets</i> the current context's fault count to zero, which is
+        /// idempotent, but <i>decrements</i> the count on every ancestor, which is not. Calling it more than once per fault drives
+        /// ancestor counts negative. The status transition only applies to an activity that is still
+        /// <see cref="ActivityStatus.Faulted"/>, so that a <see cref="Elsa.Workflows.Signals.FaultSignal"/> handler that already
+        /// terminalized the activity does not see its decision undone.
+        /// </para>
+        /// </remarks>
         public void RecoverFromFault()
         {
             activityExecutionContext.AggregateFaultCount = 0;
@@ -344,7 +391,16 @@ public static partial class ActivityExecutionContextExtensions
             foreach (var ancestor in ancestors)
                 ancestor.AggregateFaultCount--;
 
-            activityExecutionContext.TransitionTo(ActivityStatus.Running);
+            var incidents = activityExecutionContext.WorkflowExecutionContext.Incidents;
+            var ownIncident = incidents.LastOrDefault(x => x.ActivityInstanceId == activityExecutionContext.Id);
+
+            if (ownIncident != null)
+                incidents.Remove(ownIncident);
+
+            activityExecutionContext.Exception = null;
+
+            if (activityExecutionContext.Status == ActivityStatus.Faulted)
+                activityExecutionContext.TransitionTo(ActivityStatus.Running);
         }
 
         /// <summary>

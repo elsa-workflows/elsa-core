@@ -84,3 +84,4 @@ docker/docker-compose-datadog.yml
 # Test results
 TestResults/
 artifacts/
+BenchmarkDotNet.Artifacts/
