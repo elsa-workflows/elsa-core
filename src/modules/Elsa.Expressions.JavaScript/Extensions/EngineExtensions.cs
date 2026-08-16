@@ -30,9 +30,9 @@ public static class EngineExtensions
     /// </para>
     /// <para>
     /// A name that is already taken is left alone. Registering the same type twice is therefore a no-op, and a
-    /// global the host installed — through <c>JintOptions.RegisterType</c>, <c>JintOptions.ConfigureEngine</c> or
-    /// the per-evaluation <c>configureEngine</c> callback, all of which run before the built-in registrations —
-    /// is never replaced.
+    /// global installed before this method is called is never replaced. Built-in type globals are registered
+    /// lazily through <see cref="EngineOptionsExtensions.RegisterType(Jint.Options, Type)"/> while the engine is
+    /// being constructed, so host callbacks that run afterwards can replace them deliberately.
     /// </para>
     /// </remarks>
     public static void RegisterType(this Engine engine, Type type)
@@ -42,10 +42,7 @@ public static class EngineExtensions
         if (!IsUsableAsIdentifier(name))
             return;
 
-        // The type registrations are contributed by several independent handlers, whose sets overlap, and they run
-        // after the host has configured the engine. Leaving an occupied name alone does two things: the overlapping
-        // types are no longer described through reflection again for every expression evaluation, and a global that
-        // the host - or JavaScript itself - already put there keeps its value.
+        // Leave any value that the host or JavaScript already installed under this name untouched.
         if (engine.Global.HasOwnProperty(name))
             return;
 

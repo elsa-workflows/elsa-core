@@ -59,8 +59,8 @@ public class TypeRegistrationTests
     [Fact(DisplayName = "A global installed by the host wins over the built-in registration of the same name")]
     public async Task HostGlobalsAreNotOverwrittenByTheBuiltInRegistrations()
     {
-        // Guid is registered by both ConfigureEngineWithCommonTypes and the default variable descriptor set, and
-        // those handlers run after the configureEngine callback. The host's value has to survive them.
+        // Guid is registered lazily while the engine options are being built. The configureEngine callback runs
+        // afterwards, so a host can deliberately replace that built-in global.
         Assert.Equal("host-provided", await EvaluateAsync("return Guid;", engine => engine.SetValue("Guid", "host-provided")));
     }
 

@@ -22,16 +22,15 @@ internal static class ObjectConverterHelper
     
     public static ObjectInstance ConvertToJsObject(Engine engine, IDictionary<string, object?> expando)
     {
-        var jsObject = engine.Intrinsics.Object.Construct([]);
-
-        foreach (var kvp in expando)
-        {
-            // CreateDataProperty defines a writable, enumerable and configurable property, which is what the
-            // explicit descriptor used to spell out, and takes the engine's fast path for doing so.
-            jsObject.CreateDataProperty(kvp.Key, ConvertToJsValue(engine, kvp.Value));
-        }
-
-        return jsObject;
+        // CreateFromEntries defines the same writable, enumerable and configurable properties the explicit
+        // descriptor used to spell out, but builds the object directly in the engine's hidden-class
+        // representation rather than filling a per-object property dictionary. Two wins, both within a single
+        // evaluation: it drops the second descriptor allocation the explicit one caused inside Jint's
+        // ValidateAndApplyPropertyDescriptor, and objects presenting the same keys — sibling variables, and the
+        // nested objects of a repeated payload shape — share one layout instead of each carrying its own
+        // descriptors. Nothing carries across evaluations: hidden classes are interned per engine and Elsa
+        // builds a fresh engine every time.
+        return JsObject.CreateFromEntries(engine, expando.Select(kvp => new KeyValuePair<string, JsValue>(kvp.Key, ConvertToJsValue(engine, kvp.Value))));
     }
 
     private static JsValue ConvertToJsValue(Engine engine, object? value)

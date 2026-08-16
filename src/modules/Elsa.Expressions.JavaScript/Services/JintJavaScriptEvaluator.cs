@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using Acornima.Ast;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
@@ -23,9 +24,6 @@ namespace Elsa.Expressions.JavaScript.Services;
 public class JintJavaScriptEvaluator(IConfiguration configuration, INotificationSender mediator, IOptions<JintOptions> scriptOptions, IMemoryCache memoryCache)
     : IJavaScriptEvaluator
 {
-    // The converters are stateless, so a single instance of each can serve every engine.
-    private static readonly IObjectConverter[] ObjectConverters = [new ByteArrayConverter(), new EnumToStringConverter(), new JsonElementConverter()];
-
     private readonly JintOptions _jintOptions = scriptOptions.Value;
 
     /// <inheritdoc />
@@ -37,9 +35,13 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         Action<Engine>? configureEngine = null,
         CancellationToken cancellationToken = default)
     {
+        // The script is prepared before the engine is configured so that the identifiers the expression
+        // actually references are known while the globals are being installed. Handlers that would
+        // otherwise have to build a global speculatively can then skip the ones the expression cannot read.
+        var preparedScript = GetOrCreatePrepareScript(expression);
         var engine = await GetConfiguredEngine(configureEngine, context, options, cancellationToken);
-        await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression), cancellationToken);
-        var result = await ExecuteExpressionAndGetResultAsync(engine, expression, cancellationToken);
+        await mediator.SendAsync(new EvaluatingJavaScript(engine, context, expression, preparedScript.ReferencedGlobals), cancellationToken);
+        var result = await ExecuteExpressionAndGetResultAsync(engine, preparedScript, cancellationToken);
         await mediator.SendAsync(new EvaluatedJavaScript(engine, context, expression, result), cancellationToken);
 
         return result.ConvertTo(returnType);
@@ -59,6 +61,13 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         // array does not reach back into the workflow's own data, and that an array survives a round trip as
         // object[] the way it always has. Hosts that want the live view can opt in via ConfigureEngineOptions.
         engineOptions.Interop.ArrayConversion = ArrayConversionMode.Copy;
+
+        // Expose CLR enums to script as their member name. This is what EnumToStringConverter used to do by
+        // hand for values crossing the boundary; the built-in switch also covers the direction that converter
+        // could not reach, a constant read off a registered enum type such as LogPersistenceMode.Include, which
+        // used to produce a number and therefore never compared equal to the same value held in a variable.
+        // Values going back to the CLR keep accepting both the name and the number.
+        engineOptions.Interop.EnumConversion = EnumConversionMode.String;
 
         ConfigureClrAccess(engineOptions);
         ConfigureObjectWrapper(engineOptions);
@@ -118,7 +127,12 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
 
     private void ConfigureObjectConverters(Jint.Options options)
     {
-        options.Interop.ObjectConverters.AddRange(ObjectConverters);
+        // Each converter declares the CLR types it handles. A converter registered without them has to be
+        // offered every value crossing the boundary, which costs Jint its compiled member-read and
+        // method-invoker lanes for every wrapped .NET object in the engine; declaring the types keeps those
+        // lanes for the members and methods no converter can observe.
+        options.AddObjectConverter(new ByteArrayConverter(), typeof(byte[]));
+        options.AddObjectConverter(new JsonElementConverter(), typeof(JsonElement));
     }
 
     private void ConfigureArgumentGetters(Engine engine, ExpressionEvaluatorOptions options)
@@ -133,10 +147,8 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
             engine.SetValue("getConfig", (Func<string, object?>)(name => configuration.GetSection(name).Value));
     }
 
-    private async Task<object?> ExecuteExpressionAndGetResultAsync(Engine engine, string expression, CancellationToken cancellationToken)
+    private async Task<object?> ExecuteExpressionAndGetResultAsync(Engine engine, Prepared<Script> preparedScript, CancellationToken cancellationToken)
     {
-        var preparedScript = GetOrCreatePrepareScript(expression);
-
         // EvaluateAsync awaits a returned promise instead of blocking the calling thread on it, which matters
         // for expressions that await a .NET Task, such as the ones calling getSecret().
         var result = await engine.EvaluateAsync(preparedScript, cancellationToken);
@@ -172,7 +184,12 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
             ParsingOptions = new()
             {
                 AllowReturnOutsideFunction = true
-            }
+            },
+
+            // Collected once per distinct expression, alongside the parse that is already cached, and read by
+            // the handlers that would otherwise register a global for every variable, workflow input and
+            // activity output in scope.
+            CollectReferencedGlobals = true
         };
         return Engine.PrepareScript(expression, options: prepareOptions);
     }
