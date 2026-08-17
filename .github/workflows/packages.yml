@@ -342,14 +342,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: ${{ github.event.action == 'published' }}
+    permissions:
+      contents: read
+      id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
     steps:
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
+      # Exchanges a GitHub OIDC token for a temporary nuget.org API key (valid 1 hour).
+      # Requires a Trusted Publishing policy on nuget.org matching:
+      #   Repository Owner: elsa-workflows | Repository: elsa-core | Workflow File: packages.yml
+      # Keep this step immediately before the push so the key cannot expire in between.
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }} # nuget.org username (profile name), not an email address.
+
       - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k "${{ secrets.NUGET_API_KEY }}" -s ${{ env.nuget_feed_source }} --skip-duplicate
+        run: dotnet nuget push *.nupkg --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source ${{ env.nuget_feed_source }} --skip-duplicate
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages
