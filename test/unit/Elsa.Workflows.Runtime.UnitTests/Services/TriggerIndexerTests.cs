@@ -179,6 +179,14 @@ public class TriggerIndexerTests
         Assert.Throws<ArgumentException>(() => new NamedTriggerPayload(name, new TestStimulus("a")));
     }
 
+    [Fact(DisplayName = "A named payload refuses to wrap another named payload")]
+    public void NamedTriggerPayload_NestedPayload_Throws()
+    {
+        var inner = new NamedTriggerPayload(EventStimulusName, new TestStimulus("a"));
+
+        Assert.Throws<ArgumentException>(() => new NamedTriggerPayload(TimerStimulusName, inner));
+    }
+
     private async Task<ICollection<StoredTrigger>> IndexAsync(Func<TriggerIndexingContext, IEnumerable<object>> payloadsFactory)
     {
         var trigger = new TestTrigger

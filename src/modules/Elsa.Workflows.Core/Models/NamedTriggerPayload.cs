@@ -20,6 +20,9 @@ public record NamedTriggerPayload
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("A stimulus name is required.", nameof(name));
 
+        if (payload is NamedTriggerPayload)
+            throw new ArgumentException("A NamedTriggerPayload cannot wrap another NamedTriggerPayload.", nameof(payload));
+
         Name = name;
         Payload = payload;
     }
@@ -30,7 +33,8 @@ public record NamedTriggerPayload
     public string Name { get; }
 
     /// <summary>
-    /// The payload to register. This is what gets stored; the wrapper itself never is.
+    /// The payload to register. This is what gets stored; the wrapper itself never is, since the constructor refuses to wrap another
+    /// <see cref="NamedTriggerPayload"/>.
     /// </summary>
     public object Payload { get; }
 }
