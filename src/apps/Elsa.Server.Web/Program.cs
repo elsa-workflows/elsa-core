@@ -97,6 +97,7 @@ services
             })
             .UseWorkflowsApi()
             .UseDashboardApi()
+            .UseWorkflowRuntimeDashboard()
             .UseFluentStorageProvider()
             .UseElsaScriptBlobStorage()
             .UseScheduling()
@@ -152,6 +153,11 @@ services
             elsa.UseStructuredLogs();
 
         elsa.AddSwagger();
+        {
+            elsa
+                .UseStructuredLogs()
+                .UseStructuredLogsDashboard();
+        }
         
         ConfigureForTest?.Invoke(elsa);
     });

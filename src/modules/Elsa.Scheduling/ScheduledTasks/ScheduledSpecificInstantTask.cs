@@ -1,9 +1,12 @@
 using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.Scheduling.Commands;
+using Elsa.Scheduling.Options;
+using Elsa.Scheduling.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
+using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Scheduling.ScheduledTasks;
 
@@ -12,10 +15,12 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// </summary>
 public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 {
+    private static readonly PastDueScheduleStaggerer DefaultPastDueScheduleStaggerer = new(OptionsFactory.Create(new SchedulingOptions()));
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ScheduledSpecificInstantTask> _logger;
+    private readonly PastDueScheduleStaggerer _pastDueScheduleStaggerer;
     private readonly DateTimeOffset _startAt;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
@@ -27,12 +32,33 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
     /// <summary>
     /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
     /// </summary>
-    public ScheduledSpecificInstantTask(ITask task, DateTimeOffset startAt, ISystemClock systemClock, IServiceScopeFactory scopeFactory, ILogger<ScheduledSpecificInstantTask> logger)
+    public ScheduledSpecificInstantTask(
+        ITask task,
+        DateTimeOffset startAt,
+        ISystemClock systemClock,
+        IServiceScopeFactory scopeFactory,
+        ILogger<ScheduledSpecificInstantTask> logger)
+        : this(task, startAt, systemClock, scopeFactory, logger, DefaultPastDueScheduleStaggerer)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of <see cref="ScheduledSpecificInstantTask"/>.
+    /// </summary>
+    [ActivatorUtilitiesConstructor]
+    public ScheduledSpecificInstantTask(
+        ITask task,
+        DateTimeOffset startAt,
+        ISystemClock systemClock,
+        IServiceScopeFactory scopeFactory,
+        ILogger<ScheduledSpecificInstantTask> logger,
+        PastDueScheduleStaggerer pastDueScheduleStaggerer)
     {
         _task = task;
         _systemClock = systemClock;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _pastDueScheduleStaggerer = pastDueScheduleStaggerer;
         _startAt = startAt;
         _cancellationTokenSource = new();
 
@@ -57,16 +83,14 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
     {
         var now = _systemClock.UtcNow;
         var delay = _startAt - now;
+        var adjustedDelay = _pastDueScheduleStaggerer.GetDelay(delay);
 
-        // Handle edge cases where delay is zero or negative (e.g., due to clock drift, fast execution, or time alignment)
-        // Instead of silently returning, use a minimum delay to ensure the timer fires and workflow continues scheduling
         if (delay <= TimeSpan.Zero)
         {
-            _logger.LogWarning("Calculated delay is {Delay} which is not positive. Using minimum delay of 1ms to ensure timer fires", delay);
-            delay = TimeSpan.FromMilliseconds(1);
+            _logger.LogDebug("Calculated delay is {Delay} which is not positive. Using catch-up delay of {CatchUpDelay}", delay, adjustedDelay);
         }
 
-        _timer = new(delay.TotalMilliseconds)
+        _timer = new(adjustedDelay.TotalMilliseconds)
         {
             Enabled = true
         };

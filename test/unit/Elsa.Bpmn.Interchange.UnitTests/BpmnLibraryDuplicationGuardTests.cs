@@ -94,9 +94,19 @@ public class BpmnLibraryDuplicationGuardTests
             .ToList();
     }
 
+    // The declaring-type walk is load-bearing, not defensive. A collection expression targeting an
+    // IReadOnlyList<T> makes the compiler synthesize a <>z__ReadOnlySingleElementList<T> into the
+    // assembly; that outer type is filtered by its name, but its nested Enumerator struct is named
+    // plainly and carries no CompilerGeneratedAttribute of its own, so it reads as a hand-written type
+    // colliding with the identically synthesized one in Bpmn.Model. That is a false positive: nothing a
+    // person wrote is ever nested inside a <>-named type, and this guard's own fixture (BpmnGraph,
+    // nested in an ordinary class) still trips the detector. Without this, the guard fails the moment
+    // anyone writes a single-element collection expression in Elsa.Bpmn*, which teaches people to work
+    // around it rather than to trust it.
     private static bool IsCompilerGenerated(Type type) =>
         type.Name.StartsWith('<') ||
-        type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false);
+        type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false) ||
+        (type.DeclaringType is { } declaringType && IsCompilerGenerated(declaringType));
 
     /// <summary>
     /// Exists solely as this guard's own fixture: its name deliberately collides with

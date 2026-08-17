@@ -1,7 +1,8 @@
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Management;
+using Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Runtime;
 using Elsa.Persistence.EFCore;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 
 namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures;
@@ -54,10 +55,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures;
 /// </code>
 /// </example>
 /// </remarks>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Sqlite Workflow Persistence",
     Description = "Provides Sqlite persistence for workflow definitions, instances, and runtime data with unified configuration",
-    DependsOn = [typeof(SqliteWorkflowDefinitionPersistenceShellFeature), "SqliteWorkflowInstancePersistence", "SqliteWorkflowRuntimePersistence"])]
+    DependsOn = [typeof(SqliteWorkflowDefinitionPersistenceShellFeature), typeof(SqliteWorkflowInstancePersistenceShellFeature), typeof(SqliteWorkflowRuntimePersistenceShellFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow definitions, instances, and runtime data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteWorkflowPersistenceShellFeature : CombinedPersistenceShellFeatureBase

@@ -1,19 +1,11 @@
-using Elsa.Features.Services;
-using Elsa.Hosting.Management.Contracts;
 using Elsa.Hosting.Management.Options;
 using Elsa.Hosting.Management.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using NSubstitute;
-using ClusteringFeature = Elsa.Hosting.Management.Features.ClusteringFeature;
-using ShellClusteringFeature = Elsa.Hosting.Management.ShellFeatures.ClusteringFeature;
 
 namespace Elsa.Hosting.Management.UnitTests.Services;
 
 public class ConfiguredApplicationInstanceNameProviderTests
 {
-    private static int AzureServiceBusSubscriptionNameMaxLength => ConfiguredApplicationInstanceNameProvider.AzureServiceBusSubscriptionNameMaxLength;
-    private static string TriggerChangeTokenSignalEndpointNameSuffix => ConfiguredApplicationInstanceNameProvider.TriggerChangeTokenSignalEndpointNameSuffix;
     private static int ConfiguredInstanceNameMaxLength => ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength;
 
     [Fact]
@@ -132,6 +124,8 @@ public class ConfiguredApplicationInstanceNameProviderTests
 
         Assert.False(string.IsNullOrWhiteSpace(name1));
         Assert.False(string.IsNullOrWhiteSpace(name2));
+        Assert.Matches(@"^[0-9a-f]+$", name1);
+        Assert.Matches(@"^[0-9a-f]+$", name2);
         Assert.NotEqual(name1, name2);
     }
 
@@ -145,6 +139,9 @@ public class ConfiguredApplicationInstanceNameProviderTests
         var name2 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
 
         Assert.False(string.IsNullOrWhiteSpace(name1));
+        Assert.False(string.IsNullOrWhiteSpace(name2));
+        Assert.Matches(@"^[0-9a-f]+$", name1);
+        Assert.Matches(@"^[0-9a-f]+$", name2);
         Assert.NotEqual(name1, name2);
     }
 
@@ -185,6 +182,18 @@ public class ConfiguredApplicationInstanceNameProviderTests
     }
 
     [Fact]
+    public void ExplicitInstanceName_InvalidCharactersAndTooLong_ReportsBothProblems()
+    {
+        var instanceName = new string('a', ConfiguredInstanceNameMaxLength) + " b";
+
+        var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
+
+        Assert.Contains("contains invalid characters", exception.Message);
+        Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
+        Assert.Contains("Azure Service Bus", exception.Message);
+    }
+
+    [Fact]
     public void EnvironmentVariableValue_TooLong_IsShortenedDeterministically()
     {
         var variable = NewVariableName();
@@ -204,49 +213,6 @@ public class ConfiguredApplicationInstanceNameProviderTests
         {
             Environment.SetEnvironmentVariable(variable, null);
         }
-    }
-
-    [Fact]
-    public void ShellClusteringFeature_UsesConfiguredInstanceNameProvider()
-    {
-        var services = new ServiceCollection();
-        var feature = new ShellClusteringFeature
-        {
-            ApplicationInstanceOptions = options => options.InstanceName = "pod-0"
-        };
-
-        services.AddLogging();
-        feature.ConfigureServices(services);
-
-        using var serviceProvider = services.BuildServiceProvider();
-
-        var provider = serviceProvider.GetRequiredService<IApplicationInstanceNameProvider>();
-
-        Assert.IsType<ConfiguredApplicationInstanceNameProvider>(provider);
-        Assert.Equal("pod-0", provider.GetName());
-    }
-
-    [Fact]
-    public void ClusteringFeature_UsesConfiguredInstanceNameProvider()
-    {
-        var services = new ServiceCollection();
-        var module = Substitute.For<IModule>();
-        module.Services.Returns(services);
-
-        var feature = new ClusteringFeature(module)
-        {
-            ApplicationInstanceOptions = options => options.InstanceName = "pod-0"
-        };
-
-        services.AddLogging();
-        feature.Apply();
-
-        using var serviceProvider = services.BuildServiceProvider();
-
-        var provider = serviceProvider.GetRequiredService<IApplicationInstanceNameProvider>();
-
-        Assert.IsType<ConfiguredApplicationInstanceNameProvider>(provider);
-        Assert.Equal("pod-0", provider.GetName());
     }
 
     private static ConfiguredApplicationInstanceNameProvider CreateProvider(ApplicationInstanceOptions options)

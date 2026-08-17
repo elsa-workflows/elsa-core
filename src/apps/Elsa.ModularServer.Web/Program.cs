@@ -3,11 +3,17 @@ using CShells.AspNetCore.Configuration;
 using CShells.AspNetCore.Extensions;
 using CShells.DependencyInjection;
 using Elsa.Dashboard.Api.ShellFeatures;
+using Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
+using Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
+using Elsa.ExternalAuthentication.OpenIdConnect.ShellFeatures;
+using Elsa.ExternalAuthentication.Secrets.ShellFeatures;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
+using Elsa.Platform.Integration.ShellFeatures;
 using Elsa.ShellFeatures;
 using Elsa.Workflows.Api.ShellFeatures;
 using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Workflows.Runtime.Dashboard.ShellFeatures;
 using Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 using Elsa.Workflows.Runtime.ShellFeatures;
 using Elsa.Workflows.ShellFeatures;
@@ -26,6 +32,7 @@ ConsoleStreamHook.Install();
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+configuration.AddJsonFile(configuration["Elsa:PlatformIntegration:ShellOverlayPath"] ?? "platform-shell-overrides.json", optional: true, reloadOnChange: false);
 var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString();
 
 builder.Logging.AddOpenTelemetry(logging =>
@@ -74,7 +81,13 @@ builder.AddShells(shells => shells
             typeof(WorkflowRuntimeFeature),
             typeof(WorkflowsFeature),
             typeof(DistributedRuntimeFeature),
+            typeof(ElsaPlatformIntegrationFeature),
+            typeof(OpenIdConnectExternalAuthenticationFeature),
+            typeof(ElsaSecretsExternalAuthenticationFeature),
             typeof(DashboardApiFeature),
+            typeof(WorkflowRuntimeDashboardFeature),
+            typeof(ConsoleLogsDashboardFeature),
+            typeof(StructuredLogsDashboardFeature),
             typeof(WorkflowsApiFeature));
     }));
 

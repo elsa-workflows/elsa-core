@@ -1,4 +1,6 @@
+using Elsa.Common.Models;
 using Elsa.Common.Services;
+using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using JetBrains.Annotations;
@@ -35,6 +37,14 @@ public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store) : IBookmarkS
     {
         var entities = store.Query(query => Filter(query, filter)).AsEnumerable();
         return new(entities);
+    }
+
+    /// <inheritdoc />
+    public ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var count = store.Query(query => Filter(query, filter)).LongCount();
+        var result = store.Query(query => Filter(query, filter).OrderBy(x => x.Id).Paginate(pageArgs)).ToList();
+        return new(Page.Of(result, count));
     }
 
     /// <inheritdoc />

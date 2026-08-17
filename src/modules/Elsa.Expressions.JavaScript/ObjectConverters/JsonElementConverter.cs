@@ -26,7 +26,11 @@ internal class JsonElementConverter : IObjectConverter
         {
             JsonValueKind.Object => JsValue.FromObject(engine, JsonObject.Create(element)),
             JsonValueKind.Array => JsValue.FromObject(engine, JsonArray.Create(element)),
-            JsonValueKind.String => JsValue.FromObject(engine, element.GetString()),
+            // JsString.Create is the counterpart of the JsNumber.Create and JsBoolean uses below: it produces the
+            // string value directly, where JsValue.FromObject would re-enter the whole conversion pipeline — the
+            // registered object converters, this one included, followed by the default converter's type switch —
+            // to arrive at the same call. It became public in Jint 4.15.3.
+            JsonValueKind.String => JsString.Create(element.GetString()!),
             JsonValueKind.Number => element.TryGetInt32(out var intValue) ? JsNumber.Create(intValue) : JsNumber.Create(element.GetDouble()),
             JsonValueKind.True => JsBoolean.True,
             JsonValueKind.False => JsBoolean.False,

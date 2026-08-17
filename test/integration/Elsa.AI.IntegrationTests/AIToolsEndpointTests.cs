@@ -25,7 +25,9 @@ public class AIToolsEndpointTests
 
         var tools = await endpoint.ExecuteAsync(new Request(), CancellationToken.None);
 
-        Assert.Empty(tools);
+        Assert.Contains(tools, x => x.Name == "activities.search");
+        Assert.Contains(tools, x => x.Name == "workflows.search");
+        Assert.Contains(tools, x => x.Name == "instances.search");
     }
 
     [Fact(DisplayName = "Tools endpoint forwards agent scope to registry")]
@@ -41,8 +43,8 @@ public class AIToolsEndpointTests
 
         var tools = await endpoint.ExecuteAsync(new Request { Agent = "workflow-author" }, CancellationToken.None);
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("workflow.author", tool.Name);
+        Assert.Contains(tools, tool => tool.Name == "workflow.author");
+        Assert.DoesNotContain(tools, tool => tool.Name == "workflow.editor");
     }
 
     [Fact(DisplayName = "Tool registry caches definitions across list calls")]
@@ -59,6 +61,23 @@ public class AIToolsEndpointTests
         await registry.ListAsync(new AIToolQuery(), CancellationToken.None);
 
         Assert.Equal(1, CountingTool.ConstructorCount);
+    }
+
+    [Fact(DisplayName = "Tools endpoint lists built-in grounding tools")]
+    public async Task ToolsEndpointListsBuiltInGroundingTools()
+    {
+        var services = new ServiceCollection();
+        services.AddAIHostServices();
+        using var provider = services.BuildServiceProvider();
+        var endpoint = new ToolsEndpoint(provider.GetRequiredService<IAIToolRegistry>(), MicrosoftOptions.Create(new AIHostOptions()));
+
+        var tools = await endpoint.ExecuteAsync(new Request(), CancellationToken.None);
+
+        Assert.Contains(tools, tool => tool.Name == "activities.getDescriptor");
+        Assert.Contains(tools, tool => tool.Name == "workflows.getDefinitionGraph");
+        Assert.Contains(tools, tool => tool.Name == "workflows.validateDraft");
+        Assert.Contains(tools, tool => tool.Name == "incidents.search");
+        Assert.Contains(tools, tool => tool.Name == "workflows.proposeCreate" && !tool.IsEnabled);
     }
 
     private class WorkflowAuthorTool : IAITool
