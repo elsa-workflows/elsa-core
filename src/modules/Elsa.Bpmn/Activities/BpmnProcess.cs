@@ -1,8 +1,12 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Xml;
 using Bpmn.Model;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Signals;
+using Elsa.Extensions;
+using Elsa.Scheduling;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Attributes;
@@ -35,7 +39,7 @@ namespace Elsa.Bpmn.Activities;
 /// </remarks>
 [Activity("Elsa", "BPMN", "Executes a BPMN process scope.")]
 [System.ComponentModel.Browsable(false)]
-public class BpmnProcess : Container
+public class BpmnProcess : Container, ITrigger
 {
     /// <inheritdoc />
     public BpmnProcess([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -65,8 +69,10 @@ public class BpmnProcess : Container
     /// Backed by Elsa's own <see cref="Activity.CanStartWorkflow"/> rather than by a second flag, because
     /// <c>TriggerIndexer</c> gates registration on that one: two flags could disagree, and the disagreement would
     /// show up as a subprocess quietly registered as an entry point. Reading it here gives the BPMN meaning a name
-    /// and one place to document it. Trigger registration itself belongs to the issue that makes this activity an
-    /// <c>ITrigger</c>; this property is what that gate will read.
+    /// and one place to document it. This is the gate <see cref="Elsa.Workflows.Runtime.TriggerIndexer"/> reads
+    /// before it ever asks this activity for trigger payloads — see <see cref="GetStartTriggerPayloadsAsync"/>,
+    /// which re-checks nesting from the graph itself because this flag alone is not enough once a scope can be
+    /// composed deeper after it is set.
     /// </para>
     /// </remarks>
     [JsonIgnore]
@@ -88,6 +94,106 @@ public class BpmnProcess : Container
 
     /// <inheritdoc />
     protected override ValueTask ScheduleChildrenAsync(ActivityExecutionContext context) => BpmnScopeHost.For(context).StartAsync();
+
+    /// <inheritdoc />
+    ValueTask<IEnumerable<object>> ITrigger.GetTriggerPayloadsAsync(TriggerIndexingContext context) => GetStartTriggerPayloadsAsync(context);
+
+    /// <summary>
+    /// Walks this process's own event-defined start events and returns one bookmark datum per resolvable message or
+    /// signal name, and per recurring timer start. <see cref="Elsa.Workflows.Runtime.TriggerIndexer"/> only ever calls this for an activity
+    /// whose <see cref="Activity.CanStartWorkflow"/> already reads <c>true</c> — see <see cref="IsRootScope"/> — but
+    /// that flag is set once, by whoever last composed this scope, and cannot see composition that happens later.
+    /// <see cref="HasEnclosingBpmnScopeAsync"/> re-derives entry-point status from the graph itself so a scope that
+    /// is genuinely nested — directly, or via an intermediate <c>Flowchart</c> — never registers a trigger no matter
+    /// what the flag says.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Only <c>messageEventDefinition</c> and <c>signalEventDefinition</c> start events resolve to a payload here,
+    /// and both resolve to the same <see cref="Elsa.Workflows.Runtime.Stimuli.EventStimulus"/> that
+    /// <c>Event</c>/<c>PublishEvent</c> already key their own bookmarks on, keyed on the resolved name alone — the
+    /// library correlates a message and a signal start the same way, so reusing the stimulus type an external
+    /// publisher already speaks is what makes a <c>.bpmn</c> file portable rather than BPMN-specific.
+    /// </para>
+    /// <para>
+    /// A <c>timerEventDefinition</c> start resolves only when it is a recurring schedule: an ISO-8601
+    /// <c>&lt;timeCycle&gt;</c> interval registers through the same <see cref="TimerTriggerPayload"/>/
+    /// <see cref="SchedulingStimulusNames.Timer"/> path <c>Elsa.Scheduling</c>'s own <c>Timer</c> activity uses, and a
+    /// cron cycle through <see cref="CronTriggerPayload"/>/<see cref="SchedulingStimulusNames.Cron"/>. A one-shot
+    /// <c>&lt;timeDate&gt;</c>/<c>&lt;timeDuration&gt;</c> start, and any other event definition, is not represented
+    /// here at all: the reader already degraded it to a plain start event at import (see
+    /// <c>BpmnActivityBindingFormat</c>'s sibling, the interchange reader), so there is nothing left to resolve.
+    /// </para>
+    /// </remarks>
+    private async ValueTask<IEnumerable<object>> GetStartTriggerPayloadsAsync(TriggerIndexingContext context)
+    {
+        if (Process is not { } process)
+            return [];
+
+        if (await HasEnclosingBpmnScopeAsync(context))
+            return [];
+
+        var payloads = new List<object>();
+
+        foreach (var element in process.Elements)
+        {
+            if (!string.Equals(element.ElementType, BpmnElementTypes.StartEvent, StringComparison.Ordinal))
+                continue;
+
+            foreach (var eventDefinition in element.EventDefinitions)
+                AddStartTriggerPayload(context, eventDefinition, payloads);
+        }
+
+        return payloads;
+    }
+
+    private static void AddStartTriggerPayload(TriggerIndexingContext context, BpmnEventDefinition eventDefinition, ICollection<object> payloads)
+    {
+        switch (eventDefinition.Type)
+        {
+            case BpmnEventDefinitionTypes.Message:
+            case BpmnEventDefinitionTypes.Signal:
+                if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Name, out var name) && !string.IsNullOrWhiteSpace(name))
+                    payloads.Add(context.GetEventStimulus(name));
+                break;
+
+            case BpmnEventDefinitionTypes.Timer:
+                if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Interval, out var isoInterval))
+                    payloads.Add(context.GetTimerTriggerStimulus(XmlConvert.ToTimeSpan(isoInterval)));
+                else if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Cron, out var cron))
+                {
+                    context.TriggerName = SchedulingStimulusNames.Cron;
+                    payloads.Add(new CronTriggerPayload(cron));
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Whether this scope sits inside another BPMN scope anywhere above it in the published workflow graph —
+    /// directly, as a subprocess or event-subprocess body, or indirectly, through an intermediate <c>Flowchart</c>
+    /// (D11 makes composing a <c>BpmnProcess</c> into a <c>Flowchart</c> a first-class shape).
+    /// </summary>
+    /// <remarks>
+    /// <see cref="IsRootScope"/> is only ever set, never inferred, by whoever last constructs or composes this
+    /// scope. A binder sets it once, on the one top-level scope it produces; nesting it deeper afterwards — for
+    /// instance by placing that same activity inside a <c>Flowchart</c> that is itself bound as work under another
+    /// <c>BpmnProcess</c> — leaves the flag untouched, because the composer doing the nesting is not the binder and
+    /// has no reason to revisit a flag it never set. <see cref="Elsa.Bpmn.Hosting.BpmnCommandApplier"/> already refuses to
+    /// schedule a scope bound <i>directly</i> as another scope's work when that scope claims root position, but it
+    /// only ever inspects work bound directly to the enclosing <c>BpmnProcess</c>; a scope reached through an
+    /// intermediate <c>Flowchart</c> is invisible to that check. Re-deriving the answer from the whole workflow graph
+    /// at indexing time — closer to the thing being protected, registration of a trigger nobody asked for — closes
+    /// that gap without needing every composer of a <c>BpmnProcess</c> to remember to clear a flag it never set.
+    /// </remarks>
+    private async ValueTask<bool> HasEnclosingBpmnScopeAsync(TriggerIndexingContext context)
+    {
+        var activityVisitor = context.ExpressionExecutionContext.GetRequiredService<IActivityVisitor>();
+        var root = await activityVisitor.VisitAsync(context.WorkflowIndexingContext.Workflow.Root, context.CancellationToken);
+        var node = ReferenceEquals(root.Activity, this) ? root : root.Descendants().FirstOrDefault(descendant => ReferenceEquals(descendant.Activity, this));
+
+        return node is not null && node.Ancestors().Any(ancestor => ancestor.Activity is BpmnProcess);
+    }
 
     /// <summary>
     /// The activity bound to the given binding ref, or <c>null</c> when the definition declares a binding this
