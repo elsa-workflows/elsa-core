@@ -10,3 +10,5 @@
 * [8. Empty String as Default Tenant ID](0008-empty-string-as-default-tenant-id.md)
 * [9. Asterisk Sentinel Value for Tenant-Agnostic Entities](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
 * [10. Default Admin User Bootstrap for Initial Identity Access](0010-default-admin-user-bootstrap-for-initial-identity-access.md)
+* [11. Use Identity-Neutral Participant References for User Tasks](0011-identity-neutral-user-task-participants.md)
+* [12. Project User Tasks from Committed Workflow Bookmarks](0012-project-user-tasks-from-committed-bookmarks.md)

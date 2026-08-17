@@ -127,3 +127,41 @@ _Avoid_: Broker security invariant
 **Broker Security Invariant**:
 An Elsa-owned protection for the broker and its clients that connection administrators cannot weaken through Studio.
 _Avoid_: Provider Trust Setting
+
+## User Tasks
+
+**User Task Definition**:
+The design-time configuration of human work in a workflow. It is evaluated and materialized when the activity executes.
+_Avoid_: User Task Instance, standalone task
+
+**User Task Instance**:
+A durable runtime work item created by a committed User Task bookmark and completed by one accountable participant or a configured terminal outcome.
+_Avoid_: User Task Definition, generic RunTask
+
+**Participant Reference**:
+An opaque, tenant-scoped `{ provider, type, id }` reference to a host-owned user or group. It never implies an Elsa Identity record.
+_Avoid_: Elsa User ID, username
+
+**Candidate**:
+A participant eligible to claim an Available User Task. Candidacy grants safe-summary visibility, not protected task content.
+_Avoid_: Assignee, requester
+
+**Assignee**:
+The single participant accountable for an Assigned User Task and permitted to access its protected response surface.
+_Avoid_: Candidate, manager
+
+**Requester**:
+An optional informational participant shown for context and search. Requester status grants no task access.
+_Avoid_: Assignee, task owner
+
+**Task Action**:
+A stable literal outcome key and its materialized display label. `Timeout` and `Cancelled` are reserved actions.
+_Avoid_: Button text, arbitrary workflow command
+
+**Task Health**:
+An operational warning or blocking resolution problem independent of User Task lifecycle status.
+_Avoid_: Task status, workflow incident
+
+**Guest Invitation**:
+A bounded, one-time candidacy for an external participant that becomes a task-scoped guest session only after configured verification.
+_Avoid_: Elsa user invitation, bearer account
