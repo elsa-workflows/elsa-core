@@ -1,5 +1,8 @@
+using Bpmn.Interchange;
 using Elsa.Bpmn.Features;
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.Services;
+using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
@@ -25,9 +28,18 @@ public class BpmnInterchangeFeature : FeatureBase
     }
 
     /// <inheritdoc />
+    public override void Configure()
+    {
+        Module.AddFastEndpointsAssembly<BpmnInterchangeFeature>();
+    }
+
+    /// <inheritdoc />
     public override void Apply()
     {
         Services.AddSingleton<BpmnActivityBindingFormat>();
         Services.AddSingleton<BpmnWorkBinder>();
+        Services.AddSingleton<BpmnXmlReader>();
+        Services.AddSingleton<BpmnXmlWriter>();
+        Services.AddScoped<BpmnInterchangeDocumentService>();
     }
 }
