@@ -177,7 +177,7 @@ Elsa provides a pluggable expression evaluation system via `IExpressionHandler` 
 | ElsaScript DSL | `Elsa.Dsl.ElsaScript` | Custom regex-based parser + compiler |
 | Literal / Delegate | `Elsa.Expressions` | Native .NET |
 
-The JavaScript engine (Jint) supports optional CLR access (`AllowClrAccess`) and optional `getConfig` access for reading `IConfiguration` values; both are disabled by default for security. Python requires a Python runtime path configured via `PYTHONNET_PYDLL` or application settings.
+The JavaScript engine (Jint) supports optional CLR access (`AllowClrAccess`) and optional `getConfig` access for reading `IConfiguration` values; both are disabled by default for security. Script execution is bounded by `JintOptions.ExecutionTimeout` (30 seconds by default) and by the ambient `CancellationToken`; `MaxStatements`, `MemoryLimit` and `MaxRecursionDepth` are available as additional opt-in limits. Python requires a Python runtime path configured via `PYTHONNET_PYDLL` or application settings.
 
 ---
 

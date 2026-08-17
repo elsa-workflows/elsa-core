@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides Entity Framework Core persistence for Elsa external authentication.
+        </Description>
+        <PackageTags>elsa extension module external-authentication persistence efcore</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
+        <ProjectReference Include="..\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj" />
+    </ItemGroup>
+
+</Project>

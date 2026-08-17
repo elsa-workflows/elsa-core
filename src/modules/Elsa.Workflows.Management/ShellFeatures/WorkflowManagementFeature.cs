@@ -1,13 +1,13 @@
 using System.Dynamic;
-using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json;
 using CShells.Features;
 using Elsa.Caching.Features;
 using Elsa.Common.Features;
+using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
-using Elsa.Workflows.Options;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Contracts;
@@ -22,28 +22,30 @@ using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Management.Stores;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Management.ShellFeatures;
 
 /// <summary>
 /// Installs and configures the workflow management feature.
 /// </summary>
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflow Management",
     Description = "Provides comprehensive workflow definition and instance management capabilities",
     DependsOn =
     [
-        "StringCompression",
-        "Mediator",
-        "MemoryCache",
-        "SystemClock",
-        "Workflows",
-        "WorkflowDefinitions",
-        "WorkflowInstances"
+        typeof(global::Elsa.Common.ShellFeatures.StringCompressionFeature),
+        typeof(global::Elsa.Common.ShellFeatures.MediatorFeature),
+        typeof(global::Elsa.Caching.ShellFeatures.MemoryCacheFeature),
+        typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature),
+        typeof(global::Elsa.Workflows.ShellFeatures.WorkflowsFeature),
+        typeof(WorkflowDefinitionsFeature),
+        typeof(WorkflowInstancesFeature)
     ])]
 [UsedImplicitly]
 public class WorkflowManagementFeature : IShellFeature

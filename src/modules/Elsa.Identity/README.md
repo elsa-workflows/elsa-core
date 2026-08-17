@@ -88,3 +88,14 @@ identity.UseDefaultAdmin("admin", "REPLACE_WITH_SECURE_BOOTSTRAP_PASSWORD", "adm
 ## Secret Hashing
 
 New identity passwords, client secrets, and API keys are hashed with PBKDF2-SHA256 using 600,000 iterations, a per-record salt, and version metadata. Existing legacy SHA-256 hashes remain valid and are upgraded opportunistically after a successful user login or API-key validation.
+
+## External Authentication Compatibility
+
+External Authentication is additive to Elsa Identity:
+
+- Existing `/identity/login` and `/identity/refresh-token` contracts remain the direct local-credential flow.
+- The optional broker exposes separate local and external completion endpoints that return a short-lived, PKCE-bound authorization code before issuing Elsa credentials.
+- Externally provisioned users may have no local password hash or salt. Such users fail direct local login with the same public result as any other invalid credential.
+- Elsa remains the issuer of access tokens and the authority for their `permissions` claim, regardless of how the user authenticated.
+
+See [the External Authentication migration guide](../../../docs/migrations/external-authentication.md) before changing a Studio host from direct OpenID Connect to brokered mode.

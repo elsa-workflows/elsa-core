@@ -107,7 +107,7 @@
 | Deployment stamps | ❌ | No first-class multi-region stamp deployment tooling. |
 | Geode | ❌ | No geo-distribution support. |
 | Quarantine | ❌ | No quarantine/validation gate for inbound messages or data. |
-| Timeout | ✅ | `Delay`, `StartAt`, `Timer`, and `Cron` activities implement time-based waits. `CancellationToken` propagation allows workflow-level and activity-level timeout cancellation. `JintOptions` exposes a JavaScript execution timeout. |
+| Timeout | ✅ | `Delay`, `StartAt`, `Timer`, and `Cron` activities implement time-based waits. `CancellationToken` propagation allows workflow-level and activity-level timeout cancellation. `JintOptions.ExecutionTimeout` bounds how long a single JavaScript expression may run (30 seconds by default), and the ambient `CancellationToken` aborts a script that is still running; `JintOptions.MaxStatements`, `MemoryLimit` and `MaxRecursionDepth` add optional resource limits on top. |
 
 ---
 

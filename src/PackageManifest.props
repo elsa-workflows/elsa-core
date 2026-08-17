@@ -1,0 +1,16 @@
+<Project>
+
+  <!--
+    Elsa.Api.Common is shared API plumbing rather than a selectable catalog module, so it must not publish a manifest.
+    A manifest without runtime kinds is worse than none: runtime kind matching excludes features whose effective list is empty.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Elsa.Api.Common'">
+    <GenerateElsaPackageManifest>false</GenerateElsaPackageManifest>
+  </PropertyGroup>
+
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)/ShellFeatures') and '$(GenerateElsaPackageManifest)' != 'false'">
+    <PackageReference Include="Elsa.Platform.PackageManifest.Generator" PrivateAssets="all" />
+    <Compile Include="$(MSBuildThisFileDirectory)PackageManifestHints.cs" Link="PackageManifestHints.cs" />
+  </ItemGroup>
+
+</Project>

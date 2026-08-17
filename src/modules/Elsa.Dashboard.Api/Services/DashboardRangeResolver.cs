@@ -1,5 +1,5 @@
 using Elsa.Common;
-using Elsa.Dashboard.Api.Models;
+using Elsa.Dashboard.Abstractions.Models;
 
 namespace Elsa.Dashboard.Api.Services;
 
@@ -43,5 +43,3 @@ public class DashboardRangeResolver(ISystemClock clock)
             _ => DashboardRangeKeys.TwentyFourHours
         };
 }
-
-public record DashboardRange(string Key, DateTimeOffset From, DateTimeOffset To);

@@ -123,10 +123,10 @@ See [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 
 With default route prefix `elsa/api`, runtime admin endpoints include:
 
-- `GET /elsa/api/admin/workflow-runtime/status`
-- `POST /elsa/api/admin/workflow-runtime/pause`
-- `POST /elsa/api/admin/workflow-runtime/resume`
-- `POST /elsa/api/admin/workflow-runtime/force-drain`
+- `GET /elsa/api/admin/workflow-runtime/status`: requires `read:workflow-runtime`; `ManageWorkflowRuntime` is also accepted for backward compatibility.
+- `POST /elsa/api/admin/workflow-runtime/pause`: requires `ManageWorkflowRuntime`.
+- `POST /elsa/api/admin/workflow-runtime/resume`: requires `ManageWorkflowRuntime`.
+- `POST /elsa/api/admin/workflow-runtime/force-drain`: requires `ManageWorkflowRuntime`.
 
 Structured log diagnostics endpoints include:
 

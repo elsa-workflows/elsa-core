@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Text.Json;
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
@@ -75,19 +74,8 @@ public class PublishEventTests : AppComponentTest
 
         // Verify the payload structure and content
         using var payloadDocument = JsonDocument.Parse(JsonSerializer.Serialize(receivedPayload));
-        Assert.True(TryGetProperty(payloadDocument.RootElement, "Status", out var status), "Received payload should contain a Status property");
+        Assert.True(payloadDocument.RootElement.TryGetProperty("Status", out var status), "Received payload should contain a Status property");
         Assert.Equal("Shipped", status.GetString());
-    }
-
-    private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement value)
-    {
-        value = element
-            .EnumerateObject()
-            .Where(property => string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-            .Select(property => property.Value)
-            .FirstOrDefault();
-
-        return value.ValueKind != JsonValueKind.Undefined;
     }
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)

@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Management.Providers;
 /// Provides activity descriptors based on a list of activity types registered in the <see cref="ManagementOptions"/>.
 /// </summary>
 [UsedImplicitly]
-public class TypedActivityProvider : IActivityProvider
+public class TypedActivityProvider : ITenantAgnosticActivityProvider
 {
     private readonly IActivityDescriber _activityDescriber;
     private readonly ManagementOptions _options;
