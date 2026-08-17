@@ -1,8 +1,8 @@
 using Bpmn.Interchange;
 using Elsa.Abstractions;
+using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
-using Elsa.Extensions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -12,8 +12,9 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Export;
 
 /// <summary>Writes a stored workflow definition back out as BPMN 2.0 XML.</summary>
 /// <remarks>
-/// A thin wrapper over <see cref="BpmnInterchangeDocumentService.Export"/>. See that type's remarks for why this
-/// re-reads the original document rather than reconstructing one from the Elsa activity graph the definition runs.
+/// A thin wrapper over <see cref="BpmnInterchangeDocumentService.Export(Elsa.Workflows.Management.Entities.WorkflowDefinition)"/>.
+/// See that type's remarks for why this re-reads the original document rather than reconstructing one from the Elsa
+/// activity graph the definition runs, and for why a missing or stale source is refused rather than exported anyway.
 /// </remarks>
 [UsedImplicitly]
 internal sealed class Export(IWorkflowDefinitionStore store, BpmnInterchangeDocumentService documentService) : ElsaEndpoint<Request>
@@ -38,17 +39,15 @@ internal sealed class Export(IWorkflowDefinitionStore store, BpmnInterchangeDocu
             return;
         }
 
-        if (!definition.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey, out var xml) || string.IsNullOrEmpty(xml))
-        {
-            AddError($"Workflow definition '{request.DefinitionId}' was not imported from a BPMN document, so it cannot be exported as BPMN 2.0 XML.");
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-
         try
         {
-            var bytes = documentService.Export(xml);
+            var bytes = documentService.Export(definition);
             await Send.BytesAsync(bytes, $"{request.DefinitionId}.bpmn", "application/xml", cancellation: cancellationToken);
+        }
+        catch (BpmnExportUnavailableException exception)
+        {
+            AddError(exception.Message);
+            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
         }
         catch (BpmnInterchangeException exception)
         {

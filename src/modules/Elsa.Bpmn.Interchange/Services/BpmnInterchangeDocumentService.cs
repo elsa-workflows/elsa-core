@@ -3,8 +3,12 @@ using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
+using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Extensions;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Models;
 
 namespace Elsa.Bpmn.Interchange.Services;
@@ -21,11 +25,33 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// <para>
 /// <b>Export carries the whole library-owned document, not a reduced view of it.</b> The only thing <see cref="ImportAsync"/>
 /// persists beyond the bound Elsa activity graph is the original BPMN XML text, under <see cref="SourceXmlCustomPropertyKey"/>
-/// on the workflow definition's custom properties. <see cref="Export"/> re-reads that same text through the same reader
-/// and hands the resulting <see cref="BpmnImportResult"/> — retained extension elements, foreign attributes,
+/// on the workflow definition's custom properties. <see cref="Export(string)"/> re-reads that same text through the same
+/// reader and hands the resulting <see cref="BpmnImportResult"/> — retained extension elements, foreign attributes,
 /// unrecognized children and BPMN DI layout included — straight to <see cref="BpmnXmlWriter"/>. Nothing is
 /// reconstructed from the Elsa activity tree, which only carries a bindingRef-to-activityId map and would have to
 /// throw away everything the reader retained to get there.
+/// </para>
+/// <para>
+/// <b>Export is only ever the document as imported, and that is a real limitation, not a detail.</b> Until BPMN-aware
+/// editing exists (a Studio concern, out of scope for this program), nothing re-serializes edits made through Elsa's
+/// own designer back into BPMN — <see cref="Export(WorkflowDefinition)"/> always returns the source text
+/// <see cref="ImportAsync"/> stored, never a document reflecting what the definition currently is. That is why it
+/// refuses outright, rather than returning something, when it cannot prove that text still matches the definition:
+/// see <see cref="SourceVersionCustomPropertyKey"/>.
+/// </para>
+/// <para>
+/// <b>The stored source can go missing or stale after import, and each is refused with its own diagnosis.</b> BPMN
+/// source travels on <see cref="SourceXmlCustomPropertyKey"/>, one entry in the same <c>CustomProperties</c>
+/// dictionary a workflow edit can — and, through Elsa's own workflow-definition save endpoint, does — replace
+/// wholesale. A save that does not carry that key forward removes it as a side effect of editing something else
+/// entirely, which is indistinguishable, once it has happened, from a definition that was never imported from BPMN
+/// in the first place; <see cref="Export(WorkflowDefinition)"/> says so honestly rather than asserting the document
+/// was "never imported", which would be true in one case and false in the other. Separately, a save that DOES carry
+/// the key forward can still leave the definition materially changed — the graph, name, or anything else about it —
+/// while the stored BPMN text still describes the pre-edit document. <see cref="SourceVersionCustomPropertyKey"/>
+/// records the definition's own version at the moment of import for exactly this: if the current version no longer
+/// matches, the stored source is stale, and exporting it would silently hand back a document that is not what the
+/// caller has, which is worse than refusing.
 /// </para>
 /// <para>
 /// <b>Capability refusal happens here, at import, not at <c>BpmnGraph.Build</c>.</b> <see cref="BpmnCapabilityRequirements.Analyze"/>
@@ -38,25 +64,40 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// it.
 /// </para>
 /// </remarks>
-public sealed class BpmnInterchangeDocumentService(BpmnXmlReader reader, BpmnXmlWriter writer, BpmnWorkBinder binder, IWorkflowDefinitionImporter importer)
+public sealed class BpmnInterchangeDocumentService(
+    BpmnXmlReader reader,
+    BpmnXmlWriter writer,
+    BpmnWorkBinder binder,
+    IWorkflowDefinitionImporter importer,
+    IWorkflowDefinitionStore store)
 {
-    /// <summary>The workflow definition custom property the original BPMN XML is carried under, for <see cref="Export"/>.</summary>
+    /// <summary>The workflow definition custom property the original BPMN XML is carried under, for <see cref="Export(WorkflowDefinition)"/>.</summary>
     public const string SourceXmlCustomPropertyKey = "Bpmn:SourceXml";
+
+    /// <summary>
+    /// The workflow definition custom property <see cref="ImportAsync"/> records the definition's own version number
+    /// under, at the moment it stores <see cref="SourceXmlCustomPropertyKey"/>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Export(WorkflowDefinition)"/> compares this against the definition's current version to tell a
+    /// still-current source from a stale one. The version number is what <see cref="WorkflowDefinition"/> itself
+    /// already exposes for "has this definition changed", so this reuses it rather than inventing a second notion of
+    /// change (a content hash, a timestamp) that could disagree with the versioning the rest of the system already
+    /// uses.
+    /// </remarks>
+    public const string SourceVersionCustomPropertyKey = "Bpmn:SourceVersion";
 
     /// <summary>
     /// The host capabilities this deployment's BPMN runtime declares.
     /// </summary>
     /// <remarks>
-    /// This mirrors <c>Elsa.Bpmn.Hosting.BpmnScopeHost.Capabilities</c> exactly, and for the same reason that constant
-    /// gives for not simply writing <see cref="BpmnHostCapabilities.Full"/>: <c>Full</c> would silently grow to cover a
-    /// capability a later library version adds and the runtime host has never implemented, which would turn an
-    /// import-time approval into a runtime failure — the opposite of what capability refusal at import is for. That
-    /// constant is internal to <c>Elsa.Bpmn</c> (the runtime module, kept free of this package's dependency closure per
-    /// D12) and cannot be read from here directly, so it is restated. <b>If <c>BpmnScopeHost.Capabilities</c> ever
-    /// changes, this must change with it.</b>
+    /// Reads <see cref="BpmnRuntimeCapabilities.Declared"/> straight from <c>Elsa.Bpmn</c> — the runtime module,
+    /// which already publishes that constant for exactly this reason — rather than restating the flag set here.
+    /// A restatement could silently drift from what <c>Elsa.Bpmn.Hosting.BpmnScopeHost</c> actually honours at
+    /// execution time, which would mean import-time refusal and runtime behaviour disagreeing: the worse direction
+    /// for that drift to go is a document accepted here and only failing the first time it runs.
     /// </remarks>
-    public static readonly BpmnHostCapabilities DeclaredHostCapabilities =
-        BpmnHostCapabilities.SubtreeCancellation | BpmnHostCapabilities.ScopeSignalling | BpmnHostCapabilities.IterationScopes | BpmnHostCapabilities.ScopeVariables;
+    public static readonly BpmnHostCapabilities DeclaredHostCapabilities = BpmnRuntimeCapabilities.Declared;
 
     /// <summary>Every individually named capability, for turning a <see cref="BpmnHostCapabilities"/> flag set into readable names.</summary>
     public static readonly IReadOnlyList<BpmnHostCapabilities> IndividualCapabilities =
@@ -110,6 +151,17 @@ public sealed class BpmnInterchangeDocumentService(BpmnXmlReader reader, BpmnXml
 
         var importResult = await importer.ImportAsync(new SaveWorkflowDefinitionRequest { Model = model, Publish = false }, cancellationToken);
 
+        // The definition's final Version is only known once the importer/publisher has assigned and persisted it —
+        // see SourceVersionCustomPropertyKey's remarks for why that value, specifically, is what staleness is judged
+        // against. It cannot be included in the CustomProperties model built above because nothing before this point
+        // has decided it yet, so it is recorded with a second, explicit save rather than assumed or precomputed.
+        if (importResult.Succeeded)
+        {
+            var persisted = importResult.WorkflowDefinition;
+            persisted.CustomProperties[SourceVersionCustomPropertyKey] = persisted.Version;
+            await store.SaveAsync(persisted, cancellationToken);
+        }
+
         return new BpmnDocumentImportResult(importResult, result.Analysis);
     }
 
@@ -126,6 +178,46 @@ public sealed class BpmnInterchangeDocumentService(BpmnXmlReader reader, BpmnXml
         var document = writer.Write(result, new BpmnExportOptions());
 
         return Encoding.UTF8.GetBytes(document);
+    }
+
+    /// <summary>
+    /// Resolves the BPMN source a workflow definition was imported from and writes it back out, refusing rather than
+    /// guessing when that source is missing or no longer trustworthy. See this type's remarks for what "missing" and
+    /// "stale" mean and why each gets its own message.
+    /// </summary>
+    /// <param name="definition">The workflow definition to export, as read from the store.</param>
+    /// <exception cref="BpmnExportUnavailableException">
+    /// The definition does not currently carry BPMN source, or it does but the definition has changed since the
+    /// source was recorded.
+    /// </exception>
+    /// <exception cref="BpmnInterchangeException">The stored document cannot be read at all.</exception>
+    public byte[] Export(WorkflowDefinition definition)
+    {
+        if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var xml) || string.IsNullOrEmpty(xml))
+        {
+            throw new BpmnExportUnavailableException(
+                $"Workflow definition '{definition.DefinitionId}' does not currently carry BPMN source, so it cannot be exported as BPMN 2.0 XML. "
+                + "Either it was never imported from a BPMN document, or a later save replaced its custom properties wholesale and removed the "
+                + $"'{SourceXmlCustomPropertyKey}' entry as a side effect of editing something else.");
+        }
+
+        if (!definition.CustomProperties.TryGetValue<int>(SourceVersionCustomPropertyKey, out var sourceVersion))
+        {
+            throw new BpmnExportUnavailableException(
+                $"Workflow definition '{definition.DefinitionId}' carries BPMN source, but not the definition version it was recorded against, so "
+                + "whether that source still matches this definition cannot be verified. Exporting it would risk silently returning a document that "
+                + "is not what this definition currently is.");
+        }
+
+        if (sourceVersion != definition.Version)
+        {
+            throw new BpmnExportUnavailableException(
+                $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN (imported at version {sourceVersion}, "
+                + $"currently at version {definition.Version}). The BPMN source stored on it no longer corresponds to this definition, so exporting it "
+                + "would silently return a document that is not what this definition currently is.");
+        }
+
+        return Export(xml);
     }
 
     private static BpmnProcessDefinition ResolveRootDefinition(BpmnDefinitions definitions, string? processId)

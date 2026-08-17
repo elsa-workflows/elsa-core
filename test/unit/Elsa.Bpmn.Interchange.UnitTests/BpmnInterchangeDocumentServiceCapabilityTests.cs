@@ -49,16 +49,6 @@ public class BpmnInterchangeDocumentServiceCapabilityTests
         Assert.Contains("each", exception.DrivingElementIds);
     }
 
-    [Fact(DisplayName = "Elsa.Bpmn's declared host capabilities cover every capability the current library defines")]
-    public void DeclaredHostCapabilities_CoversEveryCapabilityTheLibraryDefines()
-    {
-        // Pins the assumption BpmnInterchangeDocumentService's own remarks document: today Full and
-        // DeclaredHostCapabilities happen to be the same value. If the library ever adds a capability, Full grows and
-        // this goes red, which is the prompt to re-check Elsa.Bpmn.Hosting.BpmnScopeHost.Capabilities before touching
-        // DeclaredHostCapabilities to match.
-        Assert.Equal(BpmnHostCapabilities.Full, BpmnInterchangeDocumentService.DeclaredHostCapabilities);
-    }
-
     private static BpmnProcessDefinition MultiInstanceDefinition(string processId, string elementId)
     {
         var element = new BpmnElement(
