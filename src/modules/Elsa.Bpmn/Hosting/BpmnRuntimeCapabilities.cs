@@ -14,6 +14,14 @@ namespace Elsa.Bpmn.Hosting;
 /// would refuse it for at first execution, rather than restating the set as a second literal that can silently drift
 /// from this one. <see cref="BpmnScopeHost.Capabilities"/> is defined in terms of <see cref="Declared"/>, not the
 /// other way around, so there remains exactly one place this set is spelled out.
+/// <para>
+/// Capability refusal — <c>BpmnGraph.Build</c>'s <c>ThrowIfUnmet</c>, and the mirroring check in
+/// <c>BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied</c> — is currently unreachable: the pinned
+/// <c>Bpmn.Semantics</c> version defines no flag <see cref="Declared"/> does not already cover, so nothing can be
+/// refused for a missing capability today. <c>Elsa.Bpmn.UnitTests.BpmnRuntimeCapabilitiesTests</c> is what will say
+/// when that stops being true — it fails the moment the library adds a flag this constant doesn't declare, and its
+/// failure message names the decision that needs making.
+/// </para>
 /// </remarks>
 public static class BpmnRuntimeCapabilities
 {
