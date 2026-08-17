@@ -149,9 +149,12 @@ services
             });
         }
 
-        if(useStructuredLogs)
-            elsa.UseStructuredLogs()
+        if (useStructuredLogs)
+        {
+            elsa
+                .UseStructuredLogs()
                 .UseStructuredLogsDashboard();
+        }
 
         elsa.AddSwagger();
         
