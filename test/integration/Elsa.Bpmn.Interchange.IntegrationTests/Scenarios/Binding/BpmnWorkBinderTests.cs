@@ -121,6 +121,16 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
         Assert.False(nested.IsRootScope);
     }
 
+    [Fact(DisplayName = "Bind marks the one scope it returns directly as the workflow's root scope")]
+    public void Bind_MarksTheReturnedScopeAsRootScope()
+    {
+        // Binding one process definition on its own is what turns an imported .bpmn document into a workflow's own
+        // entry point -- Bind is the only call that gets to decide this, and it decides it every time.
+        var scope = Bind(Definition(BoundElement("only", BpmnElementTypes.ServiceTask, new WriteLine("only"))), Unbound("only"));
+
+        Assert.True(scope.IsRootScope);
+    }
+
     [Fact(DisplayName = "A document-declared variable is copied onto the bound scope, and drives a collection-mode multi-instance")]
     public async Task DocumentDeclaredVariable_DrivesACollectionModeMultiInstance()
     {

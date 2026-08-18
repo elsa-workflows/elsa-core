@@ -1,12 +1,19 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using System.Xml;
 using Bpmn.Model;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Signals;
+using Elsa.Extensions;
+using Elsa.Scheduling;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Signals;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Bpmn.Activities;
 
@@ -35,8 +42,23 @@ namespace Elsa.Bpmn.Activities;
 /// </remarks>
 [Activity("Elsa", "BPMN", "Executes a BPMN process scope.")]
 [System.ComponentModel.Browsable(false)]
-public class BpmnProcess : Container
+public class BpmnProcess : Container, ITrigger
 {
+    /// <summary>
+    /// The smallest timer-start interval this process will register.
+    /// </summary>
+    /// <remarks>
+    /// A positive interval below this still rearms in a tight loop: <c>ScheduledRecurringTask.SetupTimer</c> in
+    /// <c>Elsa.Scheduling</c> substitutes a 1&#160;ms delay for any non-positive delay it computes, and
+    /// <see cref="Elsa.Scheduling.Options.SchedulingOptions.MinimumPastDueScheduleDelay"/> uses that same 1&#160;ms as
+    /// its own default floor — so 1&#160;ms is not a round number picked here, it is the scheduler's own resolution.
+    /// Anything asked for below it collapses to the same repeatedly-firing timer a zero or negative interval
+    /// produces, which is the failure this floor exists to close. Set the floor any lower and a document can still
+    /// spin the scheduler; set it higher and a legitimate short-interval timer would be refused for no reason the
+    /// scheduler can back up.
+    /// </remarks>
+    private static readonly TimeSpan MinimumTimerInterval = TimeSpan.FromMilliseconds(1);
+
     /// <inheritdoc />
     public BpmnProcess([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
@@ -65,8 +87,10 @@ public class BpmnProcess : Container
     /// Backed by Elsa's own <see cref="Activity.CanStartWorkflow"/> rather than by a second flag, because
     /// <c>TriggerIndexer</c> gates registration on that one: two flags could disagree, and the disagreement would
     /// show up as a subprocess quietly registered as an entry point. Reading it here gives the BPMN meaning a name
-    /// and one place to document it. Trigger registration itself belongs to the issue that makes this activity an
-    /// <c>ITrigger</c>; this property is what that gate will read.
+    /// and one place to document it. This is the gate <see cref="Elsa.Workflows.Runtime.TriggerIndexer"/> reads
+    /// before it ever asks this activity for trigger payloads — see <see cref="GetStartTriggerPayloadsAsync"/>,
+    /// which re-checks nesting from the graph itself because this flag alone is not enough once a scope can be
+    /// composed deeper after it is set.
     /// </para>
     /// </remarks>
     [JsonIgnore]
@@ -88,6 +112,181 @@ public class BpmnProcess : Container
 
     /// <inheritdoc />
     protected override ValueTask ScheduleChildrenAsync(ActivityExecutionContext context) => BpmnScopeHost.For(context).StartAsync();
+
+    /// <inheritdoc />
+    ValueTask<IEnumerable<object>> ITrigger.GetTriggerPayloadsAsync(TriggerIndexingContext context) => GetStartTriggerPayloadsAsync(context);
+
+    /// <summary>
+    /// Walks this process's own event-defined start events and returns one bookmark datum per resolvable message or
+    /// signal name, and per recurring timer start. <see cref="Elsa.Workflows.Runtime.TriggerIndexer"/> only ever calls this for an activity
+    /// whose <see cref="Activity.CanStartWorkflow"/> already reads <c>true</c> — see <see cref="IsRootScope"/> — but
+    /// that flag is set once, by whoever last composed this scope, and cannot see composition that happens later.
+    /// <see cref="HasEnclosingBpmnScopeAsync"/> re-derives entry-point status from the graph itself so a scope that
+    /// is genuinely nested — directly, or via an intermediate <c>Flowchart</c> — never registers a trigger no matter
+    /// what the flag says.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Only <c>messageEventDefinition</c> and <c>signalEventDefinition</c> start events resolve to a payload here,
+    /// and both resolve to the same <see cref="Elsa.Workflows.Runtime.Stimuli.EventStimulus"/> that
+    /// <c>Event</c>/<c>PublishEvent</c> already key their own bookmarks on, keyed on the resolved name alone — the
+    /// library correlates a message and a signal start the same way, so reusing the stimulus type an external
+    /// publisher already speaks is what makes a <c>.bpmn</c> file portable rather than BPMN-specific.
+    /// </para>
+    /// <para>
+    /// A <c>timerEventDefinition</c> start resolves only when it is a recurring schedule: an ISO-8601
+    /// <c>&lt;timeCycle&gt;</c> interval registers through the same <see cref="TimerTriggerPayload"/>/
+    /// <see cref="SchedulingStimulusNames.Timer"/> path <c>Elsa.Scheduling</c>'s own <c>Timer</c> activity uses, and a
+    /// cron cycle through <see cref="CronTriggerPayload"/>/<see cref="SchedulingStimulusNames.Cron"/>. A one-shot
+    /// <c>&lt;timeDate&gt;</c>/<c>&lt;timeDuration&gt;</c> start, and any other event definition, is not represented
+    /// here at all: the reader already degraded it to a plain start event at import (see
+    /// <c>BpmnActivityBindingFormat</c>'s sibling, the interchange reader), so there is nothing left to resolve.
+    /// </para>
+    /// <para>
+    /// Each payload is wrapped in a <see cref="NamedTriggerPayload"/> naming its own stimulus, rather than relying on
+    /// <see cref="TriggerIndexingContext.TriggerName"/>: that property is a single value shared by every payload of
+    /// the trigger, so a process with both a message/signal start and a recurring timer start would otherwise have
+    /// the last kind processed claim the name for every row, storing the earlier rows under a hash no publisher
+    /// would ever compute.
+    /// </para>
+    /// <para>
+    /// Two start events (or two event definitions on one start event) that resolve to the same stimulus name and
+    /// value are collapsed to a single payload: <c>Elsa.Workflows.Runtime.StimulusSender</c> starts the workflow
+    /// once per matched <see cref="Elsa.Workflows.Runtime.Entities.StoredTrigger"/> row, so two identical rows would
+    /// start the workflow twice for one inbound stimulus. Distinct resolved names, and distinct stimulus kinds, are
+    /// never collapsed into each other.
+    /// </para>
+    /// <para>
+    /// A malformed <c>&lt;timeCycle&gt;</c> interval, and one that parses to a non-positive duration (e.g. <c>PT0S</c>
+    /// or a negative duration — the scheduler treats a non-positive next execution time as "due immediately", so a
+    /// recurring trigger on it would rearm continuously), is refused for its own start event only: the offending
+    /// element is logged and skipped, and every other valid start event on this process still registers. Letting the
+    /// exception propagate would not make the failure any louder — <c>TriggerIndexer.TryGetTriggerDataAsync</c>
+    /// catches around the whole <see cref="ITrigger.GetTriggerPayloadsAsync"/> call and only logs a warning, so an
+    /// unhandled exception here would silently discard every other start on the process, which is the defect this
+    /// method exists to close.
+    /// </para>
+    /// </remarks>
+    private async ValueTask<IEnumerable<object>> GetStartTriggerPayloadsAsync(TriggerIndexingContext context)
+    {
+        if (Process is not { } process)
+            return [];
+
+        if (await HasEnclosingBpmnScopeAsync(context))
+            return [];
+
+        var logger = context.ExpressionExecutionContext.GetRequiredService<ILogger<BpmnProcess>>();
+        var payloads = new List<object>();
+        var registeredStimuli = new HashSet<(string StimulusName, string ResolvedName)>();
+
+        foreach (var element in process.Elements.Where(element => string.Equals(element.ElementType, BpmnElementTypes.StartEvent, StringComparison.Ordinal)))
+        {
+            foreach (var eventDefinition in element.EventDefinitions)
+                AddStartTriggerPayload(context, element, eventDefinition, registeredStimuli, payloads, logger);
+        }
+
+        return payloads;
+    }
+
+    private static void AddStartTriggerPayload(
+        TriggerIndexingContext context,
+        BpmnElement element,
+        BpmnEventDefinition eventDefinition,
+        ISet<(string StimulusName, string ResolvedName)> registeredStimuli,
+        ICollection<object> payloads,
+        ILogger logger)
+    {
+        switch (eventDefinition.Type)
+        {
+            case BpmnEventDefinitionTypes.Message:
+            case BpmnEventDefinitionTypes.Signal:
+                if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Name, out var name)
+                    && !string.IsNullOrWhiteSpace(name)
+                    && registeredStimuli.Add((RuntimeStimulusNames.Event, name)))
+                {
+                    payloads.Add(new NamedTriggerPayload(RuntimeStimulusNames.Event, context.GetEventStimulus(name)));
+                }
+                break;
+
+            case BpmnEventDefinitionTypes.Timer:
+                if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Interval, out var isoInterval))
+                {
+                    TimeSpan interval;
+
+                    try
+                    {
+                        interval = XmlConvert.ToTimeSpan(isoInterval);
+                    }
+                    catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentNullException)
+                    {
+                        logger.LogWarning(
+                            exception,
+                            "BPMN element '{ElementId}' declares the timer duration '{IsoInterval}', which is not an ISO-8601 duration Elsa can wait for. "
+                            + "Skipping this start event; the process's other start events still register.",
+                            element.ElementId,
+                            isoInterval);
+                        break;
+                    }
+
+                    if (interval <= TimeSpan.Zero)
+                    {
+                        logger.LogWarning(
+                            "BPMN element '{ElementId}' declares the timer duration '{IsoInterval}', which resolves to a non-positive interval Elsa cannot wait for. "
+                            + "Skipping this start event; the process's other start events still register.",
+                            element.ElementId,
+                            isoInterval);
+                        break;
+                    }
+
+                    if (interval < MinimumTimerInterval)
+                    {
+                        logger.LogWarning(
+                            "BPMN element '{ElementId}' declares the timer duration '{IsoInterval}', which resolves to {Interval}, below the {MinimumInterval} the scheduler can actually honour. "
+                            + "Skipping this start event; the process's other start events still register.",
+                            element.ElementId,
+                            isoInterval,
+                            interval,
+                            MinimumTimerInterval);
+                        break;
+                    }
+
+                    if (registeredStimuli.Add((SchedulingStimulusNames.Timer, interval.ToString())))
+                        payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Timer, context.GetTimerTriggerStimulus(interval)));
+                }
+                else if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Cron, out var cron)
+                         && registeredStimuli.Add((SchedulingStimulusNames.Cron, cron)))
+                {
+                    payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Cron, new CronTriggerPayload(cron)));
+                }
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Whether this scope sits inside another BPMN scope anywhere above it in the published workflow graph —
+    /// directly, as a subprocess or event-subprocess body, or indirectly, through an intermediate <c>Flowchart</c>
+    /// (D11 makes composing a <c>BpmnProcess</c> into a <c>Flowchart</c> a first-class shape).
+    /// </summary>
+    /// <remarks>
+    /// <see cref="IsRootScope"/> is only ever set, never inferred, by whoever last constructs or composes this
+    /// scope. A binder sets it once, on the one top-level scope it produces; nesting it deeper afterwards — for
+    /// instance by placing that same activity inside a <c>Flowchart</c> that is itself bound as work under another
+    /// <c>BpmnProcess</c> — leaves the flag untouched, because the composer doing the nesting is not the binder and
+    /// has no reason to revisit a flag it never set. <see cref="Elsa.Bpmn.Hosting.BpmnCommandApplier"/> already refuses to
+    /// schedule a scope bound <i>directly</i> as another scope's work when that scope claims root position, but it
+    /// only ever inspects work bound directly to the enclosing <c>BpmnProcess</c>; a scope reached through an
+    /// intermediate <c>Flowchart</c> is invisible to that check. Re-deriving the answer from the whole workflow graph
+    /// at indexing time — closer to the thing being protected, registration of a trigger nobody asked for — closes
+    /// that gap without needing every composer of a <c>BpmnProcess</c> to remember to clear a flag it never set.
+    /// </remarks>
+    private async ValueTask<bool> HasEnclosingBpmnScopeAsync(TriggerIndexingContext context)
+    {
+        var activityVisitor = context.ExpressionExecutionContext.GetRequiredService<IActivityVisitor>();
+        var root = await activityVisitor.VisitAsync(context.WorkflowIndexingContext.Workflow.Root, context.CancellationToken);
+        var node = ReferenceEquals(root.Activity, this) ? root : root.Descendants().FirstOrDefault(descendant => ReferenceEquals(descendant.Activity, this));
+
+        return node is not null && node.Ancestors().Any(ancestor => ancestor.Activity is BpmnProcess);
+    }
 
     /// <summary>
     /// The activity bound to the given binding ref, or <c>null</c> when the definition declares a binding this
