@@ -44,6 +44,21 @@ namespace Elsa.Bpmn.Activities;
 [System.ComponentModel.Browsable(false)]
 public class BpmnProcess : Container, ITrigger
 {
+    /// <summary>
+    /// The smallest timer-start interval this process will register.
+    /// </summary>
+    /// <remarks>
+    /// A positive interval below this still rearms in a tight loop: <c>ScheduledRecurringTask.SetupTimer</c> in
+    /// <c>Elsa.Scheduling</c> substitutes a 1&#160;ms delay for any non-positive delay it computes, and
+    /// <see cref="Elsa.Scheduling.Options.SchedulingOptions.MinimumPastDueScheduleDelay"/> uses that same 1&#160;ms as
+    /// its own default floor — so 1&#160;ms is not a round number picked here, it is the scheduler's own resolution.
+    /// Anything asked for below it collapses to the same repeatedly-firing timer a zero or negative interval
+    /// produces, which is the failure this floor exists to close. Set the floor any lower and a document can still
+    /// spin the scheduler; set it higher and a legitimate short-interval timer would be refused for no reason the
+    /// scheduler can back up.
+    /// </remarks>
+    private static readonly TimeSpan MinimumTimerInterval = TimeSpan.FromMilliseconds(1);
+
     /// <inheritdoc />
     public BpmnProcess([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
@@ -220,6 +235,18 @@ public class BpmnProcess : Container, ITrigger
                             + "Skipping this start event; the process's other start events still register.",
                             element.ElementId,
                             isoInterval);
+                        break;
+                    }
+
+                    if (interval < MinimumTimerInterval)
+                    {
+                        logger.LogWarning(
+                            "BPMN element '{ElementId}' declares the timer duration '{IsoInterval}', which resolves to {Interval}, below the {MinimumInterval} the scheduler can actually honour. "
+                            + "Skipping this start event; the process's other start events still register.",
+                            element.ElementId,
+                            isoInterval,
+                            interval,
+                            MinimumTimerInterval);
                         break;
                     }
 

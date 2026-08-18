@@ -165,6 +165,36 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         Assert.Equal("OrderPlaced", payload.EventName);
     }
 
+    [Fact(DisplayName = "A sub-resolution timer interval is refused for its own start event; every other valid start event on the process still registers")]
+    public async Task SubResolutionTimerInterval_RefusesOnlyItsOwnStartEvent()
+    {
+        // PT0.0000001S parses to a single tick -- positive, so it passes the non-positive check, but far below the
+        // ~1ms floor Elsa.Scheduling's own ScheduledRecurringTask.SetupTimer substitutes whenever it computes a
+        // non-positive delay. Left unrefused, this collapses to that same substituted delay every time it rearms,
+        // which is the hot loop the non-positive guard was meant to close, one step down.
+        var process = RootScope("sub-resolution-timer", TimerInterval("PT0.0000001S"), Message("OrderPlaced"));
+
+        var triggers = await IndexAsync(process);
+
+        Assert.DoesNotContain(triggers, trigger => trigger.Payload is TimerTriggerPayload);
+
+        var payload = Assert.Single(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>());
+        Assert.Equal("OrderPlaced", payload.EventName);
+    }
+
+    [Fact(DisplayName = "A timer interval exactly at the resolution floor registers")]
+    public async Task TimerIntervalAtTheResolutionFloor_Registers()
+    {
+        // Pinned at exactly the floor -- not comfortably above it -- so this test would fail against any floor set
+        // higher than the real one, and could not pass by coincidence against a floor set lower.
+        var process = RootScope("floor-timer", TimerInterval("PT0.001S"));
+
+        var trigger = Assert.Single(await IndexAsync(process));
+
+        var payload = Assert.IsType<TimerTriggerPayload>(trigger.Payload);
+        Assert.Equal(TimeSpan.FromMilliseconds(1), payload.Interval);
+    }
+
     [Fact(DisplayName = "A BPMN-nested scope registers no triggers, whatever its own flag says")]
     public async Task BpmnNestedScope_RegistersNoTriggers()
     {
