@@ -89,8 +89,17 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("fraudCheck");
 
         // Assert: the released entries are registered again, so the cancellation's own replay claims them -- the head
-        // handler starting a second time is the first half of the release being real.
+        // handler starting a second time is both the first half of the release being real *and* the symptom of
+        // #7959: BpmnInterpreter.CancelTransaction drops the live work it is abandoning without ever producing a
+        // PendingTeardown/CancelWorkSubtree command for it, so the host's original ledger record and bookmark for
+        // the releaseSeat slot survive untouched alongside the replay's freshly started one. The scope now holds two
+        // live records for the same (BindingRef, IterationId) slot -- pinned below so this fails the moment #7959
+        // lands, at which point it should be changed to assert a single record.
         Assert.Equal(2, _host.Log.Occurrences("executed:releaseSeat"));
+
+        var releaseSeatBindingRef = BpmnTestProcesses.BindingRef("releaseSeat");
+        var releaseSeatLiveRecords = _host.LiveWorkOf("sub").Count(record => record.BindingRef == releaseSeatBindingRef);
+        Assert.Equal(2, releaseSeatLiveRecords);
 
         // And the entry that was claimed but never ran is reached once that head handler finishes: the other half.
         var result = await _host.FinishWorkAsync("releaseSeat");
