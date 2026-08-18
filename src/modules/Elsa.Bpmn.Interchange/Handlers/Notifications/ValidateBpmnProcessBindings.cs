@@ -72,16 +72,13 @@ public class ValidateBpmnProcessBindings(IWorkflowGraphBuilder workflowGraphBuil
     {
         var graph = await workflowGraphBuilder.BuildAsync(notification.Workflow, cancellationToken);
 
-        foreach (var node in graph.Nodes)
+        foreach (var scope in graph.Nodes
+                     .Select(node => node.Activity)
+                     .OfType<BpmnProcess>()
+                     .Where(process => process.Process is not null))
         {
-            if (node.Activity is not BpmnProcess { Process: not null } scope)
-                continue;
-
-            foreach (var element in scope.Process!.Elements)
+            foreach (var element in scope.Process!.Elements.Where(IsUnboundTaskCandidate))
             {
-                if (!IsUnboundTaskCandidate(element))
-                    continue;
-
                 var boundActivity = FindBoundActivity(scope, element.BindingRef!);
 
                 if (boundActivity is null)
