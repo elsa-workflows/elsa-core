@@ -1,3 +1,4 @@
+using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
@@ -33,5 +34,5 @@ public abstract class BpmnInterchangeTestBase : IAsyncLifetime
     public Task DisposeAsync() => Task.CompletedTask;
 
     /// <summary>Reads a fixture from the <c>Assets</c> directory shipped alongside this test project.</summary>
-    protected static string ReadAsset(string fileName) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Assets", fileName));
+    protected static string ReadAsset(string fileName) => BpmnAssetReader.Read(fileName);
 }

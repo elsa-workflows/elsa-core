@@ -5,6 +5,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using Elsa;
 using Elsa.Bpmn.Interchange.Features;
+using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -175,6 +176,16 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task Export_WithAMalformedVersion_ReturnsBadRequest()
+    {
+        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export?VersionOptions=not-a-number", "read:workflow-definitions");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("not-a-number", body);
+    }
+
+    [Fact]
     public async Task Export_OfAFreshlyImportedDefinition_ReturnsOkWithBpmnXml()
     {
         using var importContent = new MultipartFormDataContent();
@@ -240,7 +251,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         content.Add(fileContent, formFieldName, $"{formFieldName}.bpmn");
     }
 
-    private static string ReadAsset(string fileName) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Assets", fileName));
+    private static string ReadAsset(string fileName) => BpmnAssetReader.Read(fileName);
 
     private async Task<HttpResponseMessage> PostAuthenticatedAsync(string requestUri, HttpContent content, params string[] permissions)
     {

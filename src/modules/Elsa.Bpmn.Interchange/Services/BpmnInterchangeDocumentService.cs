@@ -203,10 +203,19 @@ public sealed class BpmnInterchangeDocumentService(
 
         if (!definition.CustomProperties.TryGetValue<int>(SourceVersionCustomPropertyKey, out var sourceVersion))
         {
+            // Distinct from both other refusals: this is not "never imported" (the source text is right there) and
+            // not "stale" (there is no version to compare against yet). ImportAsync records SourceXmlCustomPropertyKey
+            // and SourceVersionCustomPropertyKey with two separate saves, because the definition's own version is
+            // only assigned once the first save persists it — see SourceVersionCustomPropertyKey's remarks. A
+            // definition in exactly this state is one whose import stored the source but did not finish recording
+            // the version it belongs to, most likely because the second save failed or was cancelled after the
+            // first one succeeded.
             throw new BpmnExportUnavailableException(
-                $"Workflow definition '{definition.DefinitionId}' carries BPMN source, but not the definition version it was recorded against, so "
-                + "whether that source still matches this definition cannot be verified. Exporting it would risk silently returning a document that "
-                + "is not what this definition currently is.");
+                $"Workflow definition '{definition.DefinitionId}' carries BPMN source, but not the definition version it was recorded against. This "
+                + "means the import that stored the source did not finish — the version marker that records what it was imported against was never "
+                + "written, most likely because that request failed or was cancelled partway through. It does not mean this definition was never "
+                + "imported from BPMN, and it does not mean the source is stale; whether it still matches this definition simply cannot be verified. "
+                + "Re-import the document to record a complete, exportable source.");
         }
 
         if (sourceVersion != definition.Version)
@@ -264,11 +273,12 @@ public sealed class BpmnInterchangeDocumentService(
     {
         BpmnCapabilityRequirements.Analyze(definition).ThrowIfUnmet(available, definition.ProcessId);
 
-        foreach (var nested in bindings.OfType<BpmnWorkBinding.NestedProcess>())
-        {
-            if (string.Equals(nested.ProcessId, definition.ProcessId, StringComparison.Ordinal))
-                EnsureCapabilitiesSatisfied(nested.Definition, bindings, available);
-        }
+        var ownedNestedProcesses = bindings
+            .OfType<BpmnWorkBinding.NestedProcess>()
+            .Where(nested => string.Equals(nested.ProcessId, definition.ProcessId, StringComparison.Ordinal));
+
+        foreach (var nested in ownedNestedProcesses)
+            EnsureCapabilitiesSatisfied(nested.Definition, bindings, available);
     }
 }
 

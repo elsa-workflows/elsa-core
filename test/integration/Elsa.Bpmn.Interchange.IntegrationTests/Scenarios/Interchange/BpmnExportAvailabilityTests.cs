@@ -88,6 +88,31 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         Assert.DoesNotContain("does not currently carry BPMN source", exception.Message);
     }
 
+    [Fact(DisplayName = "Exporting a definition whose import stored the source but never recorded its version marker is refused, distinctly from both other refusals")]
+    public async Task Export_OfAPartiallyImportedDefinition_IsRefused()
+    {
+        var xml = ReadAsset("camunda-order-process.bpmn");
+        var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
+        Assert.True(imported.ImportResult.Succeeded);
+
+        var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
+
+        // Mirrors what a cancelled or failed second save leaves behind: ImportAsync's first save records SourceXml,
+        // and only a second save records SourceVersion (see BpmnInterchangeDocumentService's remarks on why the
+        // version cannot be known until the first save assigns it). If that second save never happens, the source is
+        // there but the version marker it would have carried is not.
+        stored.CustomProperties.Remove(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey);
+        await DefinitionStore.SaveAsync(stored);
+
+        var refetched = await FindLatestAsync(stored.DefinitionId);
+
+        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
+
+        Assert.Contains("did not finish", exception.Message);
+        Assert.DoesNotContain("does not currently carry BPMN source", exception.Message);
+        Assert.DoesNotContain("has changed since it was imported", exception.Message);
+    }
+
     private async Task<WorkflowDefinition> FindLatestAsync(string definitionId)
     {
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();

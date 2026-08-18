@@ -29,7 +29,31 @@ internal sealed class Export(IWorkflowDefinitionStore store, BpmnInterchangeDocu
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var versionOptions = string.IsNullOrWhiteSpace(request.VersionOptions) ? VersionOptions.Latest : VersionOptions.FromString(request.VersionOptions);
+        VersionOptions versionOptions;
+
+        if (string.IsNullOrWhiteSpace(request.VersionOptions))
+        {
+            versionOptions = VersionOptions.Latest;
+        }
+        else
+        {
+            try
+            {
+                // VersionOptions.TryParse always returns true and still throws through FromString for a value it
+                // cannot make sense of, so it buys nothing over calling FromString directly — catch what it can
+                // actually throw instead: a non-numeric or out-of-range value that is not one of its named options.
+                versionOptions = VersionOptions.FromString(request.VersionOptions);
+            }
+            catch (Exception exception) when (exception is FormatException or OverflowException)
+            {
+                AddError(
+                    $"'{request.VersionOptions}' is not a valid version. Specify a whole number, or one of: AllVersions, Draft, Latest, Published, "
+                    + "LatestOrPublished, LatestAndPublished.");
+                await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+                return;
+            }
+        }
+
         var filter = WorkflowDefinitionHandle.ByDefinitionId(request.DefinitionId, versionOptions).ToFilter();
         var definition = await store.FindAsync(filter, cancellationToken);
 
