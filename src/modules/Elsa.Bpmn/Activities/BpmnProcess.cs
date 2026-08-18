@@ -10,7 +10,10 @@ using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Signals;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Bpmn.Activities;
 
@@ -124,6 +127,28 @@ public class BpmnProcess : Container, ITrigger
     /// here at all: the reader already degraded it to a plain start event at import (see
     /// <c>BpmnActivityBindingFormat</c>'s sibling, the interchange reader), so there is nothing left to resolve.
     /// </para>
+    /// <para>
+    /// Each payload is wrapped in a <see cref="NamedTriggerPayload"/> naming its own stimulus, rather than relying on
+    /// <see cref="TriggerIndexingContext.TriggerName"/>: that property is a single value shared by every payload of
+    /// the trigger, so a process with both a message/signal start and a recurring timer start would otherwise have
+    /// the last kind processed claim the name for every row, storing the earlier rows under a hash no publisher
+    /// would ever compute.
+    /// </para>
+    /// <para>
+    /// Two start events (or two event definitions on one start event) that resolve to the same stimulus name and
+    /// value are collapsed to a single payload: <c>Elsa.Workflows.Runtime.StimulusSender</c> starts the workflow
+    /// once per matched <see cref="Elsa.Workflows.Runtime.Entities.StoredTrigger"/> row, so two identical rows would
+    /// start the workflow twice for one inbound stimulus. Distinct resolved names, and distinct stimulus kinds, are
+    /// never collapsed into each other.
+    /// </para>
+    /// <para>
+    /// A malformed <c>&lt;timeCycle&gt;</c> interval is refused for its own start event only: the offending element
+    /// is logged and skipped, and every other valid start event on this process still registers. Letting the
+    /// exception propagate would not make the failure any louder — <c>TriggerIndexer.TryGetTriggerDataAsync</c>
+    /// catches around the whole <see cref="ITrigger.GetTriggerPayloadsAsync"/> call and only logs a warning, so an
+    /// unhandled exception here would silently discard every other start on the process, which is the defect this
+    /// method exists to close.
+    /// </para>
     /// </remarks>
     private async ValueTask<IEnumerable<object>> GetStartTriggerPayloadsAsync(TriggerIndexingContext context)
     {
@@ -133,7 +158,9 @@ public class BpmnProcess : Container, ITrigger
         if (await HasEnclosingBpmnScopeAsync(context))
             return [];
 
+        var logger = context.ExpressionExecutionContext.GetRequiredService<ILogger<BpmnProcess>>();
         var payloads = new List<object>();
+        var registeredStimuli = new HashSet<(string StimulusName, string ResolvedName)>();
 
         foreach (var element in process.Elements)
         {
@@ -141,29 +168,58 @@ public class BpmnProcess : Container, ITrigger
                 continue;
 
             foreach (var eventDefinition in element.EventDefinitions)
-                AddStartTriggerPayload(context, eventDefinition, payloads);
+                AddStartTriggerPayload(context, element, eventDefinition, registeredStimuli, payloads, logger);
         }
 
         return payloads;
     }
 
-    private static void AddStartTriggerPayload(TriggerIndexingContext context, BpmnEventDefinition eventDefinition, ICollection<object> payloads)
+    private static void AddStartTriggerPayload(
+        TriggerIndexingContext context,
+        BpmnElement element,
+        BpmnEventDefinition eventDefinition,
+        ISet<(string StimulusName, string ResolvedName)> registeredStimuli,
+        ICollection<object> payloads,
+        ILogger logger)
     {
         switch (eventDefinition.Type)
         {
             case BpmnEventDefinitionTypes.Message:
             case BpmnEventDefinitionTypes.Signal:
                 if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Name, out var name) && !string.IsNullOrWhiteSpace(name))
-                    payloads.Add(context.GetEventStimulus(name));
+                {
+                    if (registeredStimuli.Add((RuntimeStimulusNames.Event, name)))
+                        payloads.Add(new NamedTriggerPayload(RuntimeStimulusNames.Event, context.GetEventStimulus(name)));
+                }
                 break;
 
             case BpmnEventDefinitionTypes.Timer:
                 if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Interval, out var isoInterval))
-                    payloads.Add(context.GetTimerTriggerStimulus(XmlConvert.ToTimeSpan(isoInterval)));
+                {
+                    TimeSpan interval;
+
+                    try
+                    {
+                        interval = XmlConvert.ToTimeSpan(isoInterval);
+                    }
+                    catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentNullException)
+                    {
+                        logger.LogWarning(
+                            exception,
+                            "BPMN element '{ElementId}' declares the timer duration '{IsoInterval}', which is not an ISO-8601 duration Elsa can wait for. "
+                            + "Skipping this start event; the process's other start events still register.",
+                            element.ElementId,
+                            isoInterval);
+                        break;
+                    }
+
+                    if (registeredStimuli.Add((SchedulingStimulusNames.Timer, interval.ToString())))
+                        payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Timer, context.GetTimerTriggerStimulus(interval)));
+                }
                 else if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Cron, out var cron))
                 {
-                    context.TriggerName = SchedulingStimulusNames.Cron;
-                    payloads.Add(new CronTriggerPayload(cron));
+                    if (registeredStimuli.Add((SchedulingStimulusNames.Cron, cron)))
+                        payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Cron, new CronTriggerPayload(cron)));
                 }
                 break;
         }
