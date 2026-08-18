@@ -2,6 +2,7 @@ using Bpmn.Interchange;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.Handlers.Notifications;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Bpmn.ShellFeatures;
 using Elsa.Common.ShellFeatures;
@@ -33,5 +34,6 @@ public class BpmnInterchangeFeature : IFastEndpointsShellFeature
         services.AddSingleton<BpmnXmlReader>();
         services.AddSingleton<BpmnXmlWriter>();
         services.AddScoped<BpmnInterchangeDocumentService>();
+        services.AddNotificationHandler<ValidateBpmnProcessBindings>();
     }
 }
