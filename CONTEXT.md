@@ -1,44 +1,48 @@
-# External Authentication
+# Elsa Workflow Runtime
 
-This context describes how Elsa presents and uses external authentication choices while preserving Elsa's own user and authorization model.
+The workflow runtime executes activities and moves their results into destinations that workflows can consume.
 
 ## Language
 
-**Identity Provider**:
-An external authority that authenticates a person and asserts their identity.
-_Avoid_: Login provider, SSO definition
+**Activity Output**:
+The native value produced by an activity. Its meaning and type belong to the activity's contract and are not changed by a consumer's binding choices. Activity-output registers, journals, APIs, and diagnostics expose this native value.
+_Avoid_: Converted output, bound output
 
-**Identity Provider Connection**:
-Elsa's registration of and trust relationship with an Identity Provider. A connection may be supplied by deployment configuration or managed by an administrator.
-_Avoid_: Identity Provider, provider definition, social login
+**Output Binding**:
+The association that delivers an Activity Output to a variable or workflow output. It may apply at most one explicitly configured Output Converter before delivery. Its optional persisted converter configuration contains only a Converter ID and JSON Converter Settings. Without converter configuration, it follows the existing assignment path unchanged.
+_Avoid_: Activity output, output definition
 
-**Login Method**:
-An authentication choice presented to an Elsa client, such as local Elsa credentials or an enabled Identity Provider Connection.
-_Avoid_: Identity Provider Connection, social login button
+**Output Converter**:
+An optional deterministic, side-effect-free transformation selected strictly at an Output Binding. It changes the value delivered by that binding without changing the underlying Activity Output. It does not convert activity inputs or general expression results. Environmental choices such as locale are explicit Converter Settings.
+_Avoid_: Activity converter, implicit coercion
 
-**Authentication Client**:
-An Elsa client application registered to initiate brokered sign-in and receive its one-time completion code at an approved callback.
-_Avoid_: Elsa Application, Identity Provider Connection
+**Converter ID**:
+The stable semantic identifier by which an Output Binding explicitly selects a registered Output Converter. Matching is ordinal and case-sensitive, while registrations that differ only by case are rejected. Breaking changes to conversion behavior, settings, or result semantics use a new Converter ID.
+_Avoid_: Converter type name, converter class
 
-**Upstream Client Registration**:
-The client identifier and credentials with which an Identity Provider Connection authenticates Elsa to the external Identity Provider.
-_Avoid_: Authentication Client, Elsa Application
+**Converter Settings**:
+Optional workflow-specific parameters that refine how the selected Output Converter transforms one Output Binding. They are immutable during conversion.
+_Avoid_: Global converter options, converter service configuration
 
-**Connection Registry**:
-The unified collection of configuration-owned and administrator-owned Identity Provider Connections available to Elsa.
-_Avoid_: Provider list, connection store
+**Converter Descriptor**:
+The server-owned, API-discoverable identity and compatibility declaration of an Output Converter, including its supported source type, declared result type, localizable display metadata, and optional JSON Schema for Converter Settings. Source compatibility follows base-class and interface assignability; the result must be assignable to the Destination Type. Display metadata is not persisted with the workflow.
+_Avoid_: Converter instance, activity descriptor
 
-**Connection Key**:
-A stable, immutable logical identifier for an Identity Provider Connection within the currently connected Elsa server environment. Together with target tenant, issuer namespace, and subject, it participates in the External Identity Key.
-_Avoid_: Database row ID, scheme name, display name
+**Conversion Context**:
+The narrow, immutable input supplied to an Output Converter: the native value, declared source and destination types, and Converter Settings. It does not expose mutable workflow execution state or a service locator.
+_Avoid_: Activity execution context, workflow context
 
-**Studio Override**:
-An administrator-managed connection document that explicitly and completely shadows a configuration-owned connection with the same immutable Connection Key. Overrides replace the whole effective document; fields are never merged between sources.
-_Avoid_: Partial override, configuration patch
+**Destination Type**:
+The resolvable declared type of the variable or workflow output receiving a Bound Value. `object` is a valid Destination Type; an unknown or untyped destination is not.
+_Avoid_: Runtime value type, inferred target
 
-**Protocol Adapter**:
-A trusted Elsa module that implements external authentication for a particular protocol or provider family and translates its result into an External Identity.
-_Avoid_: Identity Provider Connection, provider definition
+**Output Conversion Error**:
+The dedicated activity fault raised when converter resolution, settings validation, compatibility checking, invocation, or result validation fails. It carries structured converter, activity, output, destination, and failure-stage metadata without exposing native values or raw settings by default.
+_Avoid_: Assignment error, converter log message
+
+**Bound Value**:
+The value delivered only to the destination of an Output Binding after any configured Output Converter has run. It may be null only when the destination permits null.
+_Avoid_: Activity output
 
 **External Identity**:
 A protocol-neutral identity asserted by an Identity Provider and identified within that provider's namespace.

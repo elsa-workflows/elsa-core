@@ -7,8 +7,17 @@ namespace Elsa.Workflows.State;
 /// <summary>
 /// A simplified, serializable model representing an exception.
 /// </summary>
-public record ExceptionState(Type Type, string Message, string? StackTrace, ExceptionState? InnerException)
+public record ExceptionState(
+    Type Type,
+    string Message,
+    string? StackTrace,
+    ExceptionState? InnerException)
 {
+    /// <summary>
+    /// Gets privacy-safe structured exception metadata.
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Metadata { get; init; }
+
     /// <summary>
     /// Constructor
     /// </summary>
@@ -23,6 +32,16 @@ public record ExceptionState(Type Type, string Message, string? StackTrace, Exce
     /// </summary>
     public static ExceptionState? FromException(Exception? ex)
     {
-        return ex == null ? null : new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, FromException(ex.InnerException));
+        if (ex == null)
+            return null;
+
+        var metadataProvider = ex as ISafeExceptionMetadataProvider;
+        var metadata = metadataProvider?.GetSafeMetadata();
+        var innerException = metadataProvider == null ? FromException(ex.InnerException) : null;
+
+        return new ExceptionState(ex.GetType(), ex.Message, ex.StackTrace, innerException)
+        {
+            Metadata = metadata
+        };
     }
 }

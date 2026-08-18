@@ -40,6 +40,16 @@ public class ActivityIncident
     /// <summary>The Node ID of the activity that caused the incident.</summary>
     public string ActivityNodeId { get; init; } = default!;
 
+    /// <summary>
+    /// The ID of the individual activity execution that caused the incident.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ActivityNodeId"/> identifies the static workflow node, which several executions can share when a node
+    /// is looped, retried or run concurrently. This tells those executions apart. Null for an incident raised outside an
+    /// activity execution, and for incidents persisted before the server recorded it.
+    /// </remarks>
+    public string? ActivityInstanceId { get; init; }
+
     /// <summary>The type of the activity that caused the incident.</summary>
     public string ActivityType { get; init; } = default!;
 

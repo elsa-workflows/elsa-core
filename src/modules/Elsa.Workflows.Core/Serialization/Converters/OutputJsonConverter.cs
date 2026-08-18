@@ -42,8 +42,23 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
             Id = memoryReferenceIdElement.GetString()!
         };
         variable.Name = variable.Id;
-        
-        return (Output<T>)Activator.CreateInstance(typeof(Output<T>), variable)!;
+
+        var output = (Output<T>)Activator.CreateInstance(typeof(Output<T>), variable)!;
+
+        if (doc.RootElement.TryGetProperty("converter", out var converterElement) &&
+            converterElement.ValueKind == JsonValueKind.Object &&
+            converterElement.TryGetProperty("id", out var converterIdElement))
+        {
+            var settings = converterElement.TryGetProperty("settings", out var settingsElement)
+                ? settingsElement
+                : (JsonElement?)null;
+            var converterId = converterIdElement.ValueKind == JsonValueKind.String
+                ? converterIdElement.GetString()
+                : null;
+            output.Converter = new(converterId ?? string.Empty, settings);
+        }
+
+        return output;
     }
 
     /// <inheritdoc />
@@ -54,15 +69,34 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
             ? alias
             : valueType.GetSimpleAssemblyQualifiedName();
 
-        var model = new
-        {
-            TypeName = valueTypeAlias,
-            MemoryReference = value == null ? null : new
-            {
-                Id = value.MemoryBlockReference().Id
-            }
-        };
+        writer.WriteStartObject();
+        writer.WriteString("typeName", valueTypeAlias);
+        writer.WritePropertyName("memoryReference");
 
-        JsonSerializer.Serialize(writer, model, options);
+        if (value == null)
+            writer.WriteNullValue();
+        else
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", value.MemoryBlockReference().Id);
+            writer.WriteEndObject();
+        }
+
+        if (value?.Converter != null)
+        {
+            writer.WritePropertyName("converter");
+            writer.WriteStartObject();
+            writer.WriteString("id", value.Converter.Id);
+
+            if (value.Converter.Settings is { } settings)
+            {
+                writer.WritePropertyName("settings");
+                settings.WriteTo(writer);
+            }
+
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
     }
 }

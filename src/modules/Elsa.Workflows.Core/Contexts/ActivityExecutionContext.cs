@@ -4,6 +4,7 @@ using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -773,11 +774,73 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="outputName">The name of the output.</param>
     public void Set(Output? output, object? value, [CallerArgumentExpression("output")] string? outputName = null)
     {
-        // Store the value in the expression execution memory block.
-        ExpressionExecutionContext.Set(output, value);
+        if (output?.Converter == null)
+        {
+            // Store the value in the expression execution memory block.
+            ExpressionExecutionContext.Set(output, value);
 
-        // Also store the value in the workflow execution transient activity output register.
+            // Also store the value in the workflow execution transient activity output register.
+            WorkflowExecutionContext.RecordActivityOutput(this, outputName, value);
+            return;
+        }
+
+        var descriptor = ActivityDescriptor.Outputs.FirstOrDefault(x => x.PropertyInfo?.Name == outputName);
+        descriptor ??= ActivityDescriptor.Outputs.FirstOrDefault(x => x.ValueGetter != null && ReferenceEquals(x.ValueGetter(Activity), output));
+        var resolvedOutputName = descriptor?.Name ?? outputName ?? ActivityOutputRegister.DefaultOutputName;
+        var sourceType = descriptor?.Type ?? GetOutputValueType(output.GetType()) ?? typeof(object);
+
+        // The activity output register always retains the activity's native value.
         WorkflowExecutionContext.RecordActivityOutput(this, outputName, value);
+
+        var destinationResolver = GetRequiredService<IOutputBindingDestinationResolver>();
+        var destination = destinationResolver.Resolve(this, output);
+
+        if (destination == null)
+        {
+            throw new OutputConversionException(
+                output.Converter.Id,
+                OutputConversionFailureStage.Resolution,
+                Activity.Id,
+                Activity.Type,
+                resolvedOutputName,
+                output.MemoryBlockReference().Id,
+                sourceType,
+                null);
+        }
+
+        if (value == null)
+        {
+            if (!destination.AllowsNull)
+            {
+                throw new OutputConversionException(
+                    output.Converter.Id,
+                    OutputConversionFailureStage.ResultValidation,
+                    Activity.Id,
+                    Activity.Type,
+                    resolvedOutputName,
+                    destination.Id,
+                    sourceType,
+                    destination.Type);
+            }
+
+            ExpressionExecutionContext.SetBoundValue(output, null);
+            return;
+        }
+
+        var converterInvoker = GetRequiredService<IOutputConverterInvoker>();
+        var convertedValue = converterInvoker.Invoke(this, output, resolvedOutputName, sourceType, value, destination);
+        ExpressionExecutionContext.SetBoundValue(output, convertedValue);
+    }
+
+    private static Type? GetOutputValueType(Type outputType)
+    {
+        for (var currentType = outputType; currentType != null; currentType = currentType.BaseType)
+        {
+            if (currentType.IsGenericType && currentType.GetGenericTypeDefinition() == typeof(Output<>))
+                return currentType.GenericTypeArguments[0];
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -815,4 +878,3 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     {
     }
 }
-

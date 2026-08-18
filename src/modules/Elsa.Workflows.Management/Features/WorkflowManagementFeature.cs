@@ -312,6 +312,7 @@ public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
             .AddNotificationHandler<RefreshActivityRegistry>()
             .AddNotificationHandler<UpdateConsumingWorkflows>()
             .AddNotificationHandler<ValidateWorkflow>()
+            .AddNotificationHandler<ValidateOutputConverters>()
             ;
 
         Services.Configure<ManagementOptions>(options =>

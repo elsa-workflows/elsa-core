@@ -334,7 +334,7 @@ jobs:
           name: elsa-nuget-packages
 
       - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k ${{ secrets.FEEDZ_API_KEY }} -s ${{ env.feedz_feed_source }} --skip-duplicate
+        run: dotnet nuget push *.nupkg -k "${{ secrets.FEEDZ_API_KEY }}" -s ${{ env.feedz_feed_source }} --skip-duplicate
 
   publish_nuget:
     name: Publish release to nuget.org
@@ -349,7 +349,7 @@ jobs:
           name: elsa-nuget-packages
 
       - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k ${{ secrets.NUGET_API_KEY }} -s ${{ env.nuget_feed_source }} --skip-duplicate
+        run: dotnet nuget push *.nupkg -k "${{ secrets.NUGET_API_KEY }}" -s ${{ env.nuget_feed_source }} --skip-duplicate
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages

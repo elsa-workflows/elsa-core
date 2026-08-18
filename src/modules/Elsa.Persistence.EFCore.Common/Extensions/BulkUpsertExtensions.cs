@@ -1,8 +1,9 @@
+using System.Linq.Expressions;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using System.Linq.Expressions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Persistence.EFCore.Extensions;
@@ -337,7 +338,7 @@ public static class BulkUpsertExtensions
         return (sb.ToString(), parameters.ToArray());
     }
 
-    private static (string, object[]) GenerateOracleUpsert<TEntity>(
+    internal static (string, object[]) GenerateOracleUpsert<TEntity>(
         DbContext dbContext,
         IList<TEntity> entities,
         Expression<Func<TEntity, string>> keySelector)
@@ -345,18 +346,21 @@ public static class BulkUpsertExtensions
     {
         var entityType = dbContext.Model.FindEntityType(typeof(TEntity))!;
         var schema = entityType.GetSchema();
-        var tableName = entityType.GetTableName();
-        var storeObject = StoreObjectIdentifier.Table(tableName!, schema);
-        var fullName = !string.IsNullOrEmpty(schema) ? $"{schema}.{tableName}" : tableName;
+        var tableName = entityType.GetTableName()!;
+        var storeObject = StoreObjectIdentifier.Table(tableName, schema);
+        var sqlGenerationHelper = dbContext.GetService<ISqlGenerationHelper>();
+        var fullName = sqlGenerationHelper.DelimitIdentifier(tableName, schema);
 
         var props = entityType.GetProperties().ToList();
 
         var keyProp = entityType.FindProperty(keySelector.GetMemberAccess().Name)!;
-        var keyColumnName = keyProp.GetColumnName(storeObject);
+        var keyColumnName = keyProp.GetColumnName(storeObject)!;
 
-        var columnNames = props
-            .Select(p => p.GetColumnName(storeObject)!)
+        // Pre-build quoted column names once and reuse throughout all clauses.
+        var quotedColumnNames = props
+            .Select(p => sqlGenerationHelper.DelimitIdentifier(p.GetColumnName(storeObject)!))
             .ToList();
+        var quotedKeyColumnName = sqlGenerationHelper.DelimitIdentifier(keyColumnName);
 
         var sb = new StringBuilder();
         var parameters = new List<object>();
@@ -384,27 +388,37 @@ public static class BulkUpsertExtensions
 
                 parameters.Add(value!);
 
-                // Oracle aliases must match the column name
-                var alias = property.GetColumnName(storeObject);
-                lineParts.Add($"{paramName} AS {alias}");
+                // Aliases must be quoted so Oracle preserves their case, matching
+                // the quoted references in ON, UPDATE SET, and INSERT/VALUES below.
+                var quotedAlias = sqlGenerationHelper.DelimitIdentifier(property.GetColumnName(storeObject)!);
+
+                // In a SELECT … FROM DUAL subquery, ODP.NET has no target column to
+                // derive bind parameter types from and defaults to VARCHAR2 for .NET
+                // strings. Elsa's Oracle migrations define string columns as NVARCHAR2,
+                // so an explicit CAST is required to avoid a datatype mismatch error.
+                // The full EF Core column type string (e.g. "NVARCHAR2(450)") is
+                // used directly in the CAST so all Oracle type variants are handled
+                // correctly without any string parsing.
+                var columnType = property.GetColumnType() ?? string.Empty;
+                var expr = columnType.StartsWith("NVARCHAR2", StringComparison.OrdinalIgnoreCase)
+                    ? $"CAST({paramName} AS {columnType})"
+                    : paramName;
+
+                lineParts.Add($"{expr} AS {quotedAlias}");
             }
 
-            // Comma if not last
-            var suffix = (i < entities.Count - 1) ? " FROM DUAL UNION ALL SELECT" : " FROM DUAL";
+            var suffix = i < entities.Count - 1 ? " FROM DUAL UNION ALL SELECT" : " FROM DUAL";
             sb.AppendLine(string.Join(", ", lineParts) + suffix);
         }
 
-        sb.AppendLine($") Source ON (Target.{keyColumnName} = Source.{keyColumnName})");
+        sb.AppendLine($") Source ON (Target.{quotedKeyColumnName} = Source.{quotedKeyColumnName})");
         sb.AppendLine("WHEN MATCHED THEN UPDATE SET");
-
-        var updateSetClauses = columnNames
-            .Where(c => c != keyColumnName)
-            .Select(c => $"Target.{c} = Source.{c}");
-
-        sb.AppendLine(string.Join(", ", updateSetClauses));
+        sb.AppendLine(string.Join(", ", quotedColumnNames
+            .Where(c => c != quotedKeyColumnName)
+            .Select(c => $"Target.{c} = Source.{c}")));
         sb.AppendLine("WHEN NOT MATCHED THEN");
-        sb.AppendLine($"INSERT ({string.Join(", ", columnNames)})");
-        sb.AppendLine($"VALUES ({string.Join(", ", columnNames.Select(c => $"Source.{c}"))});");
+        sb.AppendLine($"INSERT ({string.Join(", ", quotedColumnNames)})");
+        sb.AppendLine($"VALUES ({string.Join(", ", quotedColumnNames.Select(c => $"Source.{c}"))});");
 
         return (sb.ToString(), parameters.ToArray());
     }
