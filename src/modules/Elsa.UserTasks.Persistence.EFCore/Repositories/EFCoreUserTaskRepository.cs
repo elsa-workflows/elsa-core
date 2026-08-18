@@ -434,53 +434,48 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         var taskIds = tasks.Select(x => x.Id).ToArray();
         var taskById = tasks.ToDictionary(x => x.Id, StringComparer.Ordinal);
         var candidates = await dbContext.UserTaskCandidates.AsNoTracking().Where(x => x.TenantId == tenantId && taskIds.Contains(x.TaskId)).ToListAsync(cancellationToken);
-        foreach (var group in candidates.GroupBy(x => x.TaskId))
+        foreach (var (task, group) in GroupByLoadedTask(candidates, x => x.TaskId, taskById))
         {
-            if (!taskById.TryGetValue(group.Key, out var task))
-                continue;
             task.CandidateUsers = group.Where(x => x.ParticipantType == UserTaskParticipantType.User).Select(ToParticipant).ToList();
             task.CandidateGroups = group.Where(x => x.ParticipantType == UserTaskParticipantType.Group).Select(ToParticipant).ToList();
         }
 
         var snapshots = await dbContext.UserTaskSnapshotMembers.AsNoTracking().Where(x => x.TenantId == tenantId && taskIds.Contains(x.TaskId)).ToListAsync(cancellationToken);
-        foreach (var group in snapshots.GroupBy(x => x.TaskId))
+        foreach (var (task, group) in GroupByLoadedTask(snapshots, x => x.TaskId, taskById))
         {
-            if (!taskById.TryGetValue(group.Key, out var task))
-                continue;
             task.SnapshotMembers = group.Where(x => x.ParticipantType == UserTaskParticipantType.User).Select(ToParticipant).ToList();
             task.SnapshotGroups = group.Where(x => x.ParticipantType == UserTaskParticipantType.Group).Select(ToParticipant).ToList();
         }
 
         var exclusions = await dbContext.UserTaskExclusions.AsNoTracking().Where(x => x.TenantId == tenantId && taskIds.Contains(x.TaskId)).ToListAsync(cancellationToken);
-        foreach (var group in exclusions.GroupBy(x => x.TaskId))
-        {
-            if (taskById.TryGetValue(group.Key, out var task))
-                task.ExcludedUsers = group.Select(ToParticipant).ToList();
-        }
+        foreach (var (task, group) in GroupByLoadedTask(exclusions, x => x.TaskId, taskById))
+            task.ExcludedUsers = group.Select(ToParticipant).ToList();
 
         var events = await dbContext.UserTaskEvents.AsNoTracking().Where(x => x.TenantId == tenantId && taskIds.Contains(x.TaskId)).OrderBy(x => x.Revision).ToListAsync(cancellationToken);
-        foreach (var group in events.GroupBy(x => x.TaskId))
-        {
-            if (taskById.TryGetValue(group.Key, out var task))
-                task.Events = group.Select(ToEvent).ToList();
-        }
+        foreach (var (task, group) in GroupByLoadedTask(events, x => x.TaskId, taskById))
+            task.Events = group.Select(ToEvent).ToList();
 
         var operations = await dbContext.UserTaskOperations.AsNoTracking().Where(x => x.TenantId == tenantId && taskIds.Contains(x.TaskId)).OrderBy(x => x.CreatedAt).ToListAsync(cancellationToken);
-        foreach (var group in operations.GroupBy(x => x.TaskId))
-        {
-            if (taskById.TryGetValue(group.Key, out var task))
-                task.Operations = group.Select(ToOperation).ToList();
-        }
+        foreach (var (task, group) in GroupByLoadedTask(operations, x => x.TaskId, taskById))
+            task.Operations = group.Select(ToOperation).ToList();
 
         var invitations = await dbContext.UserTaskInvitations.AsNoTracking().Where(x => x.TenantId == tenantId && taskIds.Contains(x.TaskId)).OrderBy(x => x.IssuedAt).ToListAsync(cancellationToken);
-        foreach (var group in invitations.GroupBy(x => x.TaskId))
-        {
-            if (taskById.TryGetValue(group.Key, out var task))
-                task.Invitations = group.Select(ToInvitation).ToList();
-        }
+        foreach (var (task, group) in GroupByLoadedTask(invitations, x => x.TaskId, taskById))
+            task.Invitations = group.Select(ToInvitation).ToList();
 
         return tasks;
     }
+
+    /// <summary>
+    /// Pairs each group of child rows with the task it belongs to, dropping groups whose task is not on the
+    /// current page. The filter is explicit and each group still costs a single dictionary probe.
+    /// </summary>
+    private static IEnumerable<(UserTask Task, IGrouping<string, TRow> Rows)> GroupByLoadedTask<TRow>(
+        IEnumerable<TRow> rows, Func<TRow, string> taskIdSelector, Dictionary<string, UserTask> taskById) =>
+        rows.GroupBy(taskIdSelector)
+            .Select(group => (Task: taskById.GetValueOrDefault(group.Key), Rows: group))
+            .Where(pair => pair.Task is not null)
+            .Select(pair => (pair.Task!, pair.Rows));
 
     private static UserTask ToModel(UserTaskRecord record) => new()
     {

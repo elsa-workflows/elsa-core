@@ -45,11 +45,8 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
 
             var filteredCount = query.IncludeTotalCount ? items.Count() : 0;
             var materialized = Sort(items, query.Sort, query.Descending).ToList();
-            if (!string.IsNullOrWhiteSpace(query.Cursor))
-            {
-                if (DecodeCursor(query.Cursor!) is { } cursor)
-                    materialized = materialized.Where(x => IsAfterCursor(x, cursor, query.Descending, query.Sort)).ToList();
-            }
+            if (!string.IsNullOrWhiteSpace(query.Cursor) && DecodeCursor(query.Cursor!) is { } cursor)
+                materialized = materialized.Where(x => IsAfterCursor(x, cursor, query.Descending, query.Sort)).ToList();
 
             int? total = query.IncludeTotalCount ? filteredCount : null;
             var limit = Math.Clamp(query.Limit, 1, 200);
@@ -154,9 +151,7 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         // Manager-only scopes were already rejected by the policy for non-managers, so reaching them here
         // means the caller manages the tenant.
         if (scope.RequiresManager)
-            return !scope.IsManager
-                ? false
-                : scope.Kind != UserTaskQueryScopeKind.NeedsAttention || NeedsAttention(task);
+            return scope.IsManager && (scope.Kind != UserTaskQueryScopeKind.NeedsAttention || NeedsAttention(task));
 
         return scope.Kind switch
         {

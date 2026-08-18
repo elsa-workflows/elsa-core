@@ -120,9 +120,8 @@ public sealed class DefaultUserTaskReconciler(
             if (bookmarks.Length == 0)
                 break;
 
-            foreach (var bookmark in bookmarks)
+            foreach (var materialization in bookmarks.Select(Deserialize))
             {
-                var materialization = Deserialize(bookmark);
                 if (materialization == null || !string.Equals(materialization.TenantId, tenantId, StringComparison.Ordinal))
                     continue;
                 if (await repository.FindByMaterializationKeyAsync(tenantId, MaterializationKey(materialization), cancellationToken) != null)
