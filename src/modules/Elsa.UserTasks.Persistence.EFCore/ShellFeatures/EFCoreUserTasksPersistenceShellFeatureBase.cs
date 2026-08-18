@@ -14,7 +14,14 @@ public abstract class EFCoreUserTasksPersistenceShellFeatureBase : PersistenceSh
     protected override void OnConfiguring(IServiceCollection services)
     {
         AddStore<UserTaskRecord, EFCoreUserTaskRepository>(services);
+        AddStore<UserTaskGuestSessionRecord, EFCoreUserTaskGuestSessionIssuer>(services);
+        AddStore<UserTaskInvitationDeliveryRecord, EFCoreUserTaskInvitationOutbox>(services);
         services.AddScoped<IUserTaskRepository, EFCoreUserTaskRepository>();
         services.AddScoped<IUserTaskPersistenceAdapter, EFCoreUserTaskRepository>();
+
+        // Guest sessions and undelivered invitation secrets must survive a restart and a failover, so the
+        // provider replaces the Core in-memory defaults.
+        services.AddScoped<IUserTaskGuestSessionIssuer, EFCoreUserTaskGuestSessionIssuer>();
+        services.AddScoped<IUserTaskInvitationOutbox, EFCoreUserTaskInvitationOutbox>();
     }
 }

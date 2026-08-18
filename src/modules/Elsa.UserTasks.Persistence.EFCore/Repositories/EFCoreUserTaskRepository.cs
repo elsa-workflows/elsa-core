@@ -60,6 +60,23 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         return record is null ? null : await LoadAggregateAsync(dbContext, record, cancellationToken);
     }
 
+    public async Task<(UserTask Task, UserTaskInvitation Invitation)?> FindByInvitationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        // The unique index on TokenHash makes this a single seek. Deliberately not tenant-filtered: an
+        // anonymous holder presents only a secret and must not be trusted to name its own tenant.
+        var row = await dbContext.UserTaskInvitations.AsNoTracking().FirstOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+        if (row is null)
+            return null;
+
+        var record = await dbContext.UserTasks.AsNoTracking().FirstOrDefaultAsync(x => x.TenantId == row.TenantId && x.Id == row.TaskId, cancellationToken);
+        if (record is null)
+            return null;
+
+        var task = await LoadAggregateAsync(dbContext, record, cancellationToken);
+        return (task, ToInvitation(row));
+    }
+
     public async Task SaveAsync(UserTask task, int expectedRevision, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -111,6 +128,17 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
                 throw;
             // A concurrent projection won the unique materialization-key race. Projection is idempotent.
         }
+    }
+
+    public async Task AppendEventAsync(string tenantId, string taskId, UserTaskEvent @event, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        if (!await dbContext.UserTasks.AsNoTracking().AnyAsync(x => x.TenantId == tenantId && x.Id == taskId, cancellationToken))
+            return;
+
+        // A plain insert: the aggregate row, and therefore its revision, is deliberately left untouched.
+        dbContext.UserTaskEvents.Add(ToEventRecord(@event));
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<bool> TryMutateAsync(string tenantId, string taskId, int expectedRevision, Func<UserTask, bool> mutation, CancellationToken cancellationToken = default)
@@ -214,8 +242,15 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
     {
         var records = dbContext.UserTasks.AsNoTracking();
         records = records.Where(x => x.TenantId == query.TenantId);
-        if (query.Status is not null)
-            records = records.Where(x => x.Status == query.Status);
+        if (query.Statuses.Count > 0)
+        {
+            var statuses = query.Statuses.ToArray();
+            records = records.Where(x => statuses.Contains(x.Status));
+        }
+        if (query.OnlyOverdue)
+            records = records.Where(x => x.IsOverdue);
+        if (query.OnlyWithoutDueDate)
+            records = records.Where(x => x.DueAt == null);
         if (!string.IsNullOrWhiteSpace(query.TaskType))
             records = records.Where(x => x.TaskType == query.TaskType);
         if (query.PriorityFrom is not null)
@@ -243,37 +278,68 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
              requestedScope.Groups.Any(group => !string.Equals(group.TenantId, query.TenantId, StringComparison.Ordinal))))
             return records.Where(_ => false);
 
-        if (query.Scope is { IsManager: false } scope)
-        {
-            var subject = scope.Subject;
-            var groups = scope.Groups.ToArray();
-            var groupKeys = groups.Select(GetParticipantKey).Distinct(StringComparer.Ordinal).ToArray();
-            var tenantId = query.TenantId;
-            // Use correlated predicates directly so tenant, eligibility, and exclusion are applied before
-            // totals, cursors, and page limits.
-            records = records.Where(task =>
-                !dbContext.UserTaskExclusions.Any(exclusion =>
-                    exclusion.TenantId == tenantId && exclusion.TaskId == task.Id &&
-                    exclusion.ParticipantType == UserTaskParticipantType.User && exclusion.Provider == subject.Provider && exclusion.ParticipantId == subject.Id)
-                &&
-                 (scope.IncludeCandidateUsers && dbContext.UserTaskCandidates.Any(candidate =>
-                        candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
-                        candidate.ParticipantType == UserTaskParticipantType.User && candidate.Provider == subject.Provider && candidate.ParticipantId == subject.Id)
-                  || scope.IncludeCandidateGroups && groupKeys.Length > 0 && dbContext.UserTaskCandidates.Any(candidate =>
-                        candidate.TenantId == tenantId && candidate.TaskId == task.Id && candidate.ParticipantType == UserTaskParticipantType.Group &&
-                        groupKeys.Contains(candidate.ParticipantKey))
-                  || scope.IncludeSnapshotMembers && dbContext.UserTaskSnapshotMembers.Any(member =>
-                        member.TenantId == tenantId && member.TaskId == task.Id &&
-                        ((member.ParticipantType == UserTaskParticipantType.User && member.Provider == subject.Provider && member.ParticipantId == subject.Id)
-                         || (member.ParticipantType == UserTaskParticipantType.Group && groupKeys.Contains(member.ParticipantKey))))
-                  || scope.IncludeHistory && dbContext.UserTaskEvents.Any(@event =>
-                        @event.TenantId == tenantId && @event.TaskId == task.Id &&
-                        @event.ActorProvider == subject.Provider && @event.ActorType == subject.Type.ToString() && @event.ActorId == subject.Id)
-                  || scope.IncludeAssigned && task.AssigneeProvider == subject.Provider && task.AssigneeType == subject.Type.ToString() && task.AssigneeId == subject.Id));
+        if (query.Scope is not { } scope)
+            return records;
+
+        var subject = scope.Subject;
+        var subjectType = subject.Type.ToString();
+        var groupKeys = scope.Groups.Select(GetParticipantKey).Distinct(StringComparer.Ordinal).ToArray();
+        var tenantId = query.TenantId;
+
+        if (scope.ExcludeBlocking)
             records = records.Where(task => task.HealthSeverity != UserTaskHealthSeverity.Blocking);
+
+        // Manager-only scopes were already rejected by the policy for non-managers. Reaching them here means
+        // the caller manages the tenant, so the tenant predicate above is the whole authorization.
+        if (scope.RequiresManager)
+        {
+            if (!scope.IsManager)
+                return records.Where(_ => false);
+            if (scope.Kind == UserTaskQueryScopeKind.NeedsAttention)
+            {
+                records = records.Where(task =>
+                    task.HealthSeverity == UserTaskHealthSeverity.Blocking
+                    || task.IsOverdue
+                    || (task.AssigneeId == null && task.Status != UserTaskStatus.Completed && task.Status != UserTaskStatus.TimedOut && task.Status != UserTaskStatus.Cancelled)
+                    || task.Status == UserTaskStatus.Completing
+                    || task.Status == UserTaskStatus.TimingOut
+                    || task.Status == UserTaskStatus.Cancelling);
+            }
+            return records;
         }
 
-        return records;
+        // Correlated predicates are applied in the query path so tenant, eligibility, and exclusion are
+        // evaluated before totals, cursors, and page limits — an unauthorized row can never reach the page.
+        return scope.Kind switch
+        {
+            UserTaskQueryScopeKind.Assigned => records.Where(task =>
+                task.AssigneeProvider == subject.Provider && task.AssigneeType == subjectType && task.AssigneeId == subject.Id),
+
+            UserTaskQueryScopeKind.Available => records.Where(task =>
+                task.AssigneeId == null
+                && task.Status != UserTaskStatus.Completed && task.Status != UserTaskStatus.TimedOut && task.Status != UserTaskStatus.Cancelled
+                && !dbContext.UserTaskExclusions.Any(exclusion =>
+                    exclusion.TenantId == tenantId && exclusion.TaskId == task.Id &&
+                    exclusion.ParticipantType == UserTaskParticipantType.User && exclusion.Provider == subject.Provider && exclusion.ParticipantId == subject.Id)
+                && (dbContext.UserTaskCandidates.Any(candidate =>
+                        candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
+                        candidate.ParticipantType == UserTaskParticipantType.User && candidate.Provider == subject.Provider && candidate.ParticipantId == subject.Id)
+                    || (groupKeys.Length > 0 && dbContext.UserTaskCandidates.Any(candidate =>
+                        candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
+                        candidate.ParticipantType == UserTaskParticipantType.Group && groupKeys.Contains(candidate.ParticipantKey)))
+                    || dbContext.UserTaskSnapshotMembers.Any(member =>
+                        member.TenantId == tenantId && member.TaskId == task.Id &&
+                        ((member.ParticipantType == UserTaskParticipantType.User && member.Provider == subject.Provider && member.ParticipantId == subject.Id)
+                         || (member.ParticipantType == UserTaskParticipantType.Group && groupKeys.Contains(member.ParticipantKey)))))),
+
+            UserTaskQueryScopeKind.History => records.Where(task =>
+                (task.Status == UserTaskStatus.Completed || task.Status == UserTaskStatus.TimedOut || task.Status == UserTaskStatus.Cancelled)
+                && dbContext.UserTaskEvents.Any(@event =>
+                    @event.TenantId == tenantId && @event.TaskId == task.Id &&
+                    @event.ActorProvider == subject.Provider && @event.ActorType == subjectType && @event.ActorId == subject.Id)),
+
+            _ => records.Where(_ => false)
+        };
     }
 
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
@@ -419,7 +485,10 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         Id = record.Id,
         TenantId = record.TenantId,
         WorkflowDefinitionId = record.WorkflowDefinitionId,
+        WorkflowDefinitionName = record.WorkflowDefinitionName,
+        WorkflowDefinitionVersion = record.WorkflowDefinitionVersion,
         WorkflowInstanceId = record.WorkflowInstanceId,
+        WorkflowInstanceReference = record.WorkflowInstanceReference,
         ActivityInstanceId = record.ActivityInstanceId,
         BookmarkId = record.BookmarkId,
         MaterializationKey = record.MaterializationKey,
@@ -469,7 +538,10 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         target.Id = source.Id;
         target.TenantId = source.TenantId;
         target.WorkflowDefinitionId = source.WorkflowDefinitionId;
+        target.WorkflowDefinitionName = source.WorkflowDefinitionName;
+        target.WorkflowDefinitionVersion = source.WorkflowDefinitionVersion;
         target.WorkflowInstanceId = source.WorkflowInstanceId;
+        target.WorkflowInstanceReference = source.WorkflowInstanceReference;
         target.ActivityInstanceId = source.ActivityInstanceId;
         target.BookmarkId = source.BookmarkId;
         target.MaterializationKey = source.MaterializationKey;
@@ -518,7 +590,10 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
     {
         target.TenantId = source.TenantId;
         target.WorkflowDefinitionId = source.WorkflowDefinitionId;
+        target.WorkflowDefinitionName = source.WorkflowDefinitionName;
+        target.WorkflowDefinitionVersion = source.WorkflowDefinitionVersion;
         target.WorkflowInstanceId = source.WorkflowInstanceId;
+        target.WorkflowInstanceReference = source.WorkflowInstanceReference;
         target.ActivityInstanceId = source.ActivityInstanceId;
         target.BookmarkId = source.BookmarkId;
         target.MaterializationKey = source.MaterializationKey;
@@ -692,13 +767,17 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
 
     private static UserTaskInvitation ToInvitation(UserTaskInvitationRecord row) => new(
         row.Id, row.TenantId, row.TaskId, Deserialize<string>(row.RecipientJson), row.TokenHash, row.Status,
-        row.IssuedAt, row.ExpiresAt, row.VerifierProvider, row.VerifiedAt, row.ConsumedAt, row.RevokedAt, row.SiblingGroupId);
+        row.IssuedAt, row.ExpiresAt, row.VerifierProvider, row.VerifiedAt, row.ConsumedAt, row.RevokedAt, row.SiblingGroupId)
+    {
+        AllowedActions = Deserialize<List<string>>(row.AllowedActionsJson) ?? []
+    };
 
     private static UserTaskInvitationRecord ToInvitationRecord(UserTaskInvitation value) => new()
     {
         Id = value.Id, TenantId = value.TenantId, TaskId = value.TaskId, RecipientJson = Serialize(value.Recipient), TokenHash = value.TokenHash,
         VerifierProvider = value.VerifierName ?? "default", Status = value.Status, IssuedAt = value.IssuedAt, ExpiresAt = value.ExpiresAt,
-        VerifiedAt = value.VerifiedAt, ConsumedAt = value.ConsumedAt, RevokedAt = value.RevokedAt, SiblingGroupId = value.SiblingGroupId
+        VerifiedAt = value.VerifiedAt, ConsumedAt = value.ConsumedAt, RevokedAt = value.RevokedAt, SiblingGroupId = value.SiblingGroupId,
+        AllowedActionsJson = Serialize(value.AllowedActions)
     };
 
     private static async Task<bool> ExistsByMaterializationKeyAsync(UserTasksElsaDbContext dbContext, string tenantId, string key, CancellationToken cancellationToken) => await dbContext.UserTasks.AsNoTracking().AnyAsync(x => x.TenantId == tenantId && x.MaterializationKey == key, cancellationToken);

@@ -85,8 +85,11 @@ public sealed class UserTask : Activity<UserTaskResult>
             EnableTimeoutOutcome = EnableTimeoutOutcome.GetOrDefault(context),
             EnableCancellationOutcome = EnableCancellationOutcome.GetOrDefault(context)
         };
-        var materialization = new UserTaskMaterialization(options.DefaultTenantId,
-            context.WorkflowExecutionContext.Workflow.Identity.DefinitionId,
+        var workflow = context.WorkflowExecutionContext.Workflow;
+        var materialization = new UserTaskMaterialization(
+            // The workflow's own tenant wins; the configured default is only a fallback for single-tenant hosts.
+            workflow.Identity.TenantId ?? options.DefaultTenantId,
+            workflow.Identity.DefinitionId,
             context.WorkflowExecutionContext.Id,
             context.Id,
             bookmarkId,
@@ -94,7 +97,10 @@ public sealed class UserTask : Activity<UserTaskResult>
             [],
             [],
             context.WorkflowExecutionContext.SystemClock.UtcNow,
-            taskId);
+            taskId,
+            workflow.WorkflowMetadata.Name,
+            workflow.Identity.Version,
+            context.WorkflowExecutionContext.CorrelationId);
         context.CreateBookmark(new CreateBookmarkArgs
         {
             BookmarkId = bookmarkId,

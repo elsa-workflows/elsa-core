@@ -18,7 +18,10 @@ public static class UserTasksSchemaMigration
                 Id = table.Column<string>(maxLength: 450, nullable: false),
                 TenantId = table.Column<string>(maxLength: 450, nullable: false),
                 WorkflowDefinitionId = table.Column<string>(maxLength: 450, nullable: false),
+                WorkflowDefinitionName = table.Column<string>(maxLength: 500, nullable: true),
+                WorkflowDefinitionVersion = table.Column<int>(nullable: true),
                 WorkflowInstanceId = table.Column<string>(maxLength: 450, nullable: false),
+                WorkflowInstanceReference = table.Column<string>(maxLength: 500, nullable: true),
                 ActivityInstanceId = table.Column<string>(maxLength: 450, nullable: false),
                 BookmarkId = table.Column<string>(maxLength: 450, nullable: false),
                 MaterializationKey = table.Column<string>(maxLength: 900, nullable: false),
@@ -165,6 +168,7 @@ public static class UserTasksSchemaMigration
                 RecipientJson = table.Column<string>(nullable: true),
                 TokenHash = table.Column<string>(maxLength: 256, nullable: false),
                 VerifierProvider = table.Column<string>(maxLength: 200, nullable: false),
+                AllowedActionsJson = table.Column<string>(nullable: false),
                 ChallengeJson = table.Column<string>(nullable: true),
                 Status = table.Column<string>(maxLength: 32, nullable: false),
                 IssuedAt = table.Column<DateTimeOffset>(nullable: false),
@@ -230,7 +234,9 @@ public static class UserTasksSchemaMigration
         migrationBuilder.CreateIndex(name: "IX_UserTaskSnapshotMembers_Tenant_Task_ParticipantKey", table: "UserTaskSnapshotMembers", columns: ["TenantId", "TaskId", "ParticipantKey"], schema: schema);
         migrationBuilder.CreateIndex(name: "IX_UserTaskExclusions_Tenant_Task_Participant", table: "UserTaskExclusions", columns: ["TenantId", "TaskId", "Provider", "ParticipantType", "ParticipantId"], schema: schema, unique: true);
         migrationBuilder.CreateIndex(name: "IX_UserTaskExclusions_Tenant_Task_ParticipantKey", table: "UserTaskExclusions", columns: ["TenantId", "TaskId", "ParticipantKey"], schema: schema);
-        migrationBuilder.CreateIndex(name: "IX_UserTaskEvents_Task_Revision", table: "UserTaskEvents", columns: ["TaskId", "Revision"], schema: schema, unique: true);
+        // Not unique: audit is append-only and several entries may share a revision, because an audited read
+        // (a masked-field reveal) records without consuming the aggregate's concurrency token.
+        migrationBuilder.CreateIndex(name: "IX_UserTaskEvents_Task_Revision", table: "UserTaskEvents", columns: ["TaskId", "Revision"], schema: schema);
         migrationBuilder.CreateIndex(name: "IX_UserTaskEvents_Tenant_Task_OccurredAt", table: "UserTaskEvents", columns: ["TenantId", "TaskId", "OccurredAt"], schema: schema);
         migrationBuilder.CreateIndex(name: "IX_UserTaskOperations_Tenant_Task_Operation", table: "UserTaskOperations", columns: ["TenantId", "TaskId", "OperationId"], schema: schema, unique: true);
         migrationBuilder.CreateIndex(name: "IX_UserTaskOperations_Tenant_Status_UpdatedAt", table: "UserTaskOperations", columns: ["TenantId", "Status", "UpdatedAt"], schema: schema);

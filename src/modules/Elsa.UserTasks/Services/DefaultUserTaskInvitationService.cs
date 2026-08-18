@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Common;
@@ -11,14 +10,14 @@ using Microsoft.Extensions.Options;
 namespace Elsa.UserTasks.Services;
 
 /// <summary>
-/// Implements the invitation protocol for the in-memory Core provider. A host that needs invitations
-/// to survive a restart should replace this service with a provider-backed implementation; the public
-/// contract deliberately keeps token material out of UserTask and notification models.
+/// Implements the invitation protocol. Secrets never leave this service in plaintext except across the
+/// dispatcher boundary: only a SHA-256 hash is persisted on the task, and verification resolves the owning
+/// task by that hash so the flow works across restarts and behind any persistence provider.
 /// </summary>
 public sealed class DefaultUserTaskInvitationService(
     IUserTaskRepository repository,
     IUserTaskAccessPolicy accessPolicy,
-    IUserTaskInvitationDispatcher dispatcher,
+    IUserTaskInvitationOutbox outbox,
     IUserTaskInvitationVerifier verifier,
     IUserTaskGuestSessionIssuer sessionIssuer,
     IUserTaskNotificationSink notifications,
@@ -26,7 +25,8 @@ public sealed class DefaultUserTaskInvitationService(
     ISystemClock clock,
     IOptions<UserTasksOptions> options) : IUserTaskInvitationService
 {
-    private readonly ConcurrentDictionary<string, TokenEntry> _tokens = new(StringComparer.Ordinal);
+    /// <summary>The single public failure code. Callers must not be able to tell these cases apart.</summary>
+    private const string GenericFailure = "invitation-unavailable";
 
     public async Task<UserTaskInvitationIssueResult?> IssueAsync(string tenantId, string taskId, UserTaskInvitationIssueRequest request, UserTaskActor actor, CancellationToken cancellationToken = default)
     {
@@ -65,7 +65,11 @@ public sealed class DefaultUserTaskInvitationService(
         var invitation = new UserTaskInvitation(
             identityGenerator.GenerateId(), tenantId, taskId, request.Recipient, tokenHash,
             UserTaskInvitationStatus.Pending, now, expiresAt, request.VerifierName,
-            SiblingGroupId: siblingGroupId);
+            SiblingGroupId: siblingGroupId)
+        {
+            // Pinned at issuance: a later workflow definition change cannot widen an outstanding link.
+            AllowedActions = actions
+        };
 
         task.Invitations.Add(invitation);
         task.Events.Add(new UserTaskEvent(identityGenerator.GenerateId(), tenantId, taskId, task.Revision + 1,
@@ -79,14 +83,16 @@ public sealed class DefaultUserTaskInvitationService(
             return null;
         }
 
-        _tokens[tokenHash] = new TokenEntry(tenantId, taskId, invitation.Id);
         var committed = await repository.GetAsync(tenantId, taskId, cancellationToken) ?? task;
         await notifications.PublishAsync(new UserTaskInvitationChanged(tenantId, taskId, committed.Status, committed.Revision), cancellationToken);
 
-        // The raw token crosses only the dispatcher boundary and is never returned in the ordinary API
-        // result. Dispatchers may persist an encrypted transient outbox entry for retry.
-        await dispatcher.DispatchAsync(new UserTaskInvitationDelivery(
-            identityGenerator.GenerateId(), tenantId, taskId, invitation.Id, request.VerifierName, token, expiresAt), cancellationToken);
+        // The raw token crosses only the dispatcher boundary. It is parked in the encrypted outbox first so
+        // a dispatcher failure can be retried without ever re-deriving the secret or returning it to the API.
+        await outbox.EnqueueAsync(new UserTaskInvitationDelivery(
+            identityGenerator.GenerateId(), tenantId, taskId, invitation.Id, definition.VerifierName, token, expiresAt)
+        {
+            Recipient = request.Recipient
+        }, cancellationToken);
 
         return new UserTaskInvitationIssueResult(ToSummary(invitation), request.OperationId);
     }
@@ -123,37 +129,42 @@ public sealed class DefaultUserTaskInvitationService(
         return true;
     }
 
+    public async Task<UserTaskInvitationChallengeDescriptor> DescribeAsync(string token, CancellationToken cancellationToken = default)
+    {
+        // Copy is identical for every token. Only the challenge shape differs, and only for a token the
+        // caller already holds, so this cannot be used to probe whether an unknown token exists.
+        var resolved = await ResolveOpenInvitationAsync(token, cancellationToken);
+        var bearerOnly = resolved is { } match && FindDefinition(match.Task, match.Invitation)?.BearerOnly == true;
+        return bearerOnly
+            ? new UserTaskInvitationChallengeDescriptor("bearer", "Open this task to continue.", RequiresCode: false)
+            : new UserTaskInvitationChallengeDescriptor("code", "Enter the verification code you were sent to continue.", RequiresCode: true);
+    }
+
     public async Task<UserTaskInvitationVerificationResultWithSession> VerifyAsync(UserTaskInvitationChallenge challenge, CancellationToken cancellationToken = default)
     {
-        // Every failure below intentionally returns the same public code. Anonymous callers must not be
-        // able to distinguish missing, expired, consumed, revoked, or invalid invitations.
-        const string failure = "invitation-unavailable";
-        if (string.IsNullOrWhiteSpace(challenge.Token) || !_tokens.TryGetValue(HashToken(challenge.Token), out var tokenEntry))
-            return new UserTaskInvitationVerificationResultWithSession(false, FailureCode: failure);
+        if (await ResolveOpenInvitationAsync(challenge.Token, cancellationToken) is not { } resolved)
+            return Failed();
 
-        var tokenHash = HashToken(challenge.Token);
-        var task = await repository.GetAsync(tokenEntry.TenantId, tokenEntry.TaskId, cancellationToken);
-        var invitation = task?.Invitations.FirstOrDefault(x => x.Id == tokenEntry.InvitationId);
-        if (task == null || invitation == null || invitation.ExpiresAt <= clock.UtcNow || invitation.Status is not (UserTaskInvitationStatus.Pending or UserTaskInvitationStatus.Dispatched))
-        {
-            _tokens.TryRemove(tokenHash, out _);
-            return new UserTaskInvitationVerificationResultWithSession(false, FailureCode: failure);
-        }
-
-        var definition = task.InvitationDefinitions.FirstOrDefault(x => string.Equals(x.VerifierName, invitation.VerifierName, StringComparison.OrdinalIgnoreCase));
+        var (task, invitation) = resolved;
+        var definition = FindDefinition(task, invitation);
         var challengeResult = definition?.BearerOnly == true
             ? new UserTaskInvitationVerificationResult(true, Subject: null)
             : await verifier.VerifyAsync(challenge, cancellationToken);
         if (!challengeResult.Succeeded)
-            return new UserTaskInvitationVerificationResultWithSession(false, FailureCode: failure);
+            return Failed();
 
         var subject = new ParticipantReference(task.TenantId, "guest", UserTaskParticipantType.User,
             challengeResult.Subject ?? $"invitation:{invitation.Id}");
         var verifiedAt = clock.UtcNow;
+
+        // Claiming, consuming, and sibling revocation happen inside one compare-and-swap. A second holder
+        // racing the same sibling group therefore loses and receives the same generic failure.
         var claimed = await repository.TryMutateAsync(task.TenantId, task.Id, task.Revision, current =>
         {
             var currentInvitation = current.Invitations.FirstOrDefault(x => x.Id == invitation.Id);
             if (currentInvitation == null || currentInvitation.ExpiresAt <= verifiedAt || currentInvitation.Status is not (UserTaskInvitationStatus.Pending or UserTaskInvitationStatus.Dispatched))
+                return false;
+            if (current.IsTerminal || current.Status is UserTaskStatus.Completing or UserTaskStatus.TimingOut or UserTaskStatus.Cancelling)
                 return false;
 
             current.Assignee = subject;
@@ -162,8 +173,9 @@ public sealed class DefaultUserTaskInvitationService(
             var index = current.Invitations.IndexOf(currentInvitation);
             current.Invitations[index] = currentInvitation with
             {
-                Status = UserTaskInvitationStatus.Verified,
-                VerifiedAt = verifiedAt
+                Status = UserTaskInvitationStatus.Consumed,
+                VerifiedAt = verifiedAt,
+                ConsumedAt = verifiedAt
             };
             var revokedSiblings = 0;
             for (var i = 0; i < current.Invitations.Count; i++)
@@ -175,58 +187,56 @@ public sealed class DefaultUserTaskInvitationService(
                     revokedSiblings++;
                 }
             }
+            // The challenge response and the secret itself are never written to the audit trail.
             current.Events.Add(new UserTaskEvent(identityGenerator.GenerateId(), current.TenantId, current.Id, current.Revision + 1,
                 "InvitationVerified", verifiedAt, subject, Metadata: new Dictionary<string, object?> { ["revokedSiblingCount"] = revokedSiblings }));
             return true;
         }, cancellationToken);
         if (!claimed)
-            return new UserTaskInvitationVerificationResultWithSession(false, FailureCode: failure);
+            return Failed();
 
-        _tokens.TryRemove(tokenHash, out _);
-        var verifiedInvitation = invitation with { Status = UserTaskInvitationStatus.Verified, VerifiedAt = verifiedAt };
-        var session = await sessionIssuer.IssueAsync(verifiedInvitation, cancellationToken);
+        var consumed = invitation with { Status = UserTaskInvitationStatus.Consumed, VerifiedAt = verifiedAt, ConsumedAt = verifiedAt };
+        var session = await sessionIssuer.IssueAsync(consumed, subject, cancellationToken);
         return session.Succeeded
             ? new UserTaskInvitationVerificationResultWithSession(true, task.Id, session.Token, session.ExpiresAt)
-            : new UserTaskInvitationVerificationResultWithSession(false, FailureCode: failure);
+            : Failed();
     }
+
+    private async Task<(UserTask Task, UserTaskInvitation Invitation)?> ResolveOpenInvitationAsync(string? token, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return null;
+        var match = await repository.FindByInvitationTokenHashAsync(HashToken(token), cancellationToken);
+        if (match is not { } found)
+            return null;
+        var invitation = found.Invitation;
+        return invitation.ExpiresAt <= clock.UtcNow || invitation.Status is not (UserTaskInvitationStatus.Pending or UserTaskInvitationStatus.Dispatched)
+            ? null
+            : found;
+    }
+
+    private static UserTaskInvitationDefinition? FindDefinition(UserTask task, UserTaskInvitation invitation) =>
+        task.InvitationDefinitions.FirstOrDefault(x => string.Equals(x.VerifierName, invitation.VerifierName, StringComparison.OrdinalIgnoreCase));
+
+    private static UserTaskInvitationVerificationResultWithSession Failed() => new(false, FailureCode: GenericFailure);
 
     private static UserTaskInvitationSummary ToSummary(UserTaskInvitation invitation) => new(
         invitation.Id, invitation.TaskId, invitation.Recipient, invitation.Status, invitation.IssuedAt, invitation.ExpiresAt, invitation.VerifierName);
 
-    private static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
-    private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-
-    private sealed record TokenEntry(string TenantId, string TaskId, string InvitationId);
+    internal static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+    internal static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }
 
-public sealed class DefaultUserTaskInvitationDispatcher : IUserTaskInvitationDispatcher
+/// <summary>A dispatcher that drops deliveries. Hosts replace it with an email, SMS, or webhook dispatcher.</summary>
+public sealed class NullUserTaskInvitationDispatcher : IUserTaskInvitationDispatcher
 {
     public Task DispatchAsync(UserTaskInvitationDelivery delivery, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }
 
-/// <summary>Development-safe guest session issuer. Providers should persist hashes and revocation state.</summary>
-public sealed class DefaultUserTaskGuestSessionIssuer(ISystemClock clock) : IUserTaskGuestSessionIssuer
-{
-    private readonly ConcurrentDictionary<string, (string TaskId, DateTimeOffset ExpiresAt)> _sessions = new(StringComparer.Ordinal);
-
-    public Task<GuestSessionResult> IssueAsync(UserTaskInvitation invitation, CancellationToken cancellationToken = default)
-    {
-        var token = Base64Url(RandomNumberGenerator.GetBytes(32));
-        var expiresAt = invitation.ExpiresAt;
-        _sessions[HashToken(token)] = (invitation.TaskId, expiresAt);
-        return Task.FromResult(new GuestSessionResult(true, token, expiresAt, TaskId: invitation.TaskId));
-    }
-
-    public bool IsValid(string taskId, string token)
-    {
-        var hash = HashToken(token);
-        return _sessions.TryGetValue(hash, out var session) && session.TaskId == taskId && session.ExpiresAt > clock.UtcNow;
-    }
-
-    private static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
-    private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-}
-
+/// <summary>
+/// The default verifier refuses every challenge. A host that enables guest invitations must register a real
+/// verifier; failing closed is preferable to accepting any bearer who holds a link.
+/// </summary>
 public sealed class DefaultUserTaskInvitationVerifier : IUserTaskInvitationVerifier
 {
     public Task<UserTaskInvitationVerificationResult> VerifyAsync(UserTaskInvitationChallenge challenge, CancellationToken cancellationToken = default) =>

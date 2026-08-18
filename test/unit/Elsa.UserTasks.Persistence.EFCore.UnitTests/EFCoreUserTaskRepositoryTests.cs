@@ -87,33 +87,27 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         var pagingSecondTask = CreateTask(DateTimeOffset.UtcNow.AddSeconds(1), actor);
         await repository.AddProjectionAsync(pagingSecondTask);
 
-        var query = await repository.QueryAsync(new UserTaskQuery
-        {
-            TenantId = task.TenantId,
-            Limit = 1,
-            IncludeTotalCount = true,
-            Scope = new UserTaskQueryScope(task.TenantId, actor, [])
-        });
+        var query = await repository.QueryAsync(Query(task.TenantId, actor, limit: 1, includeTotalCount: true));
         Assert.Single(query.Items);
         Assert.Single(query.Items.Single().CandidateUsers);
         Assert.Equal(2, query.TotalCount);
         Assert.NotNull(query.NextCursor);
 
-        var finalPage = await repository.QueryAsync(new UserTaskQuery
-        {
-            TenantId = task.TenantId,
-            Limit = 1,
-            Cursor = query.NextCursor,
-            Scope = new UserTaskQueryScope(task.TenantId, actor, [])
-        });
+        var finalPage = await repository.QueryAsync(Query(task.TenantId, actor, limit: 1) with { Cursor = query.NextCursor });
         Assert.Single(finalPage.Items);
         Assert.Null(finalPage.NextCursor);
+
+        // The subject holds no assignment yet, so the assigned scope must be empty even though the
+        // available scope returns both rows.
+        var assignedScope = await repository.QueryAsync(Query(task.TenantId, actor, UserTaskQueryScopeKind.Assigned, includeTotalCount: true));
+        Assert.Empty(assignedScope.Items);
+        Assert.Equal(0, assignedScope.TotalCount);
 
         var crossTenantScope = await repository.QueryAsync(new UserTaskQuery
         {
             TenantId = task.TenantId,
             IncludeTotalCount = true,
-            Scope = new UserTaskQueryScope("other-tenant", actor with { TenantId = "other-tenant" }, [])
+            Scope = new UserTaskQueryScope("other-tenant", actor with { TenantId = "other-tenant" }, [], Kind: UserTaskQueryScopeKind.Available)
         });
         Assert.Empty(crossTenantScope.Items);
         Assert.Equal(0, crossTenantScope.TotalCount);
@@ -130,19 +124,45 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => repository.SaveAsync(secondTask, 1));
 
         var excludedTask = CreateTask(DateTimeOffset.UtcNow.AddSeconds(2), actor);
-        excludedTask.Assignee = actor;
-        excludedTask.Status = UserTaskStatus.Assigned;
         excludedTask.ExcludedUsers = [actor];
         await repository.AddProjectionAsync(excludedTask);
-        var excludedQuery = await repository.QueryAsync(new UserTaskQuery
-        {
-            TenantId = task.TenantId,
-            IncludeTotalCount = true,
-            Scope = new UserTaskQueryScope(task.TenantId, actor, [])
-        });
+        var excludedQuery = await repository.QueryAsync(Query(task.TenantId, actor, includeTotalCount: true));
         Assert.DoesNotContain(excludedQuery.Items, x => x.Id == excludedTask.Id);
+        // Three tasks exist; the excluded one is filtered in the query path, so it is absent from the
+        // total as well rather than merely being hidden on the page.
         Assert.Equal(2, excludedQuery.TotalCount);
     }
+
+    [Fact]
+    public async Task InvitationLookup_ResolvesTheOwningTaskFromATokenHashWithoutATenantHint()
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreUserTaskRepository>();
+        var actor = new ParticipantReference("tenant-1", "directory", UserTaskParticipantType.User, "u1");
+        var task = CreateTask(DateTimeOffset.UtcNow, actor);
+        task.Invitations.Add(new("invitation-1", task.TenantId, task.Id, "guest@example.com", "HASH-1",
+            UserTaskInvitationStatus.Pending, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(1), "email-code")
+        {
+            AllowedActions = ["Complete"]
+        });
+        await repository.AddProjectionAsync(task);
+
+        var match = await repository.FindByInvitationTokenHashAsync("HASH-1");
+
+        Assert.NotNull(match);
+        Assert.Equal(task.Id, match.Value.Task.Id);
+        Assert.Equal("Complete", Assert.Single(match.Value.Invitation.AllowedActions));
+        Assert.Null(await repository.FindByInvitationTokenHashAsync("HASH-UNKNOWN"));
+    }
+
+    private static UserTaskQuery Query(string tenantId, ParticipantReference subject,
+        UserTaskQueryScopeKind kind = UserTaskQueryScopeKind.Available, int limit = 50, bool includeTotalCount = false) => new()
+    {
+        TenantId = tenantId,
+        Limit = limit,
+        IncludeTotalCount = includeTotalCount,
+        Scope = new(tenantId, subject, [], Kind: kind)
+    };
 
     private static UserTask CreateTask(DateTimeOffset createdAt, ParticipantReference actor) => new()
     {

@@ -19,7 +19,10 @@ public sealed class UserTaskRecord
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string TenantId { get; set; } = default!;
     public string WorkflowDefinitionId { get; set; } = default!;
+    public string? WorkflowDefinitionName { get; set; }
+    public int? WorkflowDefinitionVersion { get; set; }
     public string WorkflowInstanceId { get; set; } = default!;
+    public string? WorkflowInstanceReference { get; set; }
     public string ActivityInstanceId { get; set; } = default!;
     public string BookmarkId { get; set; } = default!;
     public string MaterializationKey { get; set; } = default!;
@@ -163,6 +166,7 @@ public sealed class UserTaskInvitationRecord
     public string? RecipientJson { get; set; }
     public string TokenHash { get; set; } = default!;
     public string VerifierProvider { get; set; } = default!;
+    public string AllowedActionsJson { get; set; } = "[]";
     public string? ChallengeJson { get; set; }
     public UserTaskInvitationStatus Status { get; set; }
     public DateTimeOffset IssuedAt { get; set; } = DateTimeOffset.UtcNow;

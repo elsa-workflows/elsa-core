@@ -5,7 +5,13 @@ using Elsa.Common;
 
 namespace Elsa.UserTasks.Services;
 
-public sealed class DefaultUserTaskProjectionService(IUserTaskManager manager, IUserTaskRepository repository, IUserTaskNotificationSink notifications, IIdentityGenerator identityGenerator, ISystemClock clock) : IUserTaskProjectionService
+public sealed class DefaultUserTaskProjectionService(
+    IUserTaskManager manager,
+    IUserTaskRepository repository,
+    IUserTaskNotificationSink notifications,
+    IUserTaskGuestSessionIssuer guestSessions,
+    IIdentityGenerator identityGenerator,
+    ISystemClock clock) : IUserTaskProjectionService
 {
     public async Task ProjectCommittedBookmarksAsync(IReadOnlyCollection<UserTaskMaterialization> materializations, CancellationToken cancellationToken = default)
     {
@@ -59,6 +65,9 @@ public sealed class DefaultUserTaskProjectionService(IUserTaskManager manager, I
         {
             return;
         }
+        // The task is closed, so any outstanding guest session for it must stop working immediately rather
+        // than lingering until its own TTL elapses.
+        await guestSessions.RevokeForTaskAsync(task.TenantId, task.Id, cancellationToken);
         var committed = await repository.GetAsync(task.TenantId, task.Id, cancellationToken) ?? task;
         await notifications.PublishAsync(terminalStatus.Value switch
         {

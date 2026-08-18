@@ -37,9 +37,21 @@ The Core feature includes an in-memory repository for development and tests. Pro
 
 Terminal tasks are retained indefinitely by default. Configurable cleanup may purge terminal aggregates and their protected data, but never open tasks. Audit events remain append-only and contain safe metadata only.
 
+## HTTP surface
+
+Clients read `GET /user-tasks/capabilities` before rendering navigation, then work through `/user-tasks` for the queue and `/user-tasks/{id}` for a single task. Every command carries an `operationId` that the client mints once per submission and reuses on retry, so a double click or a network retry is recognised as the same command rather than accepted as a second one.
+
+Terminal commands (complete, cancel, retry resolution) answer `202`: the workflow resumes out of band and the client observes the final state by requery or invalidation. Conflicts answer `409`, semantic input errors `422`, and anonymous invitation traffic is throttled with `429`. Every failure body is `{ code, message }` with display-safe copy — never exception text or payload fragments.
+
+Masked form fields never travel with the task detail. A client that needs one calls `POST /user-tasks/{id}/reveal`, which requires protected access, requires the form provider to have marked the field revealable, and writes the disclosure to the audit trail.
+
 ## Guest invitations
 
 Guest invitations are task-scoped and do not create Elsa users. Core hashes the one-time token, retains retry material only in a Data Protection-encrypted transient outbox, and delegates delivery and challenge verification to host services. The first successful verification claims the task, revokes sibling invitations, and issues a bounded guest session. Anonymous errors are generic and rate-limited; guests cannot release or reassign work.
+
+The transient delivery outbox encrypts pending secrets with ASP.NET Core Data Protection, so the module needs an `IDataProtectionProvider`. Web hosts register one by default; a non-web host that enables invitations must call `AddDataProtection()` itself.
+
+A guest presents its session as `Authorization: UserTaskSession <credential>` against `/user-task-sessions/current` and `/user-task-sessions/current/complete`. The session identifies the task, so no task ID appears in the route and a guest can never address a task other than the one its invitation was issued for. Completion is intersected with the action allowlist pinned at issuance, and every session for a task is revoked as soon as that task closes.
 
 ## Studio and custom applications
 

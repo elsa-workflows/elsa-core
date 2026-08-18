@@ -12,7 +12,9 @@ internal static class UserTaskEntityConfiguration
             entity.HasKey(x => x.Id);
             entity.Property(x => x.TenantId).HasMaxLength(450).IsRequired();
             entity.Property(x => x.WorkflowDefinitionId).HasMaxLength(450).IsRequired();
+            entity.Property(x => x.WorkflowDefinitionName).HasMaxLength(500);
             entity.Property(x => x.WorkflowInstanceId).HasMaxLength(450).IsRequired();
+            entity.Property(x => x.WorkflowInstanceReference).HasMaxLength(500);
             entity.Property(x => x.ActivityInstanceId).HasMaxLength(450).IsRequired();
             entity.Property(x => x.BookmarkId).HasMaxLength(450).IsRequired();
             entity.Property(x => x.MaterializationKey).HasMaxLength(900).IsRequired();
@@ -117,7 +119,9 @@ internal static class UserTaskEntityConfiguration
             entity.Property(x => x.ActorId).HasMaxLength(450);
             entity.Property(x => x.Reason).HasMaxLength(4000);
             entity.Property(x => x.MetadataJson).IsRequired();
-            entity.HasIndex(x => new { x.TaskId, x.Revision }).IsUnique();
+            // Audit is append-only and several entries may share a revision (an audited read does not
+            // consume the concurrency token), so this is a lookup index rather than a uniqueness constraint.
+            entity.HasIndex(x => new { x.TaskId, x.Revision });
             entity.HasIndex(x => new { x.TenantId, x.TaskId, x.OccurredAt });
         });
 
@@ -146,6 +150,7 @@ internal static class UserTaskEntityConfiguration
             entity.Property(x => x.SiblingGroupId).HasMaxLength(450);
             entity.Property(x => x.TokenHash).HasMaxLength(256).IsRequired();
             entity.Property(x => x.VerifierProvider).HasMaxLength(200).IsRequired();
+            entity.Property(x => x.AllowedActionsJson).IsRequired();
             entity.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
             entity.HasIndex(x => x.TokenHash).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.TaskId, x.Status });

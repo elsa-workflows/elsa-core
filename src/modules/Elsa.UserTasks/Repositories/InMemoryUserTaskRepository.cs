@@ -27,8 +27,12 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
             var scope = query.Scope;
             var items = _tasks.Values
                 .Where(x => string.Equals(x.TenantId, query.TenantId, StringComparison.Ordinal))
+                // Visibility is evaluated before counting, cursoring, and paging so an unauthorized row can
+                // never influence a total or push an authorized row off the page.
                 .Where(x => scope == null || IsVisible(x, scope))
-                .Where(x => query.Status == null || x.Status == query.Status)
+                .Where(x => query.Statuses.Count == 0 || query.Statuses.Contains(x.Status))
+                .Where(x => !query.OnlyOverdue || x.IsOverdue)
+                .Where(x => !query.OnlyWithoutDueDate || x.DueAt == null)
                 .Where(x => query.PriorityFrom == null || x.Priority >= query.PriorityFrom)
                 .Where(x => query.PriorityTo == null || x.Priority <= query.PriorityTo)
                 .Where(x => query.DueFrom == null || x.DueAt >= query.DueFrom)
@@ -68,6 +72,21 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
             return Task.FromResult(_tasks.Values.FirstOrDefault(x => x.TenantId == tenantId && x.BookmarkId == bookmarkId) is { } task ? Clone(task) : null);
     }
 
+    public Task<(UserTask Task, UserTaskInvitation Invitation)?> FindByInvitationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        lock (_sync)
+        {
+            foreach (var task in _tasks.Values)
+            {
+                // Ordinal comparison over a fixed-length hex hash; the secret itself is never stored.
+                var invitation = task.Invitations.FirstOrDefault(x => string.Equals(x.TokenHash, tokenHash, StringComparison.Ordinal));
+                if (invitation != null)
+                    return Task.FromResult<(UserTask, UserTaskInvitation)?>((Clone(task), invitation));
+            }
+            return Task.FromResult<(UserTask, UserTaskInvitation)?>(null);
+        }
+    }
+
     public Task SaveAsync(UserTask task, int expectedRevision, CancellationToken cancellationToken = default)
     {
         lock (_sync)
@@ -98,6 +117,16 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         }
     }
 
+    public Task AppendEventAsync(string tenantId, string taskId, UserTaskEvent @event, CancellationToken cancellationToken = default)
+    {
+        lock (_sync)
+        {
+            if (_tasks.TryGetValue(Key(tenantId, taskId), out var current))
+                current.Events.Add(@event);
+            return Task.CompletedTask;
+        }
+    }
+
     public Task<bool> TryMutateAsync(string tenantId, string taskId, int expectedRevision, Func<UserTask, bool> mutation, CancellationToken cancellationToken = default)
     {
         lock (_sync)
@@ -123,18 +152,38 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
             return false;
         if (scope.ExcludeBlocking && task.HealthSeverity == UserTaskHealthSeverity.Blocking)
             return false;
-        if (scope.IsManager)
-            return true;
-        if (scope.IncludeAssigned && task.Assignee?.Matches(scope.Subject) == true)
-            return true;
-        if (scope.IncludeCandidateUsers && task.CandidateUsers.Any(x => x.Matches(scope.Subject)))
-            return true;
-        if (scope.IncludeCandidateGroups && task.CandidateGroups.Any(candidate => scope.Groups.Any(candidate.Matches)))
-            return true;
-        if (scope.IncludeSnapshotMembers && task.SnapshotMembers.Any(x => x.Matches(scope.Subject)))
-            return true;
-        return scope.IncludeHistory && (task.CompletedBy?.Matches(scope.Subject) == true || task.Events.Any(x => x.Actor?.Matches(scope.Subject) == true));
+        // Manager-only scopes were already rejected by the policy for non-managers, so reaching them here
+        // means the caller manages the tenant.
+        if (scope.RequiresManager)
+            return !scope.IsManager
+                ? false
+                : scope.Kind != UserTaskQueryScopeKind.NeedsAttention || NeedsAttention(task);
+
+        return scope.Kind switch
+        {
+            UserTaskQueryScopeKind.Assigned => task.Assignee?.Matches(scope.Subject) == true,
+            UserTaskQueryScopeKind.Available => task.IsOpen && task.Assignee == null && IsEligible(task, scope),
+            UserTaskQueryScopeKind.History => task.IsTerminal &&
+                                              (task.CompletedBy?.Matches(scope.Subject) == true || task.Events.Any(x => x.Actor?.Matches(scope.Subject) == true)),
+            _ => false
+        };
     }
+
+    private static bool IsEligible(UserTask task, UserTaskQueryScope scope)
+    {
+        if (task.ExcludedUsers.Any(x => x.Matches(scope.Subject)))
+            return false;
+        if (task.MembershipResolutionMode == UserTaskMembershipResolutionMode.Snapshot)
+            return task.SnapshotMembers.Any(x => x.Matches(scope.Subject));
+        return task.CandidateUsers.Any(x => x.Matches(scope.Subject))
+               || task.CandidateGroups.Any(candidate => scope.Groups.Any(candidate.Matches));
+    }
+
+    private static bool NeedsAttention(UserTask task) =>
+        task.HealthSeverity == UserTaskHealthSeverity.Blocking
+        || task.IsOverdue
+        || (task.IsOpen && task.Assignee == null)
+        || task.Status is UserTaskStatus.Completing or UserTaskStatus.TimingOut or UserTaskStatus.Cancelling;
 
     private static bool MatchesSearch(UserTask task, string? search)
     {
@@ -271,7 +320,10 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         Id = task.Id,
         TenantId = task.TenantId,
         WorkflowDefinitionId = task.WorkflowDefinitionId,
+        WorkflowDefinitionName = task.WorkflowDefinitionName,
+        WorkflowDefinitionVersion = task.WorkflowDefinitionVersion,
         WorkflowInstanceId = task.WorkflowInstanceId,
+        WorkflowInstanceReference = task.WorkflowInstanceReference,
         ActivityInstanceId = task.ActivityInstanceId,
         BookmarkId = task.BookmarkId,
         MaterializationKey = task.MaterializationKey,

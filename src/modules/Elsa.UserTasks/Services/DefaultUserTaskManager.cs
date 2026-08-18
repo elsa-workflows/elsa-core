@@ -91,7 +91,10 @@ public sealed class DefaultUserTaskManager(
             Id = materialization.TaskId ?? identityGenerator.GenerateId(),
             TenantId = materialization.TenantId,
             WorkflowDefinitionId = materialization.WorkflowDefinitionId,
+            WorkflowDefinitionName = materialization.WorkflowDefinitionName,
+            WorkflowDefinitionVersion = materialization.WorkflowDefinitionVersion,
             WorkflowInstanceId = materialization.WorkflowInstanceId,
+            WorkflowInstanceReference = materialization.WorkflowInstanceReference,
             ActivityInstanceId = materialization.ActivityInstanceId,
             BookmarkId = materialization.BookmarkId,
             MaterializationKey = MaterializationKey(materialization),
@@ -133,9 +136,14 @@ public sealed class DefaultUserTaskManager(
         return new UserTaskProjectionResult(projected, true);
     }
 
-    public async Task<UserTaskQueryResultDto> QueryAsync(UserTaskQuery query, UserTaskActor actor, CancellationToken cancellationToken = default)
+    public async Task<UserTaskQueryResultDto?> QueryAsync(UserTaskQuery query, UserTaskQueryScopeKind scopeKind, UserTaskActor actor, CancellationToken cancellationToken = default)
     {
-        var scope = await accessPolicy.CreateScopeAsync(actor, UserTaskAccessOperation.ReadSummary, cancellationToken);
+        // A null scope is a denial, not an absent filter. Falling through with the caller's raw query would
+        // hand an unauthorized actor a tenant-wide page.
+        var scope = await accessPolicy.CreateScopeAsync(actor, scopeKind, cancellationToken);
+        if (scope == null)
+            return null;
+
         var scopedQuery = query with { TenantId = actor.Subject.TenantId, Scope = scope };
         var result = await repository.QueryAsync(scopedQuery, cancellationToken);
         var summaries = new List<UserTaskSummary>();
@@ -149,9 +157,7 @@ public sealed class DefaultUserTaskManager(
         var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.ReadSummary, cancellationToken))
             return null;
-        var summary = await UserTaskModelMapper.ToSummaryAsync(task, actor, accessPolicy, cancellationToken);
-        var protectedData = await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.ReadProtected, cancellationToken);
-        return UserTaskModelMapper.ToDetail(task, summary, protectedData, protectedData || actor.IsManager);
+        return await UserTaskModelMapper.ToDetailAsync(task, actor, accessPolicy, cancellationToken);
     }
 
     public async Task<UserTaskCapabilities?> GetCapabilitiesAsync(string tenantId, string taskId, UserTaskActor actor, CancellationToken cancellationToken = default)
@@ -160,6 +166,69 @@ public sealed class DefaultUserTaskManager(
         return task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.ReadSummary, cancellationToken)
             ? null
             : await UserTaskModelMapper.ToCapabilitiesAsync(task, actor, accessPolicy, cancellationToken);
+    }
+
+    public async Task<UserTaskEventsResult?> GetEventsAsync(string tenantId, string taskId, string? cursor, int limit, UserTaskActor actor, CancellationToken cancellationToken = default)
+    {
+        var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
+        if (task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.ReadSummary, cancellationToken))
+            return null;
+
+        // Audit history is protected disclosure: a candidate who has never acted on the task sees the safe
+        // summary but not who claimed, released, or completed it. Guests never see history at all.
+        var canReadProtected = await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.ReadProtected, cancellationToken);
+        if (actor.IsGuest || !canReadProtected)
+            return new UserTaskEventsResult([], null);
+
+        var ordered = task.Events.OrderBy(x => x.OccurredAt).ThenBy(x => x.Id, StringComparer.Ordinal).ToList();
+        var startIndex = 0;
+        if (!string.IsNullOrWhiteSpace(cursor))
+        {
+            var index = ordered.FindIndex(x => string.Equals(x.Id, DecodeEventCursor(cursor), StringComparison.Ordinal));
+            startIndex = index < 0 ? ordered.Count : index + 1;
+        }
+
+        var pageSize = Math.Clamp(limit <= 0 ? 50 : limit, 1, 200);
+        var page = ordered.Skip(startIndex).Take(pageSize).ToArray();
+        var next = startIndex + page.Length < ordered.Count && page.Length > 0 ? EncodeEventCursor(page[^1].Id) : null;
+        return new UserTaskEventsResult(page.Select(UserTaskModelMapper.ToEventSummary).ToArray(), next);
+    }
+
+    public async Task<JsonElement?> RevealFieldAsync(string tenantId, string taskId, string fieldKey, UserTaskActor actor, CancellationToken cancellationToken = default)
+    {
+        var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
+        if (task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.ReadProtected, cancellationToken))
+            return null;
+
+        // Only a field the form provider explicitly marked revealable can be disclosed, and only one at a
+        // time. Unmarked or unknown keys are indistinguishable from an unauthorized task.
+        var descriptor = task.PinnedForm?.Fields.FirstOrDefault(x => string.Equals(x.Key, fieldKey, StringComparison.Ordinal));
+        if (descriptor is not { Masked: true, CanReveal: true })
+            return null;
+
+        var value = UserTaskModelMapper.ReadFieldValue(task.TaskData, fieldKey);
+        if (value == null)
+            return null;
+
+        // Appended without bumping the revision: a reveal is a read, and consuming the concurrency token
+        // here would make the caller's next command conflict for no reason.
+        await repository.AppendEventAsync(tenantId, taskId, new(identityGenerator.GenerateId(), tenantId, taskId, task.Revision,
+            "FieldRevealed", clock.UtcNow, actor.Subject, Metadata: new Dictionary<string, object?> { ["fieldKey"] = fieldKey }), cancellationToken);
+        return value;
+    }
+
+    private static string EncodeEventCursor(string eventId) => Convert.ToBase64String(Encoding.UTF8.GetBytes(eventId));
+
+    private static string? DecodeEventCursor(string cursor)
+    {
+        try
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
+        }
+        catch (FormatException)
+        {
+            return null;
+        }
     }
 
     public Task<UserTaskOperationResult> ClaimAsync(string tenantId, string taskId, UserTaskMutationRequest request, UserTaskActor actor, CancellationToken cancellationToken = default) =>
@@ -222,6 +291,10 @@ public sealed class DefaultUserTaskManager(
         if (task == null)
             return Failure(taskId, tenantId, request.OperationId, UserTaskOperationKind.Complete, "not-found");
         if (!await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.Complete, cancellationToken))
+            return Failure(task, request.OperationId, UserTaskOperationKind.Complete, "forbidden");
+        // A guest link is issued for a specific outcome set. Selecting any other configured action — even a
+        // valid one — is an authorization failure, not a validation failure.
+        if (actor.IsGuest && !actor.GuestAllowedActions.Contains(request.ActionKey))
             return Failure(task, request.OperationId, UserTaskOperationKind.Complete, "forbidden");
 
         if (PayloadBytes(request.Data) > _options.MaximumPayloadBytes)

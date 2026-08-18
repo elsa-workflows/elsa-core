@@ -52,6 +52,19 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
 
     public Task<UserTask?> FindByBookmarkIdAsync(string tenantId, string bookmarkId, CancellationToken cancellationToken = default) => FindByIndexAsync(tenantId, x => x.BookmarkId == bookmarkId, cancellationToken);
 
+    public async Task<(UserTask Task, UserTaskInvitation Invitation)?> FindByInvitationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        // The document store has no cross-tenant secondary index for invitation hashes, so this scans the
+        // storage unit. Verification is rate limited and rare; correctness matters more than the scan here.
+        foreach (var task in await LoadAllAsync(cancellationToken))
+        {
+            var invitation = task.Invitations.FirstOrDefault(x => string.Equals(x.TokenHash, tokenHash, StringComparison.Ordinal));
+            if (invitation != null)
+                return (task, invitation);
+        }
+        return null;
+    }
+
     public async Task SaveAsync(UserTask task, int expectedRevision, CancellationToken cancellationToken = default)
     {
         var existing = await LoadDocumentAsync(task.TenantId, task.Id, cancellationToken);
@@ -80,6 +93,26 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         }
     }
 
+    public async Task AppendEventAsync(string tenantId, string taskId, UserTaskEvent @event, CancellationToken cancellationToken = default)
+    {
+        var existing = await LoadDocumentAsync(tenantId, taskId, cancellationToken);
+        if (existing is null)
+            return;
+
+        // The document store has no separate audit stream, so the entry is written back with the aggregate.
+        // The revision is deliberately left as-is: an audited read must not consume the concurrency token.
+        var loaded = existing.Value;
+        loaded.Task.Events.Add(@event);
+        try
+        {
+            await documentStore.SaveAsync(CreateRequest(loaded.Task, loaded.Document.Version), cancellationToken);
+        }
+        catch (DocumentStoreConcurrencyException)
+        {
+            // A concurrent writer won. The audit entry is advisory, so losing this race is not an error.
+        }
+    }
+
     public async Task<bool> TryMutateAsync(string tenantId, string taskId, int expectedRevision, Func<UserTask, bool> mutation, CancellationToken cancellationToken = default)
     {
         var existing = await LoadDocumentAsync(tenantId, taskId, cancellationToken);
@@ -99,6 +132,24 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Loads every stored task across tenants. Only the invitation-hash lookup uses this: an anonymous
+    /// holder presents a secret and no tenant, so the scan cannot be narrowed by an index.
+    /// </summary>
+    private async Task<IReadOnlyCollection<UserTask>> LoadAllAsync(CancellationToken cancellationToken)
+    {
+        var tasks = new List<UserTask>();
+        foreach (var status in Enum.GetValues<UserTaskStatus>())
+        {
+            var documents = await documentStore.QueryAsync(new DocumentQuery(StorageUnitName, new Dictionary<string, string?>
+            {
+                ["Status"] = status.ToString()
+            }), cancellationToken);
+            tasks.AddRange(documents.Select(Deserialize));
+        }
+        return tasks;
     }
 
     private async Task<UserTask?> FindByIndexAsync(string tenantId, Func<UserTask, bool> predicate, CancellationToken cancellationToken)
@@ -150,7 +201,8 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
     private static bool Matches(UserTask task, UserTaskQuery query)
     {
         var search = query.Search?.Trim();
-        return task.TenantId == query.TenantId && (query.Status is null || task.Status == query.Status) &&
+        return task.TenantId == query.TenantId && (query.Statuses.Count == 0 || query.Statuses.Contains(task.Status)) &&
+               (!query.OnlyOverdue || task.IsOverdue) && (!query.OnlyWithoutDueDate || task.DueAt is null) &&
                (string.IsNullOrWhiteSpace(query.TaskType) || task.TaskType == query.TaskType) &&
                (!query.PriorityFrom.HasValue || task.Priority >= query.PriorityFrom) && (!query.PriorityTo.HasValue || task.Priority <= query.PriorityTo) &&
                (!query.DueFrom.HasValue || task.DueAt >= query.DueFrom) && (!query.DueTo.HasValue || task.DueAt <= query.DueTo) &&
@@ -166,20 +218,38 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
             !string.Equals(scope.Subject.TenantId, task.TenantId, StringComparison.Ordinal) ||
             scope.Groups.Any(group => !string.Equals(group.TenantId, task.TenantId, StringComparison.Ordinal)))
             return false;
-        if (scope.IsManager || task.HealthSeverity == UserTaskHealthSeverity.Blocking)
-            return scope.IsManager;
-        var subject = scope.Subject;
-        var excluded = task.ExcludedUsers.Any(x => x.Matches(subject));
-        if (excluded)
+        if (scope.ExcludeBlocking && task.HealthSeverity == UserTaskHealthSeverity.Blocking)
             return false;
-        if (scope.IncludeAssigned && task.Assignee?.Matches(subject) == true)
-            return true;
+        // Manager-only scopes were already rejected by the policy for non-managers.
+        if (scope.RequiresManager)
+            return scope.IsManager && (scope.Kind != UserTaskQueryScopeKind.NeedsAttention || NeedsAttention(task));
+
+        var subject = scope.Subject;
         var groups = scope.Groups;
-        return scope.IncludeCandidateUsers && task.CandidateUsers.Any(x => x.Matches(subject))
-            || scope.IncludeCandidateGroups && task.CandidateGroups.Any(x => groups.Any(x.Matches))
-            || scope.IncludeSnapshotMembers && (task.SnapshotMembers.Any(x => x.Matches(subject)) || task.SnapshotGroups.Any(x => groups.Any(x.Matches)))
-            || scope.IncludeHistory && task.Events.Any(x => x.Actor?.Matches(subject) == true);
+        return scope.Kind switch
+        {
+            UserTaskQueryScopeKind.Assigned => task.Assignee?.Matches(subject) == true,
+            UserTaskQueryScopeKind.Available => task.IsOpen && task.Assignee is null && IsEligible(task, subject, groups),
+            UserTaskQueryScopeKind.History => task.IsTerminal &&
+                                              (task.CompletedBy?.Matches(subject) == true || task.Events.Any(x => x.Actor?.Matches(subject) == true)),
+            _ => false
+        };
     }
+
+    private static bool IsEligible(UserTask task, ParticipantReference subject, IReadOnlyCollection<ParticipantReference> groups)
+    {
+        if (task.ExcludedUsers.Any(x => x.Matches(subject)))
+            return false;
+        if (task.MembershipResolutionMode == UserTaskMembershipResolutionMode.Snapshot)
+            return task.SnapshotMembers.Any(x => x.Matches(subject)) || task.SnapshotGroups.Any(x => groups.Any(x.Matches));
+        return task.CandidateUsers.Any(x => x.Matches(subject)) || task.CandidateGroups.Any(x => groups.Any(x.Matches));
+    }
+
+    private static bool NeedsAttention(UserTask task) =>
+        task.HealthSeverity == UserTaskHealthSeverity.Blocking
+        || task.IsOverdue
+        || (task.IsOpen && task.Assignee is null)
+        || task.Status is UserTaskStatus.Completing or UserTaskStatus.TimingOut or UserTaskStatus.Cancelling;
 
     private static IEnumerable<UserTask> ApplyOrdering(IEnumerable<UserTask> tasks, UserTaskQuery query) => query.Sort.ToLowerInvariant() switch
     {

@@ -1,37 +1,55 @@
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
+using Elsa.UserTasks.Permissions;
 
 namespace Elsa.UserTasks.Services;
 
 public sealed class DefaultUserTaskAccessPolicy : IUserTaskAccessPolicy
 {
-    public Task<UserTaskQueryScope> CreateScopeAsync(UserTaskActor actor, UserTaskAccessOperation operation, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Guests authenticate through a task-scoped invitation session. They may read and complete exactly one
+    /// task and can never claim, release, reassign, schedule, invite, cancel, or manage.
+    /// </summary>
+    private static readonly UserTaskAccessOperation[] GuestOperations =
+    [
+        UserTaskAccessOperation.ReadSummary,
+        UserTaskAccessOperation.ReadProtected,
+        UserTaskAccessOperation.Complete
+    ];
+
+    public Task<UserTaskQueryScope?> CreateScopeAsync(UserTaskActor actor, UserTaskQueryScopeKind kind, CancellationToken cancellationToken = default)
     {
-        var canRead = actor.HasPermission("read:user-tasks");
-        var managerScope = actor.IsManager && actor.HasPermission("manage:user-tasks") && canRead;
-        return Task.FromResult(new UserTaskQueryScope(
+        // A guest session is issued for one task and carries no list capability at all.
+        if (actor.IsGuest || !actor.HasPermission(UserTasksPermissions.Read))
+            return Task.FromResult<UserTaskQueryScope?>(null);
+
+        var isManager = IsManager(actor);
+        if (!isManager && kind is UserTaskQueryScopeKind.All or UserTaskQueryScopeKind.NeedsAttention)
+            return Task.FromResult<UserTaskQueryScope?>(null);
+
+        return Task.FromResult<UserTaskQueryScope?>(new UserTaskQueryScope(
             actor.Subject.TenantId,
             actor.Subject,
             actor.Groups,
-            managerScope,
-            IncludeAssigned: canRead,
-            IncludeCandidateUsers: canRead && operation is (UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.Claim),
-            IncludeCandidateGroups: canRead && operation is (UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.Claim),
-            IncludeSnapshotMembers: canRead && operation is (UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.Claim),
-            IncludeHistory: canRead,
-            ExcludeBlocking: !managerScope));
+            isManager,
+            kind,
+            ExcludeBlocking: !isManager));
     }
 
     public Task<bool> AuthorizeAsync(UserTask task, UserTaskActor actor, UserTaskAccessOperation operation, CancellationToken cancellationToken = default)
     {
         if (!string.Equals(task.TenantId, actor.Subject.TenantId, StringComparison.Ordinal))
             return Task.FromResult(false);
-
-        var isManager = actor.IsManager;
         if (!actor.HasPermission(RequiredPermission(operation)))
             return Task.FromResult(false);
+
+        if (actor.IsGuest)
+            return Task.FromResult(AuthorizeGuest(task, actor, operation));
+
+        var isManager = IsManager(actor);
         if (task.HealthSeverity == UserTaskHealthSeverity.Blocking && !isManager)
             return Task.FromResult(false);
+
         var isAssignee = task.Assignee?.Matches(actor.Subject) == true;
         var isCandidate = IsCandidate(task, actor);
         var isCompleter = task.CompletedBy?.Matches(actor.Subject) == true;
@@ -58,6 +76,26 @@ public sealed class DefaultUserTaskAccessPolicy : IUserTaskAccessPolicy
         return Task.FromResult(result);
     }
 
+    private static bool AuthorizeGuest(UserTask task, UserTaskActor actor, UserTaskAccessOperation operation)
+    {
+        if (!string.Equals(actor.GuestTaskId, task.Id, StringComparison.Ordinal))
+            return false;
+        if (!GuestOperations.Contains(operation))
+            return false;
+        // The invitation claimed the task for the guest participant; losing that assignment (through a
+        // manager reassignment or reissue) revokes the guest's access on the next request.
+        if (task.Assignee?.Matches(actor.Subject) != true)
+            return false;
+        return operation != UserTaskAccessOperation.Complete || !task.IsTerminal;
+    }
+
+    /// <summary>
+    /// A tenant-scoped manager must hold <c>manage:user-tasks</c> (or the wildcard grant). The actor flag on
+    /// its own is host-supplied metadata and is never sufficient.
+    /// </summary>
+    private static bool IsManager(UserTaskActor actor) =>
+        !actor.IsGuest && actor.IsManager && actor.HasPermission(UserTasksPermissions.Manage);
+
     private static bool IsCandidate(UserTask task, UserTaskActor actor)
     {
         if (task.ExcludedUsers.Any(x => x.Matches(actor.Subject)))
@@ -71,20 +109,20 @@ public sealed class DefaultUserTaskAccessPolicy : IUserTaskAccessPolicy
     }
 
     private static bool IsExcluded(UserTask task, UserTaskActor actor) =>
-        task.ExcludedUsers.Any(x => x.Matches(actor.Subject)) && !(actor.IsManager && task.AllowManagerExclusionOverride);
+        task.ExcludedUsers.Any(x => x.Matches(actor.Subject)) && !(IsManager(actor) && task.AllowManagerExclusionOverride);
 
     private static string RequiredPermission(UserTaskAccessOperation operation) => operation switch
     {
-        UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.ReadProtected => "read:user-tasks",
-        UserTaskAccessOperation.Claim or UserTaskAccessOperation.Release => "claim:user-tasks",
-        UserTaskAccessOperation.Complete => "complete:user-tasks",
-        UserTaskAccessOperation.Assign => "assign:user-tasks",
-        UserTaskAccessOperation.UpdateScheduling => "update:user-tasks",
-        UserTaskAccessOperation.Cancel => "cancel:user-tasks",
-        UserTaskAccessOperation.Manage => "manage:user-tasks",
-        UserTaskAccessOperation.IssueInvitation => "invite:user-tasks",
-        UserTaskAccessOperation.RetryResolution => "manage:user-tasks",
-        _ => "read:user-tasks"
+        UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.ReadProtected => UserTasksPermissions.Read,
+        UserTaskAccessOperation.Claim or UserTaskAccessOperation.Release => UserTasksPermissions.Claim,
+        UserTaskAccessOperation.Complete => UserTasksPermissions.Complete,
+        UserTaskAccessOperation.Assign => UserTasksPermissions.Assign,
+        UserTaskAccessOperation.UpdateScheduling => UserTasksPermissions.Update,
+        UserTaskAccessOperation.Cancel => UserTasksPermissions.Cancel,
+        UserTaskAccessOperation.Manage => UserTasksPermissions.Manage,
+        UserTaskAccessOperation.IssueInvitation => UserTasksPermissions.Invite,
+        UserTaskAccessOperation.RetryResolution => UserTasksPermissions.Manage,
+        _ => UserTasksPermissions.Read
     };
 }
 
