@@ -12,9 +12,14 @@ namespace Elsa.Bpmn.Interchange.Handlers.Notifications;
 /// <summary>
 /// The second net for <see cref="BpmnWorkBinding.UnboundTask"/>. <see cref="Binding.BpmnWorkBinder"/> already
 /// refuses an unbound task at <em>import</em>, but a definition can be edited after import — through Elsa's own
-/// workflow designer, not through the BPMN document — and an edit can remove the activity a task was bound to.
-/// That edit never touches the BPMN document this scope still carries, so it is invisible to the bind-time
-/// refusal; this handler is what catches it before the definition publishes.
+/// workflow designer, not through the BPMN document — and an edit can remove the activity a task was bound to,
+/// or leave the binding pointing at an activity type that has since been uninstalled. Neither edit touches the
+/// BPMN document this scope still carries, so neither is visible to the bind-time refusal; this handler is what
+/// catches both before the definition publishes. The two are reported with different messages: an id with no
+/// bound activity at all is "not bound", while an id resolved through <see cref="IActivitySerializer"/> to a
+/// <see cref="NotFoundActivity"/> - the same placeholder <c>BpmnActivityBindingFormat</c> already refuses at bind
+/// time for the identical reason - is "bound to an activity type that is no longer installed"; an operator needs
+/// to know which.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -74,13 +79,27 @@ public class ValidateBpmnProcessBindings(IWorkflowGraphBuilder workflowGraphBuil
 
             foreach (var element in scope.Process!.Elements)
             {
-                if (!IsUnboundTaskCandidate(element) || IsBound(scope, element.BindingRef!))
+                if (!IsUnboundTaskCandidate(element))
                     continue;
 
-                notification.ValidationErrors.Add(new(
-                    $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{scope.Process.ProcessId}' is not bound to an Elsa activity. "
-                    + "BPMN does not say what this task does; declare an activity binding for it, or remove the element.",
-                    element.ElementId));
+                var boundActivity = FindBoundActivity(scope, element.BindingRef!);
+
+                if (boundActivity is null)
+                {
+                    notification.ValidationErrors.Add(new(
+                        $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{scope.Process.ProcessId}' is not bound to an Elsa activity. "
+                        + "BPMN does not say what this task does; declare an activity binding for it, or remove the element.",
+                        scope.Id));
+                    continue;
+                }
+
+                if (boundActivity is NotFoundActivity notFound)
+                {
+                    notification.ValidationErrors.Add(new(
+                        $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{scope.Process.ProcessId}' is bound to an activity "
+                        + $"type that is no longer installed ('{notFound.MissingTypeName}'). Rebind the element to an installed activity type, or remove it.",
+                        scope.Id));
+                }
             }
         }
     }
@@ -90,7 +109,8 @@ public class ValidateBpmnProcessBindings(IWorkflowGraphBuilder workflowGraphBuil
         && UnboundTaskElementTypes.Contains(element.ElementType)
         && !element.Properties.ContainsKey(BpmnXmlReader.MessageNamePropertyKey);
 
-    private static bool IsBound(BpmnProcess scope, string bindingRef) =>
+    private static IActivity? FindBoundActivity(BpmnProcess scope, string bindingRef) =>
         scope.WorkBindings.TryGetValue(bindingRef, out var activityId)
-        && scope.Activities.Any(activity => string.Equals(activity.Id, activityId, StringComparison.Ordinal));
+            ? scope.Activities.FirstOrDefault(activity => string.Equals(activity.Id, activityId, StringComparison.Ordinal))
+            : null;
 }

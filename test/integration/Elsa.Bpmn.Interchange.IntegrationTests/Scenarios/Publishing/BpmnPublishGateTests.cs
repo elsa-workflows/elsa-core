@@ -37,7 +37,67 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         var result = await PublishAsync(definitionId);
 
         Assert.False(result.Succeeded);
-        Assert.Contains(result.ValidationErrors, error => error.ActivityId == "ServiceTask1");
+        // ActivityId names the containing BpmnProcess node - the real node in the materialized graph - not the BPMN
+        // element id, which resolves to no node there; the element id still appears in the message text.
+        Assert.Contains(result.ValidationErrors, error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
+    }
+
+    [Fact(DisplayName = "A process whose task is bound to a no-longer-installed activity type fails publication, naming the element and the missing type")]
+    public async Task UnboundTaskWithNotFoundActivity_FailsPublication()
+    {
+        // Simulates the module-removed scenario the finding describes without needing to actually uninstall a
+        // module: a NotFoundActivity is exactly what IActivitySerializer hands back when a binding's activity type
+        // can no longer be resolved (see BpmnActivityBindingFormat, which refuses this at bind time for the same
+        // reason), so constructing one directly reproduces the shape a stale WorkBindings entry leaves behind.
+        const string activityId = "notfound-1";
+        const string missingTypeName = "Acme.RemovedActivity";
+        var process = new BpmnProcess
+        {
+            Id = ProcessId,
+            Process = new BpmnProcessDefinition(ProcessId, Elements: [new BpmnElement("ServiceTask1", BpmnElementTypes.ServiceTask, bindingRef: "ref-ServiceTask1")]),
+            WorkBindings = new Dictionary<string, string>(StringComparer.Ordinal) { ["ref-ServiceTask1"] = activityId },
+            Activities =
+            [
+                new NotFoundActivity(missingTypeName: missingTypeName)
+                {
+                    Id = activityId,
+                    // Round-tripped through the JSON activity serializer on save and on publish: ActivityJsonConverter
+                    // re-derives a NotFoundActivity's missing-type identity from this, not from the in-memory
+                    // properties set above, so it needs to look like what that converter itself would have written.
+                    OriginalActivityJson = $$"""{"id":"{{activityId}}","type":"{{missingTypeName}}","version":1}"""
+                }
+            ]
+        };
+
+        var definitionId = await SaveDraftAsync(process);
+        var result = await PublishAsync(definitionId);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.ValidationErrors, error =>
+            error.ActivityId == process.Id
+            && error.Message.Contains("ServiceTask1")
+            && error.Message.Contains("no longer installed")
+            && error.Message.Contains(missingTypeName));
+    }
+
+    [Fact(DisplayName = "A BPMN process composed inside a Flowchart with an unbound task fails publication, naming the element")]
+    public async Task UnboundTaskInsideFlowchartComposedProcess_FailsPublication()
+    {
+        // Proves the justification for reaching the graph through IWorkflowGraphBuilder rather than a hand-rolled
+        // walk of Container.Activities (see this handler's own remarks): a BpmnProcess nested a level deeper, inside
+        // a Flowchart, must still be found and checked.
+        var process = new BpmnProcess
+        {
+            Id = ProcessId,
+            Process = new BpmnProcessDefinition(ProcessId, Elements: [new BpmnElement("ServiceTask1", BpmnElementTypes.ServiceTask, bindingRef: "ref-ServiceTask1")])
+        };
+        var flowchart = new Elsa.Workflows.Activities.Flowchart.Activities.Flowchart { Activities = [process] };
+
+        var definitionId = await SaveDraftAsync(flowchart);
+        var result = await PublishAsync(definitionId);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.ValidationErrors, error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
     }
 
     [Fact(DisplayName = "A process whose tasks are all bound publishes successfully")]
@@ -89,11 +149,7 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         var publishedAfterEdit = await PublishAsync(definitionId);
 
         Assert.False(publishedAfterEdit.Succeeded);
-        Assert.Contains(publishedAfterEdit.ValidationErrors, error => error.ActivityId == "NotifyWarehouse");
+        // Same distinction as above: ActivityId is the containing BpmnProcess's node id, not the removed element's.
+        Assert.Contains(publishedAfterEdit.ValidationErrors, error => error.ActivityId == scope.Id && error.Message.Contains("NotifyWarehouse"));
     }
-
-    private static string Ref(string elementId) => $"ref-{elementId}";
-
-    private BpmnElement BoundElement(string elementId, string elementType, IActivity activity) =>
-        new(elementId, elementType, bindingRef: Ref(elementId), extensions: BpmnActivityBindingFormat.Attach(null, Format.Write(activity)));
 }

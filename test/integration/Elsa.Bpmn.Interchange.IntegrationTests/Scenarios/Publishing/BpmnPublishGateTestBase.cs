@@ -1,8 +1,7 @@
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
-using Elsa.Extensions;
-using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
@@ -15,27 +14,20 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 /// The application <c>ValidateBpmnProcessBindings</c> — the publish-time second net for an unbound task, alongside
 /// <see cref="BpmnWorkBinder"/>'s own bind-time refusal — is exercised in.
 /// </summary>
-public abstract class BpmnPublishGateTestBase : IAsyncLifetime
+/// <remarks>
+/// Derives from <see cref="BpmnBindingTestBase"/> rather than duplicating its container setup and its <c>Ref</c>/
+/// <c>BoundElement</c> helpers: both suites exercise the same binder and format over the same kind of application,
+/// and a definition that publishes here was, in the "edited after import" cases, produced by that same binder.
+/// </remarks>
+public abstract class BpmnPublishGateTestBase : BpmnBindingTestBase
 {
-    private readonly IServiceProvider _services;
-
-    protected BpmnPublishGateTestBase(ITestOutputHelper testOutputHelper)
+    protected BpmnPublishGateTestBase(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
-            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
-            .Build();
-
-        Binder = _services.GetRequiredService<BpmnWorkBinder>();
-        Format = _services.GetRequiredService<BpmnActivityBindingFormat>();
-        DocumentService = _services.GetRequiredService<BpmnInterchangeDocumentService>();
-        Importer = _services.GetRequiredService<IWorkflowDefinitionImporter>();
-        Publisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
-        DefinitionService = _services.GetRequiredService<IWorkflowDefinitionService>();
+        DocumentService = Services.GetRequiredService<BpmnInterchangeDocumentService>();
+        Importer = Services.GetRequiredService<IWorkflowDefinitionImporter>();
+        Publisher = Services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        DefinitionService = Services.GetRequiredService<IWorkflowDefinitionService>();
     }
-
-    protected BpmnWorkBinder Binder { get; }
-
-    protected BpmnActivityBindingFormat Format { get; }
 
     protected BpmnInterchangeDocumentService DocumentService { get; }
 
@@ -44,10 +36,6 @@ public abstract class BpmnPublishGateTestBase : IAsyncLifetime
     protected IWorkflowDefinitionPublisher Publisher { get; }
 
     protected IWorkflowDefinitionService DefinitionService { get; }
-
-    public Task InitializeAsync() => _services.PopulateRegistriesAsync();
-
-    public Task DisposeAsync() => Task.CompletedTask;
 
     /// <summary>Reads a fixture from the <c>Assets</c> directory shipped alongside this test project.</summary>
     protected static string ReadAsset(string fileName) => BpmnAssetReader.Read(fileName);
