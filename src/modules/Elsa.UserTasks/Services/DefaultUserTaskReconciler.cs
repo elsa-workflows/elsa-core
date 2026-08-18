@@ -120,10 +120,14 @@ public sealed class DefaultUserTaskReconciler(
             if (bookmarks.Length == 0)
                 break;
 
-            foreach (var materialization in bookmarks.Select(Deserialize))
+            // OfType drops undeserializable bookmarks and narrows the sequence in one step, so the tenant
+            // filter reads explicitly and no null-forgiving operator is needed downstream.
+            foreach (var materialization in bookmarks
+                         .Select(Deserialize)
+                         .OfType<UserTaskMaterialization>()
+                         .Where(x => string.Equals(x.TenantId, tenantId, StringComparison.Ordinal)))
             {
-                if (materialization == null || !string.Equals(materialization.TenantId, tenantId, StringComparison.Ordinal))
-                    continue;
+                // Stays a guard rather than a filter: it awaits the repository, which LINQ cannot express here.
                 if (await repository.FindByMaterializationKeyAsync(tenantId, MaterializationKey(materialization), cancellationToken) != null)
                     continue;
                 await manager.ProjectAsync(materialization, cancellationToken);
