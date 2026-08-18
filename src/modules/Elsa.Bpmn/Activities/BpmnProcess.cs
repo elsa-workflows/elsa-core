@@ -142,8 +142,10 @@ public class BpmnProcess : Container, ITrigger
     /// never collapsed into each other.
     /// </para>
     /// <para>
-    /// A malformed <c>&lt;timeCycle&gt;</c> interval is refused for its own start event only: the offending element
-    /// is logged and skipped, and every other valid start event on this process still registers. Letting the
+    /// A malformed <c>&lt;timeCycle&gt;</c> interval, and one that parses to a non-positive duration (e.g. <c>PT0S</c>
+    /// or a negative duration — the scheduler treats a non-positive next execution time as "due immediately", so a
+    /// recurring trigger on it would rearm continuously), is refused for its own start event only: the offending
+    /// element is logged and skipped, and every other valid start event on this process still registers. Letting the
     /// exception propagate would not make the failure any louder — <c>TriggerIndexer.TryGetTriggerDataAsync</c>
     /// catches around the whole <see cref="ITrigger.GetTriggerPayloadsAsync"/> call and only logs a warning, so an
     /// unhandled exception here would silently discard every other start on the process, which is the defect this
@@ -162,11 +164,8 @@ public class BpmnProcess : Container, ITrigger
         var payloads = new List<object>();
         var registeredStimuli = new HashSet<(string StimulusName, string ResolvedName)>();
 
-        foreach (var element in process.Elements)
+        foreach (var element in process.Elements.Where(element => string.Equals(element.ElementType, BpmnElementTypes.StartEvent, StringComparison.Ordinal)))
         {
-            if (!string.Equals(element.ElementType, BpmnElementTypes.StartEvent, StringComparison.Ordinal))
-                continue;
-
             foreach (var eventDefinition in element.EventDefinitions)
                 AddStartTriggerPayload(context, element, eventDefinition, registeredStimuli, payloads, logger);
         }
@@ -186,10 +185,11 @@ public class BpmnProcess : Container, ITrigger
         {
             case BpmnEventDefinitionTypes.Message:
             case BpmnEventDefinitionTypes.Signal:
-                if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Name, out var name) && !string.IsNullOrWhiteSpace(name))
+                if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Name, out var name)
+                    && !string.IsNullOrWhiteSpace(name)
+                    && registeredStimuli.Add((RuntimeStimulusNames.Event, name)))
                 {
-                    if (registeredStimuli.Add((RuntimeStimulusNames.Event, name)))
-                        payloads.Add(new NamedTriggerPayload(RuntimeStimulusNames.Event, context.GetEventStimulus(name)));
+                    payloads.Add(new NamedTriggerPayload(RuntimeStimulusNames.Event, context.GetEventStimulus(name)));
                 }
                 break;
 
@@ -213,13 +213,23 @@ public class BpmnProcess : Container, ITrigger
                         break;
                     }
 
+                    if (interval <= TimeSpan.Zero)
+                    {
+                        logger.LogWarning(
+                            "BPMN element '{ElementId}' declares the timer duration '{IsoInterval}', which resolves to a non-positive interval Elsa cannot wait for. "
+                            + "Skipping this start event; the process's other start events still register.",
+                            element.ElementId,
+                            isoInterval);
+                        break;
+                    }
+
                     if (registeredStimuli.Add((SchedulingStimulusNames.Timer, interval.ToString())))
                         payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Timer, context.GetTimerTriggerStimulus(interval)));
                 }
-                else if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Cron, out var cron))
+                else if (eventDefinition.Properties.TryGetValue(BpmnEventDefinitionProperties.Cron, out var cron)
+                         && registeredStimuli.Add((SchedulingStimulusNames.Cron, cron)))
                 {
-                    if (registeredStimuli.Add((SchedulingStimulusNames.Cron, cron)))
-                        payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Cron, new CronTriggerPayload(cron)));
+                    payloads.Add(new NamedTriggerPayload(SchedulingStimulusNames.Cron, new CronTriggerPayload(cron)));
                 }
                 break;
         }

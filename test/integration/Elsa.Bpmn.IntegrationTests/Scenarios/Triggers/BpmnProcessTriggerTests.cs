@@ -147,6 +147,24 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         Assert.Equal("OrderPlaced", payload.EventName);
     }
 
+    [Theory(DisplayName = "A non-positive timer interval is refused for its own start event; every other valid start event on the process still registers")]
+    [InlineData("PT0S")]
+    [InlineData("-PT1S")]
+    public async Task NonPositiveTimerInterval_RefusesOnlyItsOwnStartEvent(string isoInterval)
+    {
+        // XmlConvert.ToTimeSpan parses both PT0S and a negative duration without complaint. Elsa.Scheduling's
+        // scheduler substitutes a ~1ms delay whenever a trigger's next execution time is non-positive, so
+        // registering either as a recurring timer trigger would turn a well-formed .bpmn document into a hot loop.
+        var process = RootScope("non-positive-timer", TimerInterval(isoInterval), Message("OrderPlaced"));
+
+        var triggers = await IndexAsync(process);
+
+        Assert.DoesNotContain(triggers, trigger => trigger.Payload is TimerTriggerPayload);
+
+        var payload = Assert.Single(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>());
+        Assert.Equal("OrderPlaced", payload.EventName);
+    }
+
     [Fact(DisplayName = "A BPMN-nested scope registers no triggers, whatever its own flag says")]
     public async Task BpmnNestedScope_RegistersNoTriggers()
     {
