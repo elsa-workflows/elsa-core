@@ -34,13 +34,12 @@ internal sealed class BpmnScopeHost
     /// Each capability is a claim, honoured elsewhere in this module: subtree cancellation by
     /// <see cref="BpmnWorkTeardown"/>, scope signalling by <see cref="BpmnScopeSignal"/>, iteration scopes by the
     /// applier's per-instance variables, and <see cref="BpmnHostCapabilities.ScopeVariables"/> by
-    /// <see cref="BpmnScopeVariables"/>. Spelled out rather than written as <c>BpmnHostCapabilities.Full</c> on
-    /// purpose: <c>Full</c> would silently grow to include a capability a later library version adds and this host
-    /// has never implemented, which is the one way a declaration can become a lie without anyone editing it.
-    /// The same set goes to <see cref="BpmnGraph.Build"/> and to every snapshot, which the port requires.
+    /// <see cref="BpmnScopeVariables"/>. Defined in terms of <see cref="BpmnRuntimeCapabilities.Declared"/> — see its
+    /// remarks for why the set is spelled out there rather than written as <c>BpmnHostCapabilities.Full</c>, and for
+    /// why that type exists at all. The same set goes to <see cref="BpmnGraph.Build"/> and to every snapshot, which
+    /// the port requires.
     /// </remarks>
-    public const BpmnHostCapabilities Capabilities =
-        BpmnHostCapabilities.SubtreeCancellation | BpmnHostCapabilities.ScopeSignalling | BpmnHostCapabilities.IterationScopes | BpmnHostCapabilities.ScopeVariables;
+    public const BpmnHostCapabilities Capabilities = BpmnRuntimeCapabilities.Declared;
 
     /// <summary>
     /// The property key under which a nested scope's invocation correlation is carried on its own context.
