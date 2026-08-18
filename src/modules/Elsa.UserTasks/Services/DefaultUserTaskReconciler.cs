@@ -89,11 +89,7 @@ public sealed class DefaultUserTaskReconciler(
                         action, task.CompletionData, task.CompletedBy, task.CompletedAt ?? operation.CreatedAt, task.BookmarkId), cancellationToken);
                     requeued++;
                 }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch
+                catch (Exception exception) when (exception is not OperationCanceledException)
                 {
                     // Keep the accepted operation durable for the next bounded pass.
                     await repository.TryMutateAsync(task.TenantId, task.Id, task.Revision, current =>

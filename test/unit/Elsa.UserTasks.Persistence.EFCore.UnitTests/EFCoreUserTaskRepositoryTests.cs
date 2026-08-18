@@ -1,6 +1,11 @@
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Common;
 using Elsa.UserTasks.Contracts;
+using Elsa.UserTasks.Options;
+using Elsa.UserTasks.Services;
+using Elsa.Workflows;
+using Microsoft.Extensions.Options;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Persistence.EFCore;
 using Elsa.UserTasks.Persistence.EFCore.Repositories;
@@ -121,7 +126,7 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         firstTask.Status = UserTaskStatus.Assigned;
         await repository.SaveAsync(firstTask, 1);
         secondTask.Status = UserTaskStatus.Completed;
-        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => repository.SaveAsync(secondTask, 1));
+        await Assert.ThrowsAsync<UserTaskRevisionConflictException>(() => repository.SaveAsync(secondTask, 1));
 
         var excludedTask = CreateTask(DateTimeOffset.UtcNow.AddSeconds(2), actor);
         excludedTask.ExcludedUsers = [actor];
@@ -150,9 +155,62 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         var match = await repository.FindByInvitationTokenHashAsync("HASH-1");
 
         Assert.NotNull(match);
-        Assert.Equal(task.Id, match.Value.Task.Id);
-        Assert.Equal("Complete", Assert.Single(match.Value.Invitation.AllowedActions));
+        var resolved = match!.Value;
+        Assert.Equal(task.Id, resolved.Task.Id);
+        Assert.Equal("Complete", Assert.Single(resolved.Invitation.AllowedActions));
         Assert.Null(await repository.FindByInvitationTokenHashAsync("HASH-UNKNOWN"));
+    }
+
+    [Fact]
+    public async Task Manager_ReturnsARevisionConflictWhenAConcurrentEditWinsAgainstTheRealStore()
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreUserTaskRepository>();
+        var clock = new FixedClock();
+        var manager = new DefaultUserTaskManager(repository, new DefaultUserTaskAccessPolicy(), [],
+            new NoOpResumer(), new NoOpSink(), new SequentialIdentityGenerator(), clock,
+            Microsoft.Extensions.Options.Options.Create(new UserTasksOptions()));
+
+        var subject = new ParticipantReference("tenant-1", "directory", UserTaskParticipantType.User, "u1");
+        var actor = new UserTaskActor(subject, [])
+        {
+            Permissions = new HashSet<string>(["read:user-tasks", "claim:user-tasks", "complete:user-tasks"], StringComparer.OrdinalIgnoreCase)
+        };
+        var task = CreateTask(DateTimeOffset.UtcNow, subject);
+        await repository.AddProjectionAsync(task);
+
+        // Someone else moves the task on, so the revision the caller holds is now stale.
+        var concurrent = (await repository.GetAsync(task.TenantId, task.Id))!;
+        concurrent.Priority = 90;
+        await repository.SaveAsync(concurrent, 1);
+
+        // The store raises its own concurrency exception here. It must surface as the documented
+        // conflict result rather than escaping to the unhandled-error middleware.
+        var result = await manager.ClaimAsync(task.TenantId, task.Id, new(1, "claim-1"), actor);
+
+        Assert.False(result.Accepted);
+        Assert.Equal("revision-conflict", result.ConflictCode);
+    }
+
+    private sealed class FixedClock : ISystemClock
+    {
+        public DateTimeOffset UtcNow { get; } = DateTimeOffset.UtcNow;
+    }
+
+    private sealed class SequentialIdentityGenerator : IIdentityGenerator
+    {
+        private int counter;
+        public string GenerateId() => $"id-{Interlocked.Increment(ref counter)}";
+    }
+
+    private sealed class NoOpResumer : IUserTaskWorkflowResumer
+    {
+        public Task ResumeAsync(UserTask task, UserTaskStimulus stimulus, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private sealed class NoOpSink : IUserTaskNotificationSink
+    {
+        public Task PublishAsync(UserTaskLifecycleNotification notification, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private static UserTaskQuery Query(string tenantId, ParticipantReference subject,

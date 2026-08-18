@@ -33,6 +33,18 @@ public interface IUserTaskFormProvider
     Task<UserTaskFormValidationResult> ValidateAndNormalizeAsync(ResolvedUserTaskForm form, string actionKey, JsonElement data, CancellationToken cancellationToken = default);
 }
 
+/// <summary>
+/// Signals that a task changed between being read and being saved. Every repository translates its own
+/// store-specific concurrency failure into this type, so callers never have to know which provider is
+/// installed to tell a lost optimistic-concurrency race from a genuine fault.
+/// </summary>
+public sealed class UserTaskRevisionConflictException(string taskId, int expectedRevision, Exception? innerException = null)
+    : Exception($"User task '{taskId}' changed before revision {expectedRevision} could be saved.", innerException)
+{
+    public string TaskId { get; } = taskId;
+    public int ExpectedRevision { get; } = expectedRevision;
+}
+
 public interface IUserTaskRepository
 {
     Task<UserTask?> GetAsync(string tenantId, string taskId, CancellationToken cancellationToken = default);
@@ -46,6 +58,7 @@ public interface IUserTaskRepository
     /// provider must never be asked to trust a caller-supplied tenant or task identifier.
     /// </summary>
     Task<(UserTask Task, UserTaskInvitation Invitation)?> FindByInvitationTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default);
+    /// <summary>Throws <see cref="UserTaskRevisionConflictException"/> when the stored revision has moved on.</summary>
     Task SaveAsync(UserTask task, int expectedRevision, CancellationToken cancellationToken = default);
     Task AddProjectionAsync(UserTask task, CancellationToken cancellationToken = default);
 

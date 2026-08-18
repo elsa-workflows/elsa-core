@@ -72,11 +72,20 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
             throw new KeyNotFoundException($"User task '{task.Id}' was not found.");
         var loaded = existing.Value;
         if (loaded.Task.Revision != expectedRevision)
-            throw new DocumentStoreConcurrencyException(StorageUnitName, loaded.Document.Id, expectedRevision, loaded.Document.Version);
+            throw new UserTaskRevisionConflictException(task.Id, expectedRevision);
 
         task.Revision = expectedRevision + 1;
         task.UpdatedAt = DateTimeOffset.UtcNow;
-        await documentStore.SaveAsync(CreateRequest(task, loaded.Document.Version), cancellationToken);
+        try
+        {
+            await documentStore.SaveAsync(CreateRequest(task, loaded.Document.Version), cancellationToken);
+        }
+        catch (DocumentStoreConcurrencyException exception)
+        {
+            // A writer won the race between the read above and this save. Same contract as the other
+            // providers so the caller sees one exception type regardless of the installed store.
+            throw new UserTaskRevisionConflictException(task.Id, expectedRevision, exception);
+        }
     }
 
     public async Task AddProjectionAsync(UserTask task, CancellationToken cancellationToken = default)

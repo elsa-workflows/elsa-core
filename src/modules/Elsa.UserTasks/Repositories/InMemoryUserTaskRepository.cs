@@ -47,9 +47,8 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
             var materialized = Sort(items, query.Sort, query.Descending).ToList();
             if (!string.IsNullOrWhiteSpace(query.Cursor))
             {
-                var cursor = DecodeCursor(query.Cursor!);
-                if (cursor != null)
-                    materialized = materialized.Where(x => IsAfterCursor(x, cursor.Value, query.Descending, query.Sort)).ToList();
+                if (DecodeCursor(query.Cursor!) is { } cursor)
+                    materialized = materialized.Where(x => IsAfterCursor(x, cursor, query.Descending, query.Sort)).ToList();
             }
 
             int? total = query.IncludeTotalCount ? filteredCount : null;
@@ -93,7 +92,7 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         {
             var key = Key(task.TenantId, task.Id);
             if (!_tasks.TryGetValue(key, out var current) || current.Revision != expectedRevision)
-                throw new InvalidOperationException("User Task revision conflict.");
+                throw new UserTaskRevisionConflictException(task.Id, expectedRevision);
 
             var copy = Clone(task);
             copy.Revision = expectedRevision + 1;

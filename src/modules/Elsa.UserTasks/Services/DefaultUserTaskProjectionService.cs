@@ -42,9 +42,9 @@ public sealed class DefaultUserTaskProjectionService(
             UserTaskStatus.Cancelling => UserTaskOperationKind.Cancel,
             _ => (UserTaskOperationKind?)null
         };
-        var operation = expectedOperationKind == null
-            ? null
-            : task.Operations.LastOrDefault(x => x.Status == UserTaskOperationStatus.Accepted && x.Kind == expectedOperationKind.Value);
+        var operation = expectedOperationKind is { } operationKind
+            ? task.Operations.LastOrDefault(x => x.Status == UserTaskOperationStatus.Accepted && x.Kind == operationKind)
+            : null;
         if (task.Status is (UserTaskStatus.Completing or UserTaskStatus.TimingOut or UserTaskStatus.Cancelling) && operation == null)
             return;
         if (operation != null)
@@ -61,7 +61,7 @@ public sealed class DefaultUserTaskProjectionService(
         {
             await repository.SaveAsync(task, expectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return;
         }

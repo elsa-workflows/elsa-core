@@ -51,7 +51,7 @@ public sealed class DefaultUserTaskManager(
                     {
                         snapshotMembers.AddRange(await participantDirectory.EnumerateGroupMembersAsync(group, cancellationToken));
                     }
-                    catch (Exception)
+                    catch (Exception exception) when (exception is not OperationCanceledException)
                     {
                         healthSeverity = UserTaskHealthSeverity.Blocking;
                         healthCode = "snapshot-resolution-failed";
@@ -356,7 +356,7 @@ public sealed class DefaultUserTaskManager(
         {
             await repository.SaveAsync(task, request.ExpectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return Failure(task, request.OperationId, UserTaskOperationKind.Complete, "revision-conflict");
         }
@@ -417,7 +417,7 @@ public sealed class DefaultUserTaskManager(
         {
             await repository.SaveAsync(task, expectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return Failure(task, operationId, UserTaskOperationKind.Timeout, "revision-conflict");
         }
@@ -462,7 +462,7 @@ public sealed class DefaultUserTaskManager(
         {
             await repository.SaveAsync(task, request.ExpectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return Failure(task, request.OperationId, UserTaskOperationKind.Cancel, "revision-conflict");
         }
@@ -489,10 +489,9 @@ public sealed class DefaultUserTaskManager(
 
         if (task.RequestedForm != null)
         {
-            if (_formProviders.TryGetValue(task.RequestedForm.ProviderName, out var provider))
-                task.PinnedForm = await provider.ResolveAsync(task.RequestedForm, cancellationToken);
-            else
-                task.PinnedForm = null;
+            task.PinnedForm = _formProviders.TryGetValue(task.RequestedForm.ProviderName, out var provider)
+                ? await provider.ResolveAsync(task.RequestedForm, cancellationToken)
+                : null;
         }
         UserTaskHealthSeverity? healthSeverity = task.RequestedForm != null && task.PinnedForm == null ? UserTaskHealthSeverity.Blocking : null;
         var healthCode = healthSeverity == UserTaskHealthSeverity.Blocking ? "form-resolution-failed" : null;
@@ -515,7 +514,7 @@ public sealed class DefaultUserTaskManager(
                     {
                         snapshotMembers.AddRange(await participantDirectory.EnumerateGroupMembersAsync(group, cancellationToken));
                     }
-                    catch
+                    catch (Exception exception) when (exception is not OperationCanceledException)
                     {
                         healthSeverity = UserTaskHealthSeverity.Blocking;
                         healthCode = "snapshot-resolution-failed";
@@ -537,7 +536,7 @@ public sealed class DefaultUserTaskManager(
         {
             await repository.SaveAsync(task, request.ExpectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return Failure(task, operationId, UserTaskOperationKind.RetryResolution, "revision-conflict");
         }
@@ -574,7 +573,7 @@ public sealed class DefaultUserTaskManager(
         {
             await repository.SaveAsync(task, expectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return Failure(task, operationId, kind, "revision-conflict");
         }

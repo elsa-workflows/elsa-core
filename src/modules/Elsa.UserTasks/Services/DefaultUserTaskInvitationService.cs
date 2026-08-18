@@ -78,7 +78,7 @@ public sealed class DefaultUserTaskInvitationService(
         {
             await repository.SaveAsync(task, request.ExpectedRevision, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (UserTaskRevisionConflictException)
         {
             return null;
         }

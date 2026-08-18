@@ -40,7 +40,7 @@ public abstract class UserTaskPeriodicWorker(IServiceScopeFactory scopeFactory, 
             {
                 return;
             }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 logger.LogWarning(exception, "A User Tasks background pass failed and will be retried");
             }
@@ -111,7 +111,7 @@ public sealed class UserTaskInvitationDeliveryWorker(IServiceScopeFactory scopeF
                 await dispatcher.DispatchAsync(delivery, cancellationToken);
                 await outbox.CompleteAsync(delivery.Id, cancellationToken);
             }
-            catch (Exception exception)
+            catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 var delays = Options.InvitationDeliveryRetryDelays;
                 var delay = delivery.Attempt < delays.Count ? delays[delivery.Attempt] : delays.Count > 0 ? delays[^1] : TimeSpan.FromMinutes(5);

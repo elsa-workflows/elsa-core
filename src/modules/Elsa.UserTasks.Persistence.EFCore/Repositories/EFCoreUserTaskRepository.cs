@@ -99,7 +99,9 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         catch (DbUpdateConcurrencyException exception)
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw new DbUpdateConcurrencyException($"User task '{task.Id}' changed before revision {expectedRevision} could be saved.", exception);
+            // Translated to the repository contract's exception so callers can distinguish a lost
+            // optimistic-concurrency race from a fault without depending on EF Core.
+            throw new UserTaskRevisionConflictException(task.Id, expectedRevision, exception);
         }
     }
 
@@ -787,7 +789,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         if (existing is null)
             throw new KeyNotFoundException($"User task '{taskId}' was not found.");
         if (existing.Revision != expectedRevision)
-            throw new DbUpdateConcurrencyException($"User task '{taskId}' changed before revision {expectedRevision} could be saved.");
+            throw new UserTaskRevisionConflictException(taskId, expectedRevision);
     }
 
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonOptions);

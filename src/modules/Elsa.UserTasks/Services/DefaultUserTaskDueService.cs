@@ -39,11 +39,7 @@ public sealed class DefaultUserTaskDueService(
                         if (result.Accepted)
                             marked++;
                     }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch
+                    catch (Exception exception) when (exception is not OperationCanceledException)
                     {
                         // The accepted transition remains durable and is repaired by reconciliation if
                         // bookmark delivery failed. Continue scanning other tasks.
