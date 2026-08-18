@@ -145,19 +145,20 @@ public sealed class BpmnInterchangeDocumentService(
         {
             DefinitionId = definitionId ?? string.Empty,
             Name = string.IsNullOrWhiteSpace(name) ? rootDefinition.Name ?? rootDefinition.ProcessId : name,
-            Root = process,
-            CustomProperties = new Dictionary<string, object> { [SourceXmlCustomPropertyKey] = xml }
+            Root = process
         };
 
         var importResult = await importer.ImportAsync(new SaveWorkflowDefinitionRequest { Model = model, Publish = false }, cancellationToken);
 
         // The definition's final Version is only known once the importer/publisher has assigned and persisted it —
         // see SourceVersionCustomPropertyKey's remarks for why that value, specifically, is what staleness is judged
-        // against. It cannot be included in the CustomProperties model built above because nothing before this point
-        // has decided it yet, so it is recorded with a second, explicit save rather than assumed or precomputed.
+        // against. Neither custom property is written until it is known, so both land on this single, explicit save:
+        // if it fails or is cancelled, the definition carries neither key, which Export(WorkflowDefinition) reports
+        // honestly as "never imported" rather than as a partial import that cannot be diagnosed.
         if (importResult.Succeeded)
         {
             var persisted = importResult.WorkflowDefinition;
+            persisted.CustomProperties[SourceXmlCustomPropertyKey] = xml;
             persisted.CustomProperties[SourceVersionCustomPropertyKey] = persisted.Version;
             await store.SaveAsync(persisted, cancellationToken);
         }
@@ -204,18 +205,16 @@ public sealed class BpmnInterchangeDocumentService(
         if (!definition.CustomProperties.TryGetValue<int>(SourceVersionCustomPropertyKey, out var sourceVersion))
         {
             // Distinct from both other refusals: this is not "never imported" (the source text is right there) and
-            // not "stale" (there is no version to compare against yet). ImportAsync records SourceXmlCustomPropertyKey
-            // and SourceVersionCustomPropertyKey with two separate saves, because the definition's own version is
-            // only assigned once the first save persists it — see SourceVersionCustomPropertyKey's remarks. A
-            // definition in exactly this state is one whose import stored the source but did not finish recording
-            // the version it belongs to, most likely because the second save failed or was cancelled after the
-            // first one succeeded.
+            // not "stale" (there is no version to compare against yet). ImportAsync writes SourceXmlCustomPropertyKey
+            // and SourceVersionCustomPropertyKey together, in the single save described in its remarks, so this path
+            // is not reachable through import itself; it is kept as a defence against the same combination arising
+            // some other way — e.g. custom properties edited or migrated directly, outside ImportAsync — where
+            // "whether the source still matches" cannot be verified without a version to compare against.
             throw new BpmnExportUnavailableException(
-                $"Workflow definition '{definition.DefinitionId}' carries BPMN source, but not the definition version it was recorded against. This "
-                + "means the import that stored the source did not finish — the version marker that records what it was imported against was never "
-                + "written, most likely because that request failed or was cancelled partway through. It does not mean this definition was never "
-                + "imported from BPMN, and it does not mean the source is stale; whether it still matches this definition simply cannot be verified. "
-                + "Re-import the document to record a complete, exportable source.");
+                $"Workflow definition '{definition.DefinitionId}' carries BPMN source, but not the definition version it was recorded against, so "
+                + "whether that source still matches this definition cannot be verified. It does not mean this definition was never imported from "
+                + "BPMN, and it does not mean the source is stale — there is simply no version recorded to compare against. Re-import the document to "
+                + "record a complete, exportable source.");
         }
 
         if (sourceVersion != definition.Version)
