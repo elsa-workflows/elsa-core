@@ -707,6 +707,23 @@ internal static class BpmnTestProcesses
             ("evtSubB", Body("second"), "secondHandle"));
     }
 
+    /// <summary>Two code-less catch-all escalation-triggered event subprocesses in one scope, which the library refuses.</summary>
+    public static BpmnProcess TwoCatchAllEscalationEventSubprocesses(BpmnTestLog log)
+    {
+        BpmnProcessDefinition Body(string prefix) => new BpmnProcessBuilder($"{prefix}-escalation-event-subprocess-body")
+            .Element(EventSubprocessStart($"{prefix}Start", Escalation(), interrupting: false))
+            .Task($"{prefix}Handle", bindingRef: BindingRef($"{prefix}Handle"))
+            .EndEvent($"{prefix}End")
+            .ConnectSequence($"{prefix}Start", $"{prefix}Handle", $"{prefix}End")
+            .Build();
+
+        return RefusedEventSubprocessScope(
+            "two-catch-all-escalation-event-subprocesses",
+            log,
+            ("evtSubA", Body("first"), "firstHandle"),
+            ("evtSubB", Body("second"), "secondHandle"));
+    }
+
     /// <summary>A non-interrupting error-triggered event subprocess, which is not legal BPMN and which the library refuses.</summary>
     public static BpmnProcess NonInterruptingErrorEventSubprocess(BpmnTestLog log)
     {
@@ -847,8 +864,10 @@ internal static class BpmnTestProcesses
     private static BpmnElement CompensationHandler(string elementId) =>
         new(elementId, BpmnElementTypes.Task, bindingRef: BindingRef(elementId), isForCompensation: true);
 
-    private static BpmnEventDefinition Escalation(string code) =>
-        new(BpmnEventDefinitionTypes.Escalation, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Code] = code });
+    private static BpmnEventDefinition Escalation(string? code = null) =>
+        code is null
+            ? new(BpmnEventDefinitionTypes.Escalation)
+            : new(BpmnEventDefinitionTypes.Escalation, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Code] = code });
 
     private static BpmnEventDefinition Error() => new(BpmnEventDefinitionTypes.Error);
 

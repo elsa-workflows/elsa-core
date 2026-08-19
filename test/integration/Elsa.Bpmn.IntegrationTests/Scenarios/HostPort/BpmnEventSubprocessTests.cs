@@ -247,6 +247,12 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
     public Task TwoErrorEventSubprocesses_AreRefused() =>
         AssertRefusedAsync(BpmnTestProcesses.TwoErrorEventSubprocesses(_host.Log), "more than one error event subprocess");
 
+    [Fact(DisplayName = "A second code-less catch-all escalation-triggered event subprocess in one scope is refused")]
+    public Task TwoCatchAllEscalationEventSubprocesses_AreRefused() =>
+        AssertRefusedAsync(
+            BpmnTestProcesses.TwoCatchAllEscalationEventSubprocesses(_host.Log),
+            "more than one code-less catch-all escalation event subprocess");
+
     [Fact(DisplayName = "A non-interrupting error-triggered event subprocess is refused")]
     public Task NonInterruptingErrorEventSubprocess_IsRefused() =>
         AssertRefusedAsync(BpmnTestProcesses.NonInterruptingErrorEventSubprocess(_host.Log), "must be interrupting");
