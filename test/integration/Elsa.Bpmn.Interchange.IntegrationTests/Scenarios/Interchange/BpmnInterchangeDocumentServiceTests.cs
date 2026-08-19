@@ -45,6 +45,35 @@ public class BpmnInterchangeDocumentServiceTests(ITestOutputHelper testOutputHel
         Assert.Contains(result.Analysis.Issues, issue => issue.ElementId == "NotifyWarehouse" && issue.Severity == BpmnImportIssueSeverity.Info);
     }
 
+    [Fact(DisplayName = "A non-interrupting error event subprocess is dropped at import, and the rest of the document still imports")]
+    public async Task Import_DropsANonInterruptingErrorEventSubprocess()
+    {
+        // A refusal, not a bug, and not a failed import: error events are always interrupting per BPMN, so the reader
+        // reports the whole <subProcess> as Dropped and reads the rest of the document as written.
+        //
+        // The import succeeding is what proves the drop was total. The dropped body declares an undeclared
+        // <serviceTask>, and an unbound task the binder can see is refused outright -- so a drop that reported the
+        // element but left its bindings behind would surface here as a BpmnBindingException naming 'HandleError',
+        // not as a quietly half-imported process.
+        var xml = ReadAsset("non-interrupting-error-event-subprocess.bpmn");
+
+        var analysis = DocumentService.Analyze(xml);
+
+        var dropped = Assert.Single(analysis.Issues, candidate => candidate.Severity == BpmnImportIssueSeverity.Dropped);
+
+        Assert.Equal("OnError", dropped.ElementId);
+        Assert.Contains("non-interrupting error event subprocess", dropped.Message);
+
+        // The reader's own findings about the dropped body's elements survive the drop, at Info: the body is read
+        // before the rule that drops the element around it is applied. Pinned so a future reader meets it as the
+        // library's behaviour rather than as evidence the drop was partial -- what proves it was total is the import.
+        Assert.Contains(analysis.Issues, candidate => candidate.ElementId == "HandleError" && candidate.Severity == BpmnImportIssueSeverity.Info);
+
+        var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
+
+        Assert.True(imported.ImportResult.Succeeded, string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
+    }
+
     [Fact(DisplayName = "Exporting an imported definition retains foreign extension elements, foreign attributes and waypoints byte-identically")]
     public async Task Export_RetainsForeignContentAndWaypoints()
     {
