@@ -147,6 +147,12 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
         if (BpmnWorkTeardown.FindContext(scopeContext.WorkflowExecutionContext, record.ChildContextId) is not { } childContext)
             return;
 
+        // On the scope-completion path (an armed listener retired when its scope completes), this call is measured
+        // redundant with Elsa's own CompleteActivityAsync, which already cancels a completed container's
+        // non-completed children: see BpmnEventSubprocessTests.MessageEventSubprocess_RetiresTheStillArmedListenerWhenTheScopeCompletes,
+        // where every assertion but the ledger removal above still holds with this call skipped. The ledger removal
+        // is this host's own contribution and is not redundant. The fault-teardown path (BpmnScopeHost, tearing down
+        // a claimed fault's sibling work) is a different call site and was not part of that measurement.
         await BpmnWorkTeardown.CancelSubtreeAsync(childContext, $"element '{cancel.ElementId}', {cancel.Reason}");
     }
 
