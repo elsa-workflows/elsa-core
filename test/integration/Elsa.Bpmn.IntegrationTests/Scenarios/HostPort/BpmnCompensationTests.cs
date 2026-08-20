@@ -88,23 +88,34 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         // Act: the other branch cancels the transaction, which stops the replay's coordinating token.
         await _host.FinishWorkAsync("fraudCheck");
 
-        // Assert: the released entries are registered again, so the cancellation's own replay claims them -- the head
-        // handler starting a second time is both the first half of the release being real *and* the symptom of
-        // valence-works/bpmn#13: BpmnInterpreter.CancelTransaction drops the live work it is abandoning without ever
-        // producing a PendingTeardown/CancelWorkSubtree command for it, so the host's original ledger record and
-        // bookmark for the releaseSeat slot survive untouched alongside the replay's freshly started one. The scope
-        // now holds two live records for the same (BindingRef, IterationId) slot -- pinned below so this fails the
-        // moment the library fix lands, at which point both counts become 1. Filed from here as #7959, closed as
-        // routed upstream; the applier is deliberately unpatched so this stays visible rather than worked around.
+        // Assert: the released entries are registered again, so the cancellation's own replay claims them, and the head
+        // handler starts a second time -- the first half of the release being real.
         //
-        // The flip may not be mechanical. Upstream is choosing between tearing down only the compensation handler it
-        // re-starts and tearing down every abandoned token; the second also cancels transaction branches still in
-        // flight, which can move other scenarios in this suite. Check which shipped when the Bpmn.Semantics pin moves.
+        // The second start is a *replacement*, not a duplicate, and that is what valence-works/bpmn#13 fixed in
+        // Bpmn.Semantics 0.2.0. CancelTransaction used to abandon the live work it was superseding without issuing a
+        // CancelWorkSubtree for it, so the host's original ledger record and bookmark for the releaseSeat slot
+        // survived alongside the replay's freshly started one -- two live records for one (BindingRef, IterationId)
+        // slot, which BpmnHostSnapshot documents as a host obligation never to allow, and which the interpreter's own
+        // BuildLiveWorkHandles then collapses last-wins. Upstream took the wide fix: every token a cancelled
+        // transaction abandons now gets a real teardown, not just the compensation handler being re-started.
+        //
+        // So all three of these are the fix, and each fails differently if it regresses: the handler runs twice
+        // (release), the first run is torn down (teardown), and the slot is left holding exactly one record
+        // (the invariant).
         Assert.Equal(2, _host.Log.Occurrences("executed:releaseSeat"));
+        Assert.Contains("cancelled:releaseSeat", _host.Log.Entries);
 
         var releaseSeatBindingRef = BpmnTestProcesses.BindingRef("releaseSeat");
         var releaseSeatLiveRecords = _host.LiveWorkOf("sub").Count(record => record.BindingRef == releaseSeatBindingRef);
-        Assert.Equal(2, releaseSeatLiveRecords);
+        Assert.Equal(1, releaseSeatLiveRecords);
+
+        // And the invariant holds at the moment that matters, not just once the dust settles. 0.2.0 states the
+        // at-most-one-live-unit-per-slot rule as holding after a command batch is applied in full and in order,
+        // because an interrupting path may emit the replacement StartWork ahead of the CancelWorkSubtree it
+        // supersedes. This snapshot is taken inside the replacement's own execution -- overwritten on each start, so
+        // it is the second one -- and a host that applied the batch out of order, or keyed its ledger by slot rather
+        // than by handle, would be holding two records here even though the count above settles at one.
+        Assert.Equal([releaseSeatBindingRef], _host.Log.Snapshot("liveWork@releaseSeat"));
 
         // And the entry that was claimed but never ran is reached once that head handler finishes: the other half.
         var result = await _host.FinishWorkAsync("releaseSeat");
