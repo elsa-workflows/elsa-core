@@ -21,10 +21,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Links;
 
-[Collection(nameof(IdentityLinkAuthorizationCollection))]
+[Collection(nameof(EndpointSecurityCollection))]
 public class IdentityLinkAuthorizationTests : IAsyncLifetime
 {
     private WebApplication? _app;
@@ -101,6 +102,3 @@ public class IdentityLinkAuthorizationTests : IAsyncLifetime
         }
     }
 }
-
-[CollectionDefinition(nameof(IdentityLinkAuthorizationCollection), DisableParallelization = true)]
-public class IdentityLinkAuthorizationCollection;

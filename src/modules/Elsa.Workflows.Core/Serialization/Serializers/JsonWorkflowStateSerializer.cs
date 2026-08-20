@@ -135,7 +135,7 @@ public class JsonWorkflowStateSerializer : ConfigurableSerializer, IWorkflowStat
     protected override void AddConverters(JsonSerializerOptions options)
     {
         options.Converters.Add(new TypeJsonConverter(_workflowJsonTypeRegistry));
-        options.Converters.Add(new PolymorphicObjectConverterFactory(_workflowJsonTypeRegistry));
+        options.Converters.Add(new PolymorphicObjectConverterFactory(_workflowJsonTypeRegistry, _loggerFactory.CreateLogger<PolymorphicObjectConverter>()));
         options.Converters.Add(new VariableConverterFactory(_workflowJsonTypeRegistry, _loggerFactory));
         options.Converters.Add(new FuncExpressionValueConverter());
     }
