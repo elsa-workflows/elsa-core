@@ -379,7 +379,9 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     /// </summary>
     private void WarnAboutUnaliasedType(Type type)
     {
-        if (_logger == null || !ReportedUnaliasedTypes.TryAdd(type, 0))
+        // Check the level before claiming the once-per-type slot: claiming it first would spend the type's single
+        // report on a call that logs nothing, and the type would then stay silent if the level is raised later.
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Warning) || !ReportedUnaliasedTypes.TryAdd(type, 0))
             return;
 
         _logger.LogWarning(

@@ -21,6 +21,7 @@ public class UnaliasedPayloadWarningTests(ITestOutputHelper testOutputHelper)
     private class UnaliasedPayload { public string? Status { get; set; } }
     private class RepeatedlySerializedPayload { public string? Status { get; set; } }
     private class AliasedPayload { public string? Status { get; set; } }
+    private class PayloadSerializedWhileWarningsOff { public string? Status { get; set; } }
 
     [Fact]
     public void UnaliasedPayload_WarnsNamingTheTypeAndTheRemedy()
@@ -71,6 +72,20 @@ public class UnaliasedPayloadWarningTests(ITestOutputHelper testOutputHelper)
         Assert.Equal("Shipped", Assert.IsAssignableFrom<IDictionary<string, object>>(readBack)["Status"]);
     }
 
+    [Fact]
+    public void WarningSuppressedByLogLevel_IsStillReportedOnceTheLevelIsRaised()
+    {
+        var (serializer, log) = Build();
+        log.Enabled = false;
+        var payload = new PayloadSerializedWhileWarningsOff { Status = "Shipped" };
+
+        serializer.Serialize(StateWith(payload));
+        log.Enabled = true;
+        serializer.Serialize(StateWith(payload));
+
+        Assert.Single(log.Warnings, x => x.Contains(nameof(PayloadSerializedWhileWarningsOff)));
+    }
+
     private static WorkflowState StateWith(object payload) => new()
     {
         Id = "instance-1",
@@ -83,7 +98,9 @@ public class UnaliasedPayloadWarningTests(ITestOutputHelper testOutputHelper)
     {
         var log = new LogCapture();
         var builder = new TestApplicationBuilder(testOutputHelper)
-            .ConfigureServices(services => services.AddLogging(logging => logging.AddProvider(log)));
+            // The capture must be the only provider: IsEnabled on the composite logger is an OR across providers, so
+            // leaving the builder's own xunit provider in place would keep Warning enabled whatever the capture says.
+            .ConfigureServices(services => services.AddLogging(logging => logging.ClearProviders().AddProvider(log)));
 
         if (configureAliases != null)
             builder.ConfigureServices(services => services.Configure(configureAliases));
@@ -95,13 +112,14 @@ public class UnaliasedPayloadWarningTests(ITestOutputHelper testOutputHelper)
     {
         private readonly ConcurrentQueue<string> _warnings = new();
         public IEnumerable<string> Warnings => _warnings;
+        public bool Enabled { get; set; } = true;
         public ILogger CreateLogger(string categoryName) => this;
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
+        public bool IsEnabled(LogLevel logLevel) => Enabled && logLevel >= LogLevel.Warning;
 
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            if (logLevel >= LogLevel.Warning)
+            if (Enabled && logLevel >= LogLevel.Warning)
                 _warnings.Enqueue(formatter(state, exception));
         }
 
