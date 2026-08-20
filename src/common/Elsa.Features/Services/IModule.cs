@@ -51,5 +51,9 @@ public interface IModule
     /// <summary>
     /// Will apply all configured features, causing the <see cref="Services"/> collection to be populated. 
     /// </summary>
+    /// <remarks>
+    /// Features are allowed to introduce additional features from their own <see cref="IFeature.Apply"/> method, e.g. by calling <see cref="Configure{T}(Action{T})"/>.
+    /// Those features are configured and applied as part of the same call.
+    /// </remarks>
     void Apply();
 }
