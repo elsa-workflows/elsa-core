@@ -107,8 +107,35 @@ public class ModuleTests
 
         _module.Apply();
 
-        var hostedServiceTypes = _services.Where(x => x.ServiceType == typeof(IHostedService)).Select(x => x.ImplementationType).ToList();
-        Assert.Equal([typeof(FirstHostedService), typeof(SecondHostedService), typeof(IntroducedHostedService)], hostedServiceTypes);
+        Assert.Equal([typeof(FirstHostedService), typeof(SecondHostedService), typeof(IntroducedHostedService)], GetHostedServiceTypes());
+    }
+
+    [Fact]
+    public void Apply_OrdersHostedServiceOfFeatureIntroducedFromApplyByPriority()
+    {
+        _module.ConfigureHostedService<SecondHostedService>(10);
+        _module.Configure<IntroducingFeature>();
+
+        _module.Apply();
+
+        // The introduced feature configures its hosted service at priority 3, so it has to come first even though it shows up last.
+        Assert.Equal([typeof(IntroducedHostedService), typeof(SecondHostedService)], GetHostedServiceTypes());
+    }
+
+    [Fact]
+    public void Apply_RegistersConfiguredHostedServicesBeforeThoseRegisteredFromApply()
+    {
+        _module.ConfigureHostedService<FirstHostedService>();
+        _module.Configure<HostedServiceRegisteringFeature>();
+
+        _module.Apply();
+
+        Assert.Equal([typeof(FirstHostedService), typeof(SelfRegisteredHostedService)], GetHostedServiceTypes());
+    }
+
+    private List<Type?> GetHostedServiceTypes()
+    {
+        return _services.Where(x => x.ServiceType == typeof(IHostedService)).Select(x => x.ImplementationType).ToList();
     }
 
     private IInstalledFeatureRegistry GetInstalledFeatureRegistry()
@@ -141,6 +168,18 @@ public class ModuleTests
         {
             base.Apply();
             Services.AddSingleton<IntroducedMarker>();
+        }
+    }
+
+    /// <summary>
+    /// Registers a hosted service straight with the service collection, the way <c>WorkflowRuntimeFeature</c> does, rather than through the module.
+    /// </summary>
+    public class HostedServiceRegisteringFeature(IModule module) : RecordingFeature(module)
+    {
+        public override void Apply()
+        {
+            base.Apply();
+            Services.AddHostedService<SelfRegisteredHostedService>();
         }
     }
 
@@ -192,6 +231,8 @@ public class ModuleTests
     }
 
     public class IntroducedHostedService : NoopHostedService;
+
+    public class SelfRegisteredHostedService : NoopHostedService;
 
     public class FirstHostedService : NoopHostedService;
 
