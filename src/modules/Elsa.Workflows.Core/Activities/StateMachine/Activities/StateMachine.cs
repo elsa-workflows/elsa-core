@@ -230,15 +230,7 @@ public class StateMachine : Activity
     private static void RemoveScheduledCompetingTriggers(ActivityExecutionContext context, HashSet<string> competingTriggerIds)
     {
         var scheduler = context.WorkflowExecutionContext.Scheduler;
-        var scheduledWorkItems = scheduler.List().ToList();
-
-        if (!scheduledWorkItems.Any(x => IsCompetingTriggerWorkItem(context, competingTriggerIds, x)))
-            return;
-
-        scheduler.Clear();
-
-        foreach (var workItem in scheduledWorkItems.Where(x => !IsCompetingTriggerWorkItem(context, competingTriggerIds, x)))
-            scheduler.Schedule(workItem);
+        scheduler.RemoveWhere(x => IsCompetingTriggerWorkItem(context, competingTriggerIds, x));
     }
 
     private static bool IsCompetingTriggerWorkItem(ActivityExecutionContext context, HashSet<string> competingTriggerIds, ActivityWorkItem workItem) =>
