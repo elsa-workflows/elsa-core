@@ -90,11 +90,16 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
 
         // Assert: the released entries are registered again, so the cancellation's own replay claims them -- the head
         // handler starting a second time is both the first half of the release being real *and* the symptom of
-        // #7959: BpmnInterpreter.CancelTransaction drops the live work it is abandoning without ever producing a
-        // PendingTeardown/CancelWorkSubtree command for it, so the host's original ledger record and bookmark for
-        // the releaseSeat slot survive untouched alongside the replay's freshly started one. The scope now holds two
-        // live records for the same (BindingRef, IterationId) slot -- pinned below so this fails the moment #7959
-        // lands, at which point it should be changed to assert a single record.
+        // valence-works/bpmn#13: BpmnInterpreter.CancelTransaction drops the live work it is abandoning without ever
+        // producing a PendingTeardown/CancelWorkSubtree command for it, so the host's original ledger record and
+        // bookmark for the releaseSeat slot survive untouched alongside the replay's freshly started one. The scope
+        // now holds two live records for the same (BindingRef, IterationId) slot -- pinned below so this fails the
+        // moment the library fix lands, at which point both counts become 1. Filed from here as #7959, closed as
+        // routed upstream; the applier is deliberately unpatched so this stays visible rather than worked around.
+        //
+        // The flip may not be mechanical. Upstream is choosing between tearing down only the compensation handler it
+        // re-starts and tearing down every abandoned token; the second also cancels transaction branches still in
+        // flight, which can move other scenarios in this suite. Check which shipped when the Bpmn.Semantics pin moves.
         Assert.Equal(2, _host.Log.Occurrences("executed:releaseSeat"));
 
         var releaseSeatBindingRef = BpmnTestProcesses.BindingRef("releaseSeat");
