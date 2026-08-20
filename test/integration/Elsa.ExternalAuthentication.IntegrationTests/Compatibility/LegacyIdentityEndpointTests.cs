@@ -15,12 +15,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Compatibility;
 
 /// <summary>
 /// Protects the existing direct local-credential contracts while the broker-local flow remains additive.
 /// </summary>
+[Collection(nameof(EndpointSecurityCollection))]
 public sealed class LegacyIdentityEndpointTests : IAsyncLifetime
 {
     private readonly IUserCredentialsValidator _credentialsValidator = Substitute.For<IUserCredentialsValidator>();
