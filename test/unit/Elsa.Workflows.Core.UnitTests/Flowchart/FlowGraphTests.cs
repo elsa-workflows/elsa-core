@@ -370,6 +370,38 @@ public class FlowGraphTests
         flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
     }
 
+    // Regression for https://github.com/elsa-workflows/elsa-core/issues/7717.
+    // start ──> approval ──> end
+    //   └─────> reminder ──┐ (self-loop)
+    //              ↑───────┘
+    // When the flow graph is rooted at the structural start, the self-looping reminder branch is reachable.
+    // When it is rooted at the resumed trigger (approval), the reminder branch becomes dangling.
+    [Fact]
+    public void SelfLoopingParallelBranchIsDanglingOnlyWhenRootedAtTrigger()
+    {
+        var start = new TestActivity("start");
+        var approval = new TestActivity("approval");
+        var end = new TestActivity("end");
+        var reminder = new TestActivity("reminder");
+
+        var connections = new List<Connection>
+        {
+            new(start, approval),
+            new(approval, end),
+            new(start, reminder),
+            new(reminder, reminder) // self-loop (periodic reminder)
+        };
+
+        // Rooted at the structural start: the reminder branch is reachable, so it is not dangling.
+        var startRootedGraph = new FlowGraph(connections, start);
+        startRootedGraph.ValidateDanglingActivity(false, reminder);
+
+        // Rooted at the resumed trigger (e.g. an HTTP endpoint): start, and therefore the reminder branch,
+        // are no longer reachable, so the reminder is considered dangling.
+        var triggerRootedGraph = new FlowGraph(connections, approval);
+        triggerRootedGraph.ValidateDanglingActivity(true, reminder);
+    }
+
     class TestActivity : Activity
     {
         public TestActivity(string id)
