@@ -118,6 +118,17 @@ public partial class Flowchart : Container
         }
     }
 
+    /// <summary>
+    /// Checks if the completed activity is a direct child of the flowchart.
+    /// </summary>
+    /// <param name="flowchartContext">The flowchart's execution context.</param>
+    /// <param name="completedActivityContext">The completed activity's execution context.</param>
+    /// <returns>True if the activity is a direct child; otherwise, false.</returns>
+    private static bool IsDirectChild(ActivityExecutionContext flowchartContext, ActivityExecutionContext completedActivityContext)
+    {
+        return completedActivityContext.ParentActivityExecutionContext == flowchartContext;
+    }
+
     private static ValueTask ExecuteBasedOnMode(ActivityExecutionContext context, Func<ValueTask> tokenBasedAction, Func<ValueTask> counterBasedAction)
     {
         var mode = GetEffectiveExecutionMode(context);
