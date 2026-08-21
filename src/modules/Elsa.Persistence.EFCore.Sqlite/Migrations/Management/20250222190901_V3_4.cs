@@ -18,22 +18,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: _schema.Schema);
-
-            migrationBuilder.RenameTable(
-                name: "WorkflowInstances",
-                newName: "WorkflowInstances",
-                newSchema: _schema.Schema);
-
-            migrationBuilder.RenameTable(
-                name: "WorkflowDefinitions",
-                newName: "WorkflowDefinitions",
-                newSchema: _schema.Schema);
-
+            // SQLite does not support schemas, so we only add the column and index without schema qualifiers
             migrationBuilder.AddColumn<bool>(
                 name: "IsExecuting",
-                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 type: "INTEGER",
                 nullable: false,
@@ -41,7 +28,6 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
 
             migrationBuilder.CreateIndex(
                 name: "IX_WorkflowInstance_IsExecuting",
-                schema: _schema.Schema,
                 table: "WorkflowInstances",
                 column: "IsExecuting");
         }
@@ -51,23 +37,11 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
         {
             migrationBuilder.DropIndex(
                 name: "IX_WorkflowInstance_IsExecuting",
-                schema: _schema.Schema,
                 table: "WorkflowInstances");
 
             migrationBuilder.DropColumn(
                 name: "IsExecuting",
-                schema: _schema.Schema,
                 table: "WorkflowInstances");
-
-            migrationBuilder.RenameTable(
-                name: "WorkflowInstances",
-                schema: _schema.Schema,
-                newName: "WorkflowInstances");
-
-            migrationBuilder.RenameTable(
-                name: "WorkflowDefinitions",
-                schema: _schema.Schema,
-                newName: "WorkflowDefinitions");
         }
     }
 }
