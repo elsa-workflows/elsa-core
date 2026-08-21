@@ -32,6 +32,7 @@ using Elsa.Workflows.UIHints.JsonEditor;
 using Elsa.Workflows.UIHints.RadioList;
 using Elsa.Platform.PackageManifest.Generator.Hints;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json.Linq;
 
 namespace Elsa.Workflows.ShellFeatures;
@@ -116,6 +117,8 @@ public class WorkflowsFeature : IShellFeature
             options.AddTypeAlias<JArray>(nameof(JArray));
         });
 
+        services.TryAddSingleton<IOutputConverterRegistry, OutputConverterRegistry>();
+
         services
             // Core.
             .AddScoped<IActivityInvoker, ActivityInvoker>()
@@ -135,6 +138,9 @@ public class WorkflowsFeature : IShellFeature
             .AddSingleton<IActivityDescriber, ActivityDescriber>()
             .AddSingleton<IActivityRegistry, ActivityRegistry>()
             .AddScoped<IActivityRegistryLookupService, ActivityRegistryLookupService>()
+            .AddScoped<IOutputBindingDestinationResolver, OutputBindingDestinationResolver>()
+            .AddSingleton<IOutputConverterSettingsValidator, OutputConverterSettingsValidator>()
+            .AddScoped<IOutputConverterInvoker, OutputConverterInvoker>()
             .AddSingleton<IPropertyDefaultValueResolver, PropertyDefaultValueResolver>()
             .AddSingleton<IPropertyUIHandlerResolver, PropertyUIHandlerResolver>()
             .AddSingleton<IActivityFactory, ActivityFactory>()

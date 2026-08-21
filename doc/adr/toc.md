@@ -10,3 +10,6 @@
 * [8. Empty String as Default Tenant ID](0008-empty-string-as-default-tenant-id.md)
 * [9. Asterisk Sentinel Value for Tenant-Agnostic Entities](0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md)
 * [10. Default Admin User Bootstrap for Initial Identity Access](0010-default-admin-user-bootstrap-for-initial-identity-access.md)
+* [11. Output Conversion Occurs Synchronously at the Binding Boundary](0011-output-conversion-at-binding-is-synchronous.md)
+* [12. Output Converters Use Explicit Stable Identities](0012-output-converters-use-explicit-stable-identities.md)
+* [13. Output Converter Discovery Is Server-Owned](0013-output-converter-discovery-is-server-owned.md)

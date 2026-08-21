@@ -14,6 +14,7 @@ using Elsa.Workflows.ComponentTests.Decorators;
 using Elsa.Workflows.ComponentTests.Materializers;
 using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mocks;
 using Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
+using Elsa.Workflows.ComponentTests.Scenarios.OutputConverters;
 using Elsa.Workflows.ComponentTests.WorkflowProviders;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
@@ -161,6 +162,7 @@ public class WorkflowServer(Infrastructure infrastructure, string url) : WebAppl
             });
 
             services
+                .AddOutputConverter<TestOutputConverter>(TestOutputConverter.Descriptor)
                 .AddSingleton<SignalManager>()
                 .AddScoped<AsyncWorkflowRunner>()
                 .AddSingleton<WorkflowEvents>()
