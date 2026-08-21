@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elsa.Api.Client.HttpMessageHandlers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Polly;
 
 namespace Elsa.Api.Client.Options;
@@ -39,7 +40,14 @@ public class ElsaClientBuilderOptions
     /// <summary>
     /// Gets or sets a delegate that can be used to configure the retry policy.
     /// </summary>
-    public Action<IHttpClientBuilder>? ConfigureRetryPolicy { get; set; } = builder => builder.AddTransientHttpErrorPolicy(p => p.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+    public Action<IHttpClientBuilder>? ConfigureRetryPolicy { get; set; } = builder => builder.AddResilienceHandler("elsa-api-client-retry", pipeline => pipeline.AddRetry(new HttpRetryStrategyOptions
+    {
+        MaxRetryAttempts = 3,
+        Delay = TimeSpan.FromSeconds(2),
+        BackoffType = DelayBackoffType.Exponential,
+        UseJitter = false,
+        ShouldRetryAfterHeader = false
+    }));
 
     /// <summary>
     /// Gets or sets a delegate that can be used to configure the JSON serializer options.
