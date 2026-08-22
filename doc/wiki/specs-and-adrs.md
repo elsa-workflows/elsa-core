@@ -135,7 +135,7 @@ For runtime behavior, read in this order:
 
 1. [bpmn-workflows.md](bpmn-workflows.md)
 2. `Elsa.Bpmn/Activities/BpmnProcess.cs` — the scope activity
-3. `Elsa.Bpmn/Hosting/BpmnWorkLedger.cs` and `BpmnWorkBinder.cs` — work tracking and binding
+3. `Elsa.Bpmn/Hosting/BpmnWorkLedger.cs` — scope work ledger; `Elsa.Bpmn.Interchange/Binding/BpmnWorkBinder.cs` — work binder
 4. `Elsa.Bpmn.Interchange/Binding/BpmnActivityBindingFormat.cs` — `elsa:` vendor extension
 5. `Elsa.Bpmn.Interchange/Features/BpmnInterchangeFeature.cs` — feature registration
 6. `test/integration/Elsa.Bpmn.IntegrationTests` and `Elsa.Bpmn.Interchange.IntegrationTests`

@@ -33,6 +33,8 @@ Shared helpers:
 | Structured log SQLite persistence | SQLite integration test project. |
 | Console log capture, buffering, or endpoints | `Elsa.Diagnostics.ConsoleLogs.UnitTests` or `Elsa.Diagnostics.ConsoleLogs.IntegrationTests`. |
 | OpenTelemetry diagnostics collection or endpoints | `Elsa.Diagnostics.OpenTelemetry.UnitTests` or `Elsa.Diagnostics.OpenTelemetry.IntegrationTests`. |
+| Resilience strategies, contracts, or retry records | `Elsa.Resilience.Core.UnitTests` or `Elsa.Resilience.IntegrationTests`. |
+| BPMN process execution or interchange binding | `Elsa.Bpmn.UnitTests`, `Elsa.Bpmn.Interchange.UnitTests`, `Elsa.Bpmn.IntegrationTests`, or `Elsa.Bpmn.Interchange.IntegrationTests`. |
 | Dashboard API endpoints or aggregation logic | `Elsa.Dashboard.Api.UnitTests`. |
 | AI/Weaver abstractions or host behavior | `Elsa.AI.Abstractions.UnitTests`, `Elsa.AI.Host.UnitTests`, or `Elsa.AI.IntegrationTests`. |
 | Persistence vNext store or physicalization logic | `Elsa.Persistence.VNext.UnitTests`. |
