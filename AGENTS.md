@@ -83,7 +83,7 @@ Before handing off changes, verify the following when applicable:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `specs/012-weaver-grounding-tools/plan.md`.
+shell commands, and other important information, read `specs/013-user-tasks/plan.md`.
 <!-- SPECKIT END -->
 
 ## Active Technologies

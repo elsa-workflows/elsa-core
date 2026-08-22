@@ -13,3 +13,5 @@
 * [11. Output Conversion Occurs Synchronously at the Binding Boundary](0011-output-conversion-at-binding-is-synchronous.md)
 * [12. Output Converters Use Explicit Stable Identities](0012-output-converters-use-explicit-stable-identities.md)
 * [13. Output Converter Discovery Is Server-Owned](0013-output-converter-discovery-is-server-owned.md)
+* [14. Use Identity-Neutral Participant References for User Tasks](0014-identity-neutral-user-task-participants.md)
+* [15. Project User Tasks from Committed Workflow Bookmarks](0015-project-user-tasks-from-committed-bookmarks.md)
