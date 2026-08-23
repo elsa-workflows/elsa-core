@@ -147,7 +147,7 @@ BPMN interchange reuses `workflows/definitions`: analyze and export require `vie
 
 ## Migration mapping
 
-The authoritative source for `docs/migrations/authorization-model.md`. Full legacy strings, so it is checkable mechanically.
+The source for [`docs/migrations/authorization-model.md`](../../../docs/migrations/authorization-model.md), which is the operator-facing guide and is published alongside this contract. Full legacy strings, so it is checkable mechanically.
 
 **Several mappings expand rather than rename**, because some new sub-resources are granularity increases. A migration must expand, not substitute.
 
