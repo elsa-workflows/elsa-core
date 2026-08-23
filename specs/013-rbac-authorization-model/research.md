@@ -136,7 +136,7 @@ Concrete problems with the proposed encoding:
 - **`All = 127` spans two unnamed bits (16 and 64).** `All` and `Manage|Settings` (63) differ by a
   bit with no meaning. Aggregates must be *derived from named members*, never written as literals.
 - **A stored aggregate freezes at grant time.** Add `Export = 64` later and a role holding `31`
-  does not get it. That is the *safe* behaviour and I'd keep it — but it must be an explicit,
+  does not get it. That is the *safe* behavior and I'd keep it — but it must be an explicit,
   documented decision, because administrators read "Manage" as "everything".
 - **`Settings = 32` sits outside `Manage`**, so "Manage" doesn't manage settings. Defensible,
   surprising, must be documented.
@@ -269,7 +269,7 @@ at login. What remains is closing the gaps that make the current per-tenant prom
 16. **Tenant scoping for `Elsa.Secrets`** — `Secret` is a POCO with no `TenantId`. Per-tenant
     secrets access control is unenforceable until the data is partitioned. Sizeable on its own;
     may warrant a separate ticket.
-17. **Host-scoped vs tenant-scoped roles**, modelled on `ConnectionScope(Host | DefaultTenant | Tenant)`
+17. **Host-scoped vs tenant-scoped roles**, modeled on `ConnectionScope(Host | DefaultTenant | Tenant)`
     from External Authentication, using the `"*"` agnostic sentinel. Answers "who administers the
     platform", which the proposal's *never shared across tenants* rule leaves no room for.
 
@@ -285,7 +285,7 @@ editor UI.
 ## Verification
 
 - Unit: `PermissionScope` aggregate derivation; `IPermissionEvaluator` matcher table
-  (`*`, `read:*`, hierarchical prefixes, mask containment, `scope: 0` denies everything) —
+  (`*`, hierarchical prefixes, verb matching, absence denies) — *superseded in detail by D13; `tasks.md` carries the authoritative verification* —
   alongside the existing [RoleAuthorizationServiceTests.cs](test/unit/Elsa.Identity.UnitTests/Services/RoleAuthorizationServiceTests.cs).
 - Guard test: enumerate every `ElsaEndpoint*` type and assert a declared permission or
   `AllowAnonymous`; assert every declared permission resolves to a registered descriptor.
@@ -318,7 +318,7 @@ convention of `docs/migrations/external-authentication-persistence.md`. Fails cl
 
 **D3 — `All = ~0u`, not a finite literal, and not a wrapper type.** Forward-widening falls out of
 the arithmetic: `All & <future bit> == <future bit>` passes, while a named aggregate like
-`Manage = View|Create|Update|Delete|Execute` stays frozen. One integer, both behaviours, no
+`Manage = View|Create|Update|Delete|Execute` stays frozen. One integer, both behaviors, no
 sentinel and no discriminated union. The proposal's `All = 127` is the right idea with the wrong
 literal. Superuser `*` stops being special-cased entirely — it is just `("*", All)`, collapsing the
 15 hand-rolled `PermissionNames.All` sites into one evaluator call.
@@ -527,7 +527,7 @@ vocabulary reflects the API shape rather than imposing uniformity on it. Never-b
 default-role list is a distinct thing being administered — the roles granted to a user auto-created for
 an unknown external identity — so it earns a resource. "Unrestricted" is a *mode* of one action on one
 configuration, not a thing, so it stays a verb. The tier relationship (`mayDelegate = unrestricted ||
-hasDelegate`) lives in `DefaultPermissionDelegationAuthorizer` and is deliberately not modelled;
+hasDelegate`) lives in `DefaultPermissionDelegationAuthorizer` and is deliberately not modeled;
 FR-009's absence of verb implication is correct, not a gap.
 *Finding, not caused by this work:* the `roles:assign` descriptor overstates its reach. Setting
 `defaultRoleIds` is guarded by `RoleAuthorizationService.CanAssignRolesAsync`, the ordinary
@@ -681,3 +681,38 @@ resource and one verb, so "needs link rights *and* user read" cannot be stated d
 `/user-options` is the first case to want it, and `ExternalAuthenticationRoleDeletionDependencyContributor`
 already does it imperatively across three permissions. Not needed for this work; recorded so the next
 case is not solved ad hoc.
+
+**D27 — Review findings on PR #7978 (2026-08-23).** Automated review surfaced several genuine gaps;
+recorded because two changed the model rather than the prose.
+
+**A bare `*` parses as `*:*`.** FR-021 forbids a superuser sentinel, while D2 requires a stored `*` to
+keep authorizing so no instance can lock itself out — and the seed default is `["*"]`. Those look
+contradictory. They are reconciled at the *parse* layer, not the evaluation layer: a permission string
+with no `:` consisting solely of `*` normalizes to resource `*`, verb `*`. The evaluator never sees a
+sentinel, so FR-021 holds, and the migration table's `*` → `*:*` is a normalization rather than a
+behavioral change.
+
+**Wildcards are validated structurally, not against the catalog.** `workflows/*` matches no single
+descriptor and `*` is deliberately absent from every resource's supported verbs, so naive descriptor
+validation would reject the very grants US1 is built on. Concrete resources and verbs are validated
+against the registry; wildcard segments are accepted whenever syntactically well formed, **including
+when they currently match nothing** — a grant naming a module that is not yet installed must survive,
+because installing it later is what gives the grant meaning. New FR-012a, and T022a/T022b, which also
+close a real gap: the role write paths persist `request.Permissions` after only the caller-subset
+check, and no task had wired registry validation into them.
+
+**Counts were wrong in three places.** The tree carries **47 resources and 23 verbs** (6 core, 17
+module-specific); the PR body said 45/21 and the tracking issue 44/21. The figures drifted as
+`external-authentication/descriptors` and `policies/default-roles` were added. Corrected everywhere,
+and the post-design constitution re-check now records the 17 module-specific verbs explicitly as a
+Principle VII note rather than leaving the count unexamined.
+
+**Three sequencing and coverage gaps in `tasks.md`.** T025 asserted endpoint-to-descriptor resolution
+during Phase 2, when endpoints still declare legacy strings — scoped to descriptor consistency, with
+resolution left to the cutover gate T041. The security stamp changes the Identity schema but its
+migrations sat in Phase 5, which would have made Phase 4 non-shippable — T047a now carries them.
+`RoleAuthorizationService` gains wildcard containment semantics with no test — T038a added.
+
+**The catalog and reach report are registry snapshots, not token projections.** The staleness guidance
+had told clients all three responses reflect the caller's token, which would have produced incorrect
+caching for two of them.

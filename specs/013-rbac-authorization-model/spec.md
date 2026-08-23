@@ -27,7 +27,7 @@ Both axes are open and string-keyed, because Elsa is a framework that third part
 - The permission vocabulary is a clean break. Canonical form is `{resource}:{verb}`, reversing today's `{verb}:{resource}`. The existing scheme is ad hoc and carries three competing conventions; it is replaced rather than preserved.
 - The resource axis is hierarchical with prefix matching. `/` separates depth, `:` separates resource from verb: `workflows/definitions:view`, `workflows/*:view`, `*:*`.
 - Wildcards are the only construct with forward reach, on either axis: `workflows/*` covers resources registered later, `definitions:*` covers verbs added later, and `*:*` is superuser without a special case.
-- Aggregates are not part of the model and no verb implies another, matching both Elsa's current behaviour and the original proposal's own worked example. `manage` is a user-interface preset, not a model concept.
+- Aggregates are not part of the model and no verb implies another, matching both Elsa's current behavior and the original proposal's own worked example. `manage` is a user-interface preset, not a model concept.
 - Descriptors declare which verbs each resource supports. This is required regardless — to render a role editor, validate a submitted grant, and report the current reach of a wildcard grant.
 - Storage is unchanged. `Role.Permissions` stays a string collection holding flat `{resource}:{verb}` entries.
 - Legacy permission strings stop matching. A startup validator reports them loudly and a migration document carries the full mapping. Operators of the requesting deployment have confirmed they will migrate rather than requiring a compatibility layer.
@@ -48,7 +48,7 @@ An administrator creates a "Workflow Operator" role that may view everything und
 
 A role holding no grant for a resource is refused, and an endpoint whose author forgot to declare a permission does not silently become public.
 
-**Acceptance**: A caller with no matching grant receives 403. A build or startup gate fails when an in-repository endpoint declares neither a permission nor anonymous access.
+**Acceptance**: A caller with no matching grant receives 403. An automated build-time gate fails when an in-repository endpoint declares none of a permission, anonymous access, or authenticated-only access.
 
 ### User Story 3 - Discover the Permission Catalog (Priority: P1)
 
@@ -60,7 +60,7 @@ A role editor renders the full set of grantable permissions, grouped for a human
 
 A client conditionally renders its interface — hiding sections, disabling actions, showing read-only states — from a single call, without probing endpoints.
 
-**Acceptance**: `GET /identity/me/permissions` returns the caller's effective grants for the current tenant context. Resources the caller cannot access are present with an empty scope rather than absent, so a client can distinguish "denied" from "unknown".
+**Acceptance**: `GET /identity/me/permissions` returns the caller's effective grants for the current tenant context. Resources the caller cannot access are present with an empty verb list rather than absent, so a client can distinguish "denied" from "unknown".
 
 ### User Story 5 - Migrate an Existing Deployment (Priority: P2)
 
@@ -95,9 +95,9 @@ Two tenants each define a role named `Admin` without collision, and neither can 
 ### Edge Cases
 
 - A grant whose resource matches but whose verb does not is refused; a partial match never partially authorizes.
-- A scope of zero is a valid stored state meaning no access, and never authorizes.
+- A role holding no grant for a resource is denied; absence is denial, and there is no stored value meaning "no access".
 - A wildcard grant confers access to resources registered after the grant was authored. This is intended; the catalog makes current reach inspectable.
-- A verb outside a resource's declared set is rejected at role-authoring time rather than silently stored.
+- A *concrete* verb outside a resource's declared set, or a concrete resource with no descriptor, is rejected at role-authoring time. Wildcard segments are validated structurally and are accepted even when they currently match nothing, so a grant against a not-yet-installed module survives.
 - A permission string containing a comma is rejected, because the persistence converter joins collections with commas.
 - Two tenants holding roles of the same name must not collide, and a role must never resolve across a tenant boundary.
 - A caller authenticated by API key resolves grants through the application's roles by the same evaluator as an interactive user.
@@ -124,6 +124,7 @@ Two tenants each define a role named `Admin` without collision, and neither can 
 
 - **FR-011**: Every module exposing protected endpoints MUST contribute permission descriptors through a registry hosted in core rather than in an optional module.
 - **FR-012**: A descriptor MUST declare the resource, its supported verbs, display name, description, and category.
+- **FR-012a**: Role create and update MUST reject a concrete resource with no registered descriptor, and a concrete verb outside that resource's supported verbs. Wildcard segments MUST be validated structurally only.
 - **FR-013**: The catalog MUST be exposed through an endpoint suitable for driving a role editor, and MUST mark verbs outside the recommended core set.
 - **FR-014**: Every permission declared by an in-repository endpoint MUST resolve to a registered descriptor, verified by an automated gate.
 - **FR-015**: The catalog MUST be able to report the resources a given wildcard grant currently covers.
@@ -133,7 +134,7 @@ Two tenants each define a role named `Admin` without collision, and neither can 
 - **FR-016**: All *permission* decisions MUST route through a single evaluator. Authorization concerns that are not permission checks — notably read-only mode — are a separate axis and MUST retain their own enforcement.
 - **FR-017**: The existing hand-rolled permission-claim inspections, named-policy permission checks, and SignalR hub permission checks MUST be replaced by calls to that evaluator. This does NOT extend to the mid-handler `NotReadOnlyPolicy` calls in the workflow API: those enforce deployment read-only mode rather than a permission, and folding them into the permission evaluator would conflate two independent axes.
 - **FR-018**: Endpoints MUST declare their requirement as a resource constant plus a verb, with the resource constant shared with the descriptor declaration.
-- **FR-019**: Every in-repository endpoint MUST declare exactly one of: a required permission, anonymous access, or authenticated-only access. An endpoint declaring none MUST fail an automated gate. The authenticated-only state exists so that a deliberate "needs an identity but no grant" choice is distinguishable from an author's omission.
+- **FR-019**: Every in-repository endpoint MUST declare exactly one of: a required permission, anonymous access, or authenticated-only access. An endpoint declaring none MUST fail an automated build-time coverage gate. The authenticated-only state exists so that a deliberate "needs an identity but no grant" choice is distinguishable from an author's omission.
 - **FR-020**: A failed authorization check MUST return 403.
 - **FR-021**: Superuser access MUST be expressed within the model as the whole-vocabulary grant `*:*`, not as a special-cased sentinel.
 

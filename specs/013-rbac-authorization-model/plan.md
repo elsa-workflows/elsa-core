@@ -34,7 +34,7 @@ Storage is unchanged: `Role.Permissions` remains a string collection of flat `{r
 
 **Constraints**: No new infrastructure may become a prerequisite for correct authorization — in particular the optional security stamp must not depend on cross-node cache invalidation, which Elsa does not have (`ChangeTokenSignalInvoker` is per-process). Elsa remains the only authority expanding roles into permission claims ([ADR 0009](../../docs/adr/0009-match-unlinked-identities-with-trusted-user-matchers.md)). Permission strings may not contain commas. No cross-tenant principal is introduced.
 
-**Scale/Scope**: Approximately 45 resources rising as modules contribute descriptors; 160 endpoint files; 174 declaration call sites; hand-rolled claim inspections across 15 files; 3 named-policy usages; 4 SignalR hubs. A further 15 mid-handler `NotReadOnlyPolicy` calls exist but are out of scope — read-only mode is a separate axis.
+**Scale/Scope**: 47 resources and 23 verbs at publication, rising as modules contribute descriptors; 160 endpoint files; 174 declaration call sites; hand-rolled claim inspections across 15 files; 3 named-policy usages; 4 SignalR hubs. A further 15 mid-handler `NotReadOnlyPolicy` calls exist but are out of scope — read-only mode is a separate axis.
 
 ## Constitution Check
 
@@ -84,7 +84,7 @@ src/common/Elsa.Api.Common/
 │   ├── IPermissionDescriptorProvider.cs
 │   ├── IPermissionDescriptorRegistry.cs
 │   └── DefaultPermissionDescriptorRegistry.cs
-├── Abstractions/Endpoints.cs           # RequirePermission(resource, scope); collapse 6 duplicates
+├── Abstractions/Endpoints.cs           # RequirePermission(resource, verb); collapse 6 duplicates
 ├── PermissionNames.cs                  # reduced to claim type and the whole-vocabulary grant
 └── EndpointSecurityOptions.cs          # remove dead role-name fields
 
@@ -101,7 +101,7 @@ src/modules/Elsa.Common/Services/MemoryStore.cs                          # tenan
 
 ## Phase 0: Research
 
-Complete. See [research.md](research.md) for the grounded assessment and the twelve decisions (D1–D12) that this plan implements. Two findings materially shaped the design and are recorded there rather than restated: the resource axis had to become hierarchical for the model to remove the need for a coarse second gate, and `Elsa.Caching` provides no distributed invalidation, which constrains the revocation design.
+Complete. See [research.md](research.md) for the grounded assessment and the decision record D1–D26 that this plan implements. Note that D1–D12 are partly superseded — most importantly D3 by D13, which opened the verb axis — so the governing set is the record as a whole, not its first twelve entries. Two findings materially shaped the design and are recorded there rather than restated: the resource axis had to become hierarchical for the model to remove the need for a coarse second gate, and `Elsa.Caching` provides no distributed invalidation, which constrains the revocation design.
 
 ## Phase 1: Data Model and Contracts
 
@@ -113,7 +113,7 @@ The resource tree is the highest-value artefact to review early: it is the vocab
 
 ### Milestone 1: Model and Evaluator
 
-Additive only; nothing changes behaviour.
+Additive only; nothing changes behavior.
 
 - `CoreVerbs`, `Permission`, `PermissionMatcher`, `IPermissionEvaluator` and its implementation.
 - Promote the descriptor registry from `Elsa.ExternalAuthentication` into `Elsa.Api.Common`, leaving type-forwarding shims so External Authentication keeps compiling.
@@ -140,7 +140,7 @@ The breaking change. One pull request per module.
 
 ### Milestone 4: Introspection, Revocation, and Audit
 
-- `GET /identity/me/permissions`, including denied resources with empty scope.
+- `GET /identity/me/permissions`, including denied resources with an empty `verbs` array.
 - Access-token lifetime default lowered from 1 hour to **15 minutes**, documented as the revocation bound. Refresh already rotates both tokens and re-reads roles, so no client change is required; refresh-token lifetime is unchanged at 2 hours.
 - Optional per-principal security stamp with a per-node cache and configurable interval, dependent on no new infrastructure.
 - Typed security notifications for role and assignment mutations, per [ADR 0007](../../docs/adr/0007-publish-audit-ready-security-notifications.md).
@@ -157,7 +157,17 @@ Excluded: `Elsa.Secrets` tenancy, tracked as [#7972](https://github.com/elsa-wor
 
 ## Post-Design Constitution Re-check
 
-To be completed after Phase 1 artefacts exist, with particular attention to Principle VII: the resource tree must not acquire depth or verbs beyond what endpoints actually distinguish.
+*GATE: performed 2026-08-23, after the Phase 1 contracts landed. PASS.*
+
+| Principle | Verdict | Evidence |
+| --- | --- | --- |
+| I. Modular Architecture | PASS | Model and evaluator in `Elsa.Api.Common`; each module owns its own resources. The descriptor registry moves out of an optional module into core, correcting an existing inversion. |
+| II. Composition & Extensibility | PASS | Both axes open and module-contributed; third-party modules keep working through an obsolete-but-functional declaration path with graceful degradation. |
+| III. Convention-Driven Design | PASS | Follows the proven `Permissions/<Module>Permissions.cs` pattern; verb coherence is convention (a recommended core set) rather than enforcement. American English throughout. |
+| IV. Async & Pipeline Execution | PASS | Evaluation is synchronous and allocation-light by design; catalog contribution and introspection follow existing async contracts. |
+| V. Testing Discipline | PASS | Unit, integration, regression, plus the coverage gate as a deliverable. |
+| VI. Trunk-Based Development | PASS | Milestones independently shippable; the cutover is one PR per module, landing in any order. |
+| VII. Simplicity, SRP, DRY & KISS | PASS with a note | Two axes, one matching rule shape, one wildcard; no enumeration, mask, aggregates, second gate or sentinel. **Note**: the tree carries 47 resources and 23 verbs, of which 17 verbs are module-specific and used once or twice. Each traces to a distinction an existing endpoint already makes, and the alternative — a closed verb set — was measured and rejected in D13. Re-examine at Milestone 2 if any module proposes a verb no endpoint distinguishes. |
 
 ## Complexity Tracking
 

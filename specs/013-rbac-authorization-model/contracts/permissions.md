@@ -21,6 +21,10 @@ Including the node itself is deliberate — it is how an administrator reads "gr
 
 Wildcards are the only construct with forward reach: they cover resources and verbs registered in later releases. There are no aggregates, and no verb implies another.
 
+**A bare `*` parses as `*:*`.** A permission string containing no `:` and consisting solely of `*` is normalized at parse time to resource `*`, verb `*`. This is a parsing rule, not an evaluation special case, so FR-021 holds: the evaluator never sees a sentinel and superuser is an ordinary grant. It is what allows the seeded admin role (`DefaultAdminUserOptions.AdminRolePermissions`, defaulting to `["*"]`) and any stored `*` to keep authorizing across the migration without a lock-out window, and it is why the migration table maps `*` to `*:*` as a normalization rather than a behavioral change.
+
+**Wildcards are valid in grants and are validated structurally, not against the catalog.** A grant may name a wildcard resource, a wildcard verb, or both. Because `workflows/*` matches no single descriptor and `*` is deliberately absent from any resource's supported verbs, descriptor validation applies only to *concrete* grants: a concrete resource must be registered, and a concrete verb must appear in that resource's supported verbs. A wildcard segment is accepted whenever it is syntactically well formed, including when it currently matches nothing — a grant written against a module that is not yet installed must survive, since installing the module later is what gives it meaning. The reach report is how an author sees what a wildcard covers today.
+
 ## Core verbs (convention, not enforcement)
 
 | Verb | Meaning |
@@ -71,7 +75,7 @@ Verbs marked ★ are module-specific.
 
 The nine `workflows/descriptors/*` resources stay distinct because the hierarchy already collapses them — `workflows/descriptors/*:view` grants all nine — so distinctness costs nothing and preserves the option to withhold one.
 
-BPMN interchange reuses `workflows/definitions`: analyse and export require `view`, import requires `write`.
+BPMN interchange reuses `workflows/definitions`: analyze and export require `view`, import requires `write`.
 
 **`exec:csharp-expressions` and `exec:python-expressions` are not carried forward.** See [research.md](../research.md) D21 and [#7975](https://github.com/elsa-workflows/elsa-core/issues/7975). They conflated an incoherent execution-side gate with a meaningful authoring-side one; the host switch (`AllowHostCodeExecution`) becomes the single control. This is a deliberate reduction in control and must be prominent in the migration document.
 
@@ -108,7 +112,7 @@ BPMN interchange reuses `workflows/definitions`: analyse and export require `vie
 
 **Connections have no hard delete.** `DELETE /connections/{connectionId}` maps to the archive permission and is paired with `restore`; enable and disable map to update. The absence of `delete` here is correct, not an omission.
 
-`delegate` and `delegate-unrestricted` govern which Elsa permissions an external claim mapping may confer: `delegate` allows mapping only permissions the actor already holds, `delegate-unrestricted` lifts that restriction. They are a **privilege tier**, not sibling actions — `DefaultPermissionDelegationAuthorizer` computes `mayDelegate = unrestricted || hasDelegate`. That implication stays application logic in the module and is deliberately not modelled; FR-009's absence of verb implication is correct, not a gap. Both remain verbs because "unrestricted" is a mode of one action, not a thing being administered.
+`delegate` and `delegate-unrestricted` govern which Elsa permissions an external claim mapping may confer: `delegate` allows mapping only permissions the actor already holds, `delegate-unrestricted` lifts that restriction. They are a **privilege tier**, not sibling actions — `DefaultPermissionDelegationAuthorizer` computes `mayDelegate = unrestricted || hasDelegate`. That implication stays application logic in the module and is deliberately not modeled; FR-009's absence of verb implication is correct, not a gap. Both remain verbs because "unrestricted" is a mode of one action, not a thing being administered.
 
 `policies/default-roles` is a sub-resource because the default-role list — the roles granted to a user auto-created for an unknown external identity — genuinely is a distinct thing being administered.
 
@@ -210,10 +214,10 @@ The authoritative source for `docs/migrations/authorization-model.md`. Full lega
 | `external-authentication:connections:archive` | `external-authentication/connections:archive` |
 | `external-authentication:connections:test` | `external-authentication/connections:test` |
 | `external-authentication:connections:preview` | `external-authentication/connections:preview` |
-| `external-authentication:links:manage` | `external-authentication/identity-links:view` **+** `:write` **+** `:delete` |
+| `external-authentication:links:manage` | `external-authentication/identity-links:view` **+** `external-authentication/identity-links:write` **+** `external-authentication/identity-links:delete` |
 | `external-authentication:sessions:read` | `external-authentication/sessions:view` |
 | `external-authentication:sessions:revoke` | `external-authentication/sessions:revoke` |
-| `external-authentication:policies:manage` | `external-authentication/policies:view` **+** `:update` |
+| `external-authentication:policies:manage` | `external-authentication/policies:view` **+** `external-authentication/policies:update` |
 | `external-authentication:roles:assign` | `external-authentication/policies/default-roles:update` |
 | `external-authentication:provider-trust:unsafe` | `external-authentication/provider-trust:override` |
 | `external-authentication:permissions:delegate` | `external-authentication/permission-grants:delegate` |

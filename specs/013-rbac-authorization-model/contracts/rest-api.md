@@ -2,7 +2,15 @@
 
 **Status**: Draft for review
 
-Two read-only endpoints support role authoring and client-side rendering. Both live in `Elsa.Identity` under the standard Elsa route prefix (`elsa/api` by default) and are themselves permission-guarded.
+Three read-only endpoints support role authoring and client-side rendering. All live in `Elsa.Identity` under the standard Elsa route prefix (`elsa/api` by default), but they do not share an access requirement:
+
+| Endpoint | Access | Purpose |
+| --- | --- | --- |
+| `GET /identity/permissions` | `identity/roles:view` | The catalog a role editor renders |
+| `GET /identity/permissions/reach` | `identity/roles:view` | What a wildcard grant currently covers |
+| `GET /identity/me/permissions` | authenticated only | The caller's own effective grants |
+
+The first two are permission-guarded because they describe what roles *can* contain. The third is deliberately not: any authenticated principal may ask what it holds.
 
 ## `GET /identity/permissions` — the catalog
 
@@ -95,4 +103,10 @@ Three properties matter here:
 
 ## Staleness
 
-All three responses reflect the caller's token, which carries permission claims issued at sign-in. A role change therefore takes effect on the next token issuance, bounded by the access-token lifetime, or sooner where the optional security stamp is enabled. Clients that surface role administration should refresh after a change rather than assuming the response is live.
+The three endpoints have different freshness characteristics, and clients should not cache them alike.
+
+**The catalog and the reach report are registry snapshots.** They describe what the server has registered, not what the caller holds, so they are unaffected by role changes and token issuance. They change only when installed modules change, which for most deployments means on restart.
+
+**`GET /identity/me/permissions` reflects the caller's token**, which carries permission claims issued at sign-in. A role change therefore takes effect on the next token issuance, bounded by the access-token lifetime, or sooner where the optional security stamp is enabled. Clients that surface role administration should refresh after a change rather than assuming this response is live.
+
+In all cases the source of truth is server-side: these responses exist for rendering, and every protected endpoint re-evaluates independently.
