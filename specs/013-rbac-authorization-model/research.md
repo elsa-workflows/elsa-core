@@ -644,3 +644,40 @@ The consolidation therefore covers four *permission-checking* mechanisms: FastEn
 named ASP.NET policies (3 sites), hand-rolled claim inspections (15 files), and SignalR hub checks
 (4 hubs). The count is unchanged; the composition is not. FR-016 and FR-017 are worded accordingly,
 and `tasks.md` T040 carries the exclusion explicitly so no one implements it from the task list alone.
+
+**D25 — Module-owner review outcomes (2026-08-23).** Five questions resolved; full text at the end of
+`contracts/permissions.md`.
+
+- **EA descriptors get their own resource**, `external-authentication/descriptors:view`, as a single
+  node rather than six. One legacy permission governs all six, which is the same principle that gives
+  `workflows/descriptors/*` nine separate resources — those were separately permissioned already. The
+  tree reflects the API in both cases.
+- **`/user-options` stays on `identity-links:view`.** It is a user search backing the link picker,
+  returning id and display name scoped to the tenant. *Recorded consequence:* identity-link rights
+  therefore confer tenant-wide user enumeration in that reduced projection, without
+  `identity/users:view`. Moving it would either over-grant full user read on migration or break linking.
+- **`roles:assign` descriptor corrected** to describe what it guards — removing policy references
+  during role deletion. No escalation was possible either way, since the subset rule holds regardless.
+  Whether it *should* additionally guard `defaultRoleIds` is filed as a design question rather than
+  settled inside a vocabulary migration.
+- **The two Logout endpoints declare differently.** `Logout` is authenticated-only; `ContinueLogout` is
+  anonymous. **`ContinueLogout` inheriting the authenticated default is a probable live bug** — the
+  identity provider redirects the browser there during upstream logout, potentially after the Elsa
+  session is gone, so the inherited requirement can 401 a callback that should succeed. Filed
+  separately. The fail-closed gate surfaced it; it was not introduced by this work.
+- **T028 splits four ways** along resource-group seams (31 / 20 / 15 / 12 files) rather than landing as
+  one 78-file pull request — the same unreviewable-diff problem the dropped Milestone 3 shim was
+  invented to avoid, in a different form.
+
+**D26 — Two model gaps surfaced by D25, one closed and one recorded.**
+
+*Closed:* FR-019 now accepts a **third declaration state**, authenticated-only. `Logout` needs an
+identity but no grant, which the original two-state rule could not express — it would have forced
+either a fabricated permission or a gate exemption, and an exemption list is a hole in a fail-closed
+guarantee.
+
+*Recorded, not built:* **conjunctive requirements are not expressible.** An endpoint declares one
+resource and one verb, so "needs link rights *and* user read" cannot be stated declaratively.
+`/user-options` is the first case to want it, and `ExternalAuthenticationRoleDeletionDependencyContributor`
+already does it imperatively across three permissions. Not needed for this work; recorded so the next
+case is not solved ad hoc.

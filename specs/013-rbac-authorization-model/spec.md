@@ -133,7 +133,7 @@ Two tenants each define a role named `Admin` without collision, and neither can 
 - **FR-016**: All *permission* decisions MUST route through a single evaluator. Authorization concerns that are not permission checks — notably read-only mode — are a separate axis and MUST retain their own enforcement.
 - **FR-017**: The existing hand-rolled permission-claim inspections, named-policy permission checks, and SignalR hub permission checks MUST be replaced by calls to that evaluator. This does NOT extend to the mid-handler `NotReadOnlyPolicy` calls in the workflow API: those enforce deployment read-only mode rather than a permission, and folding them into the permission evaluator would conflate two independent axes.
 - **FR-018**: Endpoints MUST declare their requirement as a resource constant plus a verb, with the resource constant shared with the descriptor declaration.
-- **FR-019**: An in-repository endpoint declaring neither a permission nor anonymous access MUST fail an automated gate.
+- **FR-019**: Every in-repository endpoint MUST declare exactly one of: a required permission, anonymous access, or authenticated-only access. An endpoint declaring none MUST fail an automated gate. The authenticated-only state exists so that a deliberate "needs an identity but no grant" choice is distinguishable from an author's omission.
 - **FR-020**: A failed authorization check MUST return 403.
 - **FR-021**: Superuser access MUST be expressed within the model as the whole-vocabulary grant `*:*`, not as a special-cased sentinel.
 

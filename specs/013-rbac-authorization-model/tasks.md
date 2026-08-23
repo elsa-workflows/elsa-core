@@ -42,7 +42,7 @@ Each module task creates `Permissions/<Module>Permissions.cs` following the patt
 - [ ] T010 [P] [US3] `Elsa.Workflows.Api` — 20 resources spanning `workflows/definitions`, `.../versions`, `.../labels`, `workflows/instances`, `activity-executions`, `runtime`, `bookmark-queue/dead-letters`, `events`, `tasks`, `tests`, the nine `descriptors/*`, and `scripting/javascript`.
 - [ ] T011 [P] [US3] `Elsa.Identity` — `identity/users`, `identity/roles`, `identity/applications`.
 - [ ] T012 [P] [US3] `Elsa.Secrets` — `secrets`. Retire the unused `use:`, `import:` and `export:` constants.
-- [ ] T013 [P] [US3] `Elsa.ExternalAuthentication` — `connections`, `identity-links`, `sessions`, `policies`, `policies/default-roles`, `provider-trust`, `permission-grants`.
+- [ ] T013 [P] [US3] `Elsa.ExternalAuthentication` — `connections`, `descriptors`, `identity-links`, `sessions`, `policies`, `policies/default-roles`, `provider-trust`, `permission-grants`. Correct the `roles:assign` descriptor text to describe what it actually guards.
 - [ ] T014 [P] [US3] `Elsa.Labels` — `labels`.
 - [ ] T015 [P] [US3] `Elsa.Tenants` — `tenants`.
 - [ ] T016 [P] [US3] `Elsa.Alterations` — `alterations`.
@@ -64,9 +64,13 @@ Each module task creates `Permissions/<Module>Permissions.cs` following the patt
 
 No migration scaffold is required — the obsolete declaration path (T027) translates legacy *endpoint declarations*, while a legacy *stored grant* still fails to match, and the seeded admin `*` satisfies every endpoint throughout. See `research.md` D20.
 
+- [ ] T026a [US2] Add an explicit authenticated-only declaration to the base classes in `src/common/Elsa.Api.Common/Abstractions/Endpoints.cs`, so FR-019's third state is expressible and the coverage gate can distinguish a deliberate choice from an omission.
 - [ ] T026 [US8] Add `RequirePermission(string resource, string verb)` to the six base classes in `src/common/Elsa.Api.Common/Abstractions/Endpoints.cs`, collapsing the six copy-pasted `ConfigurePermissions` bodies into one shared implementation.
 - [ ] T027 [US8] Keep `ConfigurePermissions(params string[])` as `[Obsolete]` but functional: resolve legacy strings through the migration table; register an implicit descriptor marked unverified and log a warning for anything unresolvable, rather than failing the host at boot. Follows the existing `unknown_permission_descriptor` precedent in `DefaultPermissionGrantResolver`.
-- [ ] T028 [US1] Migrate `Elsa.Workflows.Api` endpoints (78 files) to `RequirePermission`. Largest single unit; may be split by endpoint folder.
+- [ ] T028 [US1] Migrate `Elsa.Workflows.Api` — `WorkflowDefinitions` (31 files) to `RequirePermission`.
+- [ ] T028a [P] [US1] Migrate `Elsa.Workflows.Api` — `WorkflowInstances`, `ActivityExecutions`, `ActivityExecutionSummaries` (20 files).
+- [ ] T028b [P] [US1] Migrate `Elsa.Workflows.Api` — `RuntimeAdmin`, `BookmarkQueueDeadLetters`, `Bookmarks`, `Events`, `Tasks`, `Tests`, `Features` (15 files).
+- [ ] T028c [P] [US1] Migrate `Elsa.Workflows.Api` — the nine descriptor folders and `Scripting` (12 files).
 - [ ] T029 [P] [US1] Migrate `Elsa.ExternalAuthentication` endpoints (13 files, 34 endpoint classes — several classes per file).
 - [ ] T030 [P] [US1] Migrate `Elsa.Identity` endpoints (11 files).
 - [ ] T031 [P] [US1] Migrate `Elsa.Secrets` endpoints (10 files).
@@ -75,11 +79,11 @@ No migration scaffold is required — the obsolete declaration path (T027) trans
 - [ ] T034 [P] [US1] Migrate `Elsa.Dashboard.Api` (5) and `Elsa.Alterations` (5) endpoints.
 - [ ] T035 [P] [US1] Migrate `Elsa.Resilience` (3), `Elsa.Bpmn.Interchange` (3) and `Elsa.AI.Host` (3) endpoints.
 - [ ] T036 [P] [US1] Migrate `Elsa.Shells.Api` (2), `Elsa.Http.Webhooks` (1) and `Elsa.Expressions.JavaScript` (1) endpoints.
-- [ ] T037 [US2] Give `Logout` and `ContinueLogout` in `src/modules/Elsa.ExternalAuthentication/Endpoints/Broker/Logout.cs` an explicit declaration. Both currently declare neither a permission nor `AllowAnonymous` and inherit FastEndpoints' authenticated-without-permission default, so both fail T041. Confirm the intended declaration with the module owner first (contract question 5).
+- [ ] T037 [US2] Declare the two endpoints in `src/modules/Elsa.ExternalAuthentication/Endpoints/Broker/Logout.cs` separately: `Logout` as authenticated-only (it reads the external session claim from the principal), `ContinueLogout` as `AllowAnonymous` (the route handle carries the authority, matching every other broker callback). `ContinueLogout` inheriting the authenticated default today is a probable live bug — the identity provider redirects the browser there during upstream logout, potentially after the Elsa session is gone. Fix tracked separately.
 - [ ] T038 [US1] Replace the hand-rolled `PermissionNames.ClaimType` claim inspections with `IPermissionEvaluator` calls across `Elsa.ExternalAuthentication` (5 files), `Elsa.Workflows.Api` (2), `Elsa.Identity` (2), `Elsa.Api.Common` (1) and `Elsa.AI.Host` (1). Note `AIHttpContextIdentity` currently compares case-insensitively while every other site is ordinal; the evaluator standardises this.
 - [ ] T039 [US1] Route the four SignalR hub permission checks through `IPermissionEvaluator` — `WorkflowInstanceHub`, `ElsaConsoleLogStreamHubAuthorizer`, `StructuredLogsHub`, `OpenTelemetryHub` — replacing hard-coded arrays such as `["*", "read:*", "read:workflow-instances"]`.
 - [ ] T040 [US1] Replace the three `Policies(IdentityPolicyNames.SecurityRoot)` usages in `Elsa.Identity` (`Secrets/Hash`, `Roles/Create`, `Applications/Create`) and remove the obsolete policy. **Scope note**: per FR-017, the 15 mid-handler `AuthorizeAsync(..., NotReadOnlyPolicy)` calls in Workflows.Api are *not* in scope — read-only mode is a separate axis from permissions and keeps its own check.
-- [ ] T041 [US2] Add the fail-closed coverage gate in `test/unit/Elsa.Api.Common.UnitTests/Authorization/EndpointCoverageTests.cs`: enumerate every in-repository `ElsaEndpoint*` type by reflection and assert each declares either a permission resolving to a registered descriptor, or `AllowAnonymous`.
+- [ ] T041 [US2] Add the fail-closed coverage gate in `test/unit/Elsa.Api.Common.UnitTests/Authorization/EndpointCoverageTests.cs`: enumerate every in-repository `ElsaEndpoint*` type by reflection and assert each declares exactly one of a permission resolving to a registered descriptor, `AllowAnonymous`, or authenticated-only. No exemption list.
 - [ ] T042 [US5] Update `DefaultAccessTokenIssuer` and `DefaultElsaTokenService` to emit new-format `{resource}:{verb}` claims, and update `DefaultApiKeyProvider`, `AdminApiKeyProvider`, `LocalHostPermissionRequirement` and `DefaultExternalAuthenticationTokenIssuer` to match.
 - [ ] T043 [US5] Add a startup validator that scans stored roles and logs every permission that does not resolve, identified by role name. Fails closed and loudly; the seeded `*` grant is unaffected so an instance cannot be locked out.
 - [ ] T044 [P] [US5] Regression-test that legacy stored grants no longer authorize, that `*` still authorizes everything, and that a legacy *endpoint declaration* still resolves through T027.

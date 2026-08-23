@@ -98,6 +98,7 @@ BPMN interchange reuses `workflows/definitions`: analyse and export require `vie
 | Resource | Verbs |
 | --- | --- |
 | `external-authentication/connections` | view, create, update, archive★, test★, preview★ |
+| `external-authentication/descriptors` | view |
 | `external-authentication/identity-links` | view, write, delete |
 | `external-authentication/sessions` | view, revoke★ |
 | `external-authentication/policies` | view, update |
@@ -203,7 +204,7 @@ The authoritative source for `docs/migrations/authorization-model.md`. Full lega
 | `use:secrets` | *removed* — unused |
 | `import:secrets` | *removed* — unused |
 | `export:secrets` | *removed* — unused |
-| `external-authentication:connections:read` | `external-authentication/connections:view` |
+| `external-authentication:connections:read` | `external-authentication/connections:view` **+** `external-authentication/descriptors:view` |
 | `external-authentication:connections:create` | `external-authentication/connections:create` |
 | `external-authentication:connections:update` | `external-authentication/connections:update` |
 | `external-authentication:connections:archive` | `external-authentication/connections:archive` |
@@ -257,10 +258,18 @@ Note that `read:*` and `exec:*` become materially *more* powerful: today they au
 - A resource is owned by exactly one module, which declares its constant and descriptor together in `Permissions/<Module>Permissions.cs`.
 - Permission strings may never contain a comma, because the persistence converter joins collections with commas.
 
-## Outstanding questions for module owners
+## Module-owner review outcomes
 
-1. **Workflows** — `POST /workflow-definitions` is an upsert, mapped to `write`. Confirm that a single `write` verb is intended rather than splitting the endpoint into create and update.
-2. **External Authentication** — six `/external-authentication/descriptors/*` endpoints are guarded by `connections:read` and fold into `connections:view`. Should they instead be `external-authentication/descriptors:view`, mirroring `workflows/descriptors/*`?
-3. **External Authentication** — `/external-authentication/user-options` is guarded by `links:manage` despite being a read of user options. Incidental, or intended?
-4. **External Authentication** — the `roles:assign` descriptor overstates its reach. Setting `defaultRoleIds` is guarded by `RoleAuthorizationService.CanAssignRolesAsync` (the ordinary subset rule); `roles:assign` is enforced only when removing policy references during role deletion. The anti-escalation rule holds, so this is not a hole, but the descriptor is misleading and the gap may be unintentional.
-5. **External Authentication** — `Broker/Logout.cs` declares two endpoint classes (`Logout`, `ContinueLogout`), neither of which declares a permission or `AllowAnonymous`. They inherit FastEndpoints' default of authenticated-without-permission. Both will fail the Milestone 3 fail-closed gate and need an explicit declaration; confirm which.
+Resolved 2026-08-23.
+
+1. **Workflow-definition upsert** — `POST /workflow-definitions` maps to a single `write` verb. Confirmed; see D17.
+2. **External Authentication descriptors** — the six `/descriptors/*` endpoints get their own resource, `external-authentication/descriptors:view`, rather than folding into `connections:view`. One resource rather than six sub-nodes, because one legacy permission governs all six — the same principle that gives `workflows/descriptors/*` nine separate resources, since those were separately permissioned already. A read-only support role can now see which adapters and policies are installed without seeing connection configuration.
+3. **`/external-authentication/user-options`** — stays on `external-authentication/identity-links:view`. It is a user *search* endpoint backing the link picker, returning a minimal projection (id and display name) scoped to the tenant, and the linking UI cannot function without it. **Recorded consequence:** holding identity-link rights therefore confers tenant-wide user enumeration in that reduced projection, without `identity/users:view`. Moving it to `identity/users:view` would either over-grant full user read on migration or break linking. Requiring both is the honest answer but needs conjunctive requirements, which the model does not support — see the note below.
+4. **`roles:assign` descriptor** — corrected to describe what it actually guards: removing policy references to a role during role deletion. Setting `defaultRoleIds` is guarded by `RoleAuthorizationService.CanAssignRolesAsync`, the ordinary subset rule, so no escalation is possible either way. Whether it *should* additionally require this permission is filed separately as a design question.
+5. **`Broker/Logout.cs`** — the two endpoints declare differently. `Logout` is authenticated-only: it reads the external session claim from the principal, so it needs an identity but no permission. `ContinueLogout` is `AllowAnonymous`, matching every other broker callback — the route `handle` carries the authority, and the identity provider redirects the browser there during upstream logout, potentially after the Elsa session is gone. **`ContinueLogout` inheriting the authenticated default today is a probable live bug**, filed separately.
+
+### Two model implications from these outcomes
+
+**A third declaration state is required.** `Logout` is deliberately authenticated-without-permission, which FR-019 and the coverage gate cannot currently express — they accept only "a permission" or "anonymous". An explicit authenticated-only marker is needed so the gate distinguishes a deliberate choice from an author's omission.
+
+**Conjunctive requirements are not expressible.** An endpoint declares one resource and one verb, so "needs link rights *and* user read" cannot be stated declaratively — outcome 3 above is the first case to want it, and `ExternalAuthenticationRoleDeletionDependencyContributor` already does it imperatively across three permissions. Not needed for this work; recorded because the next such case should not be solved ad hoc.
