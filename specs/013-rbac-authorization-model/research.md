@@ -658,13 +658,13 @@ and `tasks.md` T040 carries the exclusion explicitly so no one implements it fro
   `identity/users:view`. Moving it would either over-grant full user read on migration or break linking.
 - **`roles:assign` descriptor corrected** to describe what it guards — removing policy references
   during role deletion. No escalation was possible either way, since the subset rule holds regardless.
-  Whether it *should* additionally guard `defaultRoleIds` is filed as a design question rather than
-  settled inside a vocabulary migration.
+  Whether it *should* additionally guard `defaultRoleIds` is filed as #7977 rather than settled
+  inside a vocabulary migration.
 - **The two Logout endpoints declare differently.** `Logout` is authenticated-only; `ContinueLogout` is
   anonymous. **`ContinueLogout` inheriting the authenticated default is a probable live bug** — the
   identity provider redirects the browser there during upstream logout, potentially after the Elsa
-  session is gone, so the inherited requirement can 401 a callback that should succeed. Filed
-  separately. The fail-closed gate surfaced it; it was not introduced by this work.
+  session is gone, so the inherited requirement can 401 a callback that should succeed. Filed as
+  #7976. The fail-closed gate surfaced it; it was not introduced by this work.
 - **T028 splits four ways** along resource-group seams (31 / 20 / 15 / 12 files) rather than landing as
   one 78-file pull request — the same unreviewable-diff problem the dropped Milestone 3 shim was
   invented to avoid, in a different form.
