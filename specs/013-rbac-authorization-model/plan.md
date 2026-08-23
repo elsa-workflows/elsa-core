@@ -34,7 +34,7 @@ Storage is unchanged: `Role.Permissions` remains a string collection of flat `{r
 
 **Constraints**: No new infrastructure may become a prerequisite for correct authorization — in particular the optional security stamp must not depend on cross-node cache invalidation, which Elsa does not have (`ChangeTokenSignalInvoker` is per-process). Elsa remains the only authority expanding roles into permission claims ([ADR 0009](../../docs/adr/0009-match-unlinked-identities-with-trusted-user-matchers.md)). Permission strings may not contain commas. No cross-tenant principal is introduced.
 
-**Scale/Scope**: Approximately 45 resources rising as modules contribute descriptors; 160 endpoint files; 174 declaration call sites; 15 hand-rolled wildcard checks; 3 policy usages; 15 mid-handler authorization calls; 4 SignalR hubs.
+**Scale/Scope**: Approximately 45 resources rising as modules contribute descriptors; 160 endpoint files; 174 declaration call sites; hand-rolled claim inspections across 15 files; 3 named-policy usages; 4 SignalR hubs. A further 15 mid-handler `NotReadOnlyPolicy` calls exist but are out of scope — read-only mode is a separate axis.
 
 ## Constitution Check
 
@@ -48,7 +48,7 @@ Storage is unchanged: `Role.Permissions` remains a string collection of flat `{r
 | IV. Async & Pipeline Execution | PASS | Evaluation is synchronous and allocation-light by design; catalog contribution and introspection follow existing async contracts. |
 | V. Testing Discipline | PASS | Unit, integration, regression, and an automated coverage gate; the gate is itself a deliverable. |
 | VI. Trunk-Based Development | PASS | Milestones are independently shippable; the cutover is split one pull request per module, landing in any order because the obsolete declaration path and the seeded admin grant keep trunk green throughout. |
-| VII. Simplicity, SRP, DRY & KISS | PASS | Two axes, one matching rule shape, one wildcard. No enumeration, no mask, no aggregates, no second gate, no sentinel. Collapses four enforcement mechanisms into one and six duplicated method bodies into one. |
+| VII. Simplicity, SRP, DRY & KISS | PASS | Two axes, one matching rule shape, one wildcard. No enumeration, no mask, no aggregates, no second gate, no sentinel. Collapses four parallel permission-checking mechanisms into one and six duplicated method bodies into one; read-only mode correctly keeps its own axis. |
 
 ## Project Structure
 
@@ -132,7 +132,7 @@ Still additive.
 The breaking change. One pull request per module.
 
 - Endpoints migrate to `RequirePermission(resource, verb)`.
-- The 15 hand-rolled wildcard checks, 3 policy usages, 15 mid-handler authorization calls, and 4 hub checks all route through the evaluator.
+- The hand-rolled claim inspections (15 files), 3 named-policy usages, and 4 SignalR hub checks all route through the evaluator. The 15 mid-handler `NotReadOnlyPolicy` calls are deliberately excluded — read-only mode is a separate axis.
 - `ConfigurePermissions(params string[])` becomes obsolete but functional, with unresolvable strings registering implicit unverified descriptors and logging warnings.
 - The fail-closed gate lands, asserting every in-repository endpoint declares a permission resolving to a registered descriptor.
 - The token issuer emits new-format claims; the startup validator reports unresolvable stored permissions by role.

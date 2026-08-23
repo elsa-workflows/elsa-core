@@ -330,7 +330,7 @@ say exactly what was granted. The descriptor registry owns the macro table so it
 via the catalog endpoint rather than reimplemented per client. "I clicked Manage" is recovered in
 the ADR-0007 audit notification, not by weakening storage.
 
-**D5 — Storage does not change.** `Role.Permissions` stays `ICollection<string>` holding flat
+**D5 — Storage does not change.** *(The mask referenced below is withdrawn by D13; grants are matched as strings.)* `Role.Permissions` stays `ICollection<string>` holding flat
 `{resource}:{verb}` entries. The scope mask is a runtime representation computed by grouping
 parsed entries per resource. Note the EF converter joins with commas
 (`string.Join(",", v)` in `Modules/Identity/Configurations.cs`), so no permission string may ever
@@ -354,7 +354,7 @@ in a single grant, on an axis that composes with scope instead of overriding it.
 explainable from a single grant list.
 
 Accepted cost: prefix matching gives grants implicit forward reach on the resource axis, the same
-double-edge as `All` on the scope axis. Mitigation is inspectability — the descriptor catalog lets
+double-edge as the verb wildcard. Mitigation is inspectability — the descriptor catalog lets
 the role editor show "this grant currently covers these 15 resources."
 
 ### Corrections to the assessment above
@@ -628,3 +628,19 @@ permission default. Both will fail the Milestone 3 fail-closed gate and need an 
 workflow-definition upsert verb, whether the six External Authentication descriptor endpoints deserve
 their own resource, whether `/user-options` being guarded by `links:manage` is intentional, the
 misleading `roles:assign` descriptor, and the `Logout` declarations.
+
+**D24 — Read-only mode is not a permission and keeps its own enforcement. Corrects the assessment
+above.** The original defect list counted four parallel enforcement mechanisms, one of them the 15
+mid-handler `AuthorizeAsync(..., NotReadOnlyPolicy)` calls in the workflow API, and Phase 1 proposed
+that the single evaluator serve "the mid-handler checks" among others. That was wrong.
+
+`NotReadOnlyPolicy` enforces deployment read-only mode — whether this instance accepts mutations at
+all — which is orthogonal to whether a principal holds a permission. A workflow author with full
+grants is still refused while the deployment is read-only, and correctly so. Folding it into the
+permission evaluator would conflate two independent axes and make read-only mode expressible as a
+grant, which it must not be.
+
+The consolidation therefore covers four *permission-checking* mechanisms: FastEndpoints permissions,
+named ASP.NET policies (3 sites), hand-rolled claim inspections (15 files), and SignalR hub checks
+(4 hubs). The count is unchanged; the composition is not. FR-016 and FR-017 are worded accordingly,
+and `tasks.md` T040 carries the exclusion explicitly so no one implements it from the task list alone.

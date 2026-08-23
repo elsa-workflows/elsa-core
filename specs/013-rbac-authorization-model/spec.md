@@ -14,7 +14,7 @@
 
 Elsa already has most of an authorization system. Roles carry permissions, tokens carry permission claims, and 151 of 160 endpoint files declare a required permission. What it lacks is a *model*: the permission vocabulary is an open set of ad-hoc strings compared by ordinal equality, with no implication, no grouping, and no catalog.
 
-The consequences are concrete. `"*"`, `"read:*"` and `"exec:*"` are literal claim values rather than patterns, so `read:*` grants access only to the twelve endpoints that happen to list it, out of roughly forty read endpoints. `read:workflow-definitions` does not imply `read:workflow-definitions:versions`. Fifty-six permission strings appear as inline literals across 174 call sites in three competing naming schemes, so a typo silently produces an unreachable endpoint and no user interface can render a sensible role editor. Omitting the declaration fails open. Four parallel enforcement mechanisms — FastEndpoints permissions, ASP.NET policies, mid-handler authorization calls, and hand-rolled claim inspection — leave no single place to audit.
+The consequences are concrete. `"*"`, `"read:*"` and `"exec:*"` are literal claim values rather than patterns, so `read:*` grants access only to the twelve endpoints that happen to list it, out of roughly forty read endpoints. `read:workflow-definitions` does not imply `read:workflow-definitions:versions`. Fifty-seven permission strings appear as inline literals across 174 call sites in three competing naming schemes, so a typo silently produces an unreachable endpoint and no user interface can render a sensible role editor. Omitting the declaration fails open. Four parallel permission-checking mechanisms — FastEndpoints permissions, named ASP.NET policies, hand-rolled claim inspection, and SignalR hub checks — leave no single place to audit. (Read-only mode also uses mid-handler authorization calls, but that is a separate axis and stays as it is.)
 
 This feature replaces that vocabulary with a **structured authorization model**: a hierarchical **resource** axis, an open **verb** axis, a module-contributed **permission catalog**, and a single evaluator that every enforcement path routes through.
 
@@ -130,9 +130,9 @@ Two tenants each define a role named `Admin` without collision, and neither can 
 
 #### Enforcement
 
-- **FR-016**: All authorization decisions MUST route through a single evaluator.
-- **FR-017**: The existing hand-rolled claim inspections, mid-handler authorization calls, and hub checks MUST be replaced by calls to that evaluator.
-- **FR-018**: Endpoints MUST declare their requirement as a resource constant plus a scope value, with the resource constant shared with the descriptor declaration.
+- **FR-016**: All *permission* decisions MUST route through a single evaluator. Authorization concerns that are not permission checks — notably read-only mode — are a separate axis and MUST retain their own enforcement.
+- **FR-017**: The existing hand-rolled permission-claim inspections, named-policy permission checks, and SignalR hub permission checks MUST be replaced by calls to that evaluator. This does NOT extend to the mid-handler `NotReadOnlyPolicy` calls in the workflow API: those enforce deployment read-only mode rather than a permission, and folding them into the permission evaluator would conflate two independent axes.
+- **FR-018**: Endpoints MUST declare their requirement as a resource constant plus a verb, with the resource constant shared with the descriptor declaration.
 - **FR-019**: An in-repository endpoint declaring neither a permission nor anonymous access MUST fail an automated gate.
 - **FR-020**: A failed authorization check MUST return 403.
 - **FR-021**: Superuser access MUST be expressed within the model as the whole-vocabulary grant `*:*`, not as a special-cased sentinel.
@@ -184,7 +184,7 @@ Two tenants each define a role named `Admin` without collision, and neither can 
 
 - **SC-001**: A grant of `workflows/*:view` authorizes all resources beneath `workflows/`, where `read:*` authorizes twelve of approximately forty read endpoints today.
 - **SC-002**: Every in-repository endpoint declares a permission resolving to a registered descriptor, verified automatically; the current figure is 151 of 160 files declaring, with no descriptor coverage for core permissions.
-- **SC-003**: Authorization decisions route through one evaluator, replacing four parallel mechanisms and fifteen hand-rolled wildcard checks.
+- **SC-003**: Permission decisions route through one evaluator, replacing four parallel permission-checking mechanisms — FastEndpoints permissions, named policies, hand-rolled claim inspections across fifteen files, and four SignalR hub checks. Read-only mode keeps its own enforcement and is out of scope.
 - **SC-004**: A role editor can be built with no hard-coded permission strings.
 - **SC-005**: An operator upgrading a deployment with legacy roles receives a complete, actionable startup report and cannot be locked out.
 - **SC-006**: Revocation takes effect within a documented bound under default settings, and within a configurable shorter bound with the optional stamp, without new infrastructure.
