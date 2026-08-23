@@ -1,6 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
+using Elsa.Permissions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -10,7 +11,7 @@ namespace Elsa.Identity.Endpoints.Roles.Create;
 /// An endpoint that creates a new role.
 /// </summary>
 [PublicAPI]
-internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
+internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -23,6 +24,19 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        // Reject grants the catalog cannot account for before the anti-escalation check, so an author gets
+        // a specific message rather than a blanket 403 for what is really a typo.
+        var validation = grantValidator.Validate(request.Permissions);
+
+        if (!validation.IsValid)
+        {
+            foreach (var error in validation.Errors)
+                AddError($"{nameof(request.Permissions)}: {error.Permission}", error.Reason);
+
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+
         if (!roleAuthorizationService.CanCreateRoleWithPermissions(User, request.Permissions))
         {
             await Send.ForbiddenAsync(cancellationToken);

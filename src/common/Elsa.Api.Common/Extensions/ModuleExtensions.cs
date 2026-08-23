@@ -1,6 +1,8 @@
 using System.Reflection;
 using Elsa.Features.Services;
+using Elsa.Permissions;
 using FastEndpoints;
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -49,6 +51,14 @@ public static class ModuleExtensions
             options.DisableAutoDiscovery = true;
             options.Assemblies = assemblies;
         });
+
+        // A module's permission descriptors are discovered from the same assemblies as its endpoints, so
+        // the catalog necessarily describes exactly the endpoints that exist. Registering them separately
+        // per module would let the two drift, which is the failure this model exists to remove.
+        module.Services.AddElsaAuthorization();
+
+        foreach (var assembly in assemblies)
+            module.Services.AddPermissionDescriptorsFromAssembly(assembly);
 
         return module;
     }

@@ -1,5 +1,6 @@
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
+using Elsa.Permissions;
 using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.Roles.Update;
@@ -8,7 +9,7 @@ namespace Elsa.Identity.Endpoints.Roles.Update;
 /// An endpoint that updates an existing role.
 /// </summary>
 [PublicAPI]
-internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
+internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -30,6 +31,17 @@ internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthor
         if (role == null)
         {
             await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        var validation = grantValidator.Validate(request.Permissions);
+
+        if (!validation.IsValid)
+        {
+            foreach (var error in validation.Errors)
+                AddError($"{nameof(request.Permissions)}: {error.Permission}", error.Reason);
+
+            await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
 

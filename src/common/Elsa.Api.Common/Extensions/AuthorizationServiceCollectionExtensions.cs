@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Authorization;
 using Elsa.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -17,7 +18,23 @@ public static class AuthorizationServiceCollectionExtensions
     {
         services.TryAddSingleton<IPermissionEvaluator, PermissionEvaluator>();
         services.TryAddSingleton<IPermissionDescriptorRegistry, DefaultPermissionDescriptorRegistry>();
+        services.TryAddSingleton<IPermissionGrantValidator, PermissionGrantValidator>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IAuthorizationHandler, PermissionAuthorizationHandler>());
+
+        return services;
+    }
+
+    /// <summary>
+    /// Contributes every <see cref="IPermissionDescriptorProvider"/> declared in <paramref name="assembly"/>.
+    /// Discovery is by convention so that a module cannot ship endpoints without the catalog describing them.
+    /// </summary>
+    public static IServiceCollection AddPermissionDescriptorsFromAssembly(this IServiceCollection services, Assembly assembly)
+    {
+        var providerTypes = assembly.GetTypes()
+            .Where(x => x is { IsClass: true, IsAbstract: false } && typeof(IPermissionDescriptorProvider).IsAssignableFrom(x));
+
+        foreach (var providerType in providerTypes)
+            services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IPermissionDescriptorProvider), providerType));
 
         return services;
     }
