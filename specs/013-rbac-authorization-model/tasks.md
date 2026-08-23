@@ -121,7 +121,7 @@ No migration scaffold is required — the obsolete declaration path (T027) trans
 - [ ] T059 [US5] Document in the same file the removal of `exec:csharp-expressions` and `exec:python-expressions` as a **deliberate reduction in control**: where host code is enabled, any author who may write definitions may use C# and Python. Link #7975.
 - [ ] T060 Record the model in `docs/adr/00NN-two-axis-authorization-model.md`: both axes open, wildcards as the only forward reach, no aggregates and no verb implication, and the rejection of a closed verb enumeration.
 - [ ] T061 [P] Update `doc/wiki/identity-tenancy-security.md`, replacing the Secrets-only route table with a pointer to the catalog endpoint as the authoritative source.
-- [ ] T062 Resolve the five module-owner questions at the end of `contracts/permissions.md` and fold the answers into the vocabulary before Phase 2 begins.
+- [x] T062 Resolve the five module-owner questions and fold the answers into the vocabulary. **Done 2026-08-23** — outcomes recorded at the end of `contracts/permissions.md` and as D25/D26 in `research.md`. Produced #7976 and #7977, and added FR-019's third declaration state (T026a).
 - [ ] T063 Run `dotnet build Elsa.sln` and the full test suite, confirm T041 passes with zero exemptions beyond documented anonymous endpoints, and verify the quickstart scenario end to end.
 
 ---
@@ -130,7 +130,7 @@ No migration scaffold is required — the obsolete declaration path (T027) trans
 
 - **Phase 1 blocks everything.** No descriptor work starts before the matcher and evaluator pass their tests.
 - **Phase 2 blocks Phase 3**: an endpoint cannot declare a resource that has no descriptor, because T041 asserts resolution.
-- **T062 should precede Phase 2** — the module-owner answers change the vocabulary, and the vocabulary is expensive to change once modules have declared against it.
+- **T062 preceded Phase 2** and is complete, so the vocabulary is settled before any module declares constants against it.
 - **T026 and T027 block T028–T036.** Within that range the module tasks are independent and land in any order.
 - **T041 lands with the last module migration**, not before, or trunk fails while migration is in flight.
 - **Phase 5 is independent of Phases 3 and 4** and may run in parallel with either.
