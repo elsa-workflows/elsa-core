@@ -43,6 +43,11 @@ public class IdentityFeature : IFastEndpointsShellFeature
         services.Configure<ApplicationsOptions>(_ => { });
         services.Configure<RolesOptions>(_ => { });
         services.AddHostedService<HostedServices.StoredPermissionValidator>();
+        services.AddScoped<Services.RoleSecurityNotifier>();
+        services.AddMemoryCache();
+        services.Configure<PermissionStampOptions>(_ => { });
+        services.AddScoped<Services.IPermissionStampCalculator, Services.PermissionStampCalculator>();
+        services.AddScoped<Services.PermissionStampValidator>();
 
         // Memory stores.
         services

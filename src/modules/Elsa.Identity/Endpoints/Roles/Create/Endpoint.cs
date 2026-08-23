@@ -12,7 +12,7 @@ namespace Elsa.Identity.Endpoints.Roles.Create;
 /// An endpoint that creates a new role.
 /// </summary>
 [PublicAPI]
-internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator) : ElsaEndpoint<Request, Response>
+internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator, Services.RoleSecurityNotifier securityNotifier) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -58,6 +58,8 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
             await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
             return;
         }
+
+        await securityNotifier.RoleChangedAsync(User, "created", result.Role.Id, result.Role.Name, result.Role.Permissions.ToArray(), cancellationToken);
 
         var response = new Response(
             result.Role.Id,

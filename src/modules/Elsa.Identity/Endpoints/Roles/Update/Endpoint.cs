@@ -10,7 +10,7 @@ namespace Elsa.Identity.Endpoints.Roles.Update;
 /// An endpoint that updates an existing role.
 /// </summary>
 [PublicAPI]
-internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator) : ElsaEndpoint<Request, Response>
+internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator, Services.RoleSecurityNotifier securityNotifier) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -59,6 +59,7 @@ internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthor
             role.Permissions = request.Permissions;
 
         await roleStore.SaveAsync(role, cancellationToken);
+        await securityNotifier.RoleChangedAsync(User, "updated", role.Id, role.Name, role.Permissions.ToArray(), cancellationToken);
 
         var response = new Response(
             role.Id,
