@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Security.Claims;
 using Elsa.Common.Services;
 using Elsa.Identity.Contracts;
@@ -106,7 +107,7 @@ public class RoleDeletionCoordinatorTests
         var store = new MemoryRoleStore(new MemoryStore<Role>());
         await store.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
         var roleProvider = new StoreBasedRoleProvider(store);
-        var coordinator = new RoleDeletionCoordinator(store, new RoleAuthorizationService(roleProvider), [contributor]);
+        var coordinator = new RoleDeletionCoordinator(store, new RoleAuthorizationService(roleProvider, new PermissionEvaluator()), [contributor]);
         return (store, coordinator);
     }
 

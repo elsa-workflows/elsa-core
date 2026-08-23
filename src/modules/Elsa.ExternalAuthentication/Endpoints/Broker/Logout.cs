@@ -15,6 +15,10 @@ internal sealed class Logout(IExternalAuthenticationBroker broker) : ElsaEndpoin
         // Deliberately authenticated without a permission: the session id is read from the caller's
         // principal below, so an identity is required, but logging out is never permission-gated.
         Post("/external-authentication/logout");
+
+        // Authenticated without a permission: the session id is read from the caller's principal below,
+        // so an identity is required, but logging out is never permission-gated.
+        RequireAuthenticatedOnly();
     }
 
     public override async Task HandleAsync(LogoutRequest request, CancellationToken cancellationToken)

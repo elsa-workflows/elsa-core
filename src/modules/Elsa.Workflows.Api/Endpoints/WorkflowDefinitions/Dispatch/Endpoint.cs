@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Security;
@@ -18,7 +19,7 @@ internal class Endpoint(
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/dispatch");
-        ConfigurePermissions("exec:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Execute);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

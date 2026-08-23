@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Bpmn.Interchange;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Services;
@@ -23,7 +24,7 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
     {
         Post("bpmn/analyze");
         AllowFileUploads();
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Bpmn.Interchange.Permissions.BpmnPermissions.Definitions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

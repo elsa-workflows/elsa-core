@@ -12,6 +12,9 @@ public static class LabelPermissions
 {
     /// <summary>Manage labels.</summary>
     public const string Labels = "labels";
+
+    /// <summary>View and change the labels applied to a workflow definition.</summary>
+    public const string WorkflowDefinitionLabels = "workflows/definitions/labels";
 }
 
 /// <summary>Contributes the Labels resources to the permission catalog.</summary>
@@ -22,5 +25,6 @@ public sealed class LabelPermissionsDescriptorProvider : IPermissionDescriptorPr
     public IEnumerable<PermissionDescriptor> GetDescriptors() =>
     [
         new(LabelPermissions.Labels, [CoreVerbs.View, CoreVerbs.Create, CoreVerbs.Update, CoreVerbs.Delete], "Labels", "Manage labels.", "Labels"),
+        new(LabelPermissions.WorkflowDefinitionLabels, [CoreVerbs.View, CoreVerbs.Update], "Workflow definition labels", "View and change the labels applied to a workflow definition.", "Labels"),
     ];
 }

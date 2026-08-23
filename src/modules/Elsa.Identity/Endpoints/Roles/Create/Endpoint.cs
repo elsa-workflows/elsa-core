@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
@@ -17,7 +18,7 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
     public override void Configure()
     {
         Post("/identity/roles");
-        ConfigurePermissions("create:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Create);
         Policies(IdentityPolicyNames.SecurityRoot);
     }
 

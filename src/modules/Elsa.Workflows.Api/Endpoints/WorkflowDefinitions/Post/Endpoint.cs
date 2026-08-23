@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
@@ -32,7 +33,7 @@ internal class Post(
     public override void Configure()
     {
         Post("/workflow-definitions");
-        ConfigurePermissions("write:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(SaveWorkflowDefinitionRequest request, CancellationToken cancellationToken)

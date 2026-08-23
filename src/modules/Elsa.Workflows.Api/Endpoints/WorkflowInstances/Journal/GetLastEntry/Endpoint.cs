@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Workflows.Runtime;
@@ -18,7 +19,7 @@ public class Get(IWorkflowExecutionLogStore store) : ElsaEndpoint<Request, Workf
     public override void Configure()
     {
         Get("/workflow-instances/{workflowInstanceId}/journal/{activityId}");
-        ConfigurePermissions("read:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     }
 
     /// <inheritdoc />

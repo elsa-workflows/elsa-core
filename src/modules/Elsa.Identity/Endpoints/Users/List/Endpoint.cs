@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
@@ -15,7 +16,7 @@ internal class List(IUserStore userStore) : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/identity/users");
-        ConfigurePermissions("read:user");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Users, CoreVerbs.View);
     }
 
     /// <inheritdoc />

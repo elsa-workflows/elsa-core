@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text;
 using System.Text.Json;
 using Elsa.Abstractions;
@@ -16,7 +17,7 @@ internal sealed class ListConnections(IdentityProviderConnectionManagementServic
     public override void Configure()
     {
         Get("/external-authentication/connections");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override async Task<ConnectionListResponse> ExecuteAsync(ConnectionListRequest request, CancellationToken cancellationToken)
@@ -104,7 +105,7 @@ internal sealed class GetConnection(IdentityProviderConnectionManagementService 
     public override void Configure()
     {
         Get("/external-authentication/connections/{connectionId}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -126,7 +127,7 @@ internal sealed class CreateConnection(IdentityProviderConnectionManagementServi
     public override void Configure()
     {
         Post("/external-authentication/connections");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsCreate);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Create);
     }
 
     public override async Task HandleAsync(ConnectionRequest request, CancellationToken cancellationToken)
@@ -169,7 +170,7 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
     public override void Configure()
     {
         Put("/external-authentication/connections/{connectionId}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(ConnectionRequest request, CancellationToken cancellationToken)
@@ -227,13 +228,13 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
 internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest
 {
     protected abstract ConnectionLifecycle Action { get; }
-    protected abstract string Permission { get; }
+    protected abstract string Verb { get; }
     protected abstract void ConfigureRoute();
 
     public override void Configure()
     {
         ConfigureRoute();
-        ConfigurePermissions(Permission);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, Verb);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -278,28 +279,28 @@ internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionMa
 internal sealed class EnableConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Enabled;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsUpdate;
+    protected override string Verb => CoreVerbs.Update;
     protected override void ConfigureRoute() => Post("/external-authentication/connections/{connectionId}/enable");
 }
 
 internal sealed class DisableConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Disabled;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsUpdate;
+    protected override string Verb => CoreVerbs.Update;
     protected override void ConfigureRoute() => Post("/external-authentication/connections/{connectionId}/disable");
 }
 
 internal sealed class ArchiveConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Archived;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsArchive;
+    protected override string Verb => "archive";
     protected override void ConfigureRoute() => Delete("/external-authentication/connections/{connectionId}");
 }
 
 internal sealed class RestoreConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Draft;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsArchive;
+    protected override string Verb => "archive";
     protected override void ConfigureRoute() => Post("/external-authentication/connections/{connectionId}/restore");
 }
 
@@ -308,7 +309,7 @@ internal sealed class ValidateConnection(IdentityProviderConnectionManagementSer
     public override void Configure()
     {
         Post("/external-authentication/connections/{connectionId}/validate");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -339,7 +340,7 @@ internal sealed class ReplaceManagedSecretBinding(
     public override void Configure()
     {
         Put("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}/managed");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(ManagedSecretBindingRequest request, CancellationToken cancellationToken)
@@ -448,7 +449,7 @@ internal sealed class RemoveSecretBinding(
     public override void Configure()
     {
         Delete("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

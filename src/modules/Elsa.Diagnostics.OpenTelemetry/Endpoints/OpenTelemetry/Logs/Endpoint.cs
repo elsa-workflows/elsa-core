@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Diagnostics.OpenTelemetry.Contracts;
 using Elsa.Diagnostics.OpenTelemetry.Models;
@@ -12,7 +13,7 @@ internal class Endpoint(IOpenTelemetryProvider provider) : ElsaEndpoint<OpenTele
     public override void Configure()
     {
         Post("/diagnostics/opentelemetry/logs/search");
-        ConfigurePermissions(OpenTelemetryPermissions.Read);
+        RequirePermission(Elsa.Diagnostics.OpenTelemetry.Permissions.OpenTelemetryResourcePermissions.OpenTelemetry, CoreVerbs.View);
     }
 
     public override async Task<OpenTelemetryLogResult> ExecuteAsync(OpenTelemetryLogFilter request, CancellationToken cancellationToken)

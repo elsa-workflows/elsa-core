@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -15,7 +16,7 @@ internal class BulkDelete(IWorkflowInstanceStore workflowInstanceStore, IWorkflo
             "/bulk-actions/delete/workflow-instances",
             "/bulk-actions/delete/workflow-instances/by-id" // Deprecated route.
         );
-        ConfigurePermissions("delete:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.Delete);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using JetBrains.Annotations;
@@ -14,7 +15,7 @@ internal class List(IRoleStore roleStore) : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/identity/roles");
-        ConfigurePermissions("read:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.View);
     }
 
     /// <inheritdoc />

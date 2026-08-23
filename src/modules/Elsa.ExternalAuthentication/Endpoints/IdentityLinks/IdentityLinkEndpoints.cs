@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -15,7 +16,7 @@ internal sealed class GetIdentityLinks(ExternalIdentityLinkManagementService man
     public override void Configure()
     {
         Get("/external-authentication/identity-links");
-        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task<IdentityLinkListResponse> ExecuteAsync(IdentityLinkListRequest request, CancellationToken cancellationToken)
@@ -44,7 +45,7 @@ internal sealed class FindUsers(ExternalIdentityLinkManagementService management
     public override void Configure()
     {
         Get("/external-authentication/user-options");
-        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task<FindIdentityLinkUsersResponse> ExecuteAsync(FindIdentityLinkUsersRequest request, CancellationToken cancellationToken)
@@ -71,7 +72,7 @@ internal sealed class PrelinkIdentityLink(ExternalIdentityLinkManagementService 
     public override void Configure()
     {
         Post("/external-authentication/identity-links");
-        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(PrelinkIdentityLinkRequest request, CancellationToken cancellationToken)
@@ -109,7 +110,7 @@ internal sealed class ReplaceIdentityLink(ExternalIdentityLinkManagementService 
     public override void Configure()
     {
         Post("/external-authentication/identity-links/{linkId}/replace");
-        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(ReplaceIdentityLinkRequest request, CancellationToken cancellationToken)
@@ -154,7 +155,7 @@ internal sealed class DeleteIdentityLink(ExternalIdentityLinkManagementService m
     public override void Configure()
     {
         Delete("/external-authentication/identity-links/{linkId}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.LinksManage);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

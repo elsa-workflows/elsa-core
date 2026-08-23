@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
@@ -16,7 +17,7 @@ internal class Delete(IUserDeletionCoordinator coordinator) : ElsaEndpointWithou
     public override void Configure()
     {
         Delete("/identity/users/{id}");
-        ConfigurePermissions("delete:user");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Users, CoreVerbs.Delete);
     }
 
     /// <inheritdoc />

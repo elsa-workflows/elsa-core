@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Runtime;
@@ -24,7 +25,7 @@ internal class Count : ElsaEndpoint<Request, CountResponse>
     public override void Configure()
     {
         Get("/activity-executions/count");
-        ConfigurePermissions("read:activity-execution");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.ActivityExecutions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

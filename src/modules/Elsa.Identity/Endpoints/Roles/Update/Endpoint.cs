@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Permissions;
@@ -15,7 +16,7 @@ internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthor
     public override void Configure()
     {
         Put("/identity/roles/{id}");
-        ConfigurePermissions("update:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Update);
     }
 
     /// <inheritdoc />

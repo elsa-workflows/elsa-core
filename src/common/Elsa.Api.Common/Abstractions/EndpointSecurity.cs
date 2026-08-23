@@ -24,6 +24,8 @@ internal static class EndpointSecurity
         }
 
         var permission = new Permission(resource, verb);
+
+        EndpointPermissionRegistry.Record(definition.EndpointType, permission);
         definition.Options(x => x.RequireAuthorization(policy => policy.AddRequirements(new PermissionRequirement(permission))));
     }
 

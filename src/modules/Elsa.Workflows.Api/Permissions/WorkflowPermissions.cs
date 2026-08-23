@@ -14,8 +14,6 @@ public static class WorkflowPermissions
     public const string Definitions = "workflows/definitions";
     /// <summary>Inspect, delete, and revert individual definition versions.</summary>
     public const string DefinitionVersions = "workflows/definitions/versions";
-    /// <summary>View and change the labels applied to a workflow definition.</summary>
-    public const string DefinitionLabels = "workflows/definitions/labels";
     /// <summary>Inspect, import, delete, and cancel workflow instances.</summary>
     public const string Instances = "workflows/instances";
     /// <summary>Inspect activity execution records and summaries.</summary>
@@ -61,7 +59,6 @@ public sealed class WorkflowPermissionsDescriptorProvider : IPermissionDescripto
     [
         new(WorkflowPermissions.Definitions, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, CoreVerbs.Execute, "publish", "retract", "refresh", "reload"], "Workflow definitions", "Author, publish, run, and refresh workflow definitions.", "Workflows"),
         new(WorkflowPermissions.DefinitionVersions, [CoreVerbs.View, CoreVerbs.Delete, "revert"], "Workflow definition versions", "Inspect, delete, and revert individual definition versions.", "Workflows"),
-        new(WorkflowPermissions.DefinitionLabels, [CoreVerbs.View, CoreVerbs.Update], "Workflow definition labels", "View and change the labels applied to a workflow definition.", "Workflows"),
         new(WorkflowPermissions.Instances, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete, "cancel"], "Workflow instances", "Inspect, import, delete, and cancel workflow instances.", "Workflows"),
         new(WorkflowPermissions.ActivityExecutions, [CoreVerbs.View], "Activity executions", "Inspect activity execution records and summaries.", "Workflows"),
         new(WorkflowPermissions.Runtime, [CoreVerbs.View, "control"], "Workflow runtime", "Inspect runtime status, and pause, resume, or drain the runtime.", "Workflows"),
