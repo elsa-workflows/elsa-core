@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
@@ -10,7 +11,7 @@ namespace Elsa.Identity.Endpoints.Users.List;
 /// An endpoint that lists all users.
 /// </summary>
 [PublicAPI]
-internal class List(IUserStore userStore) : ElsaEndpointWithoutRequest<Response>
+internal class List(IUserStore userStore, ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest<Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -22,7 +23,7 @@ internal class List(IUserStore userStore) : ElsaEndpointWithoutRequest<Response>
     /// <inheritdoc />
     public override async Task<Response> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var users = await userStore.FindManyAsync(new(), cancellationToken);
+        var users = await userStore.FindManyAsync(new() { TenantId = tenantAccessor.TenantId }, cancellationToken);
 
         var response = new Response(users
             .Select(user => new UserSummary(user.Id, user.Name, user.Roles, user.TenantId))

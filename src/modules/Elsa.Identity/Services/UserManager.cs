@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
@@ -14,17 +15,20 @@ public class UserManager : IUserManager
     private readonly ISecretGenerator _secretGenerator;
     private readonly ISecretHasher _secretHasher;
     private readonly IUserStore _userStore;
+    private readonly ITenantAccessor _tenantAccessor;
 
     public UserManager(
         IIdentityGenerator identityGenerator,
         ISecretGenerator secretGenerator,
         ISecretHasher secretHasher,
-        IUserStore userStore)
+        IUserStore userStore,
+        ITenantAccessor tenantAccessor)
     {
         _identityGenerator = identityGenerator;
         _secretGenerator = secretGenerator;
         _secretHasher = secretHasher;
         _userStore = userStore;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -42,6 +46,9 @@ public class UserManager : IUserManager
         {
             Id = id,
             Name = name,
+            // Set explicitly rather than relying on the Entity Framework saving handler, which does not run
+            // on the in-memory path and left users unassigned there.
+            TenantId = _tenantAccessor.TenantId,
             Roles = roles ?? new List<string>(),
             HashedPassword = hashedPassword.EncodeSecret(),
             HashedPasswordSalt = hashedPassword.EncodeSalt()
