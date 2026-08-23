@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Authorization;
 using System.Security.Claims;
 using Elsa.Common.Services;
@@ -104,7 +105,7 @@ public class RoleDeletionCoordinatorTests
 
     private static async Task<(MemoryRoleStore Store, RoleDeletionCoordinator Coordinator)> CreateCoordinatorAsync(IRoleDeletionDependencyContributor contributor)
     {
-        var store = new MemoryRoleStore(new MemoryStore<Role>());
+        var store = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await store.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
         var roleProvider = new StoreBasedRoleProvider(store);
         var coordinator = new RoleDeletionCoordinator(store, new RoleAuthorizationService(roleProvider, new PermissionEvaluator()), [contributor]);

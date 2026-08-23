@@ -15,6 +15,7 @@ using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Identity.ShellFeatures;
 
@@ -42,6 +43,10 @@ public class IdentityFeature : IFastEndpointsShellFeature
         services.Configure<UsersOptions>(_ => { });
         services.Configure<ApplicationsOptions>(_ => { });
         services.Configure<RolesOptions>(_ => { });
+
+        // The identity stores are tenant-scoped, so a host that never enables multitenancy still needs an
+        // accessor. TryAdd leaves an existing registration -- notably MultitenancyFeature's -- untouched.
+        services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddHostedService<HostedServices.StoredPermissionValidator>();
         services.AddScoped<Services.RoleSecurityNotifier>();
         services.AddMemoryCache();

@@ -13,6 +13,7 @@ using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Elsa.Identity.Features;
 
@@ -171,6 +172,10 @@ public class IdentityFeature : FeatureBase
         Services.Configure(UsersOptions);
         Services.Configure(ApplicationsOptions);
         Services.Configure(RolesOptions);
+
+        // The identity stores are tenant-scoped, so a host that never enables multitenancy still needs an
+        // accessor. TryAdd leaves an existing registration -- notably MultitenancyFeature's -- untouched.
+        Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
 
         // Memory stores.
         Services

@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Authorization;
 using System.Security.Claims;
 using Elsa.Common.Services;
@@ -14,7 +15,7 @@ public class RoleAuthorizationServiceTests
 
     public RoleAuthorizationServiceTests()
     {
-        _roleStore = new MemoryRoleStore(new MemoryStore<Role>());
+        _roleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         _service = new RoleAuthorizationService(new StoreBasedRoleProvider(_roleStore), new PermissionEvaluator());
     }
 
