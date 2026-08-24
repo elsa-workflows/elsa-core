@@ -1,7 +1,6 @@
 using Elsa.Authorization;
 using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
-using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using JetBrains.Annotations;
 using ConsoleLogSource = ConsoleLogStreaming.Core.Models.ConsoleLogSource;
 

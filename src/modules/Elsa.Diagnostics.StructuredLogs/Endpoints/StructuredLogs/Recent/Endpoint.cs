@@ -14,7 +14,7 @@ internal class Endpoint(IStructuredLogProvider logProvider) : ElsaEndpoint<Struc
     {
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
         Routes("/diagnostics/structured-logs/recent");
-        RequirePermission(Elsa.Diagnostics.StructuredLogs.Permissions.StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
+        RequirePermission(StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
     }
     
     public override async Task<RecentStructuredLogsResult> ExecuteAsync(StructuredLogFilter request, CancellationToken cancellationToken)

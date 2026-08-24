@@ -13,7 +13,7 @@ internal class Endpoint(IEnumerable<IStructuredLogStorageDiagnostics> storageDia
     public override void Configure()
     {
         Get("/diagnostics/structured-logs/storage");
-        RequirePermission(Elsa.Diagnostics.StructuredLogs.Permissions.StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
+        RequirePermission(StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
     }
     
     public override Task<StructuredLogStorageDiagnostics> ExecuteAsync(CancellationToken cancellationToken)

@@ -13,7 +13,7 @@ internal class Endpoint(IStructuredLogProvider logProvider) : ElsaEndpointWithou
     public override void Configure()
     {
         Get("/diagnostics/structured-logs/sources");
-        RequirePermission(Elsa.Diagnostics.StructuredLogs.Permissions.StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
+        RequirePermission(StructuredLogsResourcePermissions.StructuredLogs, CoreVerbs.View);
     }
     
     public override async Task<IReadOnlyCollection<StructuredLogSource>> ExecuteAsync(CancellationToken cancellationToken)

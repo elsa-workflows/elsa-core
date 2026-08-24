@@ -2,9 +2,13 @@ using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using JetBrains.Annotations;
 
+// ReSharper disable once CheckNamespace
 namespace Elsa.Diagnostics.StructuredLogs.Dashboard;
 
+/// <inheritdoc />
+[UsedImplicitly]
 public class StructuredLogsDashboardContributor(
     IStructuredLogProvider provider,
     IEnumerable<IStructuredLogStorageDiagnostics> storageDiagnostics) : IDashboardContributor
