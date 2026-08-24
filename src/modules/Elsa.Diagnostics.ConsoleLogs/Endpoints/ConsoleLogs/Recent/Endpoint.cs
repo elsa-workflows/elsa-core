@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text.Json;
 using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
@@ -17,7 +18,7 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
     {
         Verbs(FastEndpoints.Http.POST);
         Routes("/diagnostics/console-logs/recent");
-        ConfigurePermissions(ConsoleLogsPermissions.Read);
+        RequirePermission(Elsa.Diagnostics.ConsoleLogs.Permissions.ConsoleLogsResourcePermissions.ConsoleLogs, CoreVerbs.View);
     }
 
     public override async Task<RecentConsoleLogsResult> ExecuteAsync(CancellationToken cancellationToken)

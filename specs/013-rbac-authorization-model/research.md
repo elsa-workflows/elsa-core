@@ -39,11 +39,11 @@ Far more than the ticket assumes. The endpoint-declaration layer is essentially 
 | Tenant scoping | `Entity.TenantId`, [SetTenantIdFilter.cs](src/modules/Elsa.Persistence.EFCore.Common/EntityHandlers/SetTenantIdFilter.cs), `""` = default, `"*"` = agnostic (ADR 0009) | Exists for EF Core |
 | Richest scope model in the repo | `ConnectionScope(ConnectionScopeKind { Host, DefaultTenant, Tenant }, TenantId)` in [ExternalAuthenticationModels.cs](src/modules/Elsa.ExternalAuthentication/Models/ExternalAuthenticationModels.cs) | The precedent to follow for role scoping |
 
-Governing ADRs: [0004](docs/adr/0004-separate-external-identity-from-elsa-authorization.md) —
+Governing ADRs: [0017](../../doc/adr/0017-separate-external-identity-from-elsa-authorization.md) —
 Elsa's permission vocabulary is deliberately **open**, composed through grant sources;
-[0009](docs/adr/0009-match-unlinked-identities-with-trusted-user-matchers.md) — **Elsa is the
+[0022](../../doc/adr/0022-match-unlinked-identities-with-trusted-user-matchers.md) — **Elsa is the
 only authority that expands Roles into `permissions` claims**;
-[0007](docs/adr/0007-publish-audit-ready-security-notifications.md) — typed security notifications
+[0020](../../doc/adr/0020-publish-audit-ready-security-notifications.md) — typed security notifications
 over `INotificationSender`, no audit persistence in the producing module.
 
 ### The real defects in today's model
@@ -311,8 +311,8 @@ the ideal model rather than preserve it.
 
 **D2 — Upgrade is a loud, one-time migration, not a permanent alias layer.** Legacy strings stop
 matching. A startup validator scans stored roles and logs every unrecognized permission by role
-name; `docs/migrations/authorization-model.md` carries the full old→new table, following the
-convention of `docs/migrations/external-authentication-persistence.md`. Fails closed, loudly.
+name; `doc/migrations/authorization-model.md` carries the full old→new table, following the
+convention of `doc/migrations/external-authentication-persistence.md`. Fails closed, loudly.
 `*` survives as the escape hatch (see D3), so the admin role cannot be locked out.
 *Resolved 2026-08-23:* the requesting deployment does have hand-authored roles in production and accepts migrating, so no compatibility layer is required.
 

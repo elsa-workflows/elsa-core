@@ -28,7 +28,7 @@ public class LocalHostRequirementHandler : AuthorizationHandler<LocalHostRequire
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, LocalHostRequirement requirement)
     {
         if (_httpContextAccessor.HttpContext?.Request.IsLocal() == false)
-            context.Fail(new AuthorizationFailureReason(this, "Only requests from localhost are allowed"));
+            context.Fail(new(this, "Only requests from localhost are allowed"));
 
         context.Succeed(requirement);
         return Task.CompletedTask;

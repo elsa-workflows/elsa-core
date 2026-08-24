@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Bpmn.Interchange;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Exceptions;
@@ -23,7 +24,7 @@ internal sealed class Export(IWorkflowDefinitionStore store, BpmnInterchangeDocu
     public override void Configure()
     {
         Get("bpmn/definitions/{definitionId}/export");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Bpmn.Interchange.Permissions.BpmnPermissions.Definitions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

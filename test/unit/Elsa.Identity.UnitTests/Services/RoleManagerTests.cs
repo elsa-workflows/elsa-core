@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Providers;
@@ -12,7 +13,7 @@ public class RoleManagerTests
 
     public RoleManagerTests()
     {
-        _roleStore = new MemoryRoleStore(new MemoryStore<Role>());
+        _roleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         _manager = new RoleManager(_roleStore, new StoreBasedRoleProvider(_roleStore));
     }
 

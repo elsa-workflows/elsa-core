@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Models;
 using Elsa.Workflows.Management;
@@ -12,7 +13,7 @@ internal class Get(IWorkflowInstanceStore store) : ElsaEndpoint<Request, Workflo
     public override void Configure()
     {
         Get("/workflow-instances/{id}");
-        ConfigurePermissions("read:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -494,7 +495,7 @@ public class BrokerSecurityTests
     {
         var clock = new MutableClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var identity = new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>());
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         var provisioner = new InMemoryExternalIdentityProvisioner(
             users,
             new StoreBasedUserProvider(users),

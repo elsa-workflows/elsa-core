@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
@@ -13,7 +14,7 @@ internal sealed class RemediateAndDelete(IRoleDeletionCoordinator coordinator) :
     public override void Configure()
     {
         Post("/identity/roles/{id}/remove-from-jit-policies-and-delete");
-        ConfigurePermissions("delete:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(RemediateRoleDeletionRequest request, CancellationToken cancellationToken)

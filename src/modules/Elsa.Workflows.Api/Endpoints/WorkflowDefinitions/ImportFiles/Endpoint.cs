@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
@@ -39,7 +40,7 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     public override void Configure()
     {
         Post("workflow-definitions/import-files");
-        ConfigurePermissions("write:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Write);
         AllowFileUploads();
     }
 

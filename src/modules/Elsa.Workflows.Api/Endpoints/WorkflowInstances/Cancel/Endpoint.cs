@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -12,7 +13,7 @@ internal class Cancel(IWorkflowCancellationService workflowCancellationService)
     public override void Configure()
     {
         Post("/cancel/workflow-instances/{id}");
-        ConfigurePermissions("cancel:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, "cancel");
         //Allows for post with empty body
         Description(x => x.Accepts<Request>("*/*"), clearDefaults: true);
     }

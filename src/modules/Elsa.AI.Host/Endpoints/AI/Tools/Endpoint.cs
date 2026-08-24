@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
@@ -15,7 +16,7 @@ public class Endpoint(IAIToolRegistry toolRegistry, IOptions<AIHostOptions> opti
     public override void Configure()
     {
         Get("/ai/tools");
-        ConfigurePermissions(AIPermissions.ViewTools);
+        RequirePermission(Elsa.AI.Host.Permissions.AIResourcePermissions.Tools, CoreVerbs.View);
     }
 
     public override async Task<IReadOnlyCollection<AIToolDefinition>> ExecuteAsync(Request request, CancellationToken cancellationToken)

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
@@ -15,7 +16,7 @@ internal class ExecutionState(IWorkflowInstanceStore store) : ElsaEndpoint<Reque
     public override void Configure()
     {
         Get("/workflow-instances/{id}/execution-state");
-        ConfigurePermissions("read:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     }
 
     /// <inheritdoc />

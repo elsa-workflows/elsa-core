@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using System.Data.Common;
 using System.Text.Json;
 using Elsa.Common;
@@ -47,7 +48,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             .BuildServiceProvider();
         _dbContextFactory = _services.GetRequiredService<IDbContextFactory<ExternalAuthenticationElsaDbContext>>() as TestDbContextFactory ?? throw new InvalidOperationException();
         _leaseFactory = new ExternalAuthenticationDbContextLeaseFactory(_services.GetRequiredService<IServiceScopeFactory>());
-        _userStore = new MemoryUserStore(new MemoryStore<User>());
+        _userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         _userProvider = new StoreBasedUserProvider(_userStore);
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         await dbContext.Database.EnsureCreatedAsync();
@@ -303,7 +304,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             await using (var dbContext = await factory.CreateDbContextAsync())
                 await dbContext.Database.EnsureCreatedAsync();
 
-            var durableUsers = new MemoryUserStore(new MemoryStore<User>());
+            var durableUsers = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
             var coordinatedUsers = new CoordinatedUserStore(durableUsers, 2);
             using var hasher = new HmacExternalAuthenticationHandleHasher();
             var firstNode = CreateProvisioner(hasher, factory, coordinatedUsers);
@@ -355,7 +356,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     public async Task ProvisionerRemovesTheJustInTimeUserWhenPublicationIsCancelled()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
-        var users = new CancelAfterSaveUserStore(new MemoryUserStore(new MemoryStore<User>()), cancellationTokenSource);
+        var users = new CancelAfterSaveUserStore(new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a")), cancellationTokenSource);
         using var hasher = new HmacExternalAuthenticationHandleHasher();
         var provisioner = CreateProvisioner(hasher, userStore: users);
         var request = new ProvisioningRequest(
@@ -379,7 +380,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             .UseSqlite(_connection)
             .AddInterceptors(new FailingLinkSaveInterceptor())
             .Options;
-        var userStore = new DeleteFailingUserStore(new MemoryUserStore(new MemoryStore<User>()));
+        var userStore = new DeleteFailingUserStore(new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a")));
         var provisioner = CreateProvisioner(
             new HmacExternalAuthenticationHandleHasher(),
             new TestDbContextFactory(options, _services),
@@ -399,7 +400,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     [Fact]
     public async Task ProvisionerRemovesTheLinkWhenUserDeletionWinsTheRace()
     {
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
             .UseSqlite(_connection)
             .AddInterceptors(new DeleteLinkedUserBeforeCommitInterceptor(users))
@@ -699,7 +700,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             }
 
             // Both nodes share one user directory, which is what a multi-node deployment actually looks like.
-            var sharedUserStore = new MemoryUserStore(new MemoryStore<User>());
+            var sharedUserStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
             await sharedUserStore.SaveAsync(new User { Id = "user-a", Name = "alice-concurrent", TenantId = "tenant-a" });
 
             using var hasher = new HmacExternalAuthenticationHandleHasher();

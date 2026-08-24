@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
@@ -29,7 +30,7 @@ internal class Get : ElsaEndpoint<Request>
     public override void Configure()
     {
         Post("scripting/javascript/type-definitions/{workflowDefinitionId}");
-        ConfigurePermissions("read:*", "read:javascript-type-definitions");
+        RequirePermission(Elsa.Expressions.JavaScript.Permissions.JavaScriptPermissions.Scripting, CoreVerbs.View);
     }
 
     /// <inheritdoc />

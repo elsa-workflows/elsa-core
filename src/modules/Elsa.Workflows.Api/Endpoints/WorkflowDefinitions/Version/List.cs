@@ -1,4 +1,5 @@
-﻿using Elsa.Abstractions;
+﻿using Elsa.Authorization;
+using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
@@ -14,7 +15,7 @@ internal class ListVersions(IWorkflowDefinitionStore store) : ElsaEndpointWithou
     public override void Configure()
     {
         Get("workflow-definitions/{definitionId}/versions");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DefinitionVersions, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

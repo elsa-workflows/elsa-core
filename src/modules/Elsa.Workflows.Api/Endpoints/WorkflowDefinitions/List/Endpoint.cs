@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -16,7 +17,7 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
     public override void Configure()
     {
         Get("/workflow-definitions");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     public override async Task<PagedListResponse<LinkedWorkflowDefinitionSummary>> ExecuteAsync(Request request, CancellationToken cancellationToken)

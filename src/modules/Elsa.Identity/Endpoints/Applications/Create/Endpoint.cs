@@ -1,4 +1,5 @@
-﻿using Elsa.Abstractions;
+﻿using Elsa.Authorization;
+using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Workflows;
@@ -42,7 +43,7 @@ internal class Create : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/identity/applications");
-        ConfigurePermissions("create:application");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Applications, CoreVerbs.Create);
         Policies(IdentityPolicyNames.SecurityRoot);
     }
 

@@ -29,7 +29,7 @@ public class IdentityTokenOptions
     /// <summary>
     /// The lifetime of access tokens
     /// </summary>
-    public TimeSpan AccessTokenLifetime { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan AccessTokenLifetime { get; set; } = TimeSpan.FromMinutes(15);
     
     /// <summary>
     /// The lifetime of refresh tokens

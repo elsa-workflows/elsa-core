@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Serialization;
@@ -19,7 +20,7 @@ internal class List(IOutputConverterRegistry registry, ISerializationTypeRegistr
     public override void Configure()
     {
         Get("/descriptors/output-converters");
-        ConfigurePermissions("read:*", "read:output-converters");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsOutputConverters, CoreVerbs.View);
     }
 
     /// <inheritdoc />

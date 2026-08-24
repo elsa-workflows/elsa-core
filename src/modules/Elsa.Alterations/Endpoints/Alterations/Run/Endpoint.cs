@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using JetBrains.Annotations;
@@ -24,7 +25,7 @@ public class Run : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/alterations/run");
-        ConfigurePermissions("run:alterations");
+        RequirePermission(Elsa.Alterations.Permissions.AlterationPermissions.Alterations, CoreVerbs.Execute);
     }
 
     /// <inheritdoc />

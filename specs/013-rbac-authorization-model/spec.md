@@ -8,7 +8,7 @@
 
 **Tracking**: [#7974](https://github.com/elsa-workflows/elsa-core/issues/7974)
 
-**Input**: A customer request for role-based access control, assessed in [research.md](research.md), reframed against Elsa's existing identity, permission, and multitenancy infrastructure, [domain language](../../CONTEXT.md), and [architecture decisions](../../docs/adr).
+**Input**: A customer request for role-based access control, assessed in [research.md](research.md), reframed against Elsa's existing identity, permission, and multitenancy infrastructure, [domain language](../../CONTEXT.md), and [architecture decisions](../../doc/adr).
 
 ## Product Context
 
@@ -18,7 +18,7 @@ The consequences are concrete. `"*"`, `"read:*"` and `"exec:*"` are literal clai
 
 This feature replaces that vocabulary with a **structured authorization model**: a hierarchical **resource** axis, an open **verb** axis, a module-contributed **permission catalog**, and a single evaluator that every enforcement path routes through.
 
-Both axes are open and string-keyed, because Elsa is a framework that third parties extend and [ADR 0004](../../docs/adr/0004-separate-external-identity-from-elsa-authorization.md) establishes an open permission vocabulary. A closed verb enumeration was drafted and rejected: fitting the census to seven verbs forced six mappings and three invented sub-resources, and every open question it produced was an artefact of the closure. Coherence is maintained by a recommended core verb set as convention, per Principle III. [ADR 0009](../../docs/adr/0009-match-unlinked-identities-with-trusted-user-matchers.md) remains in force: Elsa is the only authority that expands Roles into permission claims.
+Both axes are open and string-keyed, because Elsa is a framework that third parties extend and [ADR 0017](../../doc/adr/0017-separate-external-identity-from-elsa-authorization.md) establishes an open permission vocabulary. A closed verb enumeration was drafted and rejected: fitting the census to seven verbs forced six mappings and three invented sub-resources, and every open question it produced was an artefact of the closure. Coherence is maintained by a recommended core verb set as convention, per Principle III. [ADR 0022](../../doc/adr/0022-match-unlinked-identities-with-trusted-user-matchers.md) remains in force: Elsa is the only authority that expands Roles into permission claims.
 
 ## Clarifications
 

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Collections.Frozen;
 using Elsa.Abstractions;
 using Elsa.Expressions.Contracts;
@@ -23,7 +24,7 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
     public override void Configure()
     {
         Get("/descriptors/expression-descriptors");
-        ConfigurePermissions("read:*", "read:expression-descriptors");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsExpressions, CoreVerbs.View);
     }
 
     /// <inheritdoc />
@@ -40,7 +41,7 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
         if (!PrivilegedExpressionPermissions.TryGetValue(descriptor.Type, out var permission))
             return true;
 
-        return descriptor.IsBrowsable && User.Claims.Any(x => x.Type == PermissionNames.ClaimType && (x.Value == PermissionNames.All || x.Value == permission));
+        return descriptor.IsBrowsable;
     }
 
     private static IEnumerable<ExpressionDescriptorModel> Map(List<ExpressionDescriptor> descriptors) => descriptors.Select(Map);

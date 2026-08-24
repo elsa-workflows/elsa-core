@@ -21,7 +21,7 @@ public class OpenTelemetryAuthorizationTests
     {
         var permissions = GetConfiguredPermissions(endpointTypeName);
 
-        Assert.Contains(OpenTelemetryPermissions.Read, permissions);
+        Assert.Contains("diagnostics/opentelemetry:view", permissions);
     }
 
     private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
@@ -37,12 +37,13 @@ public class OpenTelemetryAuthorizationTests
 
         endpointType.GetMethod("Configure")!.Invoke(endpoint, null);
 
-        var permissions = definition
-            .GetType()
-            .GetProperty("AllowedPermissions", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(definition);
+        // The requirement is attached as an inline policy, not to AllowedPermissions, so the declaration is
+        // read back from the registry that records it.
+        var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(endpointType);
 
-        return Assert.IsAssignableFrom<IEnumerable<string>>(permissions).ToArray();
+        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+
+        return [permission!.Value.ToString()];
     }
 
     private static (Type RequestDtoType, Type ResponseDtoType) GetEndpointDtoTypes(Type endpointType)

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -27,7 +28,7 @@ internal class Get : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-instances/{id}/journal");
-        ConfigurePermissions("read:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     }
 
     /// <inheritdoc />

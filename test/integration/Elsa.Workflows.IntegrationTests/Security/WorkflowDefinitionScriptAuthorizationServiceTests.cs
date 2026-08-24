@@ -16,7 +16,7 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
 {
     private static readonly ClaimsPrincipal UserWithCSharpPermission = CreateUser(PermissionNames.ExecuteCSharpExpressions);
     private static readonly ClaimsPrincipal UserWithPythonPermission = CreateUser(PermissionNames.ExecutePythonExpressions);
-    private static readonly ClaimsPrincipal UserWithoutScriptPermission = CreateUser("write:workflow-definitions");
+    private static readonly ClaimsPrincipal UserWithoutScriptPermission = CreateUser("workflows/definitions:write");
 
     [Fact]
     public async Task AuthorizeAsync_BlocksCSharpExpression_WhenHostHasNotOptedIn()
@@ -31,14 +31,18 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
     }
 
     [Fact]
-    public async Task AuthorizeAsync_BlocksCSharpExpression_WhenUserLacksPermission()
+    public async Task AuthorizeAsync_AllowsCSharpExpression_WhenHostOptedIn_RegardlessOfUserPermissions()
     {
         var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
         var model = CreateModelWithCSharpExpression();
 
         var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
 
-        Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission, result.FailureReason);
+        // The per-author permission was removed: a workflow runs under the server's authority, not the
+        // caller's, so gating execution on the caller never constrained what a script could do. The host
+        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        Assert.True(result.Succeeded);
+        Assert.Null(result.FailureReason);
     }
 
     [Fact]
@@ -80,7 +84,11 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
 
         var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
 
-        Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission, result.FailureReason);
+        // The per-author permission was removed: a workflow runs under the server's authority, not the
+        // caller's, so gating execution on the caller never constrained what a script could do. The host
+        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        Assert.True(result.Succeeded);
+        Assert.Null(result.FailureReason);
     }
 
     [Fact]
@@ -96,14 +104,18 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
     }
 
     [Fact]
-    public async Task AuthorizeAsync_BlocksPythonExpression_WhenUserLacksPermission()
+    public async Task AuthorizeAsync_AllowsPythonExpression_WhenHostOptedIn_RegardlessOfUserPermissions()
     {
         var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
         var model = CreateModelWithPythonExpression();
 
         var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
 
-        Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission, result.FailureReason);
+        // The per-author permission was removed: a workflow runs under the server's authority, not the
+        // caller's, so gating execution on the caller never constrained what a script could do. The host
+        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        Assert.True(result.Succeeded);
+        Assert.Null(result.FailureReason);
     }
 
     [Fact]
@@ -131,7 +143,11 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
 
         var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
 
-        Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission, result.FailureReason);
+        // The per-author permission was removed: a workflow runs under the server's authority, not the
+        // caller's, so gating execution on the caller never constrained what a script could do. The host
+        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        Assert.True(result.Succeeded);
+        Assert.Null(result.FailureReason);
     }
 
     private static WorkflowDefinitionModel CreateModelWithCSharpExpression()
