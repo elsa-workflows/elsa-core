@@ -21,6 +21,14 @@ public static class ModuleExtensions
     {
         var assemblies = module.Properties.GetOrAdd(FastEndpointsAssembliesKey, () => new HashSet<Assembly>());
         assemblies.Add(assembly);
+
+        // Registering an endpoint assembly is what guarantees its permissions work, so the evaluator and
+        // that assembly's descriptors are registered here rather than in AddFastEndpointsFromModule. A host
+        // that wires FastEndpoints itself never calls that helper, and without the authorization handler
+        // every RequirePermission endpoint would answer 403 -- fail-closed, but broken.
+        module.Services.AddElsaAuthorization();
+        module.Services.AddPermissionDescriptorsFromAssembly(assembly);
+
         return module;
     }
 
@@ -51,14 +59,6 @@ public static class ModuleExtensions
             options.DisableAutoDiscovery = true;
             options.Assemblies = assemblies;
         });
-
-        // A module's permission descriptors are discovered from the same assemblies as its endpoints, so
-        // the catalog necessarily describes exactly the endpoints that exist. Registering them separately
-        // per module would let the two drift, which is the failure this model exists to remove.
-        module.Services.AddElsaAuthorization();
-
-        foreach (var assembly in assemblies)
-            module.Services.AddPermissionDescriptorsFromAssembly(assembly);
 
         return module;
     }

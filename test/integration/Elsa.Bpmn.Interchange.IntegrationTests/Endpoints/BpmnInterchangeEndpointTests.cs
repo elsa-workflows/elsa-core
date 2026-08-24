@@ -99,7 +99,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // endpoint's own zero-files check ever runs.
         content.Add(new StringContent("value"), "field");
 
-        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "read:workflow-definitions");
+        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -111,7 +111,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "first");
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "second");
 
-        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "read:workflow-definitions");
+        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -122,7 +122,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
 
-        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "read:workflow-definitions");
+        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
@@ -136,7 +136,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset("unbound-task-process.bpmn"), "file");
 
-        var response = await PostAuthenticatedAsync("bpmn/import", content, "write:workflow-definitions");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
@@ -147,7 +147,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
 
-        var response = await PostAuthenticatedAsync("bpmn/import", content, "write:workflow-definitions");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
@@ -158,7 +158,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [Fact]
     public async Task Export_OfAMissingDefinition_ReturnsNotFound()
     {
-        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export", "read:workflow-definitions");
+        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export", "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -168,7 +168,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     {
         var definitionId = await CreateNonBpmnDefinitionAsync();
 
-        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "read:workflow-definitions");
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
@@ -178,7 +178,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [Fact]
     public async Task Export_WithAMalformedVersion_ReturnsBadRequest()
     {
-        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export?VersionOptions=not-a-number", "read:workflow-definitions");
+        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export?VersionOptions=not-a-number", "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
@@ -190,13 +190,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     {
         using var importContent = new MultipartFormDataContent();
         AddBpmnFile(importContent, ReadAsset("camunda-order-process.bpmn"), "file");
-        var importResponse = await PostAuthenticatedAsync("bpmn/import", importContent, "write:workflow-definitions");
+        var importResponse = await PostAuthenticatedAsync("bpmn/import", importContent, "workflows/definitions:write");
         Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
 
         using var importDocument = JsonDocument.Parse(await importResponse.Content.ReadAsStringAsync());
         var definitionId = importDocument.RootElement.GetProperty("definitionId").GetString();
 
-        var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "read:workflow-definitions");
+        var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
         var exportedXml = await exportResponse.Content.ReadAsStringAsync();
@@ -219,7 +219,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
 
         // Authenticated, but only holds the read permission Export needs, not the write permission Import needs.
-        var response = await PostAuthenticatedAsync("bpmn/import", content, "read:workflow-definitions");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
