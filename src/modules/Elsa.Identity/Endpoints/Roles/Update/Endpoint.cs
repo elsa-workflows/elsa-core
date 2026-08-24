@@ -39,8 +39,9 @@ internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthor
 
         if (!validation.IsValid)
         {
+            // Both parts matter: the permission identifies which entry to fix, the reason says how.
             foreach (var error in validation.Errors)
-                AddError($"{nameof(request.Permissions)}: {error.Permission}", error.Reason);
+                AddError($"{error.Permission} — {error.Reason}");
 
             await Send.ErrorsAsync(cancellation: cancellationToken);
             return;

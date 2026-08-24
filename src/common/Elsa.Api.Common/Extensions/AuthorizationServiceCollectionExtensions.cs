@@ -39,6 +39,37 @@ public static class AuthorizationServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Contributes every <see cref="IPermissionDescriptorProvider"/> declared in the loaded Elsa assemblies.
+    /// </summary>
+    /// <remarks>
+    /// The module path discovers descriptors from the assemblies it registers with FastEndpoints. The shell
+    /// path does not register assemblies that way -- CShells discovers endpoints from features implementing
+    /// its own marker interface -- so without this the catalog comes up empty on a shell host, taking role
+    /// authoring, introspection and the stored-permission validator with it. Scanning is bounded to loaded
+    /// Elsa assemblies and runs once per shell.
+    /// </remarks>
+    public static IServiceCollection AddPermissionDescriptorsFromLoadedAssemblies(this IServiceCollection services)
+    {
+        var assemblies = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Where(x => x.GetName().Name?.StartsWith("Elsa.", StringComparison.Ordinal) == true && !x.IsDynamic);
+
+        foreach (var assembly in assemblies)
+        {
+            try
+            {
+                services.AddPermissionDescriptorsFromAssembly(assembly);
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                // An assembly whose types cannot all be loaded contributes nothing rather than failing startup.
+            }
+        }
+
+        return services;
+    }
+
     /// <summary>Contributes <typeparamref name="T"/>'s permission descriptors to the catalog.</summary>
     public static IServiceCollection AddPermissionDescriptors<T>(this IServiceCollection services) where T : class, IPermissionDescriptorProvider
     {

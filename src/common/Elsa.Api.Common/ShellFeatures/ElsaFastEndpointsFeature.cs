@@ -21,5 +21,6 @@ public class ElsaFastEndpointsFeature : IShellFeature
     {
         services.AddSingleton<IFastEndpointsConfigurator, ElsaFastEndpointsConfigurator>();
         services.AddElsaAuthorization();
+        services.AddPermissionDescriptorsFromLoadedAssemblies();
     }
 }
