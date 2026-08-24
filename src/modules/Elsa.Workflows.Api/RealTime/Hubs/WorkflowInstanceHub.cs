@@ -19,8 +19,6 @@ namespace Elsa.Workflows.Api.RealTime.Hubs;
 [Authorize]
 public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
 {
-    private const string ReadWorkflowInstancesPermission = "read:workflow-instances";
-    private const string ReadAllPermission = "read:*";
     private static readonly Permission ReadInstances = new(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ITenantAccessor? _tenantAccessor;

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using Elsa.Identity.Options;
@@ -14,6 +15,7 @@ public class PermissionStampValidator(
     IUserProvider userProvider,
     IPermissionStampCalculator calculator,
     IMemoryCache cache,
+    ITenantAccessor tenantAccessor,
     IOptions<PermissionStampOptions> options)
 {
     /// <summary>
@@ -36,11 +38,16 @@ public class PermissionStampValidator(
         if (string.IsNullOrWhiteSpace(userName))
             return true;
 
-        var current = await cache.GetOrCreateAsync($"elsa:permission-stamp:{userName}", async entry =>
+        // The cache key and the lookup are both tenant-scoped. User names are unique per tenant, not
+        // globally, so keying on the name alone lets one tenant's cached stamp satisfy a revoked token
+        // belonging to a same-named user in another tenant.
+        var tenantId = tenantAccessor.TenantId;
+
+        var current = await cache.GetOrCreateAsync($"elsa:permission-stamp:{tenantId}:{userName}", async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = options.Value.CacheLifetime;
 
-            var user = await userProvider.FindAsync(new UserFilter { Name = userName }, cancellationToken);
+            var user = await userProvider.FindAsync(new UserFilter { Name = userName, TenantId = tenantId }, cancellationToken);
 
             return user is null ? null : await calculator.ComputeAsync(user, cancellationToken);
         });

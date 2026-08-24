@@ -52,9 +52,14 @@ public class StoredPermissionValidator(IServiceScopeFactory scopeFactory, ILogge
             if (affected > 0)
                 logger.LogWarning("{Count} role(s) hold unresolvable permissions. Re-author them against the permission catalog at GET /identity/permissions.", affected);
         }
-        catch (Exception ex)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // Reporting must never prevent the host from starting.
+            throw;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException and not StackOverflowException)
+        {
+            // Reporting must never prevent the host from starting: an unreachable or half-migrated store
+            // is exactly when an operator most needs the host up to fix it.
             logger.LogWarning(ex, "Could not validate stored role permissions.");
         }
     }

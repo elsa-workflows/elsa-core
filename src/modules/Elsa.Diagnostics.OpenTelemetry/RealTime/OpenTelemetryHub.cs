@@ -11,7 +11,6 @@ namespace Elsa.Diagnostics.OpenTelemetry.RealTime;
 [Authorize]
 public class OpenTelemetryHub(OpenTelemetrySubscriptionManager subscriptionManager) : Hub<IOpenTelemetryClient>
 {
-    private const string ReadAllPermission = "read:*";
     private static readonly Permission ReadOpenTelemetry = new(OpenTelemetryResourcePermissions.OpenTelemetry, CoreVerbs.View);
 
     public Task SubscribeAsync(OpenTelemetryTraceFilter? filter)

@@ -12,7 +12,6 @@ public interface IElsaConsoleLogHubAuthorizer
 
 public sealed class ElsaConsoleLogStreamHubAuthorizer : IElsaConsoleLogHubAuthorizer
 {
-    private const string ReadAllPermission = "read:*";
     private static readonly Permission ReadConsoleLogs = new(ConsoleLogsResourcePermissions.ConsoleLogs, CoreVerbs.View);
 
     public ValueTask<bool> CanReadAsync(HubCallerContext context, CancellationToken cancellationToken = default)

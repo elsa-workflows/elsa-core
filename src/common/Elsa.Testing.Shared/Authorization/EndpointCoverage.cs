@@ -119,9 +119,9 @@ public static class EndpointCoverage
                 if (called is not null && Declarations.Contains(called.Name, StringComparer.Ordinal))
                     return true;
             }
-            catch
+            catch (Exception ex) when (ex is ArgumentException or BadImageFormatException or MissingMethodException)
             {
-                // Not a method token at this offset; keep scanning.
+                // The bytes at this offset are not a resolvable method token; keep scanning.
             }
         }
 
