@@ -67,6 +67,6 @@ internal static class EndpointSecurity
         if (!EndpointSecurityOptions.SecurityIsEnabled)
             definition.AllowAnonymous();
         else
-            definition.Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
+            definition.Permissions([PermissionNames.All, .. permissions]);
     }
 }
