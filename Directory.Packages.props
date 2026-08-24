@@ -98,9 +98,9 @@
         <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.1.0"/>
         <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
         <PackageVersion Include="Bogus" Version="35.6.5"/>
-        <PackageVersion Include="Bpmn.Interchange" Version="0.1.1-preview.19"/>
-        <PackageVersion Include="Bpmn.Model" Version="0.1.1-preview.19"/>
-        <PackageVersion Include="Bpmn.Semantics" Version="0.1.1-preview.19"/>
+        <PackageVersion Include="Bpmn.Interchange" Version="0.2.0"/>
+        <PackageVersion Include="Bpmn.Model" Version="0.2.0"/>
+        <PackageVersion Include="Bpmn.Semantics" Version="0.2.0"/>
         <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All"/>
         <PackageVersion Include="ConsoleLogStreaming.Contracts" Version="1.1.0"/>
         <PackageVersion Include="ConsoleLogStreaming.Core" Version="1.1.0"/>

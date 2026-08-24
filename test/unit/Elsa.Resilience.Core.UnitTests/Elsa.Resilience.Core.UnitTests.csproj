@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Include>[Elsa.Resilience.Core]*</Include>
-        <Threshold>49</Threshold>
+        <Threshold>90</Threshold>
     </PropertyGroup>
 
     <ItemGroup>

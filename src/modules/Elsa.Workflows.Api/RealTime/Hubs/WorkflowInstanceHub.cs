@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows.Api.RealTime.Contracts;
@@ -18,9 +19,7 @@ namespace Elsa.Workflows.Api.RealTime.Hubs;
 [Authorize]
 public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
 {
-    private const string ReadWorkflowInstancesPermission = "read:workflow-instances";
-    private const string ReadAllPermission = "read:*";
-    private static readonly string[] ReadPermissions = [PermissionNames.All, ReadAllPermission, ReadWorkflowInstancesPermission];
+    private static readonly Permission ReadInstances = new(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ITenantAccessor? _tenantAccessor;
 
@@ -56,7 +55,7 @@ public class WorkflowInstanceHub : Hub<IWorkflowInstanceClient>
         if (user?.Identity?.IsAuthenticated != true)
             return false;
 
-        return ReadPermissions.Any(user.HasPermission);
+        return PermissionEvaluator.Shared.HasPermission(user, ReadInstances);
     }
 
     private static bool CanAccessTenant(WorkflowInstance? workflowInstance, ITenantAccessor? tenantAccessor)

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
@@ -12,7 +13,7 @@ internal class Endpoint(IConsoleLogProvider provider) : ElsaEndpointWithoutReque
     public override void Configure()
     {
         Get("/diagnostics/console-logs/sources");
-        ConfigurePermissions(ConsoleLogsPermissions.Read);
+        RequirePermission(Elsa.Diagnostics.ConsoleLogs.Permissions.ConsoleLogsResourcePermissions.ConsoleLogs, CoreVerbs.View);
     }
 
     public override async Task<IReadOnlyCollection<ConsoleLogSource>> ExecuteAsync(CancellationToken cancellationToken)

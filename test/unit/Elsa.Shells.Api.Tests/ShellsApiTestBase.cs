@@ -14,7 +14,6 @@ namespace Elsa.Shells.Api.Tests;
 public abstract class ShellsApiTestBase : IAsyncLifetime
 {
     private WebApplication? _app;
-    private bool _wasSecurityEnabled;
 
     protected IShellRegistry ShellRegistry { get; } = Substitute.For<IShellRegistry>();
     protected HttpClient HttpClient { get; private set; } = null!;
@@ -27,9 +26,6 @@ public abstract class ShellsApiTestBase : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-        EndpointSecurityOptions.SecurityIsEnabled = false;
-
         var apiSerializer = Substitute.For<IApiSerializer>();
         apiSerializer.GetOptions().Returns(JsonOptions);
 
@@ -56,7 +52,6 @@ public abstract class ShellsApiTestBase : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
         HttpClient.Dispose();
         if (_app != null)
         {

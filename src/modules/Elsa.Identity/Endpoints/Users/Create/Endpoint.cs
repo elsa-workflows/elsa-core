@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using JetBrains.Annotations;
@@ -14,7 +15,7 @@ internal class Create(IUserManager userManager, IRoleAuthorizationService roleAu
     public override void Configure()
     {
         Post("/identity/users");
-        ConfigurePermissions("create:user");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Users, CoreVerbs.Create);
     }
 
     /// <inheritdoc />

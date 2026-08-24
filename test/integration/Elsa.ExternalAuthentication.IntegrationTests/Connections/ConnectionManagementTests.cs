@@ -21,9 +21,11 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Connections;
 
+[Collection(nameof(EndpointSecurityCollection))]
 public class ConnectionManagementTests : IAsyncLifetime
 {
     private WebApplication? _app;

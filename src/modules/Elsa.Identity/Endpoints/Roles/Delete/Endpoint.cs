@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using JetBrains.Annotations;
@@ -14,7 +15,7 @@ internal class Delete(IRoleDeletionCoordinator coordinator) : ElsaEndpointWithou
     public override void Configure()
     {
         Delete("/identity/roles/{id}");
-        ConfigurePermissions("delete:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Delete);
     }
 
     /// <inheritdoc />

@@ -1,3 +1,5 @@
+using Elsa.Authorization;
+using Elsa.Testing.Shared.Multitenancy;
 using System.Security.Claims;
 using System.Text.Json;
 using Elsa.Common.Services;
@@ -164,7 +166,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         foreach (var connection in databaseConnections)
             Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(connection));
 
-        var roleStore = new MemoryRoleStore(new MemoryStore<Role>());
+        var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await roleStore.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
         await roleStore.SaveAsync(new Role { Id = "other-role", Name = "Other role", Permissions = [] });
         var versions = new InMemoryConnectionRegistryVersionStore();
@@ -172,7 +174,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var contributor = new ExternalAuthenticationRoleDeletionDependencyContributor(
             store,
             new MutableOptionsMonitor<ExternalAuthenticationOptions>(new ExternalAuthenticationOptions { ConfigurationConnections = configuredConnections.ToList() }),
-            new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore)),
+            new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator()),
             versions,
             new ConnectionRevisionCalculator(),
             new ExternalAuthenticationSecurityNotifier(services));

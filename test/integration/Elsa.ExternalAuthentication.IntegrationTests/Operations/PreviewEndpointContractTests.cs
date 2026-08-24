@@ -15,10 +15,11 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Operations;
 
-[Collection(nameof(PreviewEndpointContractCollection))]
+[Collection(nameof(EndpointSecurityCollection))]
 public class PreviewEndpointContractTests : IAsyncLifetime
 {
     private const string PreviewHandle = "preview-handle";
@@ -209,6 +210,3 @@ public class PreviewEndpointContractTests : IAsyncLifetime
         public ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }
-
-[CollectionDefinition(nameof(PreviewEndpointContractCollection), DisableParallelization = true)]
-public class PreviewEndpointContractCollection;

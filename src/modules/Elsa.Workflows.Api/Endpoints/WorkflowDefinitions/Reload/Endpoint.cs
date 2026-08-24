@@ -12,7 +12,7 @@ internal class Reload(IWorkflowDefinitionsReloader workflowDefinitionsReloader) 
     public override void Configure()
     {
         Post("/actions/workflow-definitions/reload");
-        ConfigurePermissions("actions:workflow-definitions:reload");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "reload");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

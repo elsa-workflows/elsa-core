@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
@@ -10,7 +11,7 @@ public class Endpoint(ITenantService tenantService, ITenantStore tenantStore) : 
     public override void Configure()
     {
         Post("/tenants/{id}");
-        ConfigurePermissions("write:tenants");
+        RequirePermission(Elsa.Tenants.Permissions.TenantPermissions.Tenants, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(UpdatedTenant req, CancellationToken ct)

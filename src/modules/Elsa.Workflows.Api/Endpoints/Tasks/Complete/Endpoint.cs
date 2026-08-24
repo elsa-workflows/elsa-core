@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
@@ -21,7 +22,7 @@ public class Complete : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/tasks/{taskId}/complete");
-        ConfigurePermissions("tasks:complete");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Tasks, "complete");
     }
 
     /// <inheritdoc />

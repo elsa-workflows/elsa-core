@@ -42,6 +42,14 @@ public interface IActivityScheduler
     ActivityWorkItem? Find(Func<ActivityWorkItem, bool> predicate);
     
     /// <summary>
+    /// Removes every work item matching the specified predicate, preserving the order in which the remaining items
+    /// will be taken. This is how a container withdraws work it scheduled but has since decided must not run.
+    /// </summary>
+    /// <param name="predicate">The predicate to match.</param>
+    /// <returns>The number of work items removed.</returns>
+    int RemoveWhere(Func<ActivityWorkItem, bool> predicate);
+
+    /// <summary>
     /// Clears all work items from the scheduler.
     /// </summary>
     void Clear();

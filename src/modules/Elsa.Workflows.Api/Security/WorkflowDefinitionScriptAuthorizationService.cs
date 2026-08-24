@@ -15,12 +15,10 @@ internal class WorkflowDefinitionScriptAuthorizationService(
         new(
             "CSharp",
             WorkflowScriptActivityTypeNames.RunCSharp,
-            PermissionNames.ExecuteCSharpExpressions,
             "C# workflow expression execution is disabled by the host. Set CSharpOptions.AllowHostCodeExecution to true only for trusted workflow authors; Roslyn scripting is not a sandbox."),
         new(
             "Python",
             WorkflowScriptActivityTypeNames.RunPython,
-            PermissionNames.ExecutePythonExpressions,
             "Python.NET workflow expression execution is disabled by the host. Set PythonOptions.AllowHostCodeExecution to true only for trusted workflow authors; Python.NET is not a sandbox.")
     ];
 
@@ -57,9 +55,11 @@ internal class WorkflowDefinitionScriptAuthorizationService(
         if (expressionDescriptorRegistry.Find(policy.ExpressionType)?.IsBrowsable != true)
             return WorkflowDefinitionScriptAuthorizationResult.HostDisabled(policy.HostDisabledMessage);
 
-        return HasPermission(user, policy.Permission)
-            ? WorkflowDefinitionScriptAuthorizationResult.Allowed()
-            : WorkflowDefinitionScriptAuthorizationResult.MissingPermission();
+        // The host switch is the single control. The former per-author permission conflated an incoherent
+        // execution-side gate -- a workflow runs under the server's authority, not the caller's, so the
+        // check never constrained what a script could do -- with a meaningful authoring-side one. Per-author
+        // script trust is redesigned separately; see #7975.
+        return WorkflowDefinitionScriptAuthorizationResult.Allowed();
     }
 
     private async Task<IEnumerable<ScriptPolicy>> GetUsedScriptPoliciesAsync(IActivity root, CancellationToken cancellationToken)
@@ -79,15 +79,7 @@ internal class WorkflowDefinitionScriptAuthorizationService(
     private static bool HasExpression(IActivity activity, ScriptPolicy policy) =>
         activity.GetInputs().Any(x => string.Equals(x.Expression?.Type, policy.ExpressionType, StringComparison.Ordinal));
 
-    private static bool HasPermission(ClaimsPrincipal user, string permission)
-    {
-        return user.Claims.Any(x =>
-            x.Type == PermissionNames.ClaimType &&
-            (string.Equals(x.Value, PermissionNames.All, StringComparison.Ordinal) ||
-             string.Equals(x.Value, permission, StringComparison.Ordinal)));
-    }
-
-    private sealed record ScriptPolicy(string ExpressionType, string RunActivityType, string Permission, string HostDisabledMessage);
+    private sealed record ScriptPolicy(string ExpressionType, string RunActivityType, string HostDisabledMessage);
 }
 
 internal readonly record struct WorkflowDefinitionScriptAuthorizationResult(bool Succeeded, WorkflowDefinitionScriptAuthorizationFailureReason? FailureReason, string? Message)

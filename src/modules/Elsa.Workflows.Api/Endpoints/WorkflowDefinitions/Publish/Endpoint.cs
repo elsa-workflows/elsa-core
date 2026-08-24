@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -23,7 +24,7 @@ internal class Publish(
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/publish");
-        ConfigurePermissions("publish:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

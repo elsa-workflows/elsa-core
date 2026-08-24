@@ -86,6 +86,22 @@ public sealed class BpmnTestHost
     }
 
     /// <summary>
+    /// The invocation correlation the named BPMN scope carries — the dictionary the scope that started it wrote onto
+    /// its context, and the one an event subprocess body's start-element hint is read from.
+    /// </summary>
+    /// <remarks>
+    /// It belongs to the scope and is fixed for its lifetime, so reading it after the scope has started and finished
+    /// work is what makes "nothing overwrote it" observable rather than merely documented.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string> InvocationCorrelationOf(string scopeActivityId)
+    {
+        var scopeContext = _result!.Journal.ActivityExecutionContexts.First(x => x.Activity.Id == scopeActivityId);
+
+        return BpmnScopeMemory.Read<Dictionary<string, string>>(scopeContext, BpmnScopeHost.InvocationCorrelationPropertyKey)
+               ?? new Dictionary<string, string>(StringComparer.Ordinal);
+    }
+
+    /// <summary>
     /// Replaces the current <see cref="WorkflowState"/> with what a round trip through Elsa's own
     /// <see cref="IWorkflowStateSerializer"/> hands back — what a real persistence store would return on load,
     /// rather than the exact same in-memory object the previous run produced.

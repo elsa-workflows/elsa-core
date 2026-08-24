@@ -1,5 +1,7 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
+using Elsa.Permissions;
 using JetBrains.Annotations;
 
 namespace Elsa.Identity.Endpoints.Roles.Update;
@@ -8,13 +10,13 @@ namespace Elsa.Identity.Endpoints.Roles.Update;
 /// An endpoint that updates an existing role.
 /// </summary>
 [PublicAPI]
-internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
+internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator, Services.RoleSecurityNotifier securityNotifier) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
     {
         Put("/identity/roles/{id}");
-        ConfigurePermissions("update:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Update);
     }
 
     /// <inheritdoc />
@@ -33,6 +35,18 @@ internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthor
             return;
         }
 
+        var validation = grantValidator.Validate(request.Permissions);
+
+        if (!validation.IsValid)
+        {
+            // Both parts matter: the permission identifies which entry to fix, the reason says how.
+            foreach (var error in validation.Errors)
+                AddError($"{error.Permission} — {error.Reason}");
+
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+
         if (!roleAuthorizationService.CanMutateRole(User, role, request.Permissions))
         {
             await Send.ForbiddenAsync(cancellationToken);
@@ -46,6 +60,7 @@ internal class Update(IRoleStore roleStore, IRoleAuthorizationService roleAuthor
             role.Permissions = request.Permissions;
 
         await roleStore.SaveAsync(role, cancellationToken);
+        await securityNotifier.RoleChangedAsync(User, "updated", role.Id, role.Name, role.Permissions.ToArray(), cancellationToken);
 
         var response = new Response(
             role.Id,

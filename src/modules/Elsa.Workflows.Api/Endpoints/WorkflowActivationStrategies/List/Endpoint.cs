@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -16,7 +17,7 @@ internal class List(IEnumerable<IWorkflowActivationStrategy> strategies) : ElsaE
     public override void Configure()
     {
         Get("/descriptors/workflow-activation-strategies");
-        ConfigurePermissions("read:workflow-activation-strategies");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivationStrategies, CoreVerbs.View);
     }
 
     public override Task<ListResponse<WorkflowActivationStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)

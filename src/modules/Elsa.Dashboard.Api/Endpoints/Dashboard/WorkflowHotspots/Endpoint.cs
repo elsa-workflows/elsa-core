@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
@@ -12,7 +13,7 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpoint<Das
     public override void Configure()
     {
         Post("/dashboard/workflow-hotspots");
-        ConfigurePermissions(DashboardPermissions.Read);
+        RequirePermission(Elsa.Dashboard.Api.Permissions.DashboardResourcePermissions.Dashboard, CoreVerbs.View);
     }
 
     public override async Task<DashboardWorkflowHotspotsResponse> ExecuteAsync(DashboardWorkflowHotspotsRequest request, CancellationToken cancellationToken)

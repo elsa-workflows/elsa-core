@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -21,7 +22,7 @@ internal sealed class ListExternalAuthenticationSessions(
     public override void Configure()
     {
         Get("/external-authentication/sessions");
-        ConfigurePermissions(ExternalAuthenticationPermissions.SessionsRead);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Sessions, CoreVerbs.View);
     }
 
     public override async Task<ExternalAuthenticationSessionListResponse> ExecuteAsync(ExternalAuthenticationSessionListRequest request, CancellationToken cancellationToken)
@@ -73,7 +74,7 @@ internal sealed class RevokeExternalAuthenticationSession(
     public override void Configure()
     {
         Delete("/external-authentication/sessions/{sessionId}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.SessionsRevoke);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Sessions, "revoke");
     }
 
     public override async Task HandleAsync(RevokeExternalAuthenticationSessionRequest request, CancellationToken cancellationToken)

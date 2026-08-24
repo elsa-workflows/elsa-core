@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -59,7 +60,7 @@ internal class Export : ElsaEndpointWithMapper<Request, WorkflowInstanceMapper>
     {
         Routes("/bulk-actions/export/workflow-instances", "/workflow-instances/{id}/export");
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
-        ConfigurePermissions("read:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.View);
     }
 
     /// <inheritdoc />

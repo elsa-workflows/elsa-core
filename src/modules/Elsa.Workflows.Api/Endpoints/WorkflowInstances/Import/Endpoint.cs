@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.IO.Compression;
 using System.Text.Json;
 using Elsa.Abstractions;
@@ -50,7 +51,7 @@ internal class Import : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Post("/bulk-actions/import/workflow-instances");
-        ConfigurePermissions("write:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.Write);
         AllowFileUploads();
     }
 

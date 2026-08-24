@@ -97,14 +97,17 @@ When changing persisted entities, verify tenant ID behavior and default tenant s
 
 ## API Authorization
 
-Workflow API defines read-only-mode authorization in:
+A permission is `{resource}:{verb}` — a hierarchical resource path paired with a verb. Both axes are open and contributed by modules; see [ADR 0025](../adr/0025-two-axis-authorization-model.md) for why neither is a closed set.
 
-- [AuthorizationPolicies](../../src/modules/Elsa.Workflows.Api/Constants/AuthorizationPolicies.cs)
-- [NotReadOnlyRequirement](../../src/modules/Elsa.Workflows.Api/Requirements/NotReadOnlyRequirement.cs)
+A trailing `*` on the resource axis matches the named node and every descendant, so `workflows/*:view` is one grant covering every resource beneath `workflows/`, including ones added in later releases. `*` as a verb matches any verb, and `*:*` is superuser. Wildcards are the only construct with forward reach; there are no aggregates and no verb implies another.
 
-Structured logs define diagnostics permissions in [StructuredLogsPermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs).
+**The catalog is the authoritative list.** `GET /identity/permissions` returns every registered resource with the verbs it accepts, so no client should hard-code permission strings. `GET /identity/permissions/reach` reports what a wildcard grant currently covers, and `GET /identity/me/permissions` returns the caller's own effective grants.
 
-Identity endpoints and user-management endpoints are permission-based; see [ADR 0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md).
+Endpoints declare their requirement with `RequirePermission(resource, verb)`, referencing the constant its owning module declares in `Permissions/<Module>Permissions.cs` alongside the descriptor, so the two cannot drift. An endpoint that needs an identity but no grant declares `RequireAuthenticatedOnly()`; one that needs neither declares `AllowAnonymous()`. An automated gate fails the build if an endpoint declares none of the three.
+
+Deployment read-only mode is a separate axis and keeps its own enforcement — see [AuthorizationPolicies](../../src/modules/Elsa.Workflows.Api/Constants/AuthorizationPolicies.cs) and [NotReadOnlyRequirement](../../src/modules/Elsa.Workflows.Api/Requirements/NotReadOnlyRequirement.cs). A caller holding every grant is still refused while the deployment is read-only, which is why it is not expressible as a permission.
+
+Upgrading from the previous `verb:resource` vocabulary is a breaking change; see [the migration guide](../migrations/authorization-model.md).
 
 ## Secrets
 

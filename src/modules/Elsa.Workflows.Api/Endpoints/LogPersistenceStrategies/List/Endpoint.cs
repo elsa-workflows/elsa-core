@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -17,7 +18,7 @@ internal class Endpoint(ILogPersistenceStrategyService logPersistenceStrategySer
     public override void Configure()
     {
         Get("/descriptors/log-persistence-strategies");
-        ConfigurePermissions("read:log-persistence-strategies");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsLogPersistenceStrategies, CoreVerbs.View);
     }
 
     public override Task<ListResponse<LogPersistenceStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)

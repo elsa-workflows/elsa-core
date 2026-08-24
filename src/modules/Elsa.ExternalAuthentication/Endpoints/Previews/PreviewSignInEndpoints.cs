@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Constants;
@@ -15,7 +16,7 @@ internal sealed class InitiatePreview(PreviewSignInService previews, ITenantAcce
     public override void Configure()
     {
         Post("/external-authentication/connections/{connectionId}/preview");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsPreview);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, "preview");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -99,7 +100,7 @@ internal sealed class GetPreviewResult(PreviewSignInService previews, ITenantAcc
     public override void Configure()
     {
         Get("/external-authentication/previews/{previewHandle}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsPreview);
+        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, "preview");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

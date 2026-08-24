@@ -44,9 +44,13 @@ namespace Elsa.Bpmn.Interchange.Binding;
 /// four activity targets are all in reach.
 /// </para>
 /// <para>
-/// Nothing here decides root position: <see cref="BpmnProcess.IsRootScope"/> is left off on every scope this produces,
-/// including the outermost one, so a bound process is safe to nest by default and whoever composes it into a workflow
-/// says explicitly that it is an entry point.
+/// Root position is the one thing this binder does decide, and only for the one scope it directly returns:
+/// <see cref="Bind"/> sets <see cref="BpmnProcess.IsRootScope"/> on that scope alone, because binding one process
+/// definition on its own is what turns an imported <c>.bpmn</c> document into a workflow's own entry point. Every
+/// scope <see cref="BindScope"/> produces for a nested process — a subprocess body, an event subprocess body —
+/// leaves the flag off, so it stays safe to nest. Composing the scope <see cref="Bind"/> returns any deeper after
+/// the fact — inside a <c>Flowchart</c>, inside another <c>BpmnProcess</c> — is not this binder's business to
+/// notice: whoever does that composing is what decides whether root position still applies.
 /// </para>
 /// </remarks>
 public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
@@ -61,6 +65,13 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
     {
         var scope = BindScope(definition, bindings);
         scope.Id = definition.ProcessId;
+
+        // The one scope this call returns directly is what an import turns into a workflow's own root activity, so
+        // it is the workflow's entry point by default. BindScope itself never sets this — see its own remarks —
+        // because every OTHER scope it produces, for a nested process, is reached only through this recursion and
+        // must stay off.
+        scope.IsRootScope = true;
+
         return scope;
     }
 
