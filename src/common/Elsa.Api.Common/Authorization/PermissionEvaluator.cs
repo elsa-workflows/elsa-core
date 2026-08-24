@@ -12,12 +12,13 @@ public sealed class PermissionEvaluator : IPermissionEvaluator
     public static IPermissionEvaluator Shared { get; } = new PermissionEvaluator();
 
     /// <inheritdoc />
-    public bool HasPermission(ClaimsPrincipal? principal, Permission required) =>
-        principal is not null && EnumerateGrants(principal).Any(granted => PermissionMatcher.Satisfies(granted, required));
+    public bool HasPermission(ClaimsPrincipal? principal, Permission required)
+    {
+        return principal is not null && EnumerateGrants(principal).Any(granted => PermissionMatcher.Satisfies(granted, required));
+    }
 
     /// <inheritdoc />
-    public bool HasPermission(ClaimsPrincipal? principal, string resource, string verb) =>
-        HasPermission(principal, new Permission(resource, verb));
+    public bool HasPermission(ClaimsPrincipal? principal, string resource, string verb) => HasPermission(principal, new(resource, verb));
 
     /// <inheritdoc />
     public bool HasAllPermissions(ClaimsPrincipal? principal, IEnumerable<Permission> required)
@@ -27,8 +28,10 @@ public sealed class PermissionEvaluator : IPermissionEvaluator
     }
 
     /// <inheritdoc />
-    public IReadOnlyCollection<Permission> GetGrants(ClaimsPrincipal? principal) =>
-        principal is null ? [] : EnumerateGrants(principal).Distinct().ToArray();
+    public IReadOnlyCollection<Permission> GetGrants(ClaimsPrincipal? principal)
+    {
+        return principal is null ? [] : EnumerateGrants(principal).Distinct().ToArray();
+    }
 
     /// <remarks>
     /// Reads Elsa's own permission claim type. Elsa is the only authority that expands roles into
