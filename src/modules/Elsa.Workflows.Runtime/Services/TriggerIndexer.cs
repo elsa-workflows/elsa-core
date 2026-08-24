@@ -7,6 +7,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Comparers;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
@@ -198,20 +199,29 @@ public class TriggerIndexer : ITriggerIndexer
         var expressionExecutionContext = await trigger.CreateExpressionExecutionContextAsync(triggerDescriptor, _serviceProvider, context, _expressionEvaluator, _logger);
         var triggerIndexingContext = new TriggerIndexingContext(context, expressionExecutionContext, trigger, cancellationToken);
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
-        var triggerName = triggerIndexingContext.TriggerName;
+        var defaultTriggerName = triggerIndexingContext.TriggerName;
 
         // If no trigger payloads were returned, create a null payload.
         if (!triggerData.Any()) triggerData.Add(null!);
 
-        var triggers = triggerData.Select(payload => new StoredTrigger
+        var triggers = triggerData.Select(payload =>
         {
-            Id = _identityGenerator.GenerateId(),
-            WorkflowDefinitionId = workflow.Identity.DefinitionId,
-            WorkflowDefinitionVersionId = workflow.Identity.Id,
-            Name = triggerName,
-            ActivityId = trigger.Id,
-            Hash = _hasher.Hash(triggerName, payload),
-            Payload = payload
+            // A payload can carry its own stimulus name. If it does not, the trigger's shared name applies.
+            // Name and payload are always taken from the same source so that the hash matches the name stored alongside it.
+            var namedPayload = payload as NamedTriggerPayload;
+            var triggerName = namedPayload != null ? namedPayload.Name : defaultTriggerName;
+            var stimulus = namedPayload != null ? namedPayload.Payload : payload;
+
+            return new StoredTrigger
+            {
+                Id = _identityGenerator.GenerateId(),
+                WorkflowDefinitionId = workflow.Identity.DefinitionId,
+                WorkflowDefinitionVersionId = workflow.Identity.Id,
+                Name = triggerName,
+                ActivityId = trigger.Id,
+                Hash = _hasher.Hash(triggerName, stimulus),
+                Payload = stimulus
+            };
         });
 
         return triggers.ToList();

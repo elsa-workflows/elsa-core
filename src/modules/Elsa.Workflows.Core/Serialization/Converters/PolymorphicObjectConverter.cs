@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Dynamic;
 using System.Reflection;
 using System.Text.Json;
@@ -8,6 +9,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Serialization.ReferenceHandlers;
 using Newtonsoft.Json.Linq;
 using Elsa.Common.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Serialization.Converters;
 
@@ -23,13 +25,19 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private const string RefPropertyName = "$ref";
     private const string ValuesPropertyName = "$values";
     private readonly ISerializationTypeRegistry _workflowJsonTypeRegistry;
+    private readonly ILogger? _logger;
+
+    // Types already reported as having no alias. Append-only and bounded by the number of distinct payload types
+    // the process ever serializes, so that the warning below is emitted once per type rather than once per write.
+    private static readonly ConcurrentDictionary<Type, byte> ReportedUnaliasedTypes = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PolymorphicObjectConverter"/> class.
     /// </summary>
-    public PolymorphicObjectConverter(ISerializationTypeRegistry workflowJsonTypeRegistry)
+    public PolymorphicObjectConverter(ISerializationTypeRegistry workflowJsonTypeRegistry, ILogger? logger = null)
     {
         _workflowJsonTypeRegistry = workflowJsonTypeRegistry;
+        _logger = logger;
     }
 
     /// <summary>
@@ -354,10 +362,34 @@ public class PolymorphicObjectConverter : JsonConverter<object>
     private void WriteTypeMetadata(Utf8JsonWriter writer, Type type)
     {
         if (!SerializationTypeResolver.TryGetAlias(_workflowJsonTypeRegistry, type, out var typeAlias))
+        {
+            WarnAboutUnaliasedType(type);
             return;
+        }
 
         writer.WritePropertyName(TypePropertyName);
         writer.WriteStringValue(typeAlias);
+    }
+
+    /// <summary>
+    /// Warns that <paramref name="type"/> has no registered alias, which is not an error but is lossy: without an
+    /// alias no <c>_type</c> discriminator is written, so on read there is no target type to deserialize into and
+    /// the value comes back as an <see cref="ExpandoObject"/> whose keys carry the serializer's camel-case naming
+    /// policy rather than the property names as they were authored.
+    /// </summary>
+    private void WarnAboutUnaliasedType(Type type)
+    {
+        // Check the level before claiming the once-per-type slot: claiming it first would spend the type's single
+        // report on a call that logs nothing, and the type would then stay silent if the level is raised later.
+        if (_logger == null || !_logger.IsEnabled(LogLevel.Warning) || !ReportedUnaliasedTypes.TryAdd(type, 0))
+            return;
+
+        _logger.LogWarning(
+            "Value of type {PayloadType} has no registered serialization alias, so it is stored without a type discriminator and will be read back as a property bag with camel-cased keys instead of as {PayloadType}. " +
+            "Register it during startup with AddTypeAlias<{PayloadTypeName}>(), or use a Dictionary<string, object> if a property bag is what you intend.",
+            type,
+            type,
+            type.Name);
     }
 
     private static Type GetInstantiableTargetType(Type targetType)

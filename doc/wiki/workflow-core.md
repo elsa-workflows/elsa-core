@@ -84,6 +84,13 @@ Core scheduling is about which activity work item runs next. Key services:
 - [WorkflowExecutionContextSchedulerStrategy](../../src/modules/Elsa.Workflows.Core/Services/WorkflowExecutionContextSchedulerStrategy.cs)
 - [ActivityExecutionContextSchedulerStrategy](../../src/modules/Elsa.Workflows.Core/Services/ActivityExecutionContextSchedulerStrategy.cs)
 
+Scheduling is reversible. A container that schedules a child and then decides the child must not run withdraws it by
+cancelling: `CancelActivityAsync` cancels contexts that are still `Pending` as well as running ones, and removes from
+the scheduler both the work item that would have started the cancelled activity and the work items it had scheduled for
+children that have no execution context yet. Withdrawal is a real removal (`IActivityScheduler.RemoveWhere`) rather than
+a flag honoured at dequeue time, because the scheduler is also read: `Flowchart` asks it whether the flowchart still has
+pending work, and the work item list is part of the persisted workflow state.
+
 Runtime scheduling and external dispatch are separate and live in `Elsa.Workflows.Runtime`.
 
 ## Bookmarks And Triggers
