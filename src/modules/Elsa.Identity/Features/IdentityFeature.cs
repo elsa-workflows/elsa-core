@@ -8,6 +8,7 @@ using Elsa.Features.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Multitenancy;
+using Elsa.Identity.HostedServices;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
@@ -176,6 +177,9 @@ public class IdentityFeature : FeatureBase
         // The identity stores are tenant-scoped, so a host that never enables multitenancy still needs an
         // accessor. TryAdd leaves an existing registration -- notably MultitenancyFeature's -- untouched.
         Services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        Services.AddMemoryCache();
+        Services.Configure<PermissionStampOptions>(_ => { });
+        Services.AddHostedService<StoredPermissionValidator>();
 
         // Memory stores.
         Services
@@ -216,6 +220,9 @@ public class IdentityFeature : FeatureBase
             .AddScoped<IUserManager, UserManager>()
             .AddScoped<IRoleManager, RoleManager>()
             .AddScoped<IRoleAuthorizationService, RoleAuthorizationService>()
+            .AddScoped<RoleSecurityNotifier>()
+            .AddScoped<IPermissionStampCalculator, PermissionStampCalculator>()
+            .AddScoped<PermissionStampValidator>()
             .AddScoped<IRoleDeletionCoordinator, RoleDeletionCoordinator>()
             .AddScoped<IUserDeletionCoordinator, UserDeletionCoordinator>()
             .AddScoped<ISecretHasher, DefaultSecretHasher>()
