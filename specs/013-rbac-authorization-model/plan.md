@@ -12,7 +12,7 @@
 
 Replace Elsa's ad-hoc permission vocabulary with a two-axis authorization model: a hierarchical **resource** axis and an open **verb** axis, both module-contributed, evaluated by a single evaluator that every enforcement path routes through.
 
-Both axes are open because Elsa is a framework third parties extend, and because [ADR 0004](../../docs/adr/0004-separate-external-identity-from-elsa-authorization.md) commits to an open vocabulary. Prefix matching on the resource axis makes section-wide grants a single token, which removes the pressure for a second, coarse-grained gate. Wildcards are the only construct with forward reach on either axis, so `*:*` is superuser with no sentinel and no aggregate to reinterpret. A closed verb enumeration was drafted and rejected; see [research.md](research.md) D13.
+Both axes are open because Elsa is a framework third parties extend, and because [ADR 0017](../../doc/adr/0017-separate-external-identity-from-elsa-authorization.md) commits to an open vocabulary. Prefix matching on the resource axis makes section-wide grants a single token, which removes the pressure for a second, coarse-grained gate. Wildcards are the only construct with forward reach on either axis, so `*:*` is superuser with no sentinel and no aggregate to reinterpret. A closed verb enumeration was drafted and rejected; see [research.md](research.md) D13.
 
 Storage is unchanged: `Role.Permissions` remains a string collection of flat `{resource}:{verb}` entries.
 
@@ -32,7 +32,7 @@ Storage is unchanged: `Role.Permissions` remains a string collection of flat `{r
 
 **Performance Goals**: Evaluation is O(number of grants held) with no store access on the request path; no measurable regression against today's ordinal set lookup. The catalog is built once per shell and cached.
 
-**Constraints**: No new infrastructure may become a prerequisite for correct authorization — in particular the optional security stamp must not depend on cross-node cache invalidation, which Elsa does not have (`ChangeTokenSignalInvoker` is per-process). Elsa remains the only authority expanding roles into permission claims ([ADR 0009](../../docs/adr/0009-match-unlinked-identities-with-trusted-user-matchers.md)). Permission strings may not contain commas. No cross-tenant principal is introduced.
+**Constraints**: No new infrastructure may become a prerequisite for correct authorization — in particular the optional security stamp must not depend on cross-node cache invalidation, which Elsa does not have (`ChangeTokenSignalInvoker` is per-process). Elsa remains the only authority expanding roles into permission claims ([ADR 0022](../../doc/adr/0022-match-unlinked-identities-with-trusted-user-matchers.md)). Permission strings may not contain commas. No cross-tenant principal is introduced.
 
 **Scale/Scope**: 47 resources and 23 verbs at publication, rising as modules contribute descriptors; 160 endpoint files; 174 declaration call sites; hand-rolled claim inspections across 15 files; 3 named-policy usages; 4 SignalR hubs. A further 15 mid-handler `NotReadOnlyPolicy` calls exist but are out of scope — read-only mode is a separate axis.
 
@@ -105,7 +105,7 @@ Complete. See [research.md](research.md) for the grounded assessment and the dec
 
 ## Phase 1: Data Model and Contracts
 
-Produce `contracts/permissions.md` — the full resource tree with supported verbs per resource, derived from the current 33 resources and the endpoint census — and `contracts/rest-api.md` for the catalog and introspection endpoints. Publish the legacy-to-new mapping as `docs/migrations/authorization-model.md`, following the shape of `docs/migrations/external-authentication-persistence.md`. Record the model in an ADR.
+Produce `contracts/permissions.md` — the full resource tree with supported verbs per resource, derived from the current 33 resources and the endpoint census — and `contracts/rest-api.md` for the catalog and introspection endpoints. Publish the legacy-to-new mapping as `doc/migrations/authorization-model.md`, following the shape of `doc/migrations/external-authentication-persistence.md`. Record the model in an ADR.
 
 The resource tree is the highest-value artefact to review early: it is the vocabulary every module and client will hold, and it is expensive to change once published.
 
@@ -143,7 +143,7 @@ The breaking change. One pull request per module.
 - `GET /identity/me/permissions`, including denied resources with an empty `verbs` array.
 - Access-token lifetime default lowered from 1 hour to **15 minutes**, documented as the revocation bound. Refresh already rotates both tokens and re-reads roles, so no client change is required; refresh-token lifetime is unchanged at 2 hours.
 - Optional per-principal security stamp with a per-node cache and configurable interval, dependent on no new infrastructure.
-- Typed security notifications for role and assignment mutations, per [ADR 0007](../../docs/adr/0007-publish-audit-ready-security-notifications.md).
+- Typed security notifications for role and assignment mutations, per [ADR 0020](../../doc/adr/0020-publish-audit-ready-security-notifications.md).
 
 ### Milestone 5: Tenancy Hardening
 

@@ -26,7 +26,7 @@ A coarse per-role module gate was also proposed and rejected. Its stated benefit
 
 ## Consequences
 
-- Legacy permission strings stop authorizing. A permanent alias layer would keep two vocabularies valid forever, so the break is deliberate, reported by a startup validator, and documented in `docs/migrations/authorization-model.md`. `*` survives, so no instance can lock itself out.
+- Legacy permission strings stop authorizing. A permanent alias layer would keep two vocabularies valid forever, so the break is deliberate, reported by a startup validator, and documented in `doc/migrations/authorization-model.md`. `*` survives, so no instance can lock itself out.
 - Migration expands rather than renames where new sub-resources are finer-grained than what they replace.
 - Wildcards confer forward reach on both axes. This is the property that makes section-wide grants viable; it is mitigated by a reach report showing what a grant covers today, and by a deployment-level allow/deny boundary.
 - The vocabulary can fragment, since modules may coin synonyms. Mitigated by convention and by the catalog marking non-core verbs, not by enforcement.

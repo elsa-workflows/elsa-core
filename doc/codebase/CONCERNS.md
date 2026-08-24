@@ -13,7 +13,7 @@
 | Debt item | Why | Where | Risk | Suggested fix |
 |---|---|---|---|---|
 | Broker constructor has many dependencies | Broker owns several local and external flows | `ExternalAuthenticationBroker.cs` | Manual tests/benchmarks are costly to construct | Consider focused orchestration objects only when another change justifies it |
-| `[TODO]` Repository-wide debt inventory | Investigation intentionally focused on external identity tracking | `docs/codebase/.codebase-scan.txt` | Other modules are not assessed here | Run an extended acquisition audit separately |
+| `[TODO]` Repository-wide debt inventory | Investigation intentionally focused on external identity tracking | `doc/codebase/.codebase-scan.txt` | Other modules are not assessed here | Run an extended acquisition audit separately |
 
 ## Security Concerns
 
@@ -40,7 +40,7 @@ None for this focused investigation.
 
 ## Evidence
 
-- `docs/codebase/.codebase-scan.txt`
+- `doc/codebase/.codebase-scan.txt`
 - `src/modules/Elsa.ExternalAuthentication/Services/ExternalAuthenticationBroker.cs`
 - `src/modules/Elsa.ExternalAuthentication.Persistence.EFCore/Stores/EFCoreExternalIdentityProvisioner.cs`
 - `test/integration/Elsa.ExternalAuthentication.IntegrationTests/`

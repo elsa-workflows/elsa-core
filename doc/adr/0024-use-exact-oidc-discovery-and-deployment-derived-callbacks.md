@@ -1,6 +1,6 @@
 # Use exact OIDC discovery and deployment-derived callbacks
 
-**Status**: Accepted; refines [0005](0005-separate-provider-trust-from-broker-invariants.md)
+**Status**: Accepted; refines [0018](0018-separate-provider-trust-from-broker-invariants.md)
 
 **Date**: 2026-07-24
 

@@ -97,7 +97,7 @@ When changing persisted entities, verify tenant ID behavior and default tenant s
 
 ## API Authorization
 
-A permission is `{resource}:{verb}` — a hierarchical resource path paired with a verb. Both axes are open and contributed by modules; see [ADR 0012](../adr/0012-two-axis-authorization-model.md) for why neither is a closed set.
+A permission is `{resource}:{verb}` — a hierarchical resource path paired with a verb. Both axes are open and contributed by modules; see [ADR 0025](../adr/0025-two-axis-authorization-model.md) for why neither is a closed set.
 
 A trailing `*` on the resource axis matches the named node and every descendant, so `workflows/*:view` is one grant covering every resource beneath `workflows/`, including ones added in later releases. `*` as a verb matches any verb, and `*:*` is superuser. Wildcards are the only construct with forward reach; there are no aggregates and no verb implies another.
 
@@ -107,7 +107,7 @@ Endpoints declare their requirement with `RequirePermission(resource, verb)`, re
 
 Deployment read-only mode is a separate axis and keeps its own enforcement — see [AuthorizationPolicies](../../src/modules/Elsa.Workflows.Api/Constants/AuthorizationPolicies.cs) and [NotReadOnlyRequirement](../../src/modules/Elsa.Workflows.Api/Requirements/NotReadOnlyRequirement.cs). A caller holding every grant is still refused while the deployment is read-only, which is why it is not expressible as a permission.
 
-Upgrading from the previous `verb:resource` vocabulary is a breaking change; see [the migration guide](../../docs/migrations/authorization-model.md).
+Upgrading from the previous `verb:resource` vocabulary is a breaking change; see [the migration guide](../migrations/authorization-model.md).
 
 ## Secrets
 

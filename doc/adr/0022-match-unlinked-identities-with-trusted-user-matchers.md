@@ -1,6 +1,6 @@
 # Match unlinked identities with trusted user matchers
 
-**Status**: Accepted; supersedes the v1 permission-mapping portion of [0004](0004-separate-external-identity-from-elsa-authorization.md)
+**Status**: Accepted; supersedes the v1 permission-mapping portion of [0017](0017-separate-external-identity-from-elsa-authorization.md)
 
 **Date**: 2026-07-24
 

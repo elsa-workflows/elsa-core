@@ -1,6 +1,6 @@
 # Identify host connections by logical key and use explicit overrides
 
-**Status**: Accepted; supersedes the scope and source-precedence portions of [0002](0002-compose-a-scoped-connection-registry.md)
+**Status**: Accepted; supersedes the scope and source-precedence portions of [0015](0015-compose-a-scoped-connection-registry.md)
 
 **Date**: 2026-07-24
 
