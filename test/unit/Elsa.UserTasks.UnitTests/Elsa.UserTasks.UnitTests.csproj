@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Include>[Elsa.UserTasks]*</Include>
+    <Threshold>0</Threshold>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\modules\Elsa.UserTasks\Elsa.UserTasks.csproj" />
+    <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
+  </ItemGroup>
+</Project>

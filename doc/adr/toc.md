@@ -25,3 +25,5 @@
 * [23. Separate authentication UI composition from security administration](0023-separate-authentication-ui-composition-from-security-administration.md)
 * [24. Use exact OIDC discovery and deployment-derived callbacks](0024-use-exact-oidc-discovery-and-deployment-derived-callbacks.md)
 * [25. Two-axis authorization model with open resources and open verbs](0025-two-axis-authorization-model.md)
+* [26. Use Identity-Neutral Participant References for User Tasks](0026-identity-neutral-user-task-participants.md)
+* [27. Project User Tasks from Committed Workflow Bookmarks](0027-project-user-tasks-from-committed-bookmarks.md)
