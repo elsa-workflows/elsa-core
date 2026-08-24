@@ -45,7 +45,7 @@ public class StoredPermissionValidator(IServiceScopeFactory scopeFactory, ILogge
 
                 affected++;
                 logger.LogWarning(
-                    "Role '{RoleName}' ({RoleId}) holds {Count} permission(s) that no longer resolve and will not authorize: {Permissions}. See docs/migrations/authorization-model.md.",
+                    "Role '{RoleName}' ({RoleId}) holds {Count} permission(s) that no longer resolve and will not authorize: {Permissions}. See doc/migrations/authorization-model.md.",
                     role.Name, role.Id, unresolvable.Count, string.Join(", ", unresolvable));
             }
 
