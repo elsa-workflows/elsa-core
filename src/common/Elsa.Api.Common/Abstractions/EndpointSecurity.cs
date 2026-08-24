@@ -1,6 +1,8 @@
 using Elsa.Authorization;
 using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Abstractions;
 
@@ -10,6 +12,9 @@ namespace Elsa.Abstractions;
 /// </summary>
 internal static class EndpointSecurity
 {
+    /// <summary>Used when the host has registered no evaluator of its own. Stateless, so sharing is safe.</summary>
+    private static readonly IPermissionEvaluator SharedEvaluator = new PermissionEvaluator();
+
     /// <summary>
     /// Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>. The
     /// requirement is attached as an inline policy so it needs no separate policy registration, and it is
@@ -26,7 +31,18 @@ internal static class EndpointSecurity
         var permission = new Permission(resource, verb);
 
         EndpointPermissionRegistry.Record(definition.EndpointType, permission);
-        definition.Options(x => x.RequireAuthorization(policy => policy.AddRequirements(new PermissionRequirement(permission))));
+
+        // Evaluated inline rather than through a registered IAuthorizationHandler. A handler would make
+        // enforcement depend on the host having called AddElsaAuthorization: miss it, and every endpoint
+        // answers 403 with nothing to indicate why. Hosts that wire FastEndpoints themselves -- several
+        // test hosts among them -- do exactly that. The evaluator is stateless, so falling back to a shared
+        // instance is safe, while a host that registers its own still wins.
+        definition.Options(x => x.RequireAuthorization(policy => policy.RequireAssertion(context =>
+        {
+            var evaluator = (context.Resource as HttpContext)?.RequestServices.GetService<IPermissionEvaluator>() ?? SharedEvaluator;
+
+            return evaluator.HasPermission(context.User, permission);
+        })));
     }
 
     /// <summary>

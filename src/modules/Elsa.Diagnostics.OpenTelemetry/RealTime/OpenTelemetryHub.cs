@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Diagnostics.OpenTelemetry.Contracts;
 using Elsa.Diagnostics.OpenTelemetry.Models;
 using Elsa.Diagnostics.OpenTelemetry.Permissions;
@@ -11,7 +12,7 @@ namespace Elsa.Diagnostics.OpenTelemetry.RealTime;
 public class OpenTelemetryHub(OpenTelemetrySubscriptionManager subscriptionManager) : Hub<IOpenTelemetryClient>
 {
     private const string ReadAllPermission = "read:*";
-    private static readonly string[] ReadPermissions = [PermissionNames.All, ReadAllPermission, OpenTelemetryPermissions.Read];
+    private static readonly Permission ReadOpenTelemetry = new(OpenTelemetryResourcePermissions.OpenTelemetry, CoreVerbs.View);
 
     public Task SubscribeAsync(OpenTelemetryTraceFilter? filter)
     {
@@ -44,7 +45,7 @@ public class OpenTelemetryHub(OpenTelemetrySubscriptionManager subscriptionManag
     {
         var user = Context.User;
 
-        if (user?.Identity?.IsAuthenticated != true || !ReadPermissions.Any(user.HasPermission))
+        if (user?.Identity?.IsAuthenticated != true || !PermissionEvaluator.Shared.HasPermission(user, ReadOpenTelemetry))
             throw new HubException("Access denied.");
     }
 }

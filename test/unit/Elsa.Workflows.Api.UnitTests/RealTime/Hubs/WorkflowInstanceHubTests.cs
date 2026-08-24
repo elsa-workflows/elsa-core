@@ -17,7 +17,7 @@ public class WorkflowInstanceHubTests : IDisposable
     private const string WorkflowInstanceId = "workflow-instance-1";
     private const string TenantId = "tenant-a";
     private const string OtherTenantId = "tenant-b";
-    private const string ReadWorkflowInstancesPermission = "read:workflow-instances";
+    private const string ReadWorkflowInstancesPermission = "workflows/instances:view";
     private const string CustomPermissionsClaimType = "elsa-permissions";
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly ITenantAccessor _tenantAccessor;
@@ -66,7 +66,7 @@ public class WorkflowInstanceHubTests : IDisposable
 
     [Theory]
     [InlineData("*")]
-    [InlineData("read:*")]
+    [InlineData("*:view")]
     public async Task ObserveInstanceAsync_WithWildcardReadPermission_JoinsInstanceGroup(string permission)
     {
         UseUser(permission);
@@ -77,10 +77,13 @@ public class WorkflowInstanceHubTests : IDisposable
     }
 
     [Fact]
-    public async Task ObserveInstanceAsync_UsesConfiguredFastEndpointsPermissionClaimType()
+    public async Task ObserveInstanceAsync_UsesElsaPermissionClaimType()
     {
+        // Elsa is the only authority that expands roles into permission claims (ADR 0009), and the
+        // authorization model no longer uses the FastEndpoints permission mechanism, so its separately
+        // configurable claim type is deliberately not consulted.
         UsePermissionsClaimType(CustomPermissionsClaimType);
-        UseUserClaim(CustomPermissionsClaimType, ReadWorkflowInstancesPermission);
+        UseUser(ReadWorkflowInstancesPermission);
 
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
 
