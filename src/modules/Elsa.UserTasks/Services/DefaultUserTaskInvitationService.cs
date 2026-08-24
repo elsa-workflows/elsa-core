@@ -110,10 +110,13 @@ public sealed class DefaultUserTaskInvitationService(
         var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.IssueInvitation, cancellationToken))
             return false;
+        // A consumed invitation is precisely the case worth revoking: consuming it is what issued the guest
+        // session, so refusing here would leave a live credential that no manager could withdraw. Only
+        // already-terminal states are rejected.
         if (!await repository.TryMutateAsync(tenantId, taskId, expectedRevision, current =>
             {
                 var invitation = current.Invitations.FirstOrDefault(x => x.Id == invitationId);
-                if (invitation == null || invitation.Status is UserTaskInvitationStatus.Revoked or UserTaskInvitationStatus.Consumed or UserTaskInvitationStatus.Expired)
+                if (invitation == null || invitation.Status is UserTaskInvitationStatus.Revoked or UserTaskInvitationStatus.Expired)
                     return false;
                 var index = current.Invitations.IndexOf(invitation);
                 current.Invitations[index] = invitation with { Status = UserTaskInvitationStatus.Revoked, RevokedAt = clock.UtcNow };
@@ -122,6 +125,10 @@ public sealed class DefaultUserTaskInvitationService(
                 return true;
             }, cancellationToken))
             return false;
+
+        // Withdrawing the invitation must withdraw the access it granted, so any session issued from it
+        // stops resolving immediately rather than living out its TTL.
+        await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
 
         var committed = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (committed != null)

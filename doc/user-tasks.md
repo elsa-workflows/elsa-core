@@ -51,6 +51,8 @@ Guest invitations are task-scoped and do not create Elsa users. Core hashes the 
 
 The transient delivery outbox encrypts pending secrets with ASP.NET Core Data Protection, so the module needs an `IDataProtectionProvider`. Web hosts register one by default; a non-web host that enables invitations must call `AddDataProtection()` itself.
 
+Revoking an invitation revokes the session it issued, including after the invitation has been consumed — that is the case where a live guest credential exists and a manager needs to withdraw it. Revocation is scoped to the one invitation, so other guests on the same task keep working.
+
 A guest presents its session as `Authorization: UserTaskSession <credential>` against `/user-task-sessions/current` and `/user-task-sessions/current/complete`. The session identifies the task, so no task ID appears in the route and a guest can never address a task other than the one its invitation was issued for. Completion is intersected with the action allowlist pinned at issuance, and every session for a task is revoked as soon as that task closes.
 
 ## Studio and custom applications

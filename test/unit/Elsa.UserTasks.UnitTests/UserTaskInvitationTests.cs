@@ -220,6 +220,78 @@ public class UserTaskInvitationTests
     }
 
     [Fact]
+    public async Task RevokingAConsumedInvitationWithdrawsTheGuestSessionItIssued()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        var (_, credential) = await _fixture.IssueGuestSessionAsync(task, manager);
+
+        var current = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitation = Assert.Single(current.Invitations);
+        // Verification consumed it; that is exactly the state a manager needs to be able to revoke.
+        Assert.Equal(UserTaskInvitationStatus.Consumed, invitation.Status);
+        Assert.NotNull(await _fixture.GuestActors.ResolveAsync(credential));
+
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, current.Revision, manager));
+
+        // The credential must stop working immediately rather than living out its TTL.
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+        var revoked = Assert.Single((await _fixture.Repository.GetAsync(Tenant, task.Id))!.Invitations);
+        Assert.Equal(UserTaskInvitationStatus.Revoked, revoked.Status);
+        Assert.NotNull(revoked.RevokedAt);
+
+        // Asserted at the credential, which is the actual boundary: a guest actor exists only because the
+        // resolver produced one from a live session, so once the credential is dead no guest principal can
+        // be formed and the request is rejected before it reaches the manager.
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+    }
+
+    [Fact]
+    public async Task RevokingOneInvitationLeavesOtherGuestSessionsOnTheSameTaskIntact()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject,
+            definition => definition with
+            {
+                Invitations =
+                [
+                    new("bearer-a", ["Approve"], BearerOnly: true),
+                    new("bearer-b", ["Approve"], BearerOnly: true)
+                ]
+            });
+
+        // A is verified, so it holds a live session. B is issued but never verified.
+        var (_, credentialA) = await _fixture.IssueGuestSessionAsync(task, manager, "bearer-a");
+        var afterA = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        await _fixture.Invitations.IssueAsync(Tenant, task.Id, new(afterA.Revision, "bearer-b", ["Approve"]), manager);
+
+        var beforeRevoke = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitationB = beforeRevoke.Invitations.Single(x => x.VerifierName == "bearer-b");
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitationB.Id, beforeRevoke.Revision, manager));
+
+        // Revocation is scoped to the invitation, so A's session survives B being withdrawn.
+        Assert.NotNull(await _fixture.GuestActors.ResolveAsync(credentialA));
+        var after = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.Equal(UserTaskInvitationStatus.Revoked, after.Invitations.Single(x => x.VerifierName == "bearer-b").Status);
+        Assert.Equal(UserTaskInvitationStatus.Consumed, after.Invitations.Single(x => x.VerifierName == "bearer-a").Status);
+    }
+
+    [Fact]
+    public async Task RevokingAnAlreadyRevokedInvitationIsRefused()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        await _fixture.Invitations.IssueAsync(Tenant, task.Id, new(task.Revision, "bearer", ["Approve"]), manager);
+
+        var issued = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitation = Assert.Single(issued.Invitations);
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, issued.Revision, manager));
+
+        var revoked = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.False(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, revoked.Revision, manager));
+    }
+
+    [Fact]
     public async Task GuestSession_StopsResolvingOnceTheTaskCloses()
     {
         var manager = _fixture.ManagerActor();

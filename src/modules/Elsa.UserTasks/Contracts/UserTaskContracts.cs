@@ -139,6 +139,12 @@ public interface IUserTaskGuestSessionIssuer
 
     /// <summary>Revokes every session issued for a task. Called when the task reaches a terminal state.</summary>
     Task RevokeForTaskAsync(string tenantId, string taskId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revokes the sessions issued from one invitation. This is what makes a guest credential withdrawable:
+    /// consuming an invitation is what creates the session, so revoking the invitation must kill it too.
+    /// </summary>
+    Task RevokeForInvitationAsync(string tenantId, string invitationId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
