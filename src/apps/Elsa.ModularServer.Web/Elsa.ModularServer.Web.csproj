@@ -25,6 +25,7 @@
       <ProjectReference Include="..\..\modules\Elsa.ExternalAuthentication.OpenIdConnect\Elsa.ExternalAuthentication.OpenIdConnect.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite\Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.ExternalAuthentication.Secrets\Elsa.ExternalAuthentication.Secrets.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.Http.Webhooks\Elsa.Http.Webhooks.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Identity\Elsa.Identity.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
@@ -33,6 +34,8 @@
       <ProjectReference Include="..\..\modules\Elsa.Secrets.JavaScript\Elsa.Secrets.JavaScript.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Secrets\Elsa.Secrets.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.UserTasks.Persistence.EFCore.Sqlite\Elsa.UserTasks.Persistence.EFCore.Sqlite.csproj" />
+      <ProjectReference Include="..\..\modules\Elsa.UserTasks\Elsa.UserTasks.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
       <ProjectReference Include="..\..\modules\Elsa.Workflows.Runtime.Dashboard\Elsa.Workflows.Runtime.Dashboard.csproj" />
