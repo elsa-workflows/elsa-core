@@ -44,6 +44,7 @@
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="Scrutor" Version="6.1.0"/>
+        <PackageVersion Include="GitHub.Copilot.SDK" Version="1.0.0" />
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
@@ -77,15 +78,16 @@
         <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="10.0.10"/>
         <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0"/>
-        <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.9"/>
-        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.9"/>
+        <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10"/>
+        <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10"/>
         <PackageVersion Include="Microsoft.Extensions.Resilience" Version="10.1.0"/>
         <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.9"/>
-        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9"/>
-        <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.9"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10"/>
+        <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.10"/>
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="Scrutor" Version="7.0.0"/>
+        <PackageVersion Include="GitHub.Copilot.SDK" Version="1.0.11" />
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
@@ -127,7 +129,6 @@
         <PackageVersion Include="FluentMigrator.Runner.SQLite" Version="8.0.1"/>
         <PackageVersion Include="Fluid.Core" Version="2.31.0"/>
         <PackageVersion Include="Fody" Version="6.9.3" PrivateAssets="All"/>
-        <PackageVersion Include="GitHub.Copilot.SDK" Version="1.0.0"/>
         <PackageVersion Include="GitHubActionsTestLogger" Version="3.0.4" PrivateAssets="All"/>
         <PackageVersion Include="Humanizer.Core" Version="3.0.10"/>
         <PackageVersion Include="IronCompress" Version="1.7.0"/>
