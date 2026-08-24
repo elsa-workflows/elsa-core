@@ -2,9 +2,7 @@ using Elsa.Abstractions;
 using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
-using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Broker;
 
@@ -28,7 +26,7 @@ internal sealed class ExchangeToken(IExternalAuthenticationBroker broker) : Elsa
         }
 
         var basicCredentials = TryGetBasicCredentials(HttpContext.Request.Headers.Authorization);
-        var result = await broker.ExchangeAsync(new BrokerTokenRequest(request.GrantType ?? string.Empty, request.ClientId ?? string.Empty, redirectUri, request.Code, request.CodeVerifier, request.RefreshToken, HttpContext.Request.Headers.Origin, basicCredentials?.ClientId, basicCredentials?.Secret), cancellationToken);
+        var result = await broker.ExchangeAsync(new(request.GrantType ?? string.Empty, request.ClientId ?? string.Empty, redirectUri, request.Code, request.CodeVerifier, request.RefreshToken, HttpContext.Request.Headers.Origin, basicCredentials?.ClientId, basicCredentials?.Secret), cancellationToken);
         if (result.Error is { } error)
         {
             await BrokerEndpointSupport.SendErrorAsync(Send, error, cancellationToken);

@@ -21,10 +21,11 @@ public sealed class DatabaseIdentityProviderConnectionSource(
     public async ValueTask<ConnectionSourceSnapshot> GetSnapshotAsync(ConnectionScope scope, CancellationToken cancellationToken = default)
     {
         if (!options.CurrentValue.EnableDatabaseConnections)
-            return new ConnectionSourceSnapshot(scope, "disabled", []);
+            return new(scope, "disabled", []);
 
-        var page = await store.FindAsync(new ConnectionFilter { Scope = scope }, cancellationToken);
+        var page = await store.FindAsync(new()
+            { Scope = scope }, cancellationToken);
         var version = await versions.GetVersionAsync(cancellationToken);
-        return new ConnectionSourceSnapshot(scope, version.ToString(System.Globalization.CultureInfo.InvariantCulture), page.Items.ToArray());
+        return new(scope, version.ToString(System.Globalization.CultureInfo.InvariantCulture), page.Items.ToArray());
     }
 }

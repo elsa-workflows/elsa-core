@@ -1,10 +1,7 @@
 using Elsa.Abstractions;
-using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.Identity.Constants;
-using FastEndpoints;
-using Microsoft.AspNetCore.Http;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Broker;
 
@@ -30,7 +27,7 @@ internal sealed class Logout(IExternalAuthenticationBroker broker) : ElsaEndpoin
             return;
         }
 
-        var result = await broker.LogoutAsync(new BrokerLogoutRequest(request.ClientId ?? string.Empty, redirectUri, request.Mode ?? "local"), sessionId, cancellationToken);
+        var result = await broker.LogoutAsync(new(request.ClientId ?? string.Empty, redirectUri, request.Mode ?? "local"), sessionId, cancellationToken);
         if (result.Error is { } error)
         {
             await BrokerEndpointSupport.SendErrorAsync(Send, error, cancellationToken);

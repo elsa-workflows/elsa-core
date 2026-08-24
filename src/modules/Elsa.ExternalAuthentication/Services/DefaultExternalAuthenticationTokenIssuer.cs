@@ -55,14 +55,16 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
 
     private async ValueTask<ExternalTokenResponse> IssueResponseAsync(ExternalAuthenticationSession session, string refreshToken, CancellationToken cancellationToken)
     {
-        using var tenantContext = tenantAccessor.PushContext(new Tenant { Id = session.TenantId, Name = session.TenantId });
-        var user = await userProvider.FindAsync(new UserFilter { Id = session.UserId }, cancellationToken)
+        using var tenantContext = tenantAccessor.PushContext(new()
+            { Id = session.TenantId, Name = session.TenantId });
+        var user = await userProvider.FindAsync(new()
+                       { Id = session.UserId }, cancellationToken)
             ?? throw new InvalidOperationException("The external authentication session user no longer exists.");
         var roles = (await roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToArray();
         var permissions = roles.SelectMany(x => x.Permissions).Concat(session.ExternalGrants.Select(x => x.Permission)).Distinct(StringComparer.Ordinal).ToArray();
-        var accessToken = await tokenService.IssueAccessTokenAsync(new TokenIssuanceContext(user, roles.Select(x => x.Name).ToArray(), permissions, [], session.Id), cancellationToken);
+        var accessToken = await tokenService.IssueAccessTokenAsync(new(user, roles.Select(x => x.Name).ToArray(), permissions, [], session.Id), cancellationToken);
         var now = clock.UtcNow;
-        return new ExternalTokenResponse(
+        return new(
             accessToken.Token,
             "Bearer",
             Math.Max(0, (long)(accessToken.ExpiresAt - now).TotalSeconds),

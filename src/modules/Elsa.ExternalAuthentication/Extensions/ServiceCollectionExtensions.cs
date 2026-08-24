@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Permissions;
@@ -8,7 +9,6 @@ using Elsa.ExternalAuthentication.Stores.InMemory;
 using Elsa.ExternalAuthentication.Validation;
 using Elsa.Identity.Contracts;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -31,6 +31,11 @@ public static class ServiceCollectionExtensions
         var options = services.AddOptions<ExternalAuthenticationOptions>().ValidateOnStart();
         if (configureOptions != null)
             options.Configure(configureOptions);
+
+        // The module evaluates permissions outside endpoint authorization -- delegation, the grant boundary,
+        // and the recovery override -- so it depends on the evaluator whether or not a host wired one up.
+        // The call is TryAdd-based and idempotent, so a host that already registered one keeps it.
+        services.AddElsaAuthorization();
 
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, RejectUnlinkedIdentityPolicy.PolicyType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, CreateUserUnlinkedIdentityPolicy.PolicyType);
@@ -112,7 +117,7 @@ public static class ServiceCollectionExtensions
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(type);
         services.Configure<ExternalAuthenticationExtensionOptions>(options =>
-            options.Registrations.Add(new ExternalAuthenticationExtensionRegistration(kind, type)));
+            options.Registrations.Add(new(kind, type)));
         return services;
     }
 }

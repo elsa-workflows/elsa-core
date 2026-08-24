@@ -18,7 +18,7 @@ public sealed class InMemoryAuthorizationGrantStore(ISystemClock clock) : IAutho
             if (_entries.ContainsKey(grant.CodeHash))
                 throw new InvalidOperationException("An authorization grant already exists for the supplied code hash.");
 
-            _entries[grant.CodeHash] = new GrantEntry(Clone(grant));
+            _entries[grant.CodeHash] = new(Clone(grant));
         }
 
         return ValueTask.CompletedTask;

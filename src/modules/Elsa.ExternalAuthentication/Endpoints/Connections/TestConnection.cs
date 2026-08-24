@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Permissions;
@@ -13,7 +12,7 @@ internal sealed class TestConnection(IServiceProvider services, ITenantAccessor 
     public override void Configure()
     {
         Post("/external-authentication/connections/{connectionId}/test");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, "test");
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, ExternalAuthenticationVerbs.Test);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

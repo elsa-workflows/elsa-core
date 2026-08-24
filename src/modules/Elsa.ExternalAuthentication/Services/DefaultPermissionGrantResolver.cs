@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
@@ -25,30 +27,38 @@ public sealed class DefaultPermissionGrantResolver(
         {
             if (!IsAllowedSource(selection.Type) || !_sources.TryGetValue(selection.Type, out var source))
             {
-                AddWarning(warnings, warningKeys, new PermissionGrantWarning("permission_grant_source_unavailable", $"The permission grant source '{selection.Type}' is not available."));
+                AddWarning(warnings, warningKeys, new("permission_grant_source_unavailable", $"The permission grant source '{selection.Type}' is not available."));
                 continue;
             }
 
-            var result = await source.GetGrantsAsync(new PermissionGrantContext(context.TargetTenantId, context.UserId, context.Connection, context.Identity, context.ProjectedClaims, selection), cancellationToken);
+            var result = await source.GetGrantsAsync(new(context.TargetTenantId, context.UserId, context.Connection, context.Identity, context.ProjectedClaims, selection), cancellationToken);
             foreach (var warning in result.Warnings)
                 AddWarning(warnings, warningKeys, warning);
             foreach (var grant in result.Grants)
             {
+                // A value the evaluator cannot parse authorizes nothing, so carrying it into a token only
+                // hides the mistake. Say so rather than passing it through as an opaque string.
+                if (!Permission.TryParse(grant.Permission, out _))
+                {
+                    AddWarning(warnings, warningKeys, new("malformed_permission", $"The permission '{grant.Permission}' is not well-formed and was dropped."));
+                    continue;
+                }
+
                 if (!boundary.Allows(grant.Permission))
                 {
-                    AddWarning(warnings, warningKeys, new PermissionGrantWarning("permission_denied_by_deployment", $"The permission '{grant.Permission}' is outside the deployment grant boundary."));
+                    AddWarning(warnings, warningKeys, new("permission_denied_by_deployment", $"The permission '{grant.Permission}' is outside the deployment grant boundary."));
                     continue;
                 }
 
                 if (!knownPermissions.Contains(grant.Permission))
-                    AddWarning(warnings, warningKeys, new PermissionGrantWarning("unknown_permission_descriptor", $"No module advertises a descriptor for permission '{grant.Permission}'."));
+                    AddWarning(warnings, warningKeys, new("unknown_permission_descriptor", $"No module advertises a descriptor for permission '{grant.Permission}'."));
 
                 if (grants.All(x => !string.Equals(x.Permission, grant.Permission, StringComparison.Ordinal)))
                     grants.Add(grant);
             }
         }
 
-        return new PermissionGrantResult(grants, warnings);
+        return new(grants, warnings);
     }
 
     private bool IsAllowedSource(string type) => options.Value.AllowedPermissionGrantSourceTypes.Count == 0 || options.Value.AllowedPermissionGrantSourceTypes.Contains(type, StringComparer.Ordinal);
@@ -59,26 +69,48 @@ public sealed class DefaultPermissionGrantResolver(
     }
 }
 
-public sealed class DefaultPermissionDelegationAuthorizer(IOptions<ExternalAuthenticationOptions> options) : IPermissionDelegationAuthorizer
+public sealed class DefaultPermissionDelegationAuthorizer(IOptions<ExternalAuthenticationOptions> options, IPermissionEvaluator permissionEvaluator) : IPermissionDelegationAuthorizer
 {
-    public ValueTask<PermissionDelegationResult> AuthorizeAsync(System.Security.Claims.ClaimsPrincipal actor, IReadOnlyCollection<GrantSourceSelection> selections, CancellationToken cancellationToken = default)
+    public ValueTask<PermissionDelegationResult> AuthorizeAsync(ClaimsPrincipal actor, IReadOnlyCollection<GrantSourceSelection> selections, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var actorPermissions = actor.FindAll(PermissionNames.ClaimType).Select(x => x.Value).ToHashSet(StringComparer.Ordinal);
         var boundary = new PermissionGrantBoundary(options.Value.PermissionGrants);
         var configuredPermissions = selections.SelectMany(x => PermissionGrantMappingSettings.Read(x.Settings)).SelectMany(x => x.Permissions)
             .Concat(selections.Where(x => string.Equals(x.Type, ClaimPassThroughPermissionGrantSource.SourceType, StringComparison.Ordinal)).SelectMany(x => PermissionGrantMappingSettings.ReadPassThroughPermissions(x.Settings)))
             .Distinct(StringComparer.Ordinal).OrderBy(x => x, StringComparer.Ordinal).ToArray();
-        var unrestricted = actorPermissions.Contains(PermissionNames.All) || actorPermissions.Contains(Permissions.ExternalAuthenticationPermissions.PermissionsDelegateUnrestricted);
-        var mayDelegate = unrestricted || actorPermissions.Contains(Permissions.ExternalAuthenticationPermissions.PermissionsDelegate);
-        var unauthorized = configuredPermissions.Where(permission => !boundary.Allows(permission) || !mayDelegate || (!unrestricted && !actorPermissions.Contains(permission))).ToArray();
+        var unrestricted = permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PermissionGrants, ExternalAuthenticationVerbs.DelegateUnrestricted);
+        var mayDelegate = unrestricted || permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PermissionGrants, ExternalAuthenticationVerbs.Delegate);
+        var unauthorized = configuredPermissions.Where(permission => !boundary.Allows(permission) || !mayDelegate || (!unrestricted && !permissionEvaluator.HasPermission(actor, permission))).ToArray();
         return ValueTask.FromResult(new PermissionDelegationResult(unauthorized.Length == 0, unauthorized));
     }
 }
 
+/// <summary>
+/// The deployment's allow and deny boundary on delegated permissions. Both lists are permission patterns,
+/// so they read the same way a role does: <c>workflows/*:delete</c> denies every delete beneath
+/// <c>workflows</c>, not just a permission spelled exactly that way.
+/// </summary>
 internal sealed class PermissionGrantBoundary(PermissionGrantOptions options)
 {
-    private readonly IReadOnlySet<string> _allowed = options.AllowedPermissions.ToHashSet(StringComparer.Ordinal);
-    private readonly IReadOnlySet<string> _denied = options.DeniedPermissions.ToHashSet(StringComparer.Ordinal);
-    public bool Allows(string permission) => !string.IsNullOrWhiteSpace(permission) && !_denied.Contains(permission) && (_allowed.Count == 0 || _allowed.Contains(permission));
+    private readonly IReadOnlyCollection<Permission> _allowed = Parse(options.AllowedPermissions);
+    private readonly IReadOnlyCollection<Permission> _denied = Parse(options.DeniedPermissions);
+
+    public bool Allows(string permission)
+    {
+        if (!Permission.TryParse(permission, out var candidate))
+            return false;
+
+        // Deny wins, and it is tested in both directions: a grant beneath a denied subtree is denied, and a
+        // wildcard grant that would reach a denied permission is denied too. Testing only one direction
+        // would let 'workflows/*:delete' hand out a delete the deployment denied by name.
+        if (_denied.Any(x => PermissionMatcher.Satisfies(x, candidate) || PermissionMatcher.Satisfies(candidate, x)))
+            return false;
+
+        // Allow is one-directional on purpose. An allow entry must cover the whole grant, so a grant broader
+        // than anything allowed is refused rather than admitted for the part that overlaps.
+        return _allowed.Count == 0 || _allowed.Any(x => PermissionMatcher.Satisfies(x, candidate));
+    }
+
+    private static IReadOnlyCollection<Permission> Parse(IEnumerable<string> values) =>
+        values.Select(x => Permission.TryParse(x, out var permission) ? permission : (Permission?)null).OfType<Permission>().ToArray();
 }

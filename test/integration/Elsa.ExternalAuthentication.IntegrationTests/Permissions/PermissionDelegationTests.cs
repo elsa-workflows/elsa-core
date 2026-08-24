@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Permissions;
@@ -13,14 +14,14 @@ public class PermissionDelegationTests
     [Fact]
     public async Task OrdinaryAdministratorMustPossessDelegationPermissionAndEveryGrantedPermission()
     {
-        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()));
+        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
         var selection = Selection("reports:view");
 
         var withoutGrantedPermission = await authorizer.AuthorizeAsync(
-            Actor(ExternalAuthenticationPermissions.PermissionsDelegate),
+            Actor(DelegatePermission),
             [selection]);
         var withGrantedPermission = await authorizer.AuthorizeAsync(
-            Actor(ExternalAuthenticationPermissions.PermissionsDelegate, "reports:view"),
+            Actor(DelegatePermission, "reports:view"),
             [selection]);
 
         Assert.False(withoutGrantedPermission.IsAuthorized);
@@ -33,15 +34,18 @@ public class PermissionDelegationTests
     {
         var options = new ExternalAuthenticationOptions();
         options.PermissionGrants.DeniedPermissions = ["reports:view"];
-        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(options));
+        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(options), PermissionEvaluator.Shared);
 
         var result = await authorizer.AuthorizeAsync(
-            Actor(ExternalAuthenticationPermissions.PermissionsDelegateUnrestricted, PermissionNames.All),
+            Actor(DelegateUnrestrictedPermission, PermissionNames.All),
             [Selection("reports:view")]);
 
         Assert.False(result.IsAuthorized);
         Assert.Equal(["reports:view"], result.UnauthorizedPermissions);
     }
+
+    private const string DelegatePermission = $"{ExternalAuthenticationResourcePermissions.PermissionGrants}:{ExternalAuthenticationVerbs.Delegate}";
+    private const string DelegateUnrestrictedPermission = $"{ExternalAuthenticationResourcePermissions.PermissionGrants}:{ExternalAuthenticationVerbs.DelegateUnrestricted}";
 
     private static GrantSourceSelection Selection(string permission) => new(
         "claim-mapping",

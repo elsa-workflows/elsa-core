@@ -32,7 +32,7 @@ public sealed class MatchExternalUserUnlinkedIdentityPolicy(IExternalUserMatcher
 
         var requiredClaims = (descriptor.RequiredClaimTypes ?? []).ToHashSet(StringComparer.Ordinal);
         var claims = context.ProjectedClaims.Where(x => requiredClaims.Contains(x.Key)).ToDictionary(x => x.Key, x => x.Value, StringComparer.Ordinal);
-        var match = await matcher.MatchAsync(new ExternalUserMatcherContext(context.TargetTenantId, context.Connection, context.Identity, claims, selection.Settings), cancellationToken);
+        var match = await matcher.MatchAsync(new(context.TargetTenantId, context.Connection, context.Identity, claims, selection.Settings), cancellationToken);
         if (match is ExternalUserMatchResult.Match { UserId: { Length: > 0 } userId, AuthorizationBasis: { Length: > 0 } basis })
             return new UnlinkedIdentityDecision.LinkExistingUser(userId, basis);
 
@@ -40,13 +40,13 @@ public sealed class MatchExternalUserUnlinkedIdentityPolicy(IExternalUserMatcher
             return new UnlinkedIdentityDecision.Reject("identity_unlinked");
 
         return string.Equals(ReadString(context.Settings, "noMatchAction"), "create-user", StringComparison.OrdinalIgnoreCase)
-            ? new UnlinkedIdentityDecision.CreateUser(new UserCreationProposal("external", DefaultRoleIds: CreateUserUnlinkedIdentityPolicy.ReadRoleIds(context.Settings)))
+            ? new UnlinkedIdentityDecision.CreateUser(new("external", DefaultRoleIds: CreateUserUnlinkedIdentityPolicy.ReadRoleIds(context.Settings)))
             : new UnlinkedIdentityDecision.Reject("identity_unlinked");
     }
 
     private static bool TryReadMatcher(JsonElement settings, out MatcherSelection selection)
     {
-        selection = default!;
+        selection = null!;
         if (settings.ValueKind != JsonValueKind.Object || !settings.TryGetProperty("matcher", out var value) || value.ValueKind != JsonValueKind.Object)
             return false;
         var type = ReadString(value, "type");
@@ -54,7 +54,7 @@ public sealed class MatchExternalUserUnlinkedIdentityPolicy(IExternalUserMatcher
         var matcherSettings = value.TryGetProperty("settings", out var matcherSettingsValue) ? matcherSettingsValue.Clone() : default;
         if (string.IsNullOrWhiteSpace(type) || version <= 0)
             return false;
-        selection = new MatcherSelection(type, version, matcherSettings);
+        selection = new(type, version, matcherSettings);
         return true;
     }
 

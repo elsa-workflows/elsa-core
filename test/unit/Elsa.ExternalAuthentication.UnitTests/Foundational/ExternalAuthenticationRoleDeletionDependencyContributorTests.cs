@@ -135,9 +135,9 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Theory]
-    [InlineData(ExternalAuthenticationPermissions.ConnectionsUpdate)]
-    [InlineData(ExternalAuthenticationPermissions.PoliciesManage)]
-    [InlineData(ExternalAuthenticationPermissions.RolesAssign)]
+    [InlineData(ConnectionsUpdate)]
+    [InlineData(PoliciesUpdate)]
+    [InlineData(DefaultRolesUpdate)]
     public async Task PrevalidationRequiresEveryPolicyRemediationPermission(string omittedPermission)
     {
         var databaseConnection = Connection(
@@ -177,7 +177,8 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator()),
             versions,
             new ConnectionRevisionCalculator(),
-            new ExternalAuthenticationSecurityNotifier(services));
+            new ExternalAuthenticationSecurityNotifier(services),
+            new PermissionEvaluator());
         return (contributor, store, versions);
     }
 
@@ -196,14 +197,18 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         UpdatedAt = DateTimeOffset.UnixEpoch
     };
 
+    private const string ConnectionsUpdate = $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}";
+    private const string PoliciesUpdate = $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}";
+    private const string DefaultRolesUpdate = $"{ExternalAuthenticationResourcePermissions.PolicyDefaultRoles}:{CoreVerbs.Update}";
+
     private static ClaimsPrincipal Administrator(string? omittedPermission = null)
     {
         var permissions = new[]
         {
-            "delete:role",
-            ExternalAuthenticationPermissions.ConnectionsUpdate,
-            ExternalAuthenticationPermissions.PoliciesManage,
-            ExternalAuthenticationPermissions.RolesAssign
+            "identity/roles:delete",
+            ConnectionsUpdate,
+            PoliciesUpdate,
+            DefaultRolesUpdate
         };
         return new ClaimsPrincipal(new ClaimsIdentity(
             permissions

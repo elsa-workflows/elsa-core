@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -56,6 +57,9 @@ public class ConnectionManagementTests : IAsyncLifetime
             options.Filter = endpoint => endpoint.Namespace == "Elsa.ExternalAuthentication.Endpoints.Connections";
         });
         builder.Services.AddAuthorization();
+        // This fixture wires the module's services by hand rather than through
+        // AddExternalAuthenticationServices, so it has to register the permission evaluator the way a host does.
+        builder.Services.AddElsaAuthorization();
         builder.Services.Configure<ExternalAuthenticationOptions>(options =>
         {
             options.EnableDatabaseConnections = true;

@@ -28,7 +28,8 @@ public sealed class ExternalIdentityUserProvisioningService(
     {
         if (!string.IsNullOrWhiteSpace(request.ExistingUserId))
         {
-            var existingUser = await userProvider.FindAsync(new UserFilter { Id = request.ExistingUserId }, cancellationToken)
+            var existingUser = await userProvider.FindAsync(new()
+                                   { Id = request.ExistingUserId }, cancellationToken)
                 ?? throw new InvalidOperationException("The requested Elsa user does not exist.");
             if (!string.Equals(existingUser.TenantId, request.TenantId, StringComparison.Ordinal))
                 throw new InvalidOperationException("The requested Elsa user is outside the target tenant.");
@@ -44,7 +45,8 @@ public sealed class ExternalIdentityUserProvisioningService(
             var name = $"{prefix}-{identityGenerator.GenerateId()}";
             if (tryReserveUserName is not null && !tryReserveUserName(name))
                 continue;
-            if (await userProvider.FindAsync(new UserFilter { Name = name }, cancellationToken) is not null)
+            if (await userProvider.FindAsync(new()
+                    { Name = name }, cancellationToken) is not null)
                 continue;
 
             var user = new User
@@ -64,17 +66,21 @@ public sealed class ExternalIdentityUserProvisioningService(
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                var persistedUser = await userStore.FindAsync(new UserFilter { Id = user.Id }, CancellationToken.None);
+                var persistedUser = await userStore.FindAsync(new()
+                    { Id = user.Id }, CancellationToken.None);
                 if (persistedUser is not null)
-                    await userStore.DeleteAsync(new UserFilter { Id = user.Id }, CancellationToken.None);
+                    await userStore.DeleteAsync(new()
+                        { Id = user.Id }, CancellationToken.None);
                 throw;
             }
             catch
             {
-                var persistedUser = await userProvider.FindAsync(new UserFilter { Id = user.Id }, cancellationToken);
+                var persistedUser = await userProvider.FindAsync(new()
+                    { Id = user.Id }, cancellationToken);
                 if (persistedUser is not null)
                     return (persistedUser, true);
-                if (await userProvider.FindAsync(new UserFilter { Name = name }, cancellationToken) is null)
+                if (await userProvider.FindAsync(new()
+                        { Name = name }, cancellationToken) is null)
                     throw;
             }
         }
@@ -86,15 +92,18 @@ public sealed class ExternalIdentityUserProvisioningService(
     /// Removes a user created by an operation that could not publish its external identity link.
     /// </summary>
     public Task RemoveAsync(User user, CancellationToken cancellationToken = default) =>
-        userStore.DeleteAsync(new UserFilter { Id = user.Id }, cancellationToken);
+        userStore.DeleteAsync(new()
+            { Id = user.Id }, cancellationToken);
 
     /// <summary>
     /// Checks that the resolved user still exists in the source that supplied it.
     /// </summary>
     public async ValueTask<bool> ExistsAsync(User user, bool wasCreated, CancellationToken cancellationToken = default) =>
         wasCreated
-            ? await userStore.FindAsync(new UserFilter { Id = user.Id }, cancellationToken) is not null
-            : await userProvider.FindAsync(new UserFilter { Id = user.Id }, cancellationToken) is not null;
+            ? await userStore.FindAsync(new()
+                { Id = user.Id }, cancellationToken) is not null
+            : await userProvider.FindAsync(new()
+                { Id = user.Id }, cancellationToken) is not null;
 
     private static string NormalizeUserNamePrefix(string prefix)
     {

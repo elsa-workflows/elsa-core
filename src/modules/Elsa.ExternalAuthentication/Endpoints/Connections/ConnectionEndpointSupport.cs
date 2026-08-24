@@ -1,8 +1,6 @@
 using System.Security.Claims;
-using Elsa.Abstractions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
-using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Services;
 using Microsoft.AspNetCore.Http;
 
@@ -12,9 +10,9 @@ internal static class ConnectionEndpointSupport
 {
     public static bool TryGetExpectedRevision(HttpContext context, out long revision)
     {
-        revision = default;
+        revision = 0;
         var value = context.Request.Headers.IfMatch.FirstOrDefault();
-        return !string.IsNullOrWhiteSpace(value) && value.Length >= 2 && value[0] == '"' && value[^1] == '"' && long.TryParse(value[1..^1], out revision) && revision > 0;
+        return !string.IsNullOrWhiteSpace(value) && value is ['"', _, ..] && value[^1] == '"' && long.TryParse(value[1..^1], out revision) && revision > 0;
     }
 
     public static void SetEtag(HttpContext context, long revision) => context.Response.Headers.ETag = $"\"{revision}\"";

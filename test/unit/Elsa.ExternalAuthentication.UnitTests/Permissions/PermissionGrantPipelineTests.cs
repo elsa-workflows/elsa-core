@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
@@ -124,8 +125,8 @@ public class PermissionGrantPipelineTests
     {
         var selection = new GrantSourceSelection("group-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "groups", mappings = new Dictionary<string, string[]> { ["operators"] = ["workflows:manage"] } }), 0);
         var options = new ExternalAuthenticationOptions();
-        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(options));
-        var ordinaryActor = CreateActor(ExternalAuthenticationPermissions.PermissionsDelegate, "workflows:read");
+        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(options), PermissionEvaluator.Shared);
+        var ordinaryActor = CreateActor(DelegatePermission, "workflows:read");
 
         var ordinary = await authorizer.AuthorizeAsync(ordinaryActor, [selection]);
 
@@ -133,7 +134,7 @@ public class PermissionGrantPipelineTests
         Assert.Equal(["workflows:manage"], ordinary.UnauthorizedPermissions);
 
         options.PermissionGrants.DeniedPermissions = ["workflows:manage"];
-        var unrestricted = await authorizer.AuthorizeAsync(CreateActor(ExternalAuthenticationPermissions.PermissionsDelegateUnrestricted), [selection]);
+        var unrestricted = await authorizer.AuthorizeAsync(CreateActor(DelegateUnrestrictedPermission), [selection]);
 
         Assert.False(unrestricted.IsAuthorized);
         Assert.Equal(["workflows:manage"], unrestricted.UnauthorizedPermissions);
@@ -143,10 +144,10 @@ public class PermissionGrantPipelineTests
     public async Task DelegationRequiresTheActorToPossessEachExplicitPassThroughPermission()
     {
         var selection = new GrantSourceSelection("claim-pass-through", 1, JsonSerializer.SerializeToElement(new { claimType = "permissions", allowedPermissions = new[] { "reports:view" } }), 0);
-        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()));
+        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
 
-        var denied = await authorizer.AuthorizeAsync(CreateActor(ExternalAuthenticationPermissions.PermissionsDelegate), [selection]);
-        var allowed = await authorizer.AuthorizeAsync(CreateActor(ExternalAuthenticationPermissions.PermissionsDelegate, "reports:view"), [selection]);
+        var denied = await authorizer.AuthorizeAsync(CreateActor(DelegatePermission), [selection]);
+        var allowed = await authorizer.AuthorizeAsync(CreateActor(DelegatePermission, "reports:view"), [selection]);
 
         Assert.False(denied.IsAuthorized);
         Assert.Equal(["reports:view"], denied.UnauthorizedPermissions);
@@ -164,6 +165,109 @@ public class PermissionGrantPipelineTests
 
         Assert.Equal(["reports:view", "workflows:read"], registry.List().Select(x => x.Name));
     }
+
+    [Theory]
+    // A deny of a subtree reaches every permission beneath it, the case the ordinal boundary missed.
+    [InlineData("workflows/*:delete", "workflows/definitions:delete")]
+    // And a wildcard grant cannot outflank a deny spelled out by name.
+    [InlineData("workflows/definitions:delete", "workflows/*:delete")]
+    // A verb wildcard reaches in both directions too.
+    [InlineData("workflows/definitions:*", "workflows/definitions:delete")]
+    [InlineData("workflows/definitions:delete", "workflows/definitions:*")]
+    public async Task DeploymentDenyAndGrantAreMatchedAsPatternsInBothDirections(string denied, string granted)
+    {
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.DeniedPermissions = [denied];
+        var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), options);
+
+        var result = await resolver.ResolveAsync(MappedContext(granted));
+
+        Assert.Empty(result.Grants);
+        Assert.Contains(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+    }
+
+    [Theory]
+    // An allow entry must cover the whole grant, so a subtree admits the permissions beneath it...
+    [InlineData("workflows/*:delete", "workflows/definitions:delete", true)]
+    [InlineData("workflows/definitions:*", "workflows/definitions:delete", true)]
+    // ...but a grant broader than anything allowed is refused rather than admitted for the overlap.
+    [InlineData("workflows/definitions:delete", "workflows/*:delete", false)]
+    [InlineData("workflows/definitions:delete", "workflows/definitions:*", false)]
+    public async Task DeploymentAllowListCoversGrantsBeneathItButNotGrantsBeyondIt(string allowed, string granted, bool isAdmitted)
+    {
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.AllowedPermissions = [allowed];
+        var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), options);
+
+        var result = await resolver.ResolveAsync(MappedContext(granted));
+
+        Assert.Equal(isAdmitted ? [granted] : Array.Empty<string>(), result.Grants.Select(x => x.Permission));
+    }
+
+    [Fact]
+    public async Task RolePermissionsAreMatchedAgainstTheDenyBoundaryAsPatterns()
+    {
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.DeniedPermissions = ["workflows/*:delete"];
+        var userProvider = new StaticUserProvider(new User { Id = "user-a", TenantId = "tenant-a", Roles = ["role-a"] });
+        var roleProvider = new StaticRoleProvider(new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a", Permissions = ["workflows/definitions:delete", "workflows/definitions:view"] });
+        var resolver = CreateResolver(userProvider, roleProvider, options);
+        var context = CreateContext(
+            [new GrantSourceSelection("elsa-roles", 1, JsonSerializer.SerializeToElement(new { }), 0)],
+            new Dictionary<string, IReadOnlyCollection<string>>());
+
+        var result = await resolver.ResolveAsync(context);
+
+        Assert.Equal(["workflows/definitions:view"], result.Grants.Select(x => x.Permission));
+        Assert.Contains(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+    }
+
+    [Fact]
+    public async Task GrantsThatAreNotWellFormedPermissionsAreDroppedRatherThanCarriedIntoAToken()
+    {
+        var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), new ExternalAuthenticationOptions());
+
+        var result = await resolver.ResolveAsync(MappedContext("external-authentication:connections:read"));
+
+        Assert.Empty(result.Grants);
+        Assert.Contains(result.Warnings, warning => warning.Code == "malformed_permission");
+    }
+
+    [Theory]
+    // The actor must cover what they delegate, so a subtree grant delegates the permissions beneath it...
+    [InlineData("workflows/*:delete", "workflows/definitions:delete", true)]
+    // ...and holding one leaf does not let an actor delegate the whole subtree.
+    [InlineData("workflows/definitions:delete", "workflows/*:delete", false)]
+    [InlineData(PermissionNames.All, "workflows/*:delete", true)]
+    public async Task DelegationMatchesTheActorsOwnGrantsAsPatterns(string held, string delegated, bool isAuthorized)
+    {
+        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
+        var selection = new GrantSourceSelection("group-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "groups", mappings = new Dictionary<string, string[]> { ["operators"] = [delegated] } }), 0);
+
+        var result = await authorizer.AuthorizeAsync(CreateActor(DelegatePermission, held), [selection]);
+
+        Assert.Equal(isAuthorized, result.IsAuthorized);
+    }
+
+    [Fact]
+    public async Task DelegationPermissionItselfIsHonouredThroughAWildcardGrant()
+    {
+        var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
+        var selection = new GrantSourceSelection("group-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "groups", mappings = new Dictionary<string, string[]> { ["operators"] = ["reports:view"] } }), 0);
+
+        var subtree = await authorizer.AuthorizeAsync(CreateActor($"{ExternalAuthenticationResourcePermissions.PermissionGrants}:*", "reports:view"), [selection]);
+        var without = await authorizer.AuthorizeAsync(CreateActor("reports:view"), [selection]);
+
+        Assert.True(subtree.IsAuthorized);
+        Assert.False(without.IsAuthorized);
+    }
+
+    private const string DelegatePermission = $"{ExternalAuthenticationResourcePermissions.PermissionGrants}:{ExternalAuthenticationVerbs.Delegate}";
+    private const string DelegateUnrestrictedPermission = $"{ExternalAuthenticationResourcePermissions.PermissionGrants}:{ExternalAuthenticationVerbs.DelegateUnrestricted}";
+
+    private static PermissionGrantResolutionContext MappedContext(string permission) => CreateContext(
+        [new GrantSourceSelection("claim-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "department", mappings = new Dictionary<string, string[]> { ["engineering"] = [permission] } }), 0)],
+        new Dictionary<string, IReadOnlyCollection<string>> { ["department"] = ["engineering"] });
 
     private static DefaultPermissionGrantResolver CreateResolver(IUserProvider userProvider, IRoleProvider roleProvider, ExternalAuthenticationOptions options) => new(
         [new ElsaRolePermissionGrantSource(userProvider, roleProvider), new ClaimMappingPermissionGrantSource(), new GroupMappingPermissionGrantSource(), new ClaimPassThroughPermissionGrantSource()],

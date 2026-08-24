@@ -1,5 +1,5 @@
-using Elsa.Authorization;
 using System.Security.Claims;
+using Elsa.Authorization;
 using System.Text;
 using System.Text.Json;
 using Elsa.Abstractions;
@@ -22,7 +22,7 @@ internal sealed class ListExternalAuthenticationSessions(
     public override void Configure()
     {
         Get("/external-authentication/sessions");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Sessions, CoreVerbs.View);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Sessions, CoreVerbs.View);
     }
 
     public override async Task<ExternalAuthenticationSessionListResponse> ExecuteAsync(ExternalAuthenticationSessionListRequest request, CancellationToken cancellationToken)
@@ -30,21 +30,22 @@ internal sealed class ListExternalAuthenticationSessions(
         if (!options.Value.Operations.EnableSessionAdministration)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            return new ExternalAuthenticationSessionListResponse([], null);
+            return new([], null);
         }
         if (request.PageSize is < 1 or > 100 || !IsKnownStatus(request.Status) || !TryDecode(request.Cursor, out var cursor))
         {
             HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new ExternalAuthenticationSessionListResponse([], null);
+            return new([], null);
         }
         var pageSize = request.PageSize ?? 100;
-        var rows = (await sessions.FindAsync(new Models.ExternalAuthenticationSessionFilter { TenantId = tenantAccessor.TenantId, UserId = request.UserId, ConnectionKey = request.ConnectionKey, Status = request.Status }, cancellationToken))
+        var rows = (await sessions.FindAsync(new()
+                { TenantId = tenantAccessor.TenantId, UserId = request.UserId, ConnectionKey = request.ConnectionKey, Status = request.Status }, cancellationToken))
             .OrderBy(x => x.StartedAt).ThenBy(x => x.Id, StringComparer.Ordinal)
-            .Where(x => cursor is null || Compare(new SessionCursor(x.StartedAt, x.Id), cursor) > 0)
+            .Where(x => cursor is null || Compare(new(x.StartedAt, x.Id), cursor) > 0)
             .Take(pageSize + 1).ToArray();
         var hasMore = rows.Length > pageSize;
         var page = hasMore ? rows[..^1] : rows;
-        return new ExternalAuthenticationSessionListResponse(page.Select(ExternalAuthenticationSessionDocument.From).ToArray(), hasMore ? Encode(new SessionCursor(page[^1].StartedAt, page[^1].Id)) : null);
+        return new(page.Select(ExternalAuthenticationSessionDocument.From).ToArray(), hasMore ? Encode(new(page[^1].StartedAt, page[^1].Id)) : null);
     }
 
     private static bool IsKnownStatus(string? status) => string.IsNullOrWhiteSpace(status) || status.Equals("active", StringComparison.OrdinalIgnoreCase) || status.Equals("revoked", StringComparison.OrdinalIgnoreCase);
@@ -74,7 +75,7 @@ internal sealed class RevokeExternalAuthenticationSession(
     public override void Configure()
     {
         Delete("/external-authentication/sessions/{sessionId}");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Sessions, "revoke");
+        RequirePermission(ExternalAuthenticationResourcePermissions.Sessions, ExternalAuthenticationVerbs.Revoke);
     }
 
     public override async Task HandleAsync(RevokeExternalAuthenticationSessionRequest request, CancellationToken cancellationToken)
