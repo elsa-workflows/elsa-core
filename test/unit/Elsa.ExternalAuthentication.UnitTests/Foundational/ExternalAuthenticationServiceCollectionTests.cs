@@ -1,3 +1,5 @@
+using Elsa.Permissions;
+using Elsa.Authorization;
 using Elsa.Common;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
@@ -39,8 +41,9 @@ public class ExternalAuthenticationServiceCollectionTests
         Assert.IsType<InMemoryPreviewResultStore>(serviceProvider.GetRequiredService<IPreviewResultStore>());
         Assert.IsType<InMemoryConnectionObservationStore>(serviceProvider.GetRequiredService<IConnectionObservationStore>());
         Assert.IsType<InMemoryConnectionRegistryVersionStore>(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>());
-        Assert.Contains(serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()), x => x.Name == ExternalAuthenticationPermissions.ConnectionsRead);
-        Assert.Contains(serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()), x => x.Name == ExternalAuthenticationPermissions.RolesAssign);
+        var descriptors = serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()).ToArray();
+        Assert.Contains(descriptors, x => x.Resource == ExternalAuthenticationResourcePermissions.Connections && x.Supports(CoreVerbs.View));
+        Assert.Contains(descriptors, x => x.Resource == ExternalAuthenticationResourcePermissions.PolicyDefaultRoles && x.Supports(CoreVerbs.Update));
         Assert.NotNull(serviceProvider.GetRequiredService<IOptions<RateLimiterOptions>>().Value);
         Assert.Contains(serviceProvider.GetServices<IConfigureOptions<RateLimiterOptions>>(), x => x.GetType().Name == "ConfigureExternalAuthenticationRateLimiterOptions");
     }

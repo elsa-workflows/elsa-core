@@ -1,3 +1,4 @@
+using Elsa.Permissions;
 using System.Security.Claims;
 using System.Text.Json;
 using Elsa.Authorization;
@@ -154,18 +155,6 @@ public class PermissionGrantPipelineTests
         Assert.True(allowed.IsAuthorized);
     }
 
-    [Fact]
-    public void DescriptorRegistryAggregatesModuleDescriptorsDeterministically()
-    {
-        var registry = new DefaultPermissionDescriptorRegistry(
-        [
-            new StaticDescriptorProvider(new PermissionDescriptor("reports:view", "View reports", "", "Reports")),
-            new StaticDescriptorProvider(new PermissionDescriptor("workflows:read", "Read workflows", "", "Workflows"))
-        ]);
-
-        Assert.Equal(["reports:view", "workflows:read"], registry.List().Select(x => x.Name));
-    }
-
     [Theory]
     // A deny of a subtree reaches every permission beneath it, the case the ordinal boundary missed.
     [InlineData("workflows/*:delete", "workflows/definitions:delete")]
@@ -288,6 +277,28 @@ public class PermissionGrantPipelineTests
     private static PermissionGrantResolutionContext MappedContext(string permission) => CreateContext(
         [new GrantSourceSelection("claim-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "department", mappings = new Dictionary<string, string[]> { ["engineering"] = [permission] } }), 0)],
         new Dictionary<string, IReadOnlyCollection<string>> { ["department"] = ["engineering"] });
+
+    [Theory]
+    // A grant the catalog advertises, resource and verb both matching, is not warned about.
+    [InlineData("reports:view", false)]
+    // A verb the resource does not declare is a gap worth surfacing.
+    [InlineData("reports:delete", true)]
+    // So is a resource nothing advertises.
+    [InlineData("nothing/here:view", true)]
+    // A wildcard names a pattern rather than one resource, so there is no descriptor to look it up in.
+    [InlineData("reports:*", false)]
+    [InlineData("*", false)]
+    public async Task UnknownDescriptorWarningTracksTheCoreCatalog(string permission, bool expectsWarning)
+    {
+        var resolver = new DefaultPermissionGrantResolver(
+            [new ClaimMappingPermissionGrantSource()],
+            new DefaultPermissionDescriptorRegistry([new StaticDescriptorProvider(new PermissionDescriptor("reports", [CoreVerbs.View], "Reports", "", "Reports"))]),
+            Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()));
+
+        var result = await resolver.ResolveAsync(MappedContext(permission));
+
+        Assert.Equal(expectsWarning, result.Warnings.Any(x => x.Code == "unknown_permission_descriptor"));
+    }
 
     private static DefaultPermissionGrantResolver CreateResolver(IUserProvider userProvider, IRoleProvider roleProvider, ExternalAuthenticationOptions options) => new(
         [new ElsaRolePermissionGrantSource(userProvider, roleProvider), new ClaimMappingPermissionGrantSource(), new GroupMappingPermissionGrantSource(), new ClaimPassThroughPermissionGrantSource()],

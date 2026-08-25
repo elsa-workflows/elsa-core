@@ -4,6 +4,7 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Permissions;
+using Elsa.Permissions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Services;
@@ -20,7 +21,6 @@ public sealed class DefaultPermissionGrantResolver(
         var grants = new List<PermissionGrant>();
         var warnings = new List<PermissionGrantWarning>();
         var warningKeys = new HashSet<(string Code, string Message)>();
-        var knownPermissions = descriptors.List().Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
         var boundary = new PermissionGrantBoundary(options.Value.PermissionGrants);
 
         foreach (var selection in context.Connection.Connection.PermissionGrantSources.OrderBy(x => x.Order).ThenBy(x => x.Type, StringComparer.Ordinal))
@@ -50,7 +50,10 @@ public sealed class DefaultPermissionGrantResolver(
                     continue;
                 }
 
-                if (!knownPermissions.Contains(grant.Permission))
+                // Checked against the core catalog, which is keyed by resource and lists the verbs each one
+                // accepts. The module used to keep its own registry, fed only its legacy permission names, so
+                // once the vocabulary changed every grant looked unknown and the warning became constant noise.
+                if (!IsAdvertised(descriptors, grant.Permission))
                     AddWarning(warnings, warningKeys, new("unknown_permission_descriptor", $"No module advertises a descriptor for permission '{grant.Permission}'."));
 
                 if (grants.All(x => !string.Equals(x.Permission, grant.Permission, StringComparison.Ordinal)))
@@ -59,6 +62,21 @@ public sealed class DefaultPermissionGrantResolver(
         }
 
         return new(grants, warnings);
+    }
+
+    /// <summary>
+    /// Whether some module advertises <paramref name="permission"/>. A wildcard is advertised by definition:
+    /// it names a pattern rather than one resource, so there is no single descriptor to look it up in.
+    /// </summary>
+    private static bool IsAdvertised(IPermissionDescriptorRegistry descriptors, string permission)
+    {
+        if (!Permission.TryParse(permission, out var parsed))
+            return false;
+
+        if (parsed.HasWildcard)
+            return true;
+
+        return descriptors.Find(parsed.Resource)?.Supports(parsed.Verb) == true;
     }
 
     private bool IsAllowedSource(string type) => options.Value.AllowedPermissionGrantSourceTypes.Count == 0 || options.Value.AllowedPermissionGrantSourceTypes.Contains(type, StringComparer.Ordinal);

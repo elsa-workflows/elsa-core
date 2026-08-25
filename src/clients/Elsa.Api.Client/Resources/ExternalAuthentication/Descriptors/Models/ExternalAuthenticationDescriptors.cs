@@ -33,12 +33,28 @@ public sealed class ExternalAuthenticationPermissionGrantSourceDescriptor
     public ExternalAuthenticationCustomEditorContract? CustomEditor { get; set; }
 }
 
+/// <summary>
+/// One permission resource a claim mapping may be configured to confer.
+/// </summary>
+/// <remarks>
+/// Mirrors the core catalog's descriptor, which is keyed by resource and carries the verbs that resource
+/// accepts. It replaced a single <c>Name</c> holding a whole permission string when the two-axis model
+/// landed: a mapping picks a resource and a verb, so a client needs both to offer the choice.
+/// </remarks>
 public sealed class ExternalAuthenticationPermissionDescriptor
 {
-    public string Name { get; set; } = "";
+    /// <summary>The hierarchical resource path, for example <c>workflows/definitions</c>.</summary>
+    public string Resource { get; set; } = "";
+
+    /// <summary>The verbs this resource accepts. The wildcard is deliberately absent: it is not a verb a user selects.</summary>
+    public ICollection<string> SupportedVerbs { get; set; } = [];
+
     public string DisplayName { get; set; } = "";
     public string Description { get; set; } = "";
     public string Category { get; set; } = "";
+
+    /// <summary><c>false</c> for a descriptor auto-registered because a module declared a permission that matched none.</summary>
+    public bool Verified { get; set; } = true;
 }
 
 public sealed class ExternalAuthenticationSettingFieldDescriptor
