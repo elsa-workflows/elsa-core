@@ -37,6 +37,11 @@ public static class ServiceCollectionExtensions
         // The call is TryAdd-based and idempotent, so a host that already registered one keeps it.
         services.AddElsaAuthorization();
 
+        // Contributed explicitly rather than left to the host's assembly scan, so the module's resources reach
+        // the catalog on any host that registers its services, the same reason AddElsaAuthorization is called
+        // here. Registration is TryAddEnumerable-backed, so a host that also scans this assembly gets one copy.
+        services.AddPermissionDescriptors<ExternalAuthenticationResourcePermissionsDescriptorProvider>();
+
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, RejectUnlinkedIdentityPolicy.PolicyType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, CreateUserUnlinkedIdentityPolicy.PolicyType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, MatchExternalUserUnlinkedIdentityPolicy.PolicyType);
@@ -88,7 +93,6 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IPermissionGrantResolver, DefaultPermissionGrantResolver>();
         services.TryAddScoped<IPermissionDelegationAuthorizer, DefaultPermissionDelegationAuthorizer>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<ISecretBindingResolver, ConfigurationSecretBindingResolver>());
-        services.TryAddScoped<IPermissionDescriptorRegistry, DefaultPermissionDescriptorRegistry>();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IUnlinkedIdentityPolicy, RejectUnlinkedIdentityPolicy>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IUnlinkedIdentityPolicy, CreateUserUnlinkedIdentityPolicy>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IUnlinkedIdentityPolicy, MatchExternalUserUnlinkedIdentityPolicy>());
@@ -101,7 +105,6 @@ public static class ServiceCollectionExtensions
         services.TryAddScoped<IdentityProviderConnectionManagementService>();
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IRoleDeletionDependencyContributor, ExternalAuthenticationRoleDeletionDependencyContributor>());
         services.TryAddEnumerable(ServiceDescriptor.Scoped<IUserDeletionDependencyContributor, ExternalAuthenticationUserDeletionDependencyContributor>());
-        services.TryAddEnumerable(ServiceDescriptor.Singleton<IPermissionDescriptorProvider, ExternalAuthenticationPermissionDescriptorProvider>());
 
         return services;
     }

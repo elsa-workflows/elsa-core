@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -84,7 +85,7 @@ public class IdentityLinkAuthorizationTests : IAsyncLifetime
     public async Task UserOptionsRequiresTheLinkManagementPermissionRatherThanAnUnrelatedPermission()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "/external-authentication/user-options");
-        request.Headers.Add(TestAuthenticationHandler.PermissionHeader, ExternalAuthenticationPermissions.ConnectionsRead);
+        request.Headers.Add(TestAuthenticationHandler.PermissionHeader, $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.View}");
         Assert.Equal(HttpStatusCode.Forbidden, (await _client!.SendAsync(request)).StatusCode);
     }
 

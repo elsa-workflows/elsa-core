@@ -1,5 +1,6 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
+using Elsa.Permissions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
@@ -82,6 +83,14 @@ internal sealed class ListManagedSecretResolverDescriptors(IEnumerable<IManagedS
         writers.Select(x => new ManagedSecretResolverDescriptor(x.ResolverType, x.DisplayName)).OrderBy(x => x.Type, StringComparer.Ordinal).ToArray()));
 }
 
+/// <summary>
+/// Lists the permissions a claim mapping may be configured to confer.
+/// </summary>
+/// <remarks>
+/// This serves the core catalog rather than a registry private to this module. Choosing what an external
+/// mapping confers means choosing from everything Elsa declares, not just from this module's own resources,
+/// and the module's registry only ever held its legacy permission names anyway.
+/// </remarks>
 internal sealed class ListPermissionDescriptors(IPermissionDescriptorRegistry registry) : ElsaEndpointWithoutRequest<IReadOnlyCollection<PermissionDescriptor>>
 {
     public override void Configure()

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Extensions;
 using System.Net;
 using System.Net.Http.Json;
@@ -107,7 +108,7 @@ public class ConnectionManagementTests : IAsyncLifetime
         _app = builder.Build();
         _app.Use(async (context, next) =>
         {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, _unsafePermissionGranted ? PermissionNames.All : ExternalAuthenticationPermissions.ConnectionsUpdate)], "test"));
+            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, _unsafePermissionGranted ? PermissionNames.All : $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}")], "test"));
             await next(context);
         });
         _app.UseAuthorization();

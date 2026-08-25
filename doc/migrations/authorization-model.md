@@ -82,6 +82,19 @@ The same matching now governs the delegation check: an actor may configure a map
 grants cover, so holding `workflows/*:delete` lets them delegate `workflows/definitions:delete`, while holding just
 that leaf does not let them delegate the subtree.
 
+## The legacy permission constant classes are gone
+
+The `<Module>Permissions` classes holding `verb:resource` strings — `AIPermissions`, `ConsoleLogsPermissions`,
+`DashboardPermissions`, `ExternalAuthenticationPermissions`, `OpenTelemetryPermissions`, `SecretsPermissions`
+and `StructuredLogsPermissions` — are removed rather than marked obsolete. Referencing one is now a compile
+error, which is deliberate: every string they held is unparseable under the `{resource}:{verb}` grammar, so
+keeping them would leave code that still compiles, still reads as a permission check, and silently authorizes
+nothing. A compile error names the site and can be fixed against the mapping table below; an obsolete constant
+gives a warning that is easy to suppress and a runtime failure that is not visible at all.
+
+Replace each with the module's `<Module>ResourcePermissions` constant and a verb. Classes still referenced by
+their own modules — `WorkflowPermissions`, `IdentityPermissions` and the rest — are untouched.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.
