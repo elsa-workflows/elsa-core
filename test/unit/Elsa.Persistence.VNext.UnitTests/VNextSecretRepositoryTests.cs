@@ -1,3 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
+using Elsa.Secrets.Persistence.VNext.Extensions;
+using Elsa.Secrets.Contracts;
+using Elsa.Persistence.VNext.Document;
 using Elsa.Persistence.VNext.Sqlite;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.VNext;
@@ -104,6 +108,23 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
         await Assert.ThrowsAsync<NotSupportedException>(() => repository.AddAsync(new Secret { Name = "a", DisplayName = "a" }));
     }
 
+
+    [Fact]
+    public void ResolvesFromAContainerThatNeverAddedMultitenancy()
+    {
+        // The tenancy guard needs an ITenantAccessor, which the tenants module registers -- so a host that
+        // never added multitenancy has none. Taking it as a required dependency made resolving the repository
+        // throw for exactly the deployments the guard is meant to leave alone. Every other test here
+        // constructs the repository directly and so could not see that; this one goes through the container,
+        // which is the only place the failure existed.
+        var services = new ServiceCollection();
+        services.AddSingleton<IDocumentStore>(_store);
+        services.AddSecretsPersistenceVNext();
+
+        using var provider = services.BuildServiceProvider();
+
+        Assert.NotNull(provider.GetRequiredService<ISecretRepository>());
+    }
 
     private sealed class StubTenantAccessor(string tenantId) : Elsa.Common.Multitenancy.ITenantAccessor
     {

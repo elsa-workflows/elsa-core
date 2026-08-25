@@ -7,7 +7,7 @@ using Elsa.Secrets.Models;
 
 namespace Elsa.Secrets.Persistence.VNext.Repositories;
 
-public class VNextSecretRepository(IDocumentStore documentStore, ITenantAccessor tenantAccessor) : ISecretRepository
+public class VNextSecretRepository(IDocumentStore documentStore, ITenantAccessor? tenantAccessor = null) : ISecretRepository
 {
     /// <summary>
     /// Refuses to serve a request made in a non-default tenant context.
@@ -23,10 +23,15 @@ public class VNextSecretRepository(IDocumentStore documentStore, ITenantAccessor
     /// call rather than at startup so it catches a tenant context entered at runtime, and it stays silent for
     /// the default tenant, which is every single-tenant deployment.
     /// </para>
+    /// <para>
+    /// The accessor is optional because it is registered by the tenants module: a host that never added
+    /// multitenancy has none, and requiring it would break resolving this repository at all. No accessor
+    /// means no tenancy, which is the default tenant.
+    /// </para>
     /// </remarks>
     private void EnsureDefaultTenant()
     {
-        var tenantId = tenantAccessor.TenantId;
+        var tenantId = tenantAccessor?.TenantId;
 
         if (!string.IsNullOrEmpty(tenantId))
             throw new NotSupportedException(
