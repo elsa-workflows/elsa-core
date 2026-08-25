@@ -366,6 +366,26 @@ public class UserTaskInvitationTests
     }
 
     [Fact]
+    public async Task ASuccessfulRevocationSweepsSessionsOnBothSidesOfTheCommit()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        var (_, credential) = await _fixture.IssueGuestSessionAsync(task, manager);
+
+        var counting = new UserTaskTestFixture.FaultyRevocationSessionIssuer(_fixture.GuestSessions, failures: 0);
+        var invitations = new DefaultUserTaskInvitationService(_fixture.Repository, _fixture.Policy, _fixture.Outbox,
+            new DefaultUserTaskInvitationVerifier(), counting, _fixture.Sink, _fixture.Identity, _fixture.Clock, _fixture.Options);
+
+        var before = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.True(await invitations.RevokeAsync(Tenant, task.Id, Assert.Single(before.Invitations).Id, before.Revision, manager));
+
+        // Both sweeps are load-bearing: the first keeps a store failure from committing, the second catches
+        // a session a concurrent verification issued between the first sweep and the commit.
+        Assert.Equal(2, counting.RevokeCallCount);
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+    }
+
+    [Fact]
     public async Task RevokingAnUnknownInvitationIsRefused()
     {
         var manager = _fixture.ManagerActor();

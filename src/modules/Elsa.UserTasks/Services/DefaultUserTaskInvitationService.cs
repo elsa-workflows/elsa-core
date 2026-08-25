@@ -114,9 +114,9 @@ public sealed class DefaultUserTaskInvitationService(
         if (existing == null || existing.Status is UserTaskInvitationStatus.Expired)
             return false;
 
-        // Kill the credential before committing the terminal state, never after. If the session store
-        // fails here nothing is committed, so the invitation stays revocable and a retry repairs it; the
-        // reverse order would strand a live credential behind a guard that rejects the retry.
+        // Swept on both sides of the commit, and both sides are load-bearing. This first sweep runs before
+        // anything is committed, so a session-store failure leaves the invitation revocable and a retry
+        // repairs it rather than stranding a live credential behind a guard that rejects the retry.
         await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
 
         // Already revoked: the sweep above was the only work left, so a retry succeeds idempotently
@@ -138,6 +138,12 @@ public sealed class DefaultUserTaskInvitationService(
                 return true;
             }, cancellationToken))
             return false;
+
+        // The second sweep closes the mirror window: a concurrent verification can issue a session after the
+        // first sweep and still read Consumed before this commit lands. Anything issued in that window is
+        // caught here, and any verification that issues after the commit sees the revoked state at its own
+        // settled-state check and withdraws its own credential.
+        await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
 
         var committed = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (committed != null)
