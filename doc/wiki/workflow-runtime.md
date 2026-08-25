@@ -110,10 +110,10 @@ Expired bookmark queue items are moved to the dead-letter store before they are 
 
 Operators can inspect and manage dead-lettered bookmark queue items through the workflow API:
 
-- `GET|POST /elsa/api/bookmark-queue/dead-letters`: requires `read:bookmark-queue:dead-letters`.
-- `GET /elsa/api/bookmark-queue/dead-letters/{id}`: requires `read:bookmark-queue:dead-letters`.
-- `POST /elsa/api/bookmark-queue/dead-letters/{id}/replay`: requires `replay:bookmark-queue:dead-letters`; replay creates a new active queue item and marks the dead-letter item as no longer replayable.
-- `DELETE /elsa/api/bookmark-queue/dead-letters/{id}`: requires `delete:bookmark-queue:dead-letters`.
+- `GET|POST /elsa/api/bookmark-queue/dead-letters`: requires `workflows/bookmark-queue/dead-letters:view`.
+- `GET /elsa/api/bookmark-queue/dead-letters/{id}`: requires `workflows/bookmark-queue/dead-letters:view`.
+- `POST /elsa/api/bookmark-queue/dead-letters/{id}/replay`: requires `workflows/bookmark-queue/dead-letters:replay`; replay creates a new active queue item and marks the dead-letter item as no longer replayable.
+- `DELETE /elsa/api/bookmark-queue/dead-letters/{id}`: requires `workflows/bookmark-queue/dead-letters:delete`.
 
 Read responses return a dead-letter view model for audit and replay status. Resume options are omitted from these responses because they can contain workflow input and property values.
 
@@ -159,10 +159,10 @@ Ingress source adapters are currently registered by modules such as HTTP and Sch
 
 The workflow API includes runtime admin endpoints:
 
-- `GET /elsa/api/admin/workflow-runtime/status`: requires `read:workflow-runtime`; `ManageWorkflowRuntime` is also accepted for backward compatibility.
-- `POST /elsa/api/admin/workflow-runtime/pause`: requires `ManageWorkflowRuntime`.
-- `POST /elsa/api/admin/workflow-runtime/resume`: requires `ManageWorkflowRuntime`.
-- `POST /elsa/api/admin/workflow-runtime/force-drain`: requires `ManageWorkflowRuntime`.
+- `GET /elsa/api/admin/workflow-runtime/status`: requires `workflows/runtime:view`.
+- `POST /elsa/api/admin/workflow-runtime/pause`: requires `workflows/runtime:control`.
+- `POST /elsa/api/admin/workflow-runtime/resume`: requires `workflows/runtime:control`.
+- `POST /elsa/api/admin/workflow-runtime/force-drain`: requires `workflows/runtime:control`.
 
 Endpoint code lives under [Elsa.Workflows.Api/Endpoints/RuntimeAdmin](../../src/modules/Elsa.Workflows.Api/Endpoints/RuntimeAdmin). The service behind these endpoints is [WorkflowRuntimeAdminService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowRuntimeAdminService.cs).
 

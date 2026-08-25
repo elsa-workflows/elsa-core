@@ -139,7 +139,7 @@ Core contracts:
 
 Use resilience when an activity performs IO that can fail transiently. Keep strategy types registered by the owning module.
 
-The resilience testing endpoint `GET /elsa/api/simulate-response` is included in the module. It requires `exec:resilience:simulate-response` (or wildcard `exec:resilience` or `exec:*`) and is intended for integration-testing resilience strategies, not for production traffic.
+The resilience testing endpoint `GET /elsa/api/simulate-response` is included in the module. It requires `resilience/simulation:execute` and is intended for integration-testing resilience strategies, not for production traffic.
 
 ## Cross-Cutting Graceful Shutdown
 
