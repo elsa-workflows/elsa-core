@@ -9,6 +9,9 @@ on:
       - 'scripts/adr/**'
       - '.github/workflows/adr-toc.yml'
 
+permissions:
+  contents: read
+
 jobs:
   check-toc:
     name: doc/adr/toc.md is up to date
@@ -16,7 +19,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        # Pinned to an immutable commit so retargeting the v4 tag upstream cannot change what runs
+        # here, matching how update-wiki.yml already pins this action.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Check the generated index
         run: ./scripts/adr/generate-toc.sh --check

@@ -54,7 +54,7 @@ public sealed class ConformanceCoverageTests(ITestOutputHelper output)
         var report = BuildReport();
         output.WriteLine(report);
 
-        var path = Path.Combine(AppContext.BaseDirectory, "user-task-conformance-coverage.md");
+        var path = Path.Join(AppContext.BaseDirectory, "user-task-conformance-coverage.md");
         File.WriteAllText(path, report);
 
         Assert.Contains("| Provider |", report, StringComparison.Ordinal);

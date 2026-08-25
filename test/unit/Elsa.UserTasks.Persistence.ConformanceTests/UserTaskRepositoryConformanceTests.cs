@@ -177,9 +177,10 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         var match = await Repository.FindByInvitationTokenHashAsync(tokenHash);
 
         Assert.NotNull(match);
-        Assert.Equal(task.Id, match!.Value.Task.Id);
-        Assert.Equal(TenantId, match.Value.Task.TenantId);
-        Assert.Equal("Complete", Assert.Single(match.Value.Invitation.AllowedActions));
+        var resolved = match!.Value;
+        Assert.Equal(task.Id, resolved.Task.Id);
+        Assert.Equal(TenantId, resolved.Task.TenantId);
+        Assert.Equal("Complete", Assert.Single(resolved.Invitation.AllowedActions));
         Assert.Null(await Repository.FindByInvitationTokenHashAsync($"HASH-UNKNOWN-{Guid.NewGuid():N}"));
     }
 
