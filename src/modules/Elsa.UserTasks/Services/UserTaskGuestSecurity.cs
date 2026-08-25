@@ -30,7 +30,7 @@ public sealed class InMemoryUserTaskGuestSessionIssuer(ISystemClock clock, IOpti
 
         var token = DefaultUserTaskInvitationService.Base64Url(RandomNumberGenerator.GetBytes(32));
         _sessions[DefaultUserTaskInvitationService.HashToken(token)] = new UserTaskGuestSession(
-            invitation.TenantId, invitation.TaskId, subject, invitation.AllowedActions.ToArray(), expiresAt);
+            invitation.TenantId, invitation.TaskId, invitation.Id, subject, invitation.AllowedActions.ToArray(), expiresAt);
         return Task.FromResult(new GuestSessionResult(true, token, expiresAt, TaskId: invitation.TaskId));
     }
 
@@ -52,6 +52,13 @@ public sealed class InMemoryUserTaskGuestSessionIssuer(ISystemClock clock, IOpti
     public Task RevokeForTaskAsync(string tenantId, string taskId, CancellationToken cancellationToken = default)
     {
         foreach (var entry in _sessions.Where(x => x.Value.TenantId == tenantId && x.Value.TaskId == taskId).ToArray())
+            _sessions.TryRemove(entry.Key, out _);
+        return Task.CompletedTask;
+    }
+
+    public Task RevokeForInvitationAsync(string tenantId, string invitationId, CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in _sessions.Where(x => x.Value.TenantId == tenantId && x.Value.InvitationId == invitationId).ToArray())
             _sessions.TryRemove(entry.Key, out _);
         return Task.CompletedTask;
     }

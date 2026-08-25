@@ -110,10 +110,26 @@ public sealed class DefaultUserTaskInvitationService(
         var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.IssueInvitation, cancellationToken))
             return false;
+        var existing = task.Invitations.FirstOrDefault(x => x.Id == invitationId);
+        if (existing == null || existing.Status is UserTaskInvitationStatus.Expired)
+            return false;
+
+        // Swept on both sides of the commit, and both sides are load-bearing. This first sweep runs before
+        // anything is committed, so a session-store failure leaves the invitation revocable and a retry
+        // repairs it rather than stranding a live credential behind a guard that rejects the retry.
+        await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
+
+        // Already revoked: the sweep above was the only work left, so a retry succeeds idempotently
+        // instead of reporting a failure the caller cannot act on.
+        if (existing.Status is UserTaskInvitationStatus.Revoked)
+            return true;
+
+        // A consumed invitation is precisely the case worth revoking: consuming it is what issued the guest
+        // session, so refusing here would leave a live credential that no manager could withdraw.
         if (!await repository.TryMutateAsync(tenantId, taskId, expectedRevision, current =>
             {
                 var invitation = current.Invitations.FirstOrDefault(x => x.Id == invitationId);
-                if (invitation == null || invitation.Status is UserTaskInvitationStatus.Revoked or UserTaskInvitationStatus.Consumed or UserTaskInvitationStatus.Expired)
+                if (invitation == null || invitation.Status is UserTaskInvitationStatus.Revoked or UserTaskInvitationStatus.Expired)
                     return false;
                 var index = current.Invitations.IndexOf(invitation);
                 current.Invitations[index] = invitation with { Status = UserTaskInvitationStatus.Revoked, RevokedAt = clock.UtcNow };
@@ -122,6 +138,12 @@ public sealed class DefaultUserTaskInvitationService(
                 return true;
             }, cancellationToken))
             return false;
+
+        // The second sweep closes the mirror window: a concurrent verification can issue a session after the
+        // first sweep and still read Consumed before this commit lands. Anything issued in that window is
+        // caught here, and any verification that issues after the commit sees the revoked state at its own
+        // settled-state check and withdraws its own credential.
+        await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
 
         var committed = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (committed != null)
@@ -197,9 +219,20 @@ public sealed class DefaultUserTaskInvitationService(
 
         var consumed = invitation with { Status = UserTaskInvitationStatus.Consumed, VerifiedAt = verifiedAt, ConsumedAt = verifiedAt };
         var session = await sessionIssuer.IssueAsync(consumed, subject, cancellationToken);
-        return session.Succeeded
-            ? new UserTaskInvitationVerificationResultWithSession(true, task.Id, session.Token, session.ExpiresAt)
-            : Failed();
+        if (!session.Succeeded)
+            return Failed();
+
+        // A manager can revoke between the claim above and the session landing in the store, and that
+        // revocation would find nothing to sweep. Re-read the committed invitation and withdraw the
+        // credential we just issued if it is no longer the consumed one we verified.
+        var settled = await repository.GetAsync(task.TenantId, task.Id, cancellationToken);
+        if (settled?.Invitations.FirstOrDefault(x => x.Id == invitation.Id) is not { Status: UserTaskInvitationStatus.Consumed })
+        {
+            await sessionIssuer.RevokeForInvitationAsync(task.TenantId, invitation.Id, cancellationToken);
+            return Failed();
+        }
+
+        return new UserTaskInvitationVerificationResultWithSession(true, task.Id, session.Token, session.ExpiresAt);
     }
 
     private async Task<(UserTask Task, UserTaskInvitation Invitation)?> ResolveOpenInvitationAsync(string? token, CancellationToken cancellationToken)

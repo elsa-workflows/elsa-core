@@ -71,7 +71,7 @@ public sealed class UserTaskPersistenceSchemaProvider : IPersistenceSchemaProvid
             .RequiredField("Id", PersistenceColumnType.String, 450).RequiredField("TenantId", PersistenceColumnType.String, 450).RequiredField("TaskId", PersistenceColumnType.String, 450)
             .RequiredField("InvitationId", PersistenceColumnType.String, 450).RequiredField("SessionTokenHash", PersistenceColumnType.String, 256).RequiredField("GuestParticipantJson", PersistenceColumnType.Json)
             .RequiredField("CapabilitiesJson", PersistenceColumnType.Json).RequiredField("IssuedAt", PersistenceColumnType.DateTimeOffset).RequiredField("ExpiresAt", PersistenceColumnType.DateTimeOffset).Field("RevokedAt", PersistenceColumnType.DateTimeOffset)
-            .Key("PK_UserTaskGuestSessions", "Id").Index("IX_UserTaskGuestSessions_SessionTokenHash", "SessionTokenHash", unique: true).Index("IX_UserTaskGuestSessions_Tenant_Task_ExpiresAt", ["TenantId", "TaskId", "ExpiresAt"]), @namespace: "Elsa.UserTasks");
+            .Key("PK_UserTaskGuestSessions", "Id").Index("IX_UserTaskGuestSessions_SessionTokenHash", "SessionTokenHash", unique: true).Index("IX_UserTaskGuestSessions_Tenant_Task_ExpiresAt", ["TenantId", "TaskId", "ExpiresAt"]).Index("IX_UserTaskGuestSessions_Tenant_Invitation", ["TenantId", "InvitationId"]), @namespace: "Elsa.UserTasks");
         return schema.Build();
     }
 

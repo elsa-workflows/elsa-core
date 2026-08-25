@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
 using Elsa.UserTasks.Services;
@@ -217,6 +218,184 @@ public class UserTaskInvitationTests
 
         Assert.False(await _fixture.Policy.AuthorizeAsync(current!, guest, operation));
         Assert.Null(await _fixture.Policy.CreateScopeAsync(guest, UserTaskQueryScopeKind.Assigned));
+    }
+
+    [Fact]
+    public async Task RevokingAConsumedInvitationWithdrawsTheGuestSessionItIssued()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        var (_, credential) = await _fixture.IssueGuestSessionAsync(task, manager);
+
+        var current = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitation = Assert.Single(current.Invitations);
+        // Verification consumed it; that is exactly the state a manager needs to be able to revoke.
+        Assert.Equal(UserTaskInvitationStatus.Consumed, invitation.Status);
+        Assert.NotNull(await _fixture.GuestActors.ResolveAsync(credential));
+
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, current.Revision, manager));
+
+        // The credential must stop working immediately rather than living out its TTL.
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+        var revoked = Assert.Single((await _fixture.Repository.GetAsync(Tenant, task.Id))!.Invitations);
+        Assert.Equal(UserTaskInvitationStatus.Revoked, revoked.Status);
+        Assert.NotNull(revoked.RevokedAt);
+
+        // Asserted at the credential, which is the actual boundary: a guest actor exists only because the
+        // resolver produced one from a live session, so once the credential is dead no guest principal can
+        // be formed and the request is rejected before it reaches the manager.
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+    }
+
+    [Fact]
+    public async Task RevokingOneInvitationLeavesOtherGuestSessionsOnTheSameTaskIntact()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject,
+            definition => definition with
+            {
+                Invitations =
+                [
+                    new("bearer-a", ["Approve"], BearerOnly: true),
+                    new("bearer-b", ["Approve"], BearerOnly: true)
+                ]
+            });
+
+        // A is verified, so it holds a live session. B is issued but never verified.
+        var (_, credentialA) = await _fixture.IssueGuestSessionAsync(task, manager, "bearer-a");
+        var afterA = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        await _fixture.Invitations.IssueAsync(Tenant, task.Id, new(afterA.Revision, "bearer-b", ["Approve"]), manager);
+
+        var beforeRevoke = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitationB = beforeRevoke.Invitations.Single(x => x.VerifierName == "bearer-b");
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitationB.Id, beforeRevoke.Revision, manager));
+
+        // Revocation is scoped to the invitation, so A's session survives B being withdrawn.
+        Assert.NotNull(await _fixture.GuestActors.ResolveAsync(credentialA));
+        var after = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.Equal(UserTaskInvitationStatus.Revoked, after.Invitations.Single(x => x.VerifierName == "bearer-b").Status);
+        Assert.Equal(UserTaskInvitationStatus.Consumed, after.Invitations.Single(x => x.VerifierName == "bearer-a").Status);
+    }
+
+    [Fact]
+    public async Task ARevocationThatFailsInTheSessionStoreLeavesTheInvitationRetryable()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        var (_, credential) = await _fixture.IssueGuestSessionAsync(task, manager);
+
+        // One injected failure in the session store, then it recovers.
+        var faulty = new UserTaskTestFixture.FaultyRevocationSessionIssuer(_fixture.GuestSessions, failures: 1);
+        var invitations = new DefaultUserTaskInvitationService(_fixture.Repository, _fixture.Policy, _fixture.Outbox,
+            new DefaultUserTaskInvitationVerifier(), faulty, _fixture.Sink, _fixture.Identity, _fixture.Clock, _fixture.Options);
+
+        var before = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitation = Assert.Single(before.Invitations);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => invitations.RevokeAsync(Tenant, task.Id, invitation.Id, before.Revision, manager));
+
+        // The failure must not commit the terminal state, or the retry guard would reject the repair and
+        // strand a live credential.
+        var afterFailure = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.NotEqual(UserTaskInvitationStatus.Revoked, Assert.Single(afterFailure.Invitations).Status);
+
+        Assert.True(await invitations.RevokeAsync(Tenant, task.Id, invitation.Id, afterFailure.Revision, manager));
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+        Assert.Equal(UserTaskInvitationStatus.Revoked, Assert.Single((await _fixture.Repository.GetAsync(Tenant, task.Id))!.Invitations).Status);
+    }
+
+    [Fact]
+    public async Task RetryingRevocationOnAnAlreadyRevokedInvitationStillSweepsItsSessions()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        var (_, credential) = await _fixture.IssueGuestSessionAsync(task, manager);
+        var before = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        var invitation = Assert.Single(before.Invitations);
+
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, before.Revision, manager));
+
+        // A second call is idempotently successful and re-runs the sweep, so a caller repairing a partial
+        // failure is never told "no" on an invitation whose sessions might still be live.
+        var after = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.True(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, after.Revision, manager));
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+    }
+
+    [Fact]
+    public async Task AnInvitationRevokedWhileVerificationIsInFlightDoesNotYieldALiveCredential()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        await _fixture.Invitations.IssueAsync(Tenant, task.Id, new(task.Revision, "bearer", ["Approve"]), manager);
+        await _fixture.DrainOutboxAsync();
+        var token = _fixture.Dispatcher.Token!;
+
+        // Revoke the moment the session lands in the store, which is the window where the manager's sweep
+        // finds nothing and verification would otherwise hand back a credential that outlives the revoke.
+        var racing = new RevokeOnIssueSessionIssuer(_fixture.GuestSessions, async () =>
+        {
+            var current = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+            var invitation = Assert.Single(current.Invitations);
+            await _fixture.Invitations.RevokeAsync(Tenant, task.Id, invitation.Id, current.Revision, manager);
+        });
+        var invitations = new DefaultUserTaskInvitationService(_fixture.Repository, _fixture.Policy, _fixture.Outbox,
+            new DefaultUserTaskInvitationVerifier(), racing, _fixture.Sink, _fixture.Identity, _fixture.Clock, _fixture.Options);
+
+        var verified = await invitations.VerifyAsync(new(token));
+
+        Assert.False(verified.Succeeded);
+        Assert.Equal("invitation-unavailable", verified.FailureCode);
+        Assert.Null(verified.SessionToken);
+    }
+
+    /// <summary>Runs a callback immediately after a session is issued, to drive the revoke-during-verify race.</summary>
+    private sealed class RevokeOnIssueSessionIssuer(IUserTaskGuestSessionIssuer inner, Func<Task> afterIssue) : IUserTaskGuestSessionIssuer
+    {
+        public async Task<GuestSessionResult> IssueAsync(UserTaskInvitation invitation, ParticipantReference subject, CancellationToken cancellationToken = default)
+        {
+            var result = await inner.IssueAsync(invitation, subject, cancellationToken);
+            await afterIssue();
+            return result;
+        }
+
+        public Task<UserTaskGuestSession?> ResolveAsync(string credential, CancellationToken cancellationToken = default) => inner.ResolveAsync(credential, cancellationToken);
+        public Task RevokeForTaskAsync(string tenantId, string taskId, CancellationToken cancellationToken = default) => inner.RevokeForTaskAsync(tenantId, taskId, cancellationToken);
+        public Task RevokeForInvitationAsync(string tenantId, string invitationId, CancellationToken cancellationToken = default) => inner.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
+    }
+
+    [Fact]
+    public async Task ASuccessfulRevocationSweepsSessionsOnBothSidesOfTheCommit()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        var (_, credential) = await _fixture.IssueGuestSessionAsync(task, manager);
+
+        var counting = new UserTaskTestFixture.FaultyRevocationSessionIssuer(_fixture.GuestSessions, failures: 0);
+        var invitations = new DefaultUserTaskInvitationService(_fixture.Repository, _fixture.Policy, _fixture.Outbox,
+            new DefaultUserTaskInvitationVerifier(), counting, _fixture.Sink, _fixture.Identity, _fixture.Clock, _fixture.Options);
+
+        var before = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+        Assert.True(await invitations.RevokeAsync(Tenant, task.Id, Assert.Single(before.Invitations).Id, before.Revision, manager));
+
+        // Both sweeps are load-bearing: the first keeps a store failure from committing, the second catches
+        // a session a concurrent verification issued between the first sweep and the commit.
+        Assert.Equal(2, counting.RevokeCallCount);
+        Assert.Null(await _fixture.GuestActors.ResolveAsync(credential));
+    }
+
+    [Fact]
+    public async Task RevokingAnUnknownInvitationIsRefused()
+    {
+        var manager = _fixture.ManagerActor();
+        var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, WithBearerInvitation());
+        await _fixture.Invitations.IssueAsync(Tenant, task.Id, new(task.Revision, "bearer", ["Approve"]), manager);
+        var current = (await _fixture.Repository.GetAsync(Tenant, task.Id))!;
+
+        // Retrying a revoked invitation is deliberately idempotent so a partial failure stays repairable;
+        // an invitation that does not exist is still a plain refusal.
+        Assert.False(await _fixture.Invitations.RevokeAsync(Tenant, task.Id, "no-such-invitation", current.Revision, manager));
     }
 
     [Fact]

@@ -184,6 +184,9 @@ internal static class UserTaskEntityConfiguration
             entity.Property(x => x.CapabilitiesJson).IsRequired();
             entity.HasIndex(x => x.SessionTokenHash).IsUnique();
             entity.HasIndex(x => new { x.TenantId, x.TaskId, x.ExpiresAt });
+            // Invitation-scoped revocation filters on this pair; without it every revoke scans the
+            // tenant partition, which keeps growing because expired session rows are retained.
+            entity.HasIndex(x => new { x.TenantId, x.InvitationId });
         });
     }
 }

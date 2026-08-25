@@ -73,7 +73,7 @@ public sealed class EFCoreUserTaskGuestSessionIssuer(
             return null;
 
         var actions = JsonSerializer.Deserialize<List<string>>(row.CapabilitiesJson, JsonOptions) ?? [];
-        return new(row.TenantId, row.TaskId, subject, actions, row.ExpiresAt);
+        return new(row.TenantId, row.TaskId, row.InvitationId, subject, actions, row.ExpiresAt);
     }
 
     public async Task RevokeForTaskAsync(string tenantId, string taskId, CancellationToken cancellationToken = default)
@@ -81,6 +81,14 @@ public sealed class EFCoreUserTaskGuestSessionIssuer(
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
         await dbContext.UserTaskGuestSessions
             .Where(x => x.TenantId == tenantId && x.TaskId == taskId && x.RevokedAt == null)
+            .ExecuteUpdateAsync(x => x.SetProperty(p => p.RevokedAt, clock.UtcNow), cancellationToken);
+    }
+
+    public async Task RevokeForInvitationAsync(string tenantId, string invitationId, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        await dbContext.UserTaskGuestSessions
+            .Where(x => x.TenantId == tenantId && x.InvitationId == invitationId && x.RevokedAt == null)
             .ExecuteUpdateAsync(x => x.SetProperty(p => p.RevokedAt, clock.UtcNow), cancellationToken);
     }
 }

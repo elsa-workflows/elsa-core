@@ -247,6 +247,7 @@ public static class UserTasksSchemaMigration
         migrationBuilder.CreateIndex(name: "IX_UserTaskInvitationDeliveries_Tenant_Invitation", table: "UserTaskInvitationDeliveries", columns: ["TenantId", "InvitationId"], schema: schema, unique: true);
         migrationBuilder.CreateIndex(name: "IX_UserTaskGuestSessions_SessionTokenHash", table: "UserTaskGuestSessions", column: "SessionTokenHash", schema: schema, unique: true);
         migrationBuilder.CreateIndex(name: "IX_UserTaskGuestSessions_Tenant_Task_ExpiresAt", table: "UserTaskGuestSessions", columns: ["TenantId", "TaskId", "ExpiresAt"], schema: schema);
+        migrationBuilder.CreateIndex(name: "IX_UserTaskGuestSessions_Tenant_Invitation", table: "UserTaskGuestSessions", columns: ["TenantId", "InvitationId"], schema: schema);
     }
 
     public static void Down(MigrationBuilder migrationBuilder, string schema)

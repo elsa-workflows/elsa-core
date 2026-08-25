@@ -347,6 +347,7 @@ public sealed record GuestSessionResult(bool Succeeded, string? Token = null, Da
 public sealed record UserTaskGuestSession(
     string TenantId,
     string TaskId,
+    string InvitationId,
     ParticipantReference Subject,
     IReadOnlyCollection<string> AllowedActions,
     DateTimeOffset ExpiresAt);
