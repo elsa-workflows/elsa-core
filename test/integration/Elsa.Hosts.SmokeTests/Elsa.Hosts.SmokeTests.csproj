@@ -1,0 +1,25 @@
+<!-- TreatAsLocalProperty lets the CollectCoverage setting below win over CI's /p:CollectCoverage=true,
+     which would otherwise be a global property this project could not override. See the comment below. -->
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="CollectCoverage">
+
+    <PropertyGroup>
+        <!-- Coverage is off here, for two reasons. This project references both hosts, so every module
+             either host pulls in would land in its denominator and shift the aggregate report without
+             adding a line of real coverage: startup touches a thin slice of a very large surface. And
+             coverlet cannot instrument a graph this size, failing with "Unable to read beyond the end of
+             the stream" while calculating the result. These tests are a startup gate, not a coverage
+             contribution; the modules they boot are measured by their own test projects. -->
+        <CollectCoverage>false</CollectCoverage>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
+        <ProjectReference Include="..\..\..\src\apps\Elsa.ModularServer.Web\Elsa.ModularServer.Web.csproj" />
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+    </ItemGroup>
+
+</Project>
