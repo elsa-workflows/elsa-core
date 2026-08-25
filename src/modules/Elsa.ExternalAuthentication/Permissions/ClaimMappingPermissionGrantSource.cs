@@ -19,6 +19,6 @@ public sealed class ClaimMappingPermissionGrantSource : IPermissionGrantSource
                 ? mapping.Permissions.Select(permission => new PermissionGrant(permission, sourceType, $"{mapping.ClaimType}:{mapping.Value}"))
                 : [])
             .ToArray();
-        return new PermissionGrantResult(grants, []);
+        return new(grants, []);
     }
 }

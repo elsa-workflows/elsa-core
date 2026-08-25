@@ -9,28 +9,14 @@ namespace Elsa.Identity.Services;
 /// <summary>
 /// Default implementation of <see cref="IUserManager"/>.
 /// </summary>
-public class UserManager : IUserManager
+public class UserManager(
+    IIdentityGenerator identityGenerator,
+    ISecretGenerator secretGenerator,
+    ISecretHasher secretHasher,
+    IUserStore userStore,
+    ITenantAccessor tenantAccessor)
+    : IUserManager
 {
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly ISecretGenerator _secretGenerator;
-    private readonly ISecretHasher _secretHasher;
-    private readonly IUserStore _userStore;
-    private readonly ITenantAccessor _tenantAccessor;
-
-    public UserManager(
-        IIdentityGenerator identityGenerator,
-        ISecretGenerator secretGenerator,
-        ISecretHasher secretHasher,
-        IUserStore userStore,
-        ITenantAccessor tenantAccessor)
-    {
-        _identityGenerator = identityGenerator;
-        _secretGenerator = secretGenerator;
-        _secretHasher = secretHasher;
-        _userStore = userStore;
-        _tenantAccessor = tenantAccessor;
-    }
-
     /// <inheritdoc />
     public async Task<CreateUserResult> CreateUserAsync(
         string name,
@@ -38,9 +24,9 @@ public class UserManager : IUserManager
         ICollection<string>? roles = null,
         CancellationToken cancellationToken = default)
     {
-        var id = _identityGenerator.GenerateId();
-        var plainTextPassword = string.IsNullOrWhiteSpace(password) ? _secretGenerator.Generate() : password.Trim();
-        var hashedPassword = _secretHasher.HashSecret(plainTextPassword);
+        var id = identityGenerator.GenerateId();
+        var plainTextPassword = string.IsNullOrWhiteSpace(password) ? secretGenerator.Generate() : password.Trim();
+        var hashedPassword = secretHasher.HashSecret(plainTextPassword);
 
         var user = new User
         {
@@ -48,13 +34,13 @@ public class UserManager : IUserManager
             Name = name,
             // Set explicitly rather than relying on the Entity Framework saving handler, which does not run
             // on the in-memory path and left users unassigned there.
-            TenantId = _tenantAccessor.TenantId,
+            TenantId = tenantAccessor.TenantId,
             Roles = roles ?? new List<string>(),
             HashedPassword = hashedPassword.EncodeSecret(),
             HashedPasswordSalt = hashedPassword.EncodeSalt()
         };
 
-        await _userStore.SaveAsync(user, cancellationToken);
+        await userStore.SaveAsync(user, cancellationToken);
 
         return new CreateUserResult(user, plainTextPassword);
     }

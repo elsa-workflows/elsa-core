@@ -4,7 +4,6 @@ using CShells.Features;
 using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Options;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.ExternalAuthentication.ShellFeatures;

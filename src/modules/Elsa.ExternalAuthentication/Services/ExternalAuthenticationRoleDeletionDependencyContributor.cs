@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
@@ -19,10 +20,11 @@ namespace Elsa.ExternalAuthentication.Services;
 public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     IIdentityProviderConnectionStore store,
     IOptionsMonitor<ExternalAuthenticationOptions> options,
-    Elsa.Identity.Contracts.IRoleAuthorizationService roleAuthorizationService,
+    IRoleAuthorizationService roleAuthorizationService,
     IConnectionRegistryVersionStore registryVersions,
     ConnectionRevisionCalculator revisionCalculator,
-    ExternalAuthenticationSecurityNotifier notifier) : IRoleDeletionDependencyContributor
+    ExternalAuthenticationSecurityNotifier notifier,
+    IPermissionEvaluator permissionEvaluator) : IRoleDeletionDependencyContributor
 {
     public const string SourceName = "external-authentication";
     public string Source => SourceName;
@@ -38,12 +40,12 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             configurationIndex++;
         }
 
-        var databaseConnections = await store.FindAsync(new ConnectionFilter(), cancellationToken);
+        var databaseConnections = await store.FindAsync(new(), cancellationToken);
         foreach (var connection in databaseConnections.Items)
         {
             if (!TryGetRoleReference(connection.UnlinkedPolicy, roleId, out var policyBranch, out _, out var removesLastDefaultRole))
                 continue;
-            dependencies.Add(new RoleDeletionDependency(
+            dependencies.Add(new(
                 Source,
                 connection.Id,
                 connection.Key,
@@ -59,14 +61,14 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             .ThenBy(x => x.OwnerId, StringComparer.Ordinal)
             .ThenBy(x => x.ConfigurationPath, StringComparer.Ordinal)
             .ToArray();
-        return new RoleDeletionDependencySnapshot(Source, CalculateVersion(ordered), false, ordered);
+        return new(Source, CalculateVersion(ordered), false, ordered);
     }
 
     public async ValueTask<RoleReferenceRemovalValidationResult> ValidateRemovalAsync(RoleReferenceRemovalRequest request, CancellationToken cancellationToken = default)
     {
-        if (!HasPermission(request.Actor, ExternalAuthenticationPermissions.ConnectionsUpdate) ||
-            !HasPermission(request.Actor, ExternalAuthenticationPermissions.PoliciesManage) ||
-            !HasPermission(request.Actor, ExternalAuthenticationPermissions.RolesAssign))
+        if (!permissionEvaluator.HasPermission(request.Actor, ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update) ||
+            !permissionEvaluator.HasPermission(request.Actor, ExternalAuthenticationResourcePermissions.Policies, CoreVerbs.Update) ||
+            !permissionEvaluator.HasPermission(request.Actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
             return new RoleReferenceRemovalValidationResult.Forbidden("missing_policy_permissions");
         if (request.Dependencies.Count == 0 ||
             request.Dependencies.Any(x => x.Ownership != RoleDeletionDependencyOwnership.Database || !string.Equals(x.Source, Source, StringComparison.Ordinal)))
@@ -167,7 +169,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         {
             if (string.Equals(configuredRoleId, roleId, StringComparison.Ordinal))
             {
-                yield return new RoleDeletionDependency(
+                yield return new(
                     Source,
                     string.IsNullOrWhiteSpace(connection.Id) ? $"configuration:{connectionIndex}" : connection.Id,
                     connection.Key,
@@ -209,8 +211,8 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     {
         var root = settings.ValueKind == JsonValueKind.Object
             ? JsonNode.Parse(settings.GetRawText()) as JsonObject
-            : new JsonObject();
-        root ??= new JsonObject();
+            : new();
+        root ??= new();
         var remainingRoleIds = ReadRoleIdsWithDuplicates(settings)
             .Where(x => !string.Equals(x, roleId, StringComparison.Ordinal))
             .Distinct(StringComparer.Ordinal)
@@ -240,9 +242,6 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
-
-    private static bool HasPermission(ClaimsPrincipal actor, string permission) =>
-        actor.FindAll(PermissionNames.ClaimType).Any(x => x.Value == PermissionNames.All || string.Equals(x.Value, permission, StringComparison.Ordinal));
 
     private static string CalculateVersion(IEnumerable<RoleDeletionDependency> dependencies)
     {

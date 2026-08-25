@@ -51,7 +51,7 @@ internal static class BuiltInPermissionGrantSourceDescriptors
             uiHint,
             defaultValue,
             [],
-            new SettingFieldValidation(MaximumLength: 16_384),
+            new(MaximumLength: 16_384),
             false,
             false,
             null,

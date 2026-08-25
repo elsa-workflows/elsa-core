@@ -2,7 +2,6 @@ using Elsa.Authorization;
 using System.Text.Json;
 using ConsoleLogStreaming.Core;
 using Elsa.Abstractions;
-using Elsa.Diagnostics.ConsoleLogs.Permissions;
 using Elsa.Diagnostics.ConsoleLogs.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;

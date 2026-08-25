@@ -1,4 +1,3 @@
-using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Constants;
@@ -7,7 +6,6 @@ using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Previews;
 
@@ -16,12 +14,12 @@ internal sealed class InitiatePreview(PreviewSignInService previews, ITenantAcce
     public override void Configure()
     {
         Post("/external-authentication/connections/{connectionId}/preview");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, "preview");
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, ExternalAuthenticationVerbs.Preview);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
-        if (!Endpoints.Connections.ConnectionEndpointSupport.TryGetExpectedRevision(HttpContext, out var revision))
+        if (!Connections.ConnectionEndpointSupport.TryGetExpectedRevision(HttpContext, out var revision))
         {
             HttpContext.Response.StatusCode = StatusCodes.Status428PreconditionRequired;
             return;
@@ -100,7 +98,7 @@ internal sealed class GetPreviewResult(PreviewSignInService previews, ITenantAcc
     public override void Configure()
     {
         Get("/external-authentication/previews/{previewHandle}");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, "preview");
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, ExternalAuthenticationVerbs.Preview);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

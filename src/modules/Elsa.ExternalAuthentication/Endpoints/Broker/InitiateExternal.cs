@@ -3,9 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
-using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Broker;
 
@@ -32,7 +30,7 @@ internal sealed class InitiateExternal(IExternalAuthenticationBroker broker, ITe
             return;
         }
 
-        var result = await broker.InitiateExternalAsync(new BrokerAuthorizationRequest(
+        var result = await broker.InitiateExternalAsync(new(
             clientId ?? string.Empty, redirectUri, responseType ?? string.Empty, codeChallenge ?? string.Empty,
             codeChallengeMethod ?? string.Empty, returnPath ?? string.Empty, request.ConnectionKey ?? string.Empty, request.State), tenantAccessor.TenantId, cancellationToken);
         if (result.Error is { } error)

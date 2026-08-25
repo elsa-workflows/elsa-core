@@ -47,6 +47,41 @@ The default access-token lifetime drops from 1 hour to **15 minutes**. This is t
 
 For a tighter bound, enable the optional permission stamp (`Identity:PermissionStamp:IsEnabled`). It is derived from the user's roles rather than stored, so it needs no schema change and no cross-node cache invalidation. `CacheLifetime`, default 30 seconds, is the effective bound when enabled.
 
+## External authentication grant boundaries
+
+`ExternalAuthentication:PermissionGrants:AllowedPermissions` and `DeniedPermissions` bound which permissions an
+external identity provider connection may confer. Both lists are now matched as **permission patterns** rather than
+by exact string, so they read the way a role does.
+
+- **Denied** is matched in both directions. `workflows/*:delete` denies `workflows/definitions:delete`, and a
+  connection granting `workflows/*:delete` is denied by a deny list naming only `workflows/definitions:delete`.
+  Before this release both comparisons were exact, so either spelling slipped past the other and a deployment's
+  deny list did not hold. If you carried a deny list across the upgrade, re-read it: it may now deny more than it
+  used to, which is the intent.
+- **Allowed** is matched one way: an allow entry must cover the whole grant. `workflows/*:delete` admits
+  `workflows/definitions:delete`, but an allow list naming only `workflows/definitions:delete` refuses a
+  `workflows/*:delete` grant rather than admitting the part that overlaps.
+
+The boundary now also applies to permissions the user's **own Elsa roles** carry, not only to those an external
+claim mapping confers. Previously token issuance concatenated role permissions raw, so a permission the boundary
+excluded during sign-in reappeared in the issued token from the same roles — which made the deny list
+unenforceable for anything a role happened to carry. If you configured a boundary expecting it to bound the whole
+token, it now does. If you configured one expecting it to bound only claim-mapped permissions, an external login
+may now carry fewer permissions than before; widen the list, or move the restriction into the roles themselves.
+Deployments with no boundary configured, which is the default, are unaffected.
+
+A boundary that does not parse is now a **startup failure** rather than a silently ignored setting. An allow list
+whose entries are all malformed used to reduce to an empty list, which means unrestricted, so a typo turned the
+boundary off. Fix the entries the startup error names; the mapping table below gives the new spelling.
+
+Rewrite both lists into the new `{resource}:{verb}` vocabulary using the [full mapping](#full-mapping). A value that
+is not a well-formed permission matches nothing, and a grant that is not well-formed is dropped at sign-in with a
+`malformed_permission` warning instead of being carried into a token.
+
+The same matching now governs the delegation check: an actor may configure a mapping only for permissions their own
+grants cover, so holding `workflows/*:delete` lets them delegate `workflows/definitions:delete`, while holding just
+that leaf does not let them delegate the subtree.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.

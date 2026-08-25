@@ -1,11 +1,9 @@
 using Elsa.Authorization;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Models;
-using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Services;
 using Microsoft.AspNetCore.Http;
 
@@ -16,7 +14,7 @@ internal sealed class GetIdentityLinks(ExternalIdentityLinkManagementService man
     public override void Configure()
     {
         Get("/external-authentication/identity-links");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task<IdentityLinkListResponse> ExecuteAsync(IdentityLinkListRequest request, CancellationToken cancellationToken)
@@ -24,19 +22,20 @@ internal sealed class GetIdentityLinks(ExternalIdentityLinkManagementService man
         if (request.PageSize is < 1 or > 100 || !IdentityLinkPagination.TryDecodeCursor(request.Cursor, out var cursor))
         {
             HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new IdentityLinkListResponse([], null);
+            return new([], null);
         }
 
         var pageSize = request.PageSize ?? 100;
-        var links = (await management.ListAsync(tenantAccessor.TenantId, new ExternalIdentityLinkFilter { UserId = request.UserId, ConnectionKey = request.ConnectionKey }, cancellationToken)).Items
+        var links = (await management.ListAsync(tenantAccessor.TenantId, new()
+                { UserId = request.UserId, ConnectionKey = request.ConnectionKey }, cancellationToken)).Items
             .OrderBy(x => x.CreatedAt)
             .ThenBy(x => x.Id, StringComparer.Ordinal)
-            .Where(x => cursor is null || IdentityLinkPagination.Compare(new IdentityLinkCursor(x.CreatedAt, x.Id), cursor) > 0)
+            .Where(x => cursor is null || IdentityLinkPagination.Compare(new(x.CreatedAt, x.Id), cursor) > 0)
             .Take(pageSize + 1)
             .ToArray();
         var hasMore = links.Length > pageSize;
         var items = hasMore ? links[..^1] : links;
-        return new IdentityLinkListResponse(items.Select(IdentityLinkDocument.From).ToArray(), hasMore ? IdentityLinkPagination.EncodeCursor(new IdentityLinkCursor(items[^1].CreatedAt, items[^1].Id)) : null);
+        return new(items.Select(IdentityLinkDocument.From).ToArray(), hasMore ? IdentityLinkPagination.EncodeCursor(new(items[^1].CreatedAt, items[^1].Id)) : null);
     }
 }
 
@@ -45,7 +44,7 @@ internal sealed class FindUsers(ExternalIdentityLinkManagementService management
     public override void Configure()
     {
         Get("/external-authentication/user-options");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task<FindIdentityLinkUsersResponse> ExecuteAsync(FindIdentityLinkUsersRequest request, CancellationToken cancellationToken)
@@ -53,17 +52,17 @@ internal sealed class FindUsers(ExternalIdentityLinkManagementService management
         if (request.PageSize is < 1 or > 50 || !IdentityLinkPagination.TryDecodeUserCursor(request.Cursor, out var cursor))
         {
             HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new FindIdentityLinkUsersResponse([], null);
+            return new([], null);
         }
 
         var pageSize = request.PageSize ?? 50;
         var users = (await management.FindUsersAsync(tenantAccessor.TenantId, request.Search, cancellationToken)).Items
-            .Where(x => cursor is null || IdentityLinkPagination.Compare(new UserCursor(x.DisplayName, x.Id), cursor) > 0)
+            .Where(x => cursor is null || IdentityLinkPagination.Compare(new(x.DisplayName, x.Id), cursor) > 0)
             .Take(pageSize + 1)
             .ToArray();
         var hasMore = users.Length > pageSize;
         var items = hasMore ? users[..^1] : users;
-        return new FindIdentityLinkUsersResponse(items.Select(x => new IdentityLinkUserDocument(x.Id, x.DisplayName)).ToArray(), hasMore ? IdentityLinkPagination.EncodeUserCursor(new UserCursor(items[^1].DisplayName, items[^1].Id)) : null);
+        return new(items.Select(x => new IdentityLinkUserDocument(x.Id, x.DisplayName)).ToArray(), hasMore ? IdentityLinkPagination.EncodeUserCursor(new(items[^1].DisplayName, items[^1].Id)) : null);
     }
 }
 
@@ -72,7 +71,7 @@ internal sealed class PrelinkIdentityLink(ExternalIdentityLinkManagementService 
     public override void Configure()
     {
         Post("/external-authentication/identity-links");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(PrelinkIdentityLinkRequest request, CancellationToken cancellationToken)
@@ -110,7 +109,7 @@ internal sealed class ReplaceIdentityLink(ExternalIdentityLinkManagementService 
     public override void Configure()
     {
         Post("/external-authentication/identity-links/{linkId}/replace");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(ReplaceIdentityLinkRequest request, CancellationToken cancellationToken)
@@ -155,7 +154,7 @@ internal sealed class DeleteIdentityLink(ExternalIdentityLinkManagementService m
     public override void Configure()
     {
         Delete("/external-authentication/identity-links/{linkId}");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.IdentityLinks, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

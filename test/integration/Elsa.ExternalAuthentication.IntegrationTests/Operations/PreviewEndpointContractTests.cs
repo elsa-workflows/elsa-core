@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Net;
 using System.Text.Json;
 using Elsa.Common;
@@ -63,6 +64,7 @@ public class PreviewEndpointContractTests : IAsyncLifetime
             [],
             [],
             null!,
+            new PermissionEvaluator(),
             null!,
             clock,
             options,

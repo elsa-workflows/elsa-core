@@ -1,4 +1,4 @@
-using Elsa.ExternalAuthentication.Contracts;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Policies;
@@ -34,8 +34,33 @@ public sealed class ExternalAuthenticationOptionsValidator(
         ValidateRateLimits(options.RateLimits, failures);
         ValidateProviderEgress(options.ProviderEgress, failures);
         ValidateHandleHashing(options.HandleHashing, failures);
+        ValidatePermissionGrantBoundary(options.PermissionGrants, failures);
 
         return failures.Count == 0 ? ValidateOptionsResult.Success : ValidateOptionsResult.Fail(failures);
+    }
+
+    /// <summary>
+    /// Rejects a grant boundary that cannot be parsed.
+    /// </summary>
+    /// <remarks>
+    /// The boundary is security configuration, so a malformed entry has no safe silent reading: an unparseable
+    /// allow entry would leave the list empty, which means unrestricted, and an unparseable deny entry would
+    /// quietly stop denying what it names. Failing startup puts the mistake in front of whoever can fix it
+    /// instead of leaving it to be discovered from an issued token.
+    /// </remarks>
+    private static void ValidatePermissionGrantBoundary(PermissionGrantOptions? permissionGrants, ICollection<string> failures)
+    {
+        if (permissionGrants is null)
+            return;
+
+        ValidatePermissionPatterns(permissionGrants.AllowedPermissions, "AllowedPermissions", failures);
+        ValidatePermissionPatterns(permissionGrants.DeniedPermissions, "DeniedPermissions", failures);
+    }
+
+    private static void ValidatePermissionPatterns(IEnumerable<string>? permissions, string listName, ICollection<string> failures)
+    {
+        foreach (var permission in (permissions ?? []).Where(x => !Permission.TryParse(x, out _)))
+            failures.Add($"'{permission}' in ExternalAuthentication:PermissionGrants:{listName} is not a well-formed permission. Expected '{{resource}}:{{verb}}', for example 'workflows/*:delete'.");
     }
 
     private static void ValidateExternalCallbackBaseUri(RedirectValidationOptions? redirects, ICollection<string> failures)

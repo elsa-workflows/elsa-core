@@ -2,6 +2,7 @@ using Elsa.Authorization;
 using System.Text;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
+using Elsa.Expressions.JavaScript.Permissions;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Contracts;
 using Elsa.Expressions.JavaScript.TypeDefinitions.Models;
 using Elsa.Workflows.Management;
@@ -30,7 +31,7 @@ internal class Get : ElsaEndpoint<Request>
     public override void Configure()
     {
         Post("scripting/javascript/type-definitions/{workflowDefinitionId}");
-        RequirePermission(Elsa.Expressions.JavaScript.Permissions.JavaScriptPermissions.Scripting, CoreVerbs.View);
+        RequirePermission(JavaScriptPermissions.Scripting, CoreVerbs.View);
     }
 
     /// <inheritdoc />
@@ -61,7 +62,7 @@ internal class Get : ElsaEndpoint<Request>
 
 internal record Request(string WorkflowDefinitionId, string? ActivityTypeName, string? PropertyName)
 {
-    public Request() : this(default!, default!, default)
+    public Request() : this(null!, null!, null)
     {
     }
 }

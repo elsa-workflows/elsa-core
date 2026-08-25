@@ -28,6 +28,35 @@ public static class ExternalAuthenticationResourcePermissions
     public const string PermissionGrants = "external-authentication/permission-grants";
 }
 
+/// <summary>
+/// The non-core verbs External Authentication declares. They live beside the resources they apply to so a
+/// call site and the catalog cannot drift apart, and so a delegation check cannot spell one differently
+/// from the endpoint it guards.
+/// </summary>
+public static class ExternalAuthenticationVerbs
+{
+    /// <summary>Archive or restore a connection. Reversible, and preserves identity links.</summary>
+    public const string Archive = "archive";
+
+    /// <summary>Run an on-demand connection test against the provider.</summary>
+    public const string Test = "test";
+
+    /// <summary>Run a redacted, non-mutating sign-in preview.</summary>
+    public const string Preview = "preview";
+
+    /// <summary>Revoke a session and the refresh credentials issued against it.</summary>
+    public const string Revoke = "revoke";
+
+    /// <summary>Confirm an unsafe provider trust setting or a final-login-path recovery override.</summary>
+    public const string Override = "override";
+
+    /// <summary>Configure mappings that confer permissions the actor already holds.</summary>
+    public const string Delegate = "delegate";
+
+    /// <summary>Configure permission mappings without possessing every delegated permission.</summary>
+    public const string DelegateUnrestricted = "delegate-unrestricted";
+}
+
 /// <summary>Contributes the External Authentication resources to the permission catalog.</summary>
 [UsedImplicitly]
 public sealed class ExternalAuthenticationResourcePermissionsDescriptorProvider : IPermissionDescriptorProvider
@@ -35,13 +64,13 @@ public sealed class ExternalAuthenticationResourcePermissionsDescriptorProvider 
     /// <inheritdoc />
     public IEnumerable<PermissionDescriptor> GetDescriptors() =>
     [
-        new(ExternalAuthenticationResourcePermissions.Connections, [CoreVerbs.View, CoreVerbs.Create, CoreVerbs.Update, "archive", "test", "preview"], "Identity provider connections", "Manage connections to external identity providers. Archive is reversible and preserves links; there is no hard delete.", "External Authentication"),
+        new(ExternalAuthenticationResourcePermissions.Connections, [CoreVerbs.View, CoreVerbs.Create, CoreVerbs.Update, ExternalAuthenticationVerbs.Archive, ExternalAuthenticationVerbs.Test, ExternalAuthenticationVerbs.Preview], "Identity provider connections", "Manage connections to external identity providers. Archive is reversible and preserves links; there is no hard delete.", "External Authentication"),
         new(ExternalAuthenticationResourcePermissions.Descriptors, [CoreVerbs.View], "External authentication descriptors", "Browse installed adapters, policies, permission sources, user matchers, and secret resolvers.", "External Authentication"),
         new(ExternalAuthenticationResourcePermissions.IdentityLinks, [CoreVerbs.View, CoreVerbs.Write, CoreVerbs.Delete], "External identity links", "Search users and link, relink, or unlink external identities.", "External Authentication"),
-        new(ExternalAuthenticationResourcePermissions.Sessions, [CoreVerbs.View, "revoke"], "External authentication sessions", "Inspect and revoke external authentication sessions.", "External Authentication"),
+        new(ExternalAuthenticationResourcePermissions.Sessions, [CoreVerbs.View, ExternalAuthenticationVerbs.Revoke], "External authentication sessions", "Inspect and revoke external authentication sessions.", "External Authentication"),
         new(ExternalAuthenticationResourcePermissions.Policies, [CoreVerbs.View, CoreVerbs.Update], "Unlinked identity policies", "Configure how unknown external identities are admitted.", "External Authentication"),
         new(ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, [CoreVerbs.Update], "Policy default roles", "Choose the roles granted to a user created for an unknown external identity.", "External Authentication"),
-        new(ExternalAuthenticationResourcePermissions.ProviderTrust, ["override"], "Provider trust overrides", "Confirm an unsafe provider trust setting or a final-login-path recovery override.", "External Authentication"),
-        new(ExternalAuthenticationResourcePermissions.PermissionGrants, ["delegate", "delegate-unrestricted"], "External permission grants", "Configure which Elsa permissions an external claim mapping may confer. The unrestricted verb lifts the requirement that the actor already holds them.", "External Authentication"),
+        new(ExternalAuthenticationResourcePermissions.ProviderTrust, [ExternalAuthenticationVerbs.Override], "Provider trust overrides", "Confirm an unsafe provider trust setting or a final-login-path recovery override.", "External Authentication"),
+        new(ExternalAuthenticationResourcePermissions.PermissionGrants, [ExternalAuthenticationVerbs.Delegate, ExternalAuthenticationVerbs.DelegateUnrestricted], "External permission grants", "Configure which Elsa permissions an external claim mapping may confer. The unrestricted verb lifts the requirement that the actor already holds them.", "External Authentication"),
     ];
 }

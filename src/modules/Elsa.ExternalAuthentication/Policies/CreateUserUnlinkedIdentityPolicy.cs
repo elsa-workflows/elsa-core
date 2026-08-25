@@ -25,7 +25,7 @@ public sealed class CreateUserUnlinkedIdentityPolicy : IUnlinkedIdentityPolicy
     public ValueTask<UnlinkedIdentityDecision> EvaluateAsync(UnlinkedIdentityContext context, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return ValueTask.FromResult<UnlinkedIdentityDecision>(new UnlinkedIdentityDecision.CreateUser(new UserCreationProposal(DefaultUserNamePrefix, DefaultRoleIds: ReadRoleIds(context.Settings))));
+        return ValueTask.FromResult<UnlinkedIdentityDecision>(new UnlinkedIdentityDecision.CreateUser(new(DefaultUserNamePrefix, DefaultRoleIds: ReadRoleIds(context.Settings))));
     }
 
     internal static IReadOnlyCollection<string> ReadRoleIds(JsonElement settings) =>

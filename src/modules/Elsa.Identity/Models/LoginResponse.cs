@@ -1,15 +1,8 @@
 namespace Elsa.Identity.Models;
 
-public class LoginResponse
+public class LoginResponse(bool isAuthenticated, string? accessToken, string? refreshToken)
 {
-    public LoginResponse(bool isAuthenticated, string? accessToken, string? refreshToken)
-    {
-        IsAuthenticated = isAuthenticated;
-        AccessToken = accessToken;
-        RefreshToken = refreshToken;
-    }
-
-    public bool IsAuthenticated { get; }
-    public string? AccessToken { get; }
-    public string? RefreshToken { get; }
+    public bool IsAuthenticated { get; } = isAuthenticated;
+    public string? AccessToken { get; } = accessToken;
+    public string? RefreshToken { get; } = refreshToken;
 }

@@ -1,6 +1,5 @@
 using Elsa.Authorization;
 using Elsa.Diagnostics.ConsoleLogs.Permissions;
-using FastEndpoints.Security;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Services;

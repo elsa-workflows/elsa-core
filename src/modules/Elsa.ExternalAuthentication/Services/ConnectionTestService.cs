@@ -34,7 +34,7 @@ public sealed class ConnectionTestService(
         try
         {
             secrets = await ResolveSecretsAsync(connection.Connection.SecretBindings, cancellationToken);
-            test = await adapter.TestAsync(new ConnectionTestContext(connection, secrets, clock), cancellationToken);
+            test = await adapter.TestAsync(new(connection, secrets, clock), cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -42,7 +42,7 @@ public sealed class ConnectionTestService(
         }
         catch
         {
-            test = new ConnectionTestResult(ConnectionObservationStatus.Failed, "unavailable", "The provider test could not be completed.", []);
+            test = new(ConnectionObservationStatus.Failed, "unavailable", "The provider test could not be completed.", []);
         }
         finally
         {

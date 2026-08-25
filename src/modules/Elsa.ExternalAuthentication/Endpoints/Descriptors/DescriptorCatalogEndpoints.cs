@@ -3,7 +3,6 @@ using Elsa.Abstractions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
-using Elsa.ExternalAuthentication.Permissions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Descriptors;
@@ -14,7 +13,7 @@ internal sealed class ListAdapterDescriptors(IExternalAuthenticationAdapterRegis
     public override void Configure()
     {
         Get("/external-authentication/descriptors/adapters");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
@@ -33,7 +32,7 @@ internal sealed class ListPolicyDescriptors(IUnlinkedIdentityPolicyRegistry regi
     public override void Configure()
     {
         Get("/external-authentication/descriptors/policies");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<UnlinkedIdentityPolicyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
@@ -47,7 +46,7 @@ internal sealed class ListPermissionSourceDescriptors(IPermissionGrantSourceRegi
     public override void Configure()
     {
         Get("/external-authentication/descriptors/permission-sources");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<PermissionGrantSourceDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
@@ -61,7 +60,7 @@ internal sealed class ListExternalUserMatcherDescriptors(IExternalUserMatcherReg
     public override void Configure()
     {
         Get("/external-authentication/descriptors/user-matchers");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<ExternalUserMatcherDescriptor>> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(registry.ListDescriptors());
@@ -76,7 +75,7 @@ internal sealed class ListManagedSecretResolverDescriptors(IEnumerable<IManagedS
     public override void Configure()
     {
         Get("/external-authentication/descriptors/managed-secret-resolvers");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<ManagedSecretResolverDescriptorResponse> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(new ManagedSecretResolverDescriptorResponse(
@@ -88,7 +87,7 @@ internal sealed class ListPermissionDescriptors(IPermissionDescriptorRegistry re
     public override void Configure()
     {
         Get("/external-authentication/descriptors/permissions");
-        RequirePermission(Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<PermissionDescriptor>> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(registry.List());

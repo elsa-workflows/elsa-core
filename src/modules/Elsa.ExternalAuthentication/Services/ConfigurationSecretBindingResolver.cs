@@ -27,7 +27,7 @@ public sealed class ConfigurationSecretBindingResolver(
         var value = configuration[binding.Reference];
         if (string.IsNullOrWhiteSpace(value))
             throw new InvalidOperationException("The configured secret binding could not be resolved.");
-        return ValueTask.FromResult(new ResolvedSecretBinding(new SensitiveString(value), hasher.Hash($"{ResolverType}:{binding.Reference}:{value}")));
+        return ValueTask.FromResult(new ResolvedSecretBinding(new(value), hasher.Hash($"{ResolverType}:{binding.Reference}:{value}")));
     }
 
     private static void EnsureType(SecretBinding binding)
