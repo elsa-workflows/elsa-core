@@ -142,7 +142,7 @@ internal sealed class CreateConnection(IdentityProviderConnectionManagementServi
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "secret_bindings_mutation_not_allowed", "Secret bindings must be managed through the dedicated write-only secret endpoint.", cancellationToken);
             return;
         }
-        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.PoliciesManage))
+        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.Policies, CoreVerbs.Update))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "The caller may not configure policies or permission grants.", cancellationToken);
             return;
@@ -202,7 +202,7 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "secret_bindings_mutation_not_allowed", "Secret bindings must be managed through the dedicated write-only secret endpoint.", cancellationToken);
             return;
         }
-        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.PoliciesManage))
+        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.Policies, CoreVerbs.Update))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "The caller may not configure policies or permission grants.", cancellationToken);
             return;
@@ -258,7 +258,7 @@ internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionMa
 
         var confirmOverride = string.Equals(HttpContext.Request.Query["confirmFinalLoginPathOverride"], "true", StringComparison.OrdinalIgnoreCase);
         var revokeActiveSessions = string.Equals(HttpContext.Request.Query["revokeActiveSessions"], "true", StringComparison.OrdinalIgnoreCase);
-        if (revokeActiveSessions && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.SessionsRevoke))
+        if (revokeActiveSessions && !ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.Sessions, ExternalAuthenticationVerbs.Revoke))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "Revoking active sessions requires the external-authentication sessions-revoke permission.", cancellationToken);
             return;
@@ -321,7 +321,7 @@ internal sealed class ValidateConnection(IdentityProviderConnectionManagementSer
             return;
         }
 
-        var validation = await management.ValidateAsync(connection.Connection, User, tenantAccessor.TenantId, requireCompleteConfiguration: true, confirmUnsafeSettings: ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.ProviderTrustUnsafe), cancellationToken: cancellationToken);
+        var validation = await management.ValidateAsync(connection.Connection, User, tenantAccessor.TenantId, requireCompleteConfiguration: true, confirmUnsafeSettings: ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.ProviderTrust, ExternalAuthenticationVerbs.Override), cancellationToken: cancellationToken);
         await HttpContext.Response.WriteAsJsonAsync(new ConnectionValidationResponse(validation.IsValid, validation.Errors, validation.Warnings), cancellationToken);
     }
 }

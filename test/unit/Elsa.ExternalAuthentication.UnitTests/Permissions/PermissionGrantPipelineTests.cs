@@ -204,6 +204,26 @@ public class PermissionGrantPipelineTests
         Assert.Equal(isAdmitted ? [granted] : Array.Empty<string>(), result.Grants.Select(x => x.Permission));
     }
 
+    [Theory]
+    // An allow list that parses to nothing must not read as "no allow list", which means unrestricted.
+    [InlineData(new[] { "not a permission" }, new string[0])]
+    // One bad entry among good ones is still a boundary the deployment cannot have meant.
+    [InlineData(new[] { "workflows/*:delete", "external-authentication:connections:read" }, new string[0])]
+    // A deny entry that does not parse would otherwise stop denying what it names, silently.
+    [InlineData(new string[0], new[] { "external-authentication:connections:read" })]
+    public async Task AGrantBoundaryThatDoesNotParseAdmitsNothing(string[] allowed, string[] denied)
+    {
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.AllowedPermissions = allowed;
+        options.PermissionGrants.DeniedPermissions = denied;
+        var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), options);
+
+        var result = await resolver.ResolveAsync(MappedContext("workflows/definitions:delete"));
+
+        Assert.Empty(result.Grants);
+        Assert.Contains(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+    }
+
     [Fact]
     public async Task RolePermissionsAreMatchedAgainstTheDenyBoundaryAsPatterns()
     {

@@ -90,14 +90,29 @@ public sealed class DefaultPermissionDelegationAuthorizer(IOptions<ExternalAuthe
 /// so they read the same way a role does: <c>workflows/*:delete</c> denies every delete beneath
 /// <c>workflows</c>, not just a permission spelled exactly that way.
 /// </summary>
-internal sealed class PermissionGrantBoundary(PermissionGrantOptions options)
+internal sealed class PermissionGrantBoundary
 {
-    private readonly IReadOnlyCollection<Permission> _allowed = Parse(options.AllowedPermissions);
-    private readonly IReadOnlyCollection<Permission> _denied = Parse(options.DeniedPermissions);
+    private readonly IReadOnlyCollection<Permission> _allowed;
+    private readonly IReadOnlyCollection<Permission> _denied;
+    private readonly bool _isUnusable;
+
+    public PermissionGrantBoundary(PermissionGrantOptions options)
+    {
+        _allowed = Parse(options.AllowedPermissions);
+        _denied = Parse(options.DeniedPermissions);
+
+        // A boundary the deployment configured but that does not parse is a configuration error, and the only
+        // safe reading of one is "allow nothing". Dropping the unparseable entries and carrying on would turn
+        // a typo in the allow list into no allow list at all -- an empty allow list means unrestricted -- and
+        // a typo in the deny list into a silent un-denying of whatever it named. ExternalAuthenticationOptionsValidator
+        // rejects this at startup, so reaching it here means that validation was bypassed rather than that an
+        // operator is mid-edit.
+        _isUnusable = _allowed.Count != options.AllowedPermissions.Count || _denied.Count != options.DeniedPermissions.Count;
+    }
 
     public bool Allows(string permission)
     {
-        if (!Permission.TryParse(permission, out var candidate))
+        if (_isUnusable || !Permission.TryParse(permission, out var candidate))
             return false;
 
         // Deny wins, and it is tested in both directions: a grant beneath a denied subtree is denied, and a
