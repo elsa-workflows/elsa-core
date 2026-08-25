@@ -51,6 +51,7 @@ flowchart LR
 | [Diagnostics Console Logs](diagnostics-console-logs.md) | Raw stdout/stderr capture, live feed, REST/SignalR surface, and redaction. |
 | [Health Checks](health-checks.md) | Elsa runtime readiness probes, liveness/readiness mapping, and Kubernetes probe guidance. |
 | [Identity, Tenancy, And Security](identity-tenancy-security.md) | Users, applications, roles, API keys, tenant resolution, and authorization touch points. |
+| [User Tasks](user-tasks.md) | Durable, identity-neutral human tasks bound to workflows: lifecycle, forms, guest invitations, REST surface, and persistence. |
 | [Testing Guide](testing-guide.md) | Test project layout, fixture choices, and targeted commands. |
 | [Extension Guide](extension-guide.md) | How to add features, activities, expression providers, stores, endpoints, and ingress sources. |
 | [OpenTelemetry Workflow Instrumentation](opentelemetry-workflows.md) | First-party workflow and activity traces and metrics emitted through `System.Diagnostics`. |

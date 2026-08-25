@@ -61,13 +61,13 @@ elsa.UseCSharp(options =>
 });
 ```
 
-Roslyn C# scripting is privileged host-code execution, not a sandbox. Hosts must explicitly set `CSharpOptions.AllowHostCodeExecution` to `true` before C# expressions or `RunCSharp` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing C# must have the `exec:csharp-expressions` permission.
+Roslyn C# scripting is privileged host-code execution, not a sandbox. Hosts must explicitly set `CSharpOptions.AllowHostCodeExecution` to `true` before C# expressions or `RunCSharp` can be authored or executed. When host code is enabled, any author who can write workflow definitions may use C# expressions — the `exec:csharp-expressions` permission was removed in the authorization model migration.
 
 ## Python
 
 [PythonFeature](../../src/modules/Elsa.Expressions.Python/Features/PythonFeature.cs) registers pythonnet-based evaluation and configures `PythonGlobalInterpreterManager` as a hosted service. Python.NET execution is privileged host-code execution, not a sandbox. Python code can access host process capabilities through pythonnet and must only be enabled for trusted workflow authors.
 
-Hosts must explicitly set `PythonOptions.AllowHostCodeExecution` to `true` before Python expressions or `RunPython` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing Python must have the `exec:python-expressions` permission. Hosts must also configure the Python DLL path or set `PYTHONNET_PYDLL`.
+Hosts must explicitly set `PythonOptions.AllowHostCodeExecution` to `true` before Python expressions or `RunPython` can be authored or executed. When host code is enabled, any author who can write workflow definitions may use Python expressions — the `exec:python-expressions` permission was removed in the authorization model migration. Hosts must also configure the Python DLL path or set `PYTHONNET_PYDLL`.
 
 The reference server binds `Scripting:Python` configuration in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 

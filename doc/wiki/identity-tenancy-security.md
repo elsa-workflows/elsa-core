@@ -138,17 +138,18 @@ Routes under `/elsa/api` (Elsa route prefix applies):
 
 | Route | Permission |
 | --- | --- |
-| `GET /secrets` | `read:secrets` |
-| `GET /secrets/{name}` | `read:secrets` |
-| `POST /secrets` | `write:secrets` |
-| `DELETE /secrets/{name}` | `delete:secrets` |
-| `POST /secrets/{name}/rotate` | `write:secrets` |
-| `POST /secrets/{name}/revoke` | `write:secrets` |
-| `POST /secrets/{name}/test` | `test:secrets` |
-| `POST /secrets/picker` | `read:secrets` |
-| `GET /secrets/descriptors` | `read:secrets` |
+| `GET /secrets` | `secrets:view` |
+| `GET /secrets/{name}` | `secrets:view` |
+| `POST /secrets` | `secrets:write` |
+| `PUT /secrets/{name}` | `secrets:write` |
+| `DELETE /secrets/{name}` | `secrets:delete` |
+| `POST /secrets/{name}/rotate` | `secrets:write` |
+| `POST /secrets/{name}/revoke` | `secrets:write` |
+| `POST /secrets/{name}/test` | `secrets:test` |
+| `POST /secrets/picker` | `secrets:view` |
+| `GET /secrets/descriptors` | `secrets:view` |
 
-Permission constants are in [SecretsPermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsPermissions.cs).
+Permission constants and the catalog descriptor are in [SecretsResourcePermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsResourcePermissions.cs).
 
 ### Using Secrets In Workflows
 
@@ -174,6 +175,12 @@ return `Bearer ${token}`;
 - [test/integration/Elsa.Activities.IntegrationTests](../../test/integration/Elsa.Activities.IntegrationTests)
 
 Spec: [specs/007-secrets-module/spec.md](../../specs/007-secrets-module/spec.md).
+
+## User Tasks
+
+[Elsa.UserTasks](../../src/modules/Elsa.UserTasks) is an identity-neutral human-task module. It stores opaque, tenant-scoped participant references and delegates authentication mapping, live group membership, directory lookup, and task authorization to replaceable host contracts. The module has no required dependency on `Elsa.Identity`.
+
+See [User Tasks](user-tasks.md) for the full design, lifecycle, and REST surface, and [ADR 0026](../adr/0026-identity-neutral-user-task-participants.md) for the identity-neutrality rationale.
 
 ## Ingress Rate Limiting
 

@@ -92,7 +92,7 @@ The README states the hub is mapped at `/elsa/hubs/diagnostics/structured-logs`.
 
 ## Authorization
 
-The endpoints require `read:diagnostics:structured-logs`, defined in [StructuredLogsPermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs). The SignalR hub requires an authenticated user.
+The REST endpoints require `diagnostics/structured-logs:view`, defined in [StructuredLogsResourcePermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsResourcePermissions.cs). The SignalR hub requires an authenticated user.
 
 ## Redaction
 
