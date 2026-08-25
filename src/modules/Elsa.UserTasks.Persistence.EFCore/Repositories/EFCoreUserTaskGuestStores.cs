@@ -103,6 +103,8 @@ public sealed class EFCoreUserTaskInvitationOutbox(
     ISystemClock clock,
     IOptions<UserTasksOptions> options) : IUserTaskInvitationOutbox
 {
+    private static readonly JsonSerializerOptions MetadataJsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly IDataProtector _protector = dataProtectionProvider.CreateProtector("Elsa.UserTasks.InvitationDelivery.v1");
 
     public async Task EnqueueAsync(UserTaskInvitationDelivery delivery, CancellationToken cancellationToken = default)
@@ -155,6 +157,9 @@ public sealed class EFCoreUserTaskInvitationOutbox(
 
             deliveries.Add(new(row.Id, row.TenantId, row.TaskId, row.InvitationId, row.DispatcherProvider, token, row.ExpiresAt)
             {
+                // The recipient is the only address the host's dispatcher has to send the link to. Dropping
+                // it here made every durably queued invitation undeliverable while still reporting success.
+                Recipient = ReadRecipient(row.DeliveryMetadataJson),
                 Attempt = row.Attempts,
                 NotBefore = row.AvailableAt
             });
@@ -162,6 +167,24 @@ public sealed class EFCoreUserTaskInvitationOutbox(
 
         return deliveries;
     }
+
+    private static string? ReadRecipient(string? metadataJson)
+    {
+        if (string.IsNullOrWhiteSpace(metadataJson))
+            return null;
+        try
+        {
+            return JsonSerializer.Deserialize<DeliveryMetadata>(metadataJson, MetadataJsonOptions)?.Recipient;
+        }
+        catch (JsonException)
+        {
+            // Metadata is routing information, not the secret. Unreadable metadata must not block a
+            // delivery the dispatcher may still be able to route on its own.
+            return null;
+        }
+    }
+
+    private sealed record DeliveryMetadata(string? Recipient);
 
     public async Task CompleteAsync(string deliveryId, CancellationToken cancellationToken = default)
     {

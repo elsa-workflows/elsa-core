@@ -194,6 +194,14 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
             ["MaterializationKey"] = task.MaterializationKey,
             ["BookmarkId"] = task.BookmarkId,
             ["TaskType"] = task.TaskType,
+            // Every index the schema provider declares must be supplied on save; the store rejects the
+            // write outright when one is absent, so an omission here disables the provider entirely
+            // rather than merely losing an index.
+            ["WorkflowDefinitionId"] = task.WorkflowDefinitionId,
+            ["WorkflowInstanceId"] = task.WorkflowInstanceId,
+            ["ActivityInstanceId"] = task.ActivityInstanceId,
+            ["CreatedAt"] = task.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+            ["CompletedAt"] = task.CompletedAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             ["AssigneeProvider"] = task.Assignee?.Provider,
             ["AssigneeType"] = task.Assignee?.Type.ToString(),
             ["AssigneeId"] = task.Assignee?.Id,
