@@ -32,6 +32,9 @@ public sealed class UserTaskPersistenceSchemaProvider : IPersistenceSchemaProvid
             .Field("AssignedAt", PersistenceColumnType.DateTimeOffset).Field("CompletedAt", PersistenceColumnType.DateTimeOffset).Field("CreatedFromBookmarkRevision", PersistenceColumnType.Int64)
             .Key("PK_UserTasks", "Id").Index("IX_UserTasks_Tenant_MaterializationKey", ["TenantId", "MaterializationKey"], unique: true)
             .Index("IX_UserTasks_Tenant_BookmarkId", ["TenantId", "BookmarkId"], unique: true).Index("IX_UserTasks_Tenant_Status", ["TenantId", "Status"])
+            // Status alone, deliberately: resolving an invitation token hash is tenant-agnostic by
+            // design, and the store only serves a query whose filter set exactly matches an index.
+            .Index("IX_UserTasks_Status", ["Status"])
             .Index("IX_UserTasks_Tenant_Assignee", ["TenantId", "AssigneeProvider", "AssigneeType", "AssigneeId"]).Index("IX_UserTasks_Tenant_Priority", ["TenantId", "Priority"])
             .Index("IX_UserTasks_Tenant_DueAt", ["TenantId", "DueAt"]).Index("IX_UserTasks_Tenant_WorkflowDefinition", ["TenantId", "WorkflowDefinitionId"])
             .Index("IX_UserTasks_Tenant_WorkflowInstance", ["TenantId", "WorkflowInstanceId"]).Index("IX_UserTasks_Tenant_ActivityInstance", ["TenantId", "ActivityInstanceId"])

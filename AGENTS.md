@@ -58,6 +58,17 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `build/`: NUKE build project.
 - `doc/`, `design/`, and `specs/`: documentation, design assets, and feature specifications.
 
+## Architecture Decision Records
+
+- ADRs live in `doc/adr/`. New records are named `YYYY-MM-DD-slug.md`, and the `# ` heading carries the
+  title alone with no numeric prefix. Do not continue the legacy `NNNN-` sequence: it collided on every
+  concurrent branch, which is what the date prefix exists to stop.
+- Records `0001`-`0027` keep their existing names and headings. Do not renumber or rename them.
+- `doc/adr/toc.md` is generated. Never edit it by hand: run `scripts/adr/generate-toc.sh` and commit the
+  result. `scripts/adr/generate-toc.sh --check` verifies it is current, and CI runs the same check.
+- The rationale is recorded in
+  [Identify new ADRs by date instead of a sequential number](doc/adr/2026-08-25-date-prefixed-adr-identifiers.md).
+
 ## Testing Guidance
 
 - Place tests near the relevant existing test project rather than creating a new project by default.
