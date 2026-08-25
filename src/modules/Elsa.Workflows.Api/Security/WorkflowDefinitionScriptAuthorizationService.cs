@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
@@ -22,20 +21,20 @@ internal class WorkflowDefinitionScriptAuthorizationService(
             "Python.NET workflow expression execution is disabled by the host. Set PythonOptions.AllowHostCodeExecution to true only for trusted workflow authors; Python.NET is not a sandbox.")
     ];
 
-    public async Task<WorkflowDefinitionScriptAuthorizationResult> AuthorizeAsync(WorkflowDefinitionModel model, ClaimsPrincipal user, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinitionScriptAuthorizationResult> AuthorizeAsync(WorkflowDefinitionModel model, CancellationToken cancellationToken = default)
     {
         if (model.Root == null)
             return WorkflowDefinitionScriptAuthorizationResult.Allowed();
 
-        return await AuthorizeAsync(model.Root, user, cancellationToken);
+        return await AuthorizeAsync(model.Root, cancellationToken);
     }
 
-    public async Task<WorkflowDefinitionScriptAuthorizationResult> AuthorizeAsync(IActivity root, ClaimsPrincipal user, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinitionScriptAuthorizationResult> AuthorizeAsync(IActivity root, CancellationToken cancellationToken = default)
     {
         var scriptUsages = await GetUsedScriptPoliciesAsync(root, cancellationToken);
 
         var failure = scriptUsages
-            .Select(policy => AuthorizeScriptUsage(policy, user))
+            .Select(AuthorizeScriptUsage)
             .FirstOrDefault(result => result is { Succeeded: false });
 
         if (failure.FailureReason.HasValue)
@@ -44,21 +43,23 @@ internal class WorkflowDefinitionScriptAuthorizationService(
         return WorkflowDefinitionScriptAuthorizationResult.Allowed();
     }
 
-    public async Task<WorkflowDefinitionScriptAuthorizationResult> AuthorizeAsync(Workflow workflow, ClaimsPrincipal user, CancellationToken cancellationToken = default)
+    public async Task<WorkflowDefinitionScriptAuthorizationResult> AuthorizeAsync(Workflow workflow, CancellationToken cancellationToken = default)
     {
-        return await AuthorizeAsync((IActivity)workflow, user, cancellationToken);
+        return await AuthorizeAsync((IActivity)workflow, cancellationToken);
     }
 
-    private WorkflowDefinitionScriptAuthorizationResult AuthorizeScriptUsage(ScriptPolicy policy, ClaimsPrincipal user)
+    private WorkflowDefinitionScriptAuthorizationResult AuthorizeScriptUsage(ScriptPolicy policy)
     {
         // Language-specific options live in optional modules. Workflows.Api observes the descriptor state projected by those module providers.
         if (expressionDescriptorRegistry.Find(policy.ExpressionType)?.IsBrowsable != true)
             return WorkflowDefinitionScriptAuthorizationResult.HostDisabled(policy.HostDisabledMessage);
 
-        // The host switch is the single control. The former per-author permission conflated an incoherent
-        // execution-side gate -- a workflow runs under the server's authority, not the caller's, so the
-        // check never constrained what a script could do -- with a meaningful authoring-side one. Per-author
-        // script trust is redesigned separately; see #7975.
+        // The host switch is the only control, so there is nothing left to decide once it is on. The former
+        // per-author permission conflated an incoherent execution-side gate -- a workflow runs under the
+        // server's authority, not the caller's, so the check never constrained what a script could do --
+        // with a meaningful authoring-side one. Neither the caller nor a failure reason for a denied caller
+        // is modelled here any more, because nothing produces one. Per-author script trust was considered and
+        // declined in #7975, so this is the settled shape rather than a stop on the way to one.
         return WorkflowDefinitionScriptAuthorizationResult.Allowed();
     }
 
@@ -87,12 +88,9 @@ internal readonly record struct WorkflowDefinitionScriptAuthorizationResult(bool
     public static WorkflowDefinitionScriptAuthorizationResult Allowed() => new(true, null, null);
 
     public static WorkflowDefinitionScriptAuthorizationResult HostDisabled(string message) => new(false, WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled, message);
-
-    public static WorkflowDefinitionScriptAuthorizationResult MissingPermission() => new(false, WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission, null);
 }
 
 internal enum WorkflowDefinitionScriptAuthorizationFailureReason
 {
-    HostDisabled,
-    MissingPermission
+    HostDisabled
 }

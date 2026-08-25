@@ -39,7 +39,11 @@ Today they are literal claim values, not patterns: `read:*` authorizes only the 
 - Where host code is **disabled**, nothing changes.
 - Where host code is **enabled**, any author who may write workflow definitions may use C# and Python, and the editor offers those expression types to every such author.
 
-Deployments that enabled host code while trusting only *some* authors lose that granularity until [#7975](https://github.com/elsa-workflows/elsa-core/issues/7975) lands. If that matters to you, disable host code until then.
+Deployments that enabled host code while trusting only *some* authors lose that granularity, and this is now the
+intended posture rather than a gap awaiting a fix: [#7975](https://github.com/elsa-workflows/elsa-core/issues/7975)
+was closed as won't-do. Authoring a workflow is a trusted act, and a per-author gate would not have changed what a
+script can do once it runs. If some of your authors are not trusted with host code, give them a host with the
+switch off; the switch is per language, so C# and Python can be decided separately.
 
 ## Revocation
 
@@ -146,8 +150,8 @@ If you have duplicate names across tenants today, they were impossible to create
 | `read:output-converters` | `workflows/descriptors/output-converters:view` |
 | `read:workflow-activation-strategies` | `workflows/descriptors/activation-strategies:view` |
 | `read:javascript-type-definitions` | `workflows/scripting/javascript:view` |
-| `exec:csharp-expressions` | *removed* — see #7975 |
-| `exec:python-expressions` | *removed* — see #7975 |
+| `exec:csharp-expressions` | *removed* — the host switch is the control; see #7975 |
+| `exec:python-expressions` | *removed* — the host switch is the control; see #7975 |
 | `read:user` | `identity/users:view` |
 | `create:user` | `identity/users:create` |
 | `update:user` | `identity/users:update` |

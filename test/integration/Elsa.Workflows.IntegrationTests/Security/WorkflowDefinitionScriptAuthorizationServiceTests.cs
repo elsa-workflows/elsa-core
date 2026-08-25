@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Activities;
@@ -14,9 +13,6 @@ namespace Elsa.Workflows.IntegrationTests.Security;
 
 public class WorkflowDefinitionScriptAuthorizationServiceTests
 {
-    private static readonly ClaimsPrincipal UserWithCSharpPermission = CreateUser(PermissionNames.ExecuteCSharpExpressions);
-    private static readonly ClaimsPrincipal UserWithPythonPermission = CreateUser(PermissionNames.ExecutePythonExpressions);
-    private static readonly ClaimsPrincipal UserWithoutScriptPermission = CreateUser("workflows/definitions:write");
 
     [Fact]
     public async Task AuthorizeAsync_BlocksCSharpExpression_WhenHostHasNotOptedIn()
@@ -24,36 +20,26 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         var service = CreateService(hostAllowsCSharp: false, hostAllowsPython: true);
         var model = CreateModelWithCSharpExpression();
 
-        var result = await service.AuthorizeAsync(model, UserWithCSharpPermission);
+        var result = await service.AuthorizeAsync(model);
 
         Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled, result.FailureReason);
         Assert.Contains("CSharpOptions.AllowHostCodeExecution", result.Message);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_AllowsCSharpExpression_WhenHostOptedIn_RegardlessOfUserPermissions()
+    public async Task AuthorizeAsync_AllowsCSharpExpression_WhenHostOptedIn()
     {
         var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
         var model = CreateModelWithCSharpExpression();
 
-        var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
+        var result = await service.AuthorizeAsync(model);
 
-        // The per-author permission was removed: a workflow runs under the server's authority, not the
-        // caller's, so gating execution on the caller never constrained what a script could do. The host
-        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        // The host switch is the only control. The per-author permission was removed because a workflow runs
+        // under the server's authority, not the caller's, so gating on the caller never constrained what a
+        // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
+        // this is the settled behaviour rather than an interim state.
         Assert.True(result.Succeeded);
         Assert.Null(result.FailureReason);
-    }
-
-    [Fact]
-    public async Task AuthorizeAsync_AllowsCSharpExpression_WhenHostAndUserAllowIt()
-    {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
-        var model = CreateModelWithCSharpExpression();
-
-        var result = await service.AuthorizeAsync(model, UserWithCSharpPermission);
-
-        Assert.True(result.Succeeded);
     }
 
     [Fact]
@@ -65,7 +51,7 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
             Root = new WriteLine("hello")
         };
 
-        var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
+        var result = await service.AuthorizeAsync(model);
 
         Assert.True(result.Succeeded);
     }
@@ -82,11 +68,12 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
             }
         };
 
-        var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
+        var result = await service.AuthorizeAsync(model);
 
-        // The per-author permission was removed: a workflow runs under the server's authority, not the
-        // caller's, so gating execution on the caller never constrained what a script could do. The host
-        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        // The host switch is the only control. The per-author permission was removed because a workflow runs
+        // under the server's authority, not the caller's, so gating on the caller never constrained what a
+        // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
+        // this is the settled behaviour rather than an interim state.
         Assert.True(result.Succeeded);
         Assert.Null(result.FailureReason);
     }
@@ -97,36 +84,26 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: false);
         var model = CreateModelWithPythonExpression();
 
-        var result = await service.AuthorizeAsync(model, UserWithPythonPermission);
+        var result = await service.AuthorizeAsync(model);
 
         Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled, result.FailureReason);
         Assert.Contains("PythonOptions.AllowHostCodeExecution", result.Message);
     }
 
     [Fact]
-    public async Task AuthorizeAsync_AllowsPythonExpression_WhenHostOptedIn_RegardlessOfUserPermissions()
+    public async Task AuthorizeAsync_AllowsPythonExpression_WhenHostOptedIn()
     {
         var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
         var model = CreateModelWithPythonExpression();
 
-        var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
+        var result = await service.AuthorizeAsync(model);
 
-        // The per-author permission was removed: a workflow runs under the server's authority, not the
-        // caller's, so gating execution on the caller never constrained what a script could do. The host
-        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        // The host switch is the only control. The per-author permission was removed because a workflow runs
+        // under the server's authority, not the caller's, so gating on the caller never constrained what a
+        // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
+        // this is the settled behaviour rather than an interim state.
         Assert.True(result.Succeeded);
         Assert.Null(result.FailureReason);
-    }
-
-    [Fact]
-    public async Task AuthorizeAsync_AllowsPythonExpression_WhenHostAndUserAllowIt()
-    {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
-        var model = CreateModelWithPythonExpression();
-
-        var result = await service.AuthorizeAsync(model, UserWithPythonPermission);
-
-        Assert.True(result.Succeeded);
     }
 
     [Fact]
@@ -141,11 +118,12 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
             }
         };
 
-        var result = await service.AuthorizeAsync(model, UserWithoutScriptPermission);
+        var result = await service.AuthorizeAsync(model);
 
-        // The per-author permission was removed: a workflow runs under the server's authority, not the
-        // caller's, so gating execution on the caller never constrained what a script could do. The host
-        // switch is the only control now. Per-author script trust is redesigned in #7975.
+        // The host switch is the only control. The per-author permission was removed because a workflow runs
+        // under the server's authority, not the caller's, so gating on the caller never constrained what a
+        // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
+        // this is the settled behaviour rather than an interim state.
         Assert.True(result.Succeeded);
         Assert.Null(result.FailureReason);
     }
@@ -206,9 +184,4 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         return new(visitor, registry);
     }
 
-    private static ClaimsPrincipal CreateUser(params string[] permissions)
-    {
-        var identity = new ClaimsIdentity(permissions.Select(x => new Claim("permissions", x)), "Test");
-        return new(identity);
-    }
 }

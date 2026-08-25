@@ -67,10 +67,10 @@ internal class Post(
             return;
         }
 
-        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(model, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
-            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 
