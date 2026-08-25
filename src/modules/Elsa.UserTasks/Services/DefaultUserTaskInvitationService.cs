@@ -110,9 +110,22 @@ public sealed class DefaultUserTaskInvitationService(
         var task = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (task == null || !await accessPolicy.AuthorizeAsync(task, actor, UserTaskAccessOperation.IssueInvitation, cancellationToken))
             return false;
+        var existing = task.Invitations.FirstOrDefault(x => x.Id == invitationId);
+        if (existing == null || existing.Status is UserTaskInvitationStatus.Expired)
+            return false;
+
+        // Kill the credential before committing the terminal state, never after. If the session store
+        // fails here nothing is committed, so the invitation stays revocable and a retry repairs it; the
+        // reverse order would strand a live credential behind a guard that rejects the retry.
+        await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
+
+        // Already revoked: the sweep above was the only work left, so a retry succeeds idempotently
+        // instead of reporting a failure the caller cannot act on.
+        if (existing.Status is UserTaskInvitationStatus.Revoked)
+            return true;
+
         // A consumed invitation is precisely the case worth revoking: consuming it is what issued the guest
-        // session, so refusing here would leave a live credential that no manager could withdraw. Only
-        // already-terminal states are rejected.
+        // session, so refusing here would leave a live credential that no manager could withdraw.
         if (!await repository.TryMutateAsync(tenantId, taskId, expectedRevision, current =>
             {
                 var invitation = current.Invitations.FirstOrDefault(x => x.Id == invitationId);
@@ -125,10 +138,6 @@ public sealed class DefaultUserTaskInvitationService(
                 return true;
             }, cancellationToken))
             return false;
-
-        // Withdrawing the invitation must withdraw the access it granted, so any session issued from it
-        // stops resolving immediately rather than living out its TTL.
-        await sessionIssuer.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
 
         var committed = await repository.GetAsync(tenantId, taskId, cancellationToken);
         if (committed != null)
@@ -204,9 +213,20 @@ public sealed class DefaultUserTaskInvitationService(
 
         var consumed = invitation with { Status = UserTaskInvitationStatus.Consumed, VerifiedAt = verifiedAt, ConsumedAt = verifiedAt };
         var session = await sessionIssuer.IssueAsync(consumed, subject, cancellationToken);
-        return session.Succeeded
-            ? new UserTaskInvitationVerificationResultWithSession(true, task.Id, session.Token, session.ExpiresAt)
-            : Failed();
+        if (!session.Succeeded)
+            return Failed();
+
+        // A manager can revoke between the claim above and the session landing in the store, and that
+        // revocation would find nothing to sweep. Re-read the committed invitation and withdraw the
+        // credential we just issued if it is no longer the consumed one we verified.
+        var settled = await repository.GetAsync(task.TenantId, task.Id, cancellationToken);
+        if (settled?.Invitations.FirstOrDefault(x => x.Id == invitation.Id) is not { Status: UserTaskInvitationStatus.Consumed })
+        {
+            await sessionIssuer.RevokeForInvitationAsync(task.TenantId, invitation.Id, cancellationToken);
+            return Failed();
+        }
+
+        return new UserTaskInvitationVerificationResultWithSession(true, task.Id, session.Token, session.ExpiresAt);
     }
 
     private async Task<(UserTask Task, UserTaskInvitation Invitation)?> ResolveOpenInvitationAsync(string? token, CancellationToken cancellationToken)

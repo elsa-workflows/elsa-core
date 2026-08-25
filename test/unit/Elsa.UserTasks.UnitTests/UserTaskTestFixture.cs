@@ -104,6 +104,34 @@ public sealed class UserTaskTestFixture
         }
     }
 
+    /// <summary>
+    /// Wraps a real issuer and fails a configurable number of revocation calls, so tests can drive the
+    /// cross-store failure path between the invitation aggregate and the session store.
+    /// </summary>
+    public sealed class FaultyRevocationSessionIssuer(IUserTaskGuestSessionIssuer inner, int failures) : IUserTaskGuestSessionIssuer
+    {
+        private int _remaining = failures;
+
+        public int RevokeCallCount { get; private set; }
+
+        public Task<GuestSessionResult> IssueAsync(UserTaskInvitation invitation, ParticipantReference subject, CancellationToken cancellationToken = default) =>
+            inner.IssueAsync(invitation, subject, cancellationToken);
+
+        public Task<UserTaskGuestSession?> ResolveAsync(string credential, CancellationToken cancellationToken = default) =>
+            inner.ResolveAsync(credential, cancellationToken);
+
+        public Task RevokeForTaskAsync(string tenantId, string taskId, CancellationToken cancellationToken = default) =>
+            inner.RevokeForTaskAsync(tenantId, taskId, cancellationToken);
+
+        public Task RevokeForInvitationAsync(string tenantId, string invitationId, CancellationToken cancellationToken = default)
+        {
+            RevokeCallCount++;
+            if (_remaining-- > 0)
+                throw new InvalidOperationException("Simulated session-store failure.");
+            return inner.RevokeForInvitationAsync(tenantId, invitationId, cancellationToken);
+        }
+    }
+
     public sealed class TestClock : ISystemClock
     {
         public DateTimeOffset UtcNow { get; set; } = DateTimeOffset.UtcNow;
