@@ -6,7 +6,9 @@ using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.Identity.Contracts;
+using Elsa.ExternalAuthentication.Options;
 using Elsa.Identity.Models;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Services;
 
@@ -18,7 +20,8 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
     IRoleProvider roleProvider,
     IElsaTokenService tokenService,
     ITenantAccessor tenantAccessor,
-    ISystemClock clock) : IExternalAuthenticationTokenIssuer
+    ISystemClock clock,
+    IOptions<ExternalAuthenticationOptions> options) : IExternalAuthenticationTokenIssuer
 {
     public async ValueTask<ExternalTokenResponse> IssueAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default)
     {
@@ -61,7 +64,19 @@ public sealed class DefaultExternalAuthenticationTokenIssuer(
                        { Id = session.UserId }, cancellationToken)
             ?? throw new InvalidOperationException("The external authentication session user no longer exists.");
         var roles = (await roleProvider.FindByIdsAsync(user.Roles, cancellationToken)).ToArray();
-        var permissions = roles.SelectMany(x => x.Permissions).Concat(session.ExternalGrants.Select(x => x.Permission)).Distinct(StringComparer.Ordinal).ToArray();
+        // Role permissions go through the same deployment boundary as the external grants beside them. They
+        // used to be concatenated raw, which let a permission the boundary had just excluded during grant
+        // resolution reappear here from the same roles -- making the deny list unenforceable for anything a
+        // role happened to carry, and ElsaRolePermissionGrantSource's own filtering pointless. Re-applying it
+        // at issuance also picks up a boundary that changed since sign-in, because refreshing reissues.
+        // With no boundary configured, which is the default, every well-formed permission passes and nothing
+        // about this changes.
+        var boundary = new PermissionGrantBoundary(options.Value.PermissionGrants);
+        var permissions = roles.SelectMany(x => x.Permissions)
+            .Concat(session.ExternalGrants.Select(x => x.Permission))
+            .Where(boundary.Allows)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         var accessToken = await tokenService.IssueAccessTokenAsync(new(user, roles.Select(x => x.Name).ToArray(), permissions, [], session.Id), cancellationToken);
         var now = clock.UtcNow;
         return new(

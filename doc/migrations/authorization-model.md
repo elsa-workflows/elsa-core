@@ -62,6 +62,18 @@ by exact string, so they read the way a role does.
   `workflows/definitions:delete`, but an allow list naming only `workflows/definitions:delete` refuses a
   `workflows/*:delete` grant rather than admitting the part that overlaps.
 
+The boundary now also applies to permissions the user's **own Elsa roles** carry, not only to those an external
+claim mapping confers. Previously token issuance concatenated role permissions raw, so a permission the boundary
+excluded during sign-in reappeared in the issued token from the same roles — which made the deny list
+unenforceable for anything a role happened to carry. If you configured a boundary expecting it to bound the whole
+token, it now does. If you configured one expecting it to bound only claim-mapped permissions, an external login
+may now carry fewer permissions than before; widen the list, or move the restriction into the roles themselves.
+Deployments with no boundary configured, which is the default, are unaffected.
+
+A boundary that does not parse is now a **startup failure** rather than a silently ignored setting. An allow list
+whose entries are all malformed used to reduce to an empty list, which means unrestricted, so a typo turned the
+boundary off. Fix the entries the startup error names; the mapping table below gives the new spelling.
+
 Rewrite both lists into the new `{resource}:{verb}` vocabulary using the [full mapping](#full-mapping). A value that
 is not a well-formed permission matches nothing, and a grant that is not well-formed is dropped at sign-in with a
 `malformed_permission` warning instead of being carried into a token.
