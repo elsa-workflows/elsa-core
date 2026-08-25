@@ -59,11 +59,8 @@ public sealed class ExternalAuthenticationOptionsValidator(
 
     private static void ValidatePermissionPatterns(IEnumerable<string>? permissions, string listName, ICollection<string> failures)
     {
-        foreach (var permission in permissions ?? [])
-        {
-            if (!Permission.TryParse(permission, out _))
-                failures.Add($"'{permission}' in ExternalAuthentication:PermissionGrants:{listName} is not a well-formed permission. Expected '{{resource}}:{{verb}}', for example 'workflows/*:delete'.");
-        }
+        foreach (var permission in (permissions ?? []).Where(x => !Permission.TryParse(x, out _)))
+            failures.Add($"'{permission}' in ExternalAuthentication:PermissionGrants:{listName} is not a well-formed permission. Expected '{{resource}}:{{verb}}', for example 'workflows/*:delete'.");
     }
 
     private static void ValidateExternalCallbackBaseUri(RedirectValidationOptions? redirects, ICollection<string> failures)
