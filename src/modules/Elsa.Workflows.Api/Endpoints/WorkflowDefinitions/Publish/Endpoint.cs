@@ -52,10 +52,10 @@ internal class Publish(
         }
 
         var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
-            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 

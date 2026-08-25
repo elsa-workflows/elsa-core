@@ -81,10 +81,10 @@ internal class ImportFiles : ElsaEndpoint<WorkflowDefinitionModel>
     {
         foreach (var model in models)
         {
-            var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+            var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, cancellationToken);
             if (!scriptAuthorizationResult.Succeeded)
             {
-                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
                 return false;
             }
         }
