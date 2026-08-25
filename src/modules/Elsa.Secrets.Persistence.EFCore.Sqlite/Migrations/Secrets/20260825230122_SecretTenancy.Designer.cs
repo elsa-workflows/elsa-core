@@ -2,6 +2,7 @@
 using Elsa.Secrets.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
 {
     [DbContext(typeof(SecretsElsaDbContext))]
-    partial class SecretsElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260825230122_SecretTenancy")]
+    partial class SecretTenancy
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

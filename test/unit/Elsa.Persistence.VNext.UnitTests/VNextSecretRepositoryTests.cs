@@ -15,7 +15,7 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
     public VNextSecretRepositoryTests()
     {
         _store = new SqliteDocumentStore(_connection, new SecretPersistenceSchemaProvider().DescribeSchema());
-        _repository = new VNextSecretRepository(_store);
+        _repository = new VNextSecretRepository(_store, new StubTenantAccessor(string.Empty));
     }
 
     [Fact]
@@ -87,5 +87,28 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
                 }
             }
         };
+    }
+
+    [Theory]
+    // The provider keys documents by name alone, so serving a tenant would hand back another tenant's secret.
+    // The default-tenant path needs no case of its own: every other test in this class runs through the same
+    // guard with an empty tenant id, which is what a single-tenant deployment does.
+    [InlineData("tenant-a")]
+    [InlineData("*")]
+    public async Task RefusesToServeANonDefaultTenant(string tenantId)
+    {
+        var repository = new VNextSecretRepository(_store, new StubTenantAccessor(tenantId));
+
+        await Assert.ThrowsAsync<NotSupportedException>(() => repository.ListAsync());
+        await Assert.ThrowsAsync<NotSupportedException>(() => repository.GetAsync("anything"));
+        await Assert.ThrowsAsync<NotSupportedException>(() => repository.AddAsync(new Secret { Name = "a", DisplayName = "a" }));
+    }
+
+
+    private sealed class StubTenantAccessor(string tenantId) : Elsa.Common.Multitenancy.ITenantAccessor
+    {
+        public string TenantId { get; } = tenantId;
+        public Elsa.Common.Multitenancy.Tenant? Tenant => null;
+        public IDisposable PushContext(Elsa.Common.Multitenancy.Tenant? tenant) => throw new NotSupportedException();
     }
 }
