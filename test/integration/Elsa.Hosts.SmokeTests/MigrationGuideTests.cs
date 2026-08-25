@@ -100,25 +100,51 @@ public class MigrationGuideTests
     }
 
     /// <summary>Every permission the mapping table's right-hand column tells an operator to write.</summary>
+    /// <remarks>
+    /// Rows are matched after trimming, and every data row must yield at least one replacement. Requiring a
+    /// row to start with an unindented <c>| `</c> looked equivalent and was not: a formatting-only change that
+    /// indented the table, or a left column written without backticks, would drop rows silently while the
+    /// totals still looked plausible. A skipped row is an unchecked permission, which is the one outcome this
+    /// test exists to prevent, so it is made loud rather than merely unlikely.
+    /// </remarks>
     private static IReadOnlyCollection<string> ReadReplacements()
     {
         var guide = FindGuide();
         var lines = File.ReadAllLines(guide);
-        var start = Array.FindIndex(lines, x => x.StartsWith("## Full mapping", StringComparison.Ordinal));
+        var start = Array.FindIndex(lines, x => x.Trim().StartsWith("## Full mapping", StringComparison.Ordinal));
         Assert.True(start >= 0, $"No '## Full mapping' section in {guide}. If the section was renamed, this test is looking in the wrong place rather than passing vacuously.");
 
-        var replacements = lines.Skip(start)
-            .TakeWhile(x => !x.StartsWith("## ", StringComparison.Ordinal) || x.StartsWith("## Full mapping", StringComparison.Ordinal))
-            .Where(x => x.StartsWith("| `", StringComparison.Ordinal))
+        var rows = lines.Skip(start + 1)
+            .TakeWhile(x => !x.Trim().StartsWith("## ", StringComparison.Ordinal))
+            .Select(x => x.Trim())
+            .Where(x => x.StartsWith('|'))
             .Select(x => x.Split('|'))
             .Where(x => x.Length >= 3)
-            .SelectMany(x => Regex.Matches(x[2], "`([^`]+)`").Select(m => m.Groups[1].Value))
-            .Distinct(StringComparer.Ordinal)
+            // The header names the columns and the next row is the --- separator; neither maps a permission.
+            .Where(x => !x[1].Trim().Trim('-', ':', ' ').Equals(string.Empty, StringComparison.Ordinal))
+            .Where(x => x[1].Contains('`'))
             .ToArray();
 
+        var replacements = new List<string>();
+        var emptyRows = new List<string>();
+
+        foreach (var row in rows)
+        {
+            var matches = Regex.Matches(row[2], "`([^`]+)`").Select(x => x.Groups[1].Value).ToArray();
+
+            if (matches.Length > 0)
+                replacements.AddRange(matches);
+            // A permission that was dropped rather than translated has no replacement to check. Those rows say
+            // so in words, so they are recognised rather than treated as a parse failure -- but only those.
+            else if (!row[2].Contains("removed", StringComparison.OrdinalIgnoreCase))
+                emptyRows.Add(row[1].Trim());
+        }
+
+        Assert.True(emptyRows.Count == 0, $"{emptyRows.Count} mapping row(s) yielded no replacement and do not say the permission was removed, so what they document is going unchecked: {string.Join(", ", emptyRows)}.");
+
         // A parser that silently matches nothing passes forever.
-        Assert.True(replacements.Length > 20, $"Only {replacements.Length} replacement(s) parsed out of the mapping table; the table format has changed and this test is no longer reading it.");
-        return replacements;
+        Assert.True(rows.Length > 20, $"Only {rows.Length} mapping row(s) parsed out of the table; the format has changed and this test is no longer reading it.");
+        return replacements.Distinct(StringComparer.Ordinal).ToArray();
     }
 
     private static string FindGuide()
