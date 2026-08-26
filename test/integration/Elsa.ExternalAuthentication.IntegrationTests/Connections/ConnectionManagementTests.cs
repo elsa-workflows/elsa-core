@@ -755,6 +755,81 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task OmittingAStoredCreateUserPolicyStillCountsAsChangingDefaultRoles()
+    {
+        // The abandonment guard above works by switching noMatchAction, but a PUT can drop the stored
+        // fallback more quietly: omit unlinkedPolicy altogether. Normalization does not carry the stored
+        // policy forward, so a null candidate clears it -- and its role assignments with it. That is the
+        // same decision as switching to 'reject', so it needs the same permission.
+        var (id, revision) = await CreateConnectionAsync(
+            CreateRequest("roles-omitted", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        _permissions = UpdateWithoutDefaultRolesPermission;
+
+        var response = await PutConnectionAsync(id, revision, CreateRequest("roles-omitted"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task IntroducingACreateUserPolicyOnAPolicylessConnectionRequiresThePermission()
+    {
+        // The reverse transition: the stored connection has no policy, so the baseline role set is empty,
+        // and an update that introduces a create-user fallback with roles is deciding what auto-created
+        // users receive.
+        var (id, revision) = await CreateConnectionAsync(CreateRequest("roles-introduced"));
+
+        _permissions = UpdateWithoutDefaultRolesPermission;
+
+        var response = await PutConnectionAsync(id, revision,
+            CreateRequest("roles-introduced", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task ClearingAPolicyThatAssignsNoRolesNeedsNoPermission()
+    {
+        // Clearing a create-user fallback whose role list is already empty changes nothing about what
+        // auto-created users receive, so the guard must stay quiet -- it keys off the effective set
+        // changing, not off the policy disappearing.
+        var (id, revision) = await CreateConnectionAsync(
+            CreateRequest("no-roles-cleared", unlinkedPolicy: CreateMatcherPolicyWithoutDefaultRoles("allowed-matcher", "create-user")));
+
+        _permissions = UpdateWithoutDefaultRolesPermission;
+
+        var response = await PutConnectionAsync(id, revision, CreateRequest("no-roles-cleared"));
+
+        Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    /// <summary>May edit connections and policies, but not decide default roles -- the #7977 separation.</summary>
+    private static readonly string[] UpdateWithoutDefaultRolesPermission =
+    [
+        $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}",
+        $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+    ];
+
+    private async Task<(string Id, string Revision)> CreateConnectionAsync(object request)
+    {
+        var created = await _client!.PostAsJsonAsync("/external-authentication/connections", request);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        return ((await created.Content.ReadFromJsonAsync<ConnectionDocument>())!.Id, created.Headers.ETag!.Tag);
+    }
+
+    private async Task<HttpResponseMessage> PutConnectionAsync(string id, string revision, object request)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        {
+            Content = JsonContent.Create(request)
+        };
+        message.Headers.TryAddWithoutValidation("If-Match", revision);
+        return await _client!.SendAsync(message);
+    }
+
+    [Fact]
     public async Task ValidatingAConfigurationOwnedConnectionDoesNotReadItsRolesAsNew()
     {
         // A configuration-owned connection has no database row, so taking the baseline from the database
