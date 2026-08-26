@@ -755,6 +755,23 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ValidatingAConfigurationOwnedConnectionDoesNotReadItsRolesAsNew()
+    {
+        // A configuration-owned connection has no database row, so taking the baseline from the database
+        // store alone made its configured roles look newly assigned every time. Validation only needs
+        // connections:view, so a caller with exactly that could not validate one at all.
+        var configuration = ConfigurationConnection("config-roles", isEnabled: true);
+        configuration.UnlinkedPolicy = CreateMatcherPolicy("allowed-matcher", "create-user");
+        _registry.ConfigurationConnection = configuration;
+
+        _permissions = [$"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.View}"];
+
+        var response = await _client!.PostAsync($"/external-authentication/connections/{configuration.Id}/validate", null);
+
+        Assert.DoesNotContain("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task APolicyThatSetsNoDefaultRolesNeedsNoExtraPermission()
     {
         // Creating with none decides nothing, so it needs nothing. Changing a stored set -- including

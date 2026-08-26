@@ -205,7 +205,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
         if (!adapters.TryGet(connection.AdapterType, out var adapter) || !IsAllowed(configuredOptions.AllowedAdapterTypes, connection.AdapterType))
             errors.Add(new("adapterType", "unavailable", "The selected adapter is not installed or is not allowed by this deployment."));
 
-        await ValidatePolicyAsync(connection, actor, configuredOptions, errors, cancellationToken);
+        await ValidatePolicyAsync(connection, actor, targetTenantId, configuredOptions, errors, cancellationToken);
         ValidateGrantSources(connection, configuredOptions, errors);
         if (connection.PermissionGrantSources.Count != 0)
         {
@@ -490,7 +490,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
             errors.Add(new("claimProjection.redactedClaimTypes", "invalid", "Redacted claim types must also be allowed claim types."));
     }
 
-    private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
+    private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, string targetTenantId, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
     {
         if (connection.UnlinkedPolicy is not { } policy)
             return;
@@ -518,7 +518,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
             // from editing an unrelated field once anyone had set roles. Evaluating it only for create-user
             // policies would be worse: switching a stored fallback to 'reject' drops its roles, which is a
             // decision about what auto-created users receive made without the permission that governs it.
-            if (!await DefaultRolesAreUnchangedAsync(connection, defaultRoleIds, cancellationToken)
+            if (!await DefaultRolesAreUnchangedAsync(connection, targetTenantId, defaultRoleIds, cancellationToken)
                 && !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
                 errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Changing the default roles for an unlinked identity policy requires the policy default roles update permission."));
 
@@ -535,11 +535,20 @@ public sealed partial class IdentityProviderConnectionManagementService(
         }
     }
 
-    /// <summary>Whether <paramref name="candidateRoleIds"/> matches what the stored connection already assigns.</summary>
-    private async ValueTask<bool> DefaultRolesAreUnchangedAsync(IdentityProviderConnection connection, IReadOnlyCollection<string> candidateRoleIds, CancellationToken cancellationToken)
+    /// <summary>Whether <paramref name="candidateRoleIds"/> matches what the connection already assigns.</summary>
+    /// <remarks>
+    /// The baseline comes from the registry rather than the database store, because a configuration-owned
+    /// connection has no database record: looking only there made its configured roles read as newly assigned
+    /// on every validation, so a caller with view access could not validate one at all. The registry answers
+    /// for both ownerships, which is the question being asked -- what does this connection assign today.
+    /// </remarks>
+    private async ValueTask<bool> DefaultRolesAreUnchangedAsync(IdentityProviderConnection connection, string targetTenantId, IReadOnlyCollection<string> candidateRoleIds, CancellationToken cancellationToken)
     {
-        var stored = string.IsNullOrWhiteSpace(connection.Id) ? null : await store.FindByIdAsync(connection.Id, cancellationToken);
-        var storedRoleIds = stored?.UnlinkedPolicy is { } storedPolicy && UsesCreateUserFallback(storedPolicy)
+        var existing = string.IsNullOrWhiteSpace(connection.Id)
+            ? null
+            : (await registry.FindByIdAsync(targetTenantId, connection.Id, cancellationToken))?.Connection
+              ?? await store.FindByIdAsync(connection.Id, cancellationToken);
+        var storedRoleIds = existing?.UnlinkedPolicy is { } storedPolicy && UsesCreateUserFallback(storedPolicy)
             ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(storedPolicy.Settings)
             : [];
 
