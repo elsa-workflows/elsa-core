@@ -31,11 +31,11 @@ The default route opens the **Assigned to me** tab. Tabs are represented in the 
 
 | Tab | Query value | Purpose | Required capability |
 | --- | --- | --- | --- |
-| Assigned to me | `tab=assigned` | Tasks assigned to the current actor, including claimed tasks | `read:user-tasks` |
-| Available | `tab=available` | Unassigned tasks for which the actor is an eligible candidate | `read:user-tasks` |
-| History | `tab=history` | Terminal tasks completed by the actor and safe history for tasks they acted on | `read:user-tasks` |
-| All | `tab=all` | Tenant-visible tasks for operations and support | `manage:user-tasks` |
-| Needs Attention | `tab=needs-attention` | Unassigned, blocked-health, overdue, and stale-operation tasks | `manage:user-tasks` |
+| Assigned to me | `tab=assigned` | Tasks assigned to the current actor, including claimed tasks | `user-tasks:view` |
+| Available | `tab=available` | Unassigned tasks for which the actor is an eligible candidate | `user-tasks:view` |
+| History | `tab=history` | Terminal tasks completed by the actor and safe history for tasks they acted on | `user-tasks:view` |
+| All | `tab=all` | Tenant-visible tasks for operations and support | `user-tasks:supervise` |
+| Needs Attention | `tab=needs-attention` | Unassigned, blocked-health, overdue, and stale-operation tasks | `user-tasks:supervise` |
 
 Tabs that are not allowed by the capability response are hidden. A deep link to a hidden tab displays the permitted default tab rather than an authorization error from the UI. The API remains authoritative.
 

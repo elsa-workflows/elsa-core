@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.Mediator.Contracts;
 
 namespace Elsa.UserTasks.Models;
@@ -101,7 +102,7 @@ public sealed record UserTaskActor(
 {
     /// <summary>Indicates that the host has granted tenant-scoped manager access.</summary>
     public bool IsManager { get; init; }
-    public IReadOnlySet<string> Permissions { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    public IReadOnlySet<string> Permissions { get; init; } = new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>
     /// Set when the caller authenticated with a guest invitation session. A guest is scoped to exactly
@@ -114,7 +115,19 @@ public sealed record UserTaskActor(
 
     public bool IsGuest => GuestTaskId != null;
 
-    public bool HasPermission(string permission) => Permissions.Contains(permission) || Permissions.Contains("*");
+    /// <summary>Whether a grant this actor holds satisfies <paramref name="required"/>.</summary>
+    /// <remarks>
+    /// Matched through <see cref="PermissionMatcher"/> rather than by string equality, so a subtree or verb
+    /// wildcard reaches this check exactly as it reaches an endpoint's own gate. Comparing strings would
+    /// leave the two disagreeing: the endpoint would admit a caller holding <c>user-tasks:*</c> and the
+    /// policy would then deny them, which reads as a broken task rather than as a missing grant. A bare
+    /// <c>*</c> keeps working because it parses as <c>*:*</c>, not because it is special-cased here.
+    /// </remarks>
+    public bool HasPermission(Permission required) =>
+        Permissions.Any(x => Permission.TryParse(x, out var granted) && PermissionMatcher.Satisfies(granted, required));
+
+    /// <inheritdoc cref="HasPermission(Permission)" />
+    public bool HasPermission(string resource, string verb) => HasPermission(new Permission(resource, verb));
 }
 
 public sealed record UserTaskAction(

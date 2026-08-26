@@ -16,7 +16,7 @@ Base path: `/user-tasks`. Authenticated endpoints use Elsa endpoint permission m
 }
 ```
 
-The descriptor is advisory: it decides what a client renders, never what the server allows. It is gated on `read:user-tasks`, so an actor without read access receives `403` and clients treat that as "hide the feature".
+The descriptor is advisory: it decides what a client renders, never what the server allows. It is gated on `user-tasks:view`, so an actor without read access receives `403` and clients treat that as "hide the feature".
 
 `GET /user-tasks/{id}/capabilities` returns the per-task projection: `taskId`, `revision`, `allowedActions`, `canReadProtected`, and `canManage`.
 
@@ -36,7 +36,7 @@ Items contain only the safe summary and the caller's capabilities: id, title, su
 
 `POST /user-tasks/{id}/reveal` with `{ fieldKey }` discloses one masked form field. The field must be marked `masked` and `canReveal` by its form provider, the caller must hold protected access, and the reveal is written to the audit trail. Masked values are never included in the ordinary detail response.
 
-`GET /user-task-participants?search=&type=&cursor=&limit=` requires `lookup:user-task-participants`; absence of a directory returns an empty page, never an identity-module error.
+`GET /user-task-participants?search=&type=&cursor=&limit=` requires `user-tasks/participants:view`; absence of a directory returns an empty page, never an identity-module error.
 
 ## Commands
 

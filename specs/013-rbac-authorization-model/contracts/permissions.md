@@ -116,6 +116,23 @@ BPMN interchange reuses `workflows/definitions`: analyze and export require `vie
 
 `policies/default-roles` is a sub-resource because the default-role list — the roles granted to a user auto-created for an unknown external identity — genuinely is a distinct thing being administered.
 
+### User Tasks
+
+Added after the original census: User Tasks was still on the legacy channel when that census was taken, and was migrated separately in [#7993](https://github.com/elsa-workflows/elsa-core/issues/7993).
+
+| Resource | Verbs |
+| --- | --- |
+| `user-tasks` | view, update, claim★, complete★, assign★, cancel★, invite★, supervise★ |
+| `user-tasks/participants` | view |
+
+`update` is core rather than a module verb because the only thing it modifies is a task's scheduling — priority and due date. There is no `create`: tasks come into existence from a workflow, never from the API, so the never-both rule is satisfied by `create` simply not existing.
+
+`claim` covers claiming and releasing, as `claim:user-tasks` did: releasing is undoing a claim, not a second thing to administer. `invite` likewise covers issuing, listing and revoking guest invitations, matching the module's own access policy, which treats all three as one supervisory act.
+
+`supervise` is the elevated tier — read every task in the tenant, assign, reschedule, cancel, see blocked tasks, and retry a failed resolution — and is deliberately not named `manage`, for the reason `workflows/runtime:control` is not: it implies none of the verbs beside it, and a name that reads like an aggregate invites being granted as one.
+
+`user-tasks/participants` is a sub-resource because it is a directory search backing the assignee picker, and a role that reads tasks does not necessarily enumerate the directory. **Recorded consequence:** the subtree grant `user-tasks/*:view` does confer both, so withholding the directory means naming `user-tasks:view` rather than the subtree. This is the same shape as outcome 3 below.
+
 ### Diagnostics, dashboard, and operations
 
 | Resource | Verbs |
@@ -222,6 +239,15 @@ The source for [`doc/migrations/authorization-model.md`](../../../doc/migrations
 | `external-authentication:provider-trust:unsafe` | `external-authentication/provider-trust:override` |
 | `external-authentication:permissions:delegate` | `external-authentication/permission-grants:delegate` |
 | `external-authentication:permissions:delegate-unrestricted` | `external-authentication/permission-grants:delegate-unrestricted` |
+| `read:user-tasks` | `user-tasks:view` |
+| `claim:user-tasks` | `user-tasks:claim` |
+| `complete:user-tasks` | `user-tasks:complete` |
+| `assign:user-tasks` | `user-tasks:assign` |
+| `update:user-tasks` | `user-tasks:update` |
+| `cancel:user-tasks` | `user-tasks:cancel` |
+| `invite:user-tasks` | `user-tasks:invite` |
+| `manage:user-tasks` | `user-tasks:supervise` |
+| `lookup:user-task-participants` | `user-tasks/participants:view` |
 | `read:dashboard` | `dashboard:view` |
 | `read:diagnostics:console-logs` | `diagnostics/console-logs:view` |
 | `read:diagnostics:structured-logs` | `diagnostics/structured-logs:view` |

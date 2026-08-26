@@ -16,12 +16,12 @@ The built-in identity resolver maps namespaced `ClaimsPrincipal` claims. All int
 
 - `Live` (default): candidate group checks use current principal references/claims. An exact reference match remains authoritative even if the directory cannot resolve it.
 - `Snapshot`: groups are expanded at activation and stored as snapshot members. Failure to enumerate creates a blocking manager-only health issue.
-- Explicit user exclusions deny assignment and protected access. Manager override is disabled by default; when enabled it requires `manage:user-tasks` and a reason.
+- Explicit user exclusions deny assignment and protected access. Manager override is disabled by default; when enabled it requires `user-tasks:supervise` and a reason.
 - `Requester` is context only and grants no capability.
 
 ## Operation permissions
 
-`read:user-tasks`, `claim:user-tasks`, `complete:user-tasks`, `assign:user-tasks`, `update:user-tasks`, `cancel:user-tasks`, `invite:user-tasks`, `manage:user-tasks`, and `lookup:user-task-participants` are independent permissions. Permission alone is insufficient: ordinary callers also need the corresponding task relationship. Managers are tenant-scoped. Guest sessions carry an allowlist of capabilities for one task.
+`user-tasks:view`, `:claim`, `:complete`, `:assign`, `:update`, `:cancel`, `:invite`, `:supervise`, and `user-tasks/participants:view` are independent permissions; no verb implies another. Permission alone is insufficient: ordinary callers also need the corresponding task relationship. Managers are tenant-scoped. Guest sessions carry an allowlist of capabilities for one task.
 
 ## Disclosure
 

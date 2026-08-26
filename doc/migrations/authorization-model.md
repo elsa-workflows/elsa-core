@@ -89,8 +89,8 @@ that leaf does not let them delegate the subtree.
 ## The legacy permission constant classes are gone
 
 The `<Module>Permissions` classes holding `verb:resource` strings — `AIPermissions`, `ConsoleLogsPermissions`,
-`DashboardPermissions`, `ExternalAuthenticationPermissions`, `OpenTelemetryPermissions`, `SecretsPermissions`
-and `StructuredLogsPermissions` — are removed rather than marked obsolete. Referencing one is now a compile
+`DashboardPermissions`, `ExternalAuthenticationPermissions`, `OpenTelemetryPermissions`, `SecretsPermissions`,
+`StructuredLogsPermissions` and `UserTasksPermissions` — are removed rather than marked obsolete. Referencing one is now a compile
 error, which is deliberate: every string they held is unparseable under the `{resource}:{verb}` grammar, so
 keeping them would leave code that still compiles, still reads as a permission check, and silently authorizes
 nothing. A compile error names the site and can be fixed against the mapping table below; an obsolete constant
@@ -119,6 +119,39 @@ The permission is required when the default-role set **changes** — adding, rem
 the policy away from one that creates users, which drops its roles just as surely. Leaving a stored set alone
 needs nothing extra, so an administrator without the permission can still edit other fields on a connection
 whose default roles someone else configured, enable it, or validate it.
+
+## User tasks join the structured vocabulary
+
+User Tasks was still declaring access through the legacy channel after the rest of the codebase had moved, so its
+nine permissions are re-authored in this release: `read:user-tasks` and its siblings become verbs on a `user-tasks`
+resource, and participant lookup becomes the sub-resource `user-tasks/participants`.
+
+**This is a breaking change for anyone granting the legacy strings**, which is everyone who granted User Tasks
+anything — they were the only spelling that ever worked. Rewrite them from the table below. The strings do not
+merely stop matching new-style grants; they were being compared as exact claim values, so nothing else had ever
+matched them either.
+
+**Pattern grants now reach these endpoints for the first time.** Under the legacy declaration a claim had to equal
+the required string character for character, so `*:view`, `user-tasks:*` and `user-tasks/*:view` all failed against
+every User Tasks endpoint even though they read as though they covered it. A bare `*` worked, because it was
+special-cased. If you worked around this by granting the exact legacy strings alongside a pattern, the pattern is
+now doing the work and the legacy strings can go.
+
+**`manage:user-tasks` becomes `user-tasks:supervise`, not `user-tasks:manage`.** The permission never was an
+aggregate — it grants tenant-wide oversight (read every task, assign, reschedule, cancel, see blocked tasks, retry
+a failed resolution) and confers none of `claim`, `complete`, `assign`, `cancel` or `invite`. It is renamed for the
+same reason `workflows/runtime:control` is not called `manage`: a name that reads like an aggregate invites being
+granted as one.
+
+**Recorded consequence:** because participant lookup is a sub-resource, `user-tasks/*:view` now grants it along
+with task read, where legacy `read:user-tasks` did not. Participant lookup returns a tenant-scoped directory of
+users and groups, so a role that should read tasks without enumerating the directory must name `user-tasks:view`
+rather than the subtree.
+
+If you implement `IUserTaskAccessPolicy` or construct `UserTaskActor` yourself: `UserTaskActor.HasPermission` now
+takes a `Permission` (or a resource and verb) instead of a single string, and matches through `PermissionMatcher`
+rather than by equality, so pattern grants reach your policy too. `UserTaskActor.Permissions` is compared ordinally
+rather than case-insensitively, matching the rest of the model.
 
 ## Third-party modules
 
@@ -203,6 +236,15 @@ If you have duplicate names across tenants today, they were impossible to create
 | `external-authentication:provider-trust:unsafe` | `external-authentication/provider-trust:override` |
 | `external-authentication:permissions:delegate` | `external-authentication/permission-grants:delegate` |
 | `external-authentication:permissions:delegate-unrestricted` | `external-authentication/permission-grants:delegate-unrestricted` |
+| `read:user-tasks` | `user-tasks:view` |
+| `claim:user-tasks` | `user-tasks:claim` |
+| `complete:user-tasks` | `user-tasks:complete` |
+| `assign:user-tasks` | `user-tasks:assign` |
+| `update:user-tasks` | `user-tasks:update` |
+| `cancel:user-tasks` | `user-tasks:cancel` |
+| `invite:user-tasks` | `user-tasks:invite` |
+| `manage:user-tasks` | `user-tasks:supervise` |
+| `lookup:user-task-participants` | `user-tasks/participants:view` |
 | `read:dashboard` | `dashboard:view` |
 | `read:diagnostics:console-logs` | `diagnostics/console-logs:view` |
 | `read:diagnostics:structured-logs` | `diagnostics/structured-logs:view` |
