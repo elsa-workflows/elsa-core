@@ -328,60 +328,46 @@ jobs:
     timeout-minutes: 30
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
+      - name: Check out the push action
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+          fetch-depth: 1
+
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
       - name: Publish to feedz.io
-        timeout-minutes: 25
-        env:
-          FEEDZ_API_KEY: ${{ secrets.FEEDZ_API_KEY }}
-          FEED_SOURCE: ${{ env.feedz_feed_source }}
-        run: |
-          set -euo pipefail
-
-          # `dotnet nuget push` applies its default 300s timeout per push, and the
-          # package set has grown large enough that pushing it sequentially bumps
-          # into that. Push a few packages at a time with a longer per-push
-          # timeout and retry each one; --skip-duplicate keeps retries idempotent.
-          push_one() {
-            local package="$1"
-            local attempt
-            for attempt in 1 2 3; do
-              if dotnet nuget push "$package" \
-                  -k "$FEEDZ_API_KEY" \
-                  -s "$FEED_SOURCE" \
-                  --skip-duplicate \
-                  --timeout 900; then
-                return 0
-              fi
-              echo "::warning::Pushing ${package} failed (attempt ${attempt}/3); retrying in $((attempt * 15))s"
-              sleep $((attempt * 15))
-            done
-            echo "::error::Failed to push ${package} after 3 attempts"
-            return 1
-          }
-          export -f push_one
-
-          # shellcheck disable=SC2016 # $0 is the package name in the child shell.
-          find . -maxdepth 1 -name '*.nupkg' -print0 \
-            | xargs -0 -r -n1 -P 4 bash -c 'push_one "$0"'
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.feedz_feed_source }}
+          api-key: ${{ secrets.FEEDZ_API_KEY }}
 
   publish_nuget:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     if: ${{ github.event.action == 'published' }}
     steps:
+      - name: Check out the push action
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+          fetch-depth: 1
+
       - name: Download Packages
         uses: actions/download-artifact@v4.1.7
         with:
           name: elsa-nuget-packages
 
       - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k "${{ secrets.NUGET_API_KEY }}" -s ${{ env.nuget_feed_source }} --skip-duplicate
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.nuget_feed_source }}
+          api-key: ${{ secrets.NUGET_API_KEY }}
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages

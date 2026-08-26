@@ -1,0 +1,62 @@
+name: Push NuGet packages
+description: >
+  Pushes every .nupkg in the working directory to a feed, a few at a time,
+  retrying each package. Shared by the feedz.io and nuget.org publish jobs.
+
+inputs:
+  feed-source:
+    description: NuGet v3 index URL of the feed to push to.
+    required: true
+  api-key:
+    description: API key for the feed.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Push packages
+      shell: bash
+      env:
+        FEED_SOURCE: ${{ inputs.feed-source }}
+        API_KEY: ${{ inputs.api-key }}
+      run: |
+        set -euo pipefail
+
+        mapfile -t packages < <(find . -maxdepth 1 -name '*.nupkg' | sort)
+
+        # A single `dotnet nuget push *.nupkg` failed loudly when the glob
+        # matched nothing; keep that, so a broken artifact upload can't pass
+        # as a successful publish of zero packages.
+        if [ ${#packages[@]} -eq 0 ]; then
+          echo "::error::No .nupkg files found to push to ${FEED_SOURCE}."
+          exit 1
+        fi
+
+        echo "Pushing ${#packages[@]} package(s) to ${FEED_SOURCE}"
+
+        # `dotnet nuget push` applies its default 300s timeout per push, and the
+        # package set has grown large enough that pushing it sequentially bumps
+        # into that. Push a few at a time with a longer per-push timeout and
+        # retry each one; --skip-duplicate keeps the retries idempotent.
+        push_one() {
+          local package="$1"
+          local attempt
+          for attempt in 1 2 3; do
+            if dotnet nuget push "$package" \
+                -k "$API_KEY" \
+                -s "$FEED_SOURCE" \
+                --skip-duplicate \
+                --timeout 900; then
+              return 0
+            fi
+            echo "::warning::Pushing ${package} failed (attempt ${attempt}/3); retrying in $((attempt * 15))s"
+            sleep $((attempt * 15))
+          done
+          echo "::error::Failed to push ${package} after 3 attempts"
+          return 1
+        }
+        export -f push_one
+
+        # shellcheck disable=SC2016 # $0 is the package name in the child shell.
+        printf '%s\0' "${packages[@]}" \
+          | xargs -0 -n1 -P 4 bash -c 'push_one "$0"'
