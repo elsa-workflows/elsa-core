@@ -99,6 +99,27 @@ gives a warning that is easy to suppress and a runtime failure that is not visib
 Replace each with the module's `<Module>ResourcePermissions` constant and a verb. Classes still referenced by
 their own modules — `WorkflowPermissions`, `IdentityPermissions` and the rest — are untouched.
 
+## Setting default roles now requires its own permission
+
+Authoring the `defaultRoleIds` of an unlinked-identity policy now requires
+`external-authentication/policies/default-roles:update`. Previously only the subset rule applied — you could
+not grant roles carrying permissions you did not hold, but any actor who could edit a connection could decide
+what auto-created users receive.
+
+The permission was enforced only when removing policy references during role deletion, while its sibling
+`external-authentication/policies:update` was already enforced on the write path. That asymmetry is what this
+closes, and it makes "may configure connections, may not decide what auto-created users receive" expressible.
+
+**Who this affects.** Anyone who held legacy `external-authentication:roles:assign` already maps to the new
+permission and is unaffected. The break is for roles holding `external-authentication:policies:manage`
+(→ `policies:view` + `policies:update`) but *not* `roles:assign`, which set default roles today. Grant them
+`external-authentication/policies/default-roles:update`, or move that responsibility to a role that has it.
+
+The permission is required when the default-role set **changes** — adding, removing, clearing, or switching
+the policy away from one that creates users, which drops its roles just as surely. Leaving a stored set alone
+needs nothing extra, so an administrator without the permission can still edit other fields on a connection
+whose default roles someone else configured, enable it, or validate it.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.

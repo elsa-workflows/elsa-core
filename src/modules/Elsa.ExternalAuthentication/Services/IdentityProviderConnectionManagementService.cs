@@ -205,7 +205,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
         if (!adapters.TryGet(connection.AdapterType, out var adapter) || !IsAllowed(configuredOptions.AllowedAdapterTypes, connection.AdapterType))
             errors.Add(new("adapterType", "unavailable", "The selected adapter is not installed or is not allowed by this deployment."));
 
-        await ValidatePolicyAsync(connection, actor, configuredOptions, errors, cancellationToken);
+        await ValidatePolicyAsync(connection, actor, targetTenantId, configuredOptions, errors, cancellationToken);
         ValidateGrantSources(connection, configuredOptions, errors);
         if (connection.PermissionGrantSources.Count != 0)
         {
@@ -490,7 +490,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
             errors.Add(new("claimProjection.redactedClaimTypes", "invalid", "Redacted claim types must also be allowed claim types."));
     }
 
-    private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
+    private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, string targetTenantId, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
     {
         if (connection.UnlinkedPolicy is not { } policy)
             return;
@@ -500,8 +500,30 @@ public sealed partial class IdentityProviderConnectionManagementService(
             errors.Add(new("unlinkedPolicy", "unavailable", "The selected unlinked identity policy is not installed or allowed."));
         else
         {
-            if (UsesCreateUserFallback(policy) &&
-                !await roleAuthorizationService.CanAssignRolesAsync(actor, Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings), cancellationToken))
+            // The roles this policy would actually assign. A policy that does not create users assigns none,
+            // which is what makes switching away from a create-user fallback a change rather than a no-op.
+            var defaultRoleIds = UsesCreateUserFallback(policy)
+                ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings)
+                : [];
+
+            // Two independent checks, reported separately because they answer different questions. The
+            // permission asks whether this actor may decide what auto-created users receive; the subset rule
+            // asks whether these particular roles stay within what the actor already holds. Only the second
+            // existed, which left the sibling resource guarded on the write path while the roles inside it
+            // were not -- see #7977.
+            //
+            // Gated on the effective set *changing*, not on it being non-empty, and evaluated outside the
+            // create-user branch. Validation runs on every update, on enabling a connection, and on
+            // read-only validate, so keying off presence would stop an administrator without this permission
+            // from editing an unrelated field once anyone had set roles. Evaluating it only for create-user
+            // policies would be worse: switching a stored fallback to 'reject' drops its roles, which is a
+            // decision about what auto-created users receive made without the permission that governs it.
+            if (!await DefaultRolesAreUnchangedAsync(connection, targetTenantId, defaultRoleIds, cancellationToken)
+                && !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
+                errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Changing the default roles for an unlinked identity policy requires the policy default roles update permission."));
+
+            // The subset rule only has something to say about roles actually being assigned.
+            if (UsesCreateUserFallback(policy) && !await roleAuthorizationService.CanAssignRolesAsync(actor, defaultRoleIds, cancellationToken))
                 errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
 
             if (string.Equals(policy.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
@@ -511,6 +533,27 @@ public sealed partial class IdentityProviderConnectionManagementService(
                  matchers.ListDescriptors().All(x => !string.Equals(x.Type, matcherType, StringComparison.Ordinal) || x.SettingsVersion != matcherSettingsVersion)))
                 errors.Add(new("unlinkedPolicy.matcher", "unavailable", "The selected external user matcher is not installed or allowed."));
         }
+    }
+
+    /// <summary>Whether <paramref name="candidateRoleIds"/> matches what the connection already assigns.</summary>
+    /// <remarks>
+    /// The baseline comes from the registry rather than the database store, because a configuration-owned
+    /// connection has no database record: looking only there made its configured roles read as newly assigned
+    /// on every validation, so a caller with view access could not validate one at all. The registry answers
+    /// for both ownerships, which is the question being asked -- what does this connection assign today.
+    /// </remarks>
+    private async ValueTask<bool> DefaultRolesAreUnchangedAsync(IdentityProviderConnection connection, string targetTenantId, IReadOnlyCollection<string> candidateRoleIds, CancellationToken cancellationToken)
+    {
+        var existing = string.IsNullOrWhiteSpace(connection.Id)
+            ? null
+            : (await registry.FindByIdAsync(targetTenantId, connection.Id, cancellationToken))?.Connection
+              ?? await store.FindByIdAsync(connection.Id, cancellationToken);
+        var storedRoleIds = existing?.UnlinkedPolicy is { } storedPolicy && UsesCreateUserFallback(storedPolicy)
+            ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(storedPolicy.Settings)
+            : [];
+
+        // Order is not meaningful in a role set, so a reordering is not a change.
+        return storedRoleIds.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(candidateRoleIds.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
     private static bool UsesCreateUserFallback(PolicySelection policy) =>
