@@ -44,6 +44,15 @@ public class ConnectionManagementTests : IAsyncLifetime
     private IExternalAuthenticationSessionStore _sessions = null!;
     private INotificationSender _notifications = null!;
     private bool _unsafePermissionGranted = true;
+
+    /// <summary>
+    /// Overrides the acting principal's permissions for one test.
+    /// </summary>
+    /// <remarks>
+    /// The default is all-or-nothing, which cannot express "may manage policies but may not decide default
+    /// roles" -- the separation of duties #7977 is about. A test that needs that distinction sets this.
+    /// </remarks>
+    private string[]? _permissions;
     private string _tenantId = "tenant-a";
 
     public async Task InitializeAsync()
@@ -108,7 +117,8 @@ public class ConnectionManagementTests : IAsyncLifetime
         _app = builder.Build();
         _app.Use(async (context, next) =>
         {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, _unsafePermissionGranted ? PermissionNames.All : $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}")], "test"));
+            var granted = _permissions ?? [_unsafePermissionGranted ? PermissionNames.All : $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}"];
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(granted.Select(x => new Claim(PermissionNames.ClaimType, x)), "test"));
             await next(context);
         });
         _app.UseAuthorization();
@@ -640,6 +650,72 @@ public class ConnectionManagementTests : IAsyncLifetime
         Assert.Contains("validation_failed", await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "workflow-user" }, _roleAuthorizationService.LastRequestedRoleIds);
     }
+
+    [Fact]
+    public async Task SettingDefaultRolesRequiresThePolicyDefaultRolesPermission()
+    {
+        // The actor may create connections and manage policies, but not decide what auto-created users get.
+        // Before #7977 that was inexpressible: policies:update guarded the policy while the roles inside it
+        // were guarded only by the subset rule, so any connection administrator could set them.
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-guard", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task HoldingThePolicyDefaultRolesPermissionClearsThatObjection()
+    {
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}",
+            $"{ExternalAuthenticationResourcePermissions.PolicyDefaultRoles}:{CoreVerbs.Update}"
+        ];
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-allowed", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        // The subset rule is a separate question and still applies; only this objection must be gone.
+        Assert.DoesNotContain("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task APolicyThatSetsNoDefaultRolesNeedsNoExtraPermission()
+    {
+        // The permission is required for deciding what auto-created users receive. A policy that decides
+        // nothing should not need it, so clearing the list stays available to a connection administrator.
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-empty", unlinkedPolicy: CreateMatcherPolicyWithoutDefaultRoles("allowed-matcher", "create-user")));
+
+        Assert.DoesNotContain("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    private static PolicySelection CreateMatcherPolicyWithoutDefaultRoles(string matcherType, string noMatchAction) => new(
+        "match-user",
+        1,
+        JsonSerializer.SerializeToElement(new
+        {
+            matcher = new { type = matcherType, settingsVersion = 1, settings = new { } },
+            noMatchAction,
+            defaultRoleIds = Array.Empty<string>()
+        }));
 
     private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null, string upstreamLogoutMode = "disabled", bool overridesConfigurationConnection = false) => new
     {

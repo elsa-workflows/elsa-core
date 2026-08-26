@@ -500,9 +500,22 @@ public sealed partial class IdentityProviderConnectionManagementService(
             errors.Add(new("unlinkedPolicy", "unavailable", "The selected unlinked identity policy is not installed or allowed."));
         else
         {
-            if (UsesCreateUserFallback(policy) &&
-                !await roleAuthorizationService.CanAssignRolesAsync(actor, Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings), cancellationToken))
-                errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
+            if (UsesCreateUserFallback(policy))
+            {
+                var defaultRoleIds = Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings);
+
+                // Two independent checks, reported separately because they answer different questions. The
+                // permission asks whether this actor may decide what auto-created users receive at all; the
+                // subset rule asks whether these particular roles stay within what the actor already holds.
+                // Only the second existed, which left the sibling resource guarded on the write path while
+                // the roles inside it were not -- see #7977. It is required only when roles are actually
+                // being set, so clearing the list, or a policy that sets none, needs nothing extra.
+                if (defaultRoleIds.Count > 0 && !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
+                    errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Setting the default roles for an unlinked identity policy requires the policy default roles update permission."));
+
+                if (!await roleAuthorizationService.CanAssignRolesAsync(actor, defaultRoleIds, cancellationToken))
+                    errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
+            }
 
             if (string.Equals(policy.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
                 (!TryGetMatcherSelection(policy.Settings, out var matcherType, out var matcherSettingsVersion) ||
