@@ -723,6 +723,38 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AbandoningACreateUserPolicyStillCountsAsChangingDefaultRoles()
+    {
+        // Turning off a stored create-user fallback removes its automatic role assignments. That is a
+        // decision about what auto-created users receive, so it needs the same permission as editing the
+        // list -- checking only create-user candidates would have let it through unguarded. Expressed here by
+        // changing noMatchAction rather than the policy type, because the test registry only knows match-user.
+        var created = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-abandoned", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var id = (await created.Content.ReadFromJsonAsync<ConnectionDocument>())!.Id;
+        var revision = created.Headers.ETag!.Tag;
+
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        {
+            Content = JsonContent.Create(CreateRequest("roles-abandoned", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "reject")))
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", revision);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task APolicyThatSetsNoDefaultRolesNeedsNoExtraPermission()
     {
         // Creating with none decides nothing, so it needs nothing. Changing a stored set -- including
