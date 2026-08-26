@@ -1,11 +1,14 @@
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Validation;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationOptionsValidatorTests
 {
+    private readonly CapturingLogger<ExternalAuthenticationOptionsValidator> _logger = new();
+
     [Theory]
     // The legacy spelling carries two colons, so it parses as nothing and would silently stop bounding anything.
     [InlineData("external-authentication:connections:read")]
@@ -27,6 +30,29 @@ public class ExternalAuthenticationOptionsValidatorTests
         Assert.Contains(deniedResult.Failures!, x => x.Contains("DeniedPermissions") && x.Contains("well-formed permission"));
     }
 
+    [Theory]
+    // These parse, so they slipped past well-formedness — yet the matcher never satisfies them. In a deny
+    // list that is a silent un-denying, exactly what boundary validation exists to prevent.
+    [InlineData("workflows*:delete")]
+    [InlineData("work*/foo:view")]
+    [InlineData("work*/definitions/*:view")]
+    [InlineData("workflows:del*")]
+    public void RejectsAGrantBoundaryEntryWithAWildcardTheMatcherNeverSatisfies(string permission)
+    {
+        var allowed = new ExternalAuthenticationOptions();
+        allowed.PermissionGrants.AllowedPermissions = [permission];
+        var denied = new ExternalAuthenticationOptions();
+        denied.PermissionGrants.DeniedPermissions = [permission];
+
+        var allowedResult = CreateValidator().Validate(null, allowed);
+        var deniedResult = CreateValidator().Validate(null, denied);
+
+        Assert.False(allowedResult.Succeeded);
+        Assert.Contains(allowedResult.Failures!, x => x.Contains("AllowedPermissions") && x.Contains("would match nothing"));
+        Assert.False(deniedResult.Succeeded);
+        Assert.Contains(deniedResult.Failures!, x => x.Contains("DeniedPermissions") && x.Contains("would match nothing"));
+    }
+
     [Fact]
     public void AcceptsAGrantBoundaryOfWildcardPatterns()
     {
@@ -37,6 +63,37 @@ public class ExternalAuthenticationOptionsValidatorTests
         var result = CreateValidator().Validate(null, options);
 
         Assert.DoesNotContain(result.Failures ?? [], x => x.Contains("well-formed permission"));
+    }
+
+    /// <remarks>
+    /// A deny list is not a failure, but it costs a wildcard grant everything it could have conferred: deny
+    /// matches in both directions, so '*' satisfies every deny entry and an externally-authenticated superuser
+    /// silently loses it while local login keeps working. The warning names that at startup rather than leaving
+    /// it to be diagnosed from an issued token.
+    /// </remarks>
+    [Fact]
+    public void WarnsThatANonEmptyDenyListRefusesWildcardGrantsWhole()
+    {
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.DeniedPermissions = ["workflows/*:delete"];
+
+        var result = CreateValidator().Validate(null, options);
+
+        Assert.True(result.Succeeded);
+        var warning = Assert.Single(_logger.Entries, x => x.Level == LogLevel.Warning);
+        Assert.Contains("DeniedPermissions", warning.Message);
+        Assert.Contains("refused entirely", warning.Message);
+    }
+
+    [Fact]
+    public void DoesNotWarnWhenNoPermissionsAreDenied()
+    {
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.AllowedPermissions = ["workflows/*:delete"];
+
+        CreateValidator().Validate(null, options);
+
+        Assert.DoesNotContain(_logger.Entries, x => x.Level == LogLevel.Warning);
     }
 
     [Fact]
@@ -187,7 +244,7 @@ public class ExternalAuthenticationOptionsValidatorTests
         Assert.True(result.Succeeded);
     }
 
-    private static ExternalAuthenticationOptionsValidator CreateValidator(IEnumerable<StubAdapter>? adapters = null)
+    private ExternalAuthenticationOptionsValidator CreateValidator(IEnumerable<StubAdapter>? adapters = null)
     {
         var extensions = new ExternalAuthenticationExtensionOptions();
         foreach (var adapter in adapters ?? [new StubAdapter("oidc")])
@@ -198,6 +255,28 @@ public class ExternalAuthenticationOptionsValidatorTests
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "claim-mapping"));
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "group-mapping"));
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "claim-pass-through"));
-        return new(Microsoft.Extensions.Options.Options.Create(extensions));
+        return new(Microsoft.Extensions.Options.Options.Create(extensions), _logger);
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Entries.Add(new(logLevel, formatter(state, exception)));
+    }
+
+    private sealed record LogEntry(LogLevel Level, string Message);
+
+    private sealed class NullScope : IDisposable
+    {
+        public static readonly NullScope Instance = new();
+
+        public void Dispose()
+        {
+        }
     }
 }

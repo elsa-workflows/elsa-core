@@ -61,7 +61,10 @@ by exact string, so they read the way a role does.
   connection granting `workflows/*:delete` is denied by a deny list naming only `workflows/definitions:delete`.
   Before this release both comparisons were exact, so either spelling slipped past the other and a deployment's
   deny list did not hold. If you carried a deny list across the upgrade, re-read it: it may now deny more than it
-  used to, which is the intent.
+  used to, which is the intent. A consequence to plan for: any non-empty deny list refuses every wildcard grant
+  that could reach a denied permission, and `*` (which parses to `*:*`) reaches all of them — so a role holding
+  `*`, including the seeded administrator role, will not survive external issuance. Operators using
+  `DeniedPermissions` must give externally-authenticating administrators enumerated grants instead of `*`.
 - **Allowed** is matched one way: an allow entry must cover the whole grant. `workflows/*:delete` admits
   `workflows/definitions:delete`, but an allow list naming only `workflows/definitions:delete` refuses a
   `workflows/*:delete` grant rather than admitting the part that overlaps.

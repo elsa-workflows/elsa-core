@@ -69,11 +69,16 @@ public class StoredPermissionValidator(IServiceScopeFactory scopeFactory, ILogge
 
     private static bool Resolves(IPermissionDescriptorRegistry registry, string value)
     {
-        if (!Permission.TryParse(value, out var permission))
+        if (!Permission.TryParse(value, out var permission) || !permission.IsValidPattern)
             return false;
 
-        if (permission.IsResourceWildcard || permission.IsSubtree)
+        if (permission.IsResourceWildcard)
             return true;
+
+        // A subtree grant reaching nothing is far more likely a typo ('workflow/*') than a grant for a
+        // module yet to be installed, so it is reported rather than assumed forward-reaching.
+        if (permission.IsSubtree)
+            return registry.Reach(permission.Resource).Count > 0;
 
         var descriptor = registry.Find(permission.Resource);
 
