@@ -325,7 +325,7 @@ jobs:
     name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Download Packages
@@ -334,7 +334,39 @@ jobs:
           name: elsa-nuget-packages
 
       - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k "${{ secrets.FEEDZ_API_KEY }}" -s ${{ env.feedz_feed_source }} --skip-duplicate
+        timeout-minutes: 25
+        env:
+          FEEDZ_API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+          FEED_SOURCE: ${{ env.feedz_feed_source }}
+        run: |
+          set -euo pipefail
+
+          # `dotnet nuget push` applies its default 300s timeout per push, and the
+          # package set has grown large enough that pushing it sequentially bumps
+          # into that. Push a few packages at a time with a longer per-push
+          # timeout and retry each one; --skip-duplicate keeps retries idempotent.
+          push_one() {
+            local package="$1"
+            local attempt
+            for attempt in 1 2 3; do
+              if dotnet nuget push "$package" \
+                  -k "$FEEDZ_API_KEY" \
+                  -s "$FEED_SOURCE" \
+                  --skip-duplicate \
+                  --timeout 900; then
+                return 0
+              fi
+              echo "::warning::Pushing ${package} failed (attempt ${attempt}/3); retrying in $((attempt * 15))s"
+              sleep $((attempt * 15))
+            done
+            echo "::error::Failed to push ${package} after 3 attempts"
+            return 1
+          }
+          export -f push_one
+
+          # shellcheck disable=SC2016 # $0 is the package name in the child shell.
+          find . -maxdepth 1 -name '*.nupkg' -print0 \
+            | xargs -0 -r -n1 -P 4 bash -c 'push_one "$0"'
 
   publish_nuget:
     name: Publish release to nuget.org
