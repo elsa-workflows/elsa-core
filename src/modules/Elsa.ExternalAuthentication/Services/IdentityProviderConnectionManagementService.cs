@@ -505,12 +505,18 @@ public sealed partial class IdentityProviderConnectionManagementService(
                 var defaultRoleIds = Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings);
 
                 // Two independent checks, reported separately because they answer different questions. The
-                // permission asks whether this actor may decide what auto-created users receive at all; the
-                // subset rule asks whether these particular roles stay within what the actor already holds.
-                // Only the second existed, which left the sibling resource guarded on the write path while
-                // the roles inside it were not -- see #7977. It is required only when roles are actually
-                // being set, so clearing the list, or a policy that sets none, needs nothing extra.
-                if (defaultRoleIds.Count > 0 && !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
+                // permission asks whether this actor may decide what auto-created users receive; the subset
+                // rule asks whether these particular roles stay within what the actor already holds. Only the
+                // second existed, which left the sibling resource guarded on the write path while the roles
+                // inside it were not -- see #7977.
+                //
+                // Gated on the set *changing*, not on it being non-empty. Validation runs on every update,
+                // on enabling a connection, and on read-only validate, so keying off presence would mean
+                // that once anyone set default roles, an administrator without this permission could no
+                // longer edit an unrelated field on that connection at all. Adding, removing and clearing
+                // all count as deciding; leaving them alone does not.
+                if (!await DefaultRolesAreUnchangedAsync(connection, defaultRoleIds, cancellationToken)
+                    && !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
                     errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Setting the default roles for an unlinked identity policy requires the policy default roles update permission."));
 
                 if (!await roleAuthorizationService.CanAssignRolesAsync(actor, defaultRoleIds, cancellationToken))
@@ -524,6 +530,18 @@ public sealed partial class IdentityProviderConnectionManagementService(
                  matchers.ListDescriptors().All(x => !string.Equals(x.Type, matcherType, StringComparison.Ordinal) || x.SettingsVersion != matcherSettingsVersion)))
                 errors.Add(new("unlinkedPolicy.matcher", "unavailable", "The selected external user matcher is not installed or allowed."));
         }
+    }
+
+    /// <summary>Whether <paramref name="candidateRoleIds"/> matches what the stored connection already assigns.</summary>
+    private async ValueTask<bool> DefaultRolesAreUnchangedAsync(IdentityProviderConnection connection, IReadOnlyCollection<string> candidateRoleIds, CancellationToken cancellationToken)
+    {
+        var stored = string.IsNullOrWhiteSpace(connection.Id) ? null : await store.FindByIdAsync(connection.Id, cancellationToken);
+        var storedRoleIds = stored?.UnlinkedPolicy is { } storedPolicy && UsesCreateUserFallback(storedPolicy)
+            ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(storedPolicy.Settings)
+            : [];
+
+        // Order is not meaningful in a role set, so a reordering is not a change.
+        return storedRoleIds.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(candidateRoleIds.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
     private static bool UsesCreateUserFallback(PolicySelection policy) =>

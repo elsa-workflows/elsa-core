@@ -115,8 +115,9 @@ permission and is unaffected. The break is for roles holding `external-authentic
 (→ `policies:view` + `policies:update`) but *not* `roles:assign`, which set default roles today. Grant them
 `external-authentication/policies/default-roles:update`, or move that responsibility to a role that has it.
 
-Clearing the list, or a policy that sets no default roles, needs nothing extra — the permission is required
-only when roles are actually being assigned.
+The permission is required when the default-role set **changes** — adding, removing, or clearing. Leaving a
+stored set alone needs nothing extra, so an administrator without the permission can still edit other fields
+on a connection whose default roles someone else configured, enable it, or validate it.
 
 ## Third-party modules
 

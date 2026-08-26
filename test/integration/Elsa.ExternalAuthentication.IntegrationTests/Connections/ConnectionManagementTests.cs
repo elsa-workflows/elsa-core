@@ -690,10 +690,43 @@ public class ConnectionManagementTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task LeavingStoredDefaultRolesAloneNeedsNoPermission()
+    {
+        // Validation runs on every update, on enabling a connection, and on read-only validate. Keying the
+        // permission off the roles being present rather than changing meant that once anyone set default
+        // roles, an administrator without it could no longer edit an unrelated field on that connection.
+        var created = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-untouched", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var id = (await created.Content.ReadFromJsonAsync<ConnectionDocument>())!.Id;
+        var revision = created.Headers.ETag!.Tag;
+
+        // Now act as someone who may edit connections and policies, but not decide default roles.
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        {
+            Content = JsonContent.Create(CreateRequest("roles-untouched", displayName: "Renamed", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")))
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", revision);
+
+        var response = await _client.SendAsync(request);
+
+        // Asserting the status, not just the absence of a message: DoesNotContain alone passes for any
+        // failure response, which would make this test vacuous exactly when it matters.
+        Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    [Fact]
     public async Task APolicyThatSetsNoDefaultRolesNeedsNoExtraPermission()
     {
-        // The permission is required for deciding what auto-created users receive. A policy that decides
-        // nothing should not need it, so clearing the list stays available to a connection administrator.
+        // Creating with none decides nothing, so it needs nothing. Changing a stored set -- including
+        // clearing it -- is deciding, and is covered by the permission.
         _permissions =
         [
             $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
