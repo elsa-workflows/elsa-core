@@ -130,6 +130,8 @@ Included in the same release: `User.Name`, `Role.Name`, `Application.Name` and `
 
 If you have duplicate names across tenants today, they were impossible to create, so no data conflict can arise. Going the other way — downgrading — will fail if duplicates exist by then.
 
+One caveat: the composite indexes only cover rows whose `TenantId` is non-null (SQL Server filters null rows out of the index; SQLite, PostgreSQL and MySQL treat nulls as distinct — Oracle alone still rejects null-tenant duplicates). `TenantId` is only assigned when multitenancy is enabled, so in a single-tenant deployment every row keeps null and user, role and application name uniqueness becomes application-enforced rather than schema-enforced: the pre-save existence checks block sequential duplicates, but the database no longer backstops concurrent ones. Likewise, rows written before the upgrade keep a null `TenantId`, and in a multi-tenant deployment's default tenant those legacy rows and new `""`-tenant rows are distinct index keys, so the index cannot catch a name collision between them. See the same caveat, with the reasoning, in [secrets-tenancy.md](secrets-tenancy.md).
+
 ## Full mapping
 
 | Legacy permission | Replacement |
