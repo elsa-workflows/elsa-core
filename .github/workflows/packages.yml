@@ -325,6 +325,9 @@ jobs:
     name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
+    # 30 minutes against the push action's 20-minute deadline: the action stops
+    # starting pushes once its own deadline passes, so the runner never has to
+    # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
@@ -352,6 +355,9 @@ jobs:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
+    # 30 minutes against the push action's 20-minute deadline: the action stops
+    # starting pushes once its own deadline passes, so the runner never has to
+    # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
     if: ${{ github.event.action == 'published' }}
     steps:
