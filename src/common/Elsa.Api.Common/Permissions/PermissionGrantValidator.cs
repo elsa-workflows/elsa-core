@@ -48,6 +48,14 @@ public sealed class PermissionGrantValidator(IPermissionDescriptorRegistry regis
                 continue;
             }
 
+            // An entry like 'workflows*:delete' parses but the matcher never satisfies it, so it would
+            // be persisted as a grant that silently reaches nothing.
+            if (!permission.IsValidPattern)
+            {
+                errors.Add(new(value, "Places '*' where it has no meaning and would match nothing. A wildcard may only be the entire resource ('*'), a trailing '/*' segment ('workflows/*'), or the entire verb ('workflows/definitions:*')."));
+                continue;
+            }
+
             if (permission.IsResourceWildcard || permission.IsSubtree)
                 continue;
 

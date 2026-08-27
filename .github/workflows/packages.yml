@@ -325,31 +325,65 @@ jobs:
     name: Publish to feedz.io
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30 minutes against the push action's 20-minute deadline: the action stops
+    # starting pushes once its own deadline passes, so the runner never has to
+    # cancel a publish half-done. Move the two together.
+    timeout-minutes: 30
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
+      - name: Check out the push action
+        # Every third-party action in this job runs before a feed API key is handed
+        # to the local composite, in the same writable workspace, so each one is
+        # pinned to a full commit SHA. A mutable tag here could be retargeted to
+        # substitute the composite before it receives the credential.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: .github/actions
+          fetch-depth: 1
+
       - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
+        # Pinned for the reason given on the checkout above.
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: elsa-nuget-packages
 
       - name: Publish to feedz.io
-        run: dotnet nuget push *.nupkg -k "${{ secrets.FEEDZ_API_KEY }}" -s ${{ env.feedz_feed_source }} --skip-duplicate
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.feedz_feed_source }}
+          api-key: ${{ secrets.FEEDZ_API_KEY }}
 
   publish_nuget:
     name: Publish release to nuget.org
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 30 minutes against the push action's 20-minute deadline: the action stops
+    # starting pushes once its own deadline passes, so the runner never has to
+    # cancel a publish half-done. Move the two together.
+    timeout-minutes: 30
     if: ${{ github.event.action == 'published' }}
     steps:
+      - name: Check out the push action
+        # Every third-party action in this job runs before a feed API key is handed
+        # to the local composite, in the same writable workspace, so each one is
+        # pinned to a full commit SHA. A mutable tag here could be retargeted to
+        # substitute the composite before it receives the credential.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: .github/actions
+          fetch-depth: 1
+
       - name: Download Packages
-        uses: actions/download-artifact@v4.1.7
+        # Pinned for the reason given on the checkout above.
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: elsa-nuget-packages
 
       - name: Publish to nuget.org
-        run: dotnet nuget push *.nupkg -k "${{ secrets.NUGET_API_KEY }}" -s ${{ env.nuget_feed_source }} --skip-duplicate
+        uses: ./.github/actions/push-nuget-packages
+        with:
+          feed-source: ${{ env.nuget_feed_source }}
+          api-key: ${{ secrets.NUGET_API_KEY }}
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages

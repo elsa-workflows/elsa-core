@@ -46,6 +46,45 @@ the first tenant to claim a name took it globally.
 Downgrading recreates the global unique index and **will fail if two tenants hold the same secret name by
 then**. Reconcile the duplicates first.
 
+### Null-tenant rows sit outside the index
+
+"Unique per tenant" is enforced by the database only for rows whose `TenantId` is non-null. SQL Server
+creates the composite index with a `[TenantId] IS NOT NULL` filter, and SQLite, PostgreSQL and MySQL treat
+nulls as distinct in unique indexes — either way, null-tenant rows never collide in it. Only Oracle, where
+equal nulls do count as duplicates in a composite unique index, still rejects them.
+
+This matters more than it sounds, because null is the common case. With multitenancy **disabled** — the
+default single-tenant deployment — nothing ever assigns a `TenantId`, so every row keeps null and the schema
+no longer enforces secret-name uniqueness at all. Uniqueness then rests on the repository's read-before-write
+check, which blocks sequential duplicates but not two concurrent creates racing past it. The old global index
+was the backstop for exactly that race; accepting its loss for null rows is a consequence of the no-backfill
+decision above. The same gap applies in a multi-tenant deployment's default tenant: pre-upgrade null rows and
+new `""`-tenant rows are distinct index keys, so the index cannot stop a new default-tenant secret from
+colliding by name with a legacy row.
+
+Backfilling `TenantId` to `""` yourself does **not** restore the database guarantee, and it is worth being
+precise about why. The backfill indexes the rows that exist when you run it, but nothing changes what happens
+afterwards: with multitenancy disabled no `TenantId` is ever assigned, so every subsequent write still lands
+as a null row outside the index. Two concurrent creates can still both pass the repository's read-before-write
+check and commit the same name. Restoring the guarantee for real would mean making disabled-mode writes use
+the same non-null sentinel the index is built on — Elsa does not do that, and the backfill alone does not
+substitute for it. Until it does, treat the read-before-write check as the only protection in single-tenant
+mode and serialize secret creation if you cannot tolerate the race. (The `SetTenantIdFilter`
+null-compatibility clause keeps backfilled and straggler rows visible either way, so a backfill is still
+useful for de-duplicating what you already have.)
+
+## The MySQL provider ships for net8.0 and net9.0 only
+
+`Elsa.Secrets.Persistence.EFCore.MySql` targets `net8.0;net9.0`, while the Sqlite, SQL Server, PostgreSQL and
+Oracle secrets providers also target `net10.0`. That is a dependency constraint, not an oversight:
+`Pomelo.EntityFrameworkCore.MySql` tops out at 9.0.0, built for EF Core 9, so there is no net10.0 provider to
+build against. Every MySQL project in the repository carries the same pin, and the secrets one additionally
+inherits it by referencing `Elsa.Persistence.EFCore.MySql`.
+
+A net10.0 host referencing the MySQL secrets provider resolves the net9.0 asset and runs normally, including
+the `SecretTenancy` migration — migrations are ordinary C# and do not depend on the host framework. The pins
+come out together once Pomelo ships for EF Core 10.
+
 ## The VNext persistence provider does not support this
 
 `Elsa.Secrets.Persistence.VNext` stores documents keyed by secret name alone, and `Elsa.Persistence.VNext` has

@@ -61,7 +61,10 @@ by exact string, so they read the way a role does.
   connection granting `workflows/*:delete` is denied by a deny list naming only `workflows/definitions:delete`.
   Before this release both comparisons were exact, so either spelling slipped past the other and a deployment's
   deny list did not hold. If you carried a deny list across the upgrade, re-read it: it may now deny more than it
-  used to, which is the intent.
+  used to, which is the intent. A consequence to plan for: any non-empty deny list refuses every wildcard grant
+  that could reach a denied permission, and `*` (which parses to `*:*`) reaches all of them — so a role holding
+  `*`, including the seeded administrator role, will not survive external issuance. Operators using
+  `DeniedPermissions` must give externally-authenticating administrators enumerated grants instead of `*`.
 - **Allowed** is matched one way: an allow entry must cover the whole grant. `workflows/*:delete` admits
   `workflows/definitions:delete`, but an allow list naming only `workflows/definitions:delete` refuses a
   `workflows/*:delete` grant rather than admitting the part that overlaps.
@@ -162,6 +165,8 @@ Modules outside this repository keep compiling. `ConfigurePermissions(params str
 Included in the same release: `User.Name`, `Role.Name`, `Application.Name` and `Application.ClientId` move from globally unique indexes to composite indexes on `(TenantId, Name)`. Two tenants could not previously hold a role of the same name. Apply the `PerTenantIdentityUniqueness` migration for your provider.
 
 If you have duplicate names across tenants today, they were impossible to create, so no data conflict can arise. Going the other way — downgrading — will fail if duplicates exist by then.
+
+One caveat: the composite indexes only cover rows whose `TenantId` is non-null (SQL Server filters null rows out of the index; SQLite, PostgreSQL and MySQL treat nulls as distinct — Oracle alone still rejects null-tenant duplicates). `TenantId` is only assigned when multitenancy is enabled, so in a single-tenant deployment every row keeps null and user, role and application name uniqueness becomes application-enforced rather than schema-enforced: the pre-save existence checks block sequential duplicates, but the database no longer backstops concurrent ones. Likewise, rows written before the upgrade keep a null `TenantId`, and in a multi-tenant deployment's default tenant those legacy rows and new `""`-tenant rows are distinct index keys, so the index cannot catch a name collision between them. See the same caveat, with the reasoning, in [secrets-tenancy.md](secrets-tenancy.md).
 
 ## Full mapping
 
