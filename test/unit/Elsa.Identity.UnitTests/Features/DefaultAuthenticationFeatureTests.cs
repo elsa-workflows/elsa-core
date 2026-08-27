@@ -50,15 +50,4 @@ public class DefaultAuthenticationFeatureTests
         Assert.Null(options.GetPolicy("SecurityRoot"));
     }
 
-    [Fact]
-    public void DisableLocalHostPermissionGrantForSecurityRootClearsOptInFlag()
-    {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-
-        feature.EnableLocalHostPermissionGrantForSecurityRoot();
-        Assert.True(feature.EnableLocalHostPermissionGrant);
-
-        feature.DisableLocalHostPermissionGrantForSecurityRoot();
-        Assert.False(feature.EnableLocalHostPermissionGrant);
-    }
 }

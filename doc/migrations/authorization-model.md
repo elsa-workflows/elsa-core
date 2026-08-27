@@ -156,6 +156,35 @@ takes a `Permission` (or a resource and verb) instead of a single string, and ma
 rather than by equality, so pattern grants reach your policy too. `UserTaskActor.Permissions` is compared ordinally
 rather than case-insensitively, matching the rest of the model.
 
+## The SecurityRoot policy and the localhost grant are gone
+
+`SecurityRoot` is removed, along with `IdentityPolicyNames`, `LocalHostRequirement`,
+`LocalHostPermissionRequirement` and the `EnableLocalHostPermissionGrantForSecurityRoot` /
+`DisableLocalHostPermissionGrantForSecurityRoot` toggles. ADR 0010 had already decided endpoints should be
+authorized by their own permissions; this finishes it.
+
+Two of the three endpoints that used the policy (`Roles/Create`, `Applications/Create`) already declared a
+permission, so nothing changes for them. **`POST /identity/secrets/hash` is a tightening**: `SecurityRoot`
+resolved by default to `RequireAuthenticatedUser()`, so any signed-in caller could exercise the password
+hasher. It now requires `identity/users:create`.
+
+**If you relied on the localhost permission grant to bootstrap an instance**, configure one of these instead —
+both work in a deployed environment, not just on localhost, and both attach an identity to whatever the
+caller then does:
+
+- **A seeded administrator.** `UseDefaultAdmin(username, password, roleName, permissions)`, or the
+  `DefaultAdminUser` configuration section. It creates the admin role and user at startup and is idempotent,
+  so it is safe to leave configured.
+- **An admin API key.** `UseAdminApiKey(key)` or the `AdminApiKey` setting. Disabled unless configured.
+
+The localhost grant trusted network position, which stops meaning anything behind a reverse proxy, inside a
+container, or across a port-forward — and it granted *unauthenticated* access, so the bootstrap action had no
+identity to audit. It was also already unable to do the thing it existed for: it granted
+`identity/users:create`, but `POST /identity/users` did not carry the policy that injected it.
+
+If neither is configured and no users exist, startup now logs an error naming both options, rather than
+leaving every endpoint to answer 403 without explanation.
+
 ## Third-party modules
 
 Modules outside this repository keep compiling. `ConfigurePermissions(params string[])` remains available but obsolete, and a permission that resolves to no registered descriptor registers an implicit one marked unverified, logs a warning, and appears as such in the catalog. The module keeps working and the gap stays visible.

@@ -4,8 +4,6 @@ using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
-using Elsa.Options;
-using Elsa.Requirements;
 using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -56,11 +54,6 @@ public class DefaultAuthenticationFeature : IShellFeature
         RestartRequired = true)]
     public bool UseDevelopmentAdminApiKey { get; set; }
 
-    /// <summary>
-    /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
-    /// </summary>
-    public bool EnableLocalHostPermissionGrant { get; set; }
-
     public void ConfigureServices(IServiceCollection services)
     {
         var resolvedAdminApiKey = UseDevelopmentAdminApiKey ? AdminApiKeyProvider.DevelopmentApiKey : AdminApiKey;
@@ -69,7 +62,6 @@ public class DefaultAuthenticationFeature : IShellFeature
 
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
         services.AddIdentityTokenOptionsValidation();
-        services.Configure<LocalHostPermissionRequirementOptions>(options => options.EnableLocalHostPermissionGrant = EnableLocalHostPermissionGrant);
         services.Configure<AdminApiKeyOptions>(options =>
         {
             options.ApiKey = resolvedAdminApiKey;
@@ -95,8 +87,6 @@ public class DefaultAuthenticationFeature : IShellFeature
         else
             authBuilder.AddApiKeyInAuthorizationHeader<DefaultApiKeyProvider>();
 
-        services.AddScoped<IAuthorizationHandler, LocalHostRequirementHandler>();
-        services.AddScoped<IAuthorizationHandler, LocalHostPermissionRequirementHandler>();
         services.AddScoped(ApiKeyProviderType);
         services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
 
