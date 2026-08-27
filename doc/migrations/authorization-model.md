@@ -166,7 +166,10 @@ authorized by their own permissions; this finishes it.
 Two of the three endpoints that used the policy (`Roles/Create`, `Applications/Create`) already declared a
 permission, so nothing changes for them. **`POST /identity/secrets/hash` is a tightening**: `SecurityRoot`
 resolved by default to `RequireAuthenticatedUser()`, so any signed-in caller could exercise the password
-hasher. It now requires `identity/users:create`.
+hasher. It now requires `identity/users:create`. The scope is user-only on purpose: application provisioning
+does not go through it, because `POST /identity/applications` generates and hashes the client secret and API
+key itself and returns both, so `identity/applications:create` alone remains sufficient to create an
+application.
 
 **If you relied on the localhost permission grant to bootstrap an instance**, configure one of these instead —
 both work in a deployed environment, not just on localhost, and both attach an identity to whatever the
