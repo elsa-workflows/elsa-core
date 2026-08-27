@@ -31,6 +31,7 @@ public class StoredPermissionValidatorTests
     [InlineData("workflows*:delete")]   // embedded wildcard: parses, but the matcher never satisfies it
     [InlineData("work*/foo/*:view")]
     [InlineData("workflows/definitions:frobnicate")]
+    [InlineData("workflows/*:frobnicate")] // reaches 'workflows/definitions', which supports no such verb
     public async Task WarnsAboutAPermissionThatDoesNotResolve(string permission)
     {
         await StartAsync(permission);
