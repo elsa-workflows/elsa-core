@@ -329,7 +329,10 @@ jobs:
     if: ${{ github.event_name == 'release' || github.event_name == 'push'}}
     steps:
       - name: Check out the push action
-        uses: actions/checkout@v4
+        # Pinned to a full SHA: this checkout supplies the composite action that
+        # is handed the feed API key a few steps later, so a retargeted tag would
+        # be a path to the publishing credentials.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           sparse-checkout: .github/actions
           fetch-depth: 1
@@ -353,7 +356,10 @@ jobs:
     if: ${{ github.event.action == 'published' }}
     steps:
       - name: Check out the push action
-        uses: actions/checkout@v4
+        # Pinned to a full SHA: this checkout supplies the composite action that
+        # is handed the feed API key a few steps later, so a retargeted tag would
+        # be a path to the publishing credentials.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           sparse-checkout: .github/actions
           fetch-depth: 1

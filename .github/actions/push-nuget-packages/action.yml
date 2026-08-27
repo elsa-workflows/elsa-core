@@ -38,24 +38,41 @@ runs:
         # package set has grown large enough that pushing it sequentially bumps
         # into that. Push a few at a time with a longer per-push timeout and
         # retry each one; --skip-duplicate keeps the retries idempotent.
+        #
+        # The retry budget has to fit inside the callers' 30-minute job timeout,
+        # or a package that keeps failing gets the job cancelled mid-retry and
+        # its three concurrent siblings cancelled with it -- leaving a partially
+        # published release. Worst case for one package is
+        #   3 x 420s of pushing + 15s + 30s of backoff = 1305s (21m45s),
+        # which leaves roughly eight minutes for checkout and artifact download.
+        # Raise PUSH_TIMEOUT or MAX_ATTEMPTS only alongside the job timeout.
+        PUSH_TIMEOUT=420
+        MAX_ATTEMPTS=3
+
         push_one() {
           local package="$1"
           local attempt
-          for attempt in 1 2 3; do
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
             if dotnet nuget push "$package" \
                 -k "$API_KEY" \
                 -s "$FEED_SOURCE" \
                 --skip-duplicate \
-                --timeout 900; then
+                --timeout "$PUSH_TIMEOUT"; then
               return 0
             fi
-            echo "::warning::Pushing ${package} failed (attempt ${attempt}/3); retrying in $((attempt * 15))s"
+            if [ "$attempt" -eq "$MAX_ATTEMPTS" ]; then
+              break
+            fi
+            echo "::warning::Pushing ${package} failed (attempt ${attempt}/${MAX_ATTEMPTS}); retrying in $((attempt * 15))s"
             sleep $((attempt * 15))
           done
-          echo "::error::Failed to push ${package} after 3 attempts"
+          echo "::error::Failed to push ${package} after ${MAX_ATTEMPTS} attempts"
           return 1
         }
+        # push_one runs in a child shell via xargs, so the budget has to travel
+        # with it as environment variables rather than plain shell variables.
         export -f push_one
+        export PUSH_TIMEOUT MAX_ATTEMPTS
 
         # shellcheck disable=SC2016 # $0 is the package name in the child shell.
         printf '%s\0' "${packages[@]}" \
