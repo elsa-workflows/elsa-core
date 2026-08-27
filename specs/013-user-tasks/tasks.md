@@ -1,7 +1,7 @@
 # Tasks: User Tasks
 
 > **Reconciled 2026-08-27** alongside `specs/013-rbac-authorization-model/tasks.md`. Open items were
-> re-verified against the code; three had landed and are now ticked. Of those still open, three are
+> re-verified against the code; two had landed and are now ticked. Of those still open, three are
 > Studio-side and live in the `elsa-studio` repository, so they cannot be closed from this repo.
 
 
@@ -28,7 +28,7 @@ Tasks use `[ID] [P?] [Story] Description with file path`. `[P]` tasks may run in
 - [x] T014 [P] [US3] Implement default claims resolver and default-deny access policy in `src/modules/Elsa.UserTasks/Services/`.
 - [x] T015 [US1] Implement the blocking `UserTask` activity, materialized bookmark payload, stimulus, and typed output under `src/modules/Elsa.UserTasks/Activities/`.
 - [x] T016 [US1] Project committed bookmarks and finalize removed bookmarks in `src/modules/Elsa.UserTasks/HostedServices/` and notification handlers.
-- [x] T017 [US5] Add the bounded startup/recurring reconciler for missing projections, stale operations, and orphan records. **Verified done 2026-08-27** — `Services/DefaultUserTaskReconciler.cs` + `HostedServices/UserTaskWorkers.cs`.
+- [ ] T017 [US5] Add the bounded startup/recurring reconciler for missing projections, stale operations, and orphan records. **Still open (verified 2026-08-27)** — the reconciler itself exists (`Services/DefaultUserTaskReconciler.cs`, `HostedServices/UserTaskWorkers.cs`), but no test exercises its repair logic, so it stays unchecked under this list's stated bar. See the verification-status note below.
 - [x] T018 [P] [US5] Add cluster-safe due scanning, idempotent overdue notification, and optional timeout operation.
 - [x] T019 [P] Add append-only safe audit and mediator lifecycle notification models/dispatch.
 - [x] T020 [P] Add domain, race, disclosure, identity, projection, reconciliation, and due tests in `test/unit/Elsa.UserTasks.UnitTests/`.
@@ -114,15 +114,19 @@ worktree. The following remain open and are deliberately left unchecked:
   end to end.
 - **T027** — authorization, concealment, idempotency, and conflict behavior are covered at the service
   layer. There are no HTTP-level endpoint tests asserting the status-code mapping.
-- **T041** — persistence coverage is EF Core/SQLite only. The shared conformance suite across
-  in-memory, EF, and VNext is not written.
+- **T041** — *closed 2026-08-27.* The shared conformance suite now runs across in-memory, EF Core
+  (SQLite, SQL Server, PostgreSQL, Oracle) and VNext, declared in `ProviderConformanceSuites.cs`,
+  with `ConformanceCoverageTests` failing the run when a provider silently skips. MySQL remains
+  uncovered: it is pinned to net8.0/net9.0 because Pomelo tops out at EF Core 9 — see
+  `doc/migrations/secrets-tenancy.md`.
 - **T047** — the Studio activity editor contribution and participant-picker integration for the
   designer are not implemented.
 - **T050** — Studio tests cover the wire contract, URL state, and error mapping. Component-level tests
   for tabs, disclosure, responsive routing, realtime fallback, and accessibility are not written.
 - **T052** — no runnable sample workflows or host adapter examples yet.
-- **T053, T055** — targeted Core and Studio test suites and the affected module, provider, and host
-  builds pass. A full solution-wide build across every configured target framework has not been run.
+- **T055** — targeted Core and Studio test suites and the affected module, provider, and host builds
+  pass, and T053's suites were run on 2026-08-27 (see its task entry). A full solution-wide build
+  across every configured target framework has not been run.
 - **T056–T058** — final traceability, self-review, and evidence passes are outstanding.
 
 ## Local-only gate note
