@@ -18,7 +18,7 @@ namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.Migrations.Secrets
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -73,6 +73,9 @@ namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.Migrations.Secrets
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("text");
+
                     b.Property<string>("TypeName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -82,10 +85,6 @@ namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.Migrations.Secrets
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Secret_NormalizedName");
 
                     b.HasIndex("Scope")
                         .HasDatabaseName("IX_Secret_Scope");
@@ -98,6 +97,10 @@ namespace Elsa.Secrets.Persistence.EFCore.PostgreSql.Migrations.Secrets
 
                     b.HasIndex("TypeName")
                         .HasDatabaseName("IX_Secret_TypeName");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Secret_TenantId_NormalizedName");
 
                     b.ToTable("Secrets", "Elsa");
                 });

@@ -1,4 +1,5 @@
-﻿using Elsa.Abstractions;
+﻿using Elsa.Authorization;
+using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Workflows;
@@ -10,51 +11,35 @@ namespace Elsa.Identity.Endpoints.Applications.Create;
 /// An endpoint that creates a new application. Requires the <code>SecurityRoot</code> policy.
 /// </summary>
 [PublicAPI]
-internal class Create : ElsaEndpoint<Request, Response>
+internal class Create(
+    IIdentityGenerator identityGenerator,
+    IClientIdGenerator clientIdGenerator,
+    ISecretGenerator secretGenerator,
+    IApiKeyGenerator apiKeyGenerator,
+    ISecretHasher secretHasher,
+    IApplicationStore applicationStore,
+    IRoleStore roleStore)
+    : ElsaEndpoint<Request, Response>
 {
-    private readonly IIdentityGenerator _identityGenerator;
-    private readonly IClientIdGenerator _clientIdGenerator;
-    private readonly ISecretGenerator _secretGenerator;
-    private readonly IApiKeyGenerator _apiKeyGenerator;
-    private readonly ISecretHasher _secretHasher;
-    private readonly IApplicationStore _applicationStore;
-    private readonly IRoleStore _roleStore;
-
-    public Create(
-        IIdentityGenerator identityGenerator,
-        IClientIdGenerator clientIdGenerator,
-        ISecretGenerator secretGenerator,
-        IApiKeyGenerator apiKeyGenerator,
-        ISecretHasher secretHasher,
-        IApplicationStore applicationStore,
-        IRoleStore roleStore)
-    {
-        _identityGenerator = identityGenerator;
-        _clientIdGenerator = clientIdGenerator;
-        _secretGenerator = secretGenerator;
-        _apiKeyGenerator = apiKeyGenerator;
-        _secretHasher = secretHasher;
-        _applicationStore = applicationStore;
-        _roleStore = roleStore;
-    }
+    private readonly IRoleStore _roleStore = roleStore;
 
     /// <inheritdoc />
     public override void Configure()
     {
         Post("/identity/applications");
-        ConfigurePermissions("create:application");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Applications, CoreVerbs.Create);
         Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        var id = _identityGenerator.GenerateId();
-        var clientId = await _clientIdGenerator.GenerateAsync(cancellationToken);
-        var clientSecret = _secretGenerator.Generate();
-        var hashedClientSecret = _secretHasher.HashSecret(clientSecret);
-        var apiKey = _apiKeyGenerator.Generate(clientId);
-        var hashedApiKey = _secretHasher.HashSecret(apiKey);
+        var id = identityGenerator.GenerateId();
+        var clientId = await clientIdGenerator.GenerateAsync(cancellationToken);
+        var clientSecret = secretGenerator.Generate();
+        var hashedClientSecret = secretHasher.HashSecret(clientSecret);
+        var apiKey = apiKeyGenerator.Generate(clientId);
+        var hashedApiKey = secretHasher.HashSecret(apiKey);
 
         var application = new Application
         {
@@ -68,7 +53,7 @@ internal class Create : ElsaEndpoint<Request, Response>
             Roles = request.Roles ?? new List<string>()
         };
 
-        await _applicationStore.SaveAsync(application, cancellationToken);
+        await applicationStore.SaveAsync(application, cancellationToken);
 
         var response = new Response(
             id, 

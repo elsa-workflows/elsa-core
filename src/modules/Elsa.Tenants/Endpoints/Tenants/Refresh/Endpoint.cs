@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 
@@ -8,7 +9,7 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
     public override void Configure()
     {
         Post("/tenants/refresh");
-        ConfigurePermissions("execute:tenants:refresh");
+        RequirePermission(Elsa.Tenants.Permissions.TenantPermissions.Tenants, "refresh");
     }
 
     public override async Task HandleAsync(CancellationToken ct)

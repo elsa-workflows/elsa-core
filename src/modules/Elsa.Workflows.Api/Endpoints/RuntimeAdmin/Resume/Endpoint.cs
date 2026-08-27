@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
@@ -17,7 +18,7 @@ internal sealed class ResumeEndpoint(IWorkflowRuntimeAdminService admin) : ElsaE
     public override void Configure()
     {
         Post("/admin/workflow-runtime/resume");
-        ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Runtime, "control");
     }
 
     public override async Task HandleAsync(ResumeRequest req, CancellationToken ct)

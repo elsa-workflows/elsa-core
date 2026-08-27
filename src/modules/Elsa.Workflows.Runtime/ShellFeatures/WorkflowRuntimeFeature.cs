@@ -1,14 +1,15 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using CShells.Features;
-using Elsa.Common;
 using Elsa.Common.RecurringTasks;
+using Elsa.Common.Serialization;
+using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.CommitStates;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Contracts;
 using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Discovery;
@@ -20,22 +21,24 @@ using Elsa.Workflows.Runtime.Services;
 using Elsa.Workflows.Runtime.Stores;
 using Elsa.Workflows.Runtime.Tasks;
 using Elsa.Workflows.Runtime.UIHints;
-using Medallion.Threading;
+using Elsa.Workflows.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using Medallion.Threading.FileSystem;
-using Microsoft.Extensions.DependencyInjection;
+using Medallion.Threading;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.ShellFeatures;
 
 /// <summary>
 /// Installs and configures workflow runtime features.
 /// </summary>
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Workflow Runtime",
     Description = "Provides workflow execution runtime and scheduling capabilities",
-    DependsOn = ["Workflows"])]
+    DependsOn = [typeof(WorkflowsFeature)])]
 public class WorkflowRuntimeFeature : IShellFeature
 {
     private IDictionary<string, DispatcherChannel> WorkflowDispatcherChannels { get; set; } = new Dictionary<string, DispatcherChannel>();
@@ -282,6 +285,10 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<ILogRecordExtractor<WorkflowExecutionLogRecord>, WorkflowExecutionLogRecordExtractor>()
             .AddScoped<IActivityPropertyLogPersistenceEvaluator, ActivityPropertyLogPersistenceEvaluator>()
             .AddScoped<IBookmarkQueueProcessor, BookmarkQueueProcessor>()
+            .AddScoped<WorkflowCommitNotificationBuffer>()
+            .AddScoped<IWorkflowCommitNotificationBuffer>(sp => sp.GetRequiredService<WorkflowCommitNotificationBuffer>())
+            .AddScoped<INotificationSender, WorkflowCommitNotificationSender>()
+            .AddScoped<IWorkflowCommitTransaction, NoopWorkflowCommitTransaction>()
             .AddScoped<DefaultCommitStateHandler>()
             // Decorator: disposes the execution cycle handle AFTER the workflow runner's terminal commit has persisted state,
             // so the drain orchestrator's force-cancel path can sequence its Interrupted write to land last.

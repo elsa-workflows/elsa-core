@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Models;
@@ -10,7 +11,7 @@ public class Endpoint(IRetryAttemptReader reader) : ElsaEndpointWithoutRequest
     public override void Configure()
     {
         Get("/resilience/retries/{activityInstanceId}");
-        ConfigurePermissions("read:*", "read:resilience", "read:resilience:retries");
+        RequirePermission(Elsa.Resilience.Permissions.ResiliencePermissions.Retries, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

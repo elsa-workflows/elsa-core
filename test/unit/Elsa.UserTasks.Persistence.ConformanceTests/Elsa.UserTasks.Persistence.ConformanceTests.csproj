@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Include>[Elsa.UserTasks]*,[Elsa.UserTasks.Persistence.EFCore]*,[Elsa.UserTasks.Persistence.VNext]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.Sqlite"/>
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.UserTasks.Persistence.EFCore.Oracle\Elsa.UserTasks.Persistence.EFCore.Oracle.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.UserTasks.Persistence.EFCore.PostgreSql\Elsa.UserTasks.Persistence.EFCore.PostgreSql.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.UserTasks.Persistence.EFCore.Sqlite\Elsa.UserTasks.Persistence.EFCore.Sqlite.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.UserTasks.Persistence.EFCore.SqlServer\Elsa.UserTasks.Persistence.EFCore.SqlServer.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.UserTasks.Persistence.VNext\Elsa.UserTasks.Persistence.VNext.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.VNext.Sqlite\Elsa.Persistence.VNext.Sqlite.csproj"/>
+    </ItemGroup>
+</Project>

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -23,7 +24,7 @@ internal class BulkPublish(
     public override void Configure()
     {
         Post("/bulk-actions/publish/workflow-definitions/by-definition-ids");
-        ConfigurePermissions("publish:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
@@ -41,6 +42,8 @@ internal class BulkPublish(
         var alreadyPublished = new List<string>();
         var skipped = new List<string>();
         var updatedConsumers = new List<string>();
+        var failed = new List<string>();
+        var warnings = new Dictionary<string, ICollection<string>>();
         var publishableDefinitions = new List<(string DefinitionId, WorkflowDefinition Definition)>();
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter
@@ -77,10 +80,10 @@ internal class BulkPublish(
         foreach (var (_, definition) in publishableDefinitions)
         {
             var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-            var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+            var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
             if (!scriptAuthorizationResult.Succeeded)
             {
-                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
                 return null!;
             }
         }
@@ -88,13 +91,23 @@ internal class BulkPublish(
         foreach (var (definitionId, definition) in publishableDefinitions)
         {
             var result = await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken);
+
+            if (!result.Succeeded)
+            {
+                failed.Add(definitionId);
+                continue;
+            }
+
             published.Add(definitionId);
+
+            if (result.ValidationErrors.Count > 0)
+                warnings[definitionId] = result.ValidationErrors.Select(x => x.Message).ToList();
             
             if (result.AffectedWorkflows.WorkflowDefinitions.Count > 0) 
                 updatedConsumers.AddRange(result.AffectedWorkflows.WorkflowDefinitions.Select(x => x.DefinitionId));
         }
 
-        return new(published, alreadyPublished, notFound, skipped, updatedConsumers);
+        return new(published, alreadyPublished, notFound, skipped, updatedConsumers, failed, warnings);
     }
 
 }

@@ -1,6 +1,7 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
-using Elsa.Dashboard.Api.Contracts;
-using Elsa.Dashboard.Api.Models;
+using Elsa.Dashboard.Abstractions.Contracts;
+using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Permissions;
 using JetBrains.Annotations;
 
@@ -12,7 +13,7 @@ internal class Endpoint(IDashboardProvider dashboardProvider) : ElsaEndpointWith
     public override void Configure()
     {
         Get("/dashboard/recent-activity");
-        ConfigurePermissions(DashboardPermissions.Read);
+        RequirePermission(Elsa.Dashboard.Api.Permissions.DashboardResourcePermissions.Dashboard, CoreVerbs.View);
     }
 
     public override async Task<DashboardRecentActivityResponse> ExecuteAsync(CancellationToken cancellationToken)

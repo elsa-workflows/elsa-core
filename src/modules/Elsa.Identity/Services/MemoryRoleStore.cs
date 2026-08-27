@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -11,13 +12,15 @@ namespace Elsa.Identity.Services;
 public class MemoryRoleStore : IRoleStore
 {
     private readonly MemoryStore<Role> _store;
+    private readonly ITenantAccessor _tenantAccessor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MemoryRoleStore"/> class.
     /// </summary>
-    public MemoryRoleStore(MemoryStore<Role> store)
+    public MemoryRoleStore(MemoryStore<Role> store, ITenantAccessor tenantAccessor)
     {
         _store = store;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
@@ -56,5 +59,16 @@ public class MemoryRoleStore : IRoleStore
         return Task.FromResult(result);
     }
     
-    private IQueryable<Role> Filter(IQueryable<Role> queryable, RoleFilter filter) => filter.Apply(queryable);
+    /// <remarks>
+    /// The ambient tenant is applied here rather than left to callers. Isolation previously existed only
+    /// on the Entity Framework path, and only when multitenancy was enabled, so a deployment running the
+    /// default in-memory stores had none at all.
+    /// </remarks>
+    private IQueryable<Role> Filter(IQueryable<Role> queryable, RoleFilter filter)
+    {
+        var tenantId = _tenantAccessor.TenantId;
+        queryable = queryable.Where(x => x.TenantId == tenantId || x.TenantId == Tenant.AgnosticTenantId || x.TenantId == null);
+
+        return filter.Apply(queryable);
+    }
 }

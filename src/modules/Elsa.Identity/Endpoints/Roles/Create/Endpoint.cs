@@ -1,6 +1,8 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
+using Elsa.Permissions;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 
@@ -10,19 +12,33 @@ namespace Elsa.Identity.Endpoints.Roles.Create;
 /// An endpoint that creates a new role.
 /// </summary>
 [PublicAPI]
-internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
+internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAuthorizationService, IPermissionGrantValidator grantValidator, Services.RoleSecurityNotifier securityNotifier) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
     {
         Post("/identity/roles");
-        ConfigurePermissions("create:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Create);
         Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
+        // Reject grants the catalog cannot account for before the anti-escalation check, so an author gets
+        // a specific message rather than a blanket 403 for what is really a typo.
+        var validation = grantValidator.Validate(request.Permissions);
+
+        if (!validation.IsValid)
+        {
+            // Both parts matter: the permission identifies which entry to fix, the reason says how.
+            foreach (var error in validation.Errors)
+                AddError($"{error.Permission} — {error.Reason}");
+
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+            return;
+        }
+
         if (!roleAuthorizationService.CanCreateRoleWithPermissions(User, request.Permissions))
         {
             await Send.ForbiddenAsync(cancellationToken);
@@ -43,6 +59,8 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
             await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
             return;
         }
+
+        await securityNotifier.RoleChangedAsync(User, "created", result.Role.Id, result.Role.Name, result.Role.Permissions.ToArray(), cancellationToken);
 
         var response = new Response(
             result.Role.Id,

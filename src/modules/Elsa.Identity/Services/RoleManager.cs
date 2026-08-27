@@ -8,17 +8,8 @@ namespace Elsa.Identity.Services;
 /// <summary>
 /// Default implementation of <see cref="IRoleManager"/>.
 /// </summary>
-public class RoleManager : IRoleManager
+public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider) : IRoleManager
 {
-    private readonly IRoleStore _roleStore;
-    private readonly IRoleProvider _roleProvider;
-
-    public RoleManager(IRoleStore roleStore, IRoleProvider roleProvider)
-    {
-        _roleStore = roleStore;
-        _roleProvider = roleProvider;
-    }
-
     /// <inheritdoc />
     public async Task<CreateRoleResult> CreateRoleAsync(
         string name,
@@ -38,18 +29,18 @@ public class RoleManager : IRoleManager
             Permissions = permissions ?? new List<string>()
         };
 
-        await _roleStore.SaveAsync(role, cancellationToken);
+        await roleStore.SaveAsync(role, cancellationToken);
 
         return new CreateRoleResult(role);
     }
 
     private async Task<bool> RoleExistsAsync(string roleId, CancellationToken cancellationToken)
     {
-        var storedRole = await _roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
+        var storedRole = await roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
         if (storedRole != null)
             return true;
 
-        var providedRoles = await _roleProvider.FindManyAsync(new() { Id = roleId }, cancellationToken);
+        var providedRoles = await roleProvider.FindManyAsync(new() { Id = roleId }, cancellationToken);
         return providedRoles.Any(x => x.Id == roleId);
     }
 }

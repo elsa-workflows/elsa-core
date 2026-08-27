@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
@@ -39,7 +40,7 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
     {
         Routes("workflow-definitions/import", "workflow-definitions/{definitionId}/import");
         Verbs(FastEndpoints.Http.POST, FastEndpoints.Http.PUT);
-        ConfigurePermissions("write:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Write);
     }
 
     /// <inheritdoc />
@@ -48,10 +49,10 @@ internal class Import : ElsaEndpoint<WorkflowDefinitionModel>
         var definitionId = model.DefinitionId;
         var isNew = string.IsNullOrWhiteSpace(definitionId);
 
-        var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, User, cancellationToken);
+        var scriptAuthorizationResult = await _scriptAuthorizationService.AuthorizeAsync(model, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
-            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 

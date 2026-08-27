@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Collections.Frozen;
 using Elsa.Abstractions;
 using Elsa.Expressions.Contracts;
@@ -13,17 +14,24 @@ namespace Elsa.Workflows.Api.Endpoints.Scripting.ExpressionDescriptors.List;
 [UsedImplicitly]
 internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) : ElsaEndpointWithoutRequest<ListResponse<ExpressionDescriptorModel>>
 {
-    private static readonly IReadOnlyDictionary<string, string> PrivilegedExpressionPermissions = new Dictionary<string, string>
-    {
-        ["CSharp"] = PermissionNames.ExecuteCSharpExpressions,
-        ["Python"] = PermissionNames.ExecutePythonExpressions
-    }.ToFrozenDictionary(StringComparer.Ordinal);
+    /// <summary>
+    /// The expression types the host can switch off, which are omitted entirely rather than listed as
+    /// non-browsable so a disabled language does not appear in the editor at all. Every other type is listed
+    /// and carries <c>IsBrowsable</c> for the client to act on.
+    /// </summary>
+    /// <remarks>
+    /// This was a map from expression type to a per-author permission. The permission was only ever read to
+    /// test membership -- the value went unused even before it was retired -- and the decision has always
+    /// been the host switch, surfaced as <c>IsBrowsable</c>. A set says that without implying a check that
+    /// does not happen. Per-author script trust was considered and declined in #7975: the host switch is the control.
+    /// </remarks>
+    private static readonly FrozenSet<string> HostCodeExpressionTypes = new[] { "CSharp", "Python" }.ToFrozenSet(StringComparer.Ordinal);
 
     /// <inheritdoc />
     public override void Configure()
     {
         Get("/descriptors/expression-descriptors");
-        ConfigurePermissions("read:*", "read:expression-descriptors");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsExpressions, CoreVerbs.View);
     }
 
     /// <inheritdoc />
@@ -35,13 +43,8 @@ internal class List(IExpressionDescriptorRegistry expressionDescriptorRegistry) 
         return Send.OkAsync(response, cancellationToken);
     }
 
-    private bool CanListDescriptor(ExpressionDescriptor descriptor)
-    {
-        if (!PrivilegedExpressionPermissions.TryGetValue(descriptor.Type, out var permission))
-            return true;
-
-        return descriptor.IsBrowsable && User.Claims.Any(x => x.Type == PermissionNames.ClaimType && (x.Value == PermissionNames.All || x.Value == permission));
-    }
+    private static bool CanListDescriptor(ExpressionDescriptor descriptor) =>
+        !HostCodeExpressionTypes.Contains(descriptor.Type) || descriptor.IsBrowsable;
 
     private static IEnumerable<ExpressionDescriptorModel> Map(List<ExpressionDescriptor> descriptors) => descriptors.Select(Map);
 

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
@@ -18,7 +19,7 @@ internal sealed class ForceDrainEndpoint(IWorkflowRuntimeAdminService admin) : E
     public override void Configure()
     {
         Post("/admin/workflow-runtime/force-drain");
-        ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Runtime, "control");
     }
 
     public override async Task HandleAsync(ForceDrainRequest req, CancellationToken ct)

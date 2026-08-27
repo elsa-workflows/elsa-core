@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -12,7 +13,7 @@ internal class GetById(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker
     public override void Configure()
     {
         Get("/workflow-definitions/by-id/{id}");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
         Options(x => x.WithName("GetWorkflowDefinitionById"));
     }
 

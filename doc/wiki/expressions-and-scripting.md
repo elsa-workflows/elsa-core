@@ -61,13 +61,13 @@ elsa.UseCSharp(options =>
 });
 ```
 
-Roslyn C# scripting is privileged host-code execution, not a sandbox. Hosts must explicitly set `CSharpOptions.AllowHostCodeExecution` to `true` before C# expressions or `RunCSharp` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing C# must have the `exec:csharp-expressions` permission.
+Roslyn C# scripting is privileged host-code execution, not a sandbox. Hosts must explicitly set `CSharpOptions.AllowHostCodeExecution` to `true` before C# expressions or `RunCSharp` can be authored or executed. That switch is the whole control: there is no per-caller permission, because a workflow runs under the server's authority rather than the caller's, so gating the caller never constrained what a script could do. Any author who may write workflow definitions may use C# where the switch is on. If only some of your authors are trusted with host code, give the others a host with the switch off — see [#7975](https://github.com/elsa-workflows/elsa-core/issues/7975).
 
 ## Python
 
 [PythonFeature](../../src/modules/Elsa.Expressions.Python/Features/PythonFeature.cs) registers pythonnet-based evaluation and configures `PythonGlobalInterpreterManager` as a hosted service. Python.NET execution is privileged host-code execution, not a sandbox. Python code can access host process capabilities through pythonnet and must only be enabled for trusted workflow authors.
 
-Hosts must explicitly set `PythonOptions.AllowHostCodeExecution` to `true` before Python expressions or `RunPython` can be authored or executed. API callers that author, publish, dispatch, or directly execute workflows containing Python must have the `exec:python-expressions` permission. Hosts must also configure the Python DLL path or set `PYTHONNET_PYDLL`.
+Hosts must explicitly set `PythonOptions.AllowHostCodeExecution` to `true` before Python expressions or `RunPython` can be authored or executed. As with C#, that switch is the whole control and there is no per-caller permission; the switches are independent, so Python can be enabled while C# stays off. Hosts must also configure the Python DLL path or set `PYTHONNET_PYDLL`.
 
 The reference server binds `Scripting:Python` configuration in [Program.cs](../../src/apps/Elsa.Server.Web/Program.cs).
 

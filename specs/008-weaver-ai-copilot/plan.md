@@ -5,19 +5,19 @@
 
 ## Summary
 
-Introduce Weaver as Elsa's AI copilot platform: a server-hosted, provider-isolated AI orchestration layer with Studio chat, governed tool execution, context providers, streaming events, durable audit records, and durable proposal-only workflow mutations. The first delivery establishes `Elsa.AI.Abstractions`, `Elsa.AI.Host`, `Elsa.AI.Copilot`, durable proposal/audit persistence, and a paired `Elsa.Studio.AI` module, with read-only workflow/runtime tools and safe workflow proposal flows.
+Introduce Weaver as Elsa's AI copilot platform: a server-hosted, GitHub Copilot SDK-native agent experience with Studio chat, governed Elsa tool execution, context providers, streaming events, durable audit records, and durable proposal-only workflow mutations. The first delivery establishes `Elsa.AI.Abstractions`, `Elsa.AI.Host`, `Elsa.AI.Copilot`, durable proposal/audit persistence, and a paired `Elsa.Studio.AI` module, with read-only workflow/runtime tools and safe workflow proposal flows. Copilot SDK owns session orchestration, model/tool continuation, custom agents, MCP wiring, hooks, and permission callbacks; Elsa owns Studio-facing contracts, context resolution, tenancy/RBAC checks, proposal safety, audit, and redaction.
 
 ## Technical Context
 
 **Language/Version**: C# latest, nullable reference types enabled, implicit usings enabled; paired Studio Blazor/Razor module work in the Studio repository.  
-**Primary Dependencies**: Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing identity/authorization and tenancy services, workflow definition/instance abstractions, diagnostics/log abstractions, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Logging`, OpenTelemetry, `System.Text.Json`, SignalR or SSE streaming, GitHub Copilot SDK isolated behind `Elsa.AI.Copilot`, and headless Copilot CLI JSON-RPC integration.  
+**Primary Dependencies**: Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing identity/authorization and tenancy services, workflow definition/instance abstractions, diagnostics/log abstractions, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Logging`, OpenTelemetry, `System.Text.Json`, SignalR or SSE streaming, `GitHub.Copilot.SDK` isolated behind `Elsa.AI.Copilot`, and the SDK-managed Copilot runtime connection.
 **Storage**: Configurable conversation/session retention with in-memory support for development and tests; durable proposal and audit stores required for MVP using Elsa persistence provider abstractions and an EF Core provider package for production.  
 **Testing**: xUnit unit tests for abstractions, tool metadata, authorization gates, context redaction, proposal lifecycle, persistence state transitions, explicit tool enablement, reconnect handling, and adapter mapping; integration tests for chat streaming, tool invocation, capabilities, proposal apply, tenant isolation, durable audit records, durable proposals, and scoped trend analysis; contract tests for Studio-facing API and stream event shapes.  
 **Target Platform**: ASP.NET Core Elsa Server on supported .NET target frameworks, plus Elsa Studio SPA integration through server APIs only.  
 **Project Type**: Modular .NET server libraries with REST/streaming APIs and a paired Studio UI module.  
 **Performance Goals**: First streamed chat event within 3 seconds p95 after server accepts a turn under normal load; tool metadata/capabilities under 250 ms p95; proposal validation under 5 seconds p95 for typical workflow definitions; bounded server-side context payloads.  
-**Constraints**: Studio is AI-agnostic; AI runtime is server-hosted; provider SDK types cannot leak into core abstractions, workflow models, or Studio contracts; AI writes are proposal-only; same authorized user may request/approve/apply proposals in MVP; all tools enforce tenant/RBAC/ownership server-side; proposal/admin/MCP tools require explicit administrator enablement; runtime trend analysis is scoped to attached references plus selected time range and diagnostics scope; secrets and sensitive config are redacted before model context, stream output, and audit records; implementation execution should use dedicated git worktrees for Core and paired Studio work rather than using a local primary checkout directly.  
-**Scale/Scope**: Server AI abstractions, Copilot adapter, chat/session orchestration with configurable disconnect grace, stream event translation, tool registry, context providers, durable audit sink, durable proposal store, MVP workflow/runtime tools, proposal apply endpoint, Studio chat/proposal UX contracts, and extension APIs for third-party tools/agents/MCP registrations.
+**Constraints**: Studio is AI-agnostic; AI runtime is server-hosted; provider SDK types cannot leak into core abstractions, workflow models, or Studio contracts; AI writes are proposal-only; same authorized user may request/approve/apply proposals in MVP; all Elsa tools enforce tenant/RBAC/ownership server-side before Copilot receives results; proposal/admin/MCP tools require explicit administrator enablement; runtime trend analysis is scoped to attached references plus selected time range and diagnostics scope; secrets and sensitive config are redacted before model context, stream output, and audit records; implementation execution should use dedicated git worktrees for Core and paired Studio work rather than using a local primary checkout directly.
+**Scale/Scope**: Server AI abstractions, Copilot SDK adapter, provider-owned chat/session orchestration with configurable disconnect grace at Elsa boundaries, stream event translation, tool registry, context providers, durable audit sink, durable proposal store, MVP workflow/runtime tools, proposal apply endpoint, Studio chat/proposal UX contracts, and extension APIs for third-party tools/agents/MCP registrations.
 
 ## Constitution Check
 
@@ -120,7 +120,7 @@ src/modules/
 
 **UI Prototype Reference**: Review `elsa-extensions` branch `origin/feat/ai` at commit `93f0e09d71e57f5daff1e2d593f0a51faaa80417` and its parent chain before implementing Studio UI. Useful patterns include the Razor/MudBlazor Agents menu placement under `/ai/*`, management tables, route structure, Refit client interfaces, validators, and agent configuration tabs for general metadata, input/output variables, services, plugins, and execution settings. Do not carry forward raw API key reveal, provider-specific service configuration as the primary experience, or an agent-management-first flow; Weaver's first screen remains the chat/proposal experience.
 
-**Structure Decision**: Keep provider-neutral contracts in `Elsa.AI.Abstractions`, server orchestration, APIs, built-in tools, proposals, and audit in `Elsa.AI.Host`, and Copilot SDK/CLI integration in `Elsa.AI.Copilot`. The Studio module consumes only REST and streaming contracts; if the Studio repository is not present, its implementation tasks become a sibling-repository follow-up.
+**Structure Decision**: Keep provider-neutral contracts in `Elsa.AI.Abstractions`, server APIs, built-in tools, proposals, context, and audit in `Elsa.AI.Host`, and Copilot SDK integration in `Elsa.AI.Copilot`. The Copilot adapter must use `GitHub.Copilot.SDK` session APIs directly instead of reducing Copilot to a generic turn-completion API. `Elsa.AI.Host` prepares context and governed tool handles, then streams provider-owned agent events; it must not reimplement Copilot's tool continuation loop. The Studio module consumes only REST and streaming contracts; if the Studio repository is not present, its implementation tasks become a sibling-repository follow-up.
 
 ## Phase 0 Output
 
@@ -129,8 +129,10 @@ See [research.md](./research.md).
 Resolved decisions:
 
 - Use a server-hosted AI runtime with Studio sending only references.
-- Isolate GitHub Copilot SDK and headless CLI JSON-RPC behind `Elsa.AI.Copilot`.
+- Isolate `GitHub.Copilot.SDK` behind `Elsa.AI.Copilot`.
+- Let the Copilot SDK own session creation/resume, custom agents, MCP, hooks, permission callbacks, model selection, and tool continuation.
 - Translate provider stream events into Elsa-owned stream contracts.
+- Pass Elsa tools to Copilot as governed SDK tool callbacks so Copilot plans and continues the agent loop while Elsa executes and audits the actual server-side capabilities.
 - Use proposal-only writes for workflow creation and updates.
 - Use configurable conversation retention, but require durable proposal and audit stores for MVP.
 - Allow the same authorized user to request, approve, reject, and apply proposals in MVP, with explicit actions and durable audit records.

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Workflows;
@@ -19,7 +20,7 @@ internal class Create : ElsaEndpoint<Request, Response, LabelMapper>
     public override void Configure()
     {
         Post("/labels");
-        ConfigurePermissions("create:labels");
+        RequirePermission(Elsa.Labels.Permissions.LabelPermissions.Labels, CoreVerbs.Create);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

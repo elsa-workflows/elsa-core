@@ -159,10 +159,10 @@ Ingress source adapters are currently registered by modules such as HTTP and Sch
 
 The workflow API includes runtime admin endpoints:
 
-- `GET /elsa/api/admin/workflow-runtime/status`
-- `POST /elsa/api/admin/workflow-runtime/pause`
-- `POST /elsa/api/admin/workflow-runtime/resume`
-- `POST /elsa/api/admin/workflow-runtime/force-drain`
+- `GET /elsa/api/admin/workflow-runtime/status`: requires `read:workflow-runtime`; `ManageWorkflowRuntime` is also accepted for backward compatibility.
+- `POST /elsa/api/admin/workflow-runtime/pause`: requires `ManageWorkflowRuntime`.
+- `POST /elsa/api/admin/workflow-runtime/resume`: requires `ManageWorkflowRuntime`.
+- `POST /elsa/api/admin/workflow-runtime/force-drain`: requires `ManageWorkflowRuntime`.
 
 Endpoint code lives under [Elsa.Workflows.Api/Endpoints/RuntimeAdmin](../../src/modules/Elsa.Workflows.Api/Endpoints/RuntimeAdmin). The service behind these endpoints is [WorkflowRuntimeAdminService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowRuntimeAdminService.cs).
 

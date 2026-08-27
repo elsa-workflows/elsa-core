@@ -16,7 +16,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16");
+                .HasAnnotation("ProductVersion", "10.0.9");
 
             modelBuilder.Entity("Elsa.Secrets.Models.Secret", b =>
                 {
@@ -69,6 +69,9 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("TypeName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -78,10 +81,6 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Secret_NormalizedName");
 
                     b.HasIndex("Scope")
                         .HasDatabaseName("IX_Secret_Scope");
@@ -94,6 +93,10 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
 
                     b.HasIndex("TypeName")
                         .HasDatabaseName("IX_Secret_TypeName");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Secret_TenantId_NormalizedName");
 
                     b.ToTable("Secrets", "Elsa");
                 });

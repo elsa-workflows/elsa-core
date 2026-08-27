@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -23,7 +24,7 @@ internal class Publish(
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/publish");
-        ConfigurePermissions("publish:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
@@ -51,17 +52,28 @@ internal class Publish(
         }
 
         var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
-            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
 
         var isPublished = definition.IsPublished;
         var result = !isPublished ? await workflowDefinitionPublisher.PublishAsync(definition, cancellationToken) : null;
+
+        if (result is { Succeeded: false })
+        {
+            foreach (var validationError in result.ValidationErrors)
+                AddError(validationError.Message);
+
+            await Send.ErrorsAsync(400, cancellationToken);
+            return;
+        }
+
+        var validationErrors = result?.ValidationErrors.Select(e => e.Message).ToList() ?? [];
         var mappedDefinition = await linker.MapAsync(definition, cancellationToken);
-        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0);
+        var response = new Response(mappedDefinition, isPublished, result?.AffectedWorkflows.WorkflowDefinitions.Count ?? 0, validationErrors);
         await Send.OkAsync(response, cancellationToken);
     }
 }

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -17,7 +18,7 @@ internal class UpdateReferences(IWorkflowReferenceUpdater workflowReferenceUpdat
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/update-references");
-        ConfigurePermissions("publish:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

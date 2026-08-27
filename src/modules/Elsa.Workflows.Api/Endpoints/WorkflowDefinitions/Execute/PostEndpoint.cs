@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Security;
@@ -23,7 +24,7 @@ internal class PostEndpoint(
     public override void Configure()
     {
         Routes("/workflow-definitions/{definitionId}/execute");
-        ConfigurePermissions("exec:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Execute);
         Verbs(FastEndpoints.Http.POST);
     }
     /// <inheritdoc />

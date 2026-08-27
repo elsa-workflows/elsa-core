@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>
+			Provides BPMN XML interchange support by wiring the Bpmn.Interchange library into Elsa.
+		</Description>
+		<PackageTags>elsa extension module bpmn interchange</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Bpmn.Interchange" />
+		<PackageReference Include="Bpmn.Semantics" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Elsa.Bpmn\Elsa.Bpmn.csproj" />
+		<ProjectReference Include="..\..\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+	</ItemGroup>
+
+</Project>
