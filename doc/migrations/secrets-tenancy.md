@@ -62,9 +62,16 @@ decision above. The same gap applies in a multi-tenant deployment's default tena
 new `""`-tenant rows are distinct index keys, so the index cannot stop a new default-tenant secret from
 colliding by name with a legacy row.
 
-If you want the database guarantee back in single-tenant mode, backfill `TenantId` to `""` yourself — the
-`SetTenantIdFilter` null-compatibility clause keeps any stragglers visible — but Elsa does not do this for
-you.
+Backfilling `TenantId` to `""` yourself does **not** restore the database guarantee, and it is worth being
+precise about why. The backfill indexes the rows that exist when you run it, but nothing changes what happens
+afterwards: with multitenancy disabled no `TenantId` is ever assigned, so every subsequent write still lands
+as a null row outside the index. Two concurrent creates can still both pass the repository's read-before-write
+check and commit the same name. Restoring the guarantee for real would mean making disabled-mode writes use
+the same non-null sentinel the index is built on — Elsa does not do that, and the backfill alone does not
+substitute for it. Until it does, treat the read-before-write check as the only protection in single-tenant
+mode and serialize secret creation if you cannot tolerate the race. (The `SetTenantIdFilter`
+null-compatibility clause keeps backfilled and straggler rows visible either way, so a backfill is still
+useful for de-duplicating what you already have.)
 
 ## The MySQL provider ships for net8.0 and net9.0 only
 
