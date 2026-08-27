@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa.Authorization;
 using Elsa.Extensions;
 using Elsa.Options;
 using JetBrains.Annotations;
@@ -20,11 +21,18 @@ public class LocalHostPermissionRequirement : IAuthorizationRequirement
 [PublicAPI]
 public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalHostPermissionRequirement>
 {
-    private static readonly string[] BootstrapPermissions =
+    // The three grants a local first-run needs to stand an instance up, spelled in the structured
+    // {resource}:{verb} vocabulary. These were previously the legacy strings "create:application",
+    // "create:user" and "create:role", which no longer authorize anything: a legacy string parses to a
+    // different pair entirely -- "create:user" reads as resource "create", verb "user" -- so the endpoints
+    // this grant exists to unlock (identity/applications:create, identity/users:create,
+    // identity/roles:create) all refused it. The literals are spelled out rather than referenced from
+    // Elsa.Identity because this assembly sits beneath it.
+    private static readonly Permission[] BootstrapPermissions =
     [
-        "create:application",
-        "create:user",
-        "create:role"
+        new("identity/applications", CoreVerbs.Create),
+        new("identity/users", CoreVerbs.Create),
+        new("identity/roles", CoreVerbs.Create)
     ];
 
     private readonly IHttpContextAccessor _httpContextAccessor;
@@ -62,16 +70,15 @@ public class LocalHostPermissionRequirementHandler : AuthorizationHandler<LocalH
         }
 
         var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
-        identity.AddClaims(BootstrapPermissions.Select(permission => new Claim(PermissionNames.ClaimType, permission)));
+        identity.AddClaims(BootstrapPermissions.Select(permission => new Claim(PermissionNames.ClaimType, permission.ToString())));
         context.User.AddIdentity(identity);
 
         context.Succeed(requirement);
         return Task.CompletedTask;
     }
 
-    private static bool HasBootstrapPermissions(ClaimsPrincipal user)
-    {
-        var permissions = user.FindAll(PermissionNames.ClaimType).Select(x => x.Value).ToHashSet(StringComparer.Ordinal);
-        return permissions.Contains(PermissionNames.All) || BootstrapPermissions.All(permissions.Contains);
-    }
+    // Evaluated rather than compared by claim value, so a caller holding a wildcard that covers these --
+    // "*" as before, but now also "identity/*:create" -- satisfies the requirement.
+    private static bool HasBootstrapPermissions(ClaimsPrincipal user) =>
+        PermissionEvaluator.Shared.HasAllPermissions(user, BootstrapPermissions);
 }

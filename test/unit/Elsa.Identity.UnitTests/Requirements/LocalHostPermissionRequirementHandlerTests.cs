@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using Elsa;
+using Elsa.Authorization;
 using Elsa.Options;
 using Elsa.Requirements;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,9 +29,31 @@ public class LocalHostPermissionRequirementHandlerTests
         var permissions = context.User.FindAll(PermissionNames.ClaimType).Select(x => x.Value).ToList();
 
         Assert.True(context.HasSucceeded);
-        Assert.Contains("create:application", permissions);
-        Assert.Contains("create:user", permissions);
-        Assert.Contains("create:role", permissions);
+        Assert.Contains("identity/applications:create", permissions);
+        Assert.Contains("identity/users:create", permissions);
+        Assert.Contains("identity/roles:create", permissions);
+    }
+
+    [Theory]
+    [InlineData("identity/applications", "create")]
+    [InlineData("identity/users", "create")]
+    [InlineData("identity/roles", "create")]
+    public async Task GrantedBootstrapPermissionsActuallyAuthorizeTheirEndpoints(string resource, string verb)
+    {
+        // The point of the grant, asserted through the evaluator rather than by string equality. The list
+        // previously held legacy spellings ("create:user" and friends), which parse to a different pair
+        // entirely, so the bootstrap grant authorized none of the three endpoints it exists to unlock.
+        var context = await AuthorizeAsync(enableLocalHostPermissionGrant: true, isLocal: true);
+
+        Assert.True(PermissionEvaluator.Shared.HasPermission(context.User, resource, verb));
+    }
+
+    [Fact]
+    public async Task SucceedsForAnAuthenticatedCallerHoldingAWildcardThatCoversTheBootstrapGrants()
+    {
+        var context = await AuthorizeAsync(enableLocalHostPermissionGrant: true, isLocal: true, isAuthenticated: true, permissions: ["identity/*:create"]);
+
+        Assert.True(context.HasSucceeded);
     }
 
     [Fact]
@@ -52,9 +75,9 @@ public class LocalHostPermissionRequirementHandlerTests
         Assert.True(context.HasSucceeded);
         Assert.True(context.User.Identity?.IsAuthenticated);
         Assert.Equal(3, permissions.Count);
-        Assert.Contains("create:application", permissions);
-        Assert.Contains("create:user", permissions);
-        Assert.Contains("create:role", permissions);
+        Assert.Contains("identity/applications:create", permissions);
+        Assert.Contains("identity/users:create", permissions);
+        Assert.Contains("identity/roles:create", permissions);
     }
 
     [Fact]
@@ -84,9 +107,9 @@ public class LocalHostPermissionRequirementHandlerTests
 
     private static readonly string[] BootstrapPermissions =
     [
-        "create:application",
-        "create:user",
-        "create:role"
+        "identity/applications:create",
+        "identity/users:create",
+        "identity/roles:create"
     ];
 
     private static async Task<AuthorizationHandlerContext> AuthorizeAsync(bool enableLocalHostPermissionGrant, bool isLocal, bool isAuthenticated = false, params string[] permissions)
