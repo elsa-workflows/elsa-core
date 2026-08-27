@@ -2,6 +2,7 @@ using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Policies;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Validation;
@@ -10,7 +11,8 @@ namespace Elsa.ExternalAuthentication.Validation;
 /// Validates the deployment-owned External Authentication configuration before it is used by the broker.
 /// </summary>
 public sealed class ExternalAuthenticationOptionsValidator(
-    IOptions<ExternalAuthenticationExtensionOptions> extensionOptions) : IValidateOptions<ExternalAuthenticationOptions>
+    IOptions<ExternalAuthenticationExtensionOptions> extensionOptions,
+    ILogger<ExternalAuthenticationOptionsValidator> logger) : IValidateOptions<ExternalAuthenticationOptions>
 {
     public ValidateOptionsResult Validate(string? name, ExternalAuthenticationOptions options)
     {
@@ -48,19 +50,33 @@ public sealed class ExternalAuthenticationOptionsValidator(
     /// quietly stop denying what it names. Failing startup puts the mistake in front of whoever can fix it
     /// instead of leaving it to be discovered from an issued token.
     /// </remarks>
-    private static void ValidatePermissionGrantBoundary(PermissionGrantOptions? permissionGrants, ICollection<string> failures)
+    private void ValidatePermissionGrantBoundary(PermissionGrantOptions? permissionGrants, ICollection<string> failures)
     {
         if (permissionGrants is null)
             return;
 
         ValidatePermissionPatterns(permissionGrants.AllowedPermissions, "AllowedPermissions", failures);
         ValidatePermissionPatterns(permissionGrants.DeniedPermissions, "DeniedPermissions", failures);
+
+        // Deny entries match in both directions, so a wildcard grant that could reach a denied permission is
+        // refused whole rather than narrowed — a role holding '*' does not survive external token issuance.
+        // That is intended, but surprising enough at sign-in time to be worth announcing at startup.
+        if (permissionGrants.DeniedPermissions is { Count: > 0 })
+            logger.LogWarning(
+                "ExternalAuthentication:PermissionGrants:DeniedPermissions is configured. Deny entries match wildcard grants in both directions, so any grant that could reach a denied permission is refused entirely — a role holding '*' will carry no permissions into an externally issued token. Give externally-authenticating administrators enumerated grants instead of '*'.");
     }
 
     private static void ValidatePermissionPatterns(IEnumerable<string>? permissions, string listName, ICollection<string> failures)
     {
-        foreach (var permission in (permissions ?? []).Where(x => !Permission.TryParse(x, out _)))
-            failures.Add($"'{permission}' in ExternalAuthentication:PermissionGrants:{listName} is not a well-formed permission. Expected '{{resource}}:{{verb}}', for example 'workflows/*:delete'.");
+        foreach (var permission in permissions ?? [])
+        {
+            if (!Permission.TryParse(permission, out var parsed))
+                failures.Add($"'{permission}' in ExternalAuthentication:PermissionGrants:{listName} is not a well-formed permission. Expected '{{resource}}:{{verb}}', for example 'workflows/*:delete'.");
+            // An entry like 'workflows*:delete' parses but the matcher never satisfies it, so in a deny
+            // list it would silently stop denying what it names.
+            else if (!parsed.IsValidPattern)
+                failures.Add($"'{permission}' in ExternalAuthentication:PermissionGrants:{listName} places '*' where it has no meaning and would match nothing. A wildcard may only be the entire resource ('*'), a trailing '/*' segment ('workflows/*'), or the entire verb ('workflows/definitions:*').");
+        }
     }
 
     private static void ValidateExternalCallbackBaseUri(RedirectValidationOptions? redirects, ICollection<string> failures)

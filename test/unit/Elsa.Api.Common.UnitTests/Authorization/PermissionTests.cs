@@ -63,4 +63,21 @@ public class PermissionTests
         Assert.Equal(subtree, permission.IsSubtree);
         Assert.Equal(resourceWildcard || verbWildcard || subtree, permission.HasWildcard);
     }
+
+    [Theory]
+    [InlineData("workflows/definitions:view", true)]
+    [InlineData("workflows/*:view", true)]
+    [InlineData("workflows/definitions:*", true)]
+    [InlineData("*:*", true)]
+    [InlineData("workflows*:delete", false)]        // missing slash: not a subtree pattern
+    [InlineData("work*/foo:view", false)]           // embedded wildcard mid-resource
+    [InlineData("work*/definitions/*:view", false)] // trailing '/*' does not redeem an embedded '*'
+    [InlineData("workflows/*/versions:view", false)] // '*' as a middle segment
+    [InlineData("workflows:del*", false)]           // embedded wildcard in the verb
+    public void RecognizesWildcardsTheMatcherNeverSatisfies(string value, bool valid)
+    {
+        // Such strings parse — TryParse stays lenient for stored roles — but validation paths reject them,
+        // because a pattern that matches nothing in a deny list silently stops denying.
+        Assert.Equal(valid, Permission.Parse(value).IsValidPattern);
+    }
 }

@@ -67,6 +67,21 @@ public class PermissionGrantValidatorTests
     }
 
     [Theory]
+    [InlineData("workflows*:delete")]
+    [InlineData("work*/foo/*:view")]
+    [InlineData("workflows/*/instances:view")]
+    [InlineData("workflows/definitions:vi*w")]
+    public void RejectsWildcardsTheMatcherNeverSatisfies(string permission)
+    {
+        // These parse, but the matcher never satisfies them; accepting them would persist a grant
+        // that silently reaches nothing.
+        var result = Validator.Validate([permission]);
+
+        Assert.False(result.IsValid);
+        Assert.Contains("would match nothing", result.Errors.Single().Reason);
+    }
+
+    [Theory]
     [InlineData("not a permission")]
     [InlineData("workflows/definitions")]
     [InlineData("workflows/definitions:view,create")]

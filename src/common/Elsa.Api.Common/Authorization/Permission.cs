@@ -38,6 +38,32 @@ public readonly record struct Permission(string Resource, string Verb)
     public bool HasWildcard => IsResourceWildcard || IsVerbWildcard || IsSubtree;
 
     /// <summary>
+    /// Whether every <c>*</c> this permission carries sits where the matcher gives it meaning: the entire
+    /// resource (<c>*</c>), a trailing <c>/*</c> subtree segment with no other <c>*</c>, or the entire verb.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="TryParse"/> stays lenient because stored roles may hold historical strings, so a stray
+    /// wildcard such as <c>workflows*</c> or <c>work*/foo</c> parses yet can never match anything. Validation
+    /// paths use this check to surface those entries instead of letting them silently match nothing — which
+    /// in a deny list would mean silently not denying.
+    /// </remarks>
+    public bool IsValidPattern
+    {
+        get
+        {
+            if (!IsVerbWildcard && Verb.Contains(Wildcard, StringComparison.Ordinal))
+                return false;
+
+            var first = Resource.IndexOf(Wildcard, StringComparison.Ordinal);
+
+            if (first < 0)
+                return true;
+
+            return first == Resource.LastIndexOf(Wildcard, StringComparison.Ordinal) && (IsResourceWildcard || IsSubtree);
+        }
+    }
+
+    /// <summary>
     /// Parses <paramref name="value"/>, returning <c>false</c> when it is not a well-formed permission.
     /// </summary>
     /// <remarks>

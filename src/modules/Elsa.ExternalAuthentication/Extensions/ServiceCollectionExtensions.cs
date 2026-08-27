@@ -49,6 +49,10 @@ public static class ServiceCollectionExtensions
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.PermissionGrantSource, ClaimMappingPermissionGrantSource.SourceType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.PermissionGrantSource, GroupMappingPermissionGrantSource.SourceType);
         services.AddExternalAuthenticationExtension(ExternalAuthenticationExtensionKind.PermissionGrantSource, ClaimPassThroughPermissionGrantSource.SourceType);
+        // The validator warns about grant-boundary configuration, and ValidateOnStart resolves it on any
+        // IOptions access, so a logger has to be resolvable even on a bare service collection. AddLogging is
+        // TryAdd-based, so a host that already configured logging keeps its own.
+        services.AddLogging();
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IValidateOptions<ExternalAuthenticationOptions>, ExternalAuthenticationOptionsValidator>());
         services.AddDataProtection();
         services.AddRateLimiter(_ => { });

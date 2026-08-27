@@ -69,11 +69,25 @@ public class StoredPermissionValidator(IServiceScopeFactory scopeFactory, ILogge
 
     private static bool Resolves(IPermissionDescriptorRegistry registry, string value)
     {
-        if (!Permission.TryParse(value, out var permission))
+        if (!Permission.TryParse(value, out var permission) || !permission.IsValidPattern)
             return false;
 
-        if (permission.IsResourceWildcard || permission.IsSubtree)
+        if (permission.IsResourceWildcard)
             return true;
+
+        // A subtree grant reaching nothing is far more likely a typo ('workflow/*') than a grant for a
+        // module yet to be installed, so it is reported rather than assumed forward-reaching.
+        if (permission.IsSubtree)
+        {
+            var reached = registry.Reach(permission.Resource);
+
+            // A concrete verb is only resolved when something under the subtree actually supports it:
+            // 'workflows/*:frobnicate' reaches plenty and authorizes nothing, which is the same inert
+            // grant an unreachable subtree is, and deserves the same warning.
+            return permission.IsVerbWildcard
+                ? reached.Count > 0
+                : reached.Any(x => registry.Find(x)?.Supports(permission.Verb) == true);
+        }
 
         var descriptor = registry.Find(permission.Resource);
 
