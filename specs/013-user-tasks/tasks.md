@@ -1,7 +1,7 @@
 # Tasks: User Tasks
 
 > **Reconciled 2026-08-27** alongside `specs/013-rbac-authorization-model/tasks.md`. Open items were
-> re-verified against the code; two had landed and are now ticked. Of those still open, three are
+> re-verified against the code; one had landed and is now ticked, and one (T041) is recorded as partially done. Of those still open, three are
 > Studio-side and live in the `elsa-studio` repository, so they cannot be closed from this repo.
 
 
@@ -61,7 +61,7 @@ Tasks use `[ID] [P?] [Story] Description with file path`. `[P]` tasks may run in
 - [x] T038 [P] [US5] Add MySQL provider configuration, migration, design-time factory, and shell feature.
 - [x] T039 [P] [US5] Add Oracle provider configuration, migration, design-time factory, and shell feature.
 - [x] T040 [P] [US5] Add VNext document-store repository and feature.
-- [x] T041 [US5] Add shared persistence conformance and SQLite restart/index/tenant/cursor tests. **Verified done 2026-08-27** — full conformance suite present (`UserTaskRepositoryConformanceTests`, `ConformanceCoverageTests`, fault-injection and provider fixtures).
+- [ ] T041 [US5] Add shared persistence conformance and SQLite restart/index/tenant/cursor tests. **Partially done (verified 2026-08-27)** — the shared conformance half has landed, the SQLite half has not. See the verification-status note below for exactly what exists.
 
 ## Phase 6: Elsa Studio
 
@@ -114,11 +114,13 @@ worktree. The following remain open and are deliberately left unchecked:
   end to end.
 - **T027** — authorization, concealment, idempotency, and conflict behavior are covered at the service
   layer. There are no HTTP-level endpoint tests asserting the status-code mapping.
-- **T041** — *closed 2026-08-27.* The shared conformance suite now runs across in-memory, EF Core
-  (SQLite, SQL Server, PostgreSQL, Oracle) and VNext, declared in `ProviderConformanceSuites.cs`,
-  with `ConformanceCoverageTests` failing the run when a provider silently skips. MySQL remains
-  uncovered: it is pinned to net8.0/net9.0 because Pomelo tops out at EF Core 9 — see
-  `doc/migrations/secrets-tenancy.md`.
+- **T041** — *partially closed 2026-08-27.* The shared conformance half has landed: the suite runs
+  across in-memory, EF Core (SQLite, SQL Server, PostgreSQL, Oracle) and VNext, declared in
+  `ProviderConformanceSuites.cs`, with `ConformanceCoverageTests` failing the run when a provider
+  silently skips. Tenant and cursor behaviour are covered. Still missing are the SQLite **restart**
+  and **index** tests this task also names — there is no restart/reopen test anywhere in the
+  persistence suites, and no index-specific assertion. MySQL is additionally uncovered: it is pinned
+  to net8.0/net9.0 because Pomelo tops out at EF Core 9 — see `doc/migrations/secrets-tenancy.md`.
 - **T047** — the Studio activity editor contribution and participant-picker integration for the
   designer are not implemented.
 - **T050** — Studio tests cover the wire contract, URL state, and error mapping. Component-level tests
