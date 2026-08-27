@@ -5,49 +5,44 @@ using NSubstitute;
 
 namespace Elsa.Identity.UnitTests.Features;
 
+/// <summary>
+/// These tests previously asserted the shape of the SecurityRoot policy. That policy has been retired in
+/// favour of endpoint permissions (ADR 0010), so what matters now is that the feature registers no policy of
+/// its own and still honours a host's own authorization configuration.
+/// </summary>
 public class DefaultAuthenticationFeatureTests
 {
-    // These tests previously asserted the shape of the SecurityRoot policy. That policy has been retired in
-    // favour of endpoint permissions (ADR 0010), so what matters now is that the feature registers no policy
-    // of its own and still honours a host's own authorization configuration.
+    private readonly DefaultAuthenticationFeature _feature = new(Substitute.For<IModule>());
+    private readonly AuthorizationOptions _options = new();
 
     [Fact]
     public void DefaultAuthorizationConfigurationRegistersNoPolicy()
     {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-        var options = new AuthorizationOptions();
+        _feature.ConfigureAuthorizationOptions(_options);
 
-        feature.ConfigureAuthorizationOptions(options);
-
-        Assert.Null(options.GetPolicy("SecurityRoot"));
+        Assert.Null(_options.GetPolicy("SecurityRoot"));
     }
 
     [Fact]
     public void CustomAuthorizationConfigurationIsHonoured()
     {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-        feature.ConfigureAuthorizationOptions = options => options.AddPolicy("Custom", policy => policy.RequireAuthenticatedUser());
-        var options = new AuthorizationOptions();
+        _feature.ConfigureAuthorizationOptions = options => options.AddPolicy("Custom", policy => policy.RequireAuthenticatedUser());
 
-        feature.ConfigureAuthorizationOptions(options);
+        _feature.ConfigureAuthorizationOptions(_options);
 
-        Assert.NotNull(options.GetPolicy("Custom"));
-        Assert.Null(options.GetPolicy("SecurityRoot"));
+        Assert.NotNull(_options.GetPolicy("Custom"));
+        Assert.Null(_options.GetPolicy("SecurityRoot"));
     }
 
     [Fact]
     public void NullConfigureAuthorizationOptionsFallsBackToANoOp()
     {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>())
-        {
-            ConfigureAuthorizationOptions = null!
-        };
-        var options = new AuthorizationOptions();
+        // A host clearing the hook must not take the process down on the next Apply().
+        _feature.ConfigureAuthorizationOptions = null!;
 
-        var exception = Record.Exception(() => feature.ConfigureAuthorizationOptions(options));
+        var exception = Record.Exception(() => _feature.ConfigureAuthorizationOptions(_options));
 
         Assert.Null(exception);
-        Assert.Null(options.GetPolicy("SecurityRoot"));
+        Assert.Null(_options.GetPolicy("SecurityRoot"));
     }
-
 }

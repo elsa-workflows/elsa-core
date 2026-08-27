@@ -119,5 +119,4 @@ public class DefaultAuthenticationFeature : FeatureBase
         Services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
         Services.AddAuthorization(ConfigureAuthorizationOptions);
     }
-
 }

@@ -47,18 +47,33 @@ public class IdentityBootstrapDiagnosticTests
         Assert.DoesNotContain(logger.Entries, x => x.Level == LogLevel.Error);
     }
 
+    [Fact]
+    public async Task SurvivesAStoreItCannotRead()
+    {
+        // The whole point of the broad catch: a store that cannot be read yet -- an unmigrated database, a
+        // connection that is not up -- must not be the reason the host fails to start. That failure surfaces
+        // on its own the moment a real request touches the store.
+        var logger = await StartAsync(storeFailure: new InvalidDataException("the database is not migrated"));
+
+        Assert.DoesNotContain(logger.Entries, x => x.Level == LogLevel.Error);
+        Assert.Single(logger.Entries, x => x.Level == LogLevel.Debug);
+    }
+
     private static async Task<CapturingLogger<IdentityBootstrapDiagnostic>> StartAsync(
         string adminUserName = "",
         string adminPassword = "",
         string apiKey = "",
-        User? existingUser = null)
+        User? existingUser = null,
+        Exception? storeFailure = null)
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IUserStore>(new StubUserStore(existingUser));
+        services.AddSingleton<IUserStore>(new StubUserStore(existingUser, storeFailure));
         var logger = new CapturingLogger<IdentityBootstrapDiagnostic>();
 
+        await using var serviceProvider = services.BuildServiceProvider();
+
         var diagnostic = new IdentityBootstrapDiagnostic(
-            services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>(),
+            serviceProvider.GetRequiredService<IServiceScopeFactory>(),
             OptionsFactory.Create(new DefaultAdminUserOptions { AdminUserName = adminUserName, AdminPassword = adminPassword }),
             OptionsFactory.Create(new AdminApiKeyOptions { ApiKey = apiKey }),
             logger);
@@ -67,12 +82,14 @@ public class IdentityBootstrapDiagnosticTests
         return logger;
     }
 
-    private sealed class StubUserStore(User? user) : IUserStore
+    private sealed class StubUserStore(User? user, Exception? failure = null) : IUserStore
     {
         public Task SaveAsync(User user, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
         public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IEnumerable<User>>(user is null ? [] : [user]);
+            failure is not null ? Task.FromException<IEnumerable<User>>(failure) : Task.FromResult<IEnumerable<User>>(user is null ? [] : [user]);
+
         public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default) => Task.FromResult(user);
     }
 

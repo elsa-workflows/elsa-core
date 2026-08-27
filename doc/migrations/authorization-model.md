@@ -158,9 +158,16 @@ rather than case-insensitively, matching the rest of the model.
 
 ## The SecurityRoot policy and the localhost grant are gone
 
-`SecurityRoot` is removed, along with `IdentityPolicyNames`, `LocalHostRequirement`,
-`LocalHostPermissionRequirement` and the `EnableLocalHostPermissionGrantForSecurityRoot` /
-`DisableLocalHostPermissionGrantForSecurityRoot` toggles. ADR 0010 had already decided endpoints should be
+`SecurityRoot` is removed, and with it every type and switch that existed only to serve it:
+`IdentityPolicyNames`, `LocalHostRequirement` and `LocalHostRequirementHandler`,
+`LocalHostPermissionRequirement` and `LocalHostPermissionRequirementHandler`,
+`LocalHostPermissionRequirementOptions`, the `EnableLocalHostPermissionGrant` property on both
+`DefaultAuthenticationFeature` types, and the `EnableLocalHostPermissionGrantForSecurityRoot` /
+`DisableLocalHostPermissionGrantForSecurityRoot` toggles along with the already-obsolete
+`DisableLocalHostRequirement()` alias. Calls to any of them are now compile errors; delete them, since with no
+policy left to grant into there is nothing for them to configure. The
+`ConfigureAuthorizationOptions` hook on `DefaultAuthenticationFeature` stays, now defaulting to a no-op rather
+than to registering the policy, so a host that adds policies of its own keeps working unchanged. ADR 0010 had already decided endpoints should be
 authorized by their own permissions; this finishes it.
 
 Two of the three endpoints that used the policy (`Roles/Create`, `Applications/Create`) already declared a
