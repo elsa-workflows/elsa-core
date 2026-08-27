@@ -22,6 +22,33 @@ public class RoleDeletionCoordinatorTests
         Assert.IsType<RoleDeletionInspectionResult.Forbidden>(result);
     }
 
+    [Theory]
+    [InlineData("identity/roles:delete")] // the permission the delete endpoints declare
+    [InlineData("identity/*:delete")]     // a subtree grant that reaches it
+    [InlineData("identity/roles:*")]      // a verb wildcard on the resource
+    public async Task InspectionAcceptsTheStructuredDeletePermission(string grant)
+    {
+        // Every other test here acts as an administrator holding "*", which is why this went unnoticed: the
+        // coordinator compared claim values against the legacy string "delete:role", and nothing has granted
+        // that since the vocabulary migration. A caller holding identity/roles:delete passed the endpoint's
+        // own check and was then refused here, so role deletion worked only for holders of "*".
+        var (_, coordinator) = await CreateCoordinatorAsync(new StubContributor([]));
+
+        var result = await coordinator.InspectAsync("workflow-user", PrincipalWith(grant));
+
+        Assert.IsType<RoleDeletionInspectionResult.Success>(result);
+    }
+
+    [Fact]
+    public async Task InspectionStillRefusesAnUnrelatedPermission()
+    {
+        var (_, coordinator) = await CreateCoordinatorAsync(new StubContributor([]));
+
+        var result = await coordinator.InspectAsync("workflow-user", PrincipalWith("identity/roles:view"));
+
+        Assert.IsType<RoleDeletionInspectionResult.Forbidden>(result);
+    }
+
     [Fact]
     public async Task OrdinaryDeletionIsBlockedByConfigurationDependency()
     {
@@ -113,6 +140,8 @@ public class RoleDeletionCoordinatorTests
     }
 
     private static ClaimsPrincipal Administrator() => new(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, PermissionNames.All)]));
+
+    private static ClaimsPrincipal PrincipalWith(string permission) => new(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, permission)]));
 
     private static RoleDeletionDependency Dependency(
         string ownerId,

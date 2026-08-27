@@ -24,7 +24,7 @@ public class Endpoint(IAIToolRegistry toolRegistry, IOptions<AIHostOptions> opti
         var userPermissions = AIHttpContextIdentity.GetPermissions(HttpContext);
         return await toolRegistry.ListAsync(new AIToolQuery
         {
-            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, userPermissions),
+            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, HttpContext.User),
             ActorId = AIHttpContextIdentity.GetActorId(HttpContext),
             TenantId = AIHttpContextIdentity.GetTenantId(HttpContext),
             UserPermissions = userPermissions

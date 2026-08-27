@@ -38,7 +38,7 @@ public class Endpoint(
             TenantId = AIHttpContextIdentity.GetTenantId(HttpContext),
             UserId = AIHttpContextIdentity.GetActorId(HttpContext),
             UserPermissions = userPermissions,
-            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, userPermissions),
+            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, HttpContext.User),
             ProviderName = null
         };
         var response = HttpContext.Response;
