@@ -28,7 +28,6 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// <inheritdoc />
     public DefaultAuthenticationFeature(IModule module) : base(module)
     {
-        ConfigureAuthorizationOptions = ConfigureDefaultSecurityRootPolicy;
     }
 
     /// <summary>
@@ -39,10 +38,14 @@ public class DefaultAuthenticationFeature : FeatureBase
     /// <summary>
     /// Gets or sets the authorization options configuration.
     /// </summary>
+    /// <remarks>
+    /// Defaults to a no-op. It previously registered the <c>SecurityRoot</c> policy, which has been retired in
+    /// favour of endpoint permissions -- see ADR 0010. Hosts that add their own policies keep setting this.
+    /// </remarks>
     public Action<AuthorizationOptions> ConfigureAuthorizationOptions
     {
-        get => _configureAuthorizationOptions ?? ConfigureDefaultSecurityRootPolicy;
-        set => _configureAuthorizationOptions = value ?? ConfigureDefaultSecurityRootPolicy;
+        get => _configureAuthorizationOptions ?? (_ => { });
+        set => _configureAuthorizationOptions = value;
     }
 
     /// <summary>
@@ -153,21 +156,4 @@ public class DefaultAuthenticationFeature : FeatureBase
         Services.AddAuthorization(ConfigureAuthorizationOptions);
     }
 
-    private static void ConfigureAuthenticatedSecurityRootPolicy(AuthorizationOptions options)
-    {
-        options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
-    }
-
-    private void ConfigureDefaultSecurityRootPolicy(AuthorizationOptions options)
-    {
-        if (EnableLocalHostPermissionGrant)
-            ConfigureLocalHostSecurityRootPolicy(options);
-        else
-            ConfigureAuthenticatedSecurityRootPolicy(options);
-    }
-
-    private static void ConfigureLocalHostSecurityRootPolicy(AuthorizationOptions options)
-    {
-        options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
-    }
 }

@@ -100,12 +100,8 @@ public class DefaultAuthenticationFeature : IShellFeature
         services.AddScoped(ApiKeyProviderType);
         services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
 
-        services.AddAuthorization(options =>
-        {
-            if (EnableLocalHostPermissionGrant)
-                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
-            else
-                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
-        });
+        // No SecurityRoot policy: it was retired in favour of endpoint permissions (ADR 0010). Authorization
+        // services are still registered so the permission requirement handler runs.
+        services.AddAuthorization();
     }
 }
