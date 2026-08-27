@@ -821,7 +821,7 @@ public class ConnectionManagementTests : IAsyncLifetime
 
     private async Task<HttpResponseMessage> PutConnectionAsync(string id, string revision, object request)
     {
-        var message = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        using var message = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
         {
             Content = JsonContent.Create(request)
         };
