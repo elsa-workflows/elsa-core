@@ -492,6 +492,32 @@ public sealed partial class IdentityProviderConnectionManagementService(
 
     private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, string targetTenantId, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
     {
+        // The roles the candidate would actually assign. A policy that does not create users assigns none,
+        // and so does no policy at all -- which is what makes switching away from, or clearing, a stored
+        // create-user fallback a change rather than a no-op.
+        var defaultRoleIds = connection.UnlinkedPolicy is { } candidate && UsesCreateUserFallback(candidate)
+            ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(candidate.Settings)
+            : [];
+
+        // Two independent checks, reported separately because they answer different questions. The
+        // permission asks whether this actor may decide what auto-created users receive; the subset rule
+        // asks whether these particular roles stay within what the actor already holds. Only the second
+        // existed, which left the sibling resource guarded on the write path while the roles inside it
+        // were not -- see #7977.
+        //
+        // Gated on the effective set *changing*, not on it being non-empty, and evaluated before the
+        // null-policy early return. Validation runs on every update, on enabling a connection, and on
+        // read-only validate, so keying off presence would stop an administrator without this permission
+        // from editing an unrelated field once anyone had set roles. Evaluating it only for non-null
+        // policies would be worse: omitting unlinkedPolicy from an update clears a stored fallback and
+        // drops its role assignments, the same decision as switching it to 'reject'.
+        //
+        // The cheap in-memory permission check goes first: the unchanged-roles comparison rebuilds the
+        // effective registry, and its answer is irrelevant for an actor who holds the permission.
+        if (!permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update)
+            && !await DefaultRolesAreUnchangedAsync(connection, targetTenantId, defaultRoleIds, cancellationToken))
+            errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Changing the default roles for an unlinked identity policy requires the policy default roles update permission."));
+
         if (connection.UnlinkedPolicy is not { } policy)
             return;
         if (!configuredOptions.UnlinkedIdentityPolicy.AllowDatabaseConnectionOverride)
@@ -500,28 +526,6 @@ public sealed partial class IdentityProviderConnectionManagementService(
             errors.Add(new("unlinkedPolicy", "unavailable", "The selected unlinked identity policy is not installed or allowed."));
         else
         {
-            // The roles this policy would actually assign. A policy that does not create users assigns none,
-            // which is what makes switching away from a create-user fallback a change rather than a no-op.
-            var defaultRoleIds = UsesCreateUserFallback(policy)
-                ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings)
-                : [];
-
-            // Two independent checks, reported separately because they answer different questions. The
-            // permission asks whether this actor may decide what auto-created users receive; the subset rule
-            // asks whether these particular roles stay within what the actor already holds. Only the second
-            // existed, which left the sibling resource guarded on the write path while the roles inside it
-            // were not -- see #7977.
-            //
-            // Gated on the effective set *changing*, not on it being non-empty, and evaluated outside the
-            // create-user branch. Validation runs on every update, on enabling a connection, and on
-            // read-only validate, so keying off presence would stop an administrator without this permission
-            // from editing an unrelated field once anyone had set roles. Evaluating it only for create-user
-            // policies would be worse: switching a stored fallback to 'reject' drops its roles, which is a
-            // decision about what auto-created users receive made without the permission that governs it.
-            if (!await DefaultRolesAreUnchangedAsync(connection, targetTenantId, defaultRoleIds, cancellationToken)
-                && !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
-                errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Changing the default roles for an unlinked identity policy requires the policy default roles update permission."));
-
             // The subset rule only has something to say about roles actually being assigned.
             if (UsesCreateUserFallback(policy) && !await roleAuthorizationService.CanAssignRolesAsync(actor, defaultRoleIds, cancellationToken))
                 errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
