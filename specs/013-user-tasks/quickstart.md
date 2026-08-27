@@ -9,7 +9,7 @@ This walkthrough creates a workflow-bound invoice approval, executes it, lists t
 
 - An Elsa Server with workflow management, workflow runtime, and the User Tasks module enabled.
 - A host identity provider that issues a bearer token with a stable subject and optional group claims.
-- The `read:user-tasks`, `claim:user-tasks`, and `complete:user-tasks` permissions for the worker token. A manager token additionally needs `assign:user-tasks` and `manage:user-tasks`.
+- The `user-tasks:view`, `user-tasks:claim`, and `user-tasks:complete` permissions for the worker token. A manager token additionally needs `user-tasks:assign` and `user-tasks:supervise`.
 - An installed form provider if the task uses `formReference`.
 
 The Core module defaults to an in-memory repository for development and tests. A durable host adds the User Tasks EF Core persistence package and its provider-specific shell feature, following the same package split used by `Elsa.Secrets`:
@@ -236,7 +236,7 @@ curl --fail-with-body \
 
 ## Inspect the manager queue and audit history
 
-Managers with `manage:user-tasks` can query all task scopes and see the safe event timeline:
+Managers with `user-tasks:supervise` can query all task scopes and see the safe event timeline:
 
 ```bash
 curl --fail-with-body \

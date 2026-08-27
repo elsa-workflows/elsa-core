@@ -1,8 +1,10 @@
+using Elsa.Authorization;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Common;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Options;
+using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Services;
 using Elsa.Workflows;
 using Microsoft.Extensions.Options;
@@ -174,7 +176,10 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         var subject = new ParticipantReference("tenant-1", "directory", UserTaskParticipantType.User, "u1");
         var actor = new UserTaskActor(subject, [])
         {
-            Permissions = new HashSet<string>(["read:user-tasks", "claim:user-tasks", "complete:user-tasks"], StringComparer.OrdinalIgnoreCase)
+            Permissions = new HashSet<string>(
+                new[] { CoreVerbs.View, UserTaskVerbs.Claim, UserTaskVerbs.Complete }
+                    .Select(verb => new Permission(UserTasksResourcePermissions.UserTasks, verb).ToString()),
+                StringComparer.Ordinal)
         };
         var task = CreateTask(DateTimeOffset.UtcNow, subject);
         await repository.AddProjectionAsync(task);

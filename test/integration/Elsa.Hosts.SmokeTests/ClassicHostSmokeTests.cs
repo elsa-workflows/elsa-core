@@ -23,8 +23,8 @@ public class ShellHostSmokeTests(HostFixture<ModularServerHost> host) : HostSmok
     /// <inheritdoc />
     /// <remarks>
     /// The two route sets overlap but are not identical: each lists what its own host actually configures,
-    /// and External Authentication is enabled only here. Keeping them separate is the point -- a route that
-    /// disappears from one host and not the other is the divergence these tests are looking for.
+    /// and External Authentication and User Tasks are enabled only here. Keeping them separate is the point --
+    /// a route that disappears from one host and not the other is the divergence these tests are looking for.
     /// </remarks>
     protected override IReadOnlyCollection<string> GatedRoutes =>
     [
@@ -32,6 +32,7 @@ public class ShellHostSmokeTests(HostFixture<ModularServerHost> host) : HostSmok
         "/elsa/api/workflow-instances",
         "/elsa/api/identity/permissions",
         "/elsa/api/external-authentication/connections",
-        "/elsa/api/external-authentication/descriptors/adapters"
+        "/elsa/api/external-authentication/descriptors/adapters",
+        "/elsa/api/user-tasks"
     ];
 }

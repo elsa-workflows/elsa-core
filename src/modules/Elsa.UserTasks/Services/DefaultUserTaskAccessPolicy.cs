@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Permissions;
@@ -20,7 +21,7 @@ public sealed class DefaultUserTaskAccessPolicy : IUserTaskAccessPolicy
     public Task<UserTaskQueryScope?> CreateScopeAsync(UserTaskActor actor, UserTaskQueryScopeKind kind, CancellationToken cancellationToken = default)
     {
         // A guest session is issued for one task and carries no list capability at all.
-        if (actor.IsGuest || !actor.HasPermission(UserTasksPermissions.Read))
+        if (actor.IsGuest || !actor.HasPermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View))
             return Task.FromResult<UserTaskQueryScope?>(null);
 
         var isManager = IsManager(actor);
@@ -90,11 +91,11 @@ public sealed class DefaultUserTaskAccessPolicy : IUserTaskAccessPolicy
     }
 
     /// <summary>
-    /// A tenant-scoped manager must hold <c>manage:user-tasks</c> (or the wildcard grant). The actor flag on
-    /// its own is host-supplied metadata and is never sufficient.
+    /// A tenant-scoped manager must hold <c>user-tasks:supervise</c> (or a grant covering it). The actor flag
+    /// on its own is host-supplied metadata and is never sufficient.
     /// </summary>
     private static bool IsManager(UserTaskActor actor) =>
-        !actor.IsGuest && actor.IsManager && actor.HasPermission(UserTasksPermissions.Manage);
+        !actor.IsGuest && actor.IsManager && actor.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Supervise);
 
     private static bool IsCandidate(UserTask task, UserTaskActor actor)
     {
@@ -111,18 +112,24 @@ public sealed class DefaultUserTaskAccessPolicy : IUserTaskAccessPolicy
     private static bool IsExcluded(UserTask task, UserTaskActor actor) =>
         task.ExcludedUsers.Any(x => x.Matches(actor.Subject)) && !(IsManager(actor) && task.AllowManagerExclusionOverride);
 
-    private static string RequiredPermission(UserTaskAccessOperation operation) => operation switch
+    /// <summary>
+    /// The permission an operation needs, which is the same one the endpoint offering it declares. Every
+    /// operation acts on the task itself, so only the verb varies.
+    /// </summary>
+    private static Permission RequiredPermission(UserTaskAccessOperation operation) =>
+        new(UserTasksResourcePermissions.UserTasks, RequiredVerb(operation));
+
+    private static string RequiredVerb(UserTaskAccessOperation operation) => operation switch
     {
-        UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.ReadProtected => UserTasksPermissions.Read,
-        UserTaskAccessOperation.Claim or UserTaskAccessOperation.Release => UserTasksPermissions.Claim,
-        UserTaskAccessOperation.Complete => UserTasksPermissions.Complete,
-        UserTaskAccessOperation.Assign => UserTasksPermissions.Assign,
-        UserTaskAccessOperation.UpdateScheduling => UserTasksPermissions.Update,
-        UserTaskAccessOperation.Cancel => UserTasksPermissions.Cancel,
-        UserTaskAccessOperation.Manage => UserTasksPermissions.Manage,
-        UserTaskAccessOperation.IssueInvitation => UserTasksPermissions.Invite,
-        UserTaskAccessOperation.RetryResolution => UserTasksPermissions.Manage,
-        _ => UserTasksPermissions.Read
+        UserTaskAccessOperation.ReadSummary or UserTaskAccessOperation.ReadProtected => CoreVerbs.View,
+        UserTaskAccessOperation.Claim or UserTaskAccessOperation.Release => UserTaskVerbs.Claim,
+        UserTaskAccessOperation.Complete => UserTaskVerbs.Complete,
+        UserTaskAccessOperation.Assign => UserTaskVerbs.Assign,
+        UserTaskAccessOperation.UpdateScheduling => CoreVerbs.Update,
+        UserTaskAccessOperation.Cancel => UserTaskVerbs.Cancel,
+        UserTaskAccessOperation.Manage or UserTaskAccessOperation.RetryResolution => UserTaskVerbs.Supervise,
+        UserTaskAccessOperation.IssueInvitation => UserTaskVerbs.Invite,
+        _ => CoreVerbs.View
     };
 }
 

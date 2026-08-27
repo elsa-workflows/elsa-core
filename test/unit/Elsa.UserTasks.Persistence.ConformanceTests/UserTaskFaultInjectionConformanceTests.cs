@@ -1,8 +1,10 @@
+using Elsa.Authorization;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Persistence.ConformanceTests.Faults;
 using Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
 using Elsa.UserTasks.Persistence.ConformanceTests.Providers;
+using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Services;
 using Elsa.Workflows;
 
@@ -263,18 +265,20 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
     private DefaultUserTaskInvitationService CreateInvitationService(IUserTaskRepository repository, IUserTaskGuestSessionIssuer sessions) =>
         new(repository, _policy, Fixture.Outbox, new DefaultUserTaskInvitationVerifier(), sessions, _sink, _identity, Clock, Fixture.Options);
 
+    /// <summary>The named verbs, as permissions on the <c>user-tasks</c> resource.</summary>
+    private static IReadOnlySet<string> Grants(params string[] verbs) =>
+        verbs.Select(verb => new Permission(UserTasksResourcePermissions.UserTasks, verb).ToString()).ToHashSet(StringComparer.Ordinal);
+
     private UserTaskActor Actor(string id = "user-1") => new(Subject(id), [])
     {
-        Permissions = new HashSet<string>(["read:user-tasks", "claim:user-tasks", "complete:user-tasks"], StringComparer.OrdinalIgnoreCase)
+        Permissions = Grants(CoreVerbs.View, UserTaskVerbs.Claim, UserTaskVerbs.Complete)
     };
 
     private UserTaskActor ManagerActor() => Actor("manager-1") with
     {
         IsManager = true,
-        Permissions = new HashSet<string>([
-            "read:user-tasks", "claim:user-tasks", "complete:user-tasks", "assign:user-tasks",
-            "update:user-tasks", "cancel:user-tasks", "invite:user-tasks", "manage:user-tasks"
-        ], StringComparer.OrdinalIgnoreCase)
+        Permissions = Grants(CoreVerbs.View, UserTaskVerbs.Claim, UserTaskVerbs.Complete, UserTaskVerbs.Assign,
+            CoreVerbs.Update, UserTaskVerbs.Cancel, UserTaskVerbs.Invite, UserTaskVerbs.Supervise)
     };
 
     private sealed class TestIdentityGenerator : IIdentityGenerator

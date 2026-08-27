@@ -1,7 +1,9 @@
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
+using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Services;
 using Xunit;
 
@@ -18,7 +20,7 @@ public class UserTaskInvitationTests
     private readonly UserTaskTestFixture _fixture = new();
 
     private static Func<UserTaskDefinitionSnapshot, UserTaskDefinitionSnapshot> WithBearerInvitation(params string[] actions) =>
-        definition => definition with { Invitations = [new("bearer", actions.Length > 0 ? actions : ["Approve"], BearerOnly: true)] };
+        UserTaskTestFixture.WithBearerInvitation(actions);
 
     [Fact]
     public async Task Issue_KeepsTheSecretOutOfTheApiResultAndOffTheAuditTrail()
@@ -53,7 +55,7 @@ public class UserTaskInvitationTests
     [Fact]
     public async Task Issue_RequiresTheInvitePermissionAndManagerRelationship()
     {
-        var participant = _fixture.Actor("user-1", "read:user-tasks", "invite:user-tasks");
+        var participant = _fixture.Actor("user-1", UserTaskTestFixture.Grant(CoreVerbs.View), UserTaskTestFixture.Grant(UserTaskVerbs.Invite));
         var task = await _fixture.ProjectAsync(participant.Subject, WithBearerInvitation());
 
         Assert.Null(await _fixture.Invitations.IssueAsync(Tenant, task.Id, new(task.Revision, "bearer", ["Approve"]), participant));

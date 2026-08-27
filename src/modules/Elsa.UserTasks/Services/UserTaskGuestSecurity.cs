@@ -2,10 +2,12 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.Common;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
+using Elsa.UserTasks.Permissions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
@@ -218,7 +220,10 @@ public sealed class UserTaskGuestActorResolver(IUserTaskGuestSessionIssuer sessi
         return new UserTaskActor(session.Subject, [], session.Subject.DisplayName)
         {
             IsManager = false,
-            Permissions = new HashSet<string>([Permissions.UserTasksPermissions.Read, Permissions.UserTasksPermissions.Complete], StringComparer.OrdinalIgnoreCase),
+            Permissions = new HashSet<string>([
+                new Permission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View).ToString(),
+                new Permission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Complete).ToString()
+            ], StringComparer.Ordinal),
             GuestTaskId = session.TaskId,
             GuestAllowedActions = new HashSet<string>(session.AllowedActions, StringComparer.OrdinalIgnoreCase)
         };

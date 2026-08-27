@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Abstractions;
+using Elsa.Authorization;
 using Elsa.Common;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
@@ -84,7 +85,7 @@ internal sealed class FeatureCapabilitiesEndpoint(IUserTaskIdentityResolver iden
     public override void Configure()
     {
         Get("/user-tasks/capabilities");
-        ConfigurePermissions(UserTasksPermissions.Read);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -97,23 +98,24 @@ internal sealed class FeatureCapabilitiesEndpoint(IUserTaskIdentityResolver iden
         }
 
         var settings = options.Value;
-        var isManager = actor.IsManager && actor.HasPermission(UserTasksPermissions.Manage);
+        bool Holds(string verb) => actor.HasPermission(UserTasksResourcePermissions.UserTasks, verb);
+        var isManager = actor.IsManager && Holds(UserTaskVerbs.Supervise);
         // The descriptor is advisory: it decides what the client renders, never what the server allows.
         await Send.OkAsync(new UserTaskFeatureCapabilities
         {
             Enabled = true,
-            CanList = actor.HasPermission(UserTasksPermissions.Read),
-            CanRead = actor.HasPermission(UserTasksPermissions.Read),
+            CanList = Holds(CoreVerbs.View),
+            CanRead = Holds(CoreVerbs.View),
             CanReadAll = isManager,
-            CanClaim = actor.HasPermission(UserTasksPermissions.Claim),
-            CanRelease = actor.HasPermission(UserTasksPermissions.Claim),
-            CanComplete = actor.HasPermission(UserTasksPermissions.Complete),
-            CanAssign = actor.HasPermission(UserTasksPermissions.Assign),
-            CanUpdate = actor.HasPermission(UserTasksPermissions.Update),
-            CanCancel = actor.HasPermission(UserTasksPermissions.Cancel),
-            CanCreateGuestLinks = actor.HasPermission(UserTasksPermissions.Invite),
-            CanViewProtected = actor.HasPermission(UserTasksPermissions.Read),
-            ParticipantPicker = actor.HasPermission(UserTasksPermissions.LookupParticipants) && directory is not EmptyUserTaskParticipantDirectory,
+            CanClaim = Holds(UserTaskVerbs.Claim),
+            CanRelease = Holds(UserTaskVerbs.Claim),
+            CanComplete = Holds(UserTaskVerbs.Complete),
+            CanAssign = Holds(UserTaskVerbs.Assign),
+            CanUpdate = Holds(CoreVerbs.Update),
+            CanCancel = Holds(UserTaskVerbs.Cancel),
+            CanCreateGuestLinks = Holds(UserTaskVerbs.Invite),
+            CanViewProtected = Holds(CoreVerbs.View),
+            ParticipantPicker = actor.HasPermission(UserTasksResourcePermissions.Participants, CoreVerbs.View) && directory is not EmptyUserTaskParticipantDirectory,
             Realtime = settings.RealtimeEnabled,
             PollingIntervalSeconds = settings.PollingIntervalSeconds
         }, cancellationToken);
@@ -126,7 +128,7 @@ internal sealed class ListEndpoint(IUserTaskManager manager, IUserTaskIdentityRe
     public override void Configure()
     {
         Get("/user-tasks");
-        ConfigurePermissions(UserTasksPermissions.Read);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(ListUserTasksRequest request, CancellationToken cancellationToken)
@@ -178,7 +180,7 @@ internal sealed class GetEndpoint(IUserTaskManager manager, IUserTaskIdentityRes
     public override void Configure()
     {
         Get("/user-tasks/{taskId}");
-        ConfigurePermissions(UserTasksPermissions.Read);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -201,7 +203,7 @@ internal sealed class CapabilitiesEndpoint(IUserTaskManager manager, IUserTaskId
     public override void Configure()
     {
         Get("/user-tasks/{taskId}/capabilities");
-        ConfigurePermissions(UserTasksPermissions.Read);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -222,7 +224,7 @@ internal sealed class ListEventsEndpoint(IUserTaskManager manager, IUserTaskIden
     public override void Configure()
     {
         Get("/user-tasks/{taskId}/events");
-        ConfigurePermissions(UserTasksPermissions.Read);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -247,7 +249,7 @@ internal sealed class ClaimEndpoint(IUserTaskManager manager, IUserTaskIdentityR
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/claim");
-        ConfigurePermissions(UserTasksPermissions.Claim);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Claim);
     }
 
     public override async Task HandleAsync(UserTaskMutationApiRequest request, CancellationToken cancellationToken)
@@ -269,7 +271,7 @@ internal sealed class ReleaseEndpoint(IUserTaskManager manager, IUserTaskIdentit
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/release");
-        ConfigurePermissions(UserTasksPermissions.Claim);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Claim);
     }
 
     public override async Task HandleAsync(UserTaskMutationApiRequest request, CancellationToken cancellationToken)
@@ -291,7 +293,7 @@ internal sealed class AssignEndpoint(IUserTaskManager manager, IUserTaskIdentity
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/assign");
-        ConfigurePermissions(UserTasksPermissions.Assign);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Assign);
     }
 
     public override async Task HandleAsync(AssignUserTaskApiRequest request, CancellationToken cancellationToken)
@@ -328,7 +330,7 @@ internal sealed class ScheduleEndpoint(IUserTaskManager manager, IUserTaskIdenti
     public override void Configure()
     {
         Patch("/user-tasks/{taskId}");
-        ConfigurePermissions(UserTasksPermissions.Update);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(ScheduleUserTaskApiRequest request, CancellationToken cancellationToken)
@@ -351,7 +353,7 @@ internal sealed class CompleteEndpoint(IUserTaskManager manager, IUserTaskIdenti
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/complete");
-        ConfigurePermissions(UserTasksPermissions.Complete);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Complete);
     }
 
     public override async Task HandleAsync(CompleteUserTaskApiRequest request, CancellationToken cancellationToken)
@@ -379,7 +381,7 @@ internal sealed class CancelEndpoint(IUserTaskManager manager, IUserTaskIdentity
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/cancel");
-        ConfigurePermissions(UserTasksPermissions.Cancel);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Cancel);
     }
 
     public override async Task HandleAsync(CancelUserTaskApiRequest request, CancellationToken cancellationToken)
@@ -402,7 +404,7 @@ internal sealed class RetryResolutionEndpoint(IUserTaskManager manager, IUserTas
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/retry-resolution");
-        ConfigurePermissions(UserTasksPermissions.Manage);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Supervise);
     }
 
     public override async Task HandleAsync(UserTaskMutationApiRequest request, CancellationToken cancellationToken)
@@ -424,7 +426,7 @@ internal sealed class RevealFieldEndpoint(IUserTaskManager manager, IUserTaskIde
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/reveal");
-        ConfigurePermissions(UserTasksPermissions.Read);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(RevealUserTaskFieldApiRequest request, CancellationToken cancellationToken)
@@ -448,7 +450,7 @@ internal sealed class IssueInvitationEndpoint(IUserTaskInvitationService invitat
     public override void Configure()
     {
         Post("/user-tasks/{taskId}/invitations");
-        ConfigurePermissions(UserTasksPermissions.Invite);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Invite);
     }
 
     public override async Task HandleAsync(IssueUserTaskInvitationApiRequest request, CancellationToken cancellationToken)
@@ -479,7 +481,7 @@ internal sealed class ListInvitationsEndpoint(IUserTaskInvitationService invitat
     public override void Configure()
     {
         Get("/user-tasks/{taskId}/invitations");
-        ConfigurePermissions(UserTasksPermissions.Invite);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Invite);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -501,7 +503,7 @@ internal sealed class RevokeInvitationEndpoint(IUserTaskInvitationService invita
     public override void Configure()
     {
         Delete("/user-tasks/{taskId}/invitations/{invitationId}");
-        ConfigurePermissions(UserTasksPermissions.Invite);
+        RequirePermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Invite);
     }
 
     public override async Task HandleAsync(UserTaskMutationApiRequest request, CancellationToken cancellationToken)
@@ -526,7 +528,7 @@ internal sealed class ListParticipantsEndpoint(IUserTaskParticipantDirectory dir
     public override void Configure()
     {
         Get("/user-task-participants");
-        ConfigurePermissions(UserTasksPermissions.LookupParticipants);
+        RequirePermission(UserTasksResourcePermissions.Participants, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(UserTaskParticipantLookupApiRequest request, CancellationToken cancellationToken)

@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using System.Text.Json;
+using Elsa.Authorization;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
+using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Repositories;
 using Elsa.UserTasks.Services;
 using Xunit;
@@ -20,7 +22,7 @@ public class UserTaskTests
             new Claim("sub", "user-1"),
             new Claim("groups", "group,with;delimiters"),
             new Claim("groups", "finance"),
-            new Claim("permission", "read:user-tasks")
+            new Claim("permission", UserTaskTestFixture.Grant(CoreVerbs.View))
         ], "test"));
 
         var actor = await resolver.ResolveAsync(principal);
@@ -117,7 +119,7 @@ public class UserTaskTests
     [Fact]
     public async Task Policy_RequiresOperationPermissionInAdditionToCandidateRelationship()
     {
-        var actor = _fixture.Actor("user-1", "read:user-tasks");
+        var actor = _fixture.Actor("user-1", UserTaskTestFixture.Grant(CoreVerbs.View));
         var task = await _fixture.ProjectAsync(actor.Subject);
 
         var claim = await _fixture.Manager.ClaimAsync(UserTaskTestFixture.TenantId, task.Id, new(1, "claim-no-permission"), actor);
@@ -129,11 +131,11 @@ public class UserTaskTests
     [Fact]
     public async Task Policy_ManagerFlagAloneDoesNotGrantManagementWithoutThePermission()
     {
-        var actor = _fixture.Actor("user-1", "read:user-tasks", "assign:user-tasks") with { IsManager = true };
+        var actor = _fixture.Actor("user-1", UserTaskTestFixture.Grant(CoreVerbs.View), UserTaskTestFixture.Grant(UserTaskVerbs.Assign)) with { IsManager = true };
         var candidate = _fixture.Actor("user-2");
         var task = await _fixture.ProjectAsync(candidate.Subject);
 
-        // The host set IsManager but never granted manage:user-tasks, so management must still be refused.
+        // The host set IsManager but never granted user-tasks:supervise, so management must still be refused.
         Assert.False(await _fixture.Policy.AuthorizeAsync(task, actor, UserTaskAccessOperation.Assign));
         Assert.Null(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.All));
     }

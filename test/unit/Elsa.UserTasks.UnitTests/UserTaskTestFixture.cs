@@ -1,7 +1,9 @@
+using Elsa.Authorization;
 using Elsa.Common;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
+using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Repositories;
 using Elsa.UserTasks.Services;
 using Elsa.Workflows;
@@ -44,19 +46,24 @@ public sealed class UserTaskTestFixture
         GuestActors = new(GuestSessions);
     }
 
+    /// <summary>A permission on the <c>user-tasks</c> resource, so tests name a verb rather than a string.</summary>
+    public static string Grant(string verb) => new Permission(UserTasksResourcePermissions.UserTasks, verb).ToString();
+
     public UserTaskActor Actor(string id, params string[] permissions) =>
         new(new(TenantId, "oidc", UserTaskParticipantType.User, id), [])
         {
-            Permissions = new HashSet<string>(permissions.Length > 0 ? permissions : ["read:user-tasks", "claim:user-tasks", "complete:user-tasks"], StringComparer.OrdinalIgnoreCase)
+            Permissions = new HashSet<string>(
+                permissions.Length > 0 ? permissions : [Grant(CoreVerbs.View), Grant(UserTaskVerbs.Claim), Grant(UserTaskVerbs.Complete)],
+                StringComparer.Ordinal)
         };
 
     public UserTaskActor ManagerActor(string id = "manager-1") => Actor(id) with
     {
         IsManager = true,
         Permissions = new HashSet<string>([
-            "read:user-tasks", "claim:user-tasks", "complete:user-tasks", "assign:user-tasks",
-            "update:user-tasks", "cancel:user-tasks", "invite:user-tasks", "manage:user-tasks"
-        ], StringComparer.OrdinalIgnoreCase)
+            Grant(CoreVerbs.View), Grant(UserTaskVerbs.Claim), Grant(UserTaskVerbs.Complete), Grant(UserTaskVerbs.Assign),
+            Grant(CoreVerbs.Update), Grant(UserTaskVerbs.Cancel), Grant(UserTaskVerbs.Invite), Grant(UserTaskVerbs.Supervise)
+        ], StringComparer.Ordinal)
     };
 
     public UserTaskMaterialization Materialization(ParticipantReference candidate, Func<UserTaskDefinitionSnapshot, UserTaskDefinitionSnapshot>? configure = null)
@@ -72,6 +79,10 @@ public sealed class UserTaskTestFixture
             configure?.Invoke(definition) ?? definition, [], [], Clock.UtcNow, "task-1",
             "Approval workflow", 3, "correlation-1");
     }
+
+    /// <summary>A definition carrying a bearer-verified guest invitation, which issuance requires.</summary>
+    public static Func<UserTaskDefinitionSnapshot, UserTaskDefinitionSnapshot> WithBearerInvitation(params string[] actions) =>
+        definition => definition with { Invitations = [new("bearer", actions.Length > 0 ? actions : ["Approve"], BearerOnly: true)] };
 
     /// <summary>Projects a task and returns it, so tests can start from a committed projection in one line.</summary>
     public async Task<UserTask> ProjectAsync(ParticipantReference candidate, Func<UserTaskDefinitionSnapshot, UserTaskDefinitionSnapshot>? configure = null) =>
