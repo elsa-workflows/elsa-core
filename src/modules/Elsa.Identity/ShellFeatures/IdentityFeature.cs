@@ -48,6 +48,7 @@ public class IdentityFeature : IFastEndpointsShellFeature
         // accessor. TryAdd leaves an existing registration -- notably MultitenancyFeature's -- untouched.
         services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddHostedService<HostedServices.StoredPermissionValidator>();
+        services.AddHostedService<HostedServices.IdentityBootstrapDiagnostic>();
         services.AddScoped<Services.RoleSecurityNotifier>();
         services.AddMemoryCache();
         services.Configure<PermissionStampOptions>(_ => { });

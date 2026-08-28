@@ -180,6 +180,7 @@ public class IdentityFeature : FeatureBase
         Services.AddMemoryCache();
         Services.Configure<PermissionStampOptions>(_ => { });
         Services.AddHostedService<StoredPermissionValidator>();
+        Services.AddHostedService<IdentityBootstrapDiagnostic>();
 
         // Memory stores.
         Services

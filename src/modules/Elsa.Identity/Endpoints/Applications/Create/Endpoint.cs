@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace Elsa.Identity.Endpoints.Applications.Create;
 
 /// <summary>
-/// An endpoint that creates a new application. Requires the <code>SecurityRoot</code> policy.
+/// An endpoint that creates a new application.
 /// </summary>
 [PublicAPI]
 internal class Create(
@@ -28,7 +28,6 @@ internal class Create(
     {
         Post("/identity/applications");
         RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Applications, CoreVerbs.Create);
-        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />

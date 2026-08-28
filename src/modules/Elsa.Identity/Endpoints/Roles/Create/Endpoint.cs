@@ -19,7 +19,6 @@ internal class Create(IRoleManager roleManager, IRoleAuthorizationService roleAu
     {
         Post("/identity/roles");
         RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Create);
-        Policies(IdentityPolicyNames.SecurityRoot);
     }
 
     /// <inheritdoc />
