@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Elsa.Authorization;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 
@@ -20,7 +21,7 @@ public sealed class RoleDeletionCoordinator(
         var role = await roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
         if (role is null)
             return new RoleDeletionInspectionResult.NotFound();
-        if (!HasPermission(actor, "delete:role") || !roleAuthorizationService.CanMutateRole(actor, role))
+        if (!HasPermission(actor) || !roleAuthorizationService.CanMutateRole(actor, role))
             return new RoleDeletionInspectionResult.Forbidden();
 
         var snapshots = await InspectContributorsAsync(roleId, cancellationToken);
@@ -190,6 +191,14 @@ public sealed class RoleDeletionCoordinator(
     private async ValueTask<RoleDeletionImpact> GetCurrentImpactAsync(string roleId, CancellationToken cancellationToken) =>
         CreateImpact(roleId, await InspectContributorsAsync(roleId, cancellationToken));
 
-    private static bool HasPermission(ClaimsPrincipal actor, string permission) =>
-        actor.FindAll(PermissionNames.ClaimType).Any(x => x.Value == PermissionNames.All || string.Equals(x.Value, permission, StringComparison.Ordinal));
+    /// <summary>The permission this mid-handler check enforces, matching what the delete endpoints declare.</summary>
+    private static readonly Permission DeleteRoles = new(Permissions.IdentityPermissions.Roles, CoreVerbs.Delete);
+
+    // Evaluated through the shared evaluator rather than by claim-value equality. This previously compared
+    // against the legacy string "delete:role", which nothing has granted since the vocabulary migration, so
+    // every caller except a holder of "*" was refused here after already passing the endpoint's own
+    // identity/roles:delete check. Going through the evaluator also lets a wildcard grant such as
+    // identity/*:delete reach this path, as it already does at the endpoint.
+    private static bool HasPermission(ClaimsPrincipal actor) =>
+        PermissionEvaluator.Shared.HasPermission(actor, DeleteRoles);
 }
