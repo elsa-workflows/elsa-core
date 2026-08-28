@@ -24,7 +24,11 @@ public class Endpoint(IAIToolRegistry toolRegistry, IOptions<AIHostOptions> opti
         var userPermissions = AIHttpContextIdentity.GetPermissions(HttpContext);
         return await toolRegistry.ListAsync(new AIToolQuery
         {
-            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, HttpContext.User),
+            // HttpContext?.User, not HttpContext.User: unlike the chat endpoint, this method never dereferences
+            // HttpContext unconditionally, and the sibling calls below all accept a null context — so it really
+            // can be null here. GetAuthorizedAgent treats a null principal as holding nothing, while an agent
+            // that declares no required permissions stays authorized either way.
+            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, HttpContext?.User),
             ActorId = AIHttpContextIdentity.GetActorId(HttpContext),
             TenantId = AIHttpContextIdentity.GetTenantId(HttpContext),
             UserPermissions = userPermissions
