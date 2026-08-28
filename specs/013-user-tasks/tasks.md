@@ -3,8 +3,6 @@
 > **Reconciled 2026-08-27** alongside `specs/013-rbac-authorization-model/tasks.md`. Open items were
 > re-verified against the code; one had landed and is now ticked, and one (T041) is recorded as partially done. Of those still open, three are
 > Studio-side and live in the `elsa-studio` repository, so they cannot be closed from this repo.
-
-
 Tasks use `[ID] [P?] [Story] Description with file path`. `[P]` tasks may run in parallel when their file ownership does not overlap.
 
 ## Phase 1: Durable specification
