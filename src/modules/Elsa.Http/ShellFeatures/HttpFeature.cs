@@ -180,6 +180,9 @@ public class HttpFeature : IMiddlewareShellFeature
             // Port resolvers.
             .AddScoped<IActivityResolver, SendHttpRequestActivityResolver>()
 
+            // Activity descriptor modifiers.
+            .AddScoped<IActivityDescriptorModifier, FlowSendHttpRequestDescriptorModifier>()
+
             // HTTP endpoint handlers.
             .AddScoped<AuthenticationBasedHttpEndpointAuthorizationHandler>()
             .AddScoped<AllowAnonymousHttpEndpointAuthorizationHandler>()
