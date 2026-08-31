@@ -105,6 +105,40 @@ public class StateMachineTests
         Assert.Equal(ActivityStatus.Running, context.Status);
     }
 
+    [Fact(DisplayName = "StateMachine exposes source entry, trigger, exit, action and target entry order")]
+    public async Task AcceptedTransitionExecutesObservableLifecycleOrder()
+    {
+        var lifecycle = new List<string>();
+        var context = await ExecuteAsync();
+
+        Assert.True(context.HasScheduledActivity(_newEntry));
+        Assert.False(context.HasScheduledActivity(_payTrigger));
+
+        await CompleteScheduledActivityAsync(context, _newEntry);
+        lifecycle.Add("source entry");
+        Assert.True(context.HasScheduledActivity(_payTrigger));
+
+        await CompleteScheduledActivityAsync(context, _payTrigger);
+        lifecycle.Add("trigger");
+        Assert.True(context.HasScheduledActivity(_newExit));
+        Assert.False(context.HasScheduledActivity(_payAction));
+
+        await CompleteScheduledActivityAsync(context, _newExit);
+        lifecycle.Add("source exit");
+        Assert.True(context.HasScheduledActivity(_payAction));
+
+        await CompleteScheduledActivityAsync(context, _payAction);
+        lifecycle.Add("action");
+        Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
+        Assert.True(context.HasScheduledActivity(_paidEntry));
+
+        await CompleteScheduledActivityAsync(context, _paidEntry);
+        lifecycle.Add("target entry");
+        Assert.True(context.HasScheduledActivity(_paidTrigger));
+
+        Assert.Equal(new[] { "source entry", "trigger", "source exit", "action", "target entry" }, lifecycle);
+    }
+
     [Fact(DisplayName = "StateMachine treats missing transition condition as true")]
     public async Task MissingConditionAllowsTransition()
     {
@@ -176,6 +210,47 @@ public class StateMachineTests
         Assert.DoesNotContain(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context);
     }
 
+    [Fact(DisplayName = "StateMachine completes after entering a terminal state")]
+    public async Task TerminalStateCompletesStateMachine()
+    {
+        var stateMachine = new StateMachineActivity
+        {
+            InitialState = "Done",
+            States = { new StateMachineState { Name = "Done" } }
+        };
+
+        var context = await ExecuteAsync(stateMachine);
+
+        Assert.Equal("Done", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Completed, context.Status);
+        Assert.Empty(context.WorkflowExecutionContext.Scheduler.List());
+    }
+
+    [Fact(DisplayName = "StateMachine accepts the first eligible triggerless transition in declaration order")]
+    public async Task TriggerlessTransitionsUseDeclarationOrder()
+    {
+        var stateMachine = new StateMachineActivity
+        {
+            InitialState = "Source",
+            States =
+            {
+                new StateMachineState { Name = "Source" },
+                new StateMachineState { Name = "First" },
+                new StateMachineState { Name = "Second" }
+            },
+            Transitions =
+            {
+                new Transition { Name = "FirstTransition", From = "Source", To = "First", Condition = new(true) },
+                new Transition { Name = "SecondTransition", From = "Source", To = "Second", Condition = new(true) }
+            }
+        };
+
+        var context = await ExecuteAsync(stateMachine);
+
+        Assert.Equal("First", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Completed, context.Status);
+    }
+
     [Fact(DisplayName = "StateMachine self-transition executes exit, action and entry in order")]
     public async Task SelfTransitionExecutesExitActionAndEntryInOrder()
     {
@@ -224,6 +299,31 @@ public class StateMachineTests
 
         Assert.Equal(ActivityStatus.Canceled, cancelTriggerContext.Status);
         Assert.DoesNotContain(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
+    }
+
+    [Fact(DisplayName = "StateMachine cancels every distinct competing outbound trigger")]
+    public async Task AcceptedTransitionCancelsDistinctCompetingOutboundTriggers()
+    {
+        var thirdTrigger = new WriteLine("third trigger") { Id = "third-trigger" };
+        _stateMachine.Transitions.Add(new Transition
+        {
+            Name = "CloseFromNew",
+            From = "New",
+            To = "Closed",
+            Trigger = thirdTrigger
+        });
+        var context = await ExecuteAndEnterNewStateAsync();
+        var cancelTriggerContext = await CreateScheduledActivityContextAsync(context, _cancelTrigger);
+        var thirdTriggerContext = await CreateScheduledActivityContextAsync(context, thirdTrigger);
+        var cancelBookmark = cancelTriggerContext.CreateBookmark("cancel");
+        var thirdBookmark = thirdTriggerContext.CreateBookmark("third");
+
+        await CompleteScheduledActivityAsync(context, _payTrigger);
+
+        Assert.Equal(ActivityStatus.Canceled, cancelTriggerContext.Status);
+        Assert.Equal(ActivityStatus.Canceled, thirdTriggerContext.Status);
+        Assert.DoesNotContain(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
+        Assert.DoesNotContain(thirdBookmark, context.WorkflowExecutionContext.Bookmarks);
     }
 
     [Fact(DisplayName = "StateMachine rejects transitions that share a trigger instance")]
@@ -346,6 +446,18 @@ public class StateMachineTests
         await CompleteScheduledActivityAsync(context, _payAction);
 
         Assert.False(context.HasScheduledActivity(_paidEntry));
+    }
+
+    [Fact(DisplayName = "StateMachine ignores stale state exit completions")]
+    public async Task IgnoresStaleStateExitCompletions()
+    {
+        var context = await ExecuteAndEnterNewStateAsync();
+
+        await CompleteScheduledActivityAsync(context, _payTrigger);
+        context.SetProperty(CurrentStateProperty, "Paid");
+        await CompleteScheduledActivityAsync(context, _newExit);
+
+        Assert.False(context.HasScheduledActivity(_payAction));
     }
 
     private async Task<ActivityExecutionContext> ExecuteAndEnterNewStateAsync()
