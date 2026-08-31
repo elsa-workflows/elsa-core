@@ -251,6 +251,63 @@ public class StateMachineTests
         Assert.Equal(ActivityStatus.Completed, context.Status);
     }
 
+    [Fact(DisplayName = "StateMachine yields an empty triggerless self-cycle to the workflow scheduler")]
+    public async Task EmptyTriggerlessSelfCycleYieldsToScheduler()
+    {
+        var stateMachine = new StateMachineActivity
+        {
+            InitialState = "A",
+            States = { new StateMachineState { Name = "A" } },
+            Transitions =
+            {
+                new Transition { From = "A", To = "A" }
+            }
+        };
+
+        var context = await ExecuteAsync(stateMachine);
+
+        Assert.Equal("A", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Running, context.Status);
+
+        var continuation = context.WorkflowExecutionContext.Scheduler.Take();
+        await CompleteScheduledActivityAsync(context, continuation.Activity);
+
+        Assert.Equal("A", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Running, context.Status);
+        Assert.Single(context.WorkflowExecutionContext.Scheduler.List());
+    }
+
+    [Fact(DisplayName = "StateMachine yields an empty triggerless two-state cycle to the workflow scheduler")]
+    public async Task EmptyTriggerlessTwoStateCycleYieldsToScheduler()
+    {
+        var stateMachine = new StateMachineActivity
+        {
+            InitialState = "A",
+            States =
+            {
+                new StateMachineState { Name = "A" },
+                new StateMachineState { Name = "B" }
+            },
+            Transitions =
+            {
+                new Transition { From = "A", To = "B" },
+                new Transition { From = "B", To = "A" }
+            }
+        };
+
+        var context = await ExecuteAsync(stateMachine);
+
+        Assert.Equal("B", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Running, context.Status);
+
+        var continuation = context.WorkflowExecutionContext.Scheduler.Take();
+        await CompleteScheduledActivityAsync(context, continuation.Activity);
+
+        Assert.Equal("A", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Running, context.Status);
+        Assert.Single(context.WorkflowExecutionContext.Scheduler.List());
+    }
+
     [Fact(DisplayName = "StateMachine self-transition executes exit, action and entry in order")]
     public async Task SelfTransitionExecutesExitActionAndEntryInOrder()
     {

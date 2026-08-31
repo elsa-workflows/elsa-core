@@ -19,7 +19,9 @@ namespace Elsa.Workflows.Activities.StateMachine.Activities;
 public class StateMachine : Activity
 {
     private const string PhaseEntering = "Entering";
+    private const string PhaseContinuing = "Continuing";
     private const string CurrentStateProperty = "CurrentState";
+    private readonly StateMachineContinuation _automaticTransitionContinuation = new();
 
     /// <inheritdoc />
     public StateMachine([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -201,7 +203,23 @@ public class StateMachine : Activity
     private async ValueTask CompleteTransitionAsync(ActivityExecutionContext context, Transition transition, ActivityExecutionContext? schedulingContext = null)
     {
         SetCurrentState(context, transition.To);
+
+        // Automatic transitions are normally evaluated inline after entering a state. If the
+        // target is part of a triggerless cycle, queue the next evaluation instead. This keeps
+        // the WF4 ordering (the transition has completed and the target state is current) while
+        // allowing the workflow scheduler to unwind the current call stack between iterations.
+        if (HasAutomaticCycle(GetCurrentState(context)))
+        {
+            await ScheduleAsync(context, _automaticTransitionContinuation, OnAutomaticTransitionContinuationCompletedAsync, PhaseContinuing, schedulingContext);
+            return;
+        }
+
         await EnterStateAsync(context, schedulingContext);
+    }
+
+    private async ValueTask OnAutomaticTransitionContinuationCompletedAsync(ActivityCompletedContext context)
+    {
+        await EnterStateAsync(context.TargetContext, context.ChildContext);
     }
 
     private async ValueTask ScheduleTransitionActivityAsync(
@@ -296,6 +314,8 @@ public class StateMachine : Activity
             if (transition.Action != null)
                 yield return transition.Action;
         }
+
+        yield return _automaticTransitionContinuation;
     }
 
     private void EnsureSupportedTriggerIdentities()
@@ -342,6 +362,29 @@ public class StateMachine : Activity
             ? []
             : Transitions.Where(x => string.Equals(x.From, sourceState, StringComparison.Ordinal));
 
+    private bool HasAutomaticCycle(string? startingState)
+    {
+        if (string.IsNullOrWhiteSpace(startingState))
+            return false;
+
+        var visitedStates = new HashSet<string>(StringComparer.Ordinal);
+        var statesToVisit = new Stack<string>([startingState]);
+
+        while (statesToVisit.TryPop(out var state))
+        {
+            foreach (var transition in GetOutboundTransitions(state).Where(x => x.Trigger == null && FindState(x.To) != null))
+            {
+                if (string.Equals(transition.To, startingState, StringComparison.Ordinal))
+                    return true;
+
+                if (visitedStates.Add(transition.To!))
+                    statesToVisit.Push(transition.To!);
+            }
+        }
+
+        return false;
+    }
+
     private Transition? FindTransitionByTrigger(ActivityExecutionContext context, IActivity trigger) =>
         GetOutboundTransitions(GetCurrentState(context)).FirstOrDefault(x => ReferenceEquals(x.Trigger, trigger));
 
@@ -373,4 +416,8 @@ public class StateMachine : Activity
         string.IsNullOrWhiteSpace(transition.Name)
             ? $"{transition.From}->{transition.To}"
             : transition.Name;
+
+    private sealed class StateMachineContinuation : CodeActivity
+    {
+    }
 }
