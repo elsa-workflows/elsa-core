@@ -83,18 +83,19 @@ public class StateMachineTests
         Assert.Equal(ActivityStatus.Running, context.Status);
     }
 
-    [Fact(DisplayName = "StateMachine executes accepted transition action, source exit, target entry and target triggers")]
+    [Fact(DisplayName = "StateMachine executes source exit, accepted transition action, target entry and target triggers")]
     public async Task ExecutesAcceptedTransitionPath()
     {
         var context = await ExecuteAndEnterNewStateAsync();
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
+        Assert.True(context.HasScheduledActivity(_newExit));
+        Assert.False(context.HasScheduledActivity(_payAction));
+
+        await CompleteScheduledActivityAsync(context, _newExit);
         Assert.True(context.HasScheduledActivity(_payAction));
 
         await CompleteScheduledActivityAsync(context, _payAction);
-        Assert.True(context.HasScheduledActivity(_newExit));
-
-        await CompleteScheduledActivityAsync(context, _newExit);
         Assert.Equal("Paid", _stateMachine.CurrentState);
         Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
         Assert.True(context.HasScheduledActivity(_paidEntry));
@@ -118,6 +119,80 @@ public class StateMachineTests
 
         Assert.Equal("Paid", _stateMachine.CurrentState);
         Assert.True(context.HasScheduledActivity(_paidTrigger));
+    }
+
+    [Fact(DisplayName = "StateMachine evaluates a triggerless transition immediately after state entry")]
+    public async Task TriggerlessTransitionIsEvaluatedImmediately()
+    {
+        var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
+        payTransition.Trigger = null;
+        payTransition.Condition = null;
+        var context = await ExecuteAsync();
+
+        await CompleteScheduledActivityAsync(context, _newEntry);
+
+        Assert.True(context.HasScheduledActivity(_newExit));
+        Assert.False(context.HasScheduledActivity(_cancelTrigger));
+
+        await CompleteScheduledActivityAsync(context, _newExit);
+        await CompleteScheduledActivityAsync(context, _payAction);
+
+        Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
+        Assert.True(context.HasScheduledActivity(_paidEntry));
+    }
+
+    [Fact(DisplayName = "StateMachine schedules event triggers when triggerless transition conditions are false")]
+    public async Task FalseTriggerlessConditionAllowsTriggeredTransitions()
+    {
+        var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
+        payTransition.Trigger = null;
+        payTransition.Condition = new(false);
+        var context = await ExecuteAsync();
+
+        await CompleteScheduledActivityAsync(context, _newEntry);
+
+        Assert.Equal("New", _stateMachine.CurrentState);
+        Assert.False(context.HasScheduledActivity(_newExit));
+        Assert.True(context.HasScheduledActivity(_cancelTrigger));
+        Assert.Equal(ActivityStatus.Running, context.Status);
+    }
+
+    [Fact(DisplayName = "StateMachine leaves an all-false triggerless state active without rescheduling")]
+    public async Task AllFalseTriggerlessTransitionsDoNotCompleteOrSpin()
+    {
+        _stateMachine.Transitions.Remove(_stateMachine.Transitions.Single(x => x.Name == "Cancel"));
+        var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
+        payTransition.Trigger = null;
+        payTransition.Condition = new(false);
+        var context = await ExecuteAsync();
+
+        await CompleteScheduledActivityAsync(context, _newEntry);
+
+        Assert.Equal("New", _stateMachine.CurrentState);
+        Assert.Equal(ActivityStatus.Running, context.Status);
+        Assert.False(context.HasScheduledActivity(_newExit));
+        Assert.False(context.HasScheduledActivity(_payAction));
+        Assert.False(context.HasScheduledActivity(_paidEntry));
+        Assert.DoesNotContain(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context);
+    }
+
+    [Fact(DisplayName = "StateMachine self-transition executes exit, action and entry in order")]
+    public async Task SelfTransitionExecutesExitActionAndEntryInOrder()
+    {
+        var transition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
+        transition.To = "New";
+        var context = await ExecuteAndEnterNewStateAsync();
+
+        await CompleteScheduledActivityAsync(context, _payTrigger);
+        Assert.True(context.HasScheduledActivity(_newExit));
+        Assert.False(context.HasScheduledActivity(_payAction));
+
+        await CompleteScheduledActivityAsync(context, _newExit);
+        Assert.True(context.HasScheduledActivity(_payAction));
+
+        await CompleteScheduledActivityAsync(context, _payAction);
+        Assert.Equal("New", _stateMachine.CurrentState);
+        Assert.True(context.HasScheduledActivity(_newEntry));
     }
 
     [Fact(DisplayName = "StateMachine false transition condition leaves competing triggers active")]
@@ -242,10 +317,11 @@ public class StateMachineTests
         var context = await ExecuteAndEnterNewStateAsync();
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
+        await CompleteScheduledActivityAsync(context, _newExit);
         context.SetProperty(CurrentStateProperty, "Paid");
         await CompleteScheduledActivityAsync(context, _payAction);
 
-        Assert.False(context.HasScheduledActivity(_newExit));
+        Assert.False(context.HasScheduledActivity(_paidEntry));
     }
 
     private async Task<ActivityExecutionContext> ExecuteAndEnterNewStateAsync()

@@ -98,7 +98,7 @@ public class StateMachine : Activity
 
     private async ValueTask ScheduleOutboundTriggersAsync(ActivityExecutionContext context, ActivityExecutionContext? schedulingContext = null)
     {
-        var outboundTransitions = GetOutboundTransitions(GetCurrentState(context)).Where(x => x.Trigger != null && FindState(x.To) != null).ToList();
+        var outboundTransitions = GetOutboundTransitions(GetCurrentState(context)).Where(x => FindState(x.To) != null).ToList();
 
         if (!outboundTransitions.Any())
         {
@@ -106,7 +106,18 @@ public class StateMachine : Activity
             return;
         }
 
-        foreach (var transition in outboundTransitions)
+        foreach (var transition in outboundTransitions.Where(x => x.Trigger == null))
+        {
+            if (await TryTakeTransitionAsync(context, transition, schedulingContext))
+                return;
+        }
+
+        var triggeredTransitions = outboundTransitions.Where(x => x.Trigger != null).ToList();
+
+        if (!triggeredTransitions.Any())
+            return;
+
+        foreach (var transition in triggeredTransitions)
             await ScheduleAsync(context, transition.Trigger!, OnTriggerCompletedAsync, GetTransitionKey(transition), schedulingContext);
     }
 
@@ -118,25 +129,40 @@ public class StateMachine : Activity
         if (transition == null || !IsCurrentSource(targetContext, transition) || FindState(transition.To) == null)
             return;
 
-        var canTransition = transition.Condition == null || await EvaluateConditionAsync(targetContext, transition.Condition);
-
-        if (!canTransition)
+        if (!await TryTakeTransitionAsync(targetContext, transition, context.ChildContext))
         {
             if (transition.Trigger != null)
                 await ScheduleAsync(targetContext, transition.Trigger, OnTriggerCompletedAsync, GetTransitionKey(transition), context.ChildContext);
-
-            return;
         }
+    }
 
-        await CancelCompetingTriggersAsync(targetContext, transition, context.ChildContext);
+    private async ValueTask<bool> TryTakeTransitionAsync(
+        ActivityExecutionContext context,
+        Transition transition,
+        ActivityExecutionContext? schedulingContext)
+    {
+        var canTransition = transition.Condition == null || await EvaluateConditionAsync(context, transition.Condition);
+
+        if (!canTransition)
+            return false;
+
+        await CancelCompetingTriggersAsync(context, transition, schedulingContext);
+        await ExitStateAsync(context, transition, schedulingContext);
+        return true;
+    }
+
+    private async ValueTask RunTransitionActionAsync(ActivityExecutionContext context, Transition transition, ActivityExecutionContext? schedulingContext = null)
+    {
+        if (!IsCurrentSource(context, transition))
+            return;
 
         if (transition.Action != null)
         {
-            await ScheduleTransitionActivityAsync(targetContext, transition.Action, transition, OnTransitionActionCompletedAsync, context.ChildContext);
+            await ScheduleTransitionActivityAsync(context, transition.Action, transition, OnTransitionActionCompletedAsync, schedulingContext);
             return;
         }
 
-        await ExitStateAsync(targetContext, transition, context.ChildContext);
+        await CompleteTransitionAsync(context, transition, schedulingContext);
     }
 
     private async ValueTask OnTransitionActionCompletedAsync(ActivityCompletedContext context)
@@ -147,7 +173,7 @@ public class StateMachine : Activity
         if (transition == null || !IsCurrentSource(targetContext, transition))
             return;
 
-        await ExitStateAsync(targetContext, transition, context.ChildContext);
+        await CompleteTransitionAsync(targetContext, transition, context.ChildContext);
     }
 
     private async ValueTask ExitStateAsync(ActivityExecutionContext context, Transition transition, ActivityExecutionContext? schedulingContext = null)
@@ -160,7 +186,7 @@ public class StateMachine : Activity
             return;
         }
 
-        await CompleteTransitionAsync(context, transition, schedulingContext);
+        await RunTransitionActionAsync(context, transition, schedulingContext);
     }
 
     private async ValueTask OnStateExitCompletedAsync(ActivityCompletedContext context)
@@ -171,7 +197,7 @@ public class StateMachine : Activity
         if (transition == null || !IsCurrentSource(targetContext, transition))
             return;
 
-        await CompleteTransitionAsync(targetContext, transition, context.ChildContext);
+        await RunTransitionActionAsync(targetContext, transition, context.ChildContext);
     }
 
     private async ValueTask CompleteTransitionAsync(ActivityExecutionContext context, Transition transition, ActivityExecutionContext? schedulingContext = null)
@@ -207,7 +233,7 @@ public class StateMachine : Activity
         await context.ScheduleActivityAsync(activity, options);
     }
 
-    private async Task CancelCompetingTriggersAsync(ActivityExecutionContext context, Transition winningTransition, ActivityExecutionContext winningTriggerContext)
+    private async Task CancelCompetingTriggersAsync(ActivityExecutionContext context, Transition winningTransition, ActivityExecutionContext? winningTriggerContext)
     {
         var competingTriggerIds = GetOutboundTransitions(winningTransition.From)
             .Where(x => !ReferenceEquals(x, winningTransition))
