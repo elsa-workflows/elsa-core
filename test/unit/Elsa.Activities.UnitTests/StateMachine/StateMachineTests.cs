@@ -1,9 +1,11 @@
 using Elsa.Testing.Shared;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.StateMachine.Models;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using NSubstitute;
 using StateMachineActivity = Elsa.Workflows.Activities.StateMachine.Activities.StateMachine;
 
 namespace Elsa.Activities.UnitTests.StateMachine;
@@ -308,6 +310,106 @@ public class StateMachineTests
         Assert.Single(context.WorkflowExecutionContext.Scheduler.List());
     }
 
+    [Fact(DisplayName = "StateMachine resumes an automatic cycle continuation after state persistence")]
+    public async Task AutomaticCycleContinuationSurvivesStateRoundTrip()
+    {
+        var stateMachine = new StateMachineActivity
+        {
+            InitialState = "A",
+            States = { new StateMachineState { Name = "A" } },
+            Transitions = { new Transition { From = "A", To = "A" } }
+        };
+        var fixture = CreatePersistenceFixture(stateMachine);
+        var context = await fixture.BuildAsync();
+        context.Id = "state-machine-context";
+        context.WorkflowExecutionContext.AddActivityExecutionContext(context);
+
+        await fixture.ExecuteAsync(context);
+
+        var sourceWorkflowContext = context.WorkflowExecutionContext;
+        var sourceContinuation = Assert.Single(sourceWorkflowContext.Scheduler.List());
+        Assert.Equal(context.Id, sourceContinuation.SchedulingActivityExecutionId);
+        Assert.Single(sourceWorkflowContext.CompletionCallbacks);
+
+        var extractor = sourceWorkflowContext.GetRequiredService<IWorkflowStateExtractor>();
+        var state = extractor.Extract(sourceWorkflowContext);
+        var resumedWorkflowContext = await WorkflowExecutionContext.CreateAsync(
+            sourceWorkflowContext.ServiceProvider,
+            sourceWorkflowContext.WorkflowGraph,
+            state.Id,
+            CancellationToken.None);
+
+        await extractor.ApplyAsync(resumedWorkflowContext, state);
+
+        var resumedStateMachineContext = Assert.Single(resumedWorkflowContext.ActivityExecutionContexts, x => x.Activity == stateMachine);
+        var resumedContinuation = resumedWorkflowContext.Scheduler.Take();
+        Assert.Single(state.CompletionCallbacks);
+        Assert.Equal(resumedStateMachineContext.Id, resumedContinuation.Owner?.Id);
+        Assert.Equal(resumedStateMachineContext.Id, resumedContinuation.SchedulingActivityExecutionId);
+        Assert.Contains(resumedWorkflowContext.CompletionCallbacks, x => x.Owner == resumedStateMachineContext && x.Child.Activity == resumedContinuation.Activity);
+
+        var resumedChildContext = await resumedWorkflowContext.CreateActivityExecutionContextAsync(resumedContinuation.Activity, new ActivityInvocationOptions
+        {
+            Owner = resumedContinuation.Owner,
+            Tag = resumedContinuation.Tag,
+            SchedulingActivityExecutionId = resumedContinuation.SchedulingActivityExecutionId
+        });
+        resumedChildContext.TransitionTo(ActivityStatus.Running);
+        resumedWorkflowContext.AddActivityExecutionContext(resumedChildContext);
+        await resumedContinuation.Activity.ExecuteAsync(resumedChildContext);
+
+        Assert.Equal("A", resumedStateMachineContext.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Running, resumedStateMachineContext.Status);
+        Assert.Single(resumedWorkflowContext.Scheduler.List());
+    }
+
+    [Fact(DisplayName = "StateMachine completes a triggerless transition with a composite action")]
+    public async Task TriggerlessTransitionWithCompositeActionCompletes()
+    {
+        var stateMachine = new StateMachineActivity
+        {
+            InitialState = "Source",
+            States =
+            {
+                new StateMachineState
+                {
+                    Name = "Source",
+                    Exit = new WriteLine("exit") { Id = "source-exit" }
+                },
+                new StateMachineState { Name = "Target" }
+            },
+            Transitions =
+            {
+                new Transition
+                {
+                    From = "Source",
+                    To = "Target",
+                    Condition = new(true),
+                    Action = new Sequence
+                    {
+                        Activities =
+                        {
+                            new WriteLine("first action") { Id = "first-action" },
+                            new WriteLine("second action") { Id = "second-action" }
+                        }
+                    }
+                }
+            }
+        };
+        var fixture = CreatePersistenceFixture(stateMachine);
+        var context = await fixture.BuildAsync();
+        context.Id = "state-machine-context";
+        context.WorkflowExecutionContext.AddActivityExecutionContext(context);
+
+        await fixture.ExecuteAsync(context);
+
+        while (context.WorkflowExecutionContext.Scheduler.HasAny)
+            await ExecuteNextScheduledActivityAsync(context.WorkflowExecutionContext);
+
+        Assert.Equal("Target", context.GetProperty<string>(CurrentStateProperty));
+        Assert.Equal(ActivityStatus.Completed, context.Status);
+    }
+
     [Fact(DisplayName = "StateMachine self-transition executes exit, action and entry in order")]
     public async Task SelfTransitionExecutesExitActionAndEntryInOrder()
     {
@@ -524,13 +626,23 @@ public class StateMachineTests
         return context;
     }
 
-    private Task<ActivityExecutionContext> ExecuteAsync(StateMachineActivity? stateMachine = null) => new ActivityTestFixture(stateMachine ?? _stateMachine)
+    private static ActivityTestFixture CreateFixture(StateMachineActivity stateMachine) => new ActivityTestFixture(stateMachine)
         .ConfigureServices(services =>
         {
             services.RemoveAll<IWorkflowExecutionContextSchedulerStrategy>();
             services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, WorkflowExecutionContextSchedulerStrategy>();
-        })
-        .ExecuteAsync();
+        });
+
+    private static ActivityTestFixture CreatePersistenceFixture(StateMachineActivity stateMachine) => CreateFixture(stateMachine)
+        .ConfigureServices(services =>
+        {
+            services.RemoveAll<IActivityExecutionContextSchedulerStrategy>();
+            services.AddSingleton<IActivityExecutionContextSchedulerStrategy, ActivityExecutionContextSchedulerStrategy>();
+            services.AddSingleton<IMediator>(_ => Substitute.For<IMediator>());
+            services.AddSingleton<IVariablePersistenceManager>(_ => Substitute.For<IVariablePersistenceManager>());
+        });
+
+    private Task<ActivityExecutionContext> ExecuteAsync(StateMachineActivity? stateMachine = null) => CreateFixture(stateMachine ?? _stateMachine).ExecuteAsync();
 
     private static async Task CompleteScheduledActivityAsync(ActivityExecutionContext ownerContext, IActivity activity)
     {
@@ -538,7 +650,8 @@ public class StateMachineTests
         var callback = PopCallback(ownerContext, activity);
 
         Assert.NotNull(callback?.CompletionCallback);
-        await callback!.CompletionCallback!(new ActivityCompletedContext(ownerContext, childContext));
+        ownerContext.Tag = callback!.Tag;
+        await callback.CompletionCallback!(new ActivityCompletedContext(ownerContext, childContext));
     }
 
     private static async Task<ActivityExecutionContext> CreateScheduledActivityContextAsync(ActivityExecutionContext ownerContext, IActivity activity)
@@ -552,6 +665,25 @@ public class StateMachineTests
         childContext.TransitionTo(ActivityStatus.Running);
         ownerContext.WorkflowExecutionContext.AddActivityExecutionContext(childContext);
         return childContext;
+    }
+
+    private static async Task ExecuteNextScheduledActivityAsync(WorkflowExecutionContext workflowContext)
+    {
+        var workItem = workflowContext.Scheduler.Take();
+        var childContext = await workflowContext.CreateActivityExecutionContextAsync(workItem.Activity, new ActivityInvocationOptions
+        {
+            Owner = workItem.Owner,
+            ExistingActivityExecutionContext = workItem.ExistingActivityExecutionContext,
+            Tag = workItem.Tag,
+            Variables = workItem.Variables,
+            Input = workItem.Input,
+            SchedulingActivityExecutionId = workItem.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = workItem.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = workItem.SchedulingCallStackDepth
+        });
+        childContext.TransitionTo(ActivityStatus.Running);
+        workflowContext.AddActivityExecutionContext(childContext);
+        await childContext.Activity.ExecuteAsync(childContext);
     }
 
     private static int CountScheduledActivities(ActivityExecutionContext context, IActivity activity) =>

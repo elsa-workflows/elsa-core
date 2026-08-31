@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.StateMachine.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
@@ -21,7 +22,7 @@ public class StateMachine : Activity
     private const string PhaseEntering = "Entering";
     private const string PhaseContinuing = "Continuing";
     private const string CurrentStateProperty = "CurrentState";
-    private readonly StateMachineContinuation _automaticTransitionContinuation = new();
+    private readonly Inline _automaticTransitionContinuation = new();
 
     /// <inheritdoc />
     public StateMachine([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -124,7 +125,7 @@ public class StateMachine : Activity
     private async ValueTask OnTriggerCompletedAsync(ActivityCompletedContext context)
     {
         var targetContext = context.TargetContext;
-        var transition = FindTransitionByKey(targetContext, context.ChildContext.Tag as string) ?? FindTransitionByTrigger(targetContext, context.ChildContext.Activity);
+        var transition = FindTransitionByKey(targetContext, GetCompletionTag(context)) ?? FindTransitionByTrigger(targetContext, context.ChildContext.Activity);
 
         if (transition == null || !IsCurrentSource(targetContext, transition) || FindState(transition.To) == null)
             return;
@@ -168,7 +169,7 @@ public class StateMachine : Activity
     private async ValueTask OnTransitionActionCompletedAsync(ActivityCompletedContext context)
     {
         var targetContext = context.TargetContext;
-        var transition = FindTransitionByKey(targetContext, context.ChildContext.Tag as string);
+        var transition = FindTransitionByKey(targetContext, GetCompletionTag(context));
 
         if (transition == null || !IsCurrentSource(targetContext, transition))
             return;
@@ -192,7 +193,7 @@ public class StateMachine : Activity
     private async ValueTask OnStateExitCompletedAsync(ActivityCompletedContext context)
     {
         var targetContext = context.TargetContext;
-        var transition = FindTransitionByKey(targetContext, context.ChildContext.Tag as string);
+        var transition = FindTransitionByKey(targetContext, GetCompletionTag(context));
 
         if (transition == null || !IsCurrentSource(targetContext, transition))
             return;
@@ -417,7 +418,7 @@ public class StateMachine : Activity
             ? $"{transition.From}->{transition.To}"
             : transition.Name;
 
-    private sealed class StateMachineContinuation : CodeActivity
-    {
-    }
+    private static string? GetCompletionTag(ActivityCompletedContext context) =>
+        context.TargetContext.Tag as string ?? context.ChildContext.Tag as string;
+
 }
