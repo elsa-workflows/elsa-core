@@ -201,6 +201,7 @@ public class StateMachineTests
         var context = await ExecuteAndEnterNewStateAsync();
         _stateMachine.Transitions.Single(x => x.Name == "Pay").Condition = new(false);
         var cancelTriggerContext = await CreateScheduledActivityContextAsync(context, _cancelTrigger);
+        var cancelBookmark = cancelTriggerContext.CreateBookmark("cancel");
         var scheduledPayTriggerCount = CountScheduledActivities(context, _payTrigger);
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
@@ -209,6 +210,7 @@ public class StateMachineTests
         Assert.False(context.HasScheduledActivity(_payAction));
         Assert.Equal(scheduledPayTriggerCount + 1, CountScheduledActivities(context, _payTrigger));
         Assert.NotEqual(ActivityStatus.Canceled, cancelTriggerContext.Status);
+        Assert.Contains(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
     }
 
     [Fact(DisplayName = "StateMachine cancels competing outbound triggers when a transition wins")]
@@ -216,10 +218,32 @@ public class StateMachineTests
     {
         var context = await ExecuteAndEnterNewStateAsync();
         var cancelTriggerContext = await CreateScheduledActivityContextAsync(context, _cancelTrigger);
+        var cancelBookmark = cancelTriggerContext.CreateBookmark("cancel");
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
 
         Assert.Equal(ActivityStatus.Canceled, cancelTriggerContext.Status);
+        Assert.DoesNotContain(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
+    }
+
+    [Fact(DisplayName = "StateMachine rejects transitions that share a trigger instance")]
+    public async Task SharedTriggerInstanceIsRejected()
+    {
+        _stateMachine.Transitions.Single(x => x.Name == "Cancel").Trigger = _payTrigger;
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ExecuteAsync());
+
+        Assert.Contains("cannot share a Trigger activity", exception.Message);
+    }
+
+    [Fact(DisplayName = "StateMachine rejects transition triggers with duplicate activity IDs")]
+    public async Task DuplicateTriggerIdIsRejected()
+    {
+        _cancelTrigger.Id = _payTrigger.Id;
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ExecuteAsync());
+
+        Assert.Contains("unique ID", exception.Message);
     }
 
     [Fact(DisplayName = "StateMachine removes re-armed competing triggers when a different transition wins")]

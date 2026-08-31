@@ -51,15 +51,13 @@ public class StateMachine : Activity
     /// </summary>
     [JsonIgnore]
     [Browsable(false)]
-    public IEnumerable<IActivity> Activities =>
-        States.SelectMany(x => new[] { x.Entry, x.Exit })
-            .Concat(Transitions.SelectMany(x => new[] { x.Trigger, x.Action }))
-            .Where(x => x != null)
-            .Cast<IActivity>();
+    public IEnumerable<IActivity> Activities => GetActivities();
 
     /// <inheritdoc />
     protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
     {
+        EnsureSupportedTriggerIdentities();
+
         var currentState = GetCurrentState(context);
         SetCurrentState(context, string.IsNullOrWhiteSpace(currentState) ? InitialState : currentState);
 
@@ -280,6 +278,41 @@ public class StateMachine : Activity
     }
 
     private string? GetCurrentState(ActivityExecutionContext context) => context.GetProperty<string>(CurrentStateProperty) ?? CurrentState;
+
+    private IEnumerable<IActivity> GetActivities()
+    {
+        foreach (var stateActivity in States.SelectMany(x => new[] { x.Entry, x.Exit }).Where(x => x != null))
+            yield return stateActivity!;
+
+        var seenTriggerInstances = new HashSet<IActivity>(ReferenceEqualityComparer.Instance);
+        var seenTriggerIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var transition in Transitions)
+        {
+            if (transition.Trigger != null && seenTriggerInstances.Add(transition.Trigger) &&
+                (string.IsNullOrWhiteSpace(transition.Trigger.Id) || seenTriggerIds.Add(transition.Trigger.Id)))
+                yield return transition.Trigger;
+
+            if (transition.Action != null)
+                yield return transition.Action;
+        }
+    }
+
+    private void EnsureSupportedTriggerIdentities()
+    {
+        var triggers = Transitions.Where(x => x.Trigger != null).Select(x => x.Trigger!).ToList();
+        var seenInstances = new HashSet<IActivity>(ReferenceEqualityComparer.Instance);
+        var seenIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var trigger in triggers)
+        {
+            var sharesInstance = !seenInstances.Add(trigger);
+            var duplicatesId = !string.IsNullOrWhiteSpace(trigger.Id) && !seenIds.Add(trigger.Id);
+
+            if (sharesInstance || duplicatesId)
+                throw new InvalidOperationException("StateMachine transitions cannot share a Trigger activity in Elsa 3.8. Give each transition its own trigger activity with a unique ID.");
+        }
+    }
 
     private void SetCurrentState(ActivityExecutionContext context, string? state)
     {
