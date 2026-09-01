@@ -703,6 +703,7 @@ public partial class WorkflowExecutionContext : IExecutionContext
             WorkflowSubStatus.Faulted => WorkflowStatus.Finished,
             WorkflowSubStatus.Finished => WorkflowStatus.Finished,
             WorkflowSubStatus.Suspended => WorkflowStatus.Running,
+            WorkflowSubStatus.Cancelling => WorkflowStatus.Running,
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
 
