@@ -27,6 +27,7 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.Distributed.Extensions;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
+using FastEndpoints.Swagger;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -148,12 +149,14 @@ services
             });
         }
 
-        if(useStructuredLogs)
+        if (useStructuredLogs)
         {
             elsa
                 .UseStructuredLogs()
                 .UseStructuredLogsDashboard();
         }
+
+        elsa.AddSwagger();
         
         ConfigureForTest?.Invoke(elsa);
     });
@@ -281,6 +284,7 @@ app.MapControllers();
 // Swagger API documentation.
 if (app.Environment.IsDevelopment())
 {
+    app.UseSwaggerGen();
     app.UseSwaggerUI();
 }
 

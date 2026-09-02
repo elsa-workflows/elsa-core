@@ -41,6 +41,17 @@ public abstract class ElsaEndpointWithoutRequest<TResponse> : EndpointWithoutReq
     protected void ConfigurePermissions(params string[] permissions) => EndpointSecurity.ConfigurePermissions(Definition, permissions);
 }
 
+public abstract class ElsaEndpointWithoutRequest<TRequest, TResponse> : Endpoint<TRequest, TResponse> where TRequest : notnull where TResponse : notnull
+{
+    protected void ConfigurePermissions(params string[] permissions)
+    {
+        if (!EndpointSecurityOptions.SecurityIsEnabled)
+            AllowAnonymous();
+        else
+            Permissions(new[] { PermissionNames.All }.Concat(permissions).ToArray());
+    }
+}
+
 public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> where TRequest : notnull, new() where TResponse : notnull
 {
     /// <summary>Requires a permission satisfying <paramref name="resource"/> and <paramref name="verb"/>.</summary>

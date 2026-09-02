@@ -1,0 +1,86 @@
+name: Publish NuGet Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'NuGet package version (e.g. 2.0.0)'
+        required: true
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  DOTNET_VERSION: "10.0.x"
+  NUGET_SOURCE: https://nuget.pkg.github.com/nectar-sistemas/index.json
+
+jobs:
+  publish:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Configure GitHub Packages
+        run: |
+          dotnet nuget add source \
+            "${{ env.NUGET_SOURCE }}" \
+            --name github \
+            --username "${{ github.actor }}" \
+            --password "${{ secrets.NUGET_PACKAGES_TOKEN }}" \
+            --store-password-in-clear-text
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: >
+          dotnet build
+          --configuration Release
+          -p:Version=${{ github.event.inputs.version }}
+          --no-restore
+
+      - name: Pack
+        run: >
+          dotnet pack
+          --configuration Release
+          -p:PackageVersion=${{ github.event.inputs.version }}
+          --no-build
+          --output ./artifacts
+
+      - name: Publish packages
+        run: |
+          find ./artifacts \
+            -name "*.nupkg" \
+            ! -name "*.snupkg" \
+            -exec dotnet nuget push {} \
+              --source github \
+              --skip-duplicate \;
+
+      - name: Create Git Tag
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git tag "v${{ github.event.inputs.version }}"
+          git push origin "v${{ github.event.inputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          generate_release_notes: true
+          files: |
+            artifacts/*.nupkg
+            artifacts/*.snupkg
