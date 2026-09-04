@@ -12,7 +12,7 @@ namespace Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Resume;
 /// Idempotent on the success path.
 /// </summary>
 [PublicAPI]
-internal sealed class ResumeEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEndpoint<EmptyRequest, StatusResponse>
+internal sealed class ResumeEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEndpointWithoutRequest<StatusResponse>
 {
     public override void Configure()
     {
