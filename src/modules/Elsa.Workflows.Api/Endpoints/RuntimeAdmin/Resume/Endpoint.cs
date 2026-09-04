@@ -20,7 +20,7 @@ internal sealed class ResumeEndpoint(IWorkflowRuntimeAdminService admin) : ElsaE
         ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
     }
 
-    public override async Task HandleAsync(EmptyRequest req, CancellationToken ct)
+    public override async Task HandleAsync(EmptyRequest _, CancellationToken ct)
     {
         var status = admin.GetStatus();
         if ((status.State.Reason & QuiescenceReason.Drain) != 0)

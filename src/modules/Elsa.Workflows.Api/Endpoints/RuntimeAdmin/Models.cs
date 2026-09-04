@@ -8,6 +8,12 @@ public class PauseRequest
     public string? Reason { get; set; }
 }
 
+/// <summary>Body for the resume endpoint.</summary>
+[Obsolete("Use FastEndpoints.EmptyRequest instead.")]
+public class ResumeRequest
+{
+}
+
 /// <summary>Body for the operator-force drain endpoint.</summary>
 public class ForceDrainRequest
 {
