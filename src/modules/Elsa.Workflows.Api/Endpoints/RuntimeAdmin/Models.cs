@@ -8,11 +8,6 @@ public class PauseRequest
     public string? Reason { get; set; }
 }
 
-/// <summary>Body for the resume endpoint. No fields today — kept as a class so the endpoint signature is uniform.</summary>
-public class ResumeRequest
-{
-}
-
 /// <summary>Body for the operator-force drain endpoint.</summary>
 public class ForceDrainRequest
 {
