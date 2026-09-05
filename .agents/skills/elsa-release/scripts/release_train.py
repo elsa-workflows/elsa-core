@@ -358,7 +358,11 @@ def positive_int(value, field):
 
 
 def recovery_job_names(cfg):
-    names = [name for name in cfg.get('required_jobs', []) if 'nuget.org' in name.lower()]
+    names = [
+        name
+        for name in cfg.get('required_jobs', [])
+        if isinstance(name, str) and name.lower().rsplit(' ', 1)[-1] == RECOVERY_REGISTRY
+    ]
     if len(names) != 1:
         raise ValueError('Recovery requires exactly one configured nuget.org publishing job')
     return names[0]

@@ -233,7 +233,7 @@ class TrainTests(unittest.TestCase):
                 'expired': False,
                 'workflow_run': {'id': 33977531329},
             }]}]
-        self.fail(f'Unexpected recovery GitHub call {args}')
+        raise AssertionError(f'Unhandled GitHub URL in recovery_github: {url}')
 
     def test_nuget_recovery_binds_failed_release_and_original_artifact(self):
         self.prepare_template_recovery()
