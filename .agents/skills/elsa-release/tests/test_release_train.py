@@ -1,10 +1,13 @@
 import copy
+import hashlib
+import json
 from pathlib import Path
 import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
+import zipfile
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import release_train as train
@@ -79,6 +82,222 @@ class TrainTests(unittest.TestCase):
             cfg=next(r for r in self.state['profile']['repositories'] if r['github'] in url)
             return [{'jobs':[{'name':n,'conclusion':'success'} for n in cfg['required_jobs']]}]
         self.fail(f'Unexpected GitHub call {args}')
+
+    def prepare_template_recovery(self):
+        self.bind_fixture('templates')
+        self.state['repositories'] = {'templates': self.state['repositories']['templates']}
+        self.state['repositories']['templates'].pop('verification', None)
+
+    def template_recovery_receipt(self):
+        artifact_digest = 'sha256:' + 'd' * 64
+        evidence_digest = 'sha256:' + 'f' * 64
+        return {
+            'repository': 'elsa-workflows/elsa-templates',
+            'version': '3.9.0',
+            'tag': '3.9.0',
+            'source_commit': 'a' * 40,
+            'original_release_run': {
+                'id': 33977531328,
+                'failed_jobs': ['Publish to nuget.org'],
+            },
+            'artifact': {
+                'id': 777,
+                'name': 'elsa-template-packages',
+                'run_id': 33977531328,
+                'digest': artifact_digest,
+                'size_in_bytes': 1234,
+            },
+            'recovery_run': {
+                'id': 33977531329,
+                'event': 'workflow_dispatch',
+                'publish_job': 'Publish to nuget.org',
+                'artifact_id': 777,
+                'artifact_digest': artifact_digest,
+                'workflow_sha': 'e' * 40,
+            },
+            'evidence': {
+                'id': 778,
+                'name': 'elsa-template-recovery-evidence',
+                'run_id': 33977531329,
+                'digest': evidence_digest,
+                'size_in_bytes': 567,
+            },
+            'target': {
+                'registry': 'nuget.org',
+                'package_ids': ['Elsa.Templates'],
+                'version': '3.9.0',
+            },
+        }
+
+    def template_recovery_evidence(self):
+        return {
+            'schema': 1,
+            'repository': 'elsa-workflows/elsa-templates',
+            'version': '3.9.0',
+            'recovery_run_id': 33977531329,
+            'recovery_workflow_sha': 'e' * 40,
+            'original_release_run_id': 33977531328,
+            'original_source_commit': 'a' * 40,
+            'original_artifact': {
+                'id': 777,
+                'name': 'elsa-template-packages',
+                'run_id': 33977531328,
+                'digest': 'sha256:' + 'd' * 64,
+                'size_in_bytes': 1234,
+            },
+            'target': {
+                'registry': 'nuget.org',
+                'package_ids': ['Elsa.Templates'],
+                'version': '3.9.0',
+            },
+        }
+
+    def template_recovery_files(self):
+        evidence = self.template_recovery_evidence()
+        archive = self.root / 'recovery-evidence.zip'
+        payload = json.dumps(evidence, separators=(',', ':'), sort_keys=True).encode()
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as output:
+            output.writestr('recovery-receipt.json', payload)
+        archive_digest = 'sha256:' + hashlib.sha256(archive.read_bytes()).hexdigest()
+        self.recovery_evidence_digest = archive_digest
+        self.recovery_evidence_size = archive.stat().st_size
+        receipt = self.template_recovery_receipt()
+        receipt['evidence']['digest'] = archive_digest
+        receipt['evidence']['size_in_bytes'] = self.recovery_evidence_size
+        return receipt, archive
+
+    def recovery_github(self, *args):
+        url = args[-1]
+        if '/releases?' in url:
+            return [[{'tag_name': '3.9.0', 'draft': False, 'prerelease': False, 'html_url': 'https://github.com/release'}]]
+        if '/git/ref/' in url:
+            return {'object': {'type': 'tag', 'sha': 'tag-object'}}
+        if '/git/tags/' in url:
+            return {'object': {'type': 'commit', 'sha': 'a' * 40}}
+        if '/workflows/' in url:
+            return [{'workflow_runs': [{
+                'id': 33977531328,
+                'head_sha': 'a' * 40,
+                'head_branch': '3.9.0',
+                'event': 'release',
+                'run_number': 42,
+                'run_attempt': 1,
+                'status': 'completed',
+                'conclusion': 'failure',
+                'html_url': 'https://github.com/original-run',
+            }]}]
+        if url.endswith('/actions/runs/33977531328'):
+            return {
+                'id': 33977531328,
+                'event': 'release',
+                'status': 'completed',
+                'conclusion': 'failure',
+                'head_sha': 'a' * 40,
+                'head_branch': '3.9.0',
+            }
+        if url.endswith('/actions/runs/33977531329'):
+            return {
+                'id': 33977531329,
+                'event': 'workflow_dispatch',
+                'status': 'completed',
+                'conclusion': 'success',
+                'head_sha': 'e' * 40,
+            }
+        if '/actions/runs/33977531328/jobs?' in url:
+            return [{'jobs': [
+                {'name': 'Build packages', 'conclusion': 'success'},
+                {'name': 'Publish to feedz.io', 'conclusion': 'success'},
+                {'name': 'Publish to nuget.org', 'conclusion': 'failure'},
+            ]}]
+        if '/actions/runs/33977531329/jobs?' in url:
+            return [{'jobs': [
+                {'name': 'Build packages', 'conclusion': 'skipped'},
+                {'name': 'Publish to feedz.io', 'conclusion': 'skipped'},
+                {'name': 'Publish to nuget.org', 'conclusion': 'success'},
+            ]}]
+        if '/actions/runs/33977531328/artifacts?' in url:
+            return [{'artifacts': [{
+                'id': 777,
+                'name': 'elsa-template-packages',
+                'size_in_bytes': 1234,
+                'digest': 'sha256:' + 'd' * 64,
+                'expired': False,
+                'workflow_run': {'id': 33977531328},
+            }]}]
+        if '/actions/runs/33977531329/artifacts?' in url:
+            return [{'artifacts': [{
+                'id': 778,
+                'name': 'elsa-template-recovery-evidence',
+                'size_in_bytes': getattr(self, 'recovery_evidence_size', 567),
+                'digest': getattr(self, 'recovery_evidence_digest', 'sha256:' + 'f' * 64),
+                'expired': False,
+                'workflow_run': {'id': 33977531329},
+            }]}]
+        self.fail(f'Unexpected recovery GitHub call {args}')
+
+    def test_nuget_recovery_binds_failed_release_and_original_artifact(self):
+        self.prepare_template_recovery()
+        receipt = self.root / 'recovery.json'
+        receipt_value, evidence_archive = self.template_recovery_files()
+        train.save(receipt, receipt_value)
+        with patch.object(train, 'gh', side_effect=self.recovery_github):
+            value = train.record_recovery(self.state, SimpleNamespace(repo='templates', receipt=receipt, evidence_archive=evidence_archive))
+            observed = train.inspect_release(self.state, 'templates')
+        self.assertEqual(33977531328, value['original_run_id'])
+        self.assertEqual(33977531329, value['recovery_run_id'])
+        self.assertEqual('verify-packages', observed['phase'])
+        self.assertEqual(33977531329, observed['recovery_run_id'])
+
+    def test_nuget_recovery_rejects_non_nuget_original_failure(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+        receipt['original_release_run']['failed_jobs'] = ['Build packages']
+        evidence = self.template_recovery_evidence()
+        with patch.object(train, 'gh', side_effect=self.recovery_github):
+            with self.assertRaisesRegex(ValueError, 'failed NuGet publishing job'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=evidence)
+
+    def test_nuget_recovery_rejects_rebuild_in_recovery_run(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+        evidence = self.template_recovery_evidence()
+
+        def rebuilt(*args):
+            value = self.recovery_github(*args)
+            if '/actions/runs/33977531329/jobs?' in args[-1]:
+                value[0]['jobs'][0]['conclusion'] = 'success'
+            return value
+
+        with patch.object(train, 'gh', side_effect=rebuilt):
+            with self.assertRaisesRegex(ValueError, 'rebuilt packages'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=evidence)
+
+    def test_nuget_recovery_rejects_unreviewed_workflow_sha(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+        receipt['recovery_run']['workflow_sha'] = 'a' * 40
+        with patch.object(train, 'gh', side_effect=self.recovery_github):
+            with self.assertRaisesRegex(ValueError, 'reviewed recovery workflow SHA'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=self.template_recovery_evidence())
+
+    def test_nuget_recovery_rejects_forged_machine_evidence_linkage(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+        evidence = self.template_recovery_evidence()
+        evidence['original_artifact']['digest'] = 'sha256:' + '0' * 64
+        with patch.object(train, 'gh', side_effect=self.recovery_github):
+            with self.assertRaisesRegex(ValueError, 'does not bind the original artifact payload'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=evidence)
+
+    def test_nuget_recovery_rejects_tampered_evidence_archive(self):
+        self.prepare_template_recovery()
+        receipt_value, evidence_archive = self.template_recovery_files()
+        receipt = self.root / 'recovery.json'
+        train.save(receipt, receipt_value)
+        evidence_archive.write_bytes(evidence_archive.read_bytes() + b'tampered')
+        with patch.object(train, 'gh', side_effect=self.recovery_github):
+            with self.assertRaisesRegex(ValueError, 'archive hash differs'):
+                train.record_recovery(self.state, SimpleNamespace(repo='templates', receipt=receipt, evidence_archive=evidence_archive))
 
     def test_unnumbered_rc_and_preview_need_a_resolved_version(self):
         for value in ['3.9.0-rc','3.9.0-preview']:

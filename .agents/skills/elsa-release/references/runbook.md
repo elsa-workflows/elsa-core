@@ -22,6 +22,23 @@ Check:
 - The profile intentionally publishes named stable, RC, and preview GitHub releases to NuGet and Feedz. Automated branch previews are separate, Feedz-only builds. Studio named prereleases use npm `next`; stable uses `latest`. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
 - Identify advisories and build/test prerequisites early. Assess actual usage and document disposition; a known warning from a prior release is evidence, not permanent acceptance. Keep unrelated upgrades out of the release. New material unresolved risks or failures require an explicit resolution before irreversible publication.
 
+Before creating a named release, perform a trusted NuGet credential preflight for
+each repository whose workflow publishes to NuGet. Check only secret metadata;
+never print or copy a secret value:
+
+```bash
+for repository in elsa-workflows/elsa-core elsa-workflows/elsa-studio elsa-workflows/elsa-extensions elsa-workflows/elsa-templates; do
+  gh secret list --repo "$repository" --json name --jq '.[].name' \
+    | grep -Fx NUGET_API_KEY >/dev/null \
+    || { echo "Missing NUGET_API_KEY metadata in $repository" >&2; exit 1; }
+done
+```
+
+Run the equivalent check for separately configured publishers. Secret presence
+does not prove that its value is valid, but this catches an avoidable missing
+credential before an immutable release is created. Never substitute a local key
+or put a secret in workflow-dispatch input.
+
 Use a persistent directory outside the repositories, for example `~/.codex/releases/elsa/3.9.0`. It holds source bindings, notes, artifact manifests/downloads, reports, and post receipts. Keep one release owner; the checkpoint uses an OS lock for concurrent updates. Do not run multiple publishing agents for the same version.
 
 Initialize the plan (local state only):
@@ -115,7 +132,122 @@ python3 <skill>/scripts/release.py --repo-path <worktree> \
 
 Matching existing tags/releases are reused. A different SHA, version/kind, or draft status fails. Do not force-push or recreate a tag. Re-run `status`; retain the returned release run ID. It must be a release-event run at the exact tag and SHA, with all configured publishing jobs successful.
 
-Download every artifact configured by that source workflow into a dedicated `<run>/<repo>-artifacts/` directory using `gh run download <run-id> --repo <owner/repo> --name <artifact-name> --dir <directory>`. Download NuGet and Studio's two npm archives in separate subdirectories of that artifact root, and download Templates' `elsa-template-packages` artifact separately. Verify:
+If the original release run has exactly one infrastructure failure in its
+configured `Publish to nuget.org` job, preserve that failed run, its immutable
+tag, and its artifact. Do not retag, recreate the release, or rerun the package
+build. Correct the workflow's explicit recovery path and dispatch it against the
+reviewed workflow source SHA. The recovery may run from an infrastructure repair
+commit rather than the release tag; record that SHA and verify it against the
+live run. It must consume the original configured artifact and run only the
+NuGet publication; a successful `Build packages` job is a rebuild, not recovery.
+The recovery workflow must upload a machine-readable `recovery-receipt.json` in
+the configured `elsa-template-recovery-evidence` artifact. Download the artifact
+ZIP and record its live artifact metadata along with the operator receipt. The
+operator receipt includes:
+
+```json
+{
+  "repository": "elsa-workflows/elsa-templates",
+  "version": "3.8.0",
+  "tag": "3.8.0",
+  "source_commit": "<bound-source-sha>",
+  "original_release_run": {
+    "id": 33977531328,
+    "failed_jobs": ["Publish to nuget.org"]
+  },
+  "artifact": {
+    "id": 123456,
+    "name": "elsa-template-packages",
+    "run_id": 33977531328,
+    "digest": "sha256:<github-artifact-digest>",
+    "size_in_bytes": 12345
+  },
+  "recovery_run": {
+    "id": 33977531329,
+    "event": "workflow_dispatch",
+    "publish_job": "Publish to nuget.org",
+    "artifact_id": 123456,
+    "artifact_digest": "sha256:<github-artifact-digest>",
+    "workflow_sha": "<reviewed-recovery-workflow-sha>"
+  },
+  "evidence": {
+    "id": 123457,
+    "name": "elsa-template-recovery-evidence",
+    "run_id": 33977531329,
+    "digest": "sha256:<github-evidence-artifact-digest>",
+    "size_in_bytes": 456
+  },
+  "target": {
+    "registry": "nuget.org",
+    "package_ids": ["Elsa.Templates"],
+    "version": "3.8.0"
+  }
+}
+```
+
+The downloaded `recovery-receipt.json` must contain the same version, recovery
+run ID and workflow SHA, the original release run ID/source commit, the original
+artifact ID, name, run ID, digest and size, and the exact NuGet target/package IDs. This
+machine-readable evidence is produced by the reviewed workflow and is checked
+against GitHub's live artifact metadata; a self-authored operator receipt is not
+evidence by itself.
+
+Its contents are shaped like this (the workflow writes the live values):
+
+```json
+{
+  "schema": 1,
+  "repository": "elsa-workflows/elsa-templates",
+  "version": "3.8.0",
+  "original_source_commit": "<original-release-head-sha>",
+  "recovery_run_id": 33977531329,
+  "recovery_workflow_sha": "<recovery-workflow-head-sha>",
+  "original_release_run_id": 33977531328,
+  "original_artifact": {
+    "id": 123456,
+    "name": "elsa-template-packages",
+    "run_id": 33977531328,
+    "digest": "sha256:<github-artifact-digest>",
+    "size_in_bytes": 12345
+  },
+  "target": {
+    "registry": "nuget.org",
+    "package_ids": ["Elsa.Templates"],
+    "version": "3.8.0"
+  }
+}
+```
+
+Validate and register it against the checkpoint:
+
+```bash
+python3 <skill>/scripts/release_train.py --state <run>/state.json record-recovery \
+  --repo templates \
+  --receipt <run>/templates-nuget-recovery.json \
+  --evidence-archive <run>/recovery-evidence.zip
+```
+
+The command checks the live tag/source, original release run and jobs, exact
+artifact ID/digest/size, recovery workflow SHA and dispatch event, the successful
+NuGet job, evidence artifact metadata, archive hash and contents, and the exact
+target package/version. It accepts only the sole configured NuGet failure with every
+other required job successful; it rejects a different failed job, retag, rebuild,
+artifact mismatch, forged/missing evidence, unreviewed workflow source, or target
+mismatch.
+The checkpoint retains both run IDs and the original failure history, then
+requires normal package verification against the recovery run. A failed or
+ambiguous recovery remains `repair-pipeline`.
+
+Download every artifact configured by that source workflow into a dedicated `<run>/<repo>-artifacts/` directory using `gh run download <run-id> --repo <owner/repo> --name <artifact-name> --dir <directory>`. Download NuGet and Studio's two npm archives in separate subdirectories of that artifact root, and download Templates' `elsa-template-packages` artifact separately. For a NuGet recovery, download the recovery artifact bytes directly and preserve the ZIP because its hash is the provenance check:
+
+```bash
+gh api "repos/elsa-workflows/elsa-templates/actions/artifacts/<evidence-artifact-id>/zip" \
+  > <run>/recovery-evidence.zip
+```
+
+Pass that ZIP to `record-recovery` before package verification. The helper checks
+the ZIP's SHA-256 against GitHub's artifact digest and parses the single
+`recovery-receipt.json` member. Verify:
 
 ```bash
 python3 <skill>/scripts/release_train.py --state <run>/state.json verify \
