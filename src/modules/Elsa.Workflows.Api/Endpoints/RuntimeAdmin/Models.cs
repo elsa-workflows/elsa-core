@@ -8,7 +8,8 @@ public class PauseRequest
     public string? Reason { get; set; }
 }
 
-/// <summary>Body for the resume endpoint. No fields today — kept as a class so the endpoint signature is uniform.</summary>
+/// <summary>Body for the resume endpoint.</summary>
+[Obsolete("Use FastEndpoints.EmptyRequest instead.")]
 public class ResumeRequest
 {
 }

@@ -38,7 +38,7 @@ public abstract class ElsaEndpointWithoutRequest<TResponse> : EndpointWithoutReq
     }
 }
 
-public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> where TRequest : notnull, new() where TResponse : notnull
+public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> where TRequest : notnull where TResponse : notnull
 {
     protected void ConfigurePermissions(params string[] permissions)
     {
@@ -49,7 +49,7 @@ public class ElsaEndpoint<TRequest, TResponse> : Endpoint<TRequest, TResponse> w
     }
 }
 
-public class ElsaEndpoint<TRequest, TResponse, TMapper> : Endpoint<TRequest, TResponse, TMapper> where TRequest : notnull, new() where TResponse : notnull where TMapper : class, IMapper, new()
+public class ElsaEndpoint<TRequest, TResponse, TMapper> : Endpoint<TRequest, TResponse, TMapper> where TRequest : notnull where TResponse : notnull where TMapper : class, IMapper, new()
 {
     protected void ConfigurePermissions(params string[] permissions)
     {
@@ -60,7 +60,7 @@ public class ElsaEndpoint<TRequest, TResponse, TMapper> : Endpoint<TRequest, TRe
     }
 }
 
-public class ElsaEndpoint<TRequest> : Endpoint<TRequest> where TRequest : notnull, new()
+public class ElsaEndpoint<TRequest> : Endpoint<TRequest> where TRequest : notnull
 {
     protected void ConfigurePermissions(params string[] permissions)
     {
