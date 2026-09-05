@@ -78,6 +78,80 @@
       ],
       "fixed_packages": {},
       "npm": []
+    },
+    {
+      "name": "templates",
+      "directory": "elsa-templates",
+      "github": "elsa-workflows/elsa-templates",
+      "solution": "Elsa.Templates.slnx",
+      "workflow": "packages.yml",
+      "artifact": "elsa-template-packages",
+      "dependencies": [
+        "core",
+        "studio"
+      ],
+      "stage_after": [
+        "extensions"
+      ],
+      "source_policy": {
+        "stable": "origin/main",
+        "prerelease": "origin/release/{base}"
+      },
+      "alignment": [
+        {
+          "file": "src/Elsa.Templates/Elsa.Templates.csproj",
+          "property": "Version"
+        },
+        {
+          "file": ".github/workflows/packages.yml",
+          "yaml_key": "BASE_VERSION",
+          "base_version": true
+        },
+        {
+          "glob": "src/Elsa.Templates/templates/**/*.csproj",
+          "package_prefix": "Elsa"
+        },
+        {
+          "file": "elsa-templates.csproj",
+          "package_prefix": "Elsa"
+        },
+        {
+          "glob": "src/Elsa.Templates/templates/**/StudioBrandingProvider.cs",
+          "studio_branding": true
+        },
+        {
+          "file": "test/Elsa.Templates.Tests/TemplateSmokeTests.cs",
+          "string_constant": "ElsaVersion"
+        }
+      ],
+      "content_expectations": {
+        "source_root": "src/Elsa.Templates",
+        "source_globs": [
+          "templates/**/*.csproj"
+        ],
+        "template_config_globs": [
+          "templates/**/.template.config/template.json"
+        ],
+        "archive_prefix": "content/",
+        "archive_source_prefix": "templates/",
+        "package_prefixes": [
+          "Elsa"
+        ],
+        "upstream_repositories": [
+          "core",
+          "studio"
+        ]
+      },
+      "expected_package_ids": [
+        "Elsa.Templates"
+      ],
+      "required_jobs": [
+        "Build packages",
+        "Publish to feedz.io",
+        "Publish to nuget.org"
+      ],
+      "fixed_packages": {},
+      "npm": []
     }
   ],
   "feeds": [

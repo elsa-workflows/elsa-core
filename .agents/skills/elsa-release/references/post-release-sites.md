@@ -15,6 +15,8 @@ Stable releases update the current stable guidance and use `content_label: stabl
 
 Keep historical references such as Elsa 3.7 examples separate from current recommendations. A historical example may remain when it is explicitly labelled as historical, but do not present an older Elsa runtime as the new stable release in a current install path. A separately versioned template or container may remain the latest published artifact; label its actual embedded runtime version and give a verified upgrade or source-build path instead of inventing a matching version. Verify Docker images, templates, samples, and other release artifacts independently of NuGet package verification; a green NuGet feed check does not prove those artifacts were published or that the website points to them.
 
+For a release train that selects Templates, record `Elsa.Templates` as a fourth package artifact: its exact source commit, workflow run and `elsa-template-packages` artifact, the single package ID/version, the verified NuGet/Feedz URLs, and the generated-project matrix results. Confirm every embedded Elsa reference matches the released version and belongs to the known package IDs from the configured Core and Studio upstream manifests. Keep a separately published or older template version labelled with its actual embedded runtime version until this evidence exists.
+
 ## Update workflow
 
 1. Read the verified release notes, package manifest, source commit, and selected repository scope. Extract technical claims from the tagged source and release workflow. Do not copy an unverified issue description or invent an API, package, Docker tag, template version, migration, or timeline.
