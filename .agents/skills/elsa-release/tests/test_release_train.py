@@ -96,6 +96,7 @@ class TrainTests(unittest.TestCase):
             'version': '3.9.0',
             'tag': '3.9.0',
             'source_commit': 'a' * 40,
+            'approved_source_commit': 'b' * 40,
             'original_release_run': {
                 'id': 33977531328,
                 'failed_jobs': ['Publish to nuget.org'],
@@ -174,6 +175,14 @@ class TrainTests(unittest.TestCase):
             return {'object': {'type': 'tag', 'sha': 'tag-object'}}
         if '/git/tags/' in url:
             return {'object': {'type': 'commit', 'sha': 'a' * 40}}
+        if url == 'repos/elsa-workflows/elsa-templates':
+            return {'full_name': 'elsa-workflows/elsa-templates', 'default_branch': 'main'}
+        if '/compare/' in url:
+            approved = url.split('/compare/', 1)[1].split('...', 1)[0]
+            return {'status': 'identical' if approved == 'b' * 40 else 'behind'}
+        if '/commits/' in url:
+            sha = url.rsplit('/', 1)[-1]
+            return {'sha': sha, 'commit': {'tree': {'sha': 'reviewed-tree'}}}
         if '/workflows/' in url:
             return [{'workflow_runs': [{
                 'id': 33977531328,
@@ -269,7 +278,7 @@ class TrainTests(unittest.TestCase):
             return value
 
         with patch.object(train, 'gh', side_effect=rebuilt):
-            with self.assertRaisesRegex(ValueError, 'rebuilt packages'):
+            with self.assertRaisesRegex(ValueError, 'non-NuGet work'):
                 train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=evidence)
 
     def test_nuget_recovery_rejects_unreviewed_workflow_sha(self):
@@ -288,6 +297,70 @@ class TrainTests(unittest.TestCase):
         with patch.object(train, 'gh', side_effect=self.recovery_github):
             with self.assertRaisesRegex(ValueError, 'does not bind the original artifact payload'):
                 train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=evidence)
+
+    def test_nuget_recovery_rejects_unanchored_approved_source(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+        receipt['approved_source_commit'] = 'c' * 40
+        with patch.object(train, 'gh', side_effect=self.recovery_github):
+            with self.assertRaisesRegex(ValueError, 'canonical default-branch history'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=self.template_recovery_evidence())
+
+    def test_nuget_recovery_rejects_approved_tree_mismatch(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+
+        def mismatched(*args):
+            value = self.recovery_github(*args)
+            if '/commits/e' + 'e' * 39 in args[-1]:
+                value['commit']['tree']['sha'] = 'different-tree'
+            return value
+
+        with patch.object(train, 'gh', side_effect=mismatched):
+            with self.assertRaisesRegex(ValueError, 'tree differs'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=self.template_recovery_evidence())
+
+    def test_nuget_recovery_rejects_extra_failed_original_job(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+
+        def extra_failure(*args):
+            value = self.recovery_github(*args)
+            if '/actions/runs/33977531328/jobs?' in args[-1]:
+                value[0]['jobs'].append({'name': 'Upload diagnostics', 'conclusion': 'failure'})
+            return value
+
+        with patch.object(train, 'gh', side_effect=extra_failure):
+            with self.assertRaisesRegex(ValueError, 'unknown non-success job'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=self.template_recovery_evidence())
+
+    def test_nuget_recovery_rejects_renamed_rebuild_job(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+
+        def renamed(*args):
+            value = self.recovery_github(*args)
+            if '/actions/runs/33977531329/jobs?' in args[-1]:
+                value[0]['jobs'][0]['name'] = 'Build packages (rebuild)'
+            return value
+
+        with patch.object(train, 'gh', side_effect=renamed):
+            with self.assertRaisesRegex(ValueError, 'exactly the configured required jobs'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=self.template_recovery_evidence())
+
+    def test_nuget_recovery_rejects_duplicate_job_names(self):
+        self.prepare_template_recovery()
+        receipt = self.template_recovery_receipt()
+
+        def duplicate(*args):
+            value = self.recovery_github(*args)
+            if '/actions/runs/33977531329/jobs?' in args[-1]:
+                value[0]['jobs'].append({'name': 'Build packages', 'conclusion': 'skipped'})
+            return value
+
+        with patch.object(train, 'gh', side_effect=duplicate):
+            with self.assertRaisesRegex(ValueError, 'duplicate job'):
+                train.validate_recovery_receipt(self.state, 'templates', receipt, evidence=self.template_recovery_evidence())
 
     def test_nuget_recovery_rejects_tampered_evidence_archive(self):
         self.prepare_template_recovery()
