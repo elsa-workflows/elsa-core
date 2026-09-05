@@ -76,6 +76,34 @@ def entry(state, name):
     return state['repositories'][name]
 
 
+def default_source_ref(repository, version):
+    """Resolve a repository source policy without falling back to checkout HEAD."""
+
+    policy = repository.get('source_policy', {})
+    if not policy:
+        template = 'origin/release/{base}'
+    else:
+        channel = 'stable' if version.kind == 'stable' else 'prerelease'
+        template = policy.get(channel)
+        if not template:
+            raise ValueError(f"{repository['name']}: source policy has no {channel} source")
+    return template.format(base=version.base, version=version.version, kind=version.kind)
+
+
+def compatible_profile(existing, current):
+    """Allow additive repository/profile evolution when resuming old checkpoints."""
+
+    if not isinstance(existing, dict) or not isinstance(current, dict):
+        return False
+    old_repositories = {item['name']: item for item in existing.get('repositories', []) if isinstance(item, dict) and item.get('name')}
+    new_repositories = {item['name']: item for item in current.get('repositories', []) if isinstance(item, dict) and item.get('name')}
+    if any(new_repositories.get(name) != item for name, item in old_repositories.items()):
+        return False
+    old_rest = {key: value for key, value in existing.items() if key != 'repositories'}
+    new_rest = {key: value for key, value in current.items() if key != 'repositories'}
+    return old_rest == new_rest
+
+
 def post_refresh_configured(state):
     """Return whether this checkpoint explicitly adopted the post-release gate."""
 
@@ -262,17 +290,28 @@ def init(args):
         'repositories': {r['name']: {
             'path': str((Path(args.repos_root).expanduser().resolve() / r['directory'])),
             'publish': r['name'] in selected,
-            'source_ref': sources.get(r['name'], f'origin/release/{version.base}'),
+            'source_ref': sources.get(r['name'], default_source_ref(r, version)),
         } for r in profile['repositories'] if r['name'] in needed},
     }
     if args.state.exists():
         existing = read(args.state)
         # Never erase a partially completed train by repeating init.
-        for field in ['version', 'kind', 'profile', 'prerequisites', 'announce']:
+        for field in ['version', 'kind', 'prerequisites', 'announce']:
             if existing[field] != state[field]:
                 raise ValueError(f'Existing state has a different {field}; use its recorded inputs')
-        if {k: (v['publish'], v['path'], v['source_ref']) for k,v in existing['repositories'].items()} != {k: (v['publish'], v['path'], v['source_ref']) for k,v in state['repositories'].items()}:
-            raise ValueError('Existing state has different repository scope or paths')
+        if existing.get('profile') != state['profile'] and not compatible_profile(existing.get('profile'), state['profile']):
+            raise ValueError('Existing state has a different profile; use its recorded inputs')
+        old_scope = {
+            k: (v['publish'], v['path'], v['source_ref']) for k, v in existing['repositories'].items()
+        }
+        new_scope = {
+            k: (v['publish'], v['path'], v['source_ref']) for k, v in state['repositories'].items()
+        }
+        if args.repositories is not None or args.source is not None:
+            if old_scope != new_scope:
+                raise ValueError('Existing state has different repository scope or paths')
+        elif any(new_scope.get(name) != values for name, values in old_scope.items()):
+            raise ValueError('Existing state has different repository paths or source refs')
         if post_refresh_configured(existing):
             existing_refresh = existing['post_refresh']
             requested_refresh = state['post_refresh']
@@ -358,7 +397,10 @@ def receipt_valid(item):
 
 def require_upstreams(state, name):
     check_prerequisites(state)
-    for upstream in config(state, name)['dependencies']:
+    required = config(state, name)['dependencies'] + config(state, name).get('stage_after', [])
+    for upstream in required:
+        if upstream not in state['repositories']:
+            continue
         observed = inspect_release(state, upstream)
         if observed['phase'] != 'verified':
             raise ValueError(f"{name} waits for {upstream}: {observed['phase']}")
@@ -368,13 +410,57 @@ def aligned_text(text, rule, version):
     if 'property' in rule:
         tag = re.escape(rule['property'])
         pattern = rf'(<{tag}>)([^<]*)(</{tag}>)'
+        value, count = re.subn(pattern, lambda m: m[1] + version + m[3], text)
+    elif 'yaml_key' in rule:
+        key = re.escape(rule['yaml_key'])
+        pattern = rf'(^\s*{key}:\s*)([^\s#]+)'
+        yaml_version = parse_version(version).base if rule.get('base_version') else version
+        value, count = re.subn(pattern, lambda m: m[1] + yaml_version, text, flags=re.MULTILINE)
+    elif 'package_prefix' in rule:
+        prefix = re.escape(rule['package_prefix'])
+        pattern = rf'(<PackageReference\b(?=[^>]*\bInclude=["\']{prefix}[^"\']*["\'])[^>]*?\bVersion=["\'])([^"\']*)(["\'])'
+        value, count = re.subn(pattern, lambda m: m[1] + version + m[3], text)
+        if count == 0:
+            raise ValueError(f'Expected at least one package reference for {rule}, found 0; inspect changed repository structure')
+        return value
+    elif 'studio_branding' in rule:
+        pattern = r'(["\']Elsa Studio\s+)\d+\.\d+(["\'])'
+        major_minor = '.'.join(version.split('.')[:2])
+        value, count = re.subn(pattern, rf'\g<1>{major_minor}\g<2>', text)
+    elif 'string_constant' in rule:
+        constant = re.escape(rule['string_constant'])
+        pattern = rf'(\b(?:const\s+)?string\s+{constant}\s*=\s*["\'])[^"\']+(["\'])'
+        value, count = re.subn(pattern, lambda m: m[1] + version + m[2], text)
     else:
         package = re.escape(rule['package'])
         pattern = rf'(<PackageVersion\b[^>]*\bInclude=[\"\']{package}[\"\'][^>]*\bVersion=[\"\'])([^\"\']*)([\"\'])'
-    value, count = re.subn(pattern, lambda m: m[1] + version + m[3], text)
+        value, count = re.subn(pattern, lambda m: m[1] + version + m[3], text)
     if count != 1:
         raise ValueError(f'Expected one dependency declaration for {rule}, found {count}; inspect changed repository structure')
     return value
+
+
+def alignment_files(path, rule):
+    if 'glob' in rule:
+        files = sorted(path.glob(rule['glob']))
+        if not files:
+            raise ValueError(f"Alignment glob matched no files: {rule['glob']}")
+        return files
+    if 'file' not in rule:
+        raise ValueError(f'Alignment rule requires file or glob: {rule}')
+    file = path / rule['file']
+    if not file.is_file():
+        raise ValueError(f'Alignment file does not exist: {file}')
+    return [file]
+
+
+def aligned_files(path, rules, version):
+    files = {}
+    for rule in rules:
+        for file in alignment_files(path, rule):
+            text = files.get(file, file.read_text())
+            files[file] = aligned_text(text, rule, version)
+    return files
 
 
 def align(state, args):
@@ -392,10 +478,7 @@ def align(state, args):
     remote = command(['git', 'remote', 'get-url', 'origin'], path)
     if not re.search(r'github\.com[:/]' + re.escape(expected) + r'(?:\.git)?$', remote):
         raise ValueError('Worktree remote does not match repository profile')
-    files = {}
-    for rule in config(state, args.repo)['alignment']:
-        file = path / rule['file']
-        files[file] = aligned_text(files.get(file, file.read_text()), rule, state['version'])
+    files = aligned_files(path, config(state, args.repo)['alignment'], state['version'])
     changed = [str(p) for p,t in files.items() if p.read_text() != t]
     if args.execute:
         for file,text in files.items():
@@ -415,11 +498,37 @@ def validate_manifest(state, name, manifest, commit):
         raise ValueError('Manifest npm package set differs from release profile')
     if any(x['dist_tag'] != policy['npm_dist_tag'] for x in manifest.get('npm', [])):
         raise ValueError('Manifest npm dist-tag differs from release profile')
+    expected_ids = cfg.get('expected_package_ids')
+    if expected_ids is not None and sorted(expected_ids, key=str.lower) != sorted(
+        (x['id'] for x in manifest['nuget']), key=str.lower
+    ):
+        raise ValueError('Manifest package inventory differs from the release profile')
+    if cfg.get('content_expectations') and not manifest.get('content_expectations'):
+        raise ValueError('Templates manifest is missing source-derived content expectations')
     for package in manifest['nuget']:
         if package.get('version', state['version']) != state['version'] or package.get('verify_published') is False:
             exception = cfg['fixed_packages'].get(package['id'])
             if not exception or any(package.get(k) != v for k,v in exception.items()):
                 raise ValueError('Unconfigured fixed-version/package-verification exception')
+
+
+def validate_source_content_manifest(state, name, path, manifest):
+    """Rebuild source-derived archive expectations before freezing a binding."""
+
+    cfg = config(state, name)
+    if not cfg.get('content_expectations'):
+        return
+    from package_manifest import embedded_content
+
+    upstream_manifests = {}
+    for upstream in cfg['content_expectations'].get('upstream_repositories', []):
+        binding = entry(state, upstream).get('binding')
+        if not binding:
+            raise ValueError(f'Bind upstream {upstream} before validating embedded content')
+        upstream_manifests[upstream] = read(binding['manifest'])
+    expected = embedded_content(path, cfg, state['version'], upstream_manifests)
+    if manifest.get('content_expectations') != expected:
+        raise ValueError('Manifest content expectations differ from the checked-out source')
 
 
 def bind(state, args):
@@ -438,9 +547,8 @@ def bind(state, args):
         raise ValueError('Existing release must be adopted at its exact immutable tag commit')
     if not existing and item['publish'] and command(['git', 'rev-parse', item['source_ref'] + '^{commit}'], path) != sha:
         raise ValueError('Tested commit differs from the intended release source; fetch and inspect the source before binding')
-    for rule in cfg['alignment']:
-        text = (path / rule['file']).read_text()
-        if aligned_text(text, rule, state['version']) != text:
+    for file, text in aligned_files(path, cfg['alignment'], state['version']).items():
+        if text != file.read_text():
             raise ValueError('Downstream dependency references are not aligned to this release')
     for url in state['prerequisites']:
         pr = gh('pr', 'view', url, '--json', 'state,mergeCommit,url')
@@ -448,6 +556,7 @@ def bind(state, args):
             command(['git', 'merge-base', '--is-ancestor', pr['mergeCommit']['oid'], sha], path)
     manifest = read(args.manifest)
     validate_manifest(state, args.repo, manifest, sha)
+    validate_source_content_manifest(state, args.repo, path, manifest)
     notes = args.notes_file.resolve()
     if not notes.read_text().strip() or 'Review before publishing:' in notes.read_text():
         raise ValueError('Curate the release notes before binding')
@@ -496,6 +605,10 @@ def status(state):
     check_prerequisites(state)
     results = {}
     for name in state['repositories']:
+        stage_after = [stage for stage in config(state, name).get('stage_after', []) if stage in results]
+        if any(results[stage]['phase'] != 'verified' for stage in stage_after):
+            results[name] = {'phase': 'wait-for-stage', 'stages': stage_after}
+            continue
         upstreams = config(state, name)['dependencies']
         if any(results[u]['phase'] != 'verified' for u in upstreams):
             results[name] = {'phase': 'wait-for-upstream', 'upstreams': upstreams}
@@ -600,7 +713,7 @@ def main():
     p.add_argument('--kind', choices=['stable','rc','preview'])
     p.add_argument('--profile', type=Path, default=DEFAULT_PROFILE)
     p.add_argument('--repos-root', required=True)
-    p.add_argument('--repositories', nargs='+', choices=['core','studio','extensions'])
+    p.add_argument('--repositories', nargs='+', help='Repositories to publish; upstream dependencies are verification-only')
     p.add_argument('--source', action='append', help='Explicit source override, e.g. core=3.9.0-rc1')
     p.add_argument('--pr', action='append', help='Explicit release prerequisite PR URL; never discovers arbitrary open PRs')
     p.add_argument('--no-announcements', action='store_true')

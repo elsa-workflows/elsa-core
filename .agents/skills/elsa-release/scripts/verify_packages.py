@@ -119,7 +119,95 @@ def _archive_payload_hash(data: bytes, max_bytes: int) -> str:
     return digest.hexdigest()
 
 
-def _parse_nuspec(data: bytes, max_bytes: int) -> dict[str, Any]:
+def _embedded_content_errors(data: bytes, max_bytes: int, expectations: dict[str, Any] | None, package_id: str) -> list[str]:
+    """Validate embedded template projects without extracting an untrusted archive."""
+
+    if not expectations or package_id.lower() != str(expectations.get("package_id", "")).lower():
+        return []
+    expected_files = expectations.get("files", [])
+    archive_prefix = str(expectations.get("archive_prefix", ""))
+    expected_version = str(expectations.get("expected_version", ""))
+    known_ids = {str(value).lower() for value in expectations.get("known_published_ids", [])}
+    errors: list[str] = []
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            infos = archive.infolist()
+            if len(infos) > MAX_ARCHIVE_MEMBERS:
+                raise VerificationError("nupkg contains too many archive members")
+            total_bytes = 0
+            for info in infos:
+                if not _safe_archive_name(info.filename):
+                    raise VerificationError(f"unsafe nupkg member path: {info.filename}")
+                if info.file_size > max_bytes:
+                    raise VerificationError("embedded template exceeds max bytes")
+                total_bytes += info.file_size
+                if total_bytes > max_bytes:
+                    raise VerificationError("nupkg uncompressed payload exceeds max bytes")
+            names = [info.filename for info in infos if not info.is_dir()]
+            duplicate_names = sorted(name for name, count in Counter(names).items() if count > 1)
+            if duplicate_names:
+                errors.extend(f"duplicate nupkg member: {name}" for name in duplicate_names)
+            name_set = set(names)
+            template_projects = {
+                name[len(archive_prefix):] if archive_prefix and name.startswith(archive_prefix) else name
+                for name in name_set
+                if name.lower().endswith(".csproj") and (not archive_prefix or name.startswith(archive_prefix))
+            }
+            expected_paths = {str(item.get("path", "")) for item in expected_files}
+            for missing in sorted(expected_paths - template_projects):
+                errors.append(f"embedded template project missing from nupkg: {missing}")
+            for extra in sorted(template_projects - expected_paths):
+                errors.append(f"unexpected embedded template project in nupkg: {extra}")
+            expected_configs = {str(value) for value in expectations.get("template_configs", [])}
+            if expected_configs:
+                template_configs = {
+                    name[len(archive_prefix):] if archive_prefix and name.startswith(archive_prefix) else name
+                    for name in names
+                    if name.lower().endswith("/.template.config/template.json")
+                    and (not archive_prefix or name.startswith(archive_prefix))
+                }
+                for missing in sorted(expected_configs - template_configs):
+                    errors.append(f"template configuration missing from nupkg: {missing}")
+                for extra in sorted(template_configs - expected_configs):
+                    errors.append(f"unexpected template configuration in nupkg: {extra}")
+            for expected in expected_files:
+                relative = str(expected.get("path", ""))
+                candidates = [
+                    name for name in names
+                    if name == archive_prefix + relative
+                ]
+                if len(candidates) != 1:
+                    errors.append(f"embedded template project missing or duplicated in nupkg: {relative}")
+                    continue
+                info = archive.getinfo(candidates[0])
+                try:
+                    document = ET.fromstring(archive.read(info))
+                except ET.ParseError as exc:
+                    errors.append(f"embedded template project is invalid XML: {relative}: {exc}")
+                    continue
+                observed = []
+                for node in document.iter():
+                    if _local_name(node.tag) != "PackageReference":
+                        continue
+                    package = (node.attrib.get("Include") or "").strip()
+                    if not any(package.lower().startswith(str(prefix).lower()) for prefix in expectations.get("package_prefixes", ["Elsa"])):
+                        continue
+                    version = (node.attrib.get("Version") or "").strip()
+                    observed.append({"id": package, "version": version})
+                    if package.lower() not in known_ids:
+                        errors.append(f"{relative}: embedded package {package} is not a published upstream package")
+                    if expected_version and version != expected_version:
+                        errors.append(f"{relative}: embedded package {package} version {version!r} != {expected_version!r}")
+                if sorted(observed, key=lambda item: (item["id"].lower(), item["version"])) != sorted(
+                    expected.get("references", []), key=lambda item: (item["id"].lower(), item["version"])
+                ):
+                    errors.append(f"{relative}: embedded Elsa PackageReferences differ from the bound source")
+    except (zipfile.BadZipFile, OSError, RuntimeError) as exc:
+        raise VerificationError(f"invalid nupkg zip: {exc}") from exc
+    return errors
+
+
+def _parse_nuspec(data: bytes, max_bytes: int, content_expectations: dict[str, Any] | None = None) -> dict[str, Any]:
     try:
         with zipfile.ZipFile(io.BytesIO(data)) as archive:
             infos = archive.infolist()
@@ -172,11 +260,12 @@ def _parse_nuspec(data: bytes, max_bytes: int) -> dict[str, Any]:
 
     if not values["id"] or not values["version"]:
         raise VerificationError("nuspec metadata must contain id and version")
+    values["content_errors"] = _embedded_content_errors(data, max_bytes, content_expectations, values["id"])
     values["payload_sha256"] = _archive_payload_hash(data, max_bytes)
     return values
 
 
-def _parse_nuget_artifact(path: Path, max_bytes: int) -> dict[str, Any]:
+def _parse_nuget_artifact(path: Path, max_bytes: int, content_expectations: dict[str, Any] | None = None) -> dict[str, Any]:
     try:
         size = path.stat().st_size
     except OSError as exc:
@@ -187,7 +276,7 @@ def _parse_nuget_artifact(path: Path, max_bytes: int) -> dict[str, Any]:
         data = path.read_bytes()
     except OSError as exc:
         raise VerificationError(f"cannot read artifact: {exc}") from exc
-    parsed = _parse_nuspec(data, max_bytes)
+    parsed = _parse_nuspec(data, max_bytes, content_expectations)
     parsed.update({"path": str(path), "file": path.name})
     return parsed
 
@@ -284,7 +373,7 @@ def _http_error_record(exc: BaseException) -> dict[str, Any]:
     }
 
 
-def _download_nupkg(url: str, timeout: float, max_bytes: int) -> tuple[dict[str, Any], bytes]:
+def _download_nupkg(url: str, timeout: float, max_bytes: int, content_expectations: dict[str, Any] | None = None) -> tuple[dict[str, Any], bytes]:
     """Download a published nupkg, using HEAD only as a bounded preflight."""
 
     try:
@@ -304,7 +393,7 @@ def _download_nupkg(url: str, timeout: float, max_bytes: int) -> tuple[dict[str,
     )
     if status < 200 or status >= 300:
         raise VerificationError(f"unexpected GET status {status}")
-    return _parse_nuspec(data, max_bytes), data
+    return _parse_nuspec(data, max_bytes, content_expectations), data
 
 
 def _download_json(url: str, timeout: float, max_bytes: int) -> dict[str, Any]:
@@ -371,6 +460,47 @@ def _validate_manifest(raw: Any) -> dict[str, Any]:
         ):
             raise VerificationError("manifest expected_dependencies values must be non-empty strings")
     result["expected_dependencies"] = expected_dependencies
+
+    content = raw.get("content_expectations")
+    if content is not None:
+        if not isinstance(content, dict):
+            raise VerificationError("manifest content_expectations must be an object")
+        for field in ("package_id", "expected_version", "archive_prefix"):
+            if not isinstance(content.get(field), str) or not content[field].strip():
+                raise VerificationError(f"manifest content_expectations requires {field}")
+        if content["expected_version"] != result["version"]:
+            raise VerificationError("manifest content_expectations version must match the release version")
+        if not any(
+            str(item.get("id", "")).lower() == content["package_id"].lower()
+            for item in raw.get("nuget", []) if isinstance(item, dict)
+        ):
+            raise VerificationError("manifest content_expectations package_id is not an expected NuGet package")
+        for field in ("known_published_ids", "files", "template_configs"):
+            if not isinstance(content.get(field), list):
+                raise VerificationError(f"manifest content_expectations {field} must be an array")
+            if not content[field]:
+                raise VerificationError(f"manifest content_expectations {field} must not be empty")
+        for config_path in content["template_configs"]:
+            if not isinstance(config_path, str) or not config_path.strip():
+                raise VerificationError("manifest content_expectations template configs require paths")
+        for package_id in content["known_published_ids"]:
+            if not isinstance(package_id, str) or not package_id.strip():
+                raise VerificationError("manifest content_expectations known IDs must be non-empty strings")
+        for file in content["files"]:
+            if not isinstance(file, dict) or not isinstance(file.get("path"), str) or not file["path"].strip():
+                raise VerificationError("manifest content_expectations files require paths")
+            if not isinstance(file.get("references"), list):
+                raise VerificationError("manifest content_expectations file references must be arrays")
+            for reference in file["references"]:
+                if (
+                    not isinstance(reference, dict)
+                    or not isinstance(reference.get("id"), str)
+                    or not isinstance(reference.get("version"), str)
+                    or not reference["id"].strip()
+                    or not reference["version"].strip()
+                ):
+                    raise VerificationError("manifest embedded references require id and version")
+        result["content_expectations"] = content
 
     for item in result["nuget"]:
         if not isinstance(item, dict) or not isinstance(item.get("id"), str) or not item["id"].strip():
@@ -443,6 +573,7 @@ def _check_nuget_metadata(
     artifact_label: str,
 ) -> list[str]:
     errors: list[str] = []
+    errors.extend(str(error) for error in metadata.get("content_errors", []))
     if str(metadata.get("id", "")).lower() != expected_id.lower():
         errors.append(f"{artifact_label}: nuspec id {metadata.get('id')!r} != {expected_id!r}")
     if metadata.get("version") != expected_version:
@@ -502,7 +633,7 @@ def _verify_nuget(
     artifacts_by_id: dict[str, list[dict[str, Any]]] = {}
     for path in _discover_artifacts(artifacts_dir, ".nupkg"):
         try:
-            artifact = _parse_nuget_artifact(path, max_bytes)
+            artifact = _parse_nuget_artifact(path, max_bytes, manifest.get("content_expectations"))
             artifact_errors = _check_nuget_metadata(
                 artifact,
                 str(artifact.get("id")),
@@ -570,7 +701,8 @@ def _verify_nuget(
             local = records[0]
             try:
                 published, _ = _download_nupkg(
-                    package_result["url"], timeout=timeout, max_bytes=max_bytes
+                    package_result["url"], timeout=timeout, max_bytes=max_bytes,
+                    content_expectations=manifest.get("content_expectations")
                 )
                 package_result.update(
                     {

@@ -95,6 +95,26 @@ class TrainTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'different announce'):
             train.init(self.args)
 
+    def test_init_preserves_a_legacy_three_repository_checkpoint_after_templates_is_added(self):
+        legacy = copy.deepcopy(self.state)
+        legacy['profile']['repositories'] = [
+            repository for repository in legacy['profile']['repositories'] if repository['name'] != 'templates'
+        ]
+        legacy['repositories'].pop('templates')
+        train.save(self.args.state, legacy)
+        resumed = train.init(self.args)
+        self.assertNotIn('templates', resumed['repositories'])
+        self.assertEqual(legacy['profile'], resumed['profile'])
+
+    def test_init_rejects_changed_implicit_paths_or_explicit_sources(self):
+        changed_root = self.root / 'other-root'
+        changed = SimpleNamespace(**{**vars(self.args), 'repos_root': str(changed_root)})
+        with self.assertRaisesRegex(ValueError, 'repository paths'):
+            train.init(changed)
+        changed_source = SimpleNamespace(**{**vars(self.args), 'source': ['core=origin/main']})
+        with self.assertRaisesRegex(ValueError, 'repository scope'):
+            train.init(changed_source)
+
     def test_wrong_release_line_source_is_rejected_before_checkpoint(self):
         self.args.state=self.root/'wrong-source.json';self.args.source=['core=3.8.0-rc1']
         with self.assertRaisesRegex(ValueError,'different release line'):
@@ -116,6 +136,38 @@ class TrainTests(unittest.TestCase):
         self.assertFalse(state['repositories']['studio']['publish'])
         self.assertTrue(state['repositories']['extensions']['publish'])
 
+    def test_templates_are_fourth_stage_with_core_and_studio_upstreams(self):
+        self.args.state = self.root / 'templates.json'
+        self.args.repositories = ['templates']
+        state = train.init(self.args)
+        self.assertEqual(['core', 'studio', 'templates'], list(state['repositories']))
+        self.assertFalse(state['repositories']['core']['publish'])
+        self.assertFalse(state['repositories']['studio']['publish'])
+        self.assertTrue(state['repositories']['templates']['publish'])
+        self.assertEqual('origin/main', state['repositories']['templates']['source_ref'])
+
+        self.args.state = self.root / 'templates-preview.json'
+        self.args.version = '3.9.0-preview.1'
+        self.args.kind = 'preview'
+        self.args.repositories = ['templates']
+        preview = train.init(self.args)
+        self.assertEqual('origin/release/3.9.0', preview['repositories']['templates']['source_ref'])
+
+    def test_templates_can_select_an_explicit_preview_source(self):
+        self.args.state = self.root / 'templates-source.json'
+        self.args.repositories = ['templates']
+        self.args.source = ['templates=origin/3.9.0-preview.2']
+        state = train.init(self.args)
+        self.assertEqual('origin/3.9.0-preview.2', state['repositories']['templates']['source_ref'])
+
+    def test_full_train_keeps_templates_after_extensions_even_without_an_extension_reference(self):
+        self.bind_fixture('core')
+        self.bind_fixture('studio')
+        with patch.object(train, 'gh', side_effect=self.github):
+            observed = train.status(self.state)
+        self.assertEqual('wait-for-stage', observed['repositories']['templates']['phase'])
+        self.assertEqual(['extensions'], observed['repositories']['templates']['stages'])
+
     def test_dependency_order_and_tampered_receipt_blocks_progress(self):
         with patch.object(train,'gh',side_effect=self.github):
             first=train.status(self.state)
@@ -124,7 +176,7 @@ class TrainTests(unittest.TestCase):
             self.bind_fixture('core')
             second=train.status(self.state)
             self.assertEqual('prepare',second['repositories']['studio']['phase'])
-            self.bind_fixture('studio');self.bind_fixture('extensions')
+            self.bind_fixture('studio');self.bind_fixture('extensions');self.bind_fixture('templates')
             self.site_fixture('website');self.site_fixture('documentation')
             self.assertEqual('announcements',train.status(self.state)['next'])
             binding=self.state['repositories']['core']['binding']
@@ -166,6 +218,28 @@ class TrainTests(unittest.TestCase):
         self.assertEqual(updated,train.aligned_text(updated,{'package':'Elsa.Api.Client'},'3.9.0-rc1'))
         with self.assertRaisesRegex(ValueError,'found 2'):
             train.aligned_text(source+source,{'package':'Elsa.Api.Client'},'3.9.0')
+
+    def test_template_alignment_updates_embedded_refs_branding_workflow_and_test_version(self):
+        self.assertEqual(
+            '<PackageReference Include="Elsa" Version="3.9.0" />',
+            train.aligned_text('<PackageReference Include="Elsa" Version="3.8.0" />', {'package_prefix': 'Elsa'}, '3.9.0'),
+        )
+        self.assertEqual(
+            'BASE_VERSION: 3.9.0',
+            train.aligned_text('BASE_VERSION: 3.8.0', {'yaml_key': 'BASE_VERSION'}, '3.9.0'),
+        )
+        self.assertEqual(
+            'BASE_VERSION: 3.9.0',
+            train.aligned_text('BASE_VERSION: 3.8.0', {'yaml_key': 'BASE_VERSION', 'base_version': True}, '3.9.0-rc1'),
+        )
+        self.assertIn(
+            'Elsa Studio 3.9',
+            train.aligned_text('AppNameWithVersion => "Elsa Studio 3.8"', {'studio_branding': True}, '3.9.0'),
+        )
+        self.assertIn(
+            'ElsaVersion = "3.9.0"',
+            train.aligned_text('const string ElsaVersion = "3.8.0"', {'string_constant': 'ElsaVersion'}, '3.9.0'),
+        )
 
     def test_announcements_cannot_complete_from_queued_or_changed_receipt(self):
         for name in self.state['repositories']:self.bind_fixture(name)
@@ -303,6 +377,17 @@ class TrainTests(unittest.TestCase):
         manifest['nuget'][0].pop('verify_published');manifest['feeds'].pop()
         with self.assertRaisesRegex(ValueError,'feed policy'):
             train.validate_manifest(self.state,'core',manifest,'a'*40)
+
+    def test_templates_manifest_requires_source_derived_content_expectations(self):
+        manifest = {
+            'version': '3.9.0',
+            'source_commit': 'a' * 40,
+            'nuget': [{'id': 'Elsa.Templates', 'version': '3.9.0'}],
+            'feeds': copy.deepcopy(self.state['profile']['feeds']),
+            'npm': [],
+        }
+        with self.assertRaisesRegex(ValueError, 'content expectations'):
+            train.validate_manifest(self.state, 'templates', manifest, 'a' * 40)
 
     def test_solution_inventory_evaluates_packability_and_fixed_source_version(self):
         project=self.root/'Sample.csproj';project.write_text('<Project><PropertyGroup><Version>1.0.1</Version></PropertyGroup></Project>')

@@ -40,6 +40,28 @@ def nupkg(package_id: str, version: str, commit: str, *, signed: bool = False, d
     return output.getvalue()
 
 
+def nupkg_with_template(
+    package_id: str,
+    version: str,
+    commit: str,
+    *,
+    project_path: str = "content/templates/Server.csproj",
+    embedded_version: str = VERSION,
+    include_project: bool = True,
+) -> bytes:
+    data = nupkg(package_id, version, commit)
+    if not include_project:
+        return data
+    output = io.BytesIO(data)
+    with zipfile.ZipFile(output, "a", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            project_path,
+            f'<Project><ItemGroup><PackageReference Include="Elsa.Core" Version="{embedded_version}" /></ItemGroup></Project>',
+        )
+        archive.writestr("content/elsa-server/.template.config/template.json", "{}")
+    return output.getvalue()
+
+
 def npm_tgz(name: str, version: str) -> bytes:
     output = io.BytesIO()
     with tarfile.open(fileobj=output, mode="w:gz") as archive:
@@ -308,6 +330,75 @@ class VerifyPackagesTests(unittest.TestCase):
         code, report = self.run_verify(manifest)
         self.assertNotEqual(code, 0)
         self.assertTrue(any("publication skips require" in error for error in report["errors"]))
+
+    def template_manifest(self) -> dict[str, object]:
+        return {
+            "version": VERSION,
+            "source_commit": SOURCE_COMMIT,
+            "nuget": [{"id": "Elsa.Templates"}],
+            "feeds": [
+                {"name": "feed-ok", "base_url": f"{self.registry.base_url}/feed/feed-ok"},
+            ],
+            "npm": [],
+            "expected_dependencies": {},
+            "content_expectations": {
+                "package_id": "Elsa.Templates",
+                "archive_prefix": "content/",
+                "expected_version": VERSION,
+                "known_published_ids": ["Elsa.Core"],
+                "package_prefixes": ["Elsa"],
+                "files": [
+                    {
+                        "path": "templates/Server.csproj",
+                        "references": [{"id": "Elsa.Core", "version": VERSION}],
+                    }
+                ],
+                "template_configs": ["elsa-server/.template.config/template.json"],
+            },
+        }
+
+    def test_template_content_matches_source_and_published_payload(self) -> None:
+        manifest = self.template_manifest()
+        package = nupkg_with_template("Elsa.Templates", VERSION, SOURCE_COMMIT)
+        self.write_nupkg("Elsa.Templates.nupkg", package)
+        self.registry.add_nuget("feed-ok", "Elsa.Templates", VERSION, package)
+        code, report = self.run_verify(manifest)
+        self.assertEqual(0, code, report)
+        self.assertTrue(report["verified"])
+
+    def test_stale_embedded_reference_fails_even_when_nuspec_is_current(self) -> None:
+        manifest = self.template_manifest()
+        package = nupkg_with_template("Elsa.Templates", VERSION, SOURCE_COMMIT, embedded_version="3.7.1")
+        self.write_nupkg("Elsa.Templates.nupkg", package)
+        self.registry.add_nuget("feed-ok", "Elsa.Templates", VERSION, package)
+        code, report = self.run_verify(manifest)
+        self.assertNotEqual(0, code)
+        self.assertTrue(any("embedded package Elsa.Core version" in error for error in report["errors"]))
+
+    def test_missing_embedded_template_fails_closed(self) -> None:
+        manifest = self.template_manifest()
+        package = nupkg_with_template("Elsa.Templates", VERSION, SOURCE_COMMIT, include_project=False)
+        self.write_nupkg("Elsa.Templates.nupkg", package)
+        self.registry.add_nuget("feed-ok", "Elsa.Templates", VERSION, package)
+        code, report = self.run_verify(manifest)
+        self.assertNotEqual(0, code)
+        self.assertTrue(any("embedded template project missing" in error for error in report["errors"]))
+
+    def test_duplicate_embedded_template_member_fails_closed(self) -> None:
+        manifest = self.template_manifest()
+        package = nupkg_with_template("Elsa.Templates", VERSION, SOURCE_COMMIT)
+        output = io.BytesIO(package)
+        with zipfile.ZipFile(output, "a", zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(
+                "content/templates/Server.csproj",
+                '<Project><ItemGroup><PackageReference Include="Elsa.Core" Version="3.7.1" /></ItemGroup></Project>',
+            )
+        package = output.getvalue()
+        self.write_nupkg("Elsa.Templates.nupkg", package)
+        self.registry.add_nuget("feed-ok", "Elsa.Templates", VERSION, package)
+        code, report = self.run_verify(manifest)
+        self.assertNotEqual(0, code)
+        self.assertTrue(any("duplicate nupkg member" in error for error in report["errors"]))
 
 
 if __name__ == "__main__":
