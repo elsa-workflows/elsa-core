@@ -36,4 +36,19 @@ public class ActivityWorkItemState
     /// Optional input to pass to the activity.
     /// </summary>
     public IDictionary<string, object> Input { get; set; } = new Dictionary<string, object>();
+
+    /// <summary>
+    /// The ID of the activity execution context that scheduled this work item.
+    /// </summary>
+    public string? SchedulingActivityExecutionId { get; set; }
+
+    /// <summary>
+    /// The workflow instance ID of the workflow that scheduled this work item, if it crossed a workflow boundary.
+    /// </summary>
+    public string? SchedulingWorkflowInstanceId { get; set; }
+
+    /// <summary>
+    /// The call stack depth of the activity execution context that scheduled this work item.
+    /// </summary>
+    public int? SchedulingCallStackDepth { get; set; }
 }
