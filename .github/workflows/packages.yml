@@ -15,7 +15,8 @@ on:
       - 'release/*'
       - 'codex/*'
   release:
-    types: [prereleased, published]
+    # published covers stable releases and prereleases; subscribe once.
+    types: [published]
 
 env:
   base_version: '3.8.0'
