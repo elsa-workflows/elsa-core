@@ -145,6 +145,7 @@
       "expected_package_ids": [
         "Elsa.Templates"
       ],
+      "recovery_artifact": "elsa-template-recovery-evidence",
       "required_jobs": [
         "Build packages",
         "Publish to feedz.io",

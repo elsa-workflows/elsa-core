@@ -13,6 +13,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import zipfile
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -22,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 DEFAULT_PROFILE = HERE.parent / 'references' / 'elsa-profile.json'
 SITE_TARGETS = ('website', 'documentation')
 VALID_SITE_STATUSES = {'completed', 'published', 'verified'}
+RECOVERY_REGISTRY = 'nuget.org'
 
 
 def command(args, cwd=None):
@@ -349,6 +351,275 @@ def published_release(state, name):
     raise ValueError(f'{name}: tag does not resolve to a commit')
 
 
+def positive_int(value, field):
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError(f'Recovery receipt requires positive integer {field}')
+    return value
+
+
+def recovery_job_names(cfg):
+    names = [
+        name
+        for name in cfg.get('required_jobs', [])
+        if isinstance(name, str) and name.lower().rsplit(' ', 1)[-1] == RECOVERY_REGISTRY
+    ]
+    if len(names) != 1:
+        raise ValueError('Recovery requires exactly one configured nuget.org publishing job')
+    return names[0]
+
+
+def recovery_artifact_name(cfg):
+    name = cfg.get('recovery_artifact')
+    if not isinstance(name, str) or not name:
+        raise ValueError('Recovery requires a configured machine-readable evidence artifact')
+    return name
+
+
+def commit_sha(value, field):
+    if not isinstance(value, str) or not re.fullmatch(r'[0-9a-f]{40}', value):
+        raise ValueError(f'Recovery receipt requires a lowercase 40-character SHA for {field}')
+    return value
+
+
+def workflow_jobs(cfg, run_id):
+    pages = gh('api', '--paginate', '--slurp', f"repos/{cfg['github']}/actions/runs/{run_id}/jobs?filter=latest&per_page=100")
+    return [job for page in pages for job in page.get('jobs', [])]
+
+
+def workflow_artifacts(cfg, run_id):
+    pages = gh('api', '--paginate', '--slurp', f"repos/{cfg['github']}/actions/runs/{run_id}/artifacts?per_page=100")
+    return [artifact for page in pages for artifact in page.get('artifacts', [])]
+
+
+def read_recovery_evidence_archive(path, expected_digest=None):
+    path = Path(path)
+    if not path.is_file():
+        raise ValueError('Recovery evidence archive does not exist')
+    actual_digest = 'sha256:' + digest(path)
+    if expected_digest is not None and actual_digest != expected_digest:
+        raise ValueError('Downloaded recovery evidence archive hash differs from its receipt')
+    try:
+        with zipfile.ZipFile(path) as archive:
+            names = [name for name in archive.namelist() if name.rstrip('/') == 'recovery-receipt.json']
+            if len(names) != 1:
+                raise ValueError('Recovery evidence archive must contain exactly one recovery-receipt.json')
+            info = archive.getinfo(names[0])
+            if info.file_size <= 0 or info.file_size > 1024 * 1024:
+                raise ValueError('Recovery evidence receipt has an invalid size')
+            if sum(item.file_size for item in archive.infolist()) > 4 * 1024 * 1024:
+                raise ValueError('Recovery evidence archive is too large')
+            evidence = json.loads(archive.read(names[0]))
+    except (OSError, zipfile.BadZipFile, KeyError, json.JSONDecodeError) as error:
+        raise ValueError(f'Cannot read recovery evidence archive: {error}') from error
+    if not isinstance(evidence, dict):
+        raise ValueError('Recovery evidence receipt must be a JSON object')
+    return evidence
+
+
+def validate_recovery_evidence(state, name, receipt, evidence, original_id, artifact_id, artifact_digest, artifact_size, recovery_id, recovery_sha):
+    cfg = config(state, name)
+    if not isinstance(evidence, dict) or evidence.get('schema') != 1:
+        raise ValueError('Recovery evidence must be a version 1 JSON object')
+    if evidence.get('repository') != cfg['github'] or evidence.get('version') != state['version']:
+        raise ValueError('Recovery evidence repository/version does not match the release')
+    if evidence.get('recovery_run_id') != recovery_id or evidence.get('recovery_workflow_sha') != recovery_sha:
+        raise ValueError('Recovery evidence does not identify the live recovery run/workflow source')
+    if evidence.get('original_release_run_id') != original_id or evidence.get('original_source_commit') != entry(state, name)['binding']['commit']:
+        raise ValueError('Recovery evidence is bound to a different original release run')
+    original_artifact = evidence.get('original_artifact')
+    if not isinstance(original_artifact, dict):
+        raise ValueError('Recovery evidence requires original_artifact metadata')
+    if (
+        original_artifact.get('id') != artifact_id
+        or original_artifact.get('name') != cfg['artifact']
+        or original_artifact.get('run_id') != original_id
+        or original_artifact.get('digest') != artifact_digest
+        or original_artifact.get('size_in_bytes') != artifact_size
+    ):
+        raise ValueError('Recovery evidence does not bind the original artifact payload')
+    target = evidence.get('target')
+    if not isinstance(target, dict) or target.get('registry') != RECOVERY_REGISTRY or target.get('version') != state['version']:
+        raise ValueError('Recovery evidence target must be the exact NuGet release/version')
+    package_ids = target.get('package_ids')
+    if not isinstance(package_ids, list) or any(not isinstance(package_id, str) for package_id in package_ids):
+        raise ValueError('Recovery evidence target requires package_ids')
+    expected_ids = config(state, name).get('expected_package_ids')
+    if expected_ids is None:
+        expected_ids = [package['id'] for package in read(entry(state, name)['binding']['manifest']).get('nuget', [])]
+    if sorted(package_ids, key=str.lower) != sorted(expected_ids, key=str.lower):
+        raise ValueError('Recovery evidence package inventory does not match the release profile')
+
+
+def validate_recovery_receipt(state, name, receipt, expected_original_run_id=None, evidence=None):
+    """Validate a no-rebuild NuGet recovery against the immutable failed release run."""
+
+    item = entry(state, name)
+    cfg = config(state, name)
+    if not cfg.get('artifact'):
+        raise ValueError(f'{name}: recovery requires a configured source workflow artifact')
+    binding = item.get('binding')
+    if not isinstance(binding, dict) or not binding.get('commit'):
+        raise ValueError('Recovery requires a frozen source binding')
+    if not isinstance(receipt, dict):
+        raise ValueError('Recovery receipt must be a JSON object')
+    if receipt.get('repository') != cfg['github']:
+        raise ValueError('Recovery receipt repository does not match the release profile')
+    if receipt.get('version') != state['version'] or receipt.get('tag') != state['version']:
+        raise ValueError('Recovery receipt version/tag does not match the release')
+    if receipt.get('source_commit') != binding['commit']:
+        raise ValueError('Recovery receipt source commit does not match the frozen binding')
+
+    target = receipt.get('target')
+    if not isinstance(target, dict) or target.get('registry') != RECOVERY_REGISTRY or target.get('version') != state['version']:
+        raise ValueError('Recovery receipt target must be the exact NuGet release/version')
+    raw_package_ids = target.get('package_ids') if isinstance(target, dict) else None
+    if not isinstance(raw_package_ids, list) or any(not isinstance(package_id, str) for package_id in raw_package_ids):
+        raise ValueError('Recovery receipt target requires package_ids')
+    package_ids = sorted(raw_package_ids, key=str.lower)
+    expected_ids = cfg.get('expected_package_ids')
+    if expected_ids is None:
+        expected_ids = [package['id'] for package in read(binding['manifest']).get('nuget', [])]
+    if package_ids != sorted(expected_ids, key=str.lower):
+        raise ValueError('Recovery receipt package inventory does not match the release profile')
+
+    original = receipt.get('original_release_run')
+    artifact = receipt.get('artifact')
+    recovery = receipt.get('recovery_run')
+    if not isinstance(original, dict) or not isinstance(artifact, dict) or not isinstance(recovery, dict):
+        raise ValueError('Recovery receipt requires original_release_run, artifact, and recovery_run objects')
+
+    original_id = positive_int(original.get('id'), 'original_release_run.id')
+    if expected_original_run_id is not None and original_id != expected_original_run_id:
+        raise ValueError('Recovery receipt is bound to a different original release run')
+    recovery_id = positive_int(recovery.get('id'), 'recovery_run.id')
+    if original_id == recovery_id:
+        raise ValueError('Recovery run must be distinct from the original release run')
+    artifact_id = positive_int(artifact.get('id'), 'artifact.id')
+    if artifact.get('name') != cfg['artifact'] or artifact.get('run_id') != original_id:
+        raise ValueError('Recovery artifact is not the configured artifact from the original run')
+    if not isinstance(artifact.get('digest'), str) or not artifact['digest'].startswith('sha256:'):
+        raise ValueError('Recovery artifact requires its immutable SHA-256 digest')
+    positive_int(artifact.get('size_in_bytes'), 'artifact.size_in_bytes')
+    if recovery.get('event') != 'workflow_dispatch':
+        raise ValueError('Recovery run must be a workflow_dispatch run')
+    if recovery.get('publish_job') != recovery_job_names(cfg):
+        raise ValueError('Recovery run must identify the configured NuGet publishing job')
+    recovery_sha = commit_sha(recovery.get('workflow_sha'), 'recovery_run.workflow_sha')
+    if recovery.get('artifact_id') != artifact_id or recovery.get('artifact_digest') != artifact['digest']:
+        raise ValueError('Recovery run is not bound to the original artifact payload')
+    evidence_metadata = receipt.get('evidence')
+    if not isinstance(evidence_metadata, dict):
+        raise ValueError('Recovery receipt requires evidence artifact metadata')
+    evidence_id = positive_int(evidence_metadata.get('id'), 'evidence.id')
+    if evidence_metadata.get('name') != recovery_artifact_name(cfg) or evidence_metadata.get('run_id') != recovery_id:
+        raise ValueError('Recovery evidence artifact is not from the recovery run')
+    if not isinstance(evidence_metadata.get('digest'), str) or not evidence_metadata['digest'].startswith('sha256:'):
+        raise ValueError('Recovery evidence artifact requires its immutable SHA-256 digest')
+    evidence_size = positive_int(evidence_metadata.get('size_in_bytes'), 'evidence.size_in_bytes')
+    if evidence is None:
+        raise ValueError('Recovery requires the downloaded machine-readable workflow evidence')
+
+    release = published_release(state, name)
+    if release is None or release['commit'] != binding['commit']:
+        raise ValueError('Recovery requires the existing immutable release tag at the bound source commit')
+
+    original_remote = gh('api', f"repos/{cfg['github']}/actions/runs/{original_id}")
+    if original_remote.get('id') != original_id or original_remote.get('event') != 'release':
+        raise ValueError('Original recovery run is not the release-event run')
+    if original_remote.get('status') != 'completed' or original_remote.get('conclusion') != 'failure':
+        raise ValueError('Original recovery run must preserve its completed failed history')
+    if original_remote.get('head_sha') != binding['commit'] or original_remote.get('head_branch') != state['version']:
+        raise ValueError('Original recovery run source does not match the immutable release tag')
+    expected_workflow = f".github/workflows/{cfg['workflow']}"
+    if original_remote.get('path') and original_remote['path'].lstrip('/') != expected_workflow:
+        raise ValueError('Original recovery run used a different workflow')
+
+    target_job = recovery_job_names(cfg)
+    original_jobs = {job.get('name'): job for job in workflow_jobs(cfg, original_id)}
+    required_jobs = set(cfg.get('required_jobs', []))
+    if not required_jobs <= original_jobs.keys():
+        raise ValueError('Original recovery run is missing configured required jobs')
+    failed_jobs = original.get('failed_jobs')
+    if failed_jobs != [target_job] or original_jobs[target_job].get('conclusion') != 'failure':
+        raise ValueError('Recovery is allowed only for the failed NuGet publishing job')
+    if any(original_jobs[job].get('conclusion') != 'success' for job in required_jobs if job != target_job):
+        raise ValueError('Recovery cannot bypass a failed or skipped build/feed job')
+
+    matching_artifacts = [artifact for artifact in workflow_artifacts(cfg, original_id) if artifact.get('id') == artifact_id]
+    if len(matching_artifacts) != 1:
+        raise ValueError('Recovery receipt must identify exactly one original workflow artifact')
+    remote_artifact = matching_artifacts[0]
+    if remote_artifact.get('name') != cfg['artifact'] or remote_artifact.get('expired') is True:
+        raise ValueError('Original recovery artifact is missing, expired, or has the wrong name')
+    if remote_artifact.get('workflow_run', {}).get('id') != original_id:
+        raise ValueError('Recovery artifact does not belong to the original release run')
+    if remote_artifact.get('digest') != artifact['digest'] or remote_artifact.get('size_in_bytes') != artifact['size_in_bytes']:
+        raise ValueError('Recovery receipt artifact payload differs from GitHub evidence')
+
+    recovery_remote = gh('api', f"repos/{cfg['github']}/actions/runs/{recovery_id}")
+    if recovery_remote.get('id') != recovery_id or recovery_remote.get('event') != 'workflow_dispatch':
+        raise ValueError('Recovery run is not a workflow_dispatch run')
+    if recovery_remote.get('status') != 'completed' or recovery_remote.get('conclusion') != 'success':
+        raise ValueError('Recovery run did not complete successfully')
+    if recovery_remote.get('head_sha') != recovery_sha:
+        raise ValueError('Recovery run source commit does not match the reviewed recovery workflow SHA')
+    if recovery_remote.get('path') and recovery_remote['path'].lstrip('/') != expected_workflow:
+        raise ValueError('Recovery run used a different workflow')
+    recovery_jobs = {job.get('name'): job for job in workflow_jobs(cfg, recovery_id)}
+    if recovery_jobs.get(target_job, {}).get('conclusion') != 'success':
+        raise ValueError('Recovery NuGet publishing job did not succeed')
+    if recovery_jobs.get('Build packages', {}).get('conclusion') == 'success':
+        raise ValueError('Recovery run rebuilt packages instead of publishing the original artifact')
+    matching_evidence = [artifact for artifact in workflow_artifacts(cfg, recovery_id) if artifact.get('id') == evidence_id]
+    if len(matching_evidence) != 1:
+        raise ValueError('Recovery receipt must identify exactly one workflow evidence artifact')
+    remote_evidence = matching_evidence[0]
+    if remote_evidence.get('name') != evidence_metadata['name'] or remote_evidence.get('expired') is True:
+        raise ValueError('Recovery evidence artifact is missing, expired, or has the wrong name')
+    if remote_evidence.get('workflow_run', {}).get('id') != recovery_id:
+        raise ValueError('Recovery evidence artifact does not belong to the recovery run')
+    if remote_evidence.get('digest') != evidence_metadata['digest'] or remote_evidence.get('size_in_bytes') != evidence_size:
+        raise ValueError('Recovery evidence artifact payload differs from GitHub evidence')
+    validate_recovery_evidence(
+        state,
+        name,
+        receipt,
+        evidence,
+        original_id,
+        artifact_id,
+        artifact['digest'],
+        artifact['size_in_bytes'],
+        recovery_id,
+        recovery_sha,
+    )
+    return receipt
+
+
+def recovery_receipt_valid(state, name, record, expected_original_run_id=None):
+    evidence_record = record.get('evidence') if isinstance(record, dict) else None
+    if (
+        not isinstance(record, dict)
+        or not isinstance(record.get('receipt'), str)
+        or not isinstance(record.get('sha256'), str)
+        or not isinstance(evidence_record, dict)
+        or not isinstance(evidence_record.get('archive'), str)
+        or not isinstance(evidence_record.get('sha256'), str)
+    ):
+        return False
+    try:
+        if not Path(record['receipt']).is_file() or digest(record['receipt']) != record['sha256']:
+            return False
+        if not Path(evidence_record['archive']).is_file() or digest(evidence_record['archive']) != evidence_record['sha256']:
+            return False
+        receipt = read(record['receipt'])
+        evidence_digest = receipt.get('evidence', {}).get('digest')
+        evidence = read_recovery_evidence_archive(evidence_record['archive'], evidence_digest)
+        validate_recovery_receipt(state, name, receipt, expected_original_run_id, evidence)
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+    return True
+
+
 def inspect_release(state, name):
     item = entry(state, name)
     cfg = config(state, name)
@@ -371,6 +642,16 @@ def inspect_release(state, name):
     if run['status'] != 'completed':
         return result
     if run['conclusion'] != 'success':
+        recovery = item.get('recovery')
+        if recovery_receipt_valid(state, name, recovery, run['id']):
+            receipt = read(recovery['receipt'])
+            result.update(
+                original_run_id=run['id'],
+                recovery_run_id=receipt['recovery_run']['id'],
+                recovery_receipt=recovery['receipt'],
+            )
+            result['phase'] = 'verified' if receipt_valid(item) else 'verify-packages'
+            return result
         return dict(result, phase='repair-pipeline', conclusion=run['conclusion'])
     jobs = gh('api', '--paginate', '--slurp', f"repos/{cfg['github']}/actions/runs/{run['id']}/jobs?filter=latest&per_page=100")
     complete = {j['name'] for page in jobs for j in page['jobs'] if j['conclusion'] == 'success'}
@@ -390,7 +671,11 @@ def receipt_valid(item):
         if any(digest(binding[k]) != binding[k + '_sha256'] for k in ('manifest', 'notes')):
             return False
         report = read(receipt['report'])
-        return digest(receipt['report']) == receipt['report_sha256'] and report.get('verified') is True and report.get('source_commit') == binding['commit'] and report.get('version') == read(binding['manifest'])['version']
+        valid = digest(receipt['report']) == receipt['report_sha256'] and report.get('verified') is True and report.get('source_commit') == binding['commit'] and report.get('version') == read(binding['manifest'])['version']
+        recovery = item.get('recovery')
+        if recovery:
+            valid = valid and receipt.get('run_id') == recovery.get('recovery_run_id')
+        return valid
     except (OSError, ValueError, KeyError):
         return False
 
@@ -592,7 +877,13 @@ def verify(state, args):
     data = read(report)
     if not data.get('verified') or data.get('source_commit') != binding['commit'] or data.get('version') != state['version']:
         raise ValueError('Verifier returned inconsistent evidence')
-    item['verification'] = {'commit': binding['commit'], 'report': str(report), 'report_sha256': digest(report), 'verified_at': datetime.now(timezone.utc).isoformat(), 'run_id': observed['run_id']}
+    item['verification'] = {
+        'commit': binding['commit'],
+        'report': str(report),
+        'report_sha256': digest(report),
+        'verified_at': datetime.now(timezone.utc).isoformat(),
+        'run_id': observed.get('recovery_run_id', observed['run_id']),
+    }
     return {'phase': 'verified', 'report': str(report)}
 
 
@@ -681,6 +972,33 @@ def record_site(state, args):
     return value
 
 
+def record_recovery(state, args):
+    item = entry(state, args.repo)
+    if not item['publish']:
+        raise ValueError('Cannot record recovery for a verification-only repository')
+    require_upstreams(state, args.repo)
+    evidence_archive = getattr(args, 'evidence_archive', None)
+    if evidence_archive is None:
+        raise ValueError('Recovery requires the downloaded machine-readable workflow evidence archive')
+    evidence_archive = evidence_archive.resolve()
+    receipt = read(args.receipt)
+    expected_digest = receipt.get('evidence', {}).get('digest')
+    evidence = read_recovery_evidence_archive(evidence_archive, expected_digest)
+    validate_recovery_receipt(state, args.repo, receipt, evidence=evidence)
+    value = {
+        'receipt': str(args.receipt.resolve()),
+        'sha256': digest(args.receipt),
+        'original_run_id': receipt['original_release_run']['id'],
+        'recovery_run_id': receipt['recovery_run']['id'],
+        'evidence': {'archive': str(evidence_archive), 'sha256': digest(evidence_archive)},
+    }
+    prior = item.get('recovery')
+    if prior and prior != value:
+        raise ValueError('A different recovery receipt is already recorded; preserve the original failure history')
+    item['recovery'] = value
+    return value
+
+
 def record_announcement(state, args):
     if status(state)['next'] not in ('announcements', 'complete'):
         raise ValueError('All selected repositories, post-release sites, and upstream packages must be verified before announcements')
@@ -745,6 +1063,10 @@ def main():
     p.add_argument('--target', required=True, choices=SITE_TARGETS)
     p.add_argument('--receipt', required=True, type=Path)
     p.add_argument('--replace', '--replace-site-receipt', dest='replace', action='store_true', help='Replace a stale or tampered site receipt after reviewing new live evidence')
+    p = sub.add_parser('record-recovery')
+    p.add_argument('--repo', required=True)
+    p.add_argument('--receipt', required=True, type=Path)
+    p.add_argument('--evidence-archive', required=True, type=Path, help='Downloaded ZIP for the recovery evidence artifact')
     args = parser.parse_args()
     args.state = args.state.expanduser().resolve()
     try:
