@@ -1,0 +1,129 @@
+{
+  "schema": 1,
+  "repositories": [
+    {
+      "name": "core",
+      "directory": "elsa-core",
+      "github": "elsa-workflows/elsa-core",
+      "solution": "Elsa.sln",
+      "workflow": "packages.yml",
+      "dependencies": [],
+      "alignment": [],
+      "required_jobs": [
+        "Build packages",
+        "Publish to feedz.io",
+        "Publish release to nuget.org"
+      ],
+      "fixed_packages": {
+        "Elsa.SamplePackage": {
+          "version": "1.0.1",
+          "verify_published": false,
+          "reason": "Sample project has its own fixed version; validate its artifact but do not require republishing an immutable sample version."
+        }
+      },
+      "npm": []
+    },
+    {
+      "name": "studio",
+      "directory": "elsa-studio",
+      "github": "elsa-workflows/elsa-studio",
+      "solution": "Elsa.Studio.sln",
+      "workflow": "packages.yml",
+      "dependencies": [
+        "core"
+      ],
+      "alignment": [
+        {
+          "file": "Directory.Packages.props",
+          "package": "Elsa.Api.Client"
+        }
+      ],
+      "required_jobs": [
+        "Build packages",
+        "Publish npm packages to feedz.io",
+        "Publish npm packages to npmjs.com",
+        "Publish nuget packages to feedz.io",
+        "Publish to nuget.org"
+      ],
+      "fixed_packages": {},
+      "npm": [
+        "@elsa-workflows/elsa-studio-wasm",
+        "@elsa-workflows/elsa-studio-wasm-react"
+      ]
+    },
+    {
+      "name": "extensions",
+      "directory": "elsa-extensions",
+      "github": "elsa-workflows/elsa-extensions",
+      "solution": "Elsa.Extensions.sln",
+      "workflow": "packages.yml",
+      "dependencies": [
+        "core",
+        "studio"
+      ],
+      "alignment": [
+        {
+          "file": "Directory.Build.props",
+          "property": "ElsaVersion"
+        },
+        {
+          "file": "Directory.Build.props",
+          "property": "ElsaStudioVersion"
+        }
+      ],
+      "required_jobs": [
+        "Build packages",
+        "Publish to feedz.io",
+        "Publish release to nuget.org"
+      ],
+      "fixed_packages": {},
+      "npm": []
+    }
+  ],
+  "feeds": [
+    {
+      "name": "nuget",
+      "base_url": "https://api.nuget.org/v3-flatcontainer"
+    },
+    {
+      "name": "feedz",
+      "base_url": "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"
+    }
+  ],
+  "release_kinds": {
+    "stable": {
+      "feeds": [
+        "nuget",
+        "feedz"
+      ],
+      "npm_dist_tag": "latest"
+    },
+    "rc": {
+      "feeds": [
+        "nuget",
+        "feedz"
+      ],
+      "npm_dist_tag": "next"
+    },
+    "preview": {
+      "feeds": [
+        "nuget",
+        "feedz"
+      ],
+      "npm_dist_tag": "next"
+    }
+  },
+  "announcements": {
+    "platforms": [
+      "discord",
+      "linkedin",
+      "x"
+    ],
+    "buffer_organization": "Valence Works",
+    "linkedin_channel": "Elsa Workflows",
+    "x_channel": "sfmskywalker",
+    "discord_channel_id": "1351638836119076996",
+    "discord_channel_name": "📣-releases",
+    "discord_bot_token_env": "DISCORD_BOT_TOKEN_SUPPORT"
+  }
+}
