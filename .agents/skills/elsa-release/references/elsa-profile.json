@@ -113,6 +113,29 @@
       "npm_dist_tag": "next"
     }
   },
+  "post_release_sites": {
+    "website": {
+      "platform": "Lovable",
+      "project_id": "42142296-d1c7-49c5-aeb5-ced6054f340b",
+      "project_name": "Elsa Hub",
+      "workspace_name": "Skywalker Digital",
+      "workspace_id": null,
+      "production_urls": [
+        "https://www.elsaworkflows.io"
+      ],
+      "preview_urls": [
+        "https://preview--elsa-hub.lovable.app"
+      ]
+    },
+    "documentation": {
+      "platform": "GitBook",
+      "repository": "elsa-workflows/elsa-gitbook",
+      "branch": "main",
+      "production_urls": [
+        "https://docs.elsaworkflows.io"
+      ]
+    }
+  },
   "announcements": {
     "platforms": [
       "discord",

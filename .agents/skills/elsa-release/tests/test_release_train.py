@@ -30,6 +30,38 @@ class TrainTests(unittest.TestCase):
         train.save(report,{'verified':True,'source_commit':'a'*40,'version':'3.9.0'})
         self.state['repositories'][name].update(binding={'commit':'a'*40,'manifest':str(manifest),'notes':str(notes),'manifest_sha256':train.digest(manifest),'notes_sha256':train.digest(notes)},verification={'commit':'a'*40,'report':str(report),'report_sha256':train.digest(report)})
 
+    def site_fixture(self, target, *, version='3.9.0', status='published'):
+        timestamp = '2026-09-04T10:00:00+00:00'
+        config = self.state['profile']['post_release_sites'][target]
+        receipt = {
+            'id': target + '-operation',
+            'target': target,
+            'status': status,
+            'version': version,
+            'scope': sorted(name for name, item in self.state['repositories'].items() if item['publish']),
+            'changed_urls': [config['production_urls'][0] + '/release-notes'],
+            'deployment_or_commit': target + '-deployment',
+            'evidence_at': timestamp,
+            'production_verification': {
+                'verified': True,
+                'url': config['production_urls'][0],
+                'version': version,
+                'evidence_at': timestamp,
+            },
+            'content_label': 'stable',
+            'updates_current_stable': True,
+            'replaces_latest_stable': True,
+        }
+        if target == 'website':
+            receipt.update(project_id=config['project_id'], workspace_name=config['workspace_name'])
+        else:
+            receipt.update(repository=config['repository'], branch=config['branch'])
+        path = self.root / f'{target}-receipt.json'
+        train.save(path, receipt)
+        self.state['post_refresh']['receipts'][target] = {
+            'receipt': str(path), 'sha256': train.digest(path), 'id': receipt['id']
+        }
+
     def github(self,*args):
         url=args[-1]
         if '/releases?' in url:
@@ -55,8 +87,10 @@ class TrainTests(unittest.TestCase):
 
     def test_init_resumes_without_erasing_progress_and_rejects_scope_change(self):
         self.state['repositories']['core']['marker']='preserve'
+        self.state['post_refresh']['receipts']['website']={'id':'preserve'}
         train.save(self.args.state,self.state)
         self.assertEqual('preserve',train.init(self.args)['repositories']['core']['marker'])
+        self.assertEqual('preserve',train.init(self.args)['post_refresh']['receipts']['website']['id'])
         self.args.no_announcements=True
         with self.assertRaisesRegex(ValueError,'different announce'):
             train.init(self.args)
@@ -91,6 +125,7 @@ class TrainTests(unittest.TestCase):
             second=train.status(self.state)
             self.assertEqual('prepare',second['repositories']['studio']['phase'])
             self.bind_fixture('studio');self.bind_fixture('extensions')
+            self.site_fixture('website');self.site_fixture('documentation')
             self.assertEqual('announcements',train.status(self.state)['next'])
             binding=self.state['repositories']['core']['binding']
             Path(binding['manifest']).write_text('{}')
@@ -134,6 +169,7 @@ class TrainTests(unittest.TestCase):
 
     def test_announcements_cannot_complete_from_queued_or_changed_receipt(self):
         for name in self.state['repositories']:self.bind_fixture(name)
+        self.site_fixture('website');self.site_fixture('documentation')
         with patch.object(train,'gh',side_effect=self.github):
             for platform in ['discord','linkedin','x']:
                 message=self.root/f'{platform}.txt';message.write_text('Elsa 3.9.0 stable is available')
@@ -148,6 +184,115 @@ class TrainTests(unittest.TestCase):
             self.assertEqual('complete',train.status(self.state)['next'])
             receipt.write_text('{}')
             self.assertEqual('announcements',train.status(self.state)['next'])
+
+    def test_site_gate_requires_live_evidence_and_rejects_queued_work(self):
+        for name in self.state['repositories']: self.bind_fixture(name)
+        with patch.object(train, 'gh', side_effect=self.github):
+            self.assertEqual('sites', train.status(self.state)['next'])
+            receipt = {
+                'id': 'queued', 'target': 'website', 'status': 'queued', 'version': '3.9.0',
+            }
+            path = self.root / 'queued.json'; train.save(path, receipt)
+            with self.assertRaisesRegex(ValueError, 'completed production'):
+                train.record_site(self.state, SimpleNamespace(target='website', receipt=path))
+
+    def test_site_gate_respects_no_post_refresh_independently_from_announcements(self):
+        args = SimpleNamespace(**{**vars(self.args), 'state': self.root / 'no-sites.json', 'no_post_refresh': True})
+        state = train.init(args)
+        for name in state['repositories']:
+            self.state['repositories'][name] = state['repositories'][name]
+        self.state = state
+        for name in state['repositories']: self.bind_fixture(name)
+        with patch.object(train, 'gh', side_effect=self.github):
+            self.assertEqual('announcements', train.status(state)['next'])
+        args = SimpleNamespace(**{**vars(self.args), 'state': self.root / 'no-announcements.json', 'no_announcements': True})
+        state = train.init(args)
+        self.state = state
+        for name in state['repositories']: self.bind_fixture(name)
+        with patch.object(train, 'gh', side_effect=self.github):
+            self.assertEqual('sites', train.status(state)['next'])
+
+    def test_legacy_checkpoint_requires_explicit_adoption_and_supports_website_only_followup(self):
+        for name in self.state['repositories']: self.bind_fixture(name)
+        self.site_fixture('website');self.site_fixture('documentation')
+        for platform in ('discord', 'linkedin', 'x'):
+            message = self.root / f'{platform}.txt'; message.write_text('Elsa 3.9.0 stable is available')
+            receipt = self.root / f'{platform}.json'
+            train.save(receipt, {'id': platform, 'url': 'https://example.com/' + platform, 'text': message.read_text(), 'status': 'sent', 'crossposted': True})
+            self.state['announcements'][platform] = {'receipt': str(receipt), 'sha256': train.digest(receipt), 'url': 'https://example.com/' + platform, 'id': platform}
+        self.state.pop('post_refresh')
+        self.state['profile'].pop('post_release_sites')
+        self.state['schema'] = 1
+        with patch.object(train, 'gh', side_effect=self.github):
+            self.assertEqual('adopt-post-refresh', train.status(self.state)['next'])
+        train.adopt_post_refresh(self.state, SimpleNamespace(targets=['website'], website_only=False, no_post_refresh=False))
+        self.assertIn('post_release_sites', self.state['profile'])
+        self.assertEqual(['website'], self.state['post_refresh']['targets'])
+        self.state['post_refresh']['receipts'] = {}
+        with patch.object(train, 'gh', side_effect=self.github):
+            self.assertEqual('sites', train.status(self.state)['next'])
+        self.site_fixture('website')
+        with patch.object(train, 'gh', side_effect=self.github):
+            self.assertEqual('complete', train.status(self.state)['next'])
+
+    def test_prerelease_site_receipt_cannot_replace_latest_stable(self):
+        self.state['version'] = '3.9.0-rc1'
+        self.state['kind'] = 'rc'
+        self.site_fixture('website', version='3.9.0-rc1')
+        receipt_path = Path(self.state['post_refresh']['receipts']['website']['receipt'])
+        receipt = train.read(receipt_path)
+        receipt.update(content_label='rc', updates_current_stable=False, replaces_latest_stable=False)
+        train.save(receipt_path, receipt)
+        train.validate_site_receipt(self.state, 'website', receipt)
+        receipt['replaces_latest_stable'] = True
+        with self.assertRaisesRegex(ValueError, 'preserve latest stable'):
+            train.validate_site_receipt(self.state, 'website', receipt)
+
+    def test_older_stable_site_receipt_preserves_verified_newer_stable(self):
+        self.site_fixture('website')
+        receipt_path = Path(self.state['post_refresh']['receipts']['website']['receipt'])
+        receipt = train.read(receipt_path)
+        receipt.update(
+            updates_current_stable=False,
+            replaces_latest_stable=False,
+            latest_stable_version='3.9.1',
+            latest_stable_verification={
+                'verified': True,
+                'url': 'https://www.elsaworkflows.io',
+                'version': '3.9.1',
+                'evidence_at': receipt['evidence_at'],
+            },
+        )
+        train.validate_site_receipt(self.state, 'website', receipt)
+        receipt['latest_stable_verification']['version'] = '3.9.0'
+        with self.assertRaisesRegex(ValueError, 'verify the preserved newer stable'):
+            train.validate_site_receipt(self.state, 'website', receipt)
+
+    def test_site_receipt_replacement_is_explicit_and_origin_and_time_are_checked(self):
+        for name in self.state['repositories']: self.bind_fixture(name)
+        self.site_fixture('website')
+        original = self.state['post_refresh']['receipts']['website']
+        replacement = self.root / 'replacement.json'
+        receipt = train.read(original['receipt'])
+        receipt['id'] = 'replacement-operation'
+        receipt['changed_urls'] = ['https://untrusted.example/release-notes']
+        train.save(replacement, receipt)
+        with patch.object(train, 'gh', side_effect=self.github):
+            with self.assertRaisesRegex(ValueError, 'non-empty changed_urls'):
+                train.record_site(self.state, SimpleNamespace(target='website', receipt=replacement, replace=True))
+        receipt['changed_urls'] = ['https://www.elsaworkflows.io/release-notes']
+        receipt['evidence_at'] = '2099-01-01T00:00:00+00:00'
+        receipt['production_verification']['evidence_at'] = receipt['evidence_at']
+        train.save(replacement, receipt)
+        with self.assertRaisesRegex(ValueError, 'cannot be in the future'):
+            train.validate_site_receipt(self.state, 'website', receipt)
+        receipt['evidence_at'] = '2026-09-04T10:00:00+00:00'
+        receipt['production_verification']['evidence_at'] = receipt['evidence_at']
+        train.save(replacement, receipt)
+        with patch.object(train, 'gh', side_effect=self.github):
+            with self.assertRaisesRegex(ValueError, 'different site receipt'):
+                train.record_site(self.state, SimpleNamespace(target='website', receipt=replacement, replace=False))
+            train.record_site(self.state, SimpleNamespace(target='website', receipt=replacement, replace=True))
 
     def test_manifest_requires_profile_feeds_npm_and_explicit_exceptions(self):
         manifest={'version':'3.9.0','source_commit':'a'*40,'nuget':[{'id':'Elsa','version':'3.9.0'}],'feeds':copy.deepcopy(self.state['profile']['feeds']),'npm':[]}
