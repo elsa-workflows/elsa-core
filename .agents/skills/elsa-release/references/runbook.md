@@ -136,9 +136,10 @@ If the original release run has exactly one infrastructure failure in its
 configured `Publish to nuget.org` job, preserve that failed run, its immutable
 tag, and its artifact. Do not retag, recreate the release, or rerun the package
 build. Correct the workflow's explicit recovery path and dispatch it against the
-reviewed workflow source SHA. The recovery may run from an infrastructure repair
-commit rather than the release tag; record that SHA and verify it against the
-live run. It must consume the original configured artifact and run only the
+reviewed workflow source SHA. Record an `approved_source_commit` from the
+canonical default branch as an independently reviewed source anchor. The recovery
+may run from an infrastructure repair commit rather than the release tag; record
+that SHA and verify its full tree against the approved anchor. It must consume the original configured artifact and run only the
 NuGet publication; a successful `Build packages` job is a rebuild, not recovery.
 The recovery workflow must upload a machine-readable `recovery-receipt.json` in
 the configured `elsa-template-recovery-evidence` artifact. Download the artifact
@@ -151,6 +152,7 @@ operator receipt includes:
   "version": "3.8.0",
   "tag": "3.8.0",
   "source_commit": "<bound-source-sha>",
+  "approved_source_commit": "<approved-default-branch-commit>",
   "original_release_run": {
     "id": 33977531328,
     "failed_jobs": ["Publish to nuget.org"]
@@ -187,7 +189,9 @@ operator receipt includes:
 
 The downloaded `recovery-receipt.json` must contain the same version, recovery
 run ID and workflow SHA, the original release run ID/source commit, the original
-artifact ID, name, run ID, digest and size, and the exact NuGet target/package IDs. This
+artifact ID, name, run ID, digest and size, and the exact NuGet target/package IDs. The
+operator-provided approved source commit is checked against the repository's live
+default-branch history and the recovery commit's full tree. This
 machine-readable evidence is produced by the reviewed workflow and is checked
 against GitHub's live artifact metadata; a self-authored operator receipt is not
 evidence by itself.
@@ -228,12 +232,12 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json record-recover
 ```
 
 The command checks the live tag/source, original release run and jobs, exact
-artifact ID/digest/size, recovery workflow SHA and dispatch event, the successful
-NuGet job, evidence artifact metadata, archive hash and contents, and the exact
-target package/version. It accepts only the sole configured NuGet failure with every
-other required job successful; it rejects a different failed job, retag, rebuild,
-artifact mismatch, forged/missing evidence, unreviewed workflow source, or target
-mismatch.
+artifact ID/digest/size, approved source ancestry and tree, recovery workflow SHA
+and dispatch event, the successful NuGet job, evidence artifact metadata, archive
+hash and contents, and the exact target package/version. It accepts only the sole
+configured NuGet failure with every other expected job successful; it rejects
+unknown failed jobs, duplicate or renamed jobs, retag, rebuild, artifact mismatch,
+forged/missing evidence, unreviewed workflow source, or target mismatch.
 The checkpoint retains both run IDs and the original failure history, then
 requires normal package verification against the recovery run. A failed or
 ambiguous recovery remains `repair-pipeline`.

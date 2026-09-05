@@ -15,7 +15,7 @@ import sys
 import tempfile
 import zipfile
 from datetime import datetime, timezone
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from release_support import parse_version
 
@@ -391,6 +391,39 @@ def workflow_artifacts(cfg, run_id):
     return [artifact for page in pages for artifact in page.get('artifacts', [])]
 
 
+def indexed_workflow_jobs(cfg, run_id, phase):
+    indexed = {}
+    for job in workflow_jobs(cfg, run_id):
+        name = job.get('name')
+        if not isinstance(name, str) or not name:
+            raise ValueError(f'{phase} recovery run contains a job without a name')
+        if name in indexed:
+            raise ValueError(f'{phase} recovery run contains duplicate job {name!r}')
+        indexed[name] = job
+    return indexed
+
+
+def validate_recovery_source(cfg, receipt, recovery_sha):
+    approved_sha = commit_sha(receipt.get('approved_source_commit'), 'approved_source_commit')
+    repository = gh('api', f"repos/{cfg['github']}")
+    if repository.get('full_name') != cfg['github']:
+        raise ValueError('Recovery source repository does not match the release profile')
+    default_branch = repository.get('default_branch')
+    if not isinstance(default_branch, str) or not default_branch:
+        raise ValueError('Recovery source repository has no canonical default branch')
+    comparison = gh('api', f"repos/{cfg['github']}/compare/{approved_sha}...{quote(default_branch, safe='')}")
+    if comparison.get('status') not in {'ahead', 'identical'}:
+        raise ValueError('Approved recovery source is not in the canonical default-branch history')
+    approved_commit = gh('api', f"repos/{cfg['github']}/commits/{approved_sha}")
+    recovery_commit = gh('api', f"repos/{cfg['github']}/commits/{recovery_sha}")
+    if approved_commit.get('sha') != approved_sha or recovery_commit.get('sha') != recovery_sha:
+        raise ValueError('Recovery source commit lookup returned a different SHA')
+    approved_tree = approved_commit.get('commit', {}).get('tree', {}).get('sha')
+    recovery_tree = recovery_commit.get('commit', {}).get('tree', {}).get('sha')
+    if not approved_tree or not recovery_tree or approved_tree != recovery_tree:
+        raise ValueError('Recovery workflow tree differs from the approved default-branch source tree')
+
+
 def read_recovery_evidence_archive(path, expected_digest=None):
     path = Path(path)
     if not path.is_file():
@@ -535,12 +568,16 @@ def validate_recovery_receipt(state, name, receipt, expected_original_run_id=Non
         raise ValueError('Original recovery run used a different workflow')
 
     target_job = recovery_job_names(cfg)
-    original_jobs = {job.get('name'): job for job in workflow_jobs(cfg, original_id)}
     required_jobs = set(cfg.get('required_jobs', []))
+    original_jobs = indexed_workflow_jobs(cfg, original_id, 'Original')
     if not required_jobs <= original_jobs.keys():
         raise ValueError('Original recovery run is missing configured required jobs')
+    unknown_jobs = set(original_jobs) - required_jobs
+    if any(original_jobs[job].get('conclusion') not in {'success', 'skipped'} for job in unknown_jobs):
+        raise ValueError('Original recovery run contains an unknown non-success job')
     failed_jobs = original.get('failed_jobs')
-    if failed_jobs != [target_job] or original_jobs[target_job].get('conclusion') != 'failure':
+    failed_live = [job for job, value in original_jobs.items() if value.get('conclusion') == 'failure']
+    if failed_jobs != [target_job] or failed_live != [target_job] or original_jobs[target_job].get('conclusion') != 'failure':
         raise ValueError('Recovery is allowed only for the failed NuGet publishing job')
     if any(original_jobs[job].get('conclusion') != 'success' for job in required_jobs if job != target_job):
         raise ValueError('Recovery cannot bypass a failed or skipped build/feed job')
@@ -565,11 +602,15 @@ def validate_recovery_receipt(state, name, receipt, expected_original_run_id=Non
         raise ValueError('Recovery run source commit does not match the reviewed recovery workflow SHA')
     if recovery_remote.get('path') and recovery_remote['path'].lstrip('/') != expected_workflow:
         raise ValueError('Recovery run used a different workflow')
-    recovery_jobs = {job.get('name'): job for job in workflow_jobs(cfg, recovery_id)}
+    validate_recovery_source(cfg, receipt, recovery_sha)
+    required_jobs = set(cfg.get('required_jobs', []))
+    recovery_jobs = indexed_workflow_jobs(cfg, recovery_id, 'Recovery')
+    if set(recovery_jobs) != required_jobs:
+        raise ValueError('Recovery run must contain exactly the configured required jobs')
     if recovery_jobs.get(target_job, {}).get('conclusion') != 'success':
         raise ValueError('Recovery NuGet publishing job did not succeed')
-    if recovery_jobs.get('Build packages', {}).get('conclusion') == 'success':
-        raise ValueError('Recovery run rebuilt packages instead of publishing the original artifact')
+    if any(recovery_jobs[job].get('conclusion') != 'skipped' for job in required_jobs if job != target_job):
+        raise ValueError('Recovery run performed non-NuGet work instead of publishing the original artifact')
     matching_evidence = [artifact for artifact in workflow_artifacts(cfg, recovery_id) if artifact.get('id') == evidence_id]
     if len(matching_evidence) != 1:
         raise ValueError('Recovery receipt must identify exactly one workflow evidence artifact')
