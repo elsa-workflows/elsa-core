@@ -6,7 +6,7 @@ Read this once at the start of a release. Codex operates the procedure; the user
 
 Helpers require Python 3.10+ on macOS/Linux, Git, GitHub CLI, and the SDKs required by the source repositories. They use the Python standard library.
 
-Use [elsa-profile.json](elsa-profile.json). This is the maintained default for repository names, dependency declarations, expected jobs, feeds, fixed-version exceptions, and announcement destinations. A custom `--profile` can change these for another environment; do not put credentials in it. Discover repository paths from the workspace/saved projects and verify each GitHub remote. Do not assume the user's saved checkouts are up to date.
+Use [elsa-profile.json](elsa-profile.json). This is the maintained default for repository names, dependency declarations, expected jobs, feeds, fixed-version exceptions, post-release website/documentation targets, and announcement destinations. Read [post-release site guidance](post-release-sites.md) for the content audit and receipt workflow. A custom `--profile` can change these for another environment; do not put credentials in it. Discover repository paths from the workspace/saved projects and verify each GitHub remote. Do not assume the user's saved checkouts are up to date.
 
 Default release branches are `release/<base-version>`. Fetch and inspect all required repositories before publishing Core. An explicit source such as `core=3.9.0-rc1` overrides only that source. An absent branch or conflicting version needs a concrete source decision; the helper must not fall back to `HEAD` or manufacture a branch from an unrelated release line.
 
@@ -28,7 +28,7 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json init \
   --version 3.9.0 --repos-root <parent-of-the-three-repositories>
 ```
 
-Optional arguments: `--kind stable|rc|preview`, `--repositories core studio`, `--source core=3.9.0-rc1`, repeated `--pr <URL>`, `--no-announcements`, `--profile <JSON>`. For “draft announcements”, use `--no-announcements` for publication tracking and retain the explicit draft requirement in the task notes. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly.
+Optional arguments: `--kind stable|rc|preview`, `--repositories core studio`, `--source core=3.9.0-rc1`, repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, and `--profile <JSON>`. The two flags are independent. For “draft announcements”, use `--no-announcements` for publication tracking and retain the explicit draft requirement in the task notes. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. The post-release receipt scope contains only the selected repositories.
 
 Repeating `init` with identical inputs preserves progress. Conflicting inputs fail rather than overwrite an in-flight plan.
 
@@ -40,7 +40,7 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json status
 
 The helper inspects current GitHub releases, resolved tag SHAs, exact release-event workflow runs, and successful required jobs. Verified package receipts are bound to manifest/report hashes and the immutable source. Stored `running` text is never evidence of a live job. Recheck actual package feeds on a long-delayed resume or any provenance concern.
 
-`adopt-existing` → reconstruct the binding at the returned immutable tag SHA, recover its published notes, generate the source inventory, download that release run’s artifacts and verify them; do not create another release. `prepare` → create an isolated worktree from the selected source, prepare and validate it. `publish` → run the reviewed release helper. `wait-for-run` → observe the returned run ID. `repair-pipeline` → diagnose that run. `verify-packages` → verify the downloaded artifacts. `wait-for-upstream` → complete the indicated dependency. `announcements` → follow the announcement skill. `missing-upstream-release` for a verification-only dependency requires the missing upstream release to exist, or new authorization to expand scope.
+`adopt-existing` → reconstruct the binding at the returned immutable tag SHA, recover its published notes, generate the source inventory, download that release run’s artifacts and verify them; do not create another release. `prepare` → create an isolated worktree from the selected source, prepare and validate it. `publish` → run the reviewed release helper. `wait-for-run` → observe the returned run ID. `repair-pipeline` → diagnose that run. `verify-packages` → verify the downloaded artifacts. `wait-for-upstream` → complete the indicated dependency. `sites` → follow [post-release site guidance](post-release-sites.md), update the enabled website/documentation targets, and record live production receipts. `announcements` → follow the announcement skill. `adopt-post-refresh` → explicitly upgrade a legacy checkpoint; use `--targets website` for a website-only follow-up on an already completed release and preserve its existing announcement receipts. `missing-upstream-release` for a verification-only dependency requires the missing upstream release to exist, or new authorization to expand scope.
 
 Poll live jobs/feeds at a bounded interval (typically 30–60 seconds, then back off). A timeout is not failure and must not start a replacement run. Announce meaningful changes rather than narrating identical polls. Use the environment's persistent goal or a single supported heartbeat if waiting beyond the active turn; preserve state and stop the monitor at completion.
 
@@ -106,9 +106,20 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json verify \
 
 `verify_packages.py` compares the explicit manifest with local artifacts and actual published feed content, handles NuGet repository signing, and checks npm integrity/dist-tags. Each attempt writes a report even when indexing is incomplete. Retry missing/not-yet-indexed packages with backoff; diagnose provenance mismatches rather than calling them propagation delays. Never accept a queued/uploaded state as package availability. Once Core verifies, prepare Studio; once Studio verifies, prepare Extensions.
 
-## 6. Announce, recover, and finish
+NuGet verification is not a release-wide artifact verdict. Verify Docker images, templates, samples, and other configured release artifacts independently, including the exact source/version or image tag and the public pull/template URL. Record those checks in the site audit or release completion record before using the artifact in current guidance.
 
-Invoke [Elsa Release Announcements](../../elsa-release-announcements/SKILL.md) with the verified releases and notes. Use configured Discord, LinkedIn, and X destinations; discover and verify live accounts. The release request includes these standard posts unless explicitly overridden. Draft and review factual copy as part of the task, then publish now. Retain per-channel intent/message IDs before retrying, and verify actual sent state, exact text, public URLs and Discord crossposting.
+## 6. Refresh sites, announce, recover, and finish
+
+After package verification, follow [post-release site guidance](post-release-sites.md). Update and live-verify the configured Elsa Hub website and Elsa GitBook documentation targets in the selected scope. Review pre-existing Lovable unpublished changes before publishing, include only release-related changes, and preserve unrelated work. A merged docs PR, a Lovable queue acknowledgement, or a preview URL without production verification is not completion. Record each verified target:
+
+```bash
+python3 <skill>/scripts/release_train.py --state <run>/state.json record-site \
+  --target website --receipt <run>/website-receipt.json
+python3 <skill>/scripts/release_train.py --state <run>/state.json record-site \
+  --target documentation --receipt <run>/documentation-receipt.json
+```
+
+Only after the enabled site targets are verified, invoke [Elsa Release Announcements](../../elsa-release-announcements/SKILL.md) with the verified releases and notes. Use configured Discord, LinkedIn, and X destinations; discover and verify live accounts. The release request includes these standard posts unless explicitly overridden. Draft and review factual copy as part of the task, then publish now. Retain per-channel intent/message IDs before retrying, and verify actual sent state, exact text, public URLs and Discord crossposting.
 
 The connector's verified result can be recorded as a small JSON receipt containing `id`, `url`, `text`, `status: sent` (or `published`), `error: null`, and for Discord `crossposted: true`. Record it:
 
@@ -118,6 +129,6 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json record-announc
   --message-file <run>/linkedin.txt
 ```
 
-The checkpoint validates receipt content and hashes, but does not replace the connector's live `get_post` verification. On an interrupted social publish, reconcile the recorded intent and current channel posts before sending anything again. Verify Discord with the bot API and LinkedIn/X with their connector. Queue status is only completion when the user requested scheduling.
+The checkpoint validates receipt content and hashes, but does not replace the connector's live `get_post` verification. On an interrupted social publish, reconcile the recorded intent and current channel posts before sending anything again. Verify Discord with the bot API and LinkedIn/X with their connector. Queue status is only completion when the user requested scheduling. A legacy checkpoint reports `adopt-post-refresh`; adopt it explicitly, and use `--targets website` when only the website needs to be refreshed on an already completed release. Do not create a new publication or repost existing announcements for that follow-up.
 
 Finally rerun `status`, audit the exact release/version/source/workflow and feed evidence, verify all requested social results, save a concise completion record, stop any heartbeat, and report release/post URLs plus any material limitation. Complete a persistent goal only after this audit.

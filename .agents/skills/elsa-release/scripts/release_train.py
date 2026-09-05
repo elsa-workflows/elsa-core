@@ -14,11 +14,14 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from release_support import parse_version
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_PROFILE = HERE.parent / 'references' / 'elsa-profile.json'
+SITE_TARGETS = ('website', 'documentation')
+VALID_SITE_STATUSES = {'completed', 'published', 'verified'}
 
 
 def command(args, cwd=None):
@@ -73,6 +76,157 @@ def entry(state, name):
     return state['repositories'][name]
 
 
+def post_refresh_configured(state):
+    """Return whether this checkpoint explicitly adopted the post-release gate."""
+
+    value = state.get('post_refresh')
+    return (
+        isinstance(value, dict)
+        and isinstance(value.get('receipts'), dict)
+        and isinstance(value.get('targets'), list)
+        and bool(value['targets'])
+        and all(target in SITE_TARGETS for target in value['targets'])
+        and 'enabled' in value
+    )
+
+
+def post_refresh_targets(state):
+    return state['post_refresh']['targets'] if state['post_refresh']['enabled'] else []
+
+
+def site_scope(state):
+    """Return the selected repositories whose release content may be refreshed."""
+
+    return sorted(name for name, item in state['repositories'].items() if item['publish'])
+
+
+def site_config(state, target):
+    try:
+        return state['profile']['post_release_sites'][target]
+    except (KeyError, TypeError):
+        raise ValueError(f'Profile has no post-release configuration for {target}')
+
+
+def parse_timestamp(value, field):
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f'Site receipt requires {field}')
+    try:
+        parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except ValueError as exc:
+        raise ValueError(f'Site receipt {field} must be an ISO-8601 timestamp') from exc
+    if parsed.tzinfo is None:
+        raise ValueError(f'Site receipt {field} must include a timezone')
+    if parsed > datetime.now(timezone.utc):
+        raise ValueError(f'Site receipt {field} cannot be in the future')
+    return parsed
+
+
+def same_origin(url, configured_urls):
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        return False
+    return any(
+        parsed.scheme == configured.scheme
+        and parsed.netloc == configured.netloc
+        and (parsed.path == configured.path or parsed.path.startswith(configured.path.rstrip('/') + '/'))
+        for configured in (urlparse(value) for value in configured_urls)
+    )
+
+
+def stable_version_key(value):
+    parsed = parse_version(value)
+    if parsed.kind != 'stable':
+        raise ValueError(f'Latest stable version must be stable: {value}')
+    return tuple(int(part) for part in parsed.base.split('.'))
+
+
+def validate_site_receipt(state, target, receipt):
+    """Validate live, resumable evidence for one post-release content target."""
+
+    if target not in SITE_TARGETS:
+        raise ValueError(f'Unknown post-release target: {target}')
+    if not isinstance(receipt, dict):
+        raise ValueError('Site receipt must be a JSON object')
+    if receipt.get('target') != target:
+        raise ValueError(f'Site receipt target must be {target}')
+    if receipt.get('status') not in VALID_SITE_STATUSES:
+        raise ValueError('Site receipt must describe completed production work, not a queue or draft')
+    if receipt.get('version') != state['version']:
+        raise ValueError('Site receipt version does not match the release')
+    if receipt.get('scope') != site_scope(state):
+        raise ValueError('Site receipt scope does not match the selected release repositories')
+
+    changed_urls = receipt.get('changed_urls')
+    configured_urls = site_config(state, target)['production_urls']
+    if not isinstance(changed_urls, list) or not changed_urls or any(not isinstance(url, str) or not url.strip() or not same_origin(url, configured_urls) for url in changed_urls):
+        raise ValueError('Site receipt requires non-empty changed_urls')
+    deployment_or_commit = receipt.get('deployment_or_commit')
+    if not isinstance(deployment_or_commit, str) or not deployment_or_commit.strip():
+        raise ValueError('Site receipt requires deployment_or_commit')
+    evidence_at = parse_timestamp(receipt.get('evidence_at'), 'evidence_at')
+
+    production = receipt.get('production_verification')
+    if not isinstance(production, dict) or production.get('verified') is not True:
+        raise ValueError('Site receipt requires verified live production evidence')
+    if production.get('version') != state['version']:
+        raise ValueError('Live production version does not match the release')
+    production_url = production.get('url')
+    if production_url not in configured_urls:
+        raise ValueError('Live production URL does not match the configured target')
+    if parse_timestamp(production.get('evidence_at'), 'production_verification.evidence_at') != evidence_at:
+        raise ValueError('Live production evidence timestamp differs from receipt evidence_at')
+
+    if state['kind'] == 'stable':
+        if receipt.get('content_label') != 'stable':
+            raise ValueError('Stable site receipts must be labeled stable')
+        updates_current = receipt.get('updates_current_stable')
+        replaces_latest = receipt.get('replaces_latest_stable')
+        if updates_current is True and replaces_latest is True:
+            pass
+        elif updates_current is False and replaces_latest is False:
+            latest_version = receipt.get('latest_stable_version')
+            latest_evidence = receipt.get('latest_stable_verification')
+            if not isinstance(latest_version, str) or stable_version_key(latest_version) <= stable_version_key(state['version']):
+                raise ValueError('Stable site receipts must identify a newer stable version when preserving latest guidance')
+            if not isinstance(latest_evidence, dict) or latest_evidence.get('verified') is not True or latest_evidence.get('version') != latest_version:
+                raise ValueError('Stable site receipts must verify the preserved newer stable guidance')
+            if latest_evidence.get('url') not in configured_urls:
+                raise ValueError('Preserved stable guidance URL does not match the configured target')
+            parse_timestamp(latest_evidence.get('evidence_at'), 'latest_stable_verification.evidence_at')
+        else:
+            raise ValueError('Stable site receipts must update current guidance or verify a newer stable version')
+    else:
+        if receipt.get('updates_current_stable') is not False or receipt.get('replaces_latest_stable') is not False:
+            raise ValueError('Prerelease site receipts must preserve latest stable guidance')
+        if receipt.get('content_label') != state['kind']:
+            raise ValueError(f"Prerelease site receipts must be labeled {state['kind']}")
+
+    configured = site_config(state, target)
+    if target == 'website':
+        if receipt.get('project_id') != configured['project_id']:
+            raise ValueError('Website receipt project_id does not match the Elsa Hub project')
+        if receipt.get('workspace_name') != configured['workspace_name']:
+            raise ValueError('Website receipt workspace_name does not match the configured Lovable workspace')
+    else:
+        if receipt.get('repository') != configured['repository'] or receipt.get('branch') != configured['branch']:
+            raise ValueError('Documentation receipt target does not match the configured repository and branch')
+    if not receipt.get('id'):
+        raise ValueError('Site receipt requires a resumable operation/message id')
+    return receipt
+
+
+def site_receipt_valid(state, target, record):
+    if not isinstance(record, dict) or not isinstance(record.get('receipt'), str) or not isinstance(record.get('sha256'), str):
+        return False
+    try:
+        if not Path(record['receipt']).is_file() or digest(record['receipt']) != record['sha256']:
+            return False
+        validate_site_receipt(state, target, read(record['receipt']))
+    except (OSError, ValueError, KeyError, TypeError):
+        return False
+    return True
+
+
 def init(args):
     version = parse_version(args.version, args.kind)
     profile = read(args.profile)
@@ -97,9 +251,14 @@ def init(args):
         if r['name'] in needed:
             needed.update(r['dependencies'])
     state = {
-        'schema': 1, 'version': version.version, 'kind': version.kind,
+        'schema': 2, 'version': version.version, 'kind': version.kind,
         'profile': profile, 'prerequisites': args.pr or [],
         'announce': not args.no_announcements, 'announcements': {},
+        'post_refresh': {
+            'enabled': not getattr(args, 'no_post_refresh', False),
+            'targets': list(SITE_TARGETS),
+            'receipts': {},
+        },
         'repositories': {r['name']: {
             'path': str((Path(args.repos_root).expanduser().resolve() / r['directory'])),
             'publish': r['name'] in selected,
@@ -114,6 +273,11 @@ def init(args):
                 raise ValueError(f'Existing state has a different {field}; use its recorded inputs')
         if {k: (v['publish'], v['path'], v['source_ref']) for k,v in existing['repositories'].items()} != {k: (v['publish'], v['path'], v['source_ref']) for k,v in state['repositories'].items()}:
             raise ValueError('Existing state has different repository scope or paths')
+        if post_refresh_configured(existing):
+            existing_refresh = existing['post_refresh']
+            requested_refresh = state['post_refresh']
+            if (existing_refresh['enabled'], existing_refresh['targets']) != (requested_refresh['enabled'], requested_refresh['targets']):
+                raise ValueError('Existing state has different post-refresh settings; use its recorded inputs')
         return existing
     save(args.state, state)
     return state
@@ -324,6 +488,11 @@ def verify(state, args):
 
 
 def status(state):
+    if not post_refresh_configured(state):
+        return {
+            'next': 'adopt-post-refresh',
+            'reason': 'This checkpoint predates the required post-release website/documentation gate; adopt it explicitly.',
+        }
     check_prerequisites(state)
     results = {}
     for name in state['repositories']:
@@ -333,18 +502,75 @@ def status(state):
         else:
             results[name] = inspect_release(state, name)
     ready = all(x['phase'] == 'verified' for x in results.values())
+    sites = state['post_refresh']
+    missing_sites = []
+    if sites['enabled']:
+        for target in post_refresh_targets(state):
+            receipt = sites['receipts'].get(target)
+            if not site_receipt_valid(state, target, receipt):
+                missing_sites.append(target)
     required = state['profile']['announcements']['platforms'] if state['announce'] else []
     missing = []
     for platform in required:
         receipt = state['announcements'].get(platform)
         if not receipt or not Path(receipt['receipt']).is_file() or digest(receipt['receipt']) != receipt['sha256']:
             missing.append(platform)
-    return {'repositories': results, 'next': 'complete' if ready and not missing else 'announcements' if ready else 'repositories', 'missing_announcements': missing if ready else []}
+    next_phase = 'repositories'
+    if ready:
+        next_phase = 'sites' if sites['enabled'] and missing_sites else 'announcements' if missing else 'complete'
+    return {
+        'repositories': results,
+        'sites': {'enabled': sites['enabled'], 'missing': missing_sites},
+        'next': next_phase,
+        'missing_announcements': missing if ready and not missing_sites else [],
+    }
+
+
+def adopt_post_refresh(state, args):
+    """Explicitly upgrade a legacy checkpoint without claiming site work is complete."""
+
+    if 'post_release_sites' not in state.get('profile', {}):
+        current_profile = read(DEFAULT_PROFILE)
+        state.setdefault('profile', {})['post_release_sites'] = current_profile['post_release_sites']
+    if post_refresh_configured(state):
+        return state['post_refresh']
+    state['schema'] = 2
+    targets = getattr(args, 'targets', None) or list(SITE_TARGETS)
+    if getattr(args, 'website_only', False):
+        targets = ['website']
+    if not set(targets) <= set(SITE_TARGETS) or len(set(targets)) != len(targets):
+        raise ValueError('Post-refresh targets must be unique website/documentation entries')
+    state['post_refresh'] = {
+        'enabled': not getattr(args, 'no_post_refresh', False),
+        'targets': targets,
+        'receipts': {},
+    }
+    return state['post_refresh']
+
+
+def record_site(state, args):
+    if not post_refresh_configured(state):
+        raise ValueError('Adopt the post-release phase before recording site evidence')
+    if not state['post_refresh']['enabled']:
+        raise ValueError('Post-release website/documentation refresh was explicitly disabled')
+    if args.target not in post_refresh_targets(state):
+        raise ValueError(f'Post-release target is outside this checkpoint scope: {args.target}')
+    observed = status(state)
+    if observed['next'] not in ('sites', 'announcements', 'complete'):
+        raise ValueError('All selected repositories and upstream packages must be verified before site refresh')
+    receipt = read(args.receipt)
+    validate_site_receipt(state, args.target, receipt)
+    value = {'receipt': str(args.receipt.resolve()), 'sha256': digest(args.receipt), 'id': receipt['id']}
+    prior = state['post_refresh']['receipts'].get(args.target)
+    if prior and prior != value and not getattr(args, 'replace', False):
+        raise ValueError('A different site receipt is already recorded; inspect before changing it')
+    state['post_refresh']['receipts'][args.target] = value
+    return value
 
 
 def record_announcement(state, args):
     if status(state)['next'] not in ('announcements', 'complete'):
-        raise ValueError('All selected repositories and upstream packages must be verified before announcements')
+        raise ValueError('All selected repositories, post-release sites, and upstream packages must be verified before announcements')
     if not state['announce']:
         raise ValueError('Announcements were explicitly disabled for this release')
     receipt = read(args.receipt)
@@ -378,7 +604,12 @@ def main():
     p.add_argument('--source', action='append', help='Explicit source override, e.g. core=3.9.0-rc1')
     p.add_argument('--pr', action='append', help='Explicit release prerequisite PR URL; never discovers arbitrary open PRs')
     p.add_argument('--no-announcements', action='store_true')
+    p.add_argument('--no-post-refresh', action='store_true', help='Skip the website/documentation refresh gate')
     sub.add_parser('status')
+    p = sub.add_parser('adopt-post-refresh')
+    p.add_argument('--no-post-refresh', action='store_true', help='Explicitly adopt the legacy checkpoint while keeping site refresh disabled')
+    p.add_argument('--targets', nargs='+', choices=SITE_TARGETS, help='Site targets to adopt; use website for a website-only follow-up')
+    p.add_argument('--website-only', action='store_true', help='Alias for --targets website')
     p = sub.add_parser('align')
     p.add_argument('--repo', required=True)
     p.add_argument('--repo-path', required=True, type=Path)
@@ -397,6 +628,10 @@ def main():
     p.add_argument('--platform', required=True, choices=['discord','linkedin','x'])
     p.add_argument('--receipt', required=True, type=Path)
     p.add_argument('--message-file', required=True, type=Path)
+    p = sub.add_parser('record-site')
+    p.add_argument('--target', required=True, choices=SITE_TARGETS)
+    p.add_argument('--receipt', required=True, type=Path)
+    p.add_argument('--replace', '--replace-site-receipt', dest='replace', action='store_true', help='Replace a stale or tampered site receipt after reviewing new live evidence')
     args = parser.parse_args()
     args.state = args.state.expanduser().resolve()
     try:
