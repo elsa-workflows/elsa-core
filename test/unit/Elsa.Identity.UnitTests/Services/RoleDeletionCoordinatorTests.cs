@@ -5,8 +5,11 @@ using Elsa.Common.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
+using Elsa.Identity.Notifications;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using Elsa.Mediator.Contracts;
+using NSubstitute;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -52,15 +55,37 @@ public class RoleDeletionCoordinatorTests
     [Fact]
     public async Task OrdinaryDeletionIsBlockedByConfigurationDependency()
     {
+        var notificationSender = Substitute.For<INotificationSender>();
         var (store, coordinator) = await CreateCoordinatorAsync(
             new StubContributor([
                 Dependency("configuration", RoleDeletionDependencyOwnership.Configuration, configurationPath: "ExternalAuthentication:Connections:0:UnlinkedPolicy:Settings:defaultRoleIds:0")
-            ]));
+            ]),
+            notificationSender);
 
         var result = await coordinator.DeleteAsync("workflow-user", Administrator());
 
         Assert.IsType<RoleDeletionOperationResult.Blocked>(result);
         Assert.NotNull(await store.FindAsync(new() { Id = "workflow-user" }));
+        await notificationSender.DidNotReceive().SendAsync(Arg.Any<RoleChanged>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SuccessfulDeletionPublishesDeletedRoleNotification()
+    {
+        var notificationSender = Substitute.For<INotificationSender>();
+        var (store, coordinator) = await CreateCoordinatorAsync(new StubContributor([]), notificationSender);
+
+        var result = await coordinator.DeleteAsync("workflow-user", Administrator());
+
+        Assert.IsType<RoleDeletionOperationResult.Deleted>(result);
+        Assert.Null(await store.FindAsync(new() { Id = "workflow-user" }));
+        await notificationSender.Received(1).SendAsync(
+            Arg.Is<RoleChanged>(notification =>
+                notification.Operation == "deleted" &&
+                notification.RoleId == "workflow-user" &&
+                notification.RoleName == "Workflow user" &&
+                notification.Permissions.Count == 0),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -90,7 +115,8 @@ public class RoleDeletionCoordinatorTests
     public async Task SuccessfulRemediationRemovesDependenciesBeforeDeletingRole()
     {
         var contributor = new StubContributor([Dependency("connection-a", removesLastDefaultRole: true)]);
-        var (store, coordinator) = await CreateCoordinatorAsync(contributor);
+        var notificationSender = Substitute.For<INotificationSender>();
+        var (store, coordinator) = await CreateCoordinatorAsync(contributor, notificationSender);
         var impact = Assert.IsType<RoleDeletionInspectionResult.Success>(await coordinator.InspectAsync("workflow-user", Administrator())).Impact;
 
         var result = await coordinator.RemediateAndDeleteAsync(new(
@@ -105,6 +131,9 @@ public class RoleDeletionCoordinatorTests
         Assert.Equal(["connection-a"], deleted.ChangedOwnerIds);
         Assert.Null(await store.FindAsync(new() { Id = "workflow-user" }));
         Assert.Empty(contributor.Dependencies);
+        await notificationSender.Received(1).SendAsync(
+            Arg.Is<RoleChanged>(notification => notification.Operation == "deleted" && notification.RoleId == "workflow-user"),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -113,7 +142,8 @@ public class RoleDeletionCoordinatorTests
         var contributor = new StubContributor(
             [Dependency("connection-a"), Dependency("connection-b")],
             failAfterFirst: true);
-        var (store, coordinator) = await CreateCoordinatorAsync(contributor);
+        var notificationSender = Substitute.For<INotificationSender>();
+        var (store, coordinator) = await CreateCoordinatorAsync(contributor, notificationSender);
         var impact = Assert.IsType<RoleDeletionInspectionResult.Success>(await coordinator.InspectAsync("workflow-user", Administrator())).Impact;
 
         var result = await coordinator.RemediateAndDeleteAsync(new(
@@ -128,14 +158,18 @@ public class RoleDeletionCoordinatorTests
         Assert.Equal(["connection-a"], incomplete.ChangedOwnerIds);
         Assert.NotNull(await store.FindAsync(new() { Id = "workflow-user" }));
         Assert.Single(contributor.Dependencies);
+        await notificationSender.DidNotReceive().SendAsync(Arg.Any<RoleChanged>(), Arg.Any<CancellationToken>());
     }
 
-    private static async Task<(MemoryRoleStore Store, RoleDeletionCoordinator Coordinator)> CreateCoordinatorAsync(IRoleDeletionDependencyContributor contributor)
+    private static async Task<(MemoryRoleStore Store, RoleDeletionCoordinator Coordinator)> CreateCoordinatorAsync(
+        IRoleDeletionDependencyContributor contributor,
+        INotificationSender? notificationSender = null)
     {
         var store = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await store.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
         var roleProvider = new StoreBasedRoleProvider(store);
-        var coordinator = new RoleDeletionCoordinator(store, new RoleAuthorizationService(roleProvider, new PermissionEvaluator()), [contributor]);
+        var securityNotifier = new RoleSecurityNotifier(notificationSender ?? Substitute.For<INotificationSender>(), TestTenantAccessor.Default, new SystemClock());
+        var coordinator = new RoleDeletionCoordinator(store, new RoleAuthorizationService(roleProvider, new PermissionEvaluator()), [contributor], securityNotifier);
         return (store, coordinator);
     }
 

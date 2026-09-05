@@ -11,7 +11,8 @@ namespace Elsa.Identity.Services;
 public sealed class RoleDeletionCoordinator(
     IRoleStore roleStore,
     IRoleAuthorizationService roleAuthorizationService,
-    IEnumerable<IRoleDeletionDependencyContributor> contributors) : IRoleDeletionCoordinator
+    IEnumerable<IRoleDeletionDependencyContributor> contributors,
+    RoleSecurityNotifier securityNotifier) : IRoleDeletionCoordinator
 {
     private readonly IReadOnlyDictionary<string, IRoleDeletionDependencyContributor> _contributors = contributors.ToDictionary(x => x.Source, StringComparer.Ordinal);
 
@@ -41,8 +42,7 @@ public sealed class RoleDeletionCoordinator(
         if (!impact.CanDelete)
             return new RoleDeletionOperationResult.Blocked(impact);
 
-        await roleStore.DeleteAsync(new() { Id = roleId }, cancellationToken);
-        return new RoleDeletionOperationResult.Deleted([]);
+        return await DeleteRoleAsync(roleId, actor, [], cancellationToken);
     }
 
     /// <inheritdoc />
@@ -60,10 +60,7 @@ public sealed class RoleDeletionCoordinator(
         if (impact.Dependencies.Any(x => x.Ownership == RoleDeletionDependencyOwnership.Configuration))
             return new RoleDeletionOperationResult.Blocked(impact);
         if (impact.CanDelete)
-        {
-            await roleStore.DeleteAsync(new() { Id = command.RoleId }, cancellationToken);
-            return new RoleDeletionOperationResult.Deleted([]);
-        }
+            return await DeleteRoleAsync(command.RoleId, command.Actor, [], cancellationToken);
 
         var warnings = GetRequiredConfirmations(impact, command);
         if (warnings.Count != 0)
@@ -120,8 +117,22 @@ public sealed class RoleDeletionCoordinator(
         if (!finalImpact.CanDelete)
             return new RoleDeletionOperationResult.Incomplete(finalImpact, changedOwnerIds.Distinct(StringComparer.Ordinal).ToArray(), "role_dependencies_remain");
 
-        await roleStore.DeleteAsync(new() { Id = command.RoleId }, cancellationToken);
-        return new RoleDeletionOperationResult.Deleted(changedOwnerIds.Distinct(StringComparer.Ordinal).ToArray());
+        return await DeleteRoleAsync(command.RoleId, command.Actor, changedOwnerIds.Distinct(StringComparer.Ordinal).ToArray(), cancellationToken);
+    }
+
+    private async ValueTask<RoleDeletionOperationResult> DeleteRoleAsync(
+        string roleId,
+        ClaimsPrincipal actor,
+        IReadOnlyCollection<string> changedOwnerIds,
+        CancellationToken cancellationToken)
+    {
+        var role = await roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
+        if (role is null)
+            return new RoleDeletionOperationResult.NotFound();
+
+        await roleStore.DeleteAsync(new() { Id = roleId }, cancellationToken);
+        await securityNotifier.RoleChangedAsync(actor, "deleted", role.Id, role.Name, role.Permissions.ToArray(), cancellationToken);
+        return new RoleDeletionOperationResult.Deleted(changedOwnerIds);
     }
 
     private async ValueTask<IReadOnlyCollection<RoleDeletionDependencySnapshot>> InspectContributorsAsync(string roleId, CancellationToken cancellationToken)
