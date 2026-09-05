@@ -33,9 +33,9 @@ public class EFCoreRoleStore : IRoleStore
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    public async Task<bool> DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        return await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken) > 0;
     }
 
     /// <inheritdoc />

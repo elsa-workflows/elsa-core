@@ -130,8 +130,11 @@ public sealed class RoleDeletionCoordinator(
         if (role is null)
             return new RoleDeletionOperationResult.NotFound();
 
-        await roleStore.DeleteAsync(new() { Id = roleId }, cancellationToken);
-        await securityNotifier.RoleChangedAsync(actor, "deleted", role.Id, role.Name, role.Permissions.ToArray(), cancellationToken);
+        var deleted = await roleStore.DeleteAsync(new() { Id = roleId }, cancellationToken);
+        if (!deleted)
+            return new RoleDeletionOperationResult.NotFound();
+
+        await securityNotifier.RoleChangedAsync(actor, "deleted", role.Id, role.Name, role.Permissions.ToArray(), CancellationToken.None);
         return new RoleDeletionOperationResult.Deleted(changedOwnerIds);
     }
 

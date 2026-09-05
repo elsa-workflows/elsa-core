@@ -21,8 +21,8 @@ public interface IRoleStore
     /// </summary>
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns>The task.</returns>
-    Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> when a role was deleted; otherwise, <see langword="false"/>.</returns>
+    Task<bool> DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Saves the role.

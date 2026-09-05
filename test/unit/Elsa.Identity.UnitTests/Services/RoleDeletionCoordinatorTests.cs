@@ -85,7 +85,7 @@ public class RoleDeletionCoordinatorTests
                 notification.RoleId == "workflow-user" &&
                 notification.RoleName == "Workflow user" &&
                 notification.Permissions.Count == 0),
-            Arg.Any<CancellationToken>());
+            Arg.Is<CancellationToken>(token => !token.CanBeCanceled));
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class RoleDeletionCoordinatorTests
         Assert.Empty(contributor.Dependencies);
         await notificationSender.Received(1).SendAsync(
             Arg.Is<RoleChanged>(notification => notification.Operation == "deleted" && notification.RoleId == "workflow-user"),
-            Arg.Any<CancellationToken>());
+            Arg.Is<CancellationToken>(token => !token.CanBeCanceled));
     }
 
     [Fact]
