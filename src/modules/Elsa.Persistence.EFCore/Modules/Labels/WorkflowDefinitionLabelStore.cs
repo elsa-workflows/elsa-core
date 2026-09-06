@@ -4,7 +4,7 @@ using Elsa.Labels.Entities;
 namespace Elsa.Persistence.EFCore.Modules.Labels;
 
 /// <inheritdoc />
-public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
+public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore, IWorkflowDefinitionLabelQuery
 {
     private readonly EntityStore<LabelsElsaDbContext, WorkflowDefinitionLabel> _store;
 
@@ -25,6 +25,13 @@ public class EFCoreWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default) =>
         await _store.FindManyAsync(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<WorkflowDefinitionLabel>> FindByLabelIdsAsync(IEnumerable<string> labelIds, CancellationToken cancellationToken = default)
+    {
+        var ids = labelIds.ToList();
+        return await _store.FindManyAsync(x => ids.Contains(x.LabelId), cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)

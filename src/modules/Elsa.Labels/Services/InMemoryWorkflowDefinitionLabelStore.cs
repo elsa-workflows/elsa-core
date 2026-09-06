@@ -7,7 +7,7 @@ namespace Elsa.Labels.Services;
 /// <summary>
 /// An in-memory store of workflow-label associations.
 /// </summary>
-public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore
+public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore, IWorkflowDefinitionLabelQuery
 {
     private readonly MemoryStore<WorkflowDefinitionLabel> _store;
 
@@ -44,6 +44,14 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
     public Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
     {
         var result = _store.FindMany(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId);
+        return Task.FromResult(result);
+    }
+
+    /// <inheritdoc />
+    public Task<IEnumerable<WorkflowDefinitionLabel>> FindByLabelIdsAsync(IEnumerable<string> labelIds, CancellationToken cancellationToken = default)
+    {
+        var ids = labelIds.ToHashSet();
+        var result = _store.FindMany(x => ids.Contains(x.LabelId));
         return Task.FromResult(result);
     }
 
