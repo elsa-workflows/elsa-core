@@ -26,22 +26,22 @@ public class MemoryRoleStore : IRoleStore
     /// <inheritdoc />
     public Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, x => x.Id);
+        _store.Save(role, GetStorageKey);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).Distinct().ToList();
-        _store.DeleteWhere(x => ids.Contains(x.Id));
+        var roles = _store.Query(query => Filter(query, filter)).ToList();
+        _store.DeleteMany(roles, GetStorageKey);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task SaveAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, x => x.Id);
+        _store.Save(role, GetStorageKey);
         return Task.CompletedTask;
     }
 
@@ -62,13 +62,19 @@ public class MemoryRoleStore : IRoleStore
     /// <remarks>
     /// The ambient tenant is applied here rather than left to callers. Isolation previously existed only
     /// on the Entity Framework path, and only when multitenancy was enabled, so a deployment running the
-    /// default in-memory stores had none at all.
+    /// default in-memory stores had none at all. Null tenant IDs are retained only for the default tenant
+    /// for backwards compatibility with records created before tenant assignment was added.
     /// </remarks>
     private IQueryable<Role> Filter(IQueryable<Role> queryable, RoleFilter filter)
     {
         var tenantId = _tenantAccessor.TenantId;
-        queryable = queryable.Where(x => x.TenantId == tenantId || x.TenantId == Tenant.AgnosticTenantId || x.TenantId == null);
+        queryable = queryable.Where(x => x.TenantId == tenantId || x.TenantId == Tenant.AgnosticTenantId || (x.TenantId == null && tenantId == Tenant.DefaultTenantId));
 
         return filter.Apply(queryable);
     }
+
+    private static string GetStorageKey(Role role) => GetStorageKey(role.TenantId, role.Id);
+
+    private static string GetStorageKey(string? tenantId, string roleId) =>
+        $"{tenantId?.Length ?? -1}:{tenantId}{roleId.Length}:{roleId}";
 }

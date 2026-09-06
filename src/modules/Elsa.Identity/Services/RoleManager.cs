@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
@@ -8,7 +9,7 @@ namespace Elsa.Identity.Services;
 /// <summary>
 /// Default implementation of <see cref="IRoleManager"/>.
 /// </summary>
-public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider) : IRoleManager
+public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider, ITenantAccessor tenantAccessor) : IRoleManager
 {
     /// <inheritdoc />
     public async Task<CreateRoleResult> CreateRoleAsync(
@@ -26,6 +27,8 @@ public class RoleManager(IRoleStore roleStore, IRoleProvider roleProvider) : IRo
         {
             Id = roleId,
             Name = name,
+            // The in-memory path does not run EF's ApplyTenantId saving handler.
+            TenantId = tenantAccessor.TenantId,
             Permissions = permissions ?? new List<string>()
         };
 
