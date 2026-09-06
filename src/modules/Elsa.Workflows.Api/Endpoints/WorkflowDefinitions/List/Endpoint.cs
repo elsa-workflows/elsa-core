@@ -10,6 +10,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.List;
 
@@ -26,7 +27,6 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
     {
         var pageArgs = PageArgs.FromPage(request.Page, request.PageSize);
         var filter = CreateFilter(request);
-        var applied = false;
         try
         {
             foreach (var filterProvider in filterProviders ?? [])
@@ -36,7 +36,13 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
                     continue;
                 }
 
-                applied = true;
+                if (EndpointSecurityOptions.SecurityIsEnabled && !HasRequiredPermissions(filterProvider, filter))
+                {
+                    AddError("You do not have permission to filter workflow definitions by labels.");
+                    await Send.ErrorsAsync(StatusCodes.Status403Forbidden, cancellationToken);
+                    return default!;
+                }
+
                 await filterProvider.ApplyAsync(filter, cancellationToken);
             }
         }
@@ -47,7 +53,7 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
             return default!;
         }
 
-        if (filter.LabelIds is { Count: > 0 } && !applied)
+        if (filter.LabelIds is { Count: > 0 })
         {
             AddError("Filtering workflow definitions by labels is not supported by the configured modules.");
             await Send.ErrorsAsync(StatusCodes.Status501NotImplemented, cancellationToken);
@@ -58,6 +64,12 @@ internal class List(IWorkflowDefinitionStore store, IWorkflowDefinitionLinker li
         var pagedList = new PagedListResponse<WorkflowDefinitionSummary>(summaries);
         var response = linker.MapAsync(pagedList);
         return response;
+    }
+
+    private bool HasRequiredPermissions(IWorkflowDefinitionFilterProvider filterProvider, WorkflowDefinitionFilter filter)
+    {
+        var evaluator = HttpContext.RequestServices.GetService<IPermissionEvaluator>() ?? PermissionEvaluator.Shared;
+        return filterProvider.GetRequiredPermissions(filter).All(permission => evaluator.HasPermission(HttpContext.User, permission));
     }
 
     private WorkflowDefinitionFilter CreateFilter(Request request)

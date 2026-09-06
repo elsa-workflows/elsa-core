@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
 using Elsa.Labels.Contracts;
@@ -48,10 +49,19 @@ public class WorkflowDefinitionLabelFilterTests
     [Fact]
     public async Task List_WithoutLabelIds_ReturnsAllVersions()
     {
-        var response = await ExecuteAsync(null);
+        var response = await ExecuteAsync(null, permissions: ["workflows/definitions:view"]);
 
         Assert.Equal(5, response.TotalCount);
         Assert.Equal(5, response.Items.Count);
+    }
+
+    [Fact]
+    public async Task List_WithWorkflowPermissionWildcard_ReturnsMatchingVersions()
+    {
+        var response = await ExecuteAsync(["red"], permissions: ["workflows/definitions/*:view"]);
+
+        Assert.Equal(2, response.TotalCount);
+        Assert.Equal(2, response.Items.Count);
     }
 
     [Fact]
@@ -70,6 +80,43 @@ public class WorkflowDefinitionLabelFilterTests
 
         Assert.Equal(1, response.TotalCount);
         Assert.Equal("red-version", Assert.Single(response.Items).Id);
+    }
+
+    [Fact]
+    public async Task List_WithLabelFilter_RequiresLabelPermissionBeforeQuerying()
+    {
+        var workflowDefinitionStore = Substitute.For<IWorkflowDefinitionStore>();
+        ConfigureEmptyPage(workflowDefinitionStore);
+        var labelStore = Substitute.For<IWorkflowDefinitionLabelStore, IWorkflowDefinitionLabelQuery>();
+        var labelProvider = new WorkflowDefinitionLabelFilterProvider(labelStore);
+        var endpoint = Factory.Create<List>(
+            CreateHttpContext("workflows/definitions:view"),
+            workflowDefinitionStore,
+            new TestWorkflowDefinitionLinker(),
+            new IWorkflowDefinitionFilterProvider[] { labelProvider });
+
+        await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
+
+        Assert.Equal(StatusCodes.Status403Forbidden, endpoint.HttpContext.Response.StatusCode);
+        Assert.Empty(labelStore.ReceivedCalls());
+        Assert.Empty(workflowDefinitionStore.ReceivedCalls());
+    }
+
+    [Fact]
+    public async Task List_WithUnrelatedApplicableProvider_LeavesLabelFilterUnsupported()
+    {
+        var workflowDefinitionStore = Substitute.For<IWorkflowDefinitionStore>();
+        ConfigureEmptyPage(workflowDefinitionStore);
+        var endpoint = Factory.Create<List>(
+            CreateHttpContext("workflows/definitions:view", "workflows/definitions/labels:view"),
+            workflowDefinitionStore,
+            new TestWorkflowDefinitionLinker(),
+            new IWorkflowDefinitionFilterProvider[] { new UnrelatedFilterProvider() });
+
+        await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
+
+        Assert.Equal(StatusCodes.Status501NotImplemented, endpoint.HttpContext.Response.StatusCode);
+        Assert.Empty(workflowDefinitionStore.ReceivedCalls());
     }
 
     [Fact]
@@ -99,7 +146,11 @@ public class WorkflowDefinitionLabelFilterTests
         var store = Substitute.For<IWorkflowDefinitionStore>();
         var labelStore = Substitute.For<IWorkflowDefinitionLabelStore>();
         var provider = new WorkflowDefinitionLabelFilterProvider(labelStore);
-        var endpoint = Factory.Create<List>(new DefaultHttpContext(), store, new TestWorkflowDefinitionLinker(), new IWorkflowDefinitionFilterProvider[] { provider });
+        var endpoint = Factory.Create<List>(
+            CreateHttpContext("workflows/definitions:view", "workflows/definitions/labels:view"),
+            store,
+            new TestWorkflowDefinitionLinker(),
+            new IWorkflowDefinitionFilterProvider[] { provider });
 
         await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
 
@@ -107,7 +158,7 @@ public class WorkflowDefinitionLabelFilterTests
         Assert.Empty(store.ReceivedCalls());
     }
 
-    private static async Task<PagedListResponse<LinkedWorkflowDefinitionSummary>> ExecuteAsync(string[]? labels, string[]? ids = null, int? page = 0, int? pageSize = null)
+    private static async Task<PagedListResponse<LinkedWorkflowDefinitionSummary>> ExecuteAsync(string[]? labels, string[]? ids = null, int? page = 0, int? pageSize = null, string[]? permissions = null)
     {
         var memoryStore = new MemoryStore<WorkflowDefinition>();
         var workflowDefinitionStore = new MemoryWorkflowDefinitionStore(memoryStore);
@@ -128,10 +179,11 @@ public class WorkflowDefinitionLabelFilterTests
             new WorkflowDefinitionLabel { Id = "blue-association", WorkflowDefinitionId = "blue", WorkflowDefinitionVersionId = "blue-version", LabelId = "blue" }
         ]);
 
-        var endpoint = new List(
+        var endpoint = Factory.Create<List>(
+            CreateHttpContext(permissions ?? ["workflows/definitions:view", "workflows/definitions/labels:view"]),
             workflowDefinitionStore,
             new TestWorkflowDefinitionLinker(),
-            [new WorkflowDefinitionLabelFilterProvider(labelStore)]);
+            new IWorkflowDefinitionFilterProvider[] { new WorkflowDefinitionLabelFilterProvider(labelStore) });
 
         return await endpoint.ExecuteAsync(new Request { Labels = labels, Ids = ids, Page = page, PageSize = pageSize }, CancellationToken.None);
     }
@@ -154,4 +206,24 @@ public class WorkflowDefinitionLabelFilterTests
 
         public Task<List<LinkedWorkflowDefinitionModel>> MapAsync(List<WorkflowDefinition> definitions, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
+
+    private sealed class UnrelatedFilterProvider : IWorkflowDefinitionFilterProvider
+    {
+        public bool CanApply(WorkflowDefinitionFilter filter) => true;
+
+        public Task ApplyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
+
+    private static DefaultHttpContext CreateHttpContext(params string[] permissions) => new()
+    {
+        User = new ClaimsPrincipal(new ClaimsIdentity(permissions.Select(x => new Claim(PermissionNames.ClaimType, x)), "test"))
+    };
+
+    private static void ConfigureEmptyPage(IWorkflowDefinitionStore store) =>
+        store.FindSummariesAsync(
+                Arg.Any<WorkflowDefinitionFilter>(),
+                Arg.Any<WorkflowDefinitionOrder<string>>(),
+                Arg.Any<PageArgs>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Page.Empty<WorkflowDefinitionSummary>()));
 }
