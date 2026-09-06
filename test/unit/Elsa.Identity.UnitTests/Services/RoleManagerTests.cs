@@ -67,6 +67,20 @@ public class RoleManagerTests
     }
 
     [Fact]
+    public async Task DefaultTenantListsLegacyRolesWithoutATenantId()
+    {
+        var tenantAccessor = new TestTenantAccessor();
+        var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), tenantAccessor);
+
+        await roleStore.SaveAsync(new Role { Id = "legacy", Name = "Legacy", Permissions = [] });
+
+        var roles = await roleStore.FindManyAsync(new() { TenantId = Tenant.DefaultTenantId });
+
+        Assert.Single(roles);
+        Assert.Equal("legacy", roles.Single().Id);
+    }
+
+    [Fact]
     public async Task CreateRoleRejectsExistingRoleId()
     {
         await _roleStore.SaveAsync(new Role
