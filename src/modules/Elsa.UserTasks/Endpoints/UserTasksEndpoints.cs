@@ -558,7 +558,7 @@ internal sealed class ListParticipantsEndpoint(IUserTaskParticipantDirectory dir
 /// shape for valid and invalid tokens.
 /// </summary>
 internal abstract class AnonymousInvitationEndpointBase<TRequest, TResponse> : Endpoint<TRequest, TResponse>
-    where TRequest : notnull, new()
+    where TRequest : notnull
     where TResponse : notnull
 {
     protected async Task<bool> TryAcquireAsync(IUserTaskInvitationRateLimiter limiter, CancellationToken cancellationToken)
