@@ -20,9 +20,13 @@ namespace Elsa.ExternalAuthentication.Services;
 /// <summary>Guards Elsa Role deletion against JIT-policy default-role references.</summary>
 /// <remarks>
 /// Roles are tenant-scoped, so impact and remediation only ever consider connections in the role's own tenant
-/// context: the tenant active on <see cref="ITenantAccessor"/> while the role-deletion coordinator runs, which is
-/// the tenant the coordinator already resolved the role in. A connection carrying another tenant's ID is out of
-/// scope in both directions, for impact and for remediation.
+/// context: the resolved role's own <c>TenantId</c>. The tenant active on <see cref="ITenantAccessor"/> is used
+/// only as a fallback when the role cannot be resolved, because with multitenancy disabled (the default) the EF
+/// Core role store installs no tenant query filter and can resolve a tenant-owned role by ID regardless of the
+/// ambient tenant; trusting the ambient tenant instead of the resolved role's tenant would then let this
+/// contributor scan the wrong tenant's connections while the coordinator deletes a role belonging to another
+/// tenant. A connection carrying another tenant's ID is out of scope in both directions, for impact and for
+/// remediation.
 /// Host-scoped connections (<see cref="ConnectionScope.HostTenantId"/>, and configuration entries that leave the
 /// tenant blank, which are materialized at host scope) stay in scope for every tenant. The connection registry
 /// resolves the host scope for every signing-in tenant, and a connection's default role IDs are then resolved by
@@ -60,7 +64,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
 
     public async ValueTask<RoleDeletionDependencySnapshot> InspectAsync(string roleId, CancellationToken cancellationToken = default)
     {
-        var isAgnosticRole = await IsAgnosticRoleAsync(roleId, cancellationToken);
+        var roleTenantId = await ResolveRoleTenantIdAsync(roleId, cancellationToken);
         var dependencies = new List<RoleDeletionDependency>();
         var configuredConnections = options.CurrentValue.ConfigurationConnections ?? [];
         var configurationIndex = 0;
@@ -68,12 +72,12 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         {
             // The index is part of the configuration path an operator edits, so out-of-scope entries are
             // skipped without renumbering the entries that remain.
-            if (IsInRoleTenantScope(GetConfigurationScopeTenantId(connection), isAgnosticRole))
+            if (IsInRoleTenantScope(GetConfigurationScopeTenantId(connection), roleTenantId))
                 dependencies.AddRange(GetConfigurationDependencies(connection, configurationIndex, roleId));
             configurationIndex++;
         }
 
-        foreach (var connection in await FindConnectionsInRoleTenantScopeAsync(isAgnosticRole, cancellationToken))
+        foreach (var connection in await FindConnectionsInRoleTenantScopeAsync(roleTenantId, cancellationToken))
         {
             if (!TryGetRoleReference(connection.UnlinkedPolicy, roleId, out var policyBranch, out _, out var removesLastDefaultRole))
                 continue;
@@ -122,10 +126,10 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         if (!expectedOwners.IsSubsetOf(currentOwners))
             return new RoleReferenceRemovalValidationResult.Conflict("dependency_changed");
 
-        var isAgnosticRole = await IsAgnosticRoleAsync(request.RoleId, cancellationToken);
+        var roleTenantId = await ResolveRoleTenantIdAsync(request.RoleId, cancellationToken);
         foreach (var dependency in request.Dependencies)
         {
-            var connection = await FindConnectionInRoleTenantScopeAsync(dependency.OwnerId, isAgnosticRole, cancellationToken);
+            var connection = await FindConnectionInRoleTenantScopeAsync(dependency.OwnerId, roleTenantId, cancellationToken);
             if (connection is null || connection.Revision != dependency.ExpectedRevision ||
                 !TryGetRoleReference(connection.UnlinkedPolicy, request.RoleId, out _, out var roleIds, out _))
                 return new RoleReferenceRemovalValidationResult.Conflict("connection_revision_changed");
@@ -160,13 +164,13 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         if (validation is RoleReferenceRemovalValidationResult.Conflict conflict)
             return new RoleReferenceRemovalResult.Conflict(conflict.Code, []);
 
-        var isAgnosticRole = await IsAgnosticRoleAsync(request.RoleId, cancellationToken);
+        var roleTenantId = await ResolveRoleTenantIdAsync(request.RoleId, cancellationToken);
         var changedOwnerIds = new List<string>();
         try
         {
             foreach (var dependency in request.Dependencies.OrderBy(x => x.OwnerId, StringComparer.Ordinal))
             {
-                var connection = await FindConnectionInRoleTenantScopeAsync(dependency.OwnerId, isAgnosticRole, cancellationToken);
+                var connection = await FindConnectionInRoleTenantScopeAsync(dependency.OwnerId, roleTenantId, cancellationToken);
                 if (connection is null || connection.Revision != dependency.ExpectedRevision ||
                     !TryGetRoleReference(connection.UnlinkedPolicy, request.RoleId, out _, out _, out var removesLastDefaultRole))
                     return new RoleReferenceRemovalResult.Conflict("connection_revision_changed", changedOwnerIds);
@@ -223,27 +227,29 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     }
 
     /// <summary>
-    /// Resolves whether the role being deleted is tenant-agnostic (<see cref="Tenant.AgnosticTenantId"/>), in
-    /// which case its tenant context is every tenant rather than the ambient one. In EF Core persistence a role
-    /// ID is unique across all tenants (the <c>Roles</c> table keys on <c>Id</c> alone), so this lookup resolves
-    /// to at most one role there. Only <c>MemoryRoleStore</c> can hold two roles that share an ID because its
-    /// storage key includes the tenant; if the ID resolves to more than one role, which tenant's role the
-    /// coordinator's own delete actually targets is already ambiguous, and this method cannot make the
-    /// operation consistent by guessing in either direction -- widening would expose another tenant's
-    /// references for what may be a tenant-scoped deletion, and narrowing would leave an agnostic role's
-    /// references dangling. It fails closed instead. A missing store or no matching role keeps the current
-    /// tenant-scoped behavior.
+    /// Resolves the tenant context for the role being deleted: the role's own <c>TenantId</c>
+    /// (<see cref="Tenant.AgnosticTenantId"/> normalized when the role is tenant-agnostic, in which case its
+    /// tenant context is every tenant). In EF Core persistence a role ID is unique across all tenants (the
+    /// <c>Roles</c> table keys on <c>Id</c> alone), so this lookup resolves to at most one role there. Only
+    /// <c>MemoryRoleStore</c> can hold two roles that share an ID because its storage key includes the tenant;
+    /// if the ID resolves to more than one role, which tenant's role the coordinator's own delete actually
+    /// targets is already ambiguous, and this method cannot make the operation consistent by guessing in either
+    /// direction -- widening would expose another tenant's references for what may be a tenant-scoped deletion,
+    /// and narrowing would leave an agnostic role's references dangling. It fails closed instead.
+    /// A missing store or no matching role falls back to the ambient tenant on <see cref="ITenantAccessor"/>,
+    /// which is the only case where the ambient tenant is trusted: the role cannot be resolved at all, so there
+    /// is no resolved tenant to prefer over it.
     /// </summary>
-    private async ValueTask<bool> IsAgnosticRoleAsync(string roleId, CancellationToken cancellationToken)
+    private async ValueTask<string> ResolveRoleTenantIdAsync(string roleId, CancellationToken cancellationToken)
     {
         var roleStore = ActiveRoleStore;
         if (roleStore is null)
-            return false;
+            return tenantAccessor.TenantId.NormalizeTenantId();
         var roles = (await roleStore.FindManyAsync(new() { Id = roleId }, cancellationToken)).ToArray();
         return roles.Length switch
         {
-            0 => false,
-            1 => string.Equals(roles[0].TenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal),
+            0 => tenantAccessor.TenantId.NormalizeTenantId(),
+            1 => roles[0].TenantId.NormalizeTenantId(),
             _ => throw new InvalidOperationException(
                 $"Role '{roleId}' resolves to {roles.Length} roles across tenant scopes; the deletion target is ambiguous and its external-authentication dependencies cannot be determined.")
         };
@@ -256,10 +262,10 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     /// connection could fall between the reads and appear in neither result. A single snapshot has no gap to fall
     /// through.
     /// </summary>
-    private async ValueTask<IReadOnlyCollection<IdentityProviderConnection>> FindConnectionsInRoleTenantScopeAsync(bool isAgnosticRole, CancellationToken cancellationToken)
+    private async ValueTask<IReadOnlyCollection<IdentityProviderConnection>> FindConnectionsInRoleTenantScopeAsync(string roleTenantId, CancellationToken cancellationToken)
     {
         var connections = (await store.FindAsync(new(), cancellationToken)).Items;
-        return connections.Where(x => IsInRoleTenantScope(x.TenantId, isAgnosticRole)).ToArray();
+        return connections.Where(x => IsInRoleTenantScope(x.TenantId, roleTenantId)).ToArray();
     }
 
     /// <summary>
@@ -267,16 +273,16 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     /// that a caller-supplied owner ID cannot reach across a tenant boundary. An agnostic role's tenant context
     /// is every tenant, so any connection loaded by owner ID qualifies.
     /// </summary>
-    private async ValueTask<IdentityProviderConnection?> FindConnectionInRoleTenantScopeAsync(string ownerId, bool isAgnosticRole, CancellationToken cancellationToken)
+    private async ValueTask<IdentityProviderConnection?> FindConnectionInRoleTenantScopeAsync(string ownerId, string roleTenantId, CancellationToken cancellationToken)
     {
         var connection = await store.FindByIdAsync(ownerId, cancellationToken);
-        return connection is not null && IsInRoleTenantScope(connection.TenantId, isAgnosticRole) ? connection : null;
+        return connection is not null && IsInRoleTenantScope(connection.TenantId, roleTenantId) ? connection : null;
     }
 
-    private bool IsInRoleTenantScope(string? connectionTenantId, bool isAgnosticRole) =>
-        isAgnosticRole ||
+    private static bool IsInRoleTenantScope(string? connectionTenantId, string roleTenantId) =>
+        string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) ||
         string.Equals(connectionTenantId, ConnectionScope.HostTenantId, StringComparison.Ordinal) ||
-        string.Equals(connectionTenantId.NormalizeTenantId(), tenantAccessor.TenantId.NormalizeTenantId(), StringComparison.Ordinal);
+        string.Equals(connectionTenantId.NormalizeTenantId(), roleTenantId, StringComparison.Ordinal);
 
     /// <summary>A configuration entry that leaves the tenant blank is materialized at host scope.</summary>
     private static string GetConfigurationScopeTenantId(IdentityProviderConnection connection) =>

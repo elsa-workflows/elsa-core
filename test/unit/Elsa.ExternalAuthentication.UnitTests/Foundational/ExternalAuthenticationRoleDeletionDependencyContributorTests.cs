@@ -433,6 +433,44 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Fact]
+    public async Task ImpactIsScopedByTheResolvedRolesTenantRatherThanTheAmbientTenant()
+    {
+        // The ambient tenant is the default tenant (no tenant pushed), which is what an EF host runs as with
+        // multitenancy disabled: the EF role store installs no tenant query filter there and can resolve a
+        // tenant-owned role by ID regardless of the ambient tenant, unlike MemoryRoleStore, which always
+        // filters by the ambient tenant itself. RoleStoreWithoutAmbientTenantFilter stands in for that EF
+        // behavior. The role being deleted belongs to tenant A, so impact must be scoped by that resolved
+        // tenant, not by the unrelated ambient one.
+        var ownConnection = Connection("own-connection", CreateUserPolicy("tenant-a-role"), TenantA);
+        var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("tenant-a-role"), TenantB);
+        var connectionStore = new InMemoryIdentityProviderConnectionStore();
+        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(ownConnection));
+        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(otherTenantConnection));
+        var roleStore = new RoleStoreWithoutAmbientTenantFilter(
+            [new Role { Id = "tenant-a-role", Name = "Tenant A role", TenantId = TenantA, Permissions = [] }]);
+        var roleAuthorizationService = new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator());
+        var services = new ServiceCollection().BuildServiceProvider();
+        var contributor = new ExternalAuthenticationRoleDeletionDependencyContributor(
+            connectionStore,
+            new MutableOptionsMonitor<ExternalAuthenticationOptions>(new ExternalAuthenticationOptions()),
+            [roleAuthorizationService],
+            [roleStore],
+            new InMemoryConnectionRegistryVersionStore(),
+            new ConnectionRevisionCalculator(),
+            new ExternalAuthenticationSecurityNotifier(services),
+            new PermissionEvaluator(),
+            TestTenantAccessor.Default);
+
+        var snapshot = await contributor.InspectAsync("tenant-a-role");
+
+        // Scoped by the role's own tenant (A): tenant A's connection is reported, tenant B's is not. Scoping by
+        // the ambient default tenant instead -- what this test is guarding against -- would report neither.
+        var dependency = Assert.Single(snapshot.Dependencies);
+        Assert.Equal(ownConnection.Id, dependency.OwnerId);
+        Assert.Equal(RoleDeletionDependencyOwnership.Database, dependency.Ownership);
+    }
+
+    [Fact]
     public async Task RoleIdThatResolvesToMoreThanOneRoleAcrossTenantScopesFailsClosed()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user"), TenantA);
@@ -620,6 +658,27 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         public ValueTask<ConnectionMutationResult> UpdateAsync(IdentityProviderConnection connection, long expectedRevision, CancellationToken cancellationToken = default) =>
             inner.UpdateAsync(connection, expectedRevision, cancellationToken);
+    }
+
+    /// <summary>
+    /// Resolves roles by ID alone, regardless of the ambient tenant, standing in for the EF Core role store
+    /// with multitenancy disabled: it installs no tenant query filter and can resolve a tenant-owned role by
+    /// ID no matter which tenant is ambient. <see cref="MemoryRoleStore"/> cannot exercise that scenario
+    /// because it always filters by the ambient tenant itself.
+    /// </summary>
+    private sealed class RoleStoreWithoutAmbientTenantFilter(IReadOnlyCollection<Role> roles) : IRoleStore
+    {
+        public Task AddAsync(Role role, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task SaveAsync(Role role, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+
+        public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default) =>
+            Task.FromResult(roles.FirstOrDefault(x => x.Id == filter.Id));
+
+        public Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default) =>
+            Task.FromResult(roles.Where(x => x.Id == filter.Id));
     }
 
     private sealed class RoleStoreThatRemovesReplacementAfterContributorValidation(
