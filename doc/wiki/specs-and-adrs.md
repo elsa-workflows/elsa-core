@@ -28,6 +28,21 @@ Current ADRs:
 | [0011](../adr/0011-output-conversion-at-binding-is-synchronous.md) | Output conversion occurs synchronously at the binding boundary. |
 | [0012](../adr/0012-output-converters-use-explicit-stable-identities.md) | Output converters use explicit stable identities. |
 | [0013](../adr/0013-output-converter-discovery-is-server-owned.md) | Output converter discovery is server-owned. |
+| [0014](../adr/0014-broker-external-sign-in-through-elsa-server.md) | Broker external sign-in through Elsa Server. |
+| [0015](../adr/0015-compose-a-scoped-connection-registry.md) | Compose a scoped connection registry. |
+| [0016](../adr/0016-extend-authentication-through-deployed-descriptor-providers.md) | Extend authentication through deployed descriptor providers. |
+| [0017](../adr/0017-separate-external-identity-from-elsa-authorization.md) | Separate external identity from Elsa authorization. |
+| [0018](../adr/0018-separate-provider-trust-from-broker-invariants.md) | Separate provider trust from broker invariants. |
+| [0019](../adr/0019-bind-sessions-to-shared-state-and-connection-revisions.md) | Bind sessions to shared state and connection revisions. |
+| [0020](../adr/0020-publish-audit-ready-security-notifications.md) | Publish audit-ready security notifications. |
+| [0021](../adr/0021-identify-host-connections-by-logical-key-and-use-explicit-overrides.md) | Identify host connections by logical key and use explicit overrides. |
+| [0022](../adr/0022-match-unlinked-identities-with-trusted-user-matchers.md) | Match unlinked identities with trusted user matchers. |
+| [0023](../adr/0023-separate-authentication-ui-composition-from-security-administration.md) | Separate authentication UI composition from security administration. |
+| [0024](../adr/0024-use-exact-oidc-discovery-and-deployment-derived-callbacks.md) | Use exact OIDC discovery and deployment-derived callbacks. |
+| [0025](../adr/0025-two-axis-authorization-model.md) | Two-axis authorization model with open resources and open verbs. |
+| [0026](../adr/0026-identity-neutral-user-task-participants.md) | Use identity-neutral participant references for User Tasks. |
+| [0027](../adr/0027-project-user-tasks-from-committed-bookmarks.md) | Project User Tasks from committed workflow bookmarks. |
+| [2026-08-25](../adr/2026-08-25-date-prefixed-adr-identifiers.md) | Identify new ADRs by date instead of a sequential number. |
 
 ## Active And Recent Specs
 
@@ -49,6 +64,8 @@ Current ADRs:
 | [012 output converters](../../specs/012-output-converters/spec.md) | Workflow core | Extensible, explicitly-identified output converters that transform an activity's native output at the binding boundary before writing the destination variable or workflow output. |
 | [012 external authentication](../../specs/012-external-authentication/spec.md) | Security | Server-brokered external identity providers: Identity Provider Connections, OpenID Connect adapter, linked identity resolution, configurable unlinked-identity policies, and EF Core persistence across all providers. |
 | [012 weaver grounding tools](../../specs/012-weaver-grounding-tools/spec.md) | AI | Grounds Weaver in real Elsa server data: activity registry discovery, workflow definition inspection, instance and incident investigation, and proposal-based workflow authoring with validation. |
+| [013 user tasks](../../specs/013-user-tasks/spec.md) | Workflow core | Durable workflow-bound human tasks: `UserTask` activity, candidate/assignee/supervisor roles, guest invitations, form resolution and validation, lifecycle management, REST surface, and persistence. |
+| [013 RBAC authorization model](../../specs/013-rbac-authorization-model/spec.md) | Security | Two-axis `{resource}:{verb}` permission vocabulary, open resource and verb sets, permission descriptor catalog, pattern-based wildcard grants, per-module resource contributions, and the migration from the legacy `verb:resource` strings. |
 
 Each spec folder usually contains:
 
@@ -130,6 +147,25 @@ For runtime behavior, read in this order:
 4. `Elsa.ExternalAuthentication` feature and contracts
 5. `Elsa.ExternalAuthentication.OpenIdConnect` adapter
 6. `Elsa.ExternalAuthentication.Persistence.EFCore` and provider packages
+
+## Reading Order For User Tasks Work
+
+1. [doc/user-tasks.md](../user-tasks.md) — feature overview
+2. [specs/013-user-tasks/spec.md](../../specs/013-user-tasks/spec.md)
+3. [specs/013-user-tasks/plan.md](../../specs/013-user-tasks/plan.md)
+4. [ADR 0026](../adr/0026-identity-neutral-user-task-participants.md) — identity-neutral participant references
+5. [ADR 0027](../adr/0027-project-user-tasks-from-committed-bookmarks.md) — bookmark projection
+6. `Elsa.UserTasks` feature, contracts, and REST endpoints
+7. `Elsa.UserTasks.Persistence.EFCore` and provider packages
+
+## Reading Order For Authorization Model Work
+
+1. [doc/migrations/authorization-model.md](../migrations/authorization-model.md) — migration guide and full permission mapping table
+2. [specs/013-rbac-authorization-model/spec.md](../../specs/013-rbac-authorization-model/spec.md)
+3. [ADR 0025](../adr/0025-two-axis-authorization-model.md) — two-axis model rationale
+4. [Identity, Tenancy, And Security](identity-tenancy-security.md) — API authorization section
+5. `Elsa.Authorization` contracts (resource/verb model and `PermissionMatcher`)
+6. per-module `*ResourcePermissions` constant files
 
 ## Reading Order For BPMN Work
 

@@ -96,7 +96,7 @@ Studio queries:
 GET /descriptors/output-converters?sourceType=Decimal&destinationType=String
 ```
 
-The endpoint requires `read:*` or `read:output-converters`. It returns compatible IDs, declared type names, display metadata, and optional settings schemas. It never exposes converter instances, implementation types, or service lifetimes.
+The endpoint requires `workflows/descriptors/output-converters:view`. It returns compatible IDs, declared type names, display metadata, and optional settings schemas. It never exposes converter instances, implementation types, or service lifetimes.
 
 Studio offers schema-driven fields for simple object schemas and a raw JSON-object editor otherwise. Unknown persisted converter IDs remain visible, and older servers that do not expose discovery do not cause Studio to delete existing configuration.
 

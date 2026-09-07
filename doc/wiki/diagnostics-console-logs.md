@@ -79,7 +79,7 @@ SignalR:
 
 ## Authorization
 
-All endpoints and the SignalR hub require `read:diagnostics:console-logs`, defined in [ConsoleLogsPermissions](../../src/modules/Elsa.Diagnostics.ConsoleLogs/Permissions/ConsoleLogsPermissions.cs).
+All endpoints and the SignalR hub require `diagnostics/console-logs:view`, defined in [ConsoleLogsResourcePermissions](../../src/modules/Elsa.Diagnostics.ConsoleLogs/Permissions/ConsoleLogsResourcePermissions.cs).
 
 ## Safety Boundaries
 
