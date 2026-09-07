@@ -50,17 +50,7 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
         var dispatchingTenant = new Tenant { Id = "tenant-a", Name = "Tenant A" };
         var workerTenant = new Tenant { Id = "tenant-b", Name = "Tenant B" };
 
-        await DispatchAsync(jobId, dispatchingTenant);
-
-        var callback = Assert.Single(_queuedCallbacks);
-        using (_tenantAccessor.PushContext(workerTenant))
-        {
-            await callback(CancellationToken.None);
-            Assert.Same(workerTenant, _tenantAccessor.Tenant);
-        }
-
-        Assert.Equal(dispatchingTenant.Id, _runner.GetObservedTenantId(jobId));
-        Assert.Null(_tenantAccessor.Tenant);
+        await DispatchAndRunUnderWorkerTenantAsync(jobId, dispatchingTenant, workerTenant, callback => callback(CancellationToken.None));
     }
 
     [Fact]
@@ -71,12 +61,49 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
         var workerTenant = new Tenant { Id = "tenant-b", Name = "Tenant B" };
         _runner.ExceptionToThrow = new InvalidOperationException("Runner failure");
 
+        await DispatchAndRunUnderWorkerTenantAsync(
+            jobId,
+            dispatchingTenant,
+            workerTenant,
+            callback => Assert.ThrowsAsync<InvalidOperationException>(() => callback(CancellationToken.None)));
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WhenNoTenantIsPushedAtDispatchTime_UsesDefaultTenant()
+    {
+        const string jobId = "alteration-job";
+
+        await DispatchAsync(jobId, tenant: null);
+
+        var callback = Assert.Single(_queuedCallbacks);
+        await callback(CancellationToken.None);
+
+        // With no tenant pushed at dispatch time, DefaultTenantScopeFactory.CreateScope(null) pushes a null
+        // tenant onto the accessor. DefaultTenantAccessor.TenantId then falls back to Tenant.DefaultTenantId
+        // (an empty string) rather than null, so that is the value the runner observes.
+        Assert.Equal(Tenant.DefaultTenantId, _runner.GetObservedTenantId(jobId));
+        Assert.Null(_tenantAccessor.Tenant);
+    }
+
+    /// <summary>
+    /// Dispatches a job under <paramref name="dispatchingTenant"/>, then runs the single queued callback while a
+    /// different <paramref name="workerTenant"/> is active on the accessor, invoking it via
+    /// <paramref name="runCallbackAsync"/> so callers can assert success or failure. Asserts the tenant behavior
+    /// common to both outcomes: the worker tenant remains active for the duration of the callback, the runner
+    /// observed the dispatching tenant, and the accessor's tenant is restored to null afterward.
+    /// </summary>
+    private async Task DispatchAndRunUnderWorkerTenantAsync(
+        string jobId,
+        Tenant dispatchingTenant,
+        Tenant workerTenant,
+        Func<Func<CancellationToken, Task>, Task> runCallbackAsync)
+    {
         await DispatchAsync(jobId, dispatchingTenant);
 
         var callback = Assert.Single(_queuedCallbacks);
         using (_tenantAccessor.PushContext(workerTenant))
         {
-            await Assert.ThrowsAsync<InvalidOperationException>(() => callback(CancellationToken.None));
+            await runCallbackAsync(callback);
             Assert.Same(workerTenant, _tenantAccessor.Tenant);
         }
 
