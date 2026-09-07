@@ -159,7 +159,7 @@ public sealed class RoleDeletionCoordinator(
 
         if (_atomicRoleStore is not null)
         {
-            if (!await _atomicRoleStore.TryDeleteAsync(new() { Id = roleId }, cancellationToken))
+            if (!await _atomicRoleStore.TryDeleteAsync(roleId, cancellationToken))
                 return new RoleDeletionOperationResult.NotFound();
         }
         else

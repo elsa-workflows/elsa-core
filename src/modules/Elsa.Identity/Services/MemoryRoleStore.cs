@@ -31,24 +31,23 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        await TryDeleteAsync(filter, cancellationToken);
+        var roles = _store.Query(query => Filter(query, filter)).ToList();
+        _store.DeleteMany(roles, GetStorageKey);
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     /// <remarks>
-    /// Each key is removed through the underlying concurrent dictionary, whose removal is a single compare-and-remove
-    /// step. Two callers racing on the same role therefore see one <see langword="true"/> and one
-    /// <see langword="false"/>, rather than both concluding they deleted it.
+    /// The matching role's key is removed through the underlying concurrent dictionary, whose removal is a single
+    /// compare-and-remove step. Two callers racing on the same role ID therefore see one <see langword="true"/> and
+    /// one <see langword="false"/>, rather than both concluding they deleted it.
     /// </remarks>
-    public Task<bool> TryDeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    public Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default)
     {
-        var roles = _store.Query(query => Filter(query, filter)).ToList();
-        var deleted = false;
-
-        foreach (var role in roles)
-            deleted |= _store.Delete(GetStorageKey(role));
+        var role = _store.Query(query => Filter(query, new RoleFilter { Id = roleId })).FirstOrDefault();
+        var deleted = role is not null && _store.Delete(GetStorageKey(role));
 
         return Task.FromResult(deleted);
     }

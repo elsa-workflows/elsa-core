@@ -1,5 +1,3 @@
-using Elsa.Identity.Models;
-
 namespace Elsa.Identity.Contracts;
 
 /// <summary>
@@ -15,16 +13,16 @@ namespace Elsa.Identity.Contracts;
 public interface IRoleStoreWithAtomicDelete
 {
     /// <summary>
-    /// Deletes the roles matching the specified filter in a single atomic operation and reports whether this call
-    /// removed anything.
+    /// Deletes the single role with the given ID within the current tenant scope, atomically, and reports whether
+    /// this call removed it.
     /// </summary>
     /// <remarks>
-    /// Implementations must decide the outcome atomically, so that exactly one of two concurrent calls matching the
-    /// same role observes <see langword="true"/>. Loading the roles and then deleting them in a separate step does
-    /// not satisfy this contract.
+    /// Implementations must decide the outcome atomically, so that exactly one of two concurrent callers for the
+    /// same ID observes <see langword="true"/>. Loading the role and then deleting it in a separate step does not
+    /// satisfy this contract.
     /// </remarks>
-    /// <param name="filter">The filter.</param>
+    /// <param name="roleId">The ID of the role to delete.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns><see langword="true"/> when this call removed at least one role; otherwise, <see langword="false"/>.</returns>
-    Task<bool> TryDeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default);
+    /// <returns><see langword="true"/> when this call removed the role; otherwise, <see langword="false"/>.</returns>
+    Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default);
 }

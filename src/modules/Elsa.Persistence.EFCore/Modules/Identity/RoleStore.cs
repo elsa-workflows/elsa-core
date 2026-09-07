@@ -35,7 +35,7 @@ public class EFCoreRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        await TryDeleteAsync(filter, cancellationToken);
+        await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -44,9 +44,9 @@ public class EFCoreRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// the database's own verdict on which caller removed the row, so two concurrent callers cannot both observe
     /// <see langword="true"/>.
     /// </remarks>
-    public async Task<bool> TryDeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    public async Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default)
     {
-        return await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken) > 0;
+        return await _applicationStore.DeleteWhereAsync(query => Filter(query, new RoleFilter { Id = roleId }), cancellationToken) > 0;
     }
 
     /// <inheritdoc />

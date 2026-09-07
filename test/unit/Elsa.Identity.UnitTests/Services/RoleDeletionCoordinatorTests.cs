@@ -472,7 +472,7 @@ public class RoleDeletionCoordinatorTests
     /// <summary>Finds the role but reports that the delete removed nothing, as the loser of a race would.</summary>
     private sealed class RoleStoreThatDeletesNothing(MemoryRoleStore inner) : LegacyRoleStore(inner), IRoleStoreWithAtomicDelete
     {
-        public Task<bool> TryDeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 
     /// <summary>Holds every caller at the delete until they have all found the role, then lets them race for real.</summary>
@@ -480,12 +480,12 @@ public class RoleDeletionCoordinatorTests
     {
         private readonly Barrier _barrier = new(callers);
 
-        public Task<bool> TryDeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+        public Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default)
         {
             if (!_barrier.SignalAndWait(TimeSpan.FromSeconds(30)))
                 throw new TimeoutException("The concurrent deletions never met at the barrier.");
 
-            return Inner.TryDeleteAsync(filter, cancellationToken);
+            return Inner.TryDeleteAsync(roleId, cancellationToken);
         }
     }
 }
