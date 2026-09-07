@@ -20,9 +20,9 @@ public class V3_6RuntimeMigrationTests
     private const string ActivityExecutionRecordIndexName = "IX_ActivityExecutionRecord_ActivityNodeId";
 
     [Theory]
-    [InlineData(null)]
     [InlineData("Elsa")]
-    public void GenerateScript_PostgreSql_Idempotent_TerminatesDropIndexStatements(string? schema)
+    [InlineData("custom_schema")]
+    public void GenerateScript_PostgreSql_Idempotent_TerminatesDropIndexStatements(string schema)
     {
         var script = GeneratePostgreSqlScript(MigrationsSqlGenerationOptions.Idempotent, schema);
 
@@ -30,9 +30,9 @@ public class V3_6RuntimeMigrationTests
     }
 
     [Theory]
-    [InlineData(null)]
     [InlineData("Elsa")]
-    public void GenerateScript_PostgreSql_Plain_TerminatesDropIndexStatements(string? schema)
+    [InlineData("custom_schema")]
+    public void GenerateScript_PostgreSql_Plain_TerminatesDropIndexStatements(string schema)
     {
         var script = GeneratePostgreSqlScript(MigrationsSqlGenerationOptions.Default, schema);
 
@@ -51,15 +51,16 @@ public class V3_6RuntimeMigrationTests
         AssertDropIndexStatementsAreTerminated(script, schema: null);
     }
 
-    private static string GeneratePostgreSqlScript(MigrationsSqlGenerationOptions options, string? schema)
+    private static string GeneratePostgreSqlScript(MigrationsSqlGenerationOptions options, string schema)
     {
         var migrationsAssembly = typeof(Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime.V3_6).Assembly;
+        var contextOptions = new ElsaDbContextOptions { SchemaName = schema };
 
-        return WithDefaultSchema(schema, () => GenerateScript(
-            builder => builder.UseElsaPostgreSql(migrationsAssembly, "Host=unused"),
+        return GenerateScript(
+            builder => builder.UseElsaPostgreSql(migrationsAssembly, "Host=unused", contextOptions),
             fromMigration: "20250530104953_V3_5",
             toMigration: "20251204150341_V3_6",
-            options));
+            options);
     }
 
     private static string GenerateSqliteScript(MigrationsSqlGenerationOptions options)
@@ -86,23 +87,9 @@ public class V3_6RuntimeMigrationTests
     }
 
     // ElsaDbContextOptions.SchemaName always falls back to ElsaDbContextBase.ElsaSchema ("Elsa") when it
-    // isn't set, so the only way to construct a context whose IElsaDbContextSchema.Schema is null - the
-    // branch the V3_6 migration guards against with `_schema.Schema != null ? "\"{schema}\"." : ""` - is
-    // to temporarily override that process-wide default.
-    private static T WithDefaultSchema<T>(string? schema, Func<T> generate)
-    {
-        var previousSchema = ElsaDbContextBase.ElsaSchema;
-        ElsaDbContextBase.ElsaSchema = schema!;
-        try
-        {
-            return generate();
-        }
-        finally
-        {
-            ElsaDbContextBase.ElsaSchema = previousSchema;
-        }
-    }
-
+    // isn't set, so the branch the V3_6 migration guards against with
+    // `_schema.Schema != null ? "\"{schema}\"." : ""` - a null schema - is unreachable through the
+    // public options and is therefore not covered here.
     private static IServiceProvider CreateServiceProvider() => new ServiceCollection().BuildServiceProvider();
 
     private static void AssertDropIndexStatementsAreTerminated(string script, string? schema, bool requireTrailingEndIf = false)
