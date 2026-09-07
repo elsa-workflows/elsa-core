@@ -31,11 +31,9 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     }
 
     /// <inheritdoc />
-    public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var roles = _store.Query(query => Filter(query, filter)).ToList();
-        _store.DeleteMany(roles, GetStorageKey);
-        return Task.CompletedTask;
+        await TryDeleteAsync(filter, cancellationToken);
     }
 
     /// <inheritdoc />
