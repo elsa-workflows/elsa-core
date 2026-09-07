@@ -433,6 +433,28 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Fact]
+    public async Task ImpactForAnAgnosticRoleThatSharesAnIdWithTheAmbientTenantsRoleIncludesAConnectionOwnedByAnotherTenant()
+    {
+        var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user"), TenantA);
+        var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("workflow-user"), TenantB);
+        var (contributor, _, _) = await CreateContributorAsync(
+            [],
+            [ownConnection, otherTenantConnection],
+            additionalRoles: [new Role { Id = "workflow-user", Name = "Agnostic workflow user", TenantId = Tenant.AgnosticTenantId, Permissions = [] }],
+            tenantAccessor: new TestTenantAccessor(TenantA));
+
+        var snapshot = await contributor.InspectAsync("workflow-user");
+
+        // Tenant A's own "workflow-user" role and an agnostic role sharing that same ID both exist. The wider,
+        // every-tenant scope must win deterministically, so tenant B's reference is reported alongside tenant
+        // A's -- not omitted the way a tenant-scoped role of the same ID would be omitted (see
+        // ImpactExcludesConnectionsOwnedByAnotherTenant).
+        Assert.Equal(
+            [otherTenantConnection.Id, ownConnection.Id],
+            snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
     public async Task RemediationOfAnAgnosticRoleCanRemoveTheReferenceFromAnotherTenantsConnection()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
