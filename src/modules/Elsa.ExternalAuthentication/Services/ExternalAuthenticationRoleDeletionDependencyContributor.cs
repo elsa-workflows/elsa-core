@@ -46,6 +46,12 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     public const string SourceName = "external-authentication";
     public string Source => SourceName;
 
+    /// <summary>
+    /// Match the default DI container's direct-service semantics: when persistence replaces the in-memory
+    /// store, the last registration is the active store.
+    /// </summary>
+    private IRoleStore? ActiveRoleStore => roleStores.LastOrDefault();
+
     public async ValueTask<RoleDeletionDependencySnapshot> InspectAsync(string roleId, CancellationToken cancellationToken = default)
     {
         var isAgnosticRole = await IsAgnosticRoleAsync(roleId, cancellationToken);
@@ -168,9 +174,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
 
                 if (request.SelectedReferences is not null && removesLastDefaultRole)
                 {
-                    // Match the default DI container's direct-service semantics: when persistence
-                    // replaces the in-memory store, the last registration is the active store.
-                    var roleStore = roleStores.LastOrDefault();
+                    var roleStore = ActiveRoleStore;
                     if (roleStore is null)
                         return new RoleReferenceRemovalResult.Failed("replacement_role_unavailable_or_unauthorized", changedOwnerIds);
                     var replacement = await roleStore.FindAsync(new() { Id = request.ReplacementRoleId }, cancellationToken);
@@ -220,9 +224,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     /// </summary>
     private async ValueTask<bool> IsAgnosticRoleAsync(string roleId, CancellationToken cancellationToken)
     {
-        // Match the default DI container's direct-service semantics: when persistence replaces the in-memory
-        // store, the last registration is the active store.
-        var roleStore = roleStores.LastOrDefault();
+        var roleStore = ActiveRoleStore;
         if (roleStore is null)
             return false;
         var role = await roleStore.FindAsync(new() { Id = roleId }, cancellationToken);
@@ -259,7 +261,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
 
     private IReadOnlyCollection<ConnectionScope> GetRoleTenantScopes()
     {
-        var tenantScope = ToScope(tenantAccessor.TenantId.NormalizeTenantId());
+        var tenantScope = ToConnectionScope(tenantAccessor.TenantId.NormalizeTenantId());
         return tenantScope == ConnectionScope.Host ? [ConnectionScope.Host] : [ConnectionScope.Host, tenantScope];
     }
 
@@ -272,7 +274,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     private static string GetConfigurationScopeTenantId(IdentityProviderConnection connection) =>
         string.IsNullOrWhiteSpace(connection.TenantId) ? ConnectionScope.HostTenantId : connection.TenantId;
 
-    private static ConnectionScope ToScope(string tenantId) =>
+    private static ConnectionScope ToConnectionScope(string tenantId) =>
         tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host :
         tenantId.Length == 0 ? ConnectionScope.DefaultTenant :
         new(ConnectionScopeKind.Tenant, tenantId);
