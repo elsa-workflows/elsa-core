@@ -34,15 +34,6 @@ internal class Create(IUserManager userManager, IRoleAuthorizationService roleAu
             request.Roles,
             cancellationToken);
 
-        var response = new Response(
-            result.User.Id,
-            result.User.Name,
-            result.Password,
-            result.User.Roles,
-            result.User.TenantId,
-            result.User.HashedPassword!,
-            result.User.HashedPasswordSalt!);
-
-        await Send.OkAsync(response, cancellationToken);
+        await Send.OkAsync(Response.FromResult(result), cancellationToken);
     }
 }
