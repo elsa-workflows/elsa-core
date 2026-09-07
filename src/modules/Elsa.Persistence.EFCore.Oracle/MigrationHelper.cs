@@ -13,7 +13,7 @@ namespace Elsa.Persistence.EFCore.Oracle;
 /// "this was already done", and skips the work it finds already applied. Re-running a failed migration then converges
 /// on the intended schema instead of failing with, for example, ORA-01430 ("column being added already exists").
 /// </remarks>
-public static class MigrationHelper
+internal static class MigrationHelper
 {
     /// <summary>
     /// The suffix of the temporary column <see cref="ConvertColumnType"/> builds the converted values in. The same
@@ -120,7 +120,9 @@ public static class MigrationHelper
                               """);
 
         if (notNull)
+        {
             SetColumnNotNull(migrationBuilder, schema, table, column);
+        }
     }
 
     /// <summary>
@@ -187,9 +189,19 @@ public static class MigrationHelper
     public static void CreateIndexIfMissing(MigrationBuilder migrationBuilder, IElsaDbContextSchema schema, string name, string table, string[] columns, bool unique = false)
     {
         var columnList = string.Join(", ", columns.Select(x => $"\"{x}\""));
-        var sql = $"CREATE {(unique ? "UNIQUE " : "")}INDEX \"{schema.Schema}\".\"{name}\" ON {QualifyTable(schema, table)} ({columnList})";
+        var createIndex = $"CREATE {(unique ? "UNIQUE " : "")}INDEX \"{schema.Schema}\".\"{name}\" ON {QualifyTable(schema, table)} ({columnList})";
 
-        SqlIgnoringOracleError(migrationBuilder, sql, -955, "ORA-00955: the index already exists, so an earlier run got at least this far.");
+        migrationBuilder.Sql($"""
+                              DECLARE
+                                  l_count INTEGER;
+                              BEGIN
+                                  SELECT COUNT(*) INTO l_count FROM ALL_INDEXES WHERE OWNER = '{schema.Schema}' AND INDEX_NAME = '{name}';
+
+                                  IF l_count = 0 THEN
+                                      EXECUTE IMMEDIATE '{createIndex.Replace("'", "''")}';
+                                  END IF;
+                              END;
+                              """);
     }
 
     /// <summary>

@@ -1,11 +1,8 @@
-using System.Reflection;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.UnitTests;
 
@@ -94,8 +91,10 @@ public class V3_6OracleMigrationTests
         AssertStatementAt(script, $"ALTER TABLE {Qualify(schema, "WorkflowDefinitions")} DROP COLUMN \"OriginalSource\"");
     }
 
-    // The unique trigger index is created before the alteration that used to fail, so a re-run would hit ORA-00955
-    // before ever reaching the column conversion.
+    // The unique trigger index is created before the alteration that used to fail, so a re-run would find it already
+    // there. A left-behind index is guarded against by an ALL_INDEXES lookup rather than by tolerating ORA-00955,
+    // because swallowing that error would also mask a different object already holding the name. The dropped
+    // indexes are guarded by tolerating ORA-01418 instead, since that error is specific to a missing index.
     [Theory]
     [InlineData("Elsa")]
     [InlineData("custom_schema")]
@@ -103,7 +102,7 @@ public class V3_6OracleMigrationTests
     {
         var script = GenerateRuntimeScript(RuntimeV3_5, RuntimeV3_6, schema, MigrationsSqlGenerationOptions.Default);
 
-        AssertToleratesOracleError(script, $"CREATE UNIQUE INDEX \"{schema}\".\"IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId\"", -955);
+        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId", $"CREATE UNIQUE INDEX \"{schema}\".\"IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId\"");
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_WorkflowExecutionLogRecord_ActivityNodeId\"", -1418);
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_ActivityExecutionRecord_ActivityNodeId\"", -1418);
     }
@@ -116,8 +115,8 @@ public class V3_6OracleMigrationTests
         var script = GenerateRuntimeScript(RuntimeV3_6, RuntimeV3_5, schema, MigrationsSqlGenerationOptions.Default);
 
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId\"", -1418);
-        AssertToleratesOracleError(script, $"CREATE INDEX \"{schema}\".\"IX_WorkflowExecutionLogRecord_ActivityNodeId\"", -955);
-        AssertToleratesOracleError(script, $"CREATE INDEX \"{schema}\".\"IX_ActivityExecutionRecord_ActivityNodeId\"", -955);
+        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_WorkflowExecutionLogRecord_ActivityNodeId", $"CREATE INDEX \"{schema}\".\"IX_WorkflowExecutionLogRecord_ActivityNodeId\"");
+        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_ActivityExecutionRecord_ActivityNodeId", $"CREATE INDEX \"{schema}\".\"IX_ActivityExecutionRecord_ActivityNodeId\"");
     }
 
     /// <summary>
@@ -183,6 +182,22 @@ public class V3_6OracleMigrationTests
         Assert.True(guard >= 0, $"Expected '{statementPrefix}' to be followed by a handler that swallows ORA{sqlCode}:\n{script}");
     }
 
+    // Index creation is guarded by an ALL_INDEXES lookup rather than by tolerating ORA-00955, because swallowing
+    // that error would also mask a different object already holding the name.
+    private static void AssertIndexCreationGuardedByExistenceCheck(string script, string schema, string indexName, string createStatementPrefix)
+    {
+        Assert.Contains($"SELECT COUNT(*) INTO l_count FROM ALL_INDEXES WHERE OWNER = '{schema}' AND INDEX_NAME = '{indexName}'", script, StringComparison.Ordinal);
+
+        var lookup = AssertStatementAt(script, $"FROM ALL_INDEXES WHERE OWNER = '{schema}' AND INDEX_NAME = '{indexName}'");
+        var guard = script.IndexOf("IF l_count = 0 THEN", lookup, StringComparison.Ordinal);
+
+        Assert.True(guard >= 0, $"Expected the lookup for \"{indexName}\" to be followed by an 'IF l_count = 0 THEN' guard:\n{script}");
+
+        var create = AssertStatementAt(script, createStatementPrefix);
+
+        Assert.True(create > guard, $"Expected '{createStatementPrefix}' to appear inside the 'IF l_count = 0 THEN' guard for \"{indexName}\":\n{script}");
+    }
+
     private static int AssertStatementAt(string script, string statement)
     {
         var index = script.IndexOf(statement, StringComparison.Ordinal);
@@ -195,37 +210,16 @@ public class V3_6OracleMigrationTests
     private static string Qualify(string schema, string table) => $"\"{schema}\".\"{table}\"";
 
     private static string GenerateManagementScript(string fromMigration, string toMigration, string schema, MigrationsSqlGenerationOptions options) =>
-        GenerateScript<ManagementElsaDbContext>(
-            (dbContextOptions, serviceProvider) => new(dbContextOptions, serviceProvider),
-            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.V3_6).Assembly,
+        MigrationScriptGenerator.Generate<ManagementElsaDbContext>(
+            builder => builder.UseElsaOracle(typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.V3_6).Assembly, "Data Source=unused", new ElsaDbContextOptions { SchemaName = schema }),
             fromMigration,
             toMigration,
-            schema,
             options);
 
     private static string GenerateRuntimeScript(string fromMigration, string toMigration, string schema, MigrationsSqlGenerationOptions options) =>
-        GenerateScript<RuntimeElsaDbContext>(
-            (dbContextOptions, serviceProvider) => new(dbContextOptions, serviceProvider),
-            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Runtime.V3_6).Assembly,
+        MigrationScriptGenerator.Generate<RuntimeElsaDbContext>(
+            builder => builder.UseElsaOracle(typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Runtime.V3_6).Assembly, "Data Source=unused", new ElsaDbContextOptions { SchemaName = schema }),
             fromMigration,
             toMigration,
-            schema,
             options);
-
-    private static string GenerateScript<TDbContext>(
-        Func<DbContextOptions<TDbContext>, IServiceProvider, TDbContext> createDbContext,
-        Assembly migrationsAssembly,
-        string fromMigration,
-        string toMigration,
-        string schema,
-        MigrationsSqlGenerationOptions options)
-        where TDbContext : DbContext
-    {
-        var optionsBuilder = new DbContextOptionsBuilder<TDbContext>();
-        optionsBuilder.UseElsaOracle(migrationsAssembly, "Data Source=unused", new ElsaDbContextOptions { SchemaName = schema });
-
-        using var dbContext = createDbContext(optionsBuilder.Options, new ServiceCollection().BuildServiceProvider());
-
-        return dbContext.GetService<IMigrator>().GenerateScript(fromMigration: fromMigration, toMigration: toMigration, options: options);
-    }
 }

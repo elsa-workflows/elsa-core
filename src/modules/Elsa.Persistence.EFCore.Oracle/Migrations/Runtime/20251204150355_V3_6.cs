@@ -26,6 +26,9 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // The original CreateIndex call passed filter: "\"Hash\" IS NOT NULL", but the Oracle EF provider never
+            // emitted it - Oracle has no partial indexes - so this unfiltered statement reproduces what the provider
+            // was actually generating (verified against the pre-fix generated script).
             MigrationHelper.CreateIndexIfMissing(
                 migrationBuilder,
                 _schema,
