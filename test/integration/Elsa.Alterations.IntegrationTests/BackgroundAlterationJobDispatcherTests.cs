@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Services;
@@ -8,60 +9,129 @@ using NSubstitute;
 
 namespace Elsa.Alterations.IntegrationTests;
 
-public class BackgroundAlterationJobDispatcherTests
+public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
 {
-    [Fact]
-    public async Task DispatchAsync_WhenQueuedWorkRunsAfterDispatchScopeEnds_PreservesTenant()
+    private readonly List<Func<CancellationToken, Task>> _queuedCallbacks = [];
+    private readonly DefaultTenantAccessor _tenantAccessor;
+    private readonly RecordingAlterationJobRunner _runner;
+    private readonly ServiceProvider _serviceProvider;
+
+    public BackgroundAlterationJobDispatcherTests()
     {
-        const string jobId = "alteration-job";
-        Func<CancellationToken, Task>? queuedCallback = null;
         var jobQueue = Substitute.For<IJobQueue>();
         jobQueue
             .Enqueue(Arg.Any<Func<CancellationToken, Task>>())
             .Returns(callInfo =>
             {
-                queuedCallback = callInfo.Arg<Func<CancellationToken, Task>>();
-                return "queued-job";
+                var callback = callInfo.Arg<Func<CancellationToken, Task>>();
+                _queuedCallbacks.Add(callback);
+                return $"queued-job-{_queuedCallbacks.Count}";
             });
 
-        var tenantAccessor = new DefaultTenantAccessor();
-        var runner = new RecordingAlterationJobRunner(tenantAccessor);
+        _tenantAccessor = new DefaultTenantAccessor();
+        _runner = new RecordingAlterationJobRunner(_tenantAccessor);
         var services = new ServiceCollection()
             .AddSingleton<IJobQueue>(jobQueue)
-            .AddSingleton<ITenantAccessor>(tenantAccessor)
+            .AddSingleton<ITenantAccessor>(_tenantAccessor)
             .AddSingleton<ITenantScopeFactory, DefaultTenantScopeFactory>()
-            .AddScoped<IAlterationJobRunner>(_ => runner)
+            .AddScoped<IAlterationJobRunner>(_ => _runner)
             .AddScoped<BackgroundAlterationJobDispatcher>();
-        await using var serviceProvider = services.BuildServiceProvider(validateScopes: true);
+        _serviceProvider = services.BuildServiceProvider(validateScopes: true);
+    }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+
+    public async Task DisposeAsync() => await _serviceProvider.DisposeAsync();
+
+    [Fact]
+    public async Task DispatchAsync_WhenQueuedWorkRunsAfterDispatchScopeEnds_PreservesTenant()
+    {
+        const string jobId = "alteration-job";
         var dispatchingTenant = new Tenant { Id = "tenant-a", Name = "Tenant A" };
         var workerTenant = new Tenant { Id = "tenant-b", Name = "Tenant B" };
 
-        using (tenantAccessor.PushContext(dispatchingTenant))
-        using (var dispatchScope = serviceProvider.CreateScope())
+        await DispatchAsync(jobId, dispatchingTenant);
+
+        var callback = Assert.Single(_queuedCallbacks);
+        using (_tenantAccessor.PushContext(workerTenant))
+        {
+            await callback(CancellationToken.None);
+            Assert.Same(workerTenant, _tenantAccessor.Tenant);
+        }
+
+        Assert.Equal(dispatchingTenant.Id, _runner.GetObservedTenantId(jobId));
+        Assert.Null(_tenantAccessor.Tenant);
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WhenRunnerThrows_StillRestoresWorkerTenant()
+    {
+        const string jobId = "alteration-job";
+        var dispatchingTenant = new Tenant { Id = "tenant-a", Name = "Tenant A" };
+        var workerTenant = new Tenant { Id = "tenant-b", Name = "Tenant B" };
+        _runner.ExceptionToThrow = new InvalidOperationException("Runner failure");
+
+        await DispatchAsync(jobId, dispatchingTenant);
+
+        var callback = Assert.Single(_queuedCallbacks);
+        using (_tenantAccessor.PushContext(workerTenant))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => callback(CancellationToken.None));
+            Assert.Same(workerTenant, _tenantAccessor.Tenant);
+        }
+
+        Assert.Equal(dispatchingTenant.Id, _runner.GetObservedTenantId(jobId));
+        Assert.Null(_tenantAccessor.Tenant);
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WhenConcurrentJobsBelongToDifferentTenants_TenantsAreNotExchanged()
+    {
+        const string jobAId = "alteration-job-a";
+        const string jobBId = "alteration-job-b";
+        var tenantA = new Tenant { Id = "tenant-a", Name = "Tenant A" };
+        var tenantB = new Tenant { Id = "tenant-b", Name = "Tenant B" };
+
+        await DispatchAsync(jobAId, tenantA);
+        await DispatchAsync(jobBId, tenantB);
+
+        Assert.Equal(2, _queuedCallbacks.Count);
+        var callbackA = _queuedCallbacks[0];
+        var callbackB = _queuedCallbacks[1];
+
+        await Task.WhenAll(callbackA(CancellationToken.None), callbackB(CancellationToken.None));
+
+        Assert.Equal(tenantA.Id, _runner.GetObservedTenantId(jobAId));
+        Assert.Equal(tenantB.Id, _runner.GetObservedTenantId(jobBId));
+    }
+
+    private async Task DispatchAsync(string jobId, Tenant? tenant)
+    {
+        using (_tenantAccessor.PushContext(tenant))
+        using (var dispatchScope = _serviceProvider.CreateScope())
         {
             var dispatcher = dispatchScope.ServiceProvider.GetRequiredService<BackgroundAlterationJobDispatcher>();
             await dispatcher.DispatchAsync(jobId);
         }
-
-        var callback = Assert.IsType<Func<CancellationToken, Task>>(queuedCallback);
-        using (tenantAccessor.PushContext(workerTenant))
-        {
-            await callback(CancellationToken.None);
-            Assert.Same(workerTenant, tenantAccessor.Tenant);
-        }
-
-        Assert.Equal(dispatchingTenant.Id, runner.ObservedTenantId);
-        Assert.Null(tenantAccessor.Tenant);
     }
 
     private sealed class RecordingAlterationJobRunner(ITenantAccessor tenantAccessor) : IAlterationJobRunner
     {
-        public string? ObservedTenantId { get; private set; }
+        private readonly ConcurrentDictionary<string, string?> _observedTenantIdsByJobId = new();
 
-        public Task<AlterationJob> RunAsync(string jobId, CancellationToken cancellationToken = default)
+        public Exception? ExceptionToThrow { get; set; }
+
+        public string? GetObservedTenantId(string jobId) => _observedTenantIdsByJobId.TryGetValue(jobId, out var tenantId) ? tenantId : null;
+
+        public async Task<AlterationJob> RunAsync(string jobId, CancellationToken cancellationToken = default)
         {
-            ObservedTenantId = tenantAccessor.TenantId;
-            return Task.FromResult(new AlterationJob { Id = jobId });
+            await Task.Yield();
+            _observedTenantIdsByJobId[jobId] = tenantAccessor.TenantId;
+
+            if (ExceptionToThrow is not null)
+                throw ExceptionToThrow;
+
+            return new AlterationJob { Id = jobId };
         }
     }
 }
