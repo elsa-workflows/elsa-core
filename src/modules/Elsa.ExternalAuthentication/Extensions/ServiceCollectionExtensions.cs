@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Options;
@@ -57,6 +58,11 @@ public static class ServiceCollectionExtensions
         services.AddDataProtection();
         services.AddRateLimiter(_ => { });
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<RateLimiterOptions>, ConfigureExternalAuthenticationRateLimiterOptions>());
+
+        // The module reads the ambient tenant outside the multitenancy feature -- connection scoping and the
+        // role-deletion contributor's tenant boundary -- so it depends on an accessor whether or not a host
+        // enabled multitenancy. TryAdd keeps a host's own registration.
+        services.TryAddSingleton<ITenantAccessor, DefaultTenantAccessor>();
 
         services.TryAddSingleton<ConnectionRevisionCalculator>();
         services.TryAddSingleton<FinalLoginPathGuard>();
