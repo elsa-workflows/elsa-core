@@ -25,7 +25,8 @@ public class UserManager(
         CancellationToken cancellationToken = default)
     {
         var id = identityGenerator.GenerateId();
-        var plainTextPassword = string.IsNullOrWhiteSpace(password) ? secretGenerator.Generate() : password.Trim();
+        var isPasswordGenerated = string.IsNullOrWhiteSpace(password);
+        var plainTextPassword = isPasswordGenerated ? secretGenerator.Generate() : password!.Trim();
         var hashedPassword = secretHasher.HashSecret(plainTextPassword);
 
         var user = new User
@@ -42,6 +43,6 @@ public class UserManager(
 
         await userStore.SaveAsync(user, cancellationToken);
 
-        return new CreateUserResult(user, plainTextPassword);
+        return new CreateUserResult(user, plainTextPassword, isPasswordGenerated);
     }
 }
