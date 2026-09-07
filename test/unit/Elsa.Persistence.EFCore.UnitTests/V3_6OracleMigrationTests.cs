@@ -106,7 +106,7 @@ public class V3_6OracleMigrationTests
     {
         var script = GenerateRuntimeScript(RuntimeV3_5, RuntimeV3_6, schema, MigrationsSqlGenerationOptions.Default);
 
-        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId", $"CREATE UNIQUE INDEX \"{schema}\".\"IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId\"");
+        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId", "Triggers", new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" }, unique: true);
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_WorkflowExecutionLogRecord_ActivityNodeId\"", -1418);
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_ActivityExecutionRecord_ActivityNodeId\"", -1418);
     }
@@ -119,8 +119,30 @@ public class V3_6OracleMigrationTests
         var script = GenerateRuntimeScript(RuntimeV3_6, RuntimeV3_5, schema, MigrationsSqlGenerationOptions.Default);
 
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId\"", -1418);
-        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_WorkflowExecutionLogRecord_ActivityNodeId", $"CREATE INDEX \"{schema}\".\"IX_WorkflowExecutionLogRecord_ActivityNodeId\"");
-        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_ActivityExecutionRecord_ActivityNodeId", $"CREATE INDEX \"{schema}\".\"IX_ActivityExecutionRecord_ActivityNodeId\"");
+        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_WorkflowExecutionLogRecord_ActivityNodeId", "WorkflowExecutionLogRecords", new[] { "ActivityNodeId" }, unique: false);
+        AssertIndexCreationGuardedByExistenceCheck(script, schema, "IX_ActivityExecutionRecord_ActivityNodeId", "ActivityExecutionRecords", new[] { "ActivityNodeId" }, unique: false);
+    }
+
+    // The upgraded NCLOB column permits values longer than the NVARCHAR2(450) the downgrade converts back to.
+    // Copying such a value would silently truncate it, so the length is checked - while the column is still a LOB -
+    // and the downgrade refused before any data is copied.
+    [Theory]
+    [InlineData("Elsa")]
+    [InlineData("custom_schema")]
+    public void RuntimeDown_RefusesToTruncateOversizedActivityNodeIdBeforeConverting(string schema)
+    {
+        var script = GenerateRuntimeScript(RuntimeV3_6, RuntimeV3_5, schema, MigrationsSqlGenerationOptions.Default);
+
+        foreach (var table in new[] { "WorkflowExecutionLogRecords", "ActivityExecutionRecords" })
+        {
+            var qualifiedTable = Qualify(schema, table);
+            var lengthCheck = AssertStatementAt(script, $"SELECT COUNT(*) FROM {qualifiedTable} WHERE DBMS_LOB.GETLENGTH(\"ActivityNodeId\") > 450");
+            var conversion = AssertStatementAt(script, $"ALTER TABLE {qualifiedTable} ADD (\"ActivityNodeId_New\" NVARCHAR2(450))");
+
+            Assert.True(lengthCheck < conversion, $"Expected the length check for \"ActivityNodeId\" on {qualifiedTable} to run before the conversion, but found the check at {lengthCheck} and the conversion at {conversion}:\n{script}");
+        }
+
+        Assert.Contains("RAISE_APPLICATION_ERROR(-20004,", script, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -187,8 +209,11 @@ public class V3_6OracleMigrationTests
     }
 
     // Index creation is guarded by an ALL_INDEXES lookup rather than by tolerating ORA-00955, because swallowing
-    // that error would also mask a different object already holding the name.
-    private static void AssertIndexCreationGuardedByExistenceCheck(string script, string schema, string indexName, string createStatementPrefix)
+    // that error would also mask a different object already holding the name. When an index with that name already
+    // exists, its table, uniqueness and ordered column list must also be validated against ALL_IND_COLUMNS via
+    // LISTAGG, so that a same-named index left behind by schema drift or manual recovery is not mistaken for a
+    // completed run.
+    private static void AssertIndexCreationGuardedByExistenceCheck(string script, string schema, string indexName, string table, string[] columns, bool unique)
     {
         Assert.Contains($"SELECT COUNT(*) INTO l_count FROM ALL_INDEXES WHERE OWNER = '{schema}' AND INDEX_NAME = '{indexName}'", script, StringComparison.Ordinal);
 
@@ -197,9 +222,16 @@ public class V3_6OracleMigrationTests
 
         Assert.True(guard >= 0, $"Expected the lookup for \"{indexName}\" to be followed by an 'IF l_count = 0 THEN' guard:\n{script}");
 
+        var createStatementPrefix = $"CREATE {(unique ? "UNIQUE " : "")}INDEX \"{schema}\".\"{indexName}\"";
         var create = AssertStatementAt(script, createStatementPrefix);
 
         Assert.True(create > guard, $"Expected '{createStatementPrefix}' to appear inside the 'IF l_count = 0 THEN' guard for \"{indexName}\":\n{script}");
+
+        var expectedColumns = string.Join(",", columns);
+        var expectedUniqueness = unique ? "UNIQUE" : "NONUNIQUE";
+
+        Assert.Contains($"SELECT LISTAGG(COLUMN_NAME, ',') WITHIN GROUP (ORDER BY COLUMN_POSITION) INTO l_columns FROM ALL_IND_COLUMNS WHERE INDEX_OWNER = '{schema}' AND INDEX_NAME = '{indexName}'", script, StringComparison.Ordinal);
+        Assert.Contains($"l_table_name != '{table}' OR l_uniqueness != '{expectedUniqueness}' OR l_columns != '{expectedColumns}'", script, StringComparison.Ordinal);
     }
 
     private static int AssertStatementAt(string script, string statement)

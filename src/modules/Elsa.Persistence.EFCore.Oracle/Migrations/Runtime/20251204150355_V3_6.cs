@@ -75,6 +75,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
         private void ConvertActivityNodeIdToNVarchar2(MigrationBuilder migrationBuilder, string table)
         {
+            // The upgraded NCLOB column permits values longer than the NVARCHAR2(450) the downgrade converts back
+            // to. Copying such a value would silently truncate it, so this fails the downgrade first instead.
+            MigrationHelper.EnsureLobLengthAtMost(migrationBuilder, _schema, table, "ActivityNodeId", 450);
+
             MigrationHelper.ConvertColumnType(
                 migrationBuilder,
                 _schema,

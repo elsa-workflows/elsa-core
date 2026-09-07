@@ -126,6 +126,49 @@ internal static class MigrationHelper
     }
 
     /// <summary>
+    /// Raises an error if any value stored in <paramref name="column"/> is longer than <paramref name="maxLength"/>
+    /// characters, so that <see cref="ConvertColumnType"/> converting a LOB column down to a bounded
+    /// <c>NVARCHAR2</c> fails before it copies - and so silently truncates - a value that does not fit.
+    /// </summary>
+    /// <remarks>
+    /// The check only runs while <paramref name="column"/> is still recorded as <c>NCLOB</c> or <c>CLOB</c> in
+    /// <c>ALL_TAB_COLUMNS</c>: once the conversion has landed the datatype itself already enforces the length, and a
+    /// static reference to <c>DBMS_LOB.GETLENGTH</c> against a non-LOB column would fail to compile even inside a
+    /// branch that never runs, so the length query itself is dynamic SQL to defer that type check to when the guard
+    /// actually applies. That also makes a re-run after the conversion has completed a no-op, consistent with every
+    /// other helper in this class.
+    /// </remarks>
+    /// <param name="migrationBuilder">The migration builder to emit into.</param>
+    /// <param name="schema">The Elsa schema the table lives in.</param>
+    /// <param name="table">The unquoted table name.</param>
+    /// <param name="column">The unquoted column name.</param>
+    /// <param name="maxLength">The maximum number of characters the target <c>NVARCHAR2</c> column can hold.</param>
+    public static void EnsureLobLengthAtMost(MigrationBuilder migrationBuilder, IElsaDbContextSchema schema, string table, string column, int maxLength)
+    {
+        var qualifiedTable = QualifyTable(schema, table);
+
+        migrationBuilder.Sql($"""
+                              DECLARE
+                                  l_data_type ALL_TAB_COLUMNS.DATA_TYPE%TYPE;
+                                  l_count INTEGER;
+                              BEGIN
+                                  SELECT DATA_TYPE INTO l_data_type FROM ALL_TAB_COLUMNS WHERE OWNER = '{schema.Schema}' AND TABLE_NAME = '{table}' AND COLUMN_NAME = '{column}';
+
+                                  IF l_data_type IN ('NCLOB', 'CLOB') THEN
+                                      EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM {qualifiedTable} WHERE DBMS_LOB.GETLENGTH("{column}") > {maxLength}' INTO l_count;
+
+                                      IF l_count > 0 THEN
+                                          RAISE_APPLICATION_ERROR(-20004, l_count || ' row(s) in {qualifiedTable} have "{column}" values longer than {maxLength} characters; they cannot be stored in NVARCHAR2({maxLength}). Shorten or remove them before downgrading.');
+                                      END IF;
+                                  END IF;
+                              EXCEPTION
+                                  WHEN NO_DATA_FOUND THEN
+                                      NULL;
+                              END;
+                              """);
+    }
+
+    /// <summary>
     /// Adds a column unless it is already there, so that a run following a partially applied one does not fail with
     /// ORA-01430 ("column being added already exists in table").
     /// </summary>
@@ -178,7 +221,10 @@ internal static class MigrationHelper
 
     /// <summary>
     /// Creates an index unless it is already there, so that a run following a partially applied one does not fail with
-    /// ORA-00955 ("name is already used by an existing object").
+    /// ORA-00955 ("name is already used by an existing object"). When an index with that name already exists, its
+    /// table, uniqueness and ordered column list are validated against what is being requested, so that an index
+    /// schema drift or manual recovery left behind under the same name is not mistaken for the one this migration
+    /// means to create.
     /// </summary>
     /// <param name="migrationBuilder">The migration builder to emit into.</param>
     /// <param name="schema">The Elsa schema the table lives in.</param>
@@ -190,15 +236,27 @@ internal static class MigrationHelper
     {
         var columnList = string.Join(", ", columns.Select(x => $"\"{x}\""));
         var createIndex = $"CREATE {(unique ? "UNIQUE " : "")}INDEX \"{schema.Schema}\".\"{name}\" ON {QualifyTable(schema, table)} ({columnList})";
+        var expectedUniqueness = unique ? "UNIQUE" : "NONUNIQUE";
+        var expectedColumns = string.Join(",", columns);
 
         migrationBuilder.Sql($"""
                               DECLARE
                                   l_count INTEGER;
+                                  l_table_name ALL_INDEXES.TABLE_NAME%TYPE;
+                                  l_uniqueness ALL_INDEXES.UNIQUENESS%TYPE;
+                                  l_columns VARCHAR2(4000);
                               BEGIN
                                   SELECT COUNT(*) INTO l_count FROM ALL_INDEXES WHERE OWNER = '{schema.Schema}' AND INDEX_NAME = '{name}';
 
                                   IF l_count = 0 THEN
                                       EXECUTE IMMEDIATE '{createIndex.Replace("'", "''")}';
+                                  ELSE
+                                      SELECT TABLE_NAME, UNIQUENESS INTO l_table_name, l_uniqueness FROM ALL_INDEXES WHERE OWNER = '{schema.Schema}' AND INDEX_NAME = '{name}';
+                                      SELECT LISTAGG(COLUMN_NAME, ',') WITHIN GROUP (ORDER BY COLUMN_POSITION) INTO l_columns FROM ALL_IND_COLUMNS WHERE INDEX_OWNER = '{schema.Schema}' AND INDEX_NAME = '{name}';
+
+                                      IF l_table_name != '{table}' OR l_uniqueness != '{expectedUniqueness}' OR l_columns != '{expectedColumns}' THEN
+                                          RAISE_APPLICATION_ERROR(-20005, 'Index "{schema.Schema}"."{name}" already exists but does not match the expected definition (table {table}, {expectedUniqueness}, columns {expectedColumns}); found table ' || l_table_name || ', ' || l_uniqueness || ', columns ' || l_columns || '. Drop or fix the existing index before running this migration.');
+                                      END IF;
                                   END IF;
                               END;
                               """);
