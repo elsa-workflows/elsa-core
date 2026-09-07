@@ -64,6 +64,34 @@ public class ImportAuthorizationTests : AppComponentTest
         await AssertDefinitionUnchangedAsync(readOnlyDefinitionId, "ReadOnly Original", isReadonly: true);
     }
 
+    [Fact]
+    public async Task ImportNewReadOnlyDefinition_ShouldSucceedAndPersistAsReadOnly()
+    {
+        var definitionId = $"new-readonly-import-{Guid.NewGuid():N}";
+
+        var importedDefinition = await _client.ImportAsync(CreateImportModel(definitionId, "New ReadOnly", isReadonly: true));
+
+        Assert.True(importedDefinition.IsReadonly);
+        await AssertDefinitionUnchangedAsync(definitionId, "New ReadOnly", isReadonly: true);
+    }
+
+    [Fact]
+    public async Task ImportFilesWithNewReadOnlyDefinition_ShouldSucceedAndPersistAsReadOnly()
+    {
+        var definitionId = $"new-readonly-import-files-{Guid.NewGuid():N}";
+
+        await using var stream = CreateImportStream(definitionId, "New ReadOnly", isReadonly: true);
+        var files = new List<StreamPart>
+        {
+            new(stream, "readonly.json", "application/json")
+        };
+
+        var response = await _client.ImportFilesAsync(files);
+
+        Assert.Equal(1, response.Count);
+        await AssertDefinitionUnchangedAsync(definitionId, "New ReadOnly", isReadonly: true);
+    }
+
     private async Task SaveDefinitionAsync(string definitionId, string name, bool isReadonly = false)
     {
         await _store.SaveAsync(new WorkflowDefinitionEntity
@@ -91,18 +119,19 @@ public class ImportAuthorizationTests : AppComponentTest
         Assert.Equal(isReadonly, definition.IsReadonly);
     }
 
-    private static WorkflowDefinitionModel CreateImportModel(string definitionId, string name)
+    private static WorkflowDefinitionModel CreateImportModel(string definitionId, string name, bool isReadonly = false)
     {
         return new()
         {
             DefinitionId = definitionId,
-            Name = name
+            Name = name,
+            IsReadonly = isReadonly
         };
     }
 
-    private static MemoryStream CreateImportStream(string definitionId, string name)
+    private static MemoryStream CreateImportStream(string definitionId, string name, bool isReadonly = false)
     {
-        var json = JsonSerializer.Serialize(CreateImportModel(definitionId, name), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var json = JsonSerializer.Serialize(CreateImportModel(definitionId, name, isReadonly), new JsonSerializerOptions(JsonSerializerDefaults.Web));
         return new(Encoding.UTF8.GetBytes(json));
     }
 }
