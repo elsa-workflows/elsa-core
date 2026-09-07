@@ -132,11 +132,11 @@ internal static class MigrationHelper
     /// </summary>
     /// <remarks>
     /// The check only runs while <paramref name="column"/> is still recorded as <c>NCLOB</c> or <c>CLOB</c> in
-    /// <c>ALL_TAB_COLUMNS</c>: once the conversion has landed the datatype itself already enforces the length, and a
-    /// static reference to <c>DBMS_LOB.GETLENGTH</c> against a non-LOB column would fail to compile even inside a
-    /// branch that never runs, so the length query itself is dynamic SQL to defer that type check to when the guard
-    /// actually applies. That also makes a re-run after the conversion has completed a no-op, consistent with every
-    /// other helper in this class.
+    /// <c>ALL_TAB_COLUMNS</c>: once the conversion has landed the datatype itself already enforces the length, and
+    /// the length query itself is issued through <c>EXECUTE IMMEDIATE</c> so the block takes no compile-time
+    /// dependency on the column's current datatype, keeping the migration re-runnable regardless of which datatype
+    /// the column has when the block is parsed. That also makes a re-run after the conversion has completed a
+    /// no-op, consistent with every other helper in this class.
     /// </remarks>
     /// <param name="migrationBuilder">The migration builder to emit into.</param>
     /// <param name="schema">The Elsa schema the table lives in.</param>
