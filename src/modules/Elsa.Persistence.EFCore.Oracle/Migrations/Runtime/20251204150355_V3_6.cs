@@ -50,6 +50,13 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            // The upgraded NCLOB column permits values longer than the NVARCHAR2(450) the downgrade converts back
+            // to. Copying such a value would silently truncate it, so both tables are preflighted for oversized
+            // values before any statement of the downgrade runs - including the trigger-index drop below - so that
+            // an oversized value in either table is caught before Oracle has committed any DDL.
+            MigrationHelper.EnsureLobLengthAtMost(migrationBuilder, _schema, "WorkflowExecutionLogRecords", "ActivityNodeId", 450);
+            MigrationHelper.EnsureLobLengthAtMost(migrationBuilder, _schema, "ActivityExecutionRecords", "ActivityNodeId", 450);
+
             MigrationHelper.DropIndexIfPresent(migrationBuilder, _schema, "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId");
 
             ConvertActivityNodeIdToNVarchar2(migrationBuilder, "WorkflowExecutionLogRecords");
@@ -75,10 +82,6 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
         private void ConvertActivityNodeIdToNVarchar2(MigrationBuilder migrationBuilder, string table)
         {
-            // The upgraded NCLOB column permits values longer than the NVARCHAR2(450) the downgrade converts back
-            // to. Copying such a value would silently truncate it, so this fails the downgrade first instead.
-            MigrationHelper.EnsureLobLengthAtMost(migrationBuilder, _schema, table, "ActivityNodeId", 450);
-
             MigrationHelper.ConvertColumnType(
                 migrationBuilder,
                 _schema,

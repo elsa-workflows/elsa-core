@@ -111,6 +111,23 @@ public class V3_6OracleMigrationTests
         AssertToleratesOracleError(script, $"DROP INDEX \"{schema}\".\"IX_ActivityExecutionRecord_ActivityNodeId\"", -1418);
     }
 
+    // A valid quoted Oracle schema can contain an apostrophe (for example "O'Brien"). OWNER = '...' comparisons must
+    // double it to stay inside their single-quoted literal, and "..." identifiers embedded inside an EXECUTE
+    // IMMEDIATE body - itself a single-quoted literal - must have their apostrophe doubled a second time.
+    [Fact]
+    public void RuntimeUp_EscapesSchemaNameContainingAnApostrophe()
+    {
+        const string schema = "O'Brien";
+
+        var script = GenerateRuntimeScript(RuntimeV3_5, RuntimeV3_6, schema, MigrationsSqlGenerationOptions.Default);
+
+        Assert.Contains("OWNER = 'O''Brien'", script, StringComparison.Ordinal);
+        Assert.Contains("ON \"O''Brien\".\"Triggers\"", script, StringComparison.Ordinal);
+
+        // The invalid, unescaped form must never appear.
+        Assert.DoesNotContain("'O'Brien'", script, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("Elsa")]
     [InlineData("custom_schema")]
@@ -124,8 +141,9 @@ public class V3_6OracleMigrationTests
     }
 
     // The upgraded NCLOB column permits values longer than the NVARCHAR2(450) the downgrade converts back to.
-    // Copying such a value would silently truncate it, so the length is checked - while the column is still a LOB -
-    // and the downgrade refused before any data is copied.
+    // Copying such a value would silently truncate it, so both tables are preflighted for oversized values -
+    // while their columns are still LOBs - before any statement of the downgrade runs, and the downgrade is
+    // refused before any data is copied or any DDL is committed.
     [Theory]
     [InlineData("Elsa")]
     [InlineData("custom_schema")]
@@ -133,13 +151,13 @@ public class V3_6OracleMigrationTests
     {
         var script = GenerateRuntimeScript(RuntimeV3_6, RuntimeV3_5, schema, MigrationsSqlGenerationOptions.Default);
 
-        foreach (var table in new[] { "WorkflowExecutionLogRecords", "ActivityExecutionRecords" })
-        {
-            var qualifiedTable = Qualify(schema, table);
-            var lengthCheck = AssertStatementAt(script, $"SELECT COUNT(*) FROM {qualifiedTable} WHERE DBMS_LOB.GETLENGTH(\"ActivityNodeId\") > 450");
-            var conversion = AssertStatementAt(script, $"ALTER TABLE {qualifiedTable} ADD (\"ActivityNodeId_New\" NVARCHAR2(450))");
+        var firstDowngradeStatement = AssertStatementAt(script, $"DROP INDEX \"{schema}\".\"IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId\"");
 
-            Assert.True(lengthCheck < conversion, $"Expected the length check for \"ActivityNodeId\" on {qualifiedTable} to run before the conversion, but found the check at {lengthCheck} and the conversion at {conversion}:\n{script}");
+        foreach (var qualifiedTable in new[] { "WorkflowExecutionLogRecords", "ActivityExecutionRecords" }.Select(table => Qualify(schema, table)))
+        {
+            var lengthCheck = AssertStatementAt(script, $"SELECT COUNT(*) FROM {qualifiedTable} WHERE DBMS_LOB.GETLENGTH(\"ActivityNodeId\") > 450");
+
+            Assert.True(lengthCheck < firstDowngradeStatement, $"Expected the length check for \"ActivityNodeId\" on {qualifiedTable} to run before the first statement of the downgrade, but found the check at {lengthCheck} and the first downgrade statement at {firstDowngradeStatement}:\n{script}");
         }
 
         Assert.Contains("RAISE_APPLICATION_ERROR(-20004,", script, StringComparison.Ordinal);
