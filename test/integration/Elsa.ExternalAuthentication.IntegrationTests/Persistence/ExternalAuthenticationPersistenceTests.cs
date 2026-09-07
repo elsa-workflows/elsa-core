@@ -162,8 +162,8 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var hostScoped = await store.FindAsync(new() { Scope = ConnectionScope.Host });
         var unscoped = await store.FindAsync(new());
 
-        // Callers that must not cross a tenant boundary, such as the role-deletion dependency contributor,
-        // rely on this filter, so a store that accepted and ignored it would silently widen their reach.
+        // The store honors ConnectionFilter.Scope, so callers that query by scope get only that scope's rows;
+        // a store that accepted and ignored the filter would silently widen their reach.
         Assert.Equal(["connection-a"], tenantScoped.Items.Select(x => x.Id).ToArray());
         Assert.Equal(["connection-host"], hostScoped.Items.Select(x => x.Id).ToArray());
         Assert.Equal(3, unscoped.Items.Count);
