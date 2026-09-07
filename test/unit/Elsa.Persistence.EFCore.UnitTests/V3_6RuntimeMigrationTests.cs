@@ -1,10 +1,7 @@
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Runtime;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.EFCore.UnitTests;
 
@@ -51,12 +48,16 @@ public class V3_6RuntimeMigrationTests
         AssertDropIndexStatementsAreTerminated(script, schema: null);
     }
 
+    // ElsaDbContextOptions.SchemaName always falls back to ElsaDbContextBase.ElsaSchema ("Elsa") when it
+    // isn't set, so the branch the V3_6 migration guards against with
+    // `_schema.Schema != null ? "\"{schema}\"." : ""` - a null schema - is unreachable through the
+    // public options and is therefore not covered here.
     private static string GeneratePostgreSqlScript(MigrationsSqlGenerationOptions options, string schema)
     {
         var migrationsAssembly = typeof(Elsa.Persistence.EFCore.PostgreSql.Migrations.Runtime.V3_6).Assembly;
         var contextOptions = new ElsaDbContextOptions { SchemaName = schema };
 
-        return GenerateScript(
+        return MigrationScriptGenerator.Generate<RuntimeElsaDbContext>(
             builder => builder.UseElsaPostgreSql(migrationsAssembly, "Host=unused", contextOptions),
             fromMigration: "20250530104953_V3_5",
             toMigration: "20251204150341_V3_6",
@@ -67,30 +68,12 @@ public class V3_6RuntimeMigrationTests
     {
         var migrationsAssembly = typeof(Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime.V3_6).Assembly;
 
-        return GenerateScript(
+        return MigrationScriptGenerator.Generate<RuntimeElsaDbContext>(
             builder => builder.UseElsaSqlite(migrationsAssembly, "Data Source=:memory:"),
             fromMigration: "20250530104854_V3_5",
             toMigration: "20251204150006_V3_6",
             options);
     }
-
-    private static string GenerateScript(Action<DbContextOptionsBuilder<RuntimeElsaDbContext>> configureProvider, string fromMigration, string toMigration, MigrationsSqlGenerationOptions options)
-    {
-        var optionsBuilder = new DbContextOptionsBuilder<RuntimeElsaDbContext>();
-        configureProvider(optionsBuilder);
-        var dbContextOptions = optionsBuilder.Options;
-
-        using var dbContext = new RuntimeElsaDbContext(dbContextOptions, CreateServiceProvider());
-        var migrator = dbContext.GetService<IMigrator>();
-
-        return migrator.GenerateScript(fromMigration: fromMigration, toMigration: toMigration, options: options);
-    }
-
-    // ElsaDbContextOptions.SchemaName always falls back to ElsaDbContextBase.ElsaSchema ("Elsa") when it
-    // isn't set, so the branch the V3_6 migration guards against with
-    // `_schema.Schema != null ? "\"{schema}\"." : ""` - a null schema - is unreachable through the
-    // public options and is therefore not covered here.
-    private static IServiceProvider CreateServiceProvider() => new ServiceCollection().BuildServiceProvider();
 
     private static void AssertDropIndexStatementsAreTerminated(string script, string? schema, bool requireTrailingEndIf = false)
     {
