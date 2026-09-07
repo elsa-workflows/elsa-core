@@ -32,10 +32,7 @@ namespace Elsa.ExternalAuthentication.Services;
 /// tenant blank, which are materialized at host scope) stay in scope for every tenant. The connection registry
 /// resolves the host scope for every signing-in tenant, and a connection's default role IDs are then resolved by
 /// <c>ExternalIdentityUserProvisioningService</c> through <see cref="IRoleProvider"/> in the signing-in user's
-/// tenant, so a host connection naming role ID X really does reference tenant A's role X. Because the same host
-/// connection is served to every signing-in tenant, a replacement role written into it must resolve in every one
-/// of them too, so remediation of a host-scoped connection requires an agnostic replacement even when the
-/// deletion target itself is a tenant-scoped role.
+/// tenant, so a host connection naming role ID X really does reference tenant A's role X.
 /// A tenant-agnostic role (<see cref="Tenant.AgnosticTenantId"/>) is visible from every tenant, so its tenant
 /// context is every tenant: impact and remediation for such a role scan every stored connection and every
 /// configuration entry regardless of tenant, instead of the single active tenant plus host scope. Authorizing a
@@ -153,12 +150,13 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             // Authorization below still resolves through the ambient tenant's role services, so an agnostic
             // deletion target may only be replaced by another agnostic role; a tenant-scoped replacement would
             // otherwise be authorized in this tenant and then written into every other tenant's connections.
-            // The same requirement applies when the connection being remediated is host-scoped: it is served to
-            // every signing-in tenant, so a tenant-scoped replacement written into it would resolve in the
-            // authorizing tenant but fail to resolve for every other tenant that connection serves.
+            // This does not extend to host-scoped connections: IdentityProviderConnectionManagementService
+            // forces every managed connection to host scope, and in a deployment without multitenancy roles
+            // are created scoped to the default tenant rather than agnostic, so requiring an agnostic
+            // replacement for host-scoped connections would make every replacement remediation impossible in
+            // the default deployment.
             if (requiresReplacement &&
-                (string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) ||
-                 string.Equals(connection.TenantId, ConnectionScope.HostTenantId, StringComparison.Ordinal)) &&
+                string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) &&
                 !await IsAgnosticRoleAsync(request.ReplacementRoleId, cancellationToken))
                 return new RoleReferenceRemovalValidationResult.Forbidden("replacement_role_unavailable_or_unauthorized");
 
@@ -217,15 +215,13 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
                     // Authorization above still resolves through the ambient tenant's role services, so an
                     // agnostic deletion target may only be replaced by another agnostic role; a tenant-scoped
                     // replacement would otherwise be authorized in this tenant and then written into every other
-                    // tenant's connections. The same requirement applies when this connection is host-scoped:
-                    // it is served to every signing-in tenant, so a tenant-scoped replacement would resolve in
-                    // the authorizing tenant but fail to resolve for every other tenant it serves. The check is
-                    // re-run through IsAgnosticRoleAsync rather than trusting the TenantId on `replacement` from
-                    // the FindAsync call above, because a same-ID tenant-scoped role added after validation could
-                    // make that lookup ambiguous; IsAgnosticRoleAsync resolves the candidate itself and rejects
-                    // an ambiguous match instead of accepting whichever role FindAsync happened to return.
-                    if ((string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) ||
-                         string.Equals(connection.TenantId, ConnectionScope.HostTenantId, StringComparison.Ordinal)) &&
+                    // tenant's connections. This does not extend to host-scoped connections: see the matching
+                    // guard in ValidateRemovalAsync for why. The check is re-run through IsAgnosticRoleAsync
+                    // rather than trusting the TenantId on `replacement` from the FindAsync call above, because
+                    // a same-ID tenant-scoped role added after validation could make that lookup ambiguous;
+                    // IsAgnosticRoleAsync resolves the candidate itself and rejects an ambiguous match instead
+                    // of accepting whichever role FindAsync happened to return.
+                    if (string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) &&
                         !await IsAgnosticRoleAsync(request.ReplacementRoleId, cancellationToken))
                         return new RoleReferenceRemovalResult.Failed("replacement_role_unavailable_or_unauthorized", changedOwnerIds);
                 }

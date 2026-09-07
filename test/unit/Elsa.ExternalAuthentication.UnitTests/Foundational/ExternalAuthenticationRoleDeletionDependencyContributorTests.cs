@@ -117,15 +117,12 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     [Fact]
     public async Task ReplacesFinalDefaultRoleWhenSelectedForRemediation()
     {
-        // Tenant-scoped rather than the default host scope: this test exercises ordinary replacement, not
-        // the host-connection rule covered by RemediationOfAHostScopedConnectionsFinalDefaultRole* below.
         var databaseConnection = Connection(
             "database",
             new PolicySelection(
                 CreateUserUnlinkedIdentityPolicy.PolicyType,
                 1,
-                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })),
-            Tenant.DefaultTenantId);
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
         var (contributor, store, _) = await CreateContributorAsync([], [databaseConnection], [new Role { Id = "replacement-role", Name = "Replacement role", Permissions = [] }]);
         var snapshot = await contributor.InspectAsync("workflow-user");
         var request = new RoleReferenceRemovalRequest(
@@ -149,15 +146,12 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     [Fact]
     public async Task UsesTheActiveRoleStoreWhenPersistenceReplacesTheDefaultStore()
     {
-        // Tenant-scoped rather than the default host scope: this test exercises active-store selection, not
-        // the host-connection rule covered by RemediationOfAHostScopedConnectionsFinalDefaultRole* above.
         var databaseConnection = Connection(
             "database",
             new PolicySelection(
                 CreateUserUnlinkedIdentityPolicy.PolicyType,
                 1,
-                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })),
-            Tenant.DefaultTenantId);
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
         var connectionStore = new InMemoryIdentityProviderConnectionStore();
         Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(databaseConnection));
         var replacedStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
@@ -222,15 +216,12 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     [Fact]
     public async Task ReplacementRemovedAfterCoordinatorValidationFailsClosedBeforePolicyUpdate()
     {
-        // Tenant-scoped rather than the default host scope: this test exercises the validation/removal race,
-        // not the host-connection rule covered by RemediationOfAHostScopedConnectionsFinalDefaultRole* above.
         var databaseConnection = Connection(
             "database",
             new PolicySelection(
                 CreateUserUnlinkedIdentityPolicy.PolicyType,
                 1,
-                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })),
-            Tenant.DefaultTenantId);
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
         var connectionStore = new InMemoryIdentityProviderConnectionStore();
         Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(databaseConnection));
 
@@ -628,63 +619,6 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         Assert.Equal([hostConnection.Id], result.ChangedOwnerIds);
         AssertDefaultRoleIds(await store.FindByIdAsync(hostConnection.Id), "other-role");
-    }
-
-    [Fact]
-    public async Task RemediationOfAHostScopedConnectionsFinalDefaultRoleRejectsATenantScopedReplacementRole()
-    {
-        var hostConnection = Connection("host-connection", CreateUserPolicy("workflow-user"));
-        var (contributor, store, _) = await CreateContributorAsync(
-            [],
-            [hostConnection],
-            additionalRoles: [new Role { Id = "tenant-a-replacement", Name = "Tenant A replacement", TenantId = TenantA, Permissions = [] }],
-            tenantAccessor: new TestTenantAccessor(TenantA));
-        var snapshot = await contributor.InspectAsync("workflow-user");
-        var request = new RoleReferenceRemovalRequest("workflow-user", Administrator(), snapshot.Version, snapshot.Dependencies)
-        {
-            SelectedReferences = [new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, hostConnection.Id)],
-            ReplacementRoleId = "tenant-a-replacement"
-        };
-
-        // The deletion target is tenant-scoped, but the connection losing its last default role is host-scoped
-        // and therefore served to every signing-in tenant. A tenant-A-only replacement would be authorized here
-        // in tenant A and then written into a connection that provisioning resolves in every other tenant too,
-        // where the replacement does not exist. It must be rejected rather than authorized in one tenant and
-        // applied to every tenant the host connection serves.
-        var validation = await contributor.ValidateRemovalAsync(request);
-        var forbidden = Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(validation);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", forbidden.Code);
-
-        var result = await contributor.RemoveEditableReferencesAsync(request);
-        var failed = Assert.IsType<RoleReferenceRemovalResult.Failed>(result);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", failed.Code);
-        Assert.Empty(failed.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(hostConnection.Id), "workflow-user");
-    }
-
-    [Fact]
-    public async Task RemediationOfAHostScopedConnectionsFinalDefaultRoleAcceptsAnAgnosticReplacementRole()
-    {
-        var hostConnection = Connection("host-connection", CreateUserPolicy("workflow-user"));
-        var (contributor, store, _) = await CreateContributorAsync(
-            [],
-            [hostConnection],
-            additionalRoles: [new Role { Id = "agnostic-replacement", Name = "Agnostic replacement", TenantId = Tenant.AgnosticTenantId, Permissions = [] }],
-            tenantAccessor: new TestTenantAccessor(TenantA));
-        var snapshot = await contributor.InspectAsync("workflow-user");
-        var request = new RoleReferenceRemovalRequest("workflow-user", Administrator(), snapshot.Version, snapshot.Dependencies)
-        {
-            SelectedReferences = [new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, hostConnection.Id)],
-            ReplacementRoleId = "agnostic-replacement"
-        };
-
-        // An agnostic replacement exists identically in every tenant, so it is safe to write into a host-scoped
-        // connection even though remediation was authorized through tenant A's role services alone.
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
-
-        Assert.Equal([hostConnection.Id], result.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(hostConnection.Id), "agnostic-replacement");
     }
 
     [Fact]
