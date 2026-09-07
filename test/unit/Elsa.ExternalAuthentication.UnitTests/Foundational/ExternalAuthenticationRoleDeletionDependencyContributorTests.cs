@@ -413,6 +413,49 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Fact]
+    public async Task ImpactForAnAgnosticRoleIncludesAConnectionOwnedByAnotherTenant()
+    {
+        var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
+        var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("agnostic-role"), TenantB);
+        var (contributor, _, _) = await CreateContributorAsync(
+            [],
+            [ownConnection, otherTenantConnection],
+            additionalRoles: [new Role { Id = "agnostic-role", Name = "Agnostic role", TenantId = Tenant.AgnosticTenantId, Permissions = [] }],
+            tenantAccessor: new TestTenantAccessor(TenantA));
+
+        var snapshot = await contributor.InspectAsync("agnostic-role");
+
+        // The role is visible from every tenant, so its tenant context is every tenant: tenant B's reference is
+        // reported alongside tenant A's, unlike a tenant-scoped role (see ImpactExcludesConnectionsOwnedByAnotherTenant).
+        Assert.Equal(
+            [otherTenantConnection.Id, ownConnection.Id],
+            snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
+    public async Task RemediationOfAnAgnosticRoleCanRemoveTheReferenceFromAnotherTenantsConnection()
+    {
+        var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
+        var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("agnostic-role"), TenantB);
+        var (contributor, store, _) = await CreateContributorAsync(
+            [],
+            [ownConnection, otherTenantConnection],
+            additionalRoles: [new Role { Id = "agnostic-role", Name = "Agnostic role", TenantId = Tenant.AgnosticTenantId, Permissions = [] }],
+            tenantAccessor: new TestTenantAccessor(TenantA));
+        var snapshot = await contributor.InspectAsync("agnostic-role");
+        var request = new RoleReferenceRemovalRequest("agnostic-role", Administrator(), snapshot.Version, snapshot.Dependencies);
+
+        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
+        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+
+        Assert.Equal(
+            [otherTenantConnection.Id, ownConnection.Id],
+            result.ChangedOwnerIds.Order(StringComparer.Ordinal).ToArray());
+        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id));
+        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id));
+    }
+
+    [Fact]
     public async Task RemediationRemovesTheRoleFromAHostScopedConnectionForATenant()
     {
         var hostConnection = Connection("host-connection", CreateUserPolicy("workflow-user", "other-role"));
