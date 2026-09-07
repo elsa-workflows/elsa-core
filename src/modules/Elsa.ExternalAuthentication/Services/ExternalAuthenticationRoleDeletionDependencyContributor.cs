@@ -31,6 +31,12 @@ namespace Elsa.ExternalAuthentication.Services;
 /// A tenant-agnostic role (<see cref="Tenant.AgnosticTenantId"/>) is visible from every tenant, so its tenant
 /// context is every tenant: impact and remediation for such a role scan every stored connection and every
 /// configuration entry regardless of tenant, instead of the single active tenant plus host scope.
+/// In EF Core persistence a role's primary key is its ID alone, so a role ID is unique across all tenants there
+/// and an agnostic/tenant-scoped collision cannot exist. Only <c>MemoryRoleStore</c> can hold two roles that
+/// share an ID (its storage key includes the tenant); resolving a role ID against it can then be genuinely
+/// ambiguous. That ambiguity is never resolved by guessing: widening a tenant-scoped deletion would expose
+/// another tenant's references, and narrowing an agnostic deletion would leave an agnostic role's references
+/// dangling. It fails closed instead.
 /// </remarks>
 public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     IIdentityProviderConnectionStore store,
@@ -218,22 +224,29 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
 
     /// <summary>
     /// Resolves whether the role being deleted is tenant-agnostic (<see cref="Tenant.AgnosticTenantId"/>), in
-    /// which case its tenant context is every tenant rather than the ambient one. Resolves through the active
-    /// role store exactly the way <see cref="RemoveEditableReferencesAsync"/> already does for a replacement
-    /// role, but by ID alone rather than by a single ID-scoped lookup: an unqualified ID lookup can resolve the
-    /// ambient tenant's role when an agnostic role happens to share its ID with it, which would treat deleting
-    /// the agnostic role as tenant-scoped and leave JIT-policy references in other tenants dangling. Every role
-    /// sharing the ID is inspected instead, and the wider, every-tenant scope wins the moment any of them is
-    /// agnostic: over-scanning at worst surfaces a reference the operator can inspect, where under-scanning
-    /// would leave one dangling. A missing store or an unresolved role keeps the current tenant-scoped behavior.
+    /// which case its tenant context is every tenant rather than the ambient one. In EF Core persistence a role
+    /// ID is unique across all tenants (the <c>Roles</c> table keys on <c>Id</c> alone), so this lookup resolves
+    /// to at most one role there. Only <c>MemoryRoleStore</c> can hold two roles that share an ID because its
+    /// storage key includes the tenant; if the ID resolves to more than one role, which tenant's role the
+    /// coordinator's own delete actually targets is already ambiguous, and this method cannot make the
+    /// operation consistent by guessing in either direction -- widening would expose another tenant's
+    /// references for what may be a tenant-scoped deletion, and narrowing would leave an agnostic role's
+    /// references dangling. It fails closed instead. A missing store or no matching role keeps the current
+    /// tenant-scoped behavior.
     /// </summary>
     private async ValueTask<bool> IsAgnosticRoleAsync(string roleId, CancellationToken cancellationToken)
     {
         var roleStore = ActiveRoleStore;
         if (roleStore is null)
             return false;
-        var roles = await roleStore.FindManyAsync(new() { Id = roleId }, cancellationToken);
-        return roles.Any(role => string.Equals(role.TenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal));
+        var roles = (await roleStore.FindManyAsync(new() { Id = roleId }, cancellationToken)).ToArray();
+        return roles.Length switch
+        {
+            0 => false,
+            1 => string.Equals(roles[0].TenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal),
+            _ => throw new InvalidOperationException(
+                $"Role '{roleId}' resolves to {roles.Length} roles across tenant scopes; the deletion target is ambiguous and its external-authentication dependencies cannot be determined.")
+        };
     }
 
     /// <summary>

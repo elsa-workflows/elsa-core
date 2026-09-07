@@ -433,7 +433,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Fact]
-    public async Task ImpactForAnAgnosticRoleThatSharesAnIdWithTheAmbientTenantsRoleIncludesAConnectionOwnedByAnotherTenant()
+    public async Task RoleIdThatResolvesToMoreThanOneRoleAcrossTenantScopesFailsClosed()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user"), TenantA);
         var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("workflow-user"), TenantB);
@@ -443,15 +443,29 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             additionalRoles: [new Role { Id = "workflow-user", Name = "Agnostic workflow user", TenantId = Tenant.AgnosticTenantId, Permissions = [] }],
             tenantAccessor: new TestTenantAccessor(TenantA));
 
-        var snapshot = await contributor.InspectAsync("workflow-user");
+        // Tenant A's own "workflow-user" role and an agnostic role sharing that same ID both exist in the
+        // in-memory role store, so the deletion target is ambiguous: the contributor cannot determine whether
+        // to scope its inspection and remediation to tenant A alone or to every tenant, and must fail closed
+        // rather than guess in either direction.
+        await Assert.ThrowsAsync<InvalidOperationException>(() => contributor.InspectAsync("workflow-user").AsTask());
 
-        // Tenant A's own "workflow-user" role and an agnostic role sharing that same ID both exist. The wider,
-        // every-tenant scope must win deterministically, so tenant B's reference is reported alongside tenant
-        // A's -- not omitted the way a tenant-scoped role of the same ID would be omitted (see
-        // ImpactExcludesConnectionsOwnedByAnotherTenant).
-        Assert.Equal(
-            [otherTenantConnection.Id, ownConnection.Id],
-            snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray());
+        var request = new RoleReferenceRemovalRequest(
+            "workflow-user",
+            Administrator(),
+            "irrelevant-version",
+            [
+                new RoleDeletionDependency(
+                    ExternalAuthenticationRoleDeletionDependencyContributor.SourceName,
+                    ownConnection.Id,
+                    ownConnection.Key,
+                    "create-user",
+                    RoleDeletionDependencyOwnership.Database,
+                    null,
+                    1,
+                    false)
+            ]);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => contributor.ValidateRemovalAsync(request).AsTask());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => contributor.RemoveEditableReferencesAsync(request).AsTask());
     }
 
     [Fact]
