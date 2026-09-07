@@ -530,6 +530,80 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Fact]
+    public async Task RemediationOfAnAgnosticRoleRejectsATenantScopedReplacementRole()
+    {
+        var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
+        var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("agnostic-role"), TenantB);
+        var (contributor, store, _) = await CreateContributorAsync(
+            [],
+            [ownConnection, otherTenantConnection],
+            additionalRoles:
+            [
+                new Role { Id = "agnostic-role", Name = "Agnostic role", TenantId = Tenant.AgnosticTenantId, Permissions = [] },
+                new Role { Id = "tenant-a-replacement", Name = "Tenant A replacement", TenantId = TenantA, Permissions = [] }
+            ],
+            tenantAccessor: new TestTenantAccessor(TenantA));
+        var snapshot = await contributor.InspectAsync("agnostic-role");
+        var request = new RoleReferenceRemovalRequest("agnostic-role", Administrator(), snapshot.Version, snapshot.Dependencies)
+        {
+            SelectedReferences = snapshot.Dependencies
+                .Select(x => new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, x.OwnerId))
+                .ToArray(),
+            ReplacementRoleId = "tenant-a-replacement"
+        };
+
+        // Remediation is initiated in tenant A and would resolve the replacement role through tenant A's role
+        // authorization service alone, even though tenant B's connection is also in scope for this agnostic
+        // role. Admitting a tenant-A-only replacement would write a role into tenant B's policy that does not
+        // exist there, so it must be rejected rather than authorized in one tenant and applied to every tenant.
+        var validation = await contributor.ValidateRemovalAsync(request);
+        var forbidden = Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(validation);
+        Assert.Equal("replacement_role_unavailable_or_unauthorized", forbidden.Code);
+
+        var result = await contributor.RemoveEditableReferencesAsync(request);
+        var failed = Assert.IsType<RoleReferenceRemovalResult.Failed>(result);
+        Assert.Equal("replacement_role_unavailable_or_unauthorized", failed.Code);
+        Assert.Empty(failed.ChangedOwnerIds);
+        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-role");
+        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-role");
+    }
+
+    [Fact]
+    public async Task RemediationOfAnAgnosticRoleAcceptsAnAgnosticReplacementRole()
+    {
+        var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
+        var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("agnostic-role"), TenantB);
+        var (contributor, store, _) = await CreateContributorAsync(
+            [],
+            [ownConnection, otherTenantConnection],
+            additionalRoles:
+            [
+                new Role { Id = "agnostic-role", Name = "Agnostic role", TenantId = Tenant.AgnosticTenantId, Permissions = [] },
+                new Role { Id = "agnostic-replacement", Name = "Agnostic replacement", TenantId = Tenant.AgnosticTenantId, Permissions = [] }
+            ],
+            tenantAccessor: new TestTenantAccessor(TenantA));
+        var snapshot = await contributor.InspectAsync("agnostic-role");
+        var request = new RoleReferenceRemovalRequest("agnostic-role", Administrator(), snapshot.Version, snapshot.Dependencies)
+        {
+            SelectedReferences = snapshot.Dependencies
+                .Select(x => new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, x.OwnerId))
+                .ToArray(),
+            ReplacementRoleId = "agnostic-replacement"
+        };
+
+        // An agnostic replacement exists identically in every tenant, so it is safe to write into tenant B's
+        // policy even though remediation was authorized through tenant A's role services.
+        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
+        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+
+        Assert.Equal(
+            [otherTenantConnection.Id, ownConnection.Id],
+            result.ChangedOwnerIds.Order(StringComparer.Ordinal).ToArray());
+        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-replacement");
+        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-replacement");
+    }
+
+    [Fact]
     public async Task RemediationRemovesTheRoleFromAHostScopedConnectionForATenant()
     {
         var hostConnection = Connection("host-connection", CreateUserPolicy("workflow-user", "other-role"));
