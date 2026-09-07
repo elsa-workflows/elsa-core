@@ -138,17 +138,17 @@ Routes under `/elsa/api` (Elsa route prefix applies):
 
 | Route | Permission |
 | --- | --- |
-| `GET /secrets` | `read:secrets` |
-| `GET /secrets/{name}` | `read:secrets` |
-| `POST /secrets` | `write:secrets` |
-| `DELETE /secrets/{name}` | `delete:secrets` |
-| `POST /secrets/{name}/rotate` | `write:secrets` |
-| `POST /secrets/{name}/revoke` | `write:secrets` |
-| `POST /secrets/{name}/test` | `test:secrets` |
-| `POST /secrets/picker` | `read:secrets` |
-| `GET /secrets/descriptors` | `read:secrets` |
+| `GET /secrets` | `secrets:view` |
+| `GET /secrets/{name}` | `secrets:view` |
+| `POST /secrets` | `secrets:write` |
+| `DELETE /secrets/{name}` | `secrets:delete` |
+| `POST /secrets/{name}/rotate` | `secrets:write` |
+| `POST /secrets/{name}/revoke` | `secrets:write` |
+| `POST /secrets/{name}/test` | `secrets:test` |
+| `POST /secrets/picker` | `secrets:view` |
+| `GET /secrets/descriptors` | `secrets:view` |
 
-Permission constants are in [SecretsPermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsPermissions.cs).
+Permission constants are in [SecretsResourcePermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsResourcePermissions.cs).
 
 ### Using Secrets In Workflows
 
