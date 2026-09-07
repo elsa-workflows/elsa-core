@@ -12,6 +12,7 @@ using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Policies;
 using Elsa.Identity.Contracts;
+using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Microsoft.Extensions.Options;
 
@@ -31,7 +32,10 @@ namespace Elsa.ExternalAuthentication.Services;
 /// tenant blank, which are materialized at host scope) stay in scope for every tenant. The connection registry
 /// resolves the host scope for every signing-in tenant, and a connection's default role IDs are then resolved by
 /// <c>ExternalIdentityUserProvisioningService</c> through <see cref="IRoleProvider"/> in the signing-in user's
-/// tenant, so a host connection naming role ID X really does reference tenant A's role X.
+/// tenant, so a host connection naming role ID X really does reference tenant A's role X. Because the same host
+/// connection is served to every signing-in tenant, a replacement role written into it must resolve in every one
+/// of them too, so remediation of a host-scoped connection requires an agnostic replacement even when the
+/// deletion target itself is a tenant-scoped role.
 /// A tenant-agnostic role (<see cref="Tenant.AgnosticTenantId"/>) is visible from every tenant, so its tenant
 /// context is every tenant: impact and remediation for such a role scan every stored connection and every
 /// configuration entry regardless of tenant, instead of the single active tenant plus host scope. Authorizing a
@@ -43,7 +47,10 @@ namespace Elsa.ExternalAuthentication.Services;
 /// share an ID (its storage key includes the tenant); resolving a role ID against it can then be genuinely
 /// ambiguous. That ambiguity is never resolved by guessing: widening a tenant-scoped deletion would expose
 /// another tenant's references, and narrowing an agnostic deletion would leave an agnostic role's references
-/// dangling. It fails closed instead.
+/// dangling. It fails closed instead. The same collision makes a replacement candidate ambiguous too: a
+/// replacement ID that resolves to more than one role (an ambient match and an agnostic match, under
+/// <c>MemoryRoleStore</c>) is rejected as not agnostic rather than guessed at, so it is reported as
+/// <c>replacement_role_unavailable_or_unauthorized</c> instead of surfacing as an exception.
 /// </remarks>
 public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     IIdentityProviderConnectionStore store,
@@ -146,8 +153,12 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             // Authorization below still resolves through the ambient tenant's role services, so an agnostic
             // deletion target may only be replaced by another agnostic role; a tenant-scoped replacement would
             // otherwise be authorized in this tenant and then written into every other tenant's connections.
+            // The same requirement applies when the connection being remediated is host-scoped: it is served to
+            // every signing-in tenant, so a tenant-scoped replacement written into it would resolve in the
+            // authorizing tenant but fail to resolve for every other tenant that connection serves.
             if (requiresReplacement &&
-                string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) &&
+                (string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) ||
+                 string.Equals(connection.TenantId, ConnectionScope.HostTenantId, StringComparison.Ordinal)) &&
                 !await IsAgnosticRoleAsync(request.ReplacementRoleId, cancellationToken))
                 return new RoleReferenceRemovalValidationResult.Forbidden("replacement_role_unavailable_or_unauthorized");
 
@@ -206,9 +217,16 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
                     // Authorization above still resolves through the ambient tenant's role services, so an
                     // agnostic deletion target may only be replaced by another agnostic role; a tenant-scoped
                     // replacement would otherwise be authorized in this tenant and then written into every other
-                    // tenant's connections.
-                    if (string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) &&
-                        !string.Equals(replacement.TenantId.NormalizeTenantId(), Tenant.AgnosticTenantId, StringComparison.Ordinal))
+                    // tenant's connections. The same requirement applies when this connection is host-scoped:
+                    // it is served to every signing-in tenant, so a tenant-scoped replacement would resolve in
+                    // the authorizing tenant but fail to resolve for every other tenant it serves. The check is
+                    // re-run through IsAgnosticRoleAsync rather than trusting the TenantId on `replacement` from
+                    // the FindAsync call above, because a same-ID tenant-scoped role added after validation could
+                    // make that lookup ambiguous; IsAgnosticRoleAsync resolves the candidate itself and rejects
+                    // an ambiguous match instead of accepting whichever role FindAsync happened to return.
+                    if ((string.Equals(roleTenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal) ||
+                         string.Equals(connection.TenantId, ConnectionScope.HostTenantId, StringComparison.Ordinal)) &&
+                        !await IsAgnosticRoleAsync(request.ReplacementRoleId, cancellationToken))
                         return new RoleReferenceRemovalResult.Failed("replacement_role_unavailable_or_unauthorized", changedOwnerIds);
                 }
 
@@ -261,10 +279,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     /// </summary>
     private async ValueTask<string> ResolveRoleTenantIdAsync(string roleId, CancellationToken cancellationToken)
     {
-        var roleStore = ActiveRoleStore;
-        if (roleStore is null)
-            return tenantAccessor.TenantId.NormalizeTenantId();
-        var roles = (await roleStore.FindManyAsync(new() { Id = roleId }, cancellationToken)).ToArray();
+        var roles = await FindRolesByIdAsync(roleId, cancellationToken);
         return roles.Length switch
         {
             0 => tenantAccessor.TenantId.NormalizeTenantId(),
@@ -275,17 +290,28 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     }
 
     /// <summary>
-    /// Resolves whether a candidate role ID (typically a replacement role) is itself tenant-agnostic, using the
-    /// same resolution as <see cref="ResolveRoleTenantIdAsync"/>. A role ID that cannot be resolved to exactly
-    /// one role is treated as not agnostic, since there is then no resolved role to trust as safe to write into
-    /// every tenant's connections.
+    /// Resolves whether a candidate role ID (typically a replacement role) is itself tenant-agnostic. Unlike
+    /// <see cref="ResolveRoleTenantIdAsync"/>, an ambiguous candidate -- a role ID that resolves to more than one
+    /// role, which only <c>MemoryRoleStore</c> can produce -- is not the coordinator's own deletion target, so
+    /// there is no operation to fail closed on by throwing; it is instead treated the same as an unresolved
+    /// candidate and reported as not agnostic, since there is no single resolved role to trust as safe to write
+    /// into every tenant's connections.
     /// </summary>
     private async ValueTask<bool> IsAgnosticRoleAsync(string? roleId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(roleId))
             return false;
-        var tenantId = await ResolveRoleTenantIdAsync(roleId, cancellationToken);
-        return string.Equals(tenantId, Tenant.AgnosticTenantId, StringComparison.Ordinal);
+        var roles = await FindRolesByIdAsync(roleId, cancellationToken);
+        return roles.Length == 1 && string.Equals(roles[0].TenantId.NormalizeTenantId(), Tenant.AgnosticTenantId, StringComparison.Ordinal);
+    }
+
+    /// <summary>Loads every role matching the given ID from the active role store, or an empty result if none is configured.</summary>
+    private async ValueTask<Role[]> FindRolesByIdAsync(string roleId, CancellationToken cancellationToken)
+    {
+        var roleStore = ActiveRoleStore;
+        if (roleStore is null)
+            return [];
+        return (await roleStore.FindManyAsync(new() { Id = roleId }, cancellationToken)).ToArray();
     }
 
     /// <summary>
