@@ -6,6 +6,7 @@ using Elsa.Features.Services;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
+using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Labels.Features;
@@ -45,6 +46,7 @@ public class LabelsFeature : FeatureBase
             .AddMemoryStore<WorkflowDefinitionLabel, InMemoryWorkflowDefinitionLabelStore>()
             .AddScoped(LabelStore)
             .AddScoped(WorkflowDefinitionLabelStore)
+            .AddScoped<IWorkflowDefinitionFilterProvider, WorkflowDefinitionLabelFilterProvider>()
             ;
 
         Services.AddNotificationHandlersFrom(GetType());

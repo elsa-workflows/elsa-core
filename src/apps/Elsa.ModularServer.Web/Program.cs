@@ -35,6 +35,7 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 configuration.AddJsonFile(configuration["Elsa:PlatformIntegration:ShellOverlayPath"] ?? "platform-shell-overrides.json", optional: true, reloadOnChange: false);
+services.AddRoleManagementE2EFixtures(configuration);
 var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString();
 
 builder.Logging.AddOpenTelemetry(logging =>

@@ -1,10 +1,12 @@
 using Elsa.Common;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
@@ -12,6 +14,46 @@ namespace Elsa.Workflows.Core.UnitTests.Services;
 
 public class WorkflowStateExtractorTests
 {
+    [Fact]
+    public async Task Extract_And_Apply_PreservesScheduledActivityMetadata()
+    {
+        var root = new WriteLine("root");
+        var fixture = new ActivityTestFixture(root).ConfigureServices(services =>
+        {
+            services.RemoveAll<IWorkflowExecutionContextSchedulerStrategy>();
+            services.AddSingleton<IWorkflowExecutionContextSchedulerStrategy, WorkflowExecutionContextSchedulerStrategy>();
+        });
+        var context = await fixture.BuildAsync();
+        context.Id = "owner-context";
+        context.WorkflowExecutionContext.AddActivityExecutionContext(context);
+        var scheduledWorkItem = new ActivityWorkItem(
+            root,
+            context,
+            tag: "scheduled",
+            schedulingActivityExecutionId: "predecessor",
+            schedulingWorkflowInstanceId: "parent-workflow",
+            schedulingCallStackDepth: 3);
+        context.WorkflowExecutionContext.Scheduler.Schedule(scheduledWorkItem);
+
+        var sourceWorkflowContext = context.WorkflowExecutionContext;
+        var extractor = sourceWorkflowContext.GetRequiredService<IWorkflowStateExtractor>();
+        var state = extractor.Extract(sourceWorkflowContext);
+        var resumedWorkflowContext = await WorkflowExecutionContext.CreateAsync(
+            sourceWorkflowContext.ServiceProvider,
+            sourceWorkflowContext.WorkflowGraph,
+            state.Id,
+            CancellationToken.None);
+
+        await extractor.ApplyAsync(resumedWorkflowContext, state);
+
+        var restoredWorkItem = Assert.Single(resumedWorkflowContext.Scheduler.List());
+        Assert.Equal("owner-context", restoredWorkItem.Owner?.Id);
+        Assert.Equal("scheduled", restoredWorkItem.Tag);
+        Assert.Equal("predecessor", restoredWorkItem.SchedulingActivityExecutionId);
+        Assert.Equal("parent-workflow", restoredWorkItem.SchedulingWorkflowInstanceId);
+        Assert.Equal(3, restoredWorkItem.SchedulingCallStackDepth);
+    }
+
     [Fact]
     public async Task Extract_And_Apply_PreservesCallStackDepth()
     {

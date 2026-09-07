@@ -9,11 +9,14 @@ using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Policies;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Stores.InMemory;
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
@@ -109,6 +112,156 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     }
 
     [Fact]
+    public async Task ReplacesFinalDefaultRoleWhenSelectedForRemediation()
+    {
+        var databaseConnection = Connection(
+            "database",
+            new PolicySelection(
+                CreateUserUnlinkedIdentityPolicy.PolicyType,
+                1,
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
+        var (contributor, store, _) = await CreateContributorAsync([], [databaseConnection], [new Role { Id = "replacement-role", Name = "Replacement role", Permissions = [] }]);
+        var snapshot = await contributor.InspectAsync("workflow-user");
+        var request = new RoleReferenceRemovalRequest(
+            "workflow-user",
+            Administrator(),
+            snapshot.Version,
+            snapshot.Dependencies)
+        {
+            SelectedReferences = [new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, databaseConnection.Id)],
+            ReplacementRoleId = "replacement-role"
+        };
+
+        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
+        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+
+        Assert.Equal([databaseConnection.Id], result.ChangedOwnerIds);
+        var updated = Assert.IsType<IdentityProviderConnection>(await store.FindByIdAsync(databaseConnection.Id));
+        Assert.Equal(["replacement-role"], updated.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+    }
+
+    [Fact]
+    public async Task UsesTheActiveRoleStoreWhenPersistenceReplacesTheDefaultStore()
+    {
+        var databaseConnection = Connection(
+            "database",
+            new PolicySelection(
+                CreateUserUnlinkedIdentityPolicy.PolicyType,
+                1,
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
+        var connectionStore = new InMemoryIdentityProviderConnectionStore();
+        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(databaseConnection));
+        var replacedStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
+        var activeStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
+        await activeStore.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
+        await activeStore.SaveAsync(new Role { Id = "replacement-role", Name = "Replacement role", Permissions = [] });
+        var roleAuthorizationService = new RoleAuthorizationService(new StoreBasedRoleProvider(activeStore), new PermissionEvaluator());
+        var services = new ServiceCollection().BuildServiceProvider();
+        var contributor = new ExternalAuthenticationRoleDeletionDependencyContributor(
+            connectionStore,
+            new MutableOptionsMonitor<ExternalAuthenticationOptions>(new ExternalAuthenticationOptions()),
+            [roleAuthorizationService],
+            [replacedStore, activeStore],
+            new InMemoryConnectionRegistryVersionStore(),
+            new ConnectionRevisionCalculator(),
+            new ExternalAuthenticationSecurityNotifier(services),
+            new PermissionEvaluator());
+        var snapshot = await contributor.InspectAsync("workflow-user");
+        var request = new RoleReferenceRemovalRequest(
+            "workflow-user",
+            Administrator(),
+            snapshot.Version,
+            snapshot.Dependencies)
+        {
+            SelectedReferences = [new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, databaseConnection.Id)],
+            ReplacementRoleId = "replacement-role"
+        };
+
+        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
+        Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+    }
+
+    [Fact]
+    public async Task RejectsMissingReplacementForSelectedFinalDefaultRole()
+    {
+        var databaseConnection = Connection(
+            "database",
+            new PolicySelection(
+                CreateUserUnlinkedIdentityPolicy.PolicyType,
+                1,
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
+        var (contributor, store, _) = await CreateContributorAsync([], databaseConnection);
+        var snapshot = await contributor.InspectAsync("workflow-user");
+        var request = new RoleReferenceRemovalRequest(
+            "workflow-user",
+            Administrator(),
+            snapshot.Version,
+            snapshot.Dependencies)
+        {
+            SelectedReferences = [new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, databaseConnection.Id)]
+        };
+
+        var result = await contributor.ValidateRemovalAsync(request);
+
+        var forbidden = Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(result);
+        Assert.Equal("replacement_role_unavailable_or_unauthorized", forbidden.Code);
+        var current = Assert.IsType<IdentityProviderConnection>(await store.FindByIdAsync(databaseConnection.Id));
+        Assert.Equal(["workflow-user"], current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+    }
+
+    [Fact]
+    public async Task ReplacementRemovedAfterCoordinatorValidationFailsClosedBeforePolicyUpdate()
+    {
+        var databaseConnection = Connection(
+            "database",
+            new PolicySelection(
+                CreateUserUnlinkedIdentityPolicy.PolicyType,
+                1,
+                JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
+        var connectionStore = new InMemoryIdentityProviderConnectionStore();
+        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(databaseConnection));
+
+        var backingRoleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
+        await backingRoleStore.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
+        await backingRoleStore.SaveAsync(new Role { Id = "replacement-role", Name = "Replacement role", Permissions = [] });
+        var roleStore = new RoleStoreThatRemovesReplacementAfterContributorValidation(backingRoleStore, "replacement-role");
+        var roleAuthorizationService = new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator());
+        var versions = new InMemoryConnectionRegistryVersionStore();
+        var services = new ServiceCollection().BuildServiceProvider();
+        var contributor = new ExternalAuthenticationRoleDeletionDependencyContributor(
+            connectionStore,
+            new MutableOptionsMonitor<ExternalAuthenticationOptions>(new ExternalAuthenticationOptions()),
+            [roleAuthorizationService],
+            [roleStore],
+            versions,
+            new ConnectionRevisionCalculator(),
+            new ExternalAuthenticationSecurityNotifier(services),
+            new PermissionEvaluator());
+        var securityNotifier = new RoleSecurityNotifier(Substitute.For<INotificationSender>(), TestTenantAccessor.Default, new SystemClock());
+        var coordinator = new RoleDeletionCoordinator(roleStore, roleAuthorizationService, [contributor], securityNotifier);
+        var impact = Assert.IsType<RoleDeletionInspectionResult.Success>(await coordinator.InspectAsync("workflow-user", Administrator())).Impact;
+
+        var result = await coordinator.RemediateAndDeleteAsync(new RoleDeletionRemediationCommand(
+            "workflow-user",
+            Administrator(),
+            impact.DependencyVersion,
+            true,
+            true,
+            true)
+        {
+            SelectedReferences = [new RoleDeletionReferenceSelection(ExternalAuthenticationRoleDeletionDependencyContributor.SourceName, databaseConnection.Id)],
+            ReplacementRoleId = "replacement-role"
+        });
+
+        var incomplete = Assert.IsType<RoleDeletionOperationResult.Incomplete>(result);
+        Assert.Equal("replacement_role_unavailable_or_unauthorized", incomplete.Code);
+        Assert.True(roleStore.ReplacementRemoved);
+        Assert.NotNull(await roleStore.FindAsync(new() { Id = "workflow-user" }));
+        var current = Assert.IsType<IdentityProviderConnection>(await connectionStore.FindByIdAsync(databaseConnection.Id));
+        Assert.Equal(["workflow-user"], current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+    }
+
+    [Fact]
     public async Task StaleConnectionRevisionFailsPrevalidationWithoutMutation()
     {
         var databaseConnection = Connection(
@@ -158,9 +311,15 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(result);
     }
 
+    private static Task<(ExternalAuthenticationRoleDeletionDependencyContributor Contributor, InMemoryIdentityProviderConnectionStore Store, InMemoryConnectionRegistryVersionStore Versions)> CreateContributorAsync(
+        IReadOnlyCollection<IdentityProviderConnection> configuredConnections,
+        params IdentityProviderConnection[] databaseConnections) =>
+        CreateContributorAsync(configuredConnections, databaseConnections, null);
+
     private static async Task<(ExternalAuthenticationRoleDeletionDependencyContributor Contributor, InMemoryIdentityProviderConnectionStore Store, InMemoryConnectionRegistryVersionStore Versions)> CreateContributorAsync(
         IReadOnlyCollection<IdentityProviderConnection> configuredConnections,
-        params IdentityProviderConnection[] databaseConnections)
+        IdentityProviderConnection[] databaseConnections,
+        IReadOnlyCollection<Role>? additionalRoles = null)
     {
         var store = new InMemoryIdentityProviderConnectionStore();
         foreach (var connection in databaseConnections)
@@ -169,12 +328,15 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await roleStore.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
         await roleStore.SaveAsync(new Role { Id = "other-role", Name = "Other role", Permissions = [] });
+        foreach (var role in additionalRoles ?? [])
+            await roleStore.SaveAsync(role);
         var versions = new InMemoryConnectionRegistryVersionStore();
         var services = new ServiceCollection().BuildServiceProvider();
         var contributor = new ExternalAuthenticationRoleDeletionDependencyContributor(
             store,
             new MutableOptionsMonitor<ExternalAuthenticationOptions>(new ExternalAuthenticationOptions { ConfigurationConnections = configuredConnections.ToList() }),
-            new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator()),
+            [new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator())],
+            [roleStore],
             versions,
             new ConnectionRevisionCalculator(),
             new ExternalAuthenticationSecurityNotifier(services),
@@ -214,5 +376,34 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             permissions
                 .Where(x => !string.Equals(x, omittedPermission, StringComparison.Ordinal))
                 .Select(x => new Claim(PermissionNames.ClaimType, x))));
+    }
+
+    private sealed class RoleStoreThatRemovesReplacementAfterContributorValidation(
+        MemoryRoleStore inner,
+        string replacementRoleId) : IRoleStore
+    {
+        private int _replacementChecks;
+
+        public bool ReplacementRemoved { get; private set; }
+
+        public Task AddAsync(Role role, CancellationToken cancellationToken = default) => inner.AddAsync(role, cancellationToken);
+
+        public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default) => inner.DeleteAsync(filter, cancellationToken);
+
+        public Task SaveAsync(Role role, CancellationToken cancellationToken = default) => inner.SaveAsync(role, cancellationToken);
+
+        public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default) => inner.FindAsync(filter, cancellationToken);
+
+        public async Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default)
+        {
+            var roles = (await inner.FindManyAsync(filter, cancellationToken)).ToArray();
+            if (!ReplacementRemoved && filter.Ids?.Contains(replacementRoleId) == true && Interlocked.Increment(ref _replacementChecks) == 2)
+            {
+                await inner.DeleteAsync(new() { Id = replacementRoleId }, cancellationToken);
+                ReplacementRemoved = true;
+            }
+
+            return roles;
+        }
     }
 }

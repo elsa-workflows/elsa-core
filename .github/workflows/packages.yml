@@ -363,6 +363,9 @@ jobs:
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
     if: ${{ github.event.action == 'published' }}
+    permissions:
+      contents: read
+      id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
     steps:
       - name: Check out the push action
         # Every third-party action in this job runs before a feed API key is handed
@@ -379,6 +382,16 @@ jobs:
         uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: elsa-nuget-packages
+
+      # Exchanges a GitHub OIDC token for a temporary nuget.org API key (valid 1 hour).
+      # Requires a Trusted Publishing policy on nuget.org matching:
+      #   Repository Owner: elsa-workflows | Repository: elsa-core | Workflow File: packages.yml
+      # Keep this step immediately before the push so the key cannot expire in between.
+      - name: NuGet login (OIDC)
+        uses: NuGet/login@v1
+        id: nuget_login
+        with:
+          user: ${{ secrets.NUGET_USER }} # nuget.org username (profile name), not an email address.
 
       - name: Publish to nuget.org
         uses: ./.github/actions/push-nuget-packages

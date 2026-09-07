@@ -19,10 +19,15 @@ public interface IRoleStore
     /// <summary>
     /// Deletes the role with the specified ID.
     /// </summary>
+    /// <remarks>
+    /// This member reports no affected-row count, so a caller cannot tell a deletion it performed itself apart
+    /// from one a concurrent caller had already performed. Implementations able to delete atomically should
+    /// also implement <see cref="IRoleStoreWithAtomicDelete"/>, which callers prefer when it is available.
+    /// </remarks>
     /// <param name="filter">The filter.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
-    /// <returns><see langword="true"/> when a role was deleted; otherwise, <see langword="false"/>.</returns>
-    Task<bool> DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default);
+    /// <returns>The task.</returns>
+    Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Saves the role.

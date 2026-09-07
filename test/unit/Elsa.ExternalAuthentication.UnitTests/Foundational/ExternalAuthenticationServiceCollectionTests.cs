@@ -9,6 +9,7 @@ using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Providers;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Stores.InMemory;
+using Elsa.Identity.Contracts;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -61,5 +62,24 @@ public class ExternalAuthenticationServiceCollectionTests
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IProviderHttpClient) && descriptor.ImplementationFactory is not null);
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(OpenIdConnectExternalAuthenticationAdapter));
+    }
+
+    [Fact]
+    public void RoleDeletionContributorResolvesWhenIdentityIsNotRegistered()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ISystemClock>(new TestSystemClock(DateTimeOffset.UnixEpoch));
+        services.AddExternalAuthenticationServices(options =>
+        {
+            options.AllowedUnlinkedIdentityPolicyTypes.Clear();
+            options.AllowedPermissionGrantSourceTypes.Clear();
+        });
+
+        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using var scope = serviceProvider.CreateScope();
+
+        var contributor = Assert.Single(scope.ServiceProvider.GetServices<IRoleDeletionDependencyContributor>());
+        Assert.IsType<ExternalAuthenticationRoleDeletionDependencyContributor>(contributor);
+        Assert.Empty(scope.ServiceProvider.GetServices<IRoleStore>());
     }
 }

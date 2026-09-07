@@ -21,6 +21,7 @@ public class RoleFilter
     /// <summary>
     /// Gets or sets the tenant to filter for. The tenant-agnostic sentinel is always included, matching
     /// the Entity Framework query filter, so a shared platform role remains visible from every tenant.
+    /// Legacy records without a tenant remain visible to the default tenant for backwards compatibility.
     /// </summary>
     public string? TenantId { get; set; }
     
@@ -34,7 +35,8 @@ public class RoleFilter
         var filter = this;
         if (filter.Id != null) queryable = queryable.Where(x => x.Id == filter.Id);
         if (filter.Ids != null) queryable = queryable.Where(x => filter.Ids.Contains(x.Id));
-        if (filter.TenantId != null) queryable = queryable.Where(x => x.TenantId == filter.TenantId || x.TenantId == Tenant.AgnosticTenantId);
+        if (filter.TenantId != null)
+            queryable = queryable.Where(x => x.TenantId == filter.TenantId || x.TenantId == Tenant.AgnosticTenantId || (x.TenantId == null && filter.TenantId == Tenant.DefaultTenantId));
 
         return queryable;
     }

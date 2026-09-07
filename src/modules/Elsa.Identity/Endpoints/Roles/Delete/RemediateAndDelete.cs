@@ -35,7 +35,11 @@ internal sealed class RemediateAndDelete(IRoleDeletionCoordinator coordinator) :
                 request.ExpectedDependencyVersion,
                 request.ConfirmRemoveFromEditableJitPolicies,
                 request.ConfirmEmptyDefaultRoles,
-                request.ConfirmBestEffort),
+                request.ConfirmBestEffort)
+            {
+                SelectedReferences = request.SelectedReferences,
+                ReplacementRoleId = request.ReplacementRoleId
+            },
             cancellationToken);
         await RoleDeletionEndpointSupport.SendOperationResultAsync(HttpContext, result, cancellationToken);
     }
