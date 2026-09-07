@@ -151,6 +151,25 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ConnectionStoreReturnsOnlyTheRequestedScope()
+    {
+        var store = new EFCoreIdentityProviderConnectionStore(_leaseFactory);
+        Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection()));
+        Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection("connection-b", "tenant-b")));
+        Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection("connection-host", ConnectionScope.HostTenantId)));
+
+        var tenantScoped = await store.FindAsync(new() { Scope = new(ConnectionScopeKind.Tenant, "tenant-a") });
+        var hostScoped = await store.FindAsync(new() { Scope = ConnectionScope.Host });
+        var unscoped = await store.FindAsync(new());
+
+        // Callers that must not cross a tenant boundary, such as the role-deletion dependency contributor,
+        // rely on this filter, so a store that accepted and ignored it would silently widen their reach.
+        Assert.Equal(["connection-a"], tenantScoped.Items.Select(x => x.Id).ToArray());
+        Assert.Equal(["connection-host"], hostScoped.Items.Select(x => x.Id).ToArray());
+        Assert.Equal(3, unscoped.Items.Count);
+    }
+
+    [Fact]
     public async Task DurableStateGrantSessionAndRegistryVersionOperationsAreSingleUseOrCompareAndSwap()
     {
         var durableDbContexts = _leaseFactory;
@@ -754,10 +773,10 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
     private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();
 
-    private static IdentityProviderConnection CreateConnection(string id = "connection-a") => new()
+    private static IdentityProviderConnection CreateConnection(string id = "connection-a", string tenantId = "tenant-a") => new()
     {
         Id = id,
-        TenantId = "tenant-a",
+        TenantId = tenantId,
         Key = "contoso",
         AdapterType = "openid-connect",
         AdapterSettingsVersion = 1,
