@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Common\Elsa.Persistence.EFCore.Common.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Oracle\Elsa.Persistence.EFCore.Oracle.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.PostgreSql\Elsa.Persistence.EFCore.PostgreSql.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj" />
     </ItemGroup>

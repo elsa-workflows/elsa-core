@@ -5,6 +5,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 {
     /// <inheritdoc />
+    /// <remarks>
+    /// Oracle rejects an in-place <c>ALTER TABLE ... MODIFY</c> that changes a column's datatype to or from a LOB type
+    /// (ORA-22858 / ORA-22859), so <c>ActivityNodeId</c> is converted between NVARCHAR2(450) and NCLOB with the
+    /// add/copy/drop/rename sequence <see cref="MigrationHelper.ConvertColumnType"/> emits. Because Oracle commits DDL
+    /// implicitly, a run that fails partway leaves its earlier statements applied; every step here is therefore
+    /// guarded so that a re-run picks up where the failed one stopped instead of failing on an already-created index
+    /// or an already-added column.
+    /// </remarks>
     public partial class V3_6 : Migration
     {
         private readonly Elsa.Persistence.EFCore.IElsaDbContextSchema _schema;
@@ -18,89 +26,65 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateIndex(
+            MigrationHelper.CreateIndexIfMissing(
+                migrationBuilder,
+                _schema,
                 name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
-                schema: _schema.Schema,
                 table: "Triggers",
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
-                unique: true,
-                filter: "\"Hash\" IS NOT NULL");
+                unique: true);
 
-            // ORA-01418: specified index does not exist
-            migrationBuilder.Sql(@"
-                BEGIN
-                    EXECUTE IMMEDIATE 'DROP INDEX ""IX_WorkflowExecutionLogRecord_ActivityNodeId""';
-                EXCEPTION
-                    WHEN OTHERS THEN
-                        IF SQLCODE != -1418 THEN RAISE; END IF;
-                END;
-            ");
+            // Dropping the column below takes its indexes with it, but they are still dropped up front: that is what the
+            // migration originally intended, and it also clears an index left behind on a database where the column was
+            // already converted by hand.
+            MigrationHelper.DropIndexIfPresent(migrationBuilder, _schema, "IX_WorkflowExecutionLogRecord_ActivityNodeId");
+            MigrationHelper.DropIndexIfPresent(migrationBuilder, _schema, "IX_ActivityExecutionRecord_ActivityNodeId");
 
-            migrationBuilder.Sql(@"
-                BEGIN
-                    EXECUTE IMMEDIATE 'DROP INDEX ""IX_ActivityExecutionRecord_ActivityNodeId""';
-                EXCEPTION
-                    WHEN OTHERS THEN
-                        IF SQLCODE != -1418 THEN RAISE; END IF;
-                END;
-            ");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords",
-                type: "NCLOB",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "NVARCHAR2(450)");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "NCLOB",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "NVARCHAR2(450)");
+            ConvertActivityNodeIdToNclob(migrationBuilder, "WorkflowExecutionLogRecords");
+            ConvertActivityNodeIdToNclob(migrationBuilder, "ActivityExecutionRecords");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
-                schema: _schema.Schema,
-                table: "Triggers");
+            MigrationHelper.DropIndexIfPresent(migrationBuilder, _schema, "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords",
-                type: "NVARCHAR2(450)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "NCLOB");
+            ConvertActivityNodeIdToNVarchar2(migrationBuilder, "WorkflowExecutionLogRecords");
+            ConvertActivityNodeIdToNVarchar2(migrationBuilder, "ActivityExecutionRecords");
 
-            migrationBuilder.AlterColumn<string>(
-                name: "ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                type: "NVARCHAR2(450)",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "NCLOB");
+            MigrationHelper.CreateIndexIfMissing(migrationBuilder, _schema, "IX_WorkflowExecutionLogRecord_ActivityNodeId", "WorkflowExecutionLogRecords", new[] { "ActivityNodeId" });
+            MigrationHelper.CreateIndexIfMissing(migrationBuilder, _schema, "IX_ActivityExecutionRecord_ActivityNodeId", "ActivityExecutionRecords", new[] { "ActivityNodeId" });
+        }
 
-            migrationBuilder.CreateIndex(
-                name: "IX_WorkflowExecutionLogRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "WorkflowExecutionLogRecords",
-                column: "ActivityNodeId");
+        private void ConvertActivityNodeIdToNclob(MigrationBuilder migrationBuilder, string table)
+        {
+            MigrationHelper.ConvertColumnType(
+                migrationBuilder,
+                _schema,
+                table: table,
+                column: "ActivityNodeId",
+                fromDataType: "NVARCHAR2",
+                toDataType: "NCLOB",
+                toColumnDefinition: "NCLOB",
+                copyExpression: source => $"TO_NCLOB({source})",
+                notNull: true);
+        }
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityExecutionRecord_ActivityNodeId",
-                schema: _schema.Schema,
-                table: "ActivityExecutionRecords",
-                column: "ActivityNodeId");
+        private void ConvertActivityNodeIdToNVarchar2(MigrationBuilder migrationBuilder, string table)
+        {
+            MigrationHelper.ConvertColumnType(
+                migrationBuilder,
+                _schema,
+                table: table,
+                column: "ActivityNodeId",
+                fromDataType: "NCLOB",
+                toDataType: "NVARCHAR2",
+                toColumnDefinition: "NVARCHAR2(450)",
+                // Activity node IDs are far shorter than 450 characters; DBMS_LOB.SUBSTR counts characters for an
+                // NCLOB and returns NVARCHAR2, so it neither truncates real data nor goes through the database
+                // character set the way TO_CHAR would.
+                copyExpression: source => $"DBMS_LOB.SUBSTR({source}, 450, 1)",
+                notNull: true);
         }
     }
 }
