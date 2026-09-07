@@ -53,7 +53,9 @@ public class V3_6OracleMigrationTests
         var script = GenerateRuntimeScript(RuntimeV3_5, RuntimeV3_6, schema, options);
 
         foreach (var table in new[] { "WorkflowExecutionLogRecords", "ActivityExecutionRecords" })
+        {
             AssertColumnConverted(script, schema, table, "ActivityNodeId", "NCLOB", "TO_NCLOB(\"ActivityNodeId\")", notNull: true);
+        }
     }
 
     [Theory]
@@ -64,7 +66,9 @@ public class V3_6OracleMigrationTests
         var script = GenerateRuntimeScript(RuntimeV3_6, RuntimeV3_5, schema, options);
 
         foreach (var table in new[] { "WorkflowExecutionLogRecords", "ActivityExecutionRecords" })
+        {
             AssertColumnConverted(script, schema, table, "ActivityNodeId", "NVARCHAR2(450)", "DBMS_LOB.SUBSTR(\"ActivityNodeId\", 450, 1)", notNull: true);
+        }
     }
 
     // Oracle commits DDL implicitly, so the OriginalSource column the migration adds right before the alteration that
