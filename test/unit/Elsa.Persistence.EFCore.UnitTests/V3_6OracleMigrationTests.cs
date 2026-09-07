@@ -188,7 +188,14 @@ public class V3_6OracleMigrationTests
         Assert.DoesNotContain($"MODIFY \"{column}\"", script, StringComparison.Ordinal);
 
         var add = AssertStatementAt(script, $"ALTER TABLE {qualifiedTable} ADD (\"{tempColumn}\" {toColumnDefinition})");
-        var copy = AssertStatementAt(script, $"UPDATE {qualifiedTable} SET \"{tempColumn}\" = {expectedCopyExpression} WHERE \"{column}\" IS NOT NULL");
+
+        // The copy is unconditional and NULL-preserving, so a retry after a partially committed copy reproduces the
+        // current source exactly instead of leaving a stale converted value behind for a row whose source has since
+        // become NULL.
+        var copyStatement = $"UPDATE {qualifiedTable} SET \"{tempColumn}\" = CASE WHEN \"{column}\" IS NULL THEN NULL ELSE {expectedCopyExpression} END";
+        var copy = AssertStatementAt(script, copyStatement);
+        Assert.DoesNotContain($"{copyStatement} WHERE", script, StringComparison.Ordinal);
+
         var drop = AssertStatementAt(script, $"ALTER TABLE {qualifiedTable} DROP COLUMN \"{column}\"");
         var rename = AssertStatementAt(script, $"ALTER TABLE {qualifiedTable} RENAME COLUMN \"{tempColumn}\" TO \"{column}\"");
 

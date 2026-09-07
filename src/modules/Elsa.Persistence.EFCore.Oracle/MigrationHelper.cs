@@ -41,6 +41,13 @@ internal static class MigrationHelper
     /// what lets an operator who applied the conversion by hand replay the migration. When it finds a datatype it does
     /// not recognize it raises, rather than risk converting an already-converted column and losing the data.
     /// </para>
+    /// <para>
+    /// The copy itself is unconditional and NULL-preserving: it runs for every row, not only the ones with a non-NULL
+    /// source, and writes <c>NULL</c> into the temporary column whenever the source is <c>NULL</c>. That way a retry
+    /// after a copy that already committed - but then failed before the original column was dropped - reproduces the
+    /// current source exactly instead of leaving a stale converted value behind for a row whose source has since been
+    /// cleared.
+    /// </para>
     /// </remarks>
     /// <param name="migrationBuilder">The migration builder to emit into.</param>
     /// <param name="schema">The Elsa schema the table lives in.</param>
@@ -74,7 +81,7 @@ internal static class MigrationHelper
         // schema like "O'Brien" - from producing invalid SQL, the same way SqlIgnoringOracleError already escapes the
         // statement it wraps.
         var addTempColumn = $"ALTER TABLE {qualifiedTable} ADD ({quotedTempColumn} {toColumnDefinition})".Replace("'", "''");
-        var copyValues = $"UPDATE {qualifiedTable} SET {quotedTempColumn} = {copy} WHERE {quotedColumn} IS NOT NULL".Replace("'", "''");
+        var copyValues = $"UPDATE {qualifiedTable} SET {quotedTempColumn} = CASE WHEN {quotedColumn} IS NULL THEN NULL ELSE {copy} END".Replace("'", "''");
         var dropOriginal = $"ALTER TABLE {qualifiedTable} DROP COLUMN {quotedColumn}".Replace("'", "''");
         var renameTemp = $"ALTER TABLE {qualifiedTable} RENAME COLUMN {quotedTempColumn} TO {quotedColumn}".Replace("'", "''");
         var missingBothMessage = $"Neither {quotedColumn} nor {quotedTempColumn} exists on {qualifiedTable}.".Replace("'", "''");
