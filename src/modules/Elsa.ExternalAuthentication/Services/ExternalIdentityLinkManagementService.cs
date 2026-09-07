@@ -34,7 +34,8 @@ public sealed class ExternalIdentityLinkManagementService(
     {
         ValidateTargetTenant(tenantId);
         var normalizedSearch = search?.Trim();
-        var usersInTenant = (await users.FindManyAsync(new UserFilter { TenantId = tenantId }, cancellationToken))
+        var usersInTenant = (await users.FindManyAsync(new()
+                { TenantId = tenantId }, cancellationToken))
             .Where(x => string.IsNullOrEmpty(normalizedSearch) || x.Name.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
             .OrderBy(x => x.Name, StringComparer.Ordinal)
             .ThenBy(x => x.Id, StringComparer.Ordinal)
@@ -51,7 +52,8 @@ public sealed class ExternalIdentityLinkManagementService(
         var normalizedIssuer = NormalizeIssuer(issuer);
         var normalizedSubject = NormalizeSubject(subject);
 
-        var user = await users.FindAsync(new UserFilter { Id = userId }, cancellationToken);
+        var user = await users.FindAsync(new()
+            { Id = userId }, cancellationToken);
         if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
             return new ExternalIdentityLinkPrelinkResult.UserNotFound();
 
@@ -62,10 +64,10 @@ public sealed class ExternalIdentityLinkManagementService(
 
         try
         {
-            var result = await provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest(
+            var result = await provisioner.CreateLinkOrGetExistingAsync(new(
                 tenantId,
                 ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key),
-                new ExternalIdentity(normalizedIssuer, normalizedSubject, new Dictionary<string, IReadOnlyCollection<string>>()),
+                new(normalizedIssuer, normalizedSubject, new Dictionary<string, IReadOnlyCollection<string>>()),
                 null,
                 user.Id), cancellationToken);
 
@@ -87,7 +89,8 @@ public sealed class ExternalIdentityLinkManagementService(
     {
         ValidateTargetTenant(tenantId);
         ArgumentException.ThrowIfNullOrWhiteSpace(linkId);
-        var existing = await links.FindAsync(new ExternalIdentityLinkFilter { TenantId = tenantId }, cancellationToken);
+        var existing = await links.FindAsync(new()
+            { TenantId = tenantId }, cancellationToken);
         var link = existing.Items.FirstOrDefault(x => string.Equals(x.Id, linkId, StringComparison.Ordinal));
         if (link is null || !await links.DeleteAsync(tenantId, linkId, cancellationToken))
             return false;
@@ -113,7 +116,8 @@ public sealed class ExternalIdentityLinkManagementService(
         var normalizedIssuer = NormalizeIssuer(issuer);
         var normalizedSubject = NormalizeSubject(subject);
 
-        var user = await users.FindAsync(new UserFilter { Id = userId }, cancellationToken);
+        var user = await users.FindAsync(new()
+            { Id = userId }, cancellationToken);
         if (user is null || !string.Equals(user.TenantId, tenantId, StringComparison.Ordinal))
             return new ExternalIdentityLinkReplaceResult.NotFound();
 
@@ -125,12 +129,12 @@ public sealed class ExternalIdentityLinkManagementService(
         try
         {
             result = await provisioner.ReplaceAsync(
-                new ExternalIdentityLinkReplaceRequest(
+                new(
                     tenantId,
                     linkId,
                     user.Id,
                     ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key),
-                    new ExternalIdentity(normalizedIssuer, normalizedSubject, new Dictionary<string, IReadOnlyCollection<string>>())),
+                    new(normalizedIssuer, normalizedSubject, new Dictionary<string, IReadOnlyCollection<string>>())),
                 cancellationToken);
         }
         catch (InvalidOperationException)
@@ -164,8 +168,7 @@ public sealed class ExternalIdentityLinkManagementService(
         var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(connectionKey);
         var registry = await connections.GetAsync(tenantId, cancellationToken);
         return registry.Connections.FirstOrDefault(x =>
-            !x.IsShadowed &&
-            !x.Connection.ArchivedAt.HasValue &&
+            x is { IsShadowed: false, Connection.ArchivedAt: null } &&
             string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), normalizedKey, StringComparison.Ordinal));
     }
 

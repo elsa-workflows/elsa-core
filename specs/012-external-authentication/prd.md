@@ -8,7 +8,7 @@
 
 **Domain language**: [`CONTEXT.md`](../../CONTEXT.md)
 
-**Architecture decisions**: [`docs/adr`](../../docs/adr)
+**Architecture decisions**: [`doc/adr`](../../doc/adr)
 
 ## Summary
 

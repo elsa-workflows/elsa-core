@@ -6,17 +6,8 @@ using JetBrains.Annotations;
 namespace Elsa.Identity.Endpoints.Login;
 
 [PublicAPI]
-internal class Login : Endpoint<Request, LoginResponse>
+internal class Login(IUserCredentialsValidator userCredentialsValidator, IAccessTokenIssuer tokenIssuer) : Endpoint<Request, LoginResponse>
 {
-    private readonly IUserCredentialsValidator _userCredentialsValidator;
-    private readonly IAccessTokenIssuer _tokenIssuer;
-
-    public Login(IUserCredentialsValidator userCredentialsValidator, IAccessTokenIssuer tokenIssuer)
-    {
-        _userCredentialsValidator = userCredentialsValidator;
-        _tokenIssuer = tokenIssuer;
-    }
-
     /// <inheritdoc />
     public override void Configure()
     {
@@ -27,12 +18,12 @@ internal class Login : Endpoint<Request, LoginResponse>
     /// <inheritdoc />
     public override async Task<LoginResponse> ExecuteAsync(Request request, CancellationToken cancellationToken)
     {
-        var user = await _userCredentialsValidator.ValidateAsync(request.Username.Trim(), request.Password.Trim(), cancellationToken);
+        var user = await userCredentialsValidator.ValidateAsync(request.Username.Trim(), request.Password.Trim(), cancellationToken);
 
         if (user == null)
             return new LoginResponse(false, null, null);
 
-        var tokens = await _tokenIssuer.IssueTokensAsync(user, cancellationToken);
+        var tokens = await tokenIssuer.IssueTokensAsync(user, cancellationToken);
 
         return new LoginResponse(true, tokens.AccessToken, tokens.RefreshToken);
     }

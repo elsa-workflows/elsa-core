@@ -10,7 +10,7 @@ public sealed class ExternalAuthenticationSecurityNotifier(IServiceProvider serv
     public ValueTask PublishAsync(INotification notification, CancellationToken cancellationToken = default)
     {
         var sender = services.GetService<INotificationSender>();
-        return sender is null ? ValueTask.CompletedTask : new ValueTask(sender.SendAsync(notification, cancellationToken));
+        return sender is null ? ValueTask.CompletedTask : new(sender.SendAsync(notification, cancellationToken));
     }
 
     public static SecurityEventContext Context(

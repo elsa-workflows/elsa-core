@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -16,7 +17,7 @@ internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpoint<List
     {
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
         Routes("/bookmark-queue/dead-letters");
-        ConfigurePermissions(PermissionNames.ReadBookmarkQueueDeadLetters);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.BookmarkQueueDeadLetters, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(ListRequest request, CancellationToken cancellationToken)

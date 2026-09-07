@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
@@ -22,7 +23,7 @@ internal class GetEndpoint(
     public override void Configure()
     {
         Routes("/workflow-definitions/{definitionId}/execute");
-        ConfigurePermissions("exec:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Execute);
         Verbs(FastEndpoints.Http.GET);
     }
 

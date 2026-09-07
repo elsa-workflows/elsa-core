@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using CShells.Lifecycle;
 using Elsa.Abstractions;
 using Elsa.Shells.Api.Endpoints.Shells;
@@ -13,7 +14,7 @@ internal class Reload(IShellRegistry shellRegistry, IApiSerializer apiSerializer
     public override void Configure()
     {
         Post("/shells/{shellId}/reload");
-        ConfigurePermissions("actions:shells:reload");
+        RequirePermission(Elsa.Shells.Api.Permissions.ShellPermissions.Shells, "reload");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

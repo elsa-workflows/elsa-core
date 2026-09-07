@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Secrets.Permissions;
 using Elsa.Secrets.Services;
@@ -9,7 +10,7 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<ListSecretsReques
     public override void Configure()
     {
         Get("/secrets");
-        ConfigurePermissions(SecretsPermissions.Read);
+        RequirePermission(Elsa.Secrets.Permissions.SecretsResourcePermissions.Secrets, CoreVerbs.View);
     }
 
     public override async Task<ListSecretsResponse> ExecuteAsync(ListSecretsRequest request, CancellationToken cancellationToken)

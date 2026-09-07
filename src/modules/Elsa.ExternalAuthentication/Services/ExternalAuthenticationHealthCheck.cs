@@ -11,7 +11,7 @@ public sealed class ExternalAuthenticationHealthCheck(
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var registrySnapshot = await registry.GetAsync(string.Empty, cancellationToken);
-        var enabled = registrySnapshot.Connections.Where(x => x.Connection.IsEnabled && x.Connection.ArchivedAt is null && !x.IsShadowed).ToArray();
+        var enabled = registrySnapshot.Connections.Where(x => x is { Connection: { IsEnabled: true, ArchivedAt: null }, IsShadowed: false }).ToArray();
         if (enabled.Length == 0)
             return HealthCheckResult.Healthy("No enabled external identity provider connections.");
 

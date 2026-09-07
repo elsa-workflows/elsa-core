@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup><Description>Provides provider-neutral experimental persistence for Elsa user tasks.</Description><PackageTags>elsa module user tasks persistence vnext experimental</PackageTags></PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.VNext.Extensions\Elsa.Persistence.VNext.Extensions.csproj" />
+        <ProjectReference Include="..\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj" />
+        <ProjectReference Include="..\Elsa.UserTasks\Elsa.UserTasks.csproj" />
+    </ItemGroup>
+</Project>

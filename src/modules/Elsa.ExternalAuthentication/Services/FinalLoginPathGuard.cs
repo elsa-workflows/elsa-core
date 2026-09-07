@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Elsa.ExternalAuthentication.Services;
 
 /// <summary>Prevents a management edit from removing the final ordinary sign-in path by accident.</summary>
-public sealed class FinalLoginPathGuard(IIdentityProviderConnectionRegistry registry, IOptions<ExternalAuthenticationOptions> options)
+public sealed class FinalLoginPathGuard(IIdentityProviderConnectionRegistry registry, IOptions<ExternalAuthenticationOptions> options, IPermissionEvaluator permissionEvaluator)
 {
     public async ValueTask<FinalLoginPathGuardResult> AuthorizeAsync(IdentityProviderConnection existing, IdentityProviderConnection candidate, string targetTenantId, ClaimsPrincipal actor, bool confirmedOverride, CancellationToken cancellationToken = default)
     {
@@ -18,11 +19,11 @@ public sealed class FinalLoginPathGuard(IIdentityProviderConnectionRegistry regi
         var effective = await registry.GetAsync(targetTenantId, cancellationToken);
         if (effective.Connections.Any(x => !string.Equals(x.Connection.Id, existing.Id, StringComparison.Ordinal) && IsNormal(x.Connection) && !x.IsShadowed && x.Validity != ConnectionValidity.Invalid))
             return FinalLoginPathGuardResult.Allowed;
-        var canOverride = confirmedOverride && actor.FindAll(PermissionNames.ClaimType).Any(x => x.Value == PermissionNames.All || x.Value == guard.PrivilegedOverridePermission);
+        var canOverride = confirmedOverride && permissionEvaluator.HasPermission(actor, guard.PrivilegedOverridePermission);
         return canOverride ? FinalLoginPathGuardResult.Allowed : FinalLoginPathGuardResult.Denied;
     }
 
-    private static bool IsNormal(IdentityProviderConnection connection) => connection.IsEnabled && connection.ArchivedAt is null;
+    private static bool IsNormal(IdentityProviderConnection connection) => connection is { IsEnabled: true, ArchivedAt: null };
 }
 
 public enum FinalLoginPathGuardResult { Allowed, Denied }

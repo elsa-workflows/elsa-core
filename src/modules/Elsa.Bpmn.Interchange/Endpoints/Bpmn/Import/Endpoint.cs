@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Bpmn.Interchange;
 using Bpmn.Semantics;
 using Elsa.Abstractions;
@@ -25,7 +26,7 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
     {
         Post("bpmn/import");
         AllowFileUploads();
-        ConfigurePermissions("write:workflow-definitions");
+        RequirePermission(Elsa.Bpmn.Interchange.Permissions.BpmnPermissions.Definitions, CoreVerbs.Write);
     }
 
     /// <inheritdoc />

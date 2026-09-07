@@ -42,7 +42,9 @@ public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
         // ordering is not asserted here because it is not observable for these constructs: the interpreter reads
         // LiveWork only to resolve teardown handles by (binding ref, iteration id), and none of the processes in scope
         // tears down a slot a just-completed unit of work shares. It becomes observable with multi-instance work and
-        // re-armed scope listeners, which arrive with the issues that add them.
+        // re-armed scope listeners, which arrive with the issues that add them -- see
+        // BpmnEventSubprocessTests.NonInterruptingListener_ReArmsWithoutCollidingWithTheSlotItJustVacated, which is
+        // where the ordering is pinned.
 
         // Arrange
         await _host.RunAsync(BpmnTestProcesses.InterruptingTimerBoundary(_host.Log));

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
@@ -19,7 +20,7 @@ internal class Get : ElsaEndpoint<Request, ActivityDescriptor>
     public override void Configure()
     {
         Get("/descriptors/activities/{typeName}");
-        ConfigurePermissions("read:*", "read:activity-descriptors");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
     }
 
     /// <inheritdoc />

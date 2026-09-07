@@ -345,7 +345,7 @@ Switch it to the public client from section 2:
 
 The WebAssembly client has no secret and always uses PKCE. Supply upstream and confidential broker secrets explicitly through their deployment secret configurations; never copy them through the API or UI. To roll back either host, restore `Authentication:Provider` to `OpenIdConnect` and restart; the retained direct settings were never changed.
 
-See [the migration guide](../../docs/migrations/external-authentication.md) for the complete setting map and retirement checklist.
+See [the migration guide](../../doc/migrations/external-authentication.md) for the complete setting map and retirement checklist.
 
 ## 9. Targeted Verification Commands
 

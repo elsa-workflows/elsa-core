@@ -47,9 +47,9 @@
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-        <PackageVersion Include="FastEndpoints" Version="7.2.0" />
-        <PackageVersion Include="FastEndpoints.Security" Version="7.2.0" />
-        <PackageVersion Include="FastEndpoints.Swagger" Version="7.2.0" />
+        <PackageVersion Include="FastEndpoints" Version="8.2.0" />
+        <PackageVersion Include="FastEndpoints.Security" Version="8.2.0" />
+        <PackageVersion Include="FastEndpoints.Swagger" Version="8.2.0" />
         <PackageVersion Include="Microsoft.AspNetCore.Authorization" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9"/>
@@ -98,9 +98,9 @@
         <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.1.0"/>
         <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
         <PackageVersion Include="Bogus" Version="35.6.5"/>
-        <PackageVersion Include="Bpmn.Interchange" Version="0.1.1-preview.19"/>
-        <PackageVersion Include="Bpmn.Model" Version="0.1.1-preview.19"/>
-        <PackageVersion Include="Bpmn.Semantics" Version="0.1.1-preview.19"/>
+        <PackageVersion Include="Bpmn.Interchange" Version="0.2.0"/>
+        <PackageVersion Include="Bpmn.Model" Version="0.2.0"/>
+        <PackageVersion Include="Bpmn.Semantics" Version="0.2.0"/>
         <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All"/>
         <PackageVersion Include="ConsoleLogStreaming.Contracts" Version="1.1.0"/>
         <PackageVersion Include="ConsoleLogStreaming.Core" Version="1.1.0"/>
@@ -200,6 +200,7 @@
         <PackageVersion Include="System.Net.Http" Version="4.3.4"/>
 		<PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
+        <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MsSql" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.PostgreSql" Version="4.9.0"/>

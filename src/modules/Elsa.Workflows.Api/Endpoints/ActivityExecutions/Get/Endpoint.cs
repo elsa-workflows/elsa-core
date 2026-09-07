@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -16,7 +17,7 @@ internal class Endpoint(IActivityExecutionStore store) : ElsaEndpointWithoutRequ
     public override void Configure()
     {
         Get("/activity-executions/{id}", "/activity-executions/{*id}", "/activity-executions/by-id");
-        ConfigurePermissions("read:activity-execution");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.ActivityExecutions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

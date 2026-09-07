@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -328,7 +329,7 @@ public class BrokerSecurityTests
         roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<IEnumerable<Role>>([]));
         var tokens = Substitute.For<IElsaTokenService>();
         tokens.IssueAccessTokenAsync(Arg.Any<TokenIssuanceContext>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(new IssuedAccessToken("access", clock.UtcNow.AddHours(1))));
-        var issuer = new DefaultExternalAuthenticationTokenIssuer(store, registry, [], users, roles, tokens, new DefaultTenantAccessor(), clock);
+        var issuer = new DefaultExternalAuthenticationTokenIssuer(store, registry, [], users, roles, tokens, new DefaultTenantAccessor(), clock, Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()));
         var session = new ExternalAuthenticationSession { Id = "session-a", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a", ConnectionKey = "contoso", ConnectionMaterialRevision = "revision-a", SecretGenerationFingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData([])), Issuer = "issuer", SubjectHash = "subject", StartedAt = clock.UtcNow, LastRefreshedAt = clock.UtcNow, ExpiresAt = clock.UtcNow.AddHours(1), RefreshExpiresAt = clock.UtcNow.AddHours(1) };
 
         var first = await issuer.IssueAsync(session);
@@ -494,7 +495,7 @@ public class BrokerSecurityTests
     {
         var clock = new MutableClock(new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var identity = new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>());
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         var provisioner = new InMemoryExternalIdentityProvisioner(
             users,
             new StoreBasedUserProvider(users),

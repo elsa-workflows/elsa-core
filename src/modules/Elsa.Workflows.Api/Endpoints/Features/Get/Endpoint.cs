@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Features.Contracts;
 using Elsa.Features.Models;
@@ -15,7 +16,7 @@ internal class Get(IInstalledFeatureProvider installedFeatureProvider) : ElsaEnd
     public override void Configure()
     {
         Get("/features/installed/{fullName}");
-        ConfigurePermissions("read:*", "read:installed-features");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.SystemFeatures, CoreVerbs.View);
     }
 
     /// <inheritdoc />

@@ -18,7 +18,7 @@ public sealed class InMemoryPreviewResultStore(ISystemClock clock) : IPreviewRes
             if (_entries.ContainsKey(result.HandleHash))
                 throw new InvalidOperationException("A preview result already exists for the supplied handle.");
 
-            _entries[result.HandleHash] = new PreviewEntry(result);
+            _entries[result.HandleHash] = new(result);
         }
 
         return ValueTask.CompletedTask;

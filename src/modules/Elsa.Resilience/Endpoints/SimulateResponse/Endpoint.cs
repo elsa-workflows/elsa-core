@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,7 +19,7 @@ public class SimulateResponseEndpoint(SimulateResponseSessionStore sessionStore,
     public override void Configure()
     {
         Get("/simulate-response");
-        ConfigurePermissions("exec:*", "exec:resilience", "exec:resilience:simulate-response");
+        RequirePermission(Elsa.Resilience.Permissions.ResiliencePermissions.Simulation, CoreVerbs.Execute);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

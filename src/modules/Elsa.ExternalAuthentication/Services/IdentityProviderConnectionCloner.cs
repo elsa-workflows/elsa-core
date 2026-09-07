@@ -41,7 +41,7 @@ internal static class IdentityProviderConnectionCloner
     private static ClaimProjection CloneProjection(ClaimProjection? source)
     {
         source ??= ClaimProjection.Empty;
-        return new ClaimProjection(
+        return new(
             new HashSet<string>(source.AllowedClaimTypes ?? new HashSet<string>(), StringComparer.Ordinal),
             new HashSet<string>(source.RedactedClaimTypes ?? new HashSet<string>(), StringComparer.Ordinal),
             source.MaximumClaimCount,

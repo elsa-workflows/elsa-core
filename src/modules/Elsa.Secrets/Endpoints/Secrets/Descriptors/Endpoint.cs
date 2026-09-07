@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Secrets.Permissions;
 
@@ -8,7 +9,7 @@ internal class Endpoint(ISecretTypeRegistry typeRegistry, ISecretStoreRegistry s
     public override void Configure()
     {
         Get("/secrets/descriptors");
-        ConfigurePermissions(SecretsPermissions.Read);
+        RequirePermission(Elsa.Secrets.Permissions.SecretsResourcePermissions.Secrets, CoreVerbs.View);
     }
 
     public override Task<SecretDescriptorsResponse> ExecuteAsync(CancellationToken cancellationToken)

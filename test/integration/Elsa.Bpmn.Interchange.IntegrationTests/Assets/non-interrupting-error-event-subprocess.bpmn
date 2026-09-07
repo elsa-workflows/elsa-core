@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   id="Definitions_non-interrupting-error-event-subprocess"
+                   targetNamespace="http://bpmn.io/schema/bpmn">
+  <!--
+    A non-interrupting error event subprocess, which is not legal BPMN: error events are always interrupting. The
+    reader drops the whole <subProcess>, bindings included, and reports it. The undeclared <serviceTask> in its body
+    is deliberate: an unbound task the binder can see is refused outright, so an import that still succeeds is what
+    proves the drop took the body's bindings with it rather than leaving half the element behind.
+  -->
+  <bpmn:process id="non-interrupting-error-event-subprocess" name="Non-Interrupting Error Event Subprocess" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="Settle">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration>PT5M</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Settle" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Settle" targetRef="End_1" />
+    <bpmn:subProcess id="OnError" name="On Error" triggeredByEvent="true">
+      <bpmn:startEvent id="ErrorStart" isInterrupting="false">
+        <bpmn:errorEventDefinition id="ErrorDefinition_1" />
+        <bpmn:outgoing>Flow_E1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="HandleError" name="Handle Error">
+        <bpmn:incoming>Flow_E1</bpmn:incoming>
+        <bpmn:outgoing>Flow_E2</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="ErrorEnd">
+        <bpmn:incoming>Flow_E2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_E1" sourceRef="ErrorStart" targetRef="HandleError" />
+      <bpmn:sequenceFlow id="Flow_E2" sourceRef="HandleError" targetRef="ErrorEnd" />
+    </bpmn:subProcess>
+  </bpmn:process>
+</bpmn:definitions>

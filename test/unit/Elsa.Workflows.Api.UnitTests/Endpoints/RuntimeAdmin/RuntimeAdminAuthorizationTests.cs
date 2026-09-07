@@ -1,4 +1,6 @@
 using System.Reflection;
+using Elsa.Authorization;
+using Elsa.Workflows.Api.Permissions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using NSubstitute;
@@ -9,28 +11,29 @@ namespace Elsa.Workflows.Api.UnitTests.Endpoints.RuntimeAdmin;
 public class RuntimeAdminAuthorizationTests
 {
     [Fact]
-    public void StatusEndpoint_AllowsReadWorkflowRuntimePermission()
+    public void StatusEndpoint_RequiresOnlyViewOnTheRuntime()
     {
-        var permissions = GetConfiguredPermissions("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status.StatusEndpoint");
+        // Reading runtime status must not require the verb that pauses or drains it.
+        var permission = GetDeclaredPermission("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status.StatusEndpoint");
 
-        Assert.Contains(PermissionNames.All, permissions);
-        Assert.Contains(PermissionNames.ReadWorkflowRuntime, permissions);
-        Assert.Contains(PermissionNames.ManageWorkflowRuntime, permissions);
+        Assert.Equal(WorkflowPermissions.Runtime, permission.Resource);
+        Assert.Equal(CoreVerbs.View, permission.Verb);
     }
 
     [Theory]
     [InlineData("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Pause.PauseEndpoint")]
     [InlineData("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Resume.ResumeEndpoint")]
     [InlineData("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain.ForceDrainEndpoint")]
-    public void MutatingEndpoints_RequireManageWorkflowRuntimePermission(string endpointTypeName)
+    public void MutatingEndpoints_RequireControlOnTheRuntime(string endpointTypeName)
     {
-        var permissions = GetConfiguredPermissions(endpointTypeName);
+        var permission = GetDeclaredPermission(endpointTypeName);
 
-        Assert.Contains(PermissionNames.ManageWorkflowRuntime, permissions);
-        Assert.DoesNotContain(PermissionNames.ReadWorkflowRuntime, permissions);
+        Assert.Equal(WorkflowPermissions.Runtime, permission.Resource);
+        Assert.Equal("control", permission.Verb);
+        Assert.NotEqual(CoreVerbs.View, permission.Verb);
     }
 
-    private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
+    private static Permission GetDeclaredPermission(string endpointTypeName)
     {
         var endpointType = typeof(WorkflowsApiFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
         var endpoint = Activator.CreateInstance(
@@ -48,12 +51,11 @@ public class RuntimeAdminAuthorizationTests
 
         endpointType.GetMethod("Configure")!.Invoke(endpoint, null);
 
-        var permissions = definition
-            .GetType()
-            .GetProperty("AllowedPermissions", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(definition);
+        var permission = EndpointPermissionRegistry.Find(endpointType);
 
-        return Assert.IsAssignableFrom<IEnumerable<string>>(permissions).ToArray();
+        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+
+        return permission!.Value;
     }
 
     private static (Type RequestDtoType, Type ResponseDtoType) GetEndpointDtoTypes(Type endpointType)

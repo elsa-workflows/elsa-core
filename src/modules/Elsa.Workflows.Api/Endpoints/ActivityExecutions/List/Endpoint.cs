@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Entities;
 using Elsa.Models;
@@ -27,7 +28,7 @@ internal class List : ElsaEndpoint<Request, ListResponse<ActivityExecutionRecord
     public override void Configure()
     {
         Get("/activity-executions/list");
-        ConfigurePermissions("read:activity-execution");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.ActivityExecutions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

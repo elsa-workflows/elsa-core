@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -24,7 +25,7 @@ internal class Report : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/activity-executions/report");
-        ConfigurePermissions("read:activity-execution");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.ActivityExecutions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

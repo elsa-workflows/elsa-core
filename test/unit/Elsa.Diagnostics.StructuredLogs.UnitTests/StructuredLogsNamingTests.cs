@@ -6,9 +6,11 @@ namespace Elsa.Diagnostics.StructuredLogs.UnitTests;
 public class StructuredLogsNamingTests
 {
     [Fact]
+    // Pins the resource name, not the legacy permission string: the convention worth holding is that
+    // this module is called 'diagnostics/structured-logs' wherever it appears.
     public void Permission_UsesDiagnosticsStructuredLogsName()
     {
-        Assert.Equal("read:diagnostics:structured-logs", StructuredLogsPermissions.Read);
+        Assert.Equal("diagnostics/structured-logs", StructuredLogsResourcePermissions.StructuredLogs);
     }
 
     [Fact]

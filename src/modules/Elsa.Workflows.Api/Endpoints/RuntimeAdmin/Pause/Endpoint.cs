@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
@@ -15,7 +16,7 @@ internal sealed class PauseEndpoint(IWorkflowRuntimeAdminService admin) : ElsaEn
     public override void Configure()
     {
         Post("/admin/workflow-runtime/pause");
-        ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Runtime, "control");
     }
 
     public override async Task HandleAsync(PauseRequest req, CancellationToken ct)

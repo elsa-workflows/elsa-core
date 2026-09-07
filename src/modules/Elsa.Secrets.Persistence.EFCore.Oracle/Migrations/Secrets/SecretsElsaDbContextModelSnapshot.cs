@@ -18,7 +18,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -73,6 +73,9 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
                         .HasMaxLength(100)
                         .HasColumnType("NVARCHAR2(100)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("NVARCHAR2(450)");
+
                     b.Property<string>("TypeName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -82,10 +85,6 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
                         .HasColumnType("TIMESTAMP(7) WITH TIME ZONE");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Secret_NormalizedName");
 
                     b.HasIndex("Scope")
                         .HasDatabaseName("IX_Secret_Scope");
@@ -98,6 +97,11 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
 
                     b.HasIndex("TypeName")
                         .HasDatabaseName("IX_Secret_TypeName");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Secret_TenantId_NormalizedName")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
 
                     b.ToTable("Secrets", "Elsa");
                 });

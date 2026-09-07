@@ -1,5 +1,0 @@
-# Compose a scoped connection registry
-
-**Status**: Partially superseded by [0008](0008-identify-host-connections-by-logical-key-and-use-explicit-overrides.md)
-
-Elsa exposes one Connection Registry composed from read-only deployment configuration and optional administrator-managed persistence, with configuration authoritative on collision and shadowed database records visible as conflicts. Connections have immutable internal identities, optimistic revisions, logical archival, and either host-wide or tenant scope; keys are unique within each tenant's effective registry. Host-wide connections use Elsa's tenant-agnostic `*` identifier, while the empty identifier remains the default tenant. This preserves identity continuity and deterministic source ownership while supporting runtime administration without restart.

@@ -46,6 +46,42 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task SecretNamesAreUniquePerTenantRatherThanGlobally()
+    {
+        // Asserted against the schema rather than through the repository. The repository's own duplicate-name
+        // check queries dbContext.Secrets, which the global query filter already scopes to the ambient tenant
+        // when multitenancy is on -- so exercising it here would test SetTenantIdFilter, not this change. What
+        // this change owns is the index, and a global unique index would make the name a shared resource: the
+        // second tenant to want "smtp:password" could not create one.
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SecretsElsaDbContext>>();
+        await using var dbContext = await factory.CreateDbContextAsync();
+
+        var index = dbContext.Model
+            .FindEntityType(typeof(Secret))!
+            .GetIndexes()
+            .Single(x => x.IsUnique);
+
+        Assert.Equal(["TenantId", SecretShadowPropertyNames.NormalizedName], index.Properties.Select(x => x.Name));
+    }
+
+    [Fact]
+    public async Task ExistingSecretsCarryNoTenantUntilOneIsAssigned()
+    {
+        // The upgrade adds the column nullable with no backfill, so rows written before it stay null. That is
+        // what SetTenantIdFilter's "null counts as the default tenant" clause is for, and it is why the
+        // migration needs no data step.
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
+
+        await repository.AddAsync(new Secret { Name = "legacy:secret", DisplayName = "Legacy" });
+
+        var stored = await repository.GetAsync("legacy:secret");
+        Assert.NotNull(stored);
+        Assert.Null(stored!.TenantId);
+    }
+
+    [Fact]
     public async Task PersistsSecretAggregate()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();

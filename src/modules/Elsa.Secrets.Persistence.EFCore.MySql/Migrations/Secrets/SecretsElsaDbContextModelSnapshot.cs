@@ -18,7 +18,7 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "9.0.16")
+                .HasAnnotation("ProductVersion", "9.0.17")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -73,6 +73,9 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
 
+                    b.Property<string>("TenantId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<string>("TypeName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -82,10 +85,6 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Secret_NormalizedName");
 
                     b.HasIndex("Scope")
                         .HasDatabaseName("IX_Secret_Scope");
@@ -98,6 +97,10 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
 
                     b.HasIndex("TypeName")
                         .HasDatabaseName("IX_Secret_TypeName");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Secret_TenantId_NormalizedName");
 
                     b.ToTable("Secrets", "Elsa");
                 });

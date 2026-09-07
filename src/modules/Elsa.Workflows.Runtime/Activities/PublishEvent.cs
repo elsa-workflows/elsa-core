@@ -34,6 +34,15 @@ public class PublishEvent([CallerFilePath] string? source = null, [CallerLineNum
     /// <summary>
     /// The input to send as the event body.
     /// </summary>
+    /// <remarks>
+    /// The payload is persisted as part of the receiving workflow's state, and only types with a registered
+    /// serialization alias survive that round trip as themselves. A payload whose type has no alias — an anonymous
+    /// type, or any POCO that was never registered — is stored without a type discriminator and read back as a
+    /// property bag whose keys carry the state serializer's camel-case naming policy, so a consumer looking for
+    /// <c>Status</c> will find <c>status</c>. Register the type during startup with
+    /// <c>AddTypeAlias&lt;TPayload&gt;()</c> to keep it intact, or pass a <c>Dictionary&lt;string, object&gt;</c>,
+    /// whose keys are stored verbatim, when a property bag is what you intend.
+    /// </remarks>
     [Input(Description = "The payload to send as the event body.")]
     public Input<object> Payload { get; set; } = null!;
 

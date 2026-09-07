@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
@@ -16,7 +17,7 @@ public class DryRun(IWorkflowInstanceFinder workflowInstanceFinder) : ElsaEndpoi
     public override void Configure()
     {
         Post("/alterations/dry-run");
-        ConfigurePermissions("run:alterations");
+        RequirePermission(Elsa.Alterations.Permissions.AlterationPermissions.Alterations, CoreVerbs.Execute);
     }
 
     /// <inheritdoc />

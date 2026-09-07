@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Api.Common]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\common\Elsa.Api.Common\Elsa.Api.Common.csproj" />
+    </ItemGroup>
+
+</Project>

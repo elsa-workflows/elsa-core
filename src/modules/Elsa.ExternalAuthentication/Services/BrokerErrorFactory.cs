@@ -25,7 +25,7 @@ public static class BrokerErrorFactory
             _ => throw new ArgumentOutOfRangeException(nameof(category), category, null)
         };
 
-        return new PublicBrokerError(error, message, IsSafeCorrelationId(correlationId) ? correlationId! : CreateCorrelationId());
+        return new(error, message, IsSafeCorrelationId(correlationId) ? correlationId! : CreateCorrelationId());
     }
 
     public static string CreateCorrelationId()

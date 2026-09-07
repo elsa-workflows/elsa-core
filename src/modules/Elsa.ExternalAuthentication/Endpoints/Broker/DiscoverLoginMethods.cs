@@ -3,9 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
-using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Broker;
 
@@ -25,12 +23,12 @@ internal sealed class DiscoverLoginMethods(IExternalAuthenticationBroker broker,
         {
             var methods = await broker.DiscoverAsync(tenantAccessor.TenantId, clientId, cancellationToken);
             HttpContext.Response.Headers.CacheControl = "no-store";
-            return new DiscoverLoginMethodsResponse(methods, methods.SingleOrDefault(x => x.IsPreferred)?.Key);
+            return new(methods, methods.SingleOrDefault(x => x.IsPreferred)?.Key);
         }
         catch (InvalidOperationException)
         {
             HttpContext.Response.StatusCode = 400;
-            return new DiscoverLoginMethodsResponse([], null);
+            return new([], null);
         }
     }
 }

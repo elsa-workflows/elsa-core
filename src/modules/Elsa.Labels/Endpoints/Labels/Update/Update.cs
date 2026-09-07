@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using FastEndpoints;
@@ -11,7 +12,7 @@ internal class Update(ILabelStore store) : ElsaEndpoint<Request, Response, Label
     public override void Configure()
     {
         Post("/labels/{id}");
-        ConfigurePermissions("update:labels");
+        RequirePermission(Elsa.Labels.Permissions.LabelPermissions.Labels, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

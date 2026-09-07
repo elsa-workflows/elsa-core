@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Workflows.Management;
@@ -24,7 +25,7 @@ internal class List : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Get("/workflow-definitions/{id}/labels");
-        ConfigurePermissions("read:workflow-definition-labels");
+        RequirePermission(Elsa.Labels.Permissions.LabelPermissions.WorkflowDefinitionLabels, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

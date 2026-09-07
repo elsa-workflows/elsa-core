@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Secrets.Permissions;
 
@@ -8,7 +9,7 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest<Sec
     public override void Configure()
     {
         Post("/secrets/{name}/test");
-        ConfigurePermissions(SecretsPermissions.Test);
+        RequirePermission(Elsa.Secrets.Permissions.SecretsResourcePermissions.Secrets, "test");
     }
 
     public override Task<SecretTestResponse> ExecuteAsync(CancellationToken cancellationToken)

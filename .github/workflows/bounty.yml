@@ -16,7 +16,7 @@ jobs:
         id: footer
         uses: jaywcjlove/github-action-read-file@main
         with:
-          path: docs/bounty-footer.md
+          path: doc/bounty/bounty-footer.md
       
       - name: Append Footer to Issue
         uses: actions/github-script@v7

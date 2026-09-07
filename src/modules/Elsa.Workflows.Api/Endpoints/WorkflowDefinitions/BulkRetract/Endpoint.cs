@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -16,7 +17,7 @@ internal class BulkRetract(IWorkflowDefinitionStore store, IWorkflowDefinitionPu
     public override void Configure()
     {
         Post("/bulk-actions/retract/workflow-definitions/by-definition-ids");
-        ConfigurePermissions("retract:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "retract");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

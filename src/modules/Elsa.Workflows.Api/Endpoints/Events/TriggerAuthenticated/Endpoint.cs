@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -23,7 +24,7 @@ internal class Trigger : ElsaEndpoint<Request>
     public override void Configure()
     {
         Post("/events/{eventName}/trigger");
-        ConfigurePermissions("trigger:event");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Events, "trigger");
     }
 
     /// <inheritdoc />

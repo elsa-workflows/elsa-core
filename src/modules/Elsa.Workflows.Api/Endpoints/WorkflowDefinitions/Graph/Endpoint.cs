@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
@@ -14,7 +15,7 @@ internal class Graph(IWorkflowDefinitionService workflowDefinitionService, IApiS
     public override void Configure()
     {
         Get("/workflow-definitions/subgraph/{id}");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

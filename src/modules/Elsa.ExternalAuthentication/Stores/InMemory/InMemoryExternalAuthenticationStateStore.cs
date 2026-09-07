@@ -19,7 +19,7 @@ public sealed class InMemoryExternalAuthenticationStateStore(ISystemClock clock)
             if (_entries.ContainsKey(key))
                 throw new InvalidOperationException("A state entry already exists for the supplied purpose and handle.");
 
-            _entries[key] = new StateEntry(value, expiresAt);
+            _entries[key] = new(value, expiresAt);
         }
 
         return ValueTask.CompletedTask;

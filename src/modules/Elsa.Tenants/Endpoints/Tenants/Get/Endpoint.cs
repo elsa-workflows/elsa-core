@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 using Elsa.Models;
@@ -9,7 +10,7 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
     public override void Configure()
     {
         Get("/tenants/{id}");
-        ConfigurePermissions("read:tenants");
+        RequirePermission(Elsa.Tenants.Permissions.TenantPermissions.Tenants, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -17,7 +18,7 @@ internal class RevertVersion(IWorkflowDefinitionManager workflowDefinitionManage
     public override void Configure()
     {
         Post("workflow-definitions/{definitionId}/revert/{version}");
-        ConfigurePermissions("publish:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DefinitionVersions, "revert");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Broker;
 
@@ -73,6 +74,7 @@ public class BrokerContractTests
     }
 }
 
+[Collection(nameof(EndpointSecurityCollection))]
 public class BrokerDiscoveryEndpointContractTests : IAsyncLifetime
 {
     private WebApplication? _app;

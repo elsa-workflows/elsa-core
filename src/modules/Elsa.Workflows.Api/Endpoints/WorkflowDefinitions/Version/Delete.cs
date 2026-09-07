@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -19,7 +20,7 @@ public class DeleteVersion(IWorkflowDefinitionManager workflowDefinitionManager,
     public override void Configure()
     {
         Delete("workflow-definitions/{definitionId}/version/{version}");
-        ConfigurePermissions("delete:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DefinitionVersions, CoreVerbs.Delete);
     }
 
     /// <inheritdoc />

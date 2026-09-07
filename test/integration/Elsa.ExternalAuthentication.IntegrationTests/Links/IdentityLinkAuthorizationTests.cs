@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -21,10 +22,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Links;
 
-[Collection(nameof(IdentityLinkAuthorizationCollection))]
+[Collection(nameof(EndpointSecurityCollection))]
 public class IdentityLinkAuthorizationTests : IAsyncLifetime
 {
     private WebApplication? _app;
@@ -83,7 +85,7 @@ public class IdentityLinkAuthorizationTests : IAsyncLifetime
     public async Task UserOptionsRequiresTheLinkManagementPermissionRatherThanAnUnrelatedPermission()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "/external-authentication/user-options");
-        request.Headers.Add(TestAuthenticationHandler.PermissionHeader, ExternalAuthenticationPermissions.ConnectionsRead);
+        request.Headers.Add(TestAuthenticationHandler.PermissionHeader, $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.View}");
         Assert.Equal(HttpStatusCode.Forbidden, (await _client!.SendAsync(request)).StatusCode);
     }
 
@@ -101,6 +103,3 @@ public class IdentityLinkAuthorizationTests : IAsyncLifetime
         }
     }
 }
-
-[CollectionDefinition(nameof(IdentityLinkAuthorizationCollection), DisableParallelization = true)]
-public class IdentityLinkAuthorizationCollection;

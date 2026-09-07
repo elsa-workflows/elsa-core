@@ -45,7 +45,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
             var candidatesForKey = group.ToArray();
             var hasInheritedScopeCollision = candidatesForKey.Select(x => x.Scope).Distinct().Skip(1).Any();
 
-            var explicitOverride = candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Database && x.Connection.OverridesConfigurationConnection && !x.Connection.ArchivedAt.HasValue);
+            var explicitOverride = candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Database && x.Connection is { OverridesConfigurationConnection: true, ArchivedAt: null });
             var preferred = explicitOverride ?? candidatesForKey.FirstOrDefault(x => x.Source.Ownership == ConnectionSourceOwnership.Configuration) ?? candidatesForKey.First();
             var preferredReference = ToReference(preferred);
             var shadowedReferences = hasInheritedScopeCollision
@@ -60,7 +60,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
                 var candidate = candidatesForKey[index];
                 var isArchived = candidate.Connection.ArchivedAt.HasValue;
                 var isShadowed = !isArchived && !hasInheritedScopeCollision && !ReferenceEquals(candidate, preferred);
-                connections.Add(new EffectiveIdentityProviderConnection(
+                connections.Add(new(
                     candidate.Connection,
                     candidate.Source.Ownership,
                     candidate.Scope,
@@ -82,7 +82,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
 
         var version = revisionCalculator.CalculateRegistryVersion(snapshots.Select(x => (x.Source.Name, x.Source.Ownership, x.Snapshot)));
         var loginMethods = CreateLoginMethods(orderedConnections);
-        return new EffectiveConnectionRegistry(orderedConnections, loginMethods, version);
+        return new(orderedConnections, loginMethods, version);
     }
 
     public async ValueTask<EffectiveIdentityProviderConnection?> FindByKeyAsync(string targetTenantId, string key, CancellationToken cancellationToken = default)
@@ -106,7 +106,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
             .Where(IsAvailableForAuthentication)
             .ToArray();
         var configuredPreferred = available
-            .Where(x => x.Ownership == ConnectionSourceOwnership.Configuration && x.Connection.IsPreferred)
+            .Where(x => x is { Ownership: ConnectionSourceOwnership.Configuration, Connection.IsPreferred: true })
             .OrderBy(x => x.Connection.DisplayOrder)
             .ThenBy(x => ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), StringComparer.Ordinal)
             .ThenBy(x => x.Connection.Id, StringComparer.Ordinal)
@@ -137,7 +137,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
                 x.Connection.IconId,
                 x.Connection.DisplayOrder,
                 string.Equals(x.Connection.Id, preferredConnectionId, StringComparison.Ordinal),
-                new Uri($"/external-authentication/authorize/{Uri.EscapeDataString(x.Connection.Key)}", UriKind.Relative)))
+                new($"/external-authentication/authorize/{Uri.EscapeDataString(x.Connection.Key)}", UriKind.Relative)))
             .ToArray();
 
     private static IReadOnlyList<ConnectionScope> GetApplicableScopes() => [ConnectionScope.Host];
@@ -146,8 +146,7 @@ public sealed class DefaultIdentityProviderConnectionRegistry(
     private static bool IsAvailableForAuthentication(EffectiveIdentityProviderConnection connection) =>
         !connection.IsShadowed &&
         connection.Validity != ConnectionValidity.Invalid &&
-        connection.Connection.IsEnabled &&
-        !connection.Connection.ArchivedAt.HasValue;
+        connection.Connection is { IsEnabled: true, ArchivedAt: null };
     private static int GetOwnershipPriority(ConnectionSourceOwnership ownership) => ownership == ConnectionSourceOwnership.Configuration ? 0 : 1;
     private static IdentityProviderConnectionReference ToReference(Candidate candidate) =>
         new(candidate.Connection.Id, candidate.Connection.DisplayName, candidate.Source.Ownership);

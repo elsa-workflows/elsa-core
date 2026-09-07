@@ -1,85 +1,48 @@
 using Elsa.Features.Services;
 using Elsa.Identity.Features;
-using Elsa.Requirements;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using NSubstitute;
 
 namespace Elsa.Identity.UnitTests.Features;
 
+/// <summary>
+/// These tests previously asserted the shape of the SecurityRoot policy. That policy has been retired in
+/// favour of endpoint permissions (ADR 0010), so what matters now is that the feature registers no policy of
+/// its own and still honours a host's own authorization configuration.
+/// </summary>
 public class DefaultAuthenticationFeatureTests
 {
+    private readonly DefaultAuthenticationFeature _feature = new(Substitute.For<IModule>());
+    private readonly AuthorizationOptions _options = new();
+
     [Fact]
-    public void DefaultSecurityRootPolicyRequiresAuthenticatedUser()
+    public void DefaultAuthorizationConfigurationRegistersNoPolicy()
     {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-        var options = new AuthorizationOptions();
+        _feature.ConfigureAuthorizationOptions(_options);
 
-        feature.ConfigureAuthorizationOptions(options);
-
-        var policy = options.GetPolicy(IdentityPolicyNames.SecurityRoot);
-
-        Assert.NotNull(policy);
-        Assert.Contains(policy.Requirements, requirement => requirement is DenyAnonymousAuthorizationRequirement);
-        Assert.DoesNotContain(policy.Requirements, requirement => requirement is LocalHostPermissionRequirement);
+        Assert.Null(_options.GetPolicy("SecurityRoot"));
     }
 
     [Fact]
-    public void EnableLocalHostPermissionGrantForSecurityRootConfiguresExplicitLocalhostPolicy()
+    public void CustomAuthorizationConfigurationIsHonoured()
     {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-        var options = new AuthorizationOptions();
+        _feature.ConfigureAuthorizationOptions = options => options.AddPolicy("Custom", policy => policy.RequireAuthenticatedUser());
 
-        feature.EnableLocalHostPermissionGrantForSecurityRoot();
-        feature.ConfigureAuthorizationOptions(options);
+        _feature.ConfigureAuthorizationOptions(_options);
 
-        var policy = options.GetPolicy(IdentityPolicyNames.SecurityRoot);
-
-        Assert.True(feature.EnableLocalHostPermissionGrant);
-        Assert.NotNull(policy);
-        Assert.Contains(policy.Requirements, requirement => requirement is LocalHostPermissionRequirement);
+        Assert.NotNull(_options.GetPolicy("Custom"));
+        Assert.Null(_options.GetPolicy("SecurityRoot"));
     }
 
     [Fact]
-    public void EnableLocalHostPermissionGrantDoesNotOverwriteCustomAuthorizationConfiguration()
+    public void NullConfigureAuthorizationOptionsFallsBackToANoOp()
     {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-        feature.ConfigureAuthorizationOptions = options => options.AddPolicy("Custom", policy => policy.RequireAuthenticatedUser());
+        // A host clearing the hook must not take the process down on the next Apply().
+        _feature.ConfigureAuthorizationOptions = null!;
 
-        feature.EnableLocalHostPermissionGrantForSecurityRoot();
-        var options = new AuthorizationOptions();
-        feature.ConfigureAuthorizationOptions(options);
+        var exception = Record.Exception(() => _feature.ConfigureAuthorizationOptions(_options));
 
-        Assert.True(feature.EnableLocalHostPermissionGrant);
-        Assert.NotNull(options.GetPolicy("Custom"));
-        Assert.Null(options.GetPolicy(IdentityPolicyNames.SecurityRoot));
-    }
-
-    [Fact]
-    public void NullConfigureAuthorizationOptionsFallsBackToDefaultSecurityRootPolicy()
-    {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>())
-        {
-            ConfigureAuthorizationOptions = null!
-        };
-        var options = new AuthorizationOptions();
-
-        feature.ConfigureAuthorizationOptions(options);
-
-        var policy = options.GetPolicy(IdentityPolicyNames.SecurityRoot);
-
-        Assert.NotNull(policy);
-        Assert.Contains(policy.Requirements, requirement => requirement is DenyAnonymousAuthorizationRequirement);
-    }
-
-    [Fact]
-    public void DisableLocalHostPermissionGrantForSecurityRootClearsOptInFlag()
-    {
-        var feature = new DefaultAuthenticationFeature(Substitute.For<IModule>());
-
-        feature.EnableLocalHostPermissionGrantForSecurityRoot();
-        feature.DisableLocalHostPermissionGrantForSecurityRoot();
-
-        Assert.False(feature.EnableLocalHostPermissionGrant);
+        Assert.Null(exception);
+        Assert.Null(_options.GetPolicy("SecurityRoot"));
     }
 }

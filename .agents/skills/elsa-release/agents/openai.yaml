@@ -1,4 +1,4 @@
 interface:
   display_name: "Elsa Release"
-  short_description: "Release Elsa repositories from GitHub tags"
-  default_prompt: "Use $elsa-release to create a stable GitHub release from the existing RC tag."
+  short_description: "Release the Elsa stack and verify publication"
+  default_prompt: "Use $elsa-release to release Elsa 3.9.0 stable across Core, Studio, and Extensions, then announce it."

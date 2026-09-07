@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Security.Claims;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
@@ -17,12 +18,12 @@ public class RecoveryAndRevocationTests
         var registry = Substitute.For<IIdentityProviderConnectionRegistry>();
         registry.GetAsync("tenant-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(new EffectiveConnectionRegistry([], [], "1")));
         var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions { LocalLogin = new LocalLoginMethodOptions { IsEnabled = false } });
-        var guard = new FinalLoginPathGuard(registry, options);
+        var guard = new FinalLoginPathGuard(registry, options, new PermissionEvaluator());
         var existing = Connection(enabled: true);
         var disabled = Connection(enabled: false);
 
         Assert.Equal(FinalLoginPathGuardResult.Denied, await guard.AuthorizeAsync(existing, disabled, "tenant-a", new ClaimsPrincipal(new ClaimsIdentity()), false));
-        var privileged = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Elsa.PermissionNames.ClaimType, Elsa.ExternalAuthentication.Permissions.ExternalAuthenticationPermissions.ProviderTrustUnsafe)]));
+        var privileged = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Elsa.PermissionNames.ClaimType, options.Value.FinalLoginPathGuard.PrivilegedOverridePermission)]));
         Assert.Equal(FinalLoginPathGuardResult.Allowed, await guard.AuthorizeAsync(existing, disabled, "tenant-a", privileged, true));
         options.Value.FinalLoginPathGuard.HasBreakGlassAuthentication = true;
         Assert.Equal(FinalLoginPathGuardResult.Allowed, await guard.AuthorizeAsync(existing, disabled, "tenant-a", new ClaimsPrincipal(), false));

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
@@ -19,10 +20,12 @@ namespace Elsa.ExternalAuthentication.Services;
 public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     IIdentityProviderConnectionStore store,
     IOptionsMonitor<ExternalAuthenticationOptions> options,
-    Elsa.Identity.Contracts.IRoleAuthorizationService roleAuthorizationService,
+    IEnumerable<IRoleAuthorizationService> roleAuthorizationServices,
+    IEnumerable<IRoleStore> roleStores,
     IConnectionRegistryVersionStore registryVersions,
     ConnectionRevisionCalculator revisionCalculator,
-    ExternalAuthenticationSecurityNotifier notifier) : IRoleDeletionDependencyContributor
+    ExternalAuthenticationSecurityNotifier notifier,
+    IPermissionEvaluator permissionEvaluator) : IRoleDeletionDependencyContributor
 {
     public const string SourceName = "external-authentication";
     public string Source => SourceName;
@@ -38,12 +41,12 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             configurationIndex++;
         }
 
-        var databaseConnections = await store.FindAsync(new ConnectionFilter(), cancellationToken);
+        var databaseConnections = await store.FindAsync(new(), cancellationToken);
         foreach (var connection in databaseConnections.Items)
         {
             if (!TryGetRoleReference(connection.UnlinkedPolicy, roleId, out var policyBranch, out _, out var removesLastDefaultRole))
                 continue;
-            dependencies.Add(new RoleDeletionDependency(
+            dependencies.Add(new(
                 Source,
                 connection.Id,
                 connection.Key,
@@ -59,14 +62,17 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             .ThenBy(x => x.OwnerId, StringComparer.Ordinal)
             .ThenBy(x => x.ConfigurationPath, StringComparer.Ordinal)
             .ToArray();
-        return new RoleDeletionDependencySnapshot(Source, CalculateVersion(ordered), false, ordered);
+        return new(Source, CalculateVersion(ordered), false, ordered);
     }
 
     public async ValueTask<RoleReferenceRemovalValidationResult> ValidateRemovalAsync(RoleReferenceRemovalRequest request, CancellationToken cancellationToken = default)
     {
-        if (!HasPermission(request.Actor, ExternalAuthenticationPermissions.ConnectionsUpdate) ||
-            !HasPermission(request.Actor, ExternalAuthenticationPermissions.PoliciesManage) ||
-            !HasPermission(request.Actor, ExternalAuthenticationPermissions.RolesAssign))
+        var roleAuthorizationService = roleAuthorizationServices.SingleOrDefault();
+        if (roleAuthorizationService is null)
+            return new RoleReferenceRemovalValidationResult.Forbidden("role_authorization_unavailable");
+        if (!permissionEvaluator.HasPermission(request.Actor, ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update) ||
+            !permissionEvaluator.HasPermission(request.Actor, ExternalAuthenticationResourcePermissions.Policies, CoreVerbs.Update) ||
+            !permissionEvaluator.HasPermission(request.Actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update))
             return new RoleReferenceRemovalValidationResult.Forbidden("missing_policy_permissions");
         if (request.Dependencies.Count == 0 ||
             request.Dependencies.Any(x => x.Ownership != RoleDeletionDependencyOwnership.Database || !string.Equals(x.Source, Source, StringComparison.Ordinal)))
@@ -82,7 +88,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             .Where(x => x.Ownership == RoleDeletionDependencyOwnership.Database)
             .Select(x => x.OwnerId)
             .ToHashSet(StringComparer.Ordinal);
-        if (!expectedOwners.SetEquals(currentOwners))
+        if (!expectedOwners.IsSubsetOf(currentOwners))
             return new RoleReferenceRemovalValidationResult.Conflict("dependency_changed");
 
         foreach (var dependency in request.Dependencies)
@@ -92,8 +98,20 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
                 !TryGetRoleReference(connection.UnlinkedPolicy, request.RoleId, out _, out var roleIds, out _))
                 return new RoleReferenceRemovalValidationResult.Conflict("connection_revision_changed");
             var remainingRoleIds = roleIds.Where(x => !string.Equals(x, request.RoleId, StringComparison.Ordinal)).ToArray();
-            if (!await roleAuthorizationService.CanAssignRolesAsync(request.Actor, remainingRoleIds, cancellationToken))
-                return new RoleReferenceRemovalValidationResult.Forbidden("role_assignment_denied");
+            var requiresReplacement = remainingRoleIds.Length == 0 && request.SelectedReferences is not null;
+            if (requiresReplacement &&
+                (string.IsNullOrWhiteSpace(request.ReplacementRoleId) ||
+                 string.Equals(request.ReplacementRoleId, request.RoleId, StringComparison.Ordinal)))
+                return new RoleReferenceRemovalValidationResult.Forbidden("replacement_role_unavailable_or_unauthorized");
+
+            var rolesToAssign = requiresReplacement
+                ? new[] { request.ReplacementRoleId! }
+                : remainingRoleIds;
+            if (!await roleAuthorizationService.CanAssignRolesAsync(request.Actor, rolesToAssign, cancellationToken))
+            {
+                var code = requiresReplacement ? "replacement_role_unavailable_or_unauthorized" : "role_assignment_denied";
+                return new RoleReferenceRemovalValidationResult.Forbidden(code);
+            }
         }
 
         return new RoleReferenceRemovalValidationResult.Valid();
@@ -101,6 +119,9 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
 
     public async ValueTask<RoleReferenceRemovalResult> RemoveEditableReferencesAsync(RoleReferenceRemovalRequest request, CancellationToken cancellationToken = default)
     {
+        var roleAuthorizationService = roleAuthorizationServices.SingleOrDefault();
+        if (roleAuthorizationService is null)
+            return new RoleReferenceRemovalResult.Failed("role_authorization_unavailable", []);
         var validation = await ValidateRemovalAsync(request, cancellationToken);
         if (validation is RoleReferenceRemovalValidationResult.Forbidden forbidden)
             return new RoleReferenceRemovalResult.Failed(forbidden.Code, []);
@@ -114,15 +135,28 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
             {
                 var connection = await store.FindByIdAsync(dependency.OwnerId, cancellationToken);
                 if (connection is null || connection.Revision != dependency.ExpectedRevision ||
-                    !TryGetRoleReference(connection.UnlinkedPolicy, request.RoleId, out _, out _, out _))
+                    !TryGetRoleReference(connection.UnlinkedPolicy, request.RoleId, out _, out _, out var removesLastDefaultRole))
                     return new RoleReferenceRemovalResult.Conflict("connection_revision_changed", changedOwnerIds);
 
                 var candidate = IdentityProviderConnectionCloner.Clone(connection);
                 candidate.UnlinkedPolicy = candidate.UnlinkedPolicy is { } policy
-                    ? policy with { Settings = RemoveRole(policy.Settings, request.RoleId) }
+                    ? policy with { Settings = RemoveRole(policy.Settings, request.RoleId, request.SelectedReferences is not null ? request.ReplacementRoleId : null) }
                     : null;
                 candidate.UpdatedAt = DateTimeOffset.UtcNow;
                 candidate.MaterialRevision = revisionCalculator.CalculateMaterialRevision(candidate);
+
+                if (request.SelectedReferences is not null && removesLastDefaultRole)
+                {
+                    // Match the default DI container's direct-service semantics: when persistence
+                    // replaces the in-memory store, the last registration is the active store.
+                    var roleStore = roleStores.LastOrDefault();
+                    if (roleStore is null)
+                        return new RoleReferenceRemovalResult.Failed("replacement_role_unavailable_or_unauthorized", changedOwnerIds);
+                    var replacement = await roleStore.FindAsync(new() { Id = request.ReplacementRoleId }, cancellationToken);
+                    if (replacement is null ||
+                        !await roleAuthorizationService.CanAssignRolesAsync(request.Actor, [replacement.Id], cancellationToken))
+                        return new RoleReferenceRemovalResult.Failed("replacement_role_unavailable_or_unauthorized", changedOwnerIds);
+                }
 
                 var update = await store.UpdateAsync(candidate, connection.Revision, cancellationToken);
                 if (update is not ConnectionMutationResult.Updated updated)
@@ -167,7 +201,7 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         {
             if (string.Equals(configuredRoleId, roleId, StringComparison.Ordinal))
             {
-                yield return new RoleDeletionDependency(
+                yield return new(
                     Source,
                     string.IsNullOrWhiteSpace(connection.Id) ? $"configuration:{connectionIndex}" : connection.Id,
                     connection.Key,
@@ -205,16 +239,18 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         return true;
     }
 
-    private static JsonElement RemoveRole(JsonElement settings, string roleId)
+    private static JsonElement RemoveRole(JsonElement settings, string roleId, string? replacementRoleId = null)
     {
         var root = settings.ValueKind == JsonValueKind.Object
             ? JsonNode.Parse(settings.GetRawText()) as JsonObject
-            : new JsonObject();
-        root ??= new JsonObject();
+            : new();
+        root ??= new();
         var remainingRoleIds = ReadRoleIdsWithDuplicates(settings)
             .Where(x => !string.Equals(x, roleId, StringComparison.Ordinal))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
+        if (remainingRoleIds.Length == 0 && !string.IsNullOrWhiteSpace(replacementRoleId))
+            remainingRoleIds = [replacementRoleId];
         var roleNodes = new JsonNode?[remainingRoleIds.Length];
         for (var index = 0; index < remainingRoleIds.Length; index++)
             roleNodes[index] = JsonValue.Create(remainingRoleIds[index]);
@@ -240,9 +276,6 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
         value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
-
-    private static bool HasPermission(ClaimsPrincipal actor, string permission) =>
-        actor.FindAll(PermissionNames.ClaimType).Any(x => x.Value == PermissionNames.All || string.Equals(x.Value, permission, StringComparison.Ordinal));
 
     private static string CalculateVersion(IEnumerable<RoleDeletionDependency> dependencies)
     {

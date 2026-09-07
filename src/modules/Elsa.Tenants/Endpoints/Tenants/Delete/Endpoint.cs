@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Multitenancy;
 
@@ -8,7 +9,7 @@ public class Endpoint(ITenantService tenantService, ITenantStore store) : ElsaEn
     public override void Configure()
     {
         Delete("/tenants/{id}");
-        ConfigurePermissions("delete:tenants");
+        RequirePermission(Elsa.Tenants.Permissions.TenantPermissions.Tenants, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

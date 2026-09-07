@@ -1,6 +1,7 @@
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Validation;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
@@ -51,7 +52,7 @@ public class HmacExternalAuthenticationHandleHasherTests
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "claim-mapping"));
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "group-mapping"));
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "claim-pass-through"));
-        var validator = new ExternalAuthenticationOptionsValidator(Microsoft.Extensions.Options.Options.Create(extensions));
+        var validator = new ExternalAuthenticationOptionsValidator(Microsoft.Extensions.Options.Options.Create(extensions), NullLogger<ExternalAuthenticationOptionsValidator>.Instance);
 
         var result = validator.Validate(null, options);
 

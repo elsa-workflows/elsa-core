@@ -20,11 +20,12 @@ public class OutputConverterEndpointTests
         endpoint.Configure();
 
         Assert.Contains("/descriptors/output-converters", definition.Routes);
-        var permissions = (IEnumerable<string>)typeof(EndpointDefinition)
-            .GetProperty("AllowedPermissions", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!
-            .GetValue(definition)!;
-        Assert.Contains("read:*", permissions);
-        Assert.Contains("read:output-converters", permissions);
+
+        var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(typeof(List));
+
+        Assert.True(permission.HasValue);
+        Assert.Equal(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsOutputConverters, permission!.Value.Resource);
+        Assert.Equal(Elsa.Authorization.CoreVerbs.View, permission.Value.Verb);
     }
 
     [Fact]

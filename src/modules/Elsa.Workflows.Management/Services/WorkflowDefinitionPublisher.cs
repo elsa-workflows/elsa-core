@@ -153,12 +153,17 @@ public class WorkflowDefinitionPublisher(
 
     public async Task<WorkflowDefinition> RevertVersionAsync(string definitionId, int version, CancellationToken cancellationToken = default)
     {
-        var filter = new WorkflowDefinitionFilter
+        var latestVersionFilter = new WorkflowDefinitionFilter
         {
             DefinitionId = definitionId,
             VersionOptions = VersionOptions.Latest
         };
-        var latestVersion = await workflowDefinitionStore.FindAsync(filter, cancellationToken);
+        var latestVersion = await workflowDefinitionStore.FindAsync(latestVersionFilter, cancellationToken);
+        var lastVersionFilter = new WorkflowDefinitionFilter
+        {
+            DefinitionId = definitionId
+        };
+        var lastVersion = await workflowDefinitionStore.FindLastVersionAsync(lastVersionFilter, cancellationToken);
 
         if (latestVersion != null)
         {
@@ -168,7 +173,7 @@ public class WorkflowDefinitionPublisher(
 
         var draft = await GetDraftAsync(definitionId, VersionOptions.SpecificVersion(version), cancellationToken);
         draft!.Id = identityGenerator.GenerateId();
-        draft.Version = (latestVersion?.Version ?? 0) + 1;
+        draft.Version = (lastVersion?.Version ?? 0) + 1;
         draft.IsLatest = true;
 
         await workflowDefinitionStore.SaveAsync(draft, cancellationToken);

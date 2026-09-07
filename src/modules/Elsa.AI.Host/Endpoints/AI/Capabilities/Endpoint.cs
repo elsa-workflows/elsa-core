@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
@@ -22,7 +23,7 @@ public class Endpoint(
     public override void Configure()
     {
         Get("/ai/capabilities");
-        ConfigurePermissions(AIPermissions.ViewCapabilities);
+        RequirePermission(Elsa.AI.Host.Permissions.AIResourcePermissions.Capabilities, CoreVerbs.View);
     }
 
     public override Task<Response> ExecuteAsync(CancellationToken cancellationToken)

@@ -1,6 +1,8 @@
 using System.Reflection;
 using Elsa.Features.Services;
+using Elsa.Permissions;
 using FastEndpoints;
+using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -19,6 +21,14 @@ public static class ModuleExtensions
     {
         var assemblies = module.Properties.GetOrAdd(FastEndpointsAssembliesKey, () => new HashSet<Assembly>());
         assemblies.Add(assembly);
+
+        // Registering an endpoint assembly is what guarantees its permissions work, so the evaluator and
+        // that assembly's descriptors are registered here rather than in AddFastEndpointsFromModule. A host
+        // that wires FastEndpoints itself never calls that helper, and without the authorization handler
+        // every RequirePermission endpoint would answer 403 -- fail-closed, but broken.
+        module.Services.AddElsaAuthorization();
+        module.Services.AddPermissionDescriptorsFromAssembly(assembly);
+
         return module;
     }
 

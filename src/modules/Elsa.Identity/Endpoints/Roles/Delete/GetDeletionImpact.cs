@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using JetBrains.Annotations;
@@ -11,7 +12,7 @@ internal sealed class GetDeletionImpact(IRoleDeletionCoordinator coordinator) : 
     public override void Configure()
     {
         Get("/identity/roles/{id}/deletion-impact");
-        ConfigurePermissions("delete:role");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Roles, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

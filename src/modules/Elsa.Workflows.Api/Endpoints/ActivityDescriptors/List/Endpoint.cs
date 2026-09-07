@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
@@ -10,7 +11,7 @@ internal class List(IActivityRegistry registry, IActivityRegistryPopulator regis
     public override void Configure()
     {
         Get("/descriptors/activities");
-        ConfigurePermissions("read:*", "read:activity-descriptors");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsActivities, CoreVerbs.View);
     }
 
     public override async Task<Response> ExecuteAsync(CancellationToken cancellationToken)

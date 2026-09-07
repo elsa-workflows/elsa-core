@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
 using JetBrains.Annotations;
@@ -14,7 +15,7 @@ internal class Update(IUserStore userStore, ISecretHasher secretHasher, IRoleAut
     public override void Configure()
     {
         Put("/identity/users/{id}");
-        ConfigurePermissions("update:user");
+        RequirePermission(Elsa.Identity.Permissions.IdentityPermissions.Users, CoreVerbs.Update);
     }
 
     /// <inheritdoc />

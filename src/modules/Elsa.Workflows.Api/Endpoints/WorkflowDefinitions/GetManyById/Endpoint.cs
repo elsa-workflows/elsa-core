@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Api.Models;
@@ -13,7 +14,7 @@ internal class GetManyById(IWorkflowDefinitionStore store, IWorkflowDefinitionLi
     public override void Configure()
     {
         Get("/workflow-definitions/many-by-id");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

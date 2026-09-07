@@ -98,4 +98,4 @@ External Authentication is additive to Elsa Identity:
 - Externally provisioned users may have no local password hash or salt. Such users fail direct local login with the same public result as any other invalid credential.
 - Elsa remains the issuer of access tokens and the authority for their `permissions` claim, regardless of how the user authenticated.
 
-See [the External Authentication migration guide](../../../docs/migrations/external-authentication.md) before changing a Studio host from direct OpenID Connect to brokered mode.
+See [the External Authentication migration guide](../../../doc/migrations/external-authentication.md) before changing a Studio host from direct OpenID Connect to brokered mode.

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
@@ -13,7 +14,7 @@ internal class GetByDefinitionId(IWorkflowDefinitionStore store, IWorkflowDefini
     public override void Configure()
     {
         Get("/workflow-definitions/by-definition-id/{definitionId}", "/workflow-definitions/{definitionId}");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

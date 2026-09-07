@@ -7,6 +7,8 @@ using Elsa.Diagnostics.ConsoleLogs.Dashboard.ShellFeatures;
 using Elsa.Diagnostics.StructuredLogs.Dashboard.ShellFeatures;
 using Elsa.ExternalAuthentication.OpenIdConnect.ShellFeatures;
 using Elsa.ExternalAuthentication.Secrets.ShellFeatures;
+using Elsa.UserTasks.Persistence.EFCore.Sqlite.ShellFeatures;
+using Elsa.UserTasks.ShellFeatures;
 using Elsa.ModularServer.Web;
 using Elsa.ModularServer.Web.Catalog;
 using Elsa.Platform.Integration.ShellFeatures;
@@ -33,6 +35,7 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 configuration.AddJsonFile(configuration["Elsa:PlatformIntegration:ShellOverlayPath"] ?? "platform-shell-overrides.json", optional: true, reloadOnChange: false);
+services.AddRoleManagementE2EFixtures(configuration);
 var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString();
 
 builder.Logging.AddOpenTelemetry(logging =>
@@ -88,7 +91,9 @@ builder.AddShells(shells => shells
             typeof(WorkflowRuntimeDashboardFeature),
             typeof(ConsoleLogsDashboardFeature),
             typeof(StructuredLogsDashboardFeature),
-            typeof(WorkflowsApiFeature));
+            typeof(WorkflowsApiFeature),
+            typeof(UserTasksFeature),
+            typeof(SqliteUserTasksPersistenceShellFeature));
     }));
 
 services.AddSingleton<PluginCatalog>();

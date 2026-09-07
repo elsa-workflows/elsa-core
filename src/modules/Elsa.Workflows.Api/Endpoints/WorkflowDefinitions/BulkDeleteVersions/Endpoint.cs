@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Constants;
 using Elsa.Workflows.Api.Requirements;
@@ -14,7 +15,7 @@ internal class BulkDeleteVersions(IWorkflowDefinitionManager workflowDefinitionM
     public override void Configure()
     {
         Post("/bulk-actions/delete/workflow-definitions/by-id");
-        ConfigurePermissions("delete:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Delete);
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)

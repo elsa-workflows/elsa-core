@@ -1,8 +1,23 @@
+using Elsa.Common.Entities;
+
 namespace Elsa.Secrets.Models;
 
-public class Secret
+public class Secret : Entity
 {
-    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    /// <summary>
+    /// Assigns the identifier the property initializer used to provide.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Entity.Id"/> is declared <c>null!</c>, and nothing in this module assigns a secret's id --
+    /// there is no identity generator on the create path, so the initializer this replaces was load-bearing.
+    /// Dropping it while deriving would have produced a null id on every insert, which unit tests that build
+    /// a Secret by hand would not have noticed.
+    /// </remarks>
+    public Secret()
+    {
+        Id = Guid.NewGuid().ToString("N");
+    }
+
     public string Name { get; set; } = default!;
     public string DisplayName { get; set; } = default!;
     public string? Description { get; set; }

@@ -21,7 +21,7 @@ public class ConsoleLogsAuthorizationTests
     [Fact]
     public async Task HubSubscribe_WithoutConsoleLogsPermission_DeniesAccess()
     {
-        var hub = CreateHub("write:diagnostics:console-logs");
+        var hub = CreateHub("diagnostics/console-logs:write");
 
         await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(new()));
     }
@@ -29,15 +29,15 @@ public class ConsoleLogsAuthorizationTests
     [Fact]
     public async Task HubUpdateFilter_WithoutConsoleLogsPermission_DeniesAccess()
     {
-        var hub = CreateHub("write:diagnostics:console-logs");
+        var hub = CreateHub("diagnostics/console-logs:write");
 
         await Assert.ThrowsAsync<HubException>(() => hub.UpdateFilterAsync(new()));
     }
 
     [Theory]
-    [InlineData(ConsoleLogsPermissions.Read)]
+    [InlineData("diagnostics/console-logs:view")]
     [InlineData(PermissionNames.All)]
-    [InlineData("read:*")]
+    [InlineData("*:view")]
     public async Task HubSubscribe_WithConsoleLogsPermission_AllowsAccess(string permission)
     {
         var hub = CreateHub(permission);
@@ -52,7 +52,7 @@ public class ConsoleLogsAuthorizationTests
     {
         var permissions = GetConfiguredPermissions(endpointTypeName);
 
-        Assert.Contains(ConsoleLogsPermissions.Read, permissions);
+        Assert.Contains("diagnostics/console-logs:view", permissions);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class ConsoleLogsAuthorizationTests
     public async Task HubStream_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
-        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+        var hub = CreateHub(provider, "diagnostics/console-logs:view");
 
         await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" }, CancellationToken.None))
         {
@@ -182,7 +182,7 @@ public class ConsoleLogsAuthorizationTests
     public async Task HubStream_MapsActivityFiltersToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
-        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+        var hub = CreateHub(provider, "diagnostics/console-logs:view");
 
         await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter
                        {
@@ -202,7 +202,7 @@ public class ConsoleLogsAuthorizationTests
     public async Task HubSubscribe_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
-        var hub = CreateHub(provider, ConsoleLogsPermissions.Read);
+        var hub = CreateHub(provider, "diagnostics/console-logs:view");
 
         await hub.SubscribeAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" });
         var filter = await provider.WaitForSubscriptionFilterAsync();
@@ -249,12 +249,13 @@ public class ConsoleLogsAuthorizationTests
 
         endpointType.GetMethod("Configure")!.Invoke(endpoint, null);
 
-        var permissions = definition
-            .GetType()
-            .GetProperty("AllowedPermissions", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!
-            .GetValue(definition);
+        // The requirement is attached as an inline policy, not to AllowedPermissions, so the declaration is
+        // read back from the registry that records it.
+        var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(endpointType);
 
-        return Assert.IsAssignableFrom<IEnumerable<string>>(permissions).ToArray();
+        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+
+        return [permission!.Value.ToString()];
     }
 
     private static (Type RequestDtoType, Type ResponseDtoType) GetEndpointDtoTypes(Type endpointType)

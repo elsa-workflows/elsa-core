@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -14,7 +15,7 @@ internal class Delete(IWorkflowDefinitionManager workflowDefinitionManager, IAut
     public override void Configure()
     {
         Delete("/workflow-definitions/{definitionId}");
-        ConfigurePermissions("delete:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

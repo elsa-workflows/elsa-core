@@ -38,6 +38,10 @@ public partial class Flowchart
         foreach (var t in inboundTokens)
             t.Consume();
 
+        // The activation wave for the completed activity is decided once it completes.
+        // Clear blocked inbound tokens so future activations (e.g. via loop-back edges) are not swallowed by stale blocks.
+        tokens.RemoveWhere(t => t.ToActivityId == completedActivity.Id && t.Blocked);
+
         // Schedule next activities based on merge modes.
         foreach (var connection in activeOutboundConnections)
         {

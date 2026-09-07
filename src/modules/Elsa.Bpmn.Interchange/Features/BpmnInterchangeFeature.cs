@@ -1,6 +1,7 @@
 using Bpmn.Interchange;
 using Elsa.Bpmn.Features;
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.Handlers.Notifications;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
@@ -41,5 +42,6 @@ public class BpmnInterchangeFeature : FeatureBase
         Services.AddSingleton<BpmnXmlReader>();
         Services.AddSingleton<BpmnXmlWriter>();
         Services.AddScoped<BpmnInterchangeDocumentService>();
+        Services.AddNotificationHandler<ValidateBpmnProcessBindings>();
     }
 }

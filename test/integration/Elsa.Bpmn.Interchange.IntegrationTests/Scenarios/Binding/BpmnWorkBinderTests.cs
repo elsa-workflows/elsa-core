@@ -201,6 +201,43 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
         Assert.Equal("Escalated", ValueOf<string>(Assert.IsType<Event>(WorkForRef(scope, ListenerRef("escalationHandler"))).EventName));
     }
 
+    [Fact(DisplayName = "A compensation handler is bound like any other work, and only compensation replay runs it")]
+    public async Task CompensationHandler_IsBoundAndOnlyReachedByReplay()
+    {
+        // An isForCompensation element binds work and takes no sequence flows, and the reader emits an ordinary
+        // Primary binding for it — so the binder needs no case for it, which is exactly why this is worth pinning.
+        // A binder that skipped such a binding would still produce a scope that builds and publishes; the failure
+        // would surface only once a replay asked for work the scope maps to nothing. Running the bound scope is what
+        // turns that into an assertion.
+        //
+        // The throw names one of the two hosts, so the other handler is bound and reachable and still must not run:
+        // nothing in the graph flows into a compensation handler, and only the replay's own selection reaches it.
+        var definition = new BpmnProcessBuilder(ProcessId)
+            .StartEvent("start")
+            .Element(BoundElement("book", BpmnElementTypes.ServiceTask, new WriteLine("booked")))
+            .Element(BoundElement("pay", BpmnElementTypes.ServiceTask, new WriteLine("paid")))
+            .IntermediateThrowEvent("undoBookOnly", Compensation(activityRef: "book"))
+            .EndEvent("end")
+            .Element(CompensationBoundary("bookCompensated", attachedTo: "book", handler: "undoBook"))
+            .Element(CompensationBoundary("payCompensated", attachedTo: "pay", handler: "undoPay"))
+            .Element(CompensationHandler("undoBook", new WriteLine("unbooked")))
+            .Element(CompensationHandler("undoPay", new WriteLine("unpaid")))
+            .ConnectSequence("start", "book", "pay", "undoBookOnly", "end")
+            .Build();
+
+        var scope = Bind(definition, Unbound("book"), Unbound("pay"), Unbound("undoBook"), Unbound("undoPay"));
+
+        // Bound: a handler is an entry in the same map as any other binding ref, under no special slot.
+        var undoBookActivityId = scope.WorkBindings[Ref("undoBook")];
+        var undoPayActivityId = scope.WorkBindings[Ref("undoPay")];
+
+        var result = await Services.GetRequiredService<IWorkflowRunner>().RunAsync(scope);
+
+        Assert.Equal(1, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == undoBookActivityId));
+        Assert.Equal(0, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == undoPayActivityId));
+        Assert.Empty(result.WorkflowState.Incidents);
+    }
+
     [Fact(DisplayName = "An unbound task the document does not bind is refused, naming the element")]
     public void UnboundTask_WithNoDeclarationIsRefused()
     {
@@ -270,6 +307,27 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
     private static BpmnProcessDefinition Definition(params BpmnElement[] elements) => new(ProcessId, Elements: elements);
 
     private static BpmnElement Element(string elementId, string elementType) => new(elementId, elementType, bindingRef: Ref(elementId));
+
+    private static BpmnEventDefinition Compensation(string? activityRef = null) =>
+        activityRef is null
+            ? new(BpmnEventDefinitionTypes.Compensation)
+            : new(BpmnEventDefinitionTypes.Compensation, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.ActivityRef] = activityRef });
+
+    /// <summary>A compensation boundary event, which reaches its handler by association rather than by a sequence flow.</summary>
+    private static BpmnElement CompensationBoundary(string elementId, string attachedTo, string handler) =>
+        new(elementId,
+            BpmnElementTypes.BoundaryEvent,
+            attachedToRef: attachedTo,
+            eventDefinitions: [Compensation()],
+            compensationHandlerElementId: handler);
+
+    /// <summary>An unbound task marked as a compensation handler, carrying the activity binding the document declares for it.</summary>
+    private BpmnElement CompensationHandler(string elementId, IActivity activity) =>
+        new(elementId,
+            BpmnElementTypes.ServiceTask,
+            bindingRef: Ref(elementId),
+            isForCompensation: true,
+            extensions: BpmnActivityBindingFormat.Attach(null, Format.Write(activity)));
 
     private static BpmnWorkBinding.TimerWait Timer(string elementId, string isoDuration) =>
         new(ProcessId, elementId, Ref(elementId), BpmnBindingSlot.Primary, isoDuration);

@@ -10,7 +10,7 @@ public class ConsoleLogsModuleTests
     public void Module_UsesDiagnosticsConsoleLogsIdentity()
     {
         Assert.Equal("/elsa/hubs/diagnostics/console-logs", EndpointRouteBuilderExtensions.HubRoute);
-        Assert.Equal("read:diagnostics:console-logs", ConsoleLogsPermissions.Read);
+        Assert.Equal("diagnostics/console-logs", ConsoleLogsResourcePermissions.ConsoleLogs);
         Assert.StartsWith("Elsa.Diagnostics.ConsoleLogs", typeof(ConsoleLogsFeature).Namespace);
     }
 

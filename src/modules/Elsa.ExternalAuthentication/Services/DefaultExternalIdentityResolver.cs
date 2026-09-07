@@ -24,13 +24,13 @@ public sealed class DefaultExternalIdentityResolver(
         if (existingLink is not null)
         {
             ValidateLink(existingLink, context);
-            return new ExternalIdentityResolution(existingLink.UserId, false);
+            return new(existingLink.UserId, false);
         }
 
         var selection = GetPolicySelection(context.Connection);
         var policy = _policies.GetValueOrDefault(selection.Type)
             ?? throw new InvalidOperationException($"The unlinked identity policy '{selection.Type}' is not available.");
-        var decision = await policy.EvaluateAsync(new UnlinkedIdentityContext(
+        var decision = await policy.EvaluateAsync(new(
             context.TargetTenantId,
             context.Connection,
             context.Identity,
@@ -41,14 +41,14 @@ public sealed class DefaultExternalIdentityResolver(
         {
             UnlinkedIdentityDecision.Reject reject => throw new ExternalIdentityUnlinkedException(reject.SafeReason),
             UnlinkedIdentityDecision.CreateUser createUser => await provisioner.CreateLinkOrGetExistingAsync(
-                new ProvisioningRequest(context.TargetTenantId, connectionKey, context.Identity, createUser.Proposal), cancellationToken),
+                new(context.TargetTenantId, connectionKey, context.Identity, createUser.Proposal), cancellationToken),
             UnlinkedIdentityDecision.LinkExistingUser linkExistingUser => await provisioner.CreateLinkOrGetExistingAsync(
-                new ProvisioningRequest(context.TargetTenantId, connectionKey, context.Identity, null, linkExistingUser.UserId), cancellationToken),
+                new(context.TargetTenantId, connectionKey, context.Identity, null, linkExistingUser.UserId), cancellationToken),
             _ => throw new InvalidOperationException("The unlinked identity policy returned an unsupported decision.")
         };
 
         ValidateLink(result.Link, context);
-        return new ExternalIdentityResolution(result.UserId, result.WasCreated);
+        return new(result.UserId, result.WasCreated);
     }
 
     public ValueTask<bool> RecordSuccessfulSignInAsync(
@@ -69,7 +69,7 @@ public sealed class DefaultExternalIdentityResolver(
         if (configuredPolicy is not null && mayOverride)
             return configuredPolicy;
 
-        return new PolicySelection(options.Value.UnlinkedIdentityPolicy.DefaultType, 1, default);
+        return new(options.Value.UnlinkedIdentityPolicy.DefaultType, 1, default);
     }
 
     private static void ValidateLink(ExternalIdentityLink link, ExternalIdentityResolutionContext context)

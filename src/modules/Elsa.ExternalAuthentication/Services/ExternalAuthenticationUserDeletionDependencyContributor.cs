@@ -16,7 +16,7 @@ public sealed class ExternalAuthenticationUserDeletionDependencyContributor(
     /// <inheritdoc />
     public async ValueTask<UserDeletionDependency?> InspectAsync(User user, CancellationToken cancellationToken = default)
     {
-        var linksForUser = await links.FindAsync(new ExternalIdentityLinkFilter
+        var linksForUser = await links.FindAsync(new()
         {
             TenantId = user.TenantId ?? string.Empty,
             UserId = user.Id

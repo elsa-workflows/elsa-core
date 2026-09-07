@@ -27,6 +27,22 @@ All changes happen through Pull Requests targeting the `main` branch.
 4. Ensure the test suite passes.
 5. Open a Pull Request.
 
+### Architecture Decision Records
+
+Records live in `doc/adr/`. Name a new one `YYYY-MM-DD-slug.md` and give it a `# ` heading with the title
+alone — no numeric prefix. The older `NNNN-` records stay as they are; do not renumber them, and do not
+continue the sequence. Sequential numbering had no reservation step, so two branches in flight always
+picked the same number and one of them had to be renumbered on merge.
+
+`doc/adr/toc.md` is generated. After adding or retitling a record, run:
+
+```bash
+scripts/adr/generate-toc.sh
+```
+
+and commit the result. CI runs `scripts/adr/generate-toc.sh --check` and fails a pull request whose index
+is out of date, so the index is never hand-edited.
+
 ---
 
 ## Pull Requests

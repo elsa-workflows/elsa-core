@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ConsoleLogStreaming.Core.Models;
 
 namespace Elsa.Diagnostics.ConsoleLogs.Contracts;
 

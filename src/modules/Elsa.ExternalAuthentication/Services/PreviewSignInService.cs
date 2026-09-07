@@ -42,7 +42,7 @@ public sealed class PreviewSignInService(
         var transaction = new BrokerTransaction
         {
             HandleHash = handles.Hash(handle), Purpose = BrokerTransactionPurpose.Preview, ClientId = adminId,
-            CallbackUri = new Uri($"/external-authentication/previews/{Uri.EscapeDataString(handle)}/authorize", UriKind.Relative),
+            CallbackUri = new($"/external-authentication/previews/{Uri.EscapeDataString(handle)}/authorize", UriKind.Relative),
             ReturnPath = "/", TenantId = tenantId, ConnectionId = connection.Connection.Id,
             ConnectionMaterialRevision = connection.Connection.MaterialRevision, PkceChallenge = string.Empty,
             ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.PreviewLifetime)
@@ -71,7 +71,7 @@ public sealed class PreviewSignInService(
         try
         {
             transaction.SecretGenerationFingerprint = SecretFingerprint(secrets);
-            var request = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(connection, secrets, transaction, state, clock), cancellationToken);
+            var request = await adapter.CreateAuthorizationRequestAsync(new(connection, secrets, transaction, state, clock), cancellationToken);
             transaction.ProtectedPayload = dataProtection.CreateProtector("Elsa.ExternalAuthentication.AdapterPayload.v1").Protect(request.ProtectedAdapterState);
             await stateStore.PutAsync(BrokerTransactionPurpose.Preview.ToString(), transaction.HandleHash, transaction, transaction.ExpiresAt, cancellationToken);
             return new PreviewAuthorizeResult.Redirect(request.NavigationUri);
@@ -94,13 +94,13 @@ public sealed class PreviewSignInService(
             var protectedPayload = transaction.ProtectedPayload;
             transaction.ProtectedPayload = dataProtection.CreateProtector("Elsa.ExternalAuthentication.AdapterPayload.v1").Unprotect(protectedPayload);
             ExternalAuthenticationResult authentication;
-            try { authentication = await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(connection, secrets, transaction, state, parameters, clock), cancellationToken); }
+            try { authentication = await adapter.AuthenticateCallbackAsync(new(connection, secrets, transaction, state, parameters, clock), cancellationToken); }
             finally { transaction.ProtectedPayload = protectedPayload; }
             var existingLink = await provisioner.FindLinkAsync(transaction.TenantId, ConnectionRevisionCalculator.NormalizeKey(connection.Connection.Key), authentication.Identity, cancellationToken);
             var decision = existingLink is null ? await DescribePolicyAsync(connection, authentication, cancellationToken) : "would_sign_in_existing_link";
             var grants = existingLink is null
-                ? new PermissionGrantResult([], [new PermissionGrantWarning("user_resolution_required", "Permission grants require an existing Elsa user link.")])
-                : await permissionGrants.ResolveAsync(new PermissionGrantResolutionContext(transaction.TenantId, existingLink.UserId, connection, authentication.Identity, authentication.ProjectedClaims), cancellationToken);
+                ? new([], [new("user_resolution_required", "Permission grants require an existing Elsa user link.")])
+                : await permissionGrants.ResolveAsync(new(transaction.TenantId, existingLink.UserId, connection, authentication.Identity, authentication.ProjectedClaims), cancellationToken);
             var result = new PreviewResult(handles.Hash(transaction.ClientState), transaction.ClientId, transaction.TenantId, connection.Connection.Id, connection.Connection.MaterialRevision,
                 authentication.Identity.Issuer, Mask(authentication.Identity.Subject), ExternalAuthenticationRedactor.RedactProjectedClaims(authentication.ProjectedClaims, connection.Connection.ClaimProjection.RedactedClaimTypes), decision, grants.Grants, [.. authentication.Warnings, .. grants.Warnings.Select(x => x.Message)], transaction.ExpiresAt, null);
             await results.SaveAsync(result, cancellationToken);
@@ -124,7 +124,7 @@ public sealed class PreviewSignInService(
     {
         var selection = connection.Connection.UnlinkedPolicy ?? new PolicySelection(options.Value.UnlinkedIdentityPolicy.DefaultType, 1, default);
         if (!_policies.TryGetValue(selection.Type, out var policy)) return "unlinked_policy_unavailable";
-        var decision = await policy.EvaluateAsync(new UnlinkedIdentityContext(connection.Connection.TenantId, connection, authentication.Identity, authentication.ProjectedClaims, selection.Settings), cancellationToken);
+        var decision = await policy.EvaluateAsync(new(connection.Connection.TenantId, connection, authentication.Identity, authentication.ProjectedClaims, selection.Settings), cancellationToken);
         return decision switch
         {
             UnlinkedIdentityDecision.CreateUser => "would_create_user_and_link",

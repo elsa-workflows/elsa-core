@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Abstractions;
@@ -12,7 +13,7 @@ public class Endpoint(ITenantService tenantService) : ElsaEndpointWithoutRequest
     public override void Configure()
     {
         Get("/tenants");
-        ConfigurePermissions("read:tenants");
+        RequirePermission(Elsa.Tenants.Permissions.TenantPermissions.Tenants, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

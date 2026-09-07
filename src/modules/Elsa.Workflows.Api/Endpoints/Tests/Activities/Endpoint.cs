@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Models;
@@ -26,7 +27,7 @@ internal class Endpoint(
     public override void Configure()
     {
         Post("/tests/activities");
-        ConfigurePermissions("exec:tests");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Tests, CoreVerbs.Execute);
     }
 
     /// <inheritdoc />

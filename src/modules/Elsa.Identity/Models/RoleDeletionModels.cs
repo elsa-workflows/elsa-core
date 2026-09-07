@@ -34,6 +34,9 @@ public sealed record RoleDeletionDependencySnapshot(
     bool SupportsAtomicRemoval,
     IReadOnlyCollection<RoleDeletionDependency> Dependencies);
 
+/// <summary>Identifies one editable dependency reference selected for role remediation.</summary>
+public sealed record RoleDeletionReferenceSelection(string Source, string OwnerId);
+
 /// <summary>The aggregated impact of deleting a role.</summary>
 public sealed record RoleDeletionImpact(
     string RoleId,
@@ -48,7 +51,11 @@ public sealed record RoleReferenceRemovalRequest(
     string RoleId,
     ClaimsPrincipal Actor,
     string ExpectedContributorVersion,
-    IReadOnlyCollection<RoleDeletionDependency> Dependencies);
+    IReadOnlyCollection<RoleDeletionDependency> Dependencies)
+{
+    public IReadOnlyCollection<RoleDeletionReferenceSelection>? SelectedReferences { get; init; }
+    public string? ReplacementRoleId { get; init; }
+}
 
 /// <summary>Inputs for the coordinated remediation command.</summary>
 public sealed record RoleDeletionRemediationCommand(
@@ -57,7 +64,11 @@ public sealed record RoleDeletionRemediationCommand(
     string ExpectedDependencyVersion,
     bool ConfirmRemoveFromEditablePolicies,
     bool ConfirmEmptyDefaultRoles,
-    bool ConfirmBestEffort);
+    bool ConfirmBestEffort)
+{
+    public IReadOnlyCollection<RoleDeletionReferenceSelection>? SelectedReferences { get; init; }
+    public string? ReplacementRoleId { get; init; }
+}
 
 public abstract record RoleReferenceRemovalValidationResult
 {
@@ -103,6 +114,7 @@ public abstract record RoleDeletionOperationResult
     public sealed record Forbidden : RoleDeletionOperationResult;
     public sealed record Blocked(RoleDeletionImpact Impact) : RoleDeletionOperationResult;
     public sealed record PreconditionFailed(RoleDeletionImpact Impact) : RoleDeletionOperationResult;
+    public sealed record ValidationFailed(RoleDeletionImpact Impact, string Code) : RoleDeletionOperationResult;
     public sealed record ConfirmationRequired(RoleDeletionImpact Impact, IReadOnlyCollection<string> Warnings) : RoleDeletionOperationResult;
     public sealed record Incomplete(RoleDeletionImpact Impact, IReadOnlyCollection<string> ChangedOwnerIds, string Code) : RoleDeletionOperationResult;
 }

@@ -1,8 +1,9 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
+using Elsa.Permissions;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
-using Elsa.ExternalAuthentication.Permissions;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Descriptors;
@@ -13,7 +14,7 @@ internal sealed class ListAdapterDescriptors(IExternalAuthenticationAdapterRegis
     public override void Configure()
     {
         Get("/external-authentication/descriptors/adapters");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
@@ -32,7 +33,7 @@ internal sealed class ListPolicyDescriptors(IUnlinkedIdentityPolicyRegistry regi
     public override void Configure()
     {
         Get("/external-authentication/descriptors/policies");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<UnlinkedIdentityPolicyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
@@ -46,7 +47,7 @@ internal sealed class ListPermissionSourceDescriptors(IPermissionGrantSourceRegi
     public override void Configure()
     {
         Get("/external-authentication/descriptors/permission-sources");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<PermissionGrantSourceDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
@@ -60,7 +61,7 @@ internal sealed class ListExternalUserMatcherDescriptors(IExternalUserMatcherReg
     public override void Configure()
     {
         Get("/external-authentication/descriptors/user-matchers");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<ExternalUserMatcherDescriptor>> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(registry.ListDescriptors());
@@ -75,19 +76,27 @@ internal sealed class ListManagedSecretResolverDescriptors(IEnumerable<IManagedS
     public override void Configure()
     {
         Get("/external-authentication/descriptors/managed-secret-resolvers");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<ManagedSecretResolverDescriptorResponse> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(new ManagedSecretResolverDescriptorResponse(
         writers.Select(x => new ManagedSecretResolverDescriptor(x.ResolverType, x.DisplayName)).OrderBy(x => x.Type, StringComparer.Ordinal).ToArray()));
 }
 
+/// <summary>
+/// Lists the permissions a claim mapping may be configured to confer.
+/// </summary>
+/// <remarks>
+/// This serves the core catalog rather than a registry private to this module. Choosing what an external
+/// mapping confers means choosing from everything Elsa declares, not just from this module's own resources,
+/// and the module's registry only ever held its legacy permission names anyway.
+/// </remarks>
 internal sealed class ListPermissionDescriptors(IPermissionDescriptorRegistry registry) : ElsaEndpointWithoutRequest<IReadOnlyCollection<PermissionDescriptor>>
 {
     public override void Configure()
     {
         Get("/external-authentication/descriptors/permissions");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthentication.Permissions.ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override Task<IReadOnlyCollection<PermissionDescriptor>> ExecuteAsync(CancellationToken cancellationToken) => Task.FromResult(registry.List());

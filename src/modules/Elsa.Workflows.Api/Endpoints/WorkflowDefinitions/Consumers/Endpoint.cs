@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
@@ -16,7 +17,7 @@ internal class Consumers(IWorkflowDefinitionStore store, IWorkflowReferenceGraph
     public override void Configure()
     {
         Get("/workflow-definitions/{definitionId}/consumers");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

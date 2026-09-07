@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
@@ -43,7 +44,7 @@ internal class Update : ElsaEndpoint<Request, Response>
     public override void Configure()
     {
         Post("/workflow-definitions/{id}/labels");
-        ConfigurePermissions("update:workflow-definition-labels");
+        RequirePermission(Elsa.Labels.Permissions.LabelPermissions.WorkflowDefinitionLabels, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

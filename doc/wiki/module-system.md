@@ -23,6 +23,8 @@ Feature classes usually use three lifecycle methods:
 
 `Module.Apply()` topologically sorts configured features and dependencies, configures them once, filters features with missing optional dependencies, registers hosted services, applies services, and finally registers installed-feature metadata.
 
+A feature may introduce another feature from `Apply()`, for example by calling `Module.Configure<OtherFeature>()` directly or through a helper such as `AddActivity<T>()`. `Module.Apply()` keeps applying until no new features show up, so the introduced feature (and its dependencies) are configured and applied as well.
+
 ## Entry Points
 
 The common public path is:
@@ -93,4 +95,4 @@ When adding a new module, follow this shape:
 - Do not register services in extension methods when the module already has a feature class. Put service registration in `Apply()`.
 - Do not bypass dependencies with direct service provider access in unrelated modules. Add a contract and dependency if the relationship is real.
 - Use `TryAdd*` for overridable defaults and normal `Add*` for deliberate multiple registrations such as handlers, validators, and descriptors.
-- If a feature uses `Module.Configure<OtherFeature>()`, verify that the other feature is already a dependency or that optional behavior is intentional.
+- If a feature uses `Module.Configure<OtherFeature>()`, verify that the other feature is already a dependency or that optional behavior is intentional. Introducing a feature this way works from `Configure()` and from `Apply()`, but declaring `[DependsOn(typeof(OtherFeature))]` keeps the relationship visible and gives the dependency the normal ordering.

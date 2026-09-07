@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -10,7 +11,7 @@ internal class Delete(IWorkflowRuntime workflowRuntime) : ElsaEndpoint<Request>
     public override void Configure()
     {
         Delete("/workflow-instances/{id}");
-        ConfigurePermissions("delete:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
