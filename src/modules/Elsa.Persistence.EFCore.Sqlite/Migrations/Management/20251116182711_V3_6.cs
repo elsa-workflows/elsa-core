@@ -18,9 +18,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // SQLite does not support schemas, so we omit the schema parameter
             migrationBuilder.AddColumn<string>(
                 name: "OriginalSource",
-                schema: _schema.Schema,
                 table: "WorkflowDefinitions",
                 type: "TEXT",
                 nullable: true);
@@ -31,7 +31,6 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Management
         {
             migrationBuilder.DropColumn(
                 name: "OriginalSource",
-                schema: _schema.Schema,
                 table: "WorkflowDefinitions");
         }
     }
