@@ -4,13 +4,11 @@ using Acornima.Ast;
 using Elsa.Expressions.Helpers;
 using Elsa.Expressions.Models;
 using Elsa.Expressions.JavaScript.Contracts;
-using Elsa.Expressions.JavaScript.Helpers;
 using Elsa.Expressions.JavaScript.Notifications;
 using Elsa.Expressions.JavaScript.ObjectConverters;
 using Elsa.Expressions.JavaScript.Options;
 using Elsa.Mediator.Contracts;
 using Jint;
-using Jint.Runtime.Interop;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -70,7 +68,6 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         engineOptions.Interop.EnumConversion = EnumConversionMode.String;
 
         ConfigureClrAccess(engineOptions);
-        ConfigureObjectWrapper(engineOptions);
         ConfigureObjectConverters(engineOptions);
         ConfigureExecutionConstraints(engineOptions, cancellationToken);
 
@@ -91,19 +88,6 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
     {
         if (_jintOptions.AllowClrAccess)
             options.AllowClr();
-    }
-
-    private void ConfigureObjectWrapper(Jint.Options options)
-    {
-        options.SetWrapObjectHandler((engine, target, type) =>
-        {
-            var instance = ObjectWrapper.Create(engine, target);
-
-            if (ObjectArrayHelper.DetermineIfObjectIsArrayLikeClrCollection(target.GetType()))
-                instance.Prototype = engine.Intrinsics.Array.PrototypeObject;
-
-            return instance;
-        });
     }
 
     private void ConfigureExecutionConstraints(Jint.Options options, CancellationToken cancellationToken)
