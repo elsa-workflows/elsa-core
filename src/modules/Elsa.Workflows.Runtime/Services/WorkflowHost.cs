@@ -93,6 +93,7 @@ public class WorkflowHost : IWorkflowHost
         var workflowResult = await workflowRunner.RunAsync(WorkflowGraph, WorkflowState, runOptions, linkedCancellationToken);
 
         WorkflowState = workflowResult.WorkflowState;
+        WorkflowState.TenantId = WorkflowGraph.Workflow.Identity?.TenantId;
         await PersistStateAsync(scope, cancellationToken);
         
         _linkedTokenSource.Dispose();

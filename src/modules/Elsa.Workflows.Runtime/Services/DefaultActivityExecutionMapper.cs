@@ -31,6 +31,7 @@ public class DefaultActivityExecutionMapper(
         var record = new ActivityExecutionRecord
         {
             Id = source.Id,
+            TenantId = source.WorkflowExecutionContext.Workflow?.Identity?.TenantId,
             ActivityId = source.Activity.Id,
             ActivityNodeId = source.NodeId,
             WorkflowInstanceId = source.WorkflowExecutionContext.Id,
