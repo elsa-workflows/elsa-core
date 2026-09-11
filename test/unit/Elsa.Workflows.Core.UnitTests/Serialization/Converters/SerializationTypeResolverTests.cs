@@ -5,6 +5,7 @@ using Elsa.Expressions.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Services;
@@ -177,6 +178,35 @@ public sealed class SerializationTypeResolverTests
         Assert.Equal(nameof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy), incidentStrategyAlias);
         Assert.True(registry.TryGetType(typeof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy).GetSimpleAssemblyQualifiedName(), out var legacyIncidentStrategyType));
         Assert.Equal(typeof(Elsa.Workflows.IncidentStrategies.ContinueWithIncidentsStrategy), legacyIncidentStrategyType);
+        Assert.True(registry.TryGetAlias(typeof(Elsa.Workflows.ActivationValidators.AllowAlwaysStrategy), out var activationStrategyAlias));
+        Assert.Equal(nameof(Elsa.Workflows.ActivationValidators.AllowAlwaysStrategy), activationStrategyAlias);
+        Assert.True(registry.TryGetType(typeof(Elsa.Workflows.ActivationValidators.AllowAlwaysStrategy).GetSimpleAssemblyQualifiedName(), out var legacyActivationStrategyType));
+        Assert.Equal(typeof(Elsa.Workflows.ActivationValidators.AllowAlwaysStrategy), legacyActivationStrategyType);
+    }
+
+    [Fact]
+    public void When_ConfigureWorkflowsFeature_Then_WorkflowOptionsRoundTripActivationStrategyType()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        module.UseWorkflows();
+        module.Apply();
+        using var serviceProvider = services.BuildServiceProvider();
+        var serializer = serviceProvider.GetRequiredService<IApiSerializer>();
+        var strategyType = typeof(Elsa.Workflows.ActivationValidators.AllowAlwaysStrategy);
+
+        var byAlias = serializer.Deserialize<WorkflowOptions>("""{"activationStrategyType":"AllowAlwaysStrategy"}""");
+        Assert.Equal(strategyType, byAlias.ActivationStrategyType);
+
+        var byLegacyName = serializer.Deserialize<WorkflowOptions>($$"""{"activationStrategyType":{{JsonString(strategyType.GetSimpleAssemblyQualifiedName())}}}""");
+        Assert.Equal(strategyType, byLegacyName.ActivationStrategyType);
+
+        var serialized = serializer.Serialize(new WorkflowOptions { ActivationStrategyType = strategyType });
+        Assert.Contains("AllowAlwaysStrategy", serialized);
+        Assert.DoesNotContain("UnregisteredClrType:", serialized);
+
+        var roundTrip = serializer.Deserialize<WorkflowOptions>(serialized);
+        Assert.Equal(strategyType, roundTrip.ActivationStrategyType);
     }
 
     [Fact]

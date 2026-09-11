@@ -6,6 +6,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Features;
 using Elsa.Workflows.Options;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Providers;
 using NSubstitute;
@@ -144,6 +145,30 @@ public class WorkflowRuntimeFeatureTests
     }
 
     [Fact]
+    public void RegisterWorkflowTypeAliases_RegistersBuiltInActivationStrategyAliases()
+    {
+        var options = new SerializationTypeOptions();
+
+        RegisterWorkflowTypeAliases(_feature, options);
+
+        AssertActivationStrategyAlias(options, typeof(SingletonStrategy), nameof(SingletonStrategy));
+        AssertActivationStrategyAlias(options, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
+        AssertActivationStrategyAlias(options, typeof(CorrelationStrategy), nameof(CorrelationStrategy));
+    }
+
+    [Fact]
+    public void ShellRegisterWorkflowTypeAliases_RegistersBuiltInActivationStrategyAliases()
+    {
+        var options = new SerializationTypeOptions();
+
+        RegisterWorkflowTypeAliases(_shellFeature, options);
+
+        AssertActivationStrategyAlias(options, typeof(SingletonStrategy), nameof(SingletonStrategy));
+        AssertActivationStrategyAlias(options, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
+        AssertActivationStrategyAlias(options, typeof(CorrelationStrategy), nameof(CorrelationStrategy));
+    }
+
+    [Fact]
     public void RegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
     {
         var workflowType = typeof(GenericWorkflow<int>);
@@ -210,5 +235,15 @@ public class WorkflowRuntimeFeatureTests
         feature.GetType()
             .GetMethod("RegisterWorkflowTypeAliases", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(feature, new object[] { options });
+    }
+
+    private static void AssertActivationStrategyAlias(SerializationTypeOptions options, Type strategyType, string alias)
+    {
+        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
+
+        Assert.Equal(strategyType, options.AliasTypeDictionary[alias]);
+        Assert.Equal(alias, options.TypeAliasDictionary[strategyType]);
+        Assert.True(registry.TryGetType(strategyType.GetSimpleAssemblyQualifiedName(), out var legacyType));
+        Assert.Equal(strategyType, legacyType);
     }
 }

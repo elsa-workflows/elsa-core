@@ -104,6 +104,7 @@ public class WorkflowsFeature : IShellFeature
             options.AddTypeAliasWithLegacyName<MemoryStorageDriver>(nameof(MemoryStorageDriver));
             options.AddTypeAliasWithLegacyName<FaultStrategy>(nameof(FaultStrategy));
             options.AddTypeAliasWithLegacyName<ContinueWithIncidentsStrategy>(nameof(ContinueWithIncidentsStrategy));
+            options.AddTypeAliasWithLegacyName<AllowAlwaysStrategy>(nameof(AllowAlwaysStrategy));
             options.AddTypeAlias<Exception>(nameof(Exception));
             options.AddTypeAlias<ArgumentException>(nameof(ArgumentException));
             options.AddTypeAlias<ArgumentNullException>(nameof(ArgumentNullException));
