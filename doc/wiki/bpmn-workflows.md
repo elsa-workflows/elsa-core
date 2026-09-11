@@ -126,6 +126,17 @@ The BPMN interpreter's execution state (`BpmnExecutionState`) and the scope's `B
 
 Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/HostPort/BpmnPersistenceTests.cs` proves that state size stays flat across a multi-iteration loop.
 
+## Diagnostics Projection
+
+Under Option A, only bound work (a task, a nested scope) gets its own Elsa activity id. A gateway, an intermediate event or a sequence flow is a decision the interpreter made internally, and the interpreter records every one of them in `BpmnExecutionState.Diagnostics`. `BpmnScopeHost` projects each new diagnostic onto the scope's own execution log — as an `AddExecutionLogEntry` call on the scope's own `ActivityExecutionContext`, never a child's — before the state is pruned, since pruning caps `Diagnostics` at 200 entries and a diagnostic that falls off the cap can never be projected from persisted state afterward. A resumed scope does not re-project a diagnostic a previous evaluation already turned into a journal entry: the last diagnostic id projected is tracked as a high-water mark in the scope's own memory, next to its execution state and work ledger.
+
+- **Event name** — the diagnostic kind's own enum member name (e.g. `TokenEmitted`, `Joined`, `Faulted`). `Elsa.Bpmn.Hosting.BpmnDiagnosticEventNames` documents every one of them as a public constant, so Studio has one place to mirror instead of depending on the library's integer enum values.
+- **Source** — always `"BPMN"` (`BpmnDiagnosticEventNames.Source`).
+- **Payload** — `Elsa.Bpmn.Hosting.BpmnDiagnosticLogPayload`, serialized camelCase like every other execution log payload: `diagnosticId`, `elementId`, `flowId`, `tokenId`, `kind` (the enum member name, again as a string) and `details`, carried verbatim from the diagnostic. Studio keys its overlay on `elementId` (and, for a decision about a flow, `flowId`); neither is folded into the message.
+- **Not projected** — the scope's own start (the initial token, which carries no flow) and its own completion (the terminal `Completed` diagnostic, which names no element), because both are already journaled as the activity's own lifecycle.
+
+Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/HostPort/BpmnDiagnosticsProjectionTests.cs`.
+
 ## Composing BPMN Into an Elsa Workflow
 
 A `BpmnProcess` is a `Container` and can be nested inside any Elsa composite activity (e.g. a `Flowchart`). The workflow that hosts it is responsible for marking the outermost scope as the entry point (`IsRootScope = true`). Nested BPMN scopes — embedded subprocesses, event subprocesses — are themselves `BpmnProcess` instances bound as child work by the binder and need no special treatment from the containing workflow.

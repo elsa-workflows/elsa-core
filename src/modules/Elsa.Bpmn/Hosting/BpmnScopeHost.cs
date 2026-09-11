@@ -1,4 +1,5 @@
 using Bpmn.Model;
+using Bpmn.Model.State;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Exceptions;
@@ -151,6 +152,8 @@ internal sealed class BpmnScopeHost
         var evaluation = Interpreter.OnWorkFaulted(new BpmnWorkFaultedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message));
 
+        ProjectDiagnostics(evaluation.State);
+
         memory.State = evaluation.State.Prune();
         memory.SaveState();
 
@@ -182,6 +185,10 @@ internal sealed class BpmnScopeHost
             if (evaluation is null)
                 return;
 
+            // Diagnostics are audit-only and capped: projecting from persisted state later would lose whatever
+            // Prune() already dropped, so this runs on the evaluation's own state, before pruning.
+            ProjectDiagnostics(evaluation.State);
+
             // Persist the state before acting on the commands: a command applied against a state that was never
             // recorded is how a crash produces work with no token behind it.
             memory.State = evaluation.State.Prune();
@@ -208,6 +215,61 @@ internal sealed class BpmnScopeHost
                 throw new NotSupportedException($"The BPMN continuation '{evaluation.Continuation.GetType().Name}' is not supported by this host.");
         }
     }
+
+    /// <summary>
+    /// Projects every diagnostic the interpreter has appended since the last evaluation onto this scope's own
+    /// execution log, keyed by element id. Under Option A only bound work has an activity id, so a gateway, an
+    /// intermediate event or a sequence flow has nothing else in the journal to say where a token went; this is
+    /// write-only and never read back by the interpreter or this host.
+    /// </summary>
+    /// <remarks>
+    /// Runs on <see cref="_context"/> — this scope's own context — and never a child's: the diagnostic describes
+    /// this scope's decision about a child, and the child may already be torn down by the time this runs. Called
+    /// with the evaluation's own <see cref="BpmnEvaluation.State"/>, before <c>Prune()</c> caps
+    /// <see cref="BpmnExecutionState.Diagnostics"/> at 200 entries, because projecting from what was actually
+    /// persisted would lose whatever pruning already dropped. The last diagnostic id it has projected is kept in
+    /// <see cref="BpmnScopeMemory.DiagnosticsCursorPropertyKey"/> so a resumed scope does not re-emit one a
+    /// previous evaluation already turned into a journal entry.
+    /// </remarks>
+    private void ProjectDiagnostics(BpmnExecutionState state)
+    {
+        var lastProjectedSequence = BpmnScopeMemory.Read<BpmnDiagnosticsCursor>(_context, BpmnScopeMemory.DiagnosticsCursorPropertyKey)?.LastSequence ?? 0;
+        var highWaterMark = lastProjectedSequence;
+
+        foreach (var diagnostic in state.Diagnostics)
+        {
+            var sequence = DiagnosticSequence(diagnostic.DiagnosticId);
+
+            if (sequence <= lastProjectedSequence)
+                continue;
+
+            highWaterMark = Math.Max(highWaterMark, sequence);
+
+            // The scope's own start (the initial token, which carries no flow) and its own completion (the
+            // terminal summary, which names no element) are already journaled as the activity's own lifecycle.
+            if (diagnostic.Kind == BpmnDiagnosticKind.TokenEmitted && string.IsNullOrEmpty(diagnostic.FlowId))
+                continue;
+
+            if (diagnostic.Kind == BpmnDiagnosticKind.Completed)
+                continue;
+
+            var payload = new BpmnDiagnosticLogPayload(
+                diagnostic.DiagnosticId,
+                diagnostic.ElementId,
+                diagnostic.FlowId,
+                diagnostic.TokenId,
+                diagnostic.Kind.ToString(),
+                diagnostic.Details);
+
+            _context.AddExecutionLogEntry(diagnostic.Kind.ToString(), diagnostic.Message, BpmnDiagnosticEventNames.Source, payload);
+        }
+
+        if (highWaterMark != lastProjectedSequence)
+            BpmnScopeMemory.Write(_context, BpmnScopeMemory.DiagnosticsCursorPropertyKey, new BpmnDiagnosticsCursor(highWaterMark));
+    }
+
+    /// <summary>The numeric ordinal in a diagnostic id (<c>diag:N</c>) — a pure function of the interpreter's own mutation-order sequence, so it sorts the same as arrival order.</summary>
+    private static int DiagnosticSequence(string diagnosticId) => int.Parse(diagnosticId.AsSpan(diagnosticId.IndexOf(':') + 1));
 
     /// <summary>
     /// Finds the unit of work this scope started that the failing activity belongs to, walking outward from the
