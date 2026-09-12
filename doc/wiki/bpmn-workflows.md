@@ -221,18 +221,22 @@ document, in three situations:
 - The definition does not currently carry BPMN source — either it was never imported from BPMN, or a later save
   replaced its custom properties wholesale (BPMN source travels on the same `CustomProperties` dictionary a workflow
   edit can overwrite).
-- The definition has changed — by version — since the source was recorded, meaning the stored BPMN text no longer
-  corresponds to the current definition.
-- The definition's activity graph has changed since the source was recorded, even though its version has not. An
-  unpublished draft is saved in place (same row, same version), so a designer save that edits a bound activity's
-  inputs — as Studio's binding UX (elsa-studio#1001) does — moves the graph without moving the version, which the
-  version check above cannot see. `Import` also records a SHA-256 hash of the graph
-  (`BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey`, `Bpmn:SourceGraphHash`) at the moment it stores
-  the source, and `Export`/the document `GET` refuse when the current graph's hash no longer matches it. A definition
-  imported before this marker existed carries no value for it and falls back to the version-only check, so it is not
-  refused just for predating the marker. One practical consequence: a document `GET` performed after a designer save
-  now returns `422` too — Studio has to re-import (or PUT a fresh document) rather than edit a document that no
-  longer describes the current graph.
+- The definition's activity graph has changed since the source was recorded. `Import` records a SHA-256 hash of the
+  graph (`BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey`, `Bpmn:SourceGraphHash`) at the moment it
+  stores the source, and once a definition carries that marker, it alone decides staleness: `Export`/the document
+  `GET` refuse exactly when the current graph's hash no longer matches it, regardless of whether the definition's
+  version has also changed. That cuts both ways. An unpublished draft is saved in place (same row, same version), so
+  a designer save that edits a bound activity's inputs — as Studio's binding UX (elsa-studio#1001) does — moves the
+  graph without moving the version, and is refused as stale even though the version alone would have missed it. The
+  other way round, publishing a definition and then making a metadata-only save — a rename, a variable change — bumps
+  it to a new draft version without touching the graph, and is *not* refused: the version moved, but the stored
+  source still describes the graph exactly. One practical consequence: a document `GET` performed after a designer
+  save that edits the graph returns `422` — Studio has to re-import (or PUT a fresh document) rather than edit a
+  document that no longer describes the current graph — but a `GET` after a rename or other metadata-only save keeps
+  returning `200`.
+- The definition has changed — by version — since the source was recorded, and it carries no graph-hash marker to
+  decide staleness by instead. This is the whole test for a definition imported before that marker existed; once one
+  exists, it takes over from the version check entirely, as above.
 
 A missing `definitionId` returns `404 Not Found`.
 
