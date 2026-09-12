@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Elsa.Common;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -299,6 +300,17 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             ? WorkflowInterruptedPayload.ReasonOperatorForce
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
+        // Snapshot before Phase A. Same-cycle user cancel and drain force-cancel both persist
+        // Finished/Cancelled; scoping promote to this drain's force-cancelled ids that were
+        // not already Cancelled is enough for 3.8.1. Do not redesign Cancelled.
+        var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var handle in live)
+        {
+            var snapshot = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
+            if (snapshot is null || snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                drainInducedInstanceIds.Add(handle.WorkflowInstanceId);
+        }
+
         // Force-cancel proceeds in three phases. The split exists because cancelling and
         // awaiting in the same loop made every execution cycle after the first run at full speed
         // through the prior execution cycle's settle window — total wall time was O(N × settle
@@ -323,12 +335,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         // Phase B — wait for every runner to settle in parallel under a shared deadline.
         // The handle disposes when ExecutionCycleTrackingMiddleware exits its `using` block, which
-        // is after the workflow runner has finished its commit. We want runners' terminal
-        // commits to land before we overwrite the sub-status with Interrupted — but we
-        // bound the wait so a non-cancellable activity cannot block drain. PersistInterruptedAsync
-        // applies Interrupted only via a store-level compare-and-set that refuses already-terminal
-        // rows, so a late Finished commit is not overwritten (the recovery scan only requeues
-        // Running+Interrupted).
+        // is after the workflow runner has finished its commit. We want that commit to land first
+        // so PersistInterruptedAsync can overwrite drain-induced Finished/Cancelled (the runner's
+        // reaction to force-cancel) with Running+Interrupted. User-cancelled rows snapshotted
+        // before Phase A, and naturally completed rows (Finished/Finished or Finished/Faulted),
+        // are refused so they are not requeued. Bound the wait so a non-cancellable activity
+        // cannot block drain.
         // Total wall time for this phase is at most ForceCancelSettleTimeout regardless
         // of N.
         var settleTasks = live.Select(async handle =>
@@ -360,7 +372,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             try
             {
                 using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
-                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, persistCts.Token);
+                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, persistCts.Token);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
@@ -377,6 +389,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         ExecutionCycleHandle handle,
         string generationId,
         string reason,
+        HashSet<string> drainInducedInstanceIds,
         CancellationToken cancellationToken)
     {
         var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
@@ -422,7 +435,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             return;
         }
 
-        if (instance.Status == WorkflowStatus.Finished)
+        if (ShouldSkipInterruptedPersist(instance, drainInducedInstanceIds))
         {
             _logger.LogInformation(
                 "Skipping Interrupted persist for instance {InstanceId}: already in terminal status {Status}/{SubStatus}.",
@@ -434,10 +447,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         try
         {
-            // Conditional write: do not SaveAsync the Find snapshot. A runner can commit Finished
-            // between the read and a full-entity save, which would revert Status to Running and
-            // let startup recovery requeue a completed instance.
-            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken);
+            // Conditional write: do not SaveAsync the Find snapshot. Default TryMark refuses
+            // every Finished row (#8052). Drain alone may set allowFinishedCancelled when
+            // this id is in the force-cancelled set and the runner committed Cancelled.
+            var allowFinishedCancelled = instance.Status == WorkflowStatus.Finished
+                && instance.SubStatus == WorkflowSubStatus.Cancelled
+                && drainInducedInstanceIds.Contains(instance.Id);
+            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken, allowFinishedCancelled);
             if (!marked)
             {
                 _logger.LogInformation(
@@ -476,5 +492,22 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         return _registry.Snapshot()
             .Select(s => new IngressSourceFinalState(s.Name, s.State, s.LastError, WasForceStopped: s.State == IngressSourceState.PauseFailed && s.LastError is not null))
             .ToArray();
+    }
+
+    /// <summary>
+    /// Skip persist when the row is already a real terminal outcome: natural completion,
+    /// fault, or a user cancellation that was already Cancelled before drain force-cancel.
+    /// Drain-induced Finished/Cancelled (not in the pre-cancel snapshot as Cancelled) is
+    /// interruptible so deadline-breach recovery can requeue it.
+    /// </summary>
+    private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> drainInducedInstanceIds)
+    {
+        if (instance.Status != WorkflowStatus.Finished)
+            return false;
+
+        if (instance.SubStatus == WorkflowSubStatus.Cancelled)
+            return !drainInducedInstanceIds.Contains(instance.Id);
+
+        return true;
     }
 }

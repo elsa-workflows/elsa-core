@@ -174,16 +174,23 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
         // Same lock as Save/Update so a runner's terminal persist cannot land between the
         // non-terminal check and the Interrupted mutations.
         lock (_sync)
         {
             var instance = _store.Find(x => x.Id == workflowInstanceId);
-            if (instance is null || instance.Status == WorkflowStatus.Finished)
+            if (instance is null)
                 return ValueTask.FromResult(false);
 
+            if (instance.Status == WorkflowStatus.Finished)
+            {
+                if (!allowFinishedCancelled || instance.SubStatus != WorkflowSubStatus.Cancelled)
+                    return ValueTask.FromResult(false);
+            }
+
+            instance.Status = WorkflowStatus.Running;
             instance.SubStatus = WorkflowSubStatus.Interrupted;
             instance.IsExecuting = false;
 
