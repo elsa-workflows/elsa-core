@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  id="Definitions_subprocess-reuses-parent-process-id"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <!-- The top-level process and the subprocess declared directly inside it share the same id ("P"), which is
+       invalid BPMN (ids must be unique within a document) and, before elsa-core#8074's fix, overflowed the stack of
+       any code that finds a scope's nested processes by matching this id back out of the flat binding list: the
+       top-level process's own id was never added to the pool checked for uniqueness (only its elements were), so a
+       subprocess reusing it went undetected. -->
+  <bpmn:process id="P" name="Parent Reused By Its Own Subprocess" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:subProcess id="P" name="Subprocess Reusing Its Parent's Id">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:startEvent id="Inner_Start">
+        <bpmn:outgoing>Inner_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:endEvent id="Inner_End">
+        <bpmn:incoming>Inner_Flow_1</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Inner_Flow_1" sourceRef="Inner_Start" targetRef="Inner_End" />
+    </bpmn:subProcess>
+
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="P" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="P" targetRef="End_1" />
+  </bpmn:process>
+</bpmn:definitions>

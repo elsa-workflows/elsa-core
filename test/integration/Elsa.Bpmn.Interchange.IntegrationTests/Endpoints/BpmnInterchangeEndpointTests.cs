@@ -149,6 +149,67 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task Import_OfADocumentWithASubprocessNestedInsideASubprocessThatReusesItsParentsId_ReturnsUnprocessableEntityAndTheServerStaysAlive()
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("nested-subprocess-duplicate-id.bpmn"), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Contains("Outer", body);
+
+        // elsa-core#8074: before the fix, reading this document overflowed the stack and killed the process, which
+        // .NET cannot catch — there would be no HTTP response to assert on at all. Reaching the assertions above already
+        // proves the process survived; a further successful request proves the host is still serving requests, too.
+        using var followUpContent = new MultipartFormDataContent();
+        AddBpmnFile(followUpContent, ReadAsset("camunda-order-process.bpmn"), "file");
+        var followUpResponse = await PostAuthenticatedAsync("bpmn/analyze", followUpContent, "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, followUpResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithASubprocessReusingItsParentTopLevelProcessesOwnId_ReturnsUnprocessableEntityAndTheServerStaysAlive()
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("subprocess-reuses-parent-process-id.bpmn"), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Contains("P", body);
+
+        // elsa-core#8074: a top-level process's own id was never in the pool checked for uniqueness (only its
+        // elements were), so a subprocess declared directly inside it that reuses that same id went undetected and
+        // overflowed the stack the same way a subprocess nested inside another subprocess does. See the equivalent
+        // nested-subprocess test's remarks: reaching the assertions above already proves the process survived; a
+        // further successful request proves the host is still serving requests, too.
+        using var followUpContent = new MultipartFormDataContent();
+        AddBpmnFile(followUpContent, ReadAsset("camunda-order-process.bpmn"), "file");
+        var followUpResponse = await PostAuthenticatedAsync("bpmn/analyze", followUpContent, "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, followUpResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithTwoTopLevelProcessesSharingAnId_ReturnsUnprocessableEntity()
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("two-process-duplicate-id.bpmn"), "file");
+        content.Add(new StringContent("shared"), "ProcessId");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Contains("shared", body);
+    }
+
+    [Fact]
     public async Task Import_OfAValidDocument_ReturnsOkAndPersistsADefinition()
     {
         using var content = new MultipartFormDataContent();
@@ -492,6 +553,50 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task DocumentPut_WithARepeatedElementId_ReturnsUnprocessableEntityAndPersistsNoNewDraftAndTheServerStaysAlive()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var versionBeforePut = await LatestVersionOfAsync(definitionId);
+
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+        var putResponse = await PutDocumentAsync(definitionId, WithADuplicatedElementId(documentJson), etag);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        var body = await putResponse.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+
+        // See the equivalent Import test's remarks: reaching the assertions above already proves the process
+        // survived reading this document; a further successful request proves the host is still serving requests.
+        Assert.Equal(HttpStatusCode.OK, (await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view")).StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentPut_WithATopLevelProcessIdReusingAnExistingSubprocessId_ReturnsUnprocessableEntityAndPersistsNoNewDraftAndTheServerStaysAlive()
+    {
+        // nested-subprocesses.bpmn already declares a subprocess with id "Outer"; renaming the top-level process's
+        // own id to "Outer" reproduces elsa-core#8074's collision through the document PUT, where the nested scope
+        // ("Outer"'s stored body) comes not from the edited document but from the definition's already-stored
+        // source (see ImportDocumentAsync's remarks on storedNestedScopes).
+        var definitionId = await ImportWrittenBackAsync("nested-subprocesses.bpmn");
+        var versionBeforePut = await LatestVersionOfAsync(definitionId);
+
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+        var putResponse = await PutDocumentAsync(definitionId, WithTopLevelProcessIdReusingASubprocessId(documentJson, "Outer"), etag);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        var body = await putResponse.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Contains("Outer", body);
+        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+
+        // See the equivalent repeated-element-id test's remarks: reaching the assertions above already proves the
+        // process survived reading this document; a further successful request proves the host is still serving
+        // requests, too.
+        Assert.Equal(HttpStatusCode.OK, (await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view")).StatusCode);
+    }
+
+    [Fact]
     public async Task DocumentPut_UnchangedDocument_ReturnsOkAndTheSameFindingsAsImport()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -781,6 +886,24 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var document = JsonNode.Parse(documentJson)!;
         var bounds = document["diagrams"]![0]!["plane"]!["shapes"]![0]!["bounds"]!;
         bounds["x"] = bounds["x"]!.GetValue<double>() + 10;
+        return document.ToJsonString();
+    }
+
+    /// <summary>Renames the document's last top-level element to its first element's id, so the two collide (elsa-core#8074).</summary>
+    private static string WithADuplicatedElementId(string documentJson)
+    {
+        var document = JsonNode.Parse(documentJson)!;
+        var elements = document["processes"]![0]!["elements"]!.AsArray();
+        var firstElementId = elements[0]!["elementId"]!.GetValue<string>();
+        elements[^1]!["elementId"] = firstElementId;
+        return document.ToJsonString();
+    }
+
+    /// <summary>Renames the document's top-level process id to <paramref name="subprocessId"/>, so it collides with a subprocess that already declares that id (elsa-core#8074).</summary>
+    private static string WithTopLevelProcessIdReusingASubprocessId(string documentJson, string subprocessId)
+    {
+        var document = JsonNode.Parse(documentJson)!;
+        document["processes"]![0]!["processId"] = subprocessId;
         return document.ToJsonString();
     }
 
