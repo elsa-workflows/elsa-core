@@ -1,4 +1,5 @@
 using Bpmn.Interchange;
+using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
@@ -6,6 +7,7 @@ using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -49,6 +51,79 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
 
         Assert.True(stored.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var sourceVersion));
         Assert.Equal(stored.Version, sourceVersion);
+    }
+
+    [Fact(DisplayName = "Exporting a definition whose unpublished draft was saved from the designer with a changed graph is refused as stale, even though its version has not changed")]
+    public async Task Export_OfADefinitionSavedFromTheDesignerWithAChangedGraph_IsRefusedAsStale()
+    {
+        var xml = ReadAsset("camunda-order-process.bpmn");
+        var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
+        Assert.True(imported.ImportResult.Succeeded);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+
+        // Captured as plain values, not the live entity: the in-memory store this test runs against hands back the
+        // same object reference on every find, so holding onto the entity itself would see the designer's edit
+        // through both "before" and "after" variables.
+        var storedBefore = await FindLatestAsync(definitionId);
+        var (versionBeforeSave, stringDataBeforeSave) = (storedBefore.Version, storedBefore.StringData);
+
+        await SaveDraftFromTheDesignerAsync(definitionId);
+
+        var storedAfterSave = await FindLatestAsync(definitionId);
+
+        // Saved in place: same version, only the graph moved.
+        Assert.Equal(versionBeforeSave, storedAfterSave.Version);
+        Assert.NotEqual(stringDataBeforeSave, storedAfterSave.StringData);
+
+        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(storedAfterSave));
+
+        Assert.Contains("has changed since it was imported", exception.Message);
+
+        var documentException = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.ReadDocument(storedAfterSave));
+        Assert.Contains("has changed since it was imported", documentException.Message);
+    }
+
+    [Fact(DisplayName = "Exporting a definition whose unpublished draft was saved from the designer with no graph change still succeeds")]
+    public async Task Export_OfADefinitionSavedFromTheDesignerWithNoGraphChange_StillSucceeds()
+    {
+        var xml = ReadAsset("camunda-order-process.bpmn");
+        var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
+        Assert.True(imported.ImportResult.Succeeded);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+
+        // Round-trips the draft through the designer's save path unedited, so the graph hash still matches.
+        var draft = await DefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest);
+        Assert.NotNull(draft);
+        await DefinitionPublisher.SaveDraftAsync(draft!);
+
+        var stored = await FindLatestAsync(definitionId);
+
+        var bytes = DocumentService.Export(stored);
+
+        Assert.NotEmpty(bytes);
+    }
+
+    [Fact(DisplayName = "A definition imported before the graph-hash marker existed still exports after a designer save, on version alone")]
+    public async Task Export_OfADefinitionWithoutAGraphHashMarker_FallsBackToVersionOnlyAfterADesignerSave()
+    {
+        var xml = ReadAsset("camunda-order-process.bpmn");
+        var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
+        Assert.True(imported.ImportResult.Succeeded);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+
+        // Simulates a definition imported before this marker existed.
+        var stored = await FindLatestAsync(definitionId);
+        stored.CustomProperties.Remove(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey);
+        await DefinitionStore.SaveAsync(stored);
+
+        await SaveDraftFromTheDesignerAsync(definitionId);
+
+        var storedAfterSave = await FindLatestAsync(definitionId);
+        Assert.False(storedAfterSave.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey));
+
+        var bytes = DocumentService.Export(storedAfterSave);
+
+        Assert.NotEmpty(bytes);
     }
 
     [Fact(DisplayName = "Exporting a definition whose custom properties no longer carry the BPMN source is refused, naming that as the reason")]
@@ -169,6 +244,24 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         var definition = await DefinitionStore.FindAsync(filter);
         Assert.NotNull(definition);
         return definition!;
+    }
+
+    /// <summary>
+    /// Saves the latest draft of <paramref name="definitionId"/> the way the workflow-definition save endpoint
+    /// Studio's designer calls does — <see cref="IWorkflowDefinitionPublisher.GetDraftAsync(string, VersionOptions, CancellationToken)"/>
+    /// then <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/> — with the bound activity's text edited, same
+    /// as <c>BpmnInterchangeEndpointTests.SaveDraftFromTheDesignerAsync</c>.
+    /// </summary>
+    private async Task SaveDraftFromTheDesignerAsync(string definitionId)
+    {
+        var draft = await DefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest);
+        Assert.NotNull(draft);
+
+        var root = Assert.IsType<BpmnProcess>(ActivitySerializer.Deserialize(draft!.StringData!));
+        Assert.Single(root.Activities.OfType<WriteLine>()).Text = new("Notifying the warehouse, edited in the designer");
+        draft.StringData = ActivitySerializer.Serialize(root);
+
+        await DefinitionPublisher.SaveDraftAsync(draft);
     }
 
     /// <summary>

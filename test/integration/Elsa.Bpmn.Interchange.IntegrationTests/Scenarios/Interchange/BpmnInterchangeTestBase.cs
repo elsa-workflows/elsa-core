@@ -2,6 +2,7 @@ using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -23,11 +24,24 @@ public abstract class BpmnInterchangeTestBase : IAsyncLifetime
 
         DocumentService = _services.GetRequiredService<BpmnInterchangeDocumentService>();
         DefinitionStore = _services.GetRequiredService<IWorkflowDefinitionStore>();
+        DefinitionPublisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        ActivitySerializer = _services.GetRequiredService<IActivitySerializer>();
     }
 
     protected BpmnInterchangeDocumentService DocumentService { get; }
 
     protected IWorkflowDefinitionStore DefinitionStore { get; }
+
+    /// <summary>
+    /// Resolves the same <see cref="IWorkflowDefinitionPublisher"/> the workflow-definition save endpoint the
+    /// designer uses calls, so a test can save a draft the way the designer does:
+    /// <see cref="IWorkflowDefinitionPublisher.GetDraftAsync(string, Elsa.Common.Models.VersionOptions, CancellationToken)"/>
+    /// then <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/>.
+    /// </summary>
+    protected IWorkflowDefinitionPublisher DefinitionPublisher { get; }
+
+    /// <summary>Resolves activities out of a draft's <c>StringData</c> so a test can edit one before saving it back.</summary>
+    protected IActivitySerializer ActivitySerializer { get; }
 
     public Task InitializeAsync() => _services.PopulateRegistriesAsync();
 
