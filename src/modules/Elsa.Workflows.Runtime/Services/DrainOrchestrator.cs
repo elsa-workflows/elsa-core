@@ -307,18 +307,22 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             ? WorkflowInterruptedPayload.ReasonOperatorForce
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
-        // Snapshot before Phase A. Each Find has its own 250ms budget so a stalled
-        // first read cannot starve later instances. Finds run concurrently so Phase A
-        // Cancel waits ~one per-find timeout, not N×timeout. Timeout/error: exclude
-        // that id (prefer preserving user-cancel / #8052 over promoting an unknown row).
+        // Snapshot before Phase A. Each Find has its own 250ms budget and its own
+        // DI scope so concurrent reads do not share an EF DbContext (Phase C stays
+        // sequential on the outer scope for the same reason). Finds run concurrently
+        // so Phase A Cancel waits ~one per-find timeout, not N×timeout. Timeout/error:
+        // exclude that id (prefer preserving user-cancel / #8052 over promoting an
+        // unknown row).
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         var snapshotTasks = live.Select(async handle =>
         {
             try
             {
+                using var findScope = _scopeFactory.CreateScope();
+                var findStore = findScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
                 using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 perFindCts.CancelAfter(PreCancelSnapshotTimeout);
-                var snapshot = await instanceStore
+                var snapshot = await findStore
                     .FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, perFindCts.Token)
                     .AsTask()
                     .WaitAsync(perFindCts.Token)
