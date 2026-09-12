@@ -28,6 +28,16 @@ public static class BpmnErrorCodes
     public const string ImportBindingInvalid = "bpmn.import.binding-invalid";
 
     /// <summary>
+    /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document that declares the same element id more than
+    /// once — most often a subprocess nested inside another subprocess that reuses its parent's id. Refused before
+    /// any recursion into nested processes runs, since a repeated id would otherwise make that recursion — in this
+    /// type's own capability walk, in <c>BpmnWorkBinder.BindScope</c>, and in <c>Bpmn.Interchange</c>'s own
+    /// <c>BpmnXmlWriter</c> — loop without ever terminating and crash the process outright. Carries
+    /// <c>data.elementIds</c> (the duplicated ids).
+    /// </summary>
+    public const string ImportDuplicateElementId = "bpmn.import.duplicate-element-id";
+
+    /// <summary>
     /// <c>bpmn/definitions/{id}/export</c> and the document <c>GET</c> refuse a workflow definition that does not
     /// currently carry BPMN source — either it was never imported from BPMN, or a later save replaced its custom
     /// properties wholesale.

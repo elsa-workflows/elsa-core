@@ -50,6 +50,11 @@ internal static class BpmnImportErrorResponses
             await BpmnErrorResponse.SendAsync(httpResponse, BindingInvalidResponseFor(exception), cancellationToken);
             return null;
         }
+        catch (BpmnDuplicateElementIdException exception)
+        {
+            await BpmnErrorResponse.SendAsync(httpResponse, DuplicateElementIdResponseFor(exception), cancellationToken);
+            return null;
+        }
         catch (BpmnCapabilityException exception)
         {
             await BpmnErrorResponse.SendAsync(httpResponse, CapabilityResponseFor(exception), cancellationToken);
@@ -82,6 +87,17 @@ internal static class BpmnImportErrorResponses
     /// <summary>The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>.</summary>
     internal static BpmnErrorResponse BindingInvalidResponseFor(BpmnBindingException exception) =>
         BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportBindingInvalid, StatusCodes.Status422UnprocessableEntity);
+
+    /// <summary>
+    /// The <see cref="BpmnErrorCodes.ImportDuplicateElementId"/> response for <paramref name="exception"/>, carrying
+    /// the duplicated ids as <c>data.elementIds</c>.
+    /// </summary>
+    internal static BpmnErrorResponse DuplicateElementIdResponseFor(BpmnDuplicateElementIdException exception) =>
+        BpmnErrorResponse.Create(
+            exception.Message,
+            BpmnErrorCodes.ImportDuplicateElementId,
+            StatusCodes.Status422UnprocessableEntity,
+            new { ElementIds = exception.DuplicateElementIds });
 
     /// <summary>
     /// The <see cref="BpmnErrorCodes.ImportCapabilityUnsupported"/> response for <paramref name="exception"/>, as its

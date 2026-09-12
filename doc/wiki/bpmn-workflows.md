@@ -215,6 +215,17 @@ capabilities and the offending element ids, rather than persisting a definition 
 runs. `Analyze` never performs this check, since it does not persist; a document that `Analyze` reports cleanly can
 still be refused by `Import` on capability grounds.
 
+### Duplicate element id refusal
+
+BPMN requires every element id to be unique within a document. `Import` and the document `PUT` both refuse, with
+`422 Unprocessable Entity`, a document that repeats one — most often a subprocess nested inside another subprocess
+that reuses its parent's id. This is not just an ordinary validation rule: reading or writing such a document walks
+into a nested process by matching the repeated id back out of a flat binding list, in three different places (this
+service's own capability walk, the work binder, and the interchange library's own writer), and each of those walks
+would otherwise recurse without ever terminating and crash the process outright — .NET cannot catch a
+`StackOverflowException`. Both endpoints check this before any of that recursion runs. `Analyze` never performs this
+check, since the plain read it does never walks a nested process this way to begin with.
+
 ### Export's limitation
 
 `Export` does not reconstruct a `.bpmn` document from the Elsa activity graph a definition runs — that would discard
@@ -290,6 +301,7 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | --- | --- | --- | --- |
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
 | `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
+| `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
 | `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-stale` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-version-unknown` | `GET .../export`, document `GET` | 422 | — |
