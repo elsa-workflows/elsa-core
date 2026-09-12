@@ -137,6 +137,23 @@ public sealed class BpmnTestHost
             JsonSerializer.Deserialize<BpmnWorkLedger>(workLedgerJson) ?? new BpmnWorkLedger());
     }
 
+    /// <summary>
+    /// Removes the diagnostics cursor from a scope's persisted state, simulating a scope that was suspended before
+    /// diagnostics projection existed: it carries diagnostics in its execution state, but no
+    /// <see cref="BpmnScopeMemory.DiagnosticsCursorPropertyKey"/> property to say how many of them are already
+    /// journaled.
+    /// </summary>
+    internal void RemoveDiagnosticsCursor(bool nested = false)
+    {
+        var state = _state ?? throw new InvalidOperationException("The workflow has not been run yet.");
+        var scopeStates = state.ActivityExecutionContexts.Where(x => x.Properties.ContainsKey(BpmnScopeMemory.WorkLedgerPropertyKey));
+        var scopeState = nested
+            ? scopeStates.OrderByDescending(x => x.CallStackDepth).First()
+            : scopeStates.OrderBy(x => x.CallStackDepth).First();
+
+        scopeState.Properties.Remove(BpmnScopeMemory.DiagnosticsCursorPropertyKey);
+    }
+
     private RunWorkflowResult Record(RunWorkflowResult result)
     {
         _result = result;

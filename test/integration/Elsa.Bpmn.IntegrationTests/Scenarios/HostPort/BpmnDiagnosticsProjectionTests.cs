@@ -79,6 +79,36 @@ public class BpmnDiagnosticsProjectionTests(ITestOutputHelper testOutputHelper)
             string.IsNullOrEmpty(((BpmnDiagnosticLogPayload)x.Payload!).FlowId));
     }
 
+    [Fact(DisplayName = "A scope persisted before the diagnostics cursor existed does not replay its historical diagnostics on resume")]
+    public async Task MissingDiagnosticsCursor_DoesNotReplayDiagnosticsFromBeforeTheSuspend_ButStillProjectsNewOnes()
+    {
+        // Arrange & Act: run to a suspend with both branches blocked, so the scope's execution state already
+        // carries diagnostics for the split and both outbound flows...
+        var beforeResume = await _host.RunAsync(BpmnTestProcesses.ParallelSplitAndJoinBlocking(_host.Log));
+        var historicalDiagnosticIds = beforeResume.Journal.WorkflowExecutionLogEntries
+            .Where(x => x.Source == BpmnDiagnosticEventNames.Source)
+            .Select(x => ((BpmnDiagnosticLogPayload)x.Payload!).DiagnosticId)
+            .ToList();
+        Assert.NotEmpty(historicalDiagnosticIds);
+
+        // ...then delete the cursor property, simulating a scope that was suspended before this feature existed:
+        // diagnostics in its state, but nothing recording how many of them are already journaled.
+        _host.RemoveDiagnosticsCursor();
+
+        var afterResume = await _host.FinishWorkAsync("left");
+        var resumedDiagnostics = afterResume.Journal.WorkflowExecutionLogEntries
+            .Where(x => x.Source == BpmnDiagnosticEventNames.Source)
+            .Select(x => (BpmnDiagnosticLogPayload)x.Payload!)
+            .ToList();
+
+        // Assert: none of the diagnostics that were already in the state before this evaluation is projected again...
+        Assert.DoesNotContain(resumedDiagnostics, p => historicalDiagnosticIds.Contains(p.DiagnosticId));
+
+        // ...but the diagnostic this evaluation actually produced -- the join now waiting on its left inbound flow
+        // -- is projected, so the missing cursor did not also make the scope swallow genuinely new diagnostics.
+        Assert.Contains(resumedDiagnostics, p => p.ElementId == "join" && p.FlowId == "flow-left-join");
+    }
+
     [Fact(DisplayName = "Diagnostics are written on the scope's own activity execution context, never a child's")]
     public async Task Diagnostics_AreWrittenOnTheScopesOwnContext()
     {
