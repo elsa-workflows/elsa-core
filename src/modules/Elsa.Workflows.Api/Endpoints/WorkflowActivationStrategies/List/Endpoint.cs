@@ -4,14 +4,16 @@ using System.Reflection;
 using Elsa.Abstractions;
 using Elsa.Extensions;
 using Elsa.Models;
+using Elsa.Workflows;
 using Humanizer;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Api.Endpoints.WorkflowActivationStrategies.List;
 
 /// <summary>
 /// Returns list of available <see cref="IWorkflowActivationStrategy" /> implementations.
 /// </summary>
-internal class List(IEnumerable<IWorkflowActivationStrategy> strategies) : ElsaEndpointWithoutRequest<ListResponse<WorkflowActivationStrategyDescriptor>>
+internal class List(IEnumerable<IWorkflowActivationStrategy> strategies, ISerializationTypeRegistry workflowJsonTypeRegistry) : ElsaEndpointWithoutRequest<ListResponse<WorkflowActivationStrategyDescriptor>>
 {
     public override void Configure()
     {
@@ -21,15 +23,15 @@ internal class List(IEnumerable<IWorkflowActivationStrategy> strategies) : ElsaE
 
     public override Task<ListResponse<WorkflowActivationStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)
     {
-        var descriptors = strategies.Select(WorkflowActivationStrategyDescriptor.FromStrategy).OrderBy(x => x.DisplayName).ToList();
-        var response =new ListResponse<WorkflowActivationStrategyDescriptor>(descriptors);
+        var descriptors = strategies.Select(x => WorkflowActivationStrategyDescriptor.FromStrategy(x, workflowJsonTypeRegistry)).OrderBy(x => x.DisplayName).ToList();
+        var response = new ListResponse<WorkflowActivationStrategyDescriptor>(descriptors);
         return Task.FromResult(response);
     }
 }
 
 internal record WorkflowActivationStrategyDescriptor(string DisplayName, string Description, string TypeName)
 {
-    public static WorkflowActivationStrategyDescriptor FromStrategy(IWorkflowActivationStrategy strategy)
+    public static WorkflowActivationStrategyDescriptor FromStrategy(IWorkflowActivationStrategy strategy, ISerializationTypeRegistry workflowJsonTypeRegistry)
     {
         var type = strategy.GetType();
         var displayNameAttribute = type.GetCustomAttribute<DisplayNameAttribute>();
@@ -38,6 +40,7 @@ internal record WorkflowActivationStrategyDescriptor(string DisplayName, string 
         var displayName = displayNameAttribute?.DisplayName ?? displayAttribute?.Name ?? type.Name.Replace("Strategy", "").Humanize();
         var description = descriptionAttribute?.Description ?? displayAttribute?.Description ?? "";
 
-        return new WorkflowActivationStrategyDescriptor(displayName, description, type.GetSimpleAssemblyQualifiedName());
+        var typeName = workflowJsonTypeRegistry.TryGetAlias(type, out var alias) ? alias : type.GetSimpleAssemblyQualifiedName();
+        return new WorkflowActivationStrategyDescriptor(displayName, description, typeName);
     }
 }
