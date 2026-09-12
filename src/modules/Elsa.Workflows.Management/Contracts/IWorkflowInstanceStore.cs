@@ -178,4 +178,14 @@ public interface IWorkflowInstanceStore
     /// <param name="value">The new timestamp value to set.</param>
     /// <param name="cancellationToken">The cancellation token to observe during the operation.</param>
     Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets <see cref="WorkflowInstance.SubStatus"/> to <see cref="WorkflowSubStatus.Interrupted"/> and
+    /// <see cref="WorkflowInstance.IsExecuting"/> to <c>false</c> only if the stored instance is still non-terminal.
+    /// </summary>
+    /// <returns>
+    /// <c>true</c> when the interrupt markers were applied; <c>false</c> when the instance is missing or already
+    /// <see cref="WorkflowStatus.Finished"/>. Implementations must not overwrite a concurrent terminal commit.
+    /// </returns>
+    ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 }

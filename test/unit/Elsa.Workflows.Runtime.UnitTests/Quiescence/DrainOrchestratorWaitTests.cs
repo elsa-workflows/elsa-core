@@ -37,6 +37,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
                 Version = 1,
                 IsExecuting = true,
             }));
+        InstanceStore.TryMarkInterruptedAsync("instance-1", Arg.Any<CancellationToken>()).Returns(new ValueTask<bool>(true));
 
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
@@ -45,7 +46,8 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Contains("instance-1", outcome.ForceCancelledInstanceIds);
         Assert.True(handle.CancellationToken.IsCancellationRequested);
-        await InstanceStore.Received(1).SaveAsync(Arg.Is<WorkflowInstance>(i => i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting), Arg.Any<CancellationToken>());
+        await InstanceStore.Received(1).TryMarkInterruptedAsync("instance-1", Arg.Any<CancellationToken>());
+        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
         await LogStore.Received(1).AddAsync(Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName), Arg.Any<CancellationToken>());
     }
 
@@ -74,6 +76,34 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Contains("instance-finished", outcome.ForceCancelledInstanceIds);
         await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+        await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]
+    public async Task SkipsInterruptedPersistWhenMarkLosesTerminalRace()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-raced", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
+            {
+                Id = "instance-raced",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Running,
+                IsExecuting = true,
+            }));
+        InstanceStore.TryMarkInterruptedAsync("instance-raced", Arg.Any<CancellationToken>()).Returns(new ValueTask<bool>(false));
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        await InstanceStore.Received(1).TryMarkInterruptedAsync("instance-raced", Arg.Any<CancellationToken>());
+        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
         await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
     }
 
@@ -92,7 +122,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
                 Version = 1,
                 IsExecuting = true,
             }));
-        InstanceStore.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
+        InstanceStore.TryMarkInterruptedAsync("instance-2", Arg.Any<CancellationToken>())
             .Returns(_ => throw new InvalidOperationException("db unavailable"));
 
         var sut = BuildSut();

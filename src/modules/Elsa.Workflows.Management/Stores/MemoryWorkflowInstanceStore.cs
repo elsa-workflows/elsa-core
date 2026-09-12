@@ -168,6 +168,18 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         workflowInstance.UpdatedAt = value;
     }
 
+    /// <inheritdoc />
+    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    {
+        var instance = _store.Find(x => x.Id == workflowInstanceId);
+        if (instance is null || instance.Status == WorkflowStatus.Finished)
+            return ValueTask.FromResult(false);
+
+        instance.SubStatus = WorkflowSubStatus.Interrupted;
+        instance.IsExecuting = false;
+        return ValueTask.FromResult(true);
+    }
+
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
