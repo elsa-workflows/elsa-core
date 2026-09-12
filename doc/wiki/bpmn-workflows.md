@@ -129,7 +129,8 @@ whole-definition import and resets them from the document, same as it always has
 The `document` GET/PUT pair exists for Studio (W21, part of #7909): Studio holds a BPMN process as the library's own
 JSON payload, not as `.bpmn` XML, and editing it — binding a task (W11), moving a shape (W14) — has to write that
 JSON back through the same path `Import` uses, or the stored BPMN source drifts out of sync with the definition (see
-`BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey`) and `Export` starts refusing with `422`.
+`BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey` and `SourceGraphHashCustomPropertyKey`) and `Export`
+starts refusing with `422`.
 
 The request and response bodies on both routes are the `bpmnDefinitions` document exactly as `Bpmn.Model` serializes
 it: property names as `Bpmn.Model`'s own `[JsonPropertyName]` attributes declare them, and any enum as its underlying
@@ -142,7 +143,8 @@ imported with — recorded on the workflow definition the first time it is impor
 `document` `PUT`, so an edit to a multi-process document does not have to name the process again on every save.
 
 **The document `PUT` edits the BPMN document, not the whole definition.** Only the activity graph the newly bound
-document produces and the `Bpmn:*` custom properties (`SourceXml`, `SourceVersion`, `SourceProcessId`) change; the
+document produces and the `Bpmn:*` custom properties (`SourceXml`, `SourceVersion`, `SourceProcessId`,
+`SourceGraphHash`) change; the
 definition's name, description, variables, inputs, outputs, outcomes, options, tool version and every other custom
 property are carried forward exactly as they stood before the `PUT`. This is what lets Studio's binding UX (elsa-
 studio#1001) save a binding change through this endpoint without silently resetting metadata the author set some
@@ -166,19 +168,30 @@ everything the reader retained on import (foreign extension elements, foreign at
 DI layout). Instead, it returns exactly the document the most recent successful import stored. This has a real
 consequence for one kind of edit: **an edit made through Elsa's own designer, without going back through BPMN, is not
 reflected in what `Export` returns** — the graph moves on, but the stored source still describes the document as it
-stood before that edit.
+stood before that edit. Rather than silently returning that pre-edit document, `Export` and the document `GET` refuse
+it as stale — see below.
 
 An edit made through the `document` `PUT` endpoint above is different: it re-imports, so the stored source and the
 graph move together, and **`Export` reflects the edit immediately afterward.**
 
 `Export` also refuses outright, with `422 Unprocessable Entity`, rather than silently returning a stale or wrong
-document, in two situations:
+document, in three situations:
 
 - The definition does not currently carry BPMN source — either it was never imported from BPMN, or a later save
   replaced its custom properties wholesale (BPMN source travels on the same `CustomProperties` dictionary a workflow
   edit can overwrite).
 - The definition has changed — by version — since the source was recorded, meaning the stored BPMN text no longer
   corresponds to the current definition.
+- The definition's activity graph has changed since the source was recorded, even though its version has not. An
+  unpublished draft is saved in place (same row, same version), so a designer save that edits a bound activity's
+  inputs — as Studio's binding UX (elsa-studio#1001) does — moves the graph without moving the version, which the
+  version check above cannot see. `Import` also records a SHA-256 hash of the graph
+  (`BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey`, `Bpmn:SourceGraphHash`) at the moment it stores
+  the source, and `Export`/the document `GET` refuse when the current graph's hash no longer matches it. A definition
+  imported before this marker existed carries no value for it and falls back to the version-only check, so it is not
+  refused just for predating the marker. One practical consequence: a document `GET` performed after a designer save
+  now returns `422` too — Studio has to re-import (or PUT a fresh document) rather than edit a document that no
+  longer describes the current graph.
 
 A missing `definitionId` returns `404 Not Found`.
 

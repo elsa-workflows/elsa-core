@@ -57,7 +57,9 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// while the stored BPMN text still describes the pre-edit document. <see cref="SourceVersionCustomPropertyKey"/>
 /// records the definition's own version at the moment of import for exactly this: if the current version no longer
 /// matches, the stored source is stale, and exporting it would silently hand back a document that is not what the
-/// caller has, which is worse than refusing.
+/// caller has, which is worse than refusing. A version bump alone misses one case, though: an unpublished draft is
+/// saved in place — same row, same version — so a designer save of the draft moves the graph without moving the
+/// version. <see cref="SourceGraphHashCustomPropertyKey"/> closes that gap with a content hash of the graph itself.
 /// </para>
 /// <para>
 /// <b>A whole-definition import and a document edit disagree about what else gets replaced.</b> <see cref="ImportAsync"/>
@@ -66,9 +68,10 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// inputs, outputs, outcomes, options, tool version, read-only flag and custom properties with what that model carries.
 /// <see cref="ImportDocumentAsync"/> is different: it edits the BPMN document of an <em>existing</em> definition, so
 /// it passes that definition to the shared import logic's <c>preserveMetadataFrom</c> parameter, which carries all
-/// of the above onto the result unchanged. Either way, only the bound activity graph and the three custom properties
+/// of the above onto the result unchanged. Either way, only the bound activity graph and the four custom properties
 /// this service owns (<see cref="SourceXmlCustomPropertyKey"/>, <see cref="SourceVersionCustomPropertyKey"/>,
-/// <see cref="SourceProcessIdCustomPropertyKey"/>) come from the import itself.
+/// <see cref="SourceProcessIdCustomPropertyKey"/>, <see cref="SourceGraphHashCustomPropertyKey"/>) come from the
+/// import itself.
 /// </para>
 /// <para>
 /// <b>Capability refusal happens here, at import, not at <c>BpmnGraph.Build</c>.</b> <see cref="BpmnCapabilityRequirements.Analyze"/>
@@ -100,8 +103,9 @@ public sealed class BpmnInterchangeDocumentService(
     /// <see cref="Export(WorkflowDefinition)"/> compares this against the definition's current version to tell a
     /// still-current source from a stale one. The version number is what <see cref="WorkflowDefinition"/> itself
     /// already exposes for "has this definition changed", so this reuses it rather than inventing a second notion of
-    /// change (a content hash, a timestamp) that could disagree with the versioning the rest of the system already
-    /// uses.
+    /// change for the case a version bump alone catches: a publish, or any other save that assigns a new version.
+    /// It does not, on its own, catch an unpublished draft saved in place — same row, same version — which is what
+    /// <see cref="SourceGraphHashCustomPropertyKey"/> is for.
     /// </remarks>
     public const string SourceVersionCustomPropertyKey = "Bpmn:SourceVersion";
 
@@ -117,6 +121,28 @@ public sealed class BpmnInterchangeDocumentService(
     /// single-process document, so this is always derivable the same way rather than only when it happens to matter.
     /// </remarks>
     public const string SourceProcessIdCustomPropertyKey = "Bpmn:SourceProcessId";
+
+    /// <summary>
+    /// The workflow definition custom property <see cref="ImportAsync"/> records a content hash of the definition's
+    /// serialized activity graph (<see cref="WorkflowDefinition.StringData"/>) under, at the moment it stores
+    /// <see cref="SourceXmlCustomPropertyKey"/>.
+    /// </summary>
+    /// <remarks>
+    /// An unpublished draft is saved in place — same row, same version — so a designer save of the draft that edits
+    /// a bound activity's inputs changes <see cref="WorkflowDefinition.StringData"/> without changing
+    /// <see cref="WorkflowDefinition"/>'s own <c>Version</c>, which <see cref="SourceVersionCustomPropertyKey"/> alone
+    /// cannot tell apart from no change at all. This marker closes that gap: <see cref="Export(WorkflowDefinition)"/> and
+    /// <see cref="ReadDocument"/> also treat the stored source as stale when the current graph's hash differs from
+    /// the one recorded here, in addition to the existing version check. Computed with the same hashing
+    /// <see cref="Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document.BpmnDocumentETag"/> uses for the graph field, via
+    /// <see cref="BpmnContentHash"/>, so the two never disagree about what "the graph changed" means.
+    /// <para>
+    /// A definition imported before this marker existed carries no value for this key; <see cref="ResolveSourceXml"/>
+    /// falls back to the version-only check for it rather than refusing every definition imported under the older
+    /// behaviour.
+    /// </para>
+    /// </remarks>
+    public const string SourceGraphHashCustomPropertyKey = "Bpmn:SourceGraphHash";
 
     /// <summary>
     /// The host capabilities this deployment's BPMN runtime declares.
@@ -177,8 +203,9 @@ public sealed class BpmnInterchangeDocumentService(
     /// When set, the definition this import must otherwise leave untouched: its name, description, variables,
     /// inputs, outputs, outcomes, options, tool version, read-only flag and custom properties are carried onto the
     /// imported definition as-is, and only the bound activity graph and the <see cref="SourceXmlCustomPropertyKey"/>,
-    /// <see cref="SourceVersionCustomPropertyKey"/> and <see cref="SourceProcessIdCustomPropertyKey"/> custom
-    /// properties this method owns change. This is what <see cref="ImportDocumentAsync"/> passes so the document PUT
+    /// <see cref="SourceVersionCustomPropertyKey"/>, <see cref="SourceProcessIdCustomPropertyKey"/> and
+    /// <see cref="SourceGraphHashCustomPropertyKey"/> custom properties this method owns change. This is what
+    /// <see cref="ImportDocumentAsync"/> passes so the document PUT
     /// edits the BPMN document without silently resetting the rest of the definition; left <c>null</c> for a
     /// whole-definition import, where the model built from the document alone is the intended contract.
     /// </param>
@@ -240,6 +267,7 @@ public sealed class BpmnInterchangeDocumentService(
             persisted.CustomProperties[SourceXmlCustomPropertyKey] = xml;
             persisted.CustomProperties[SourceVersionCustomPropertyKey] = persisted.Version;
             persisted.CustomProperties[SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId;
+            persisted.CustomProperties[SourceGraphHashCustomPropertyKey] = BpmnContentHash.OfGraph(persisted.StringData);
             await store.SaveAsync(persisted, cancellationToken);
         }
 
@@ -307,7 +335,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// properties other than the ones this service owns — is carried onto the result unchanged; see the shared
     /// import logic's <c>preserveMetadataFrom</c> parameter, which this passes the existing definition to. Only the activity graph
     /// and the <see cref="SourceXmlCustomPropertyKey"/>/<see cref="SourceVersionCustomPropertyKey"/>/
-    /// <see cref="SourceProcessIdCustomPropertyKey"/> custom properties move.
+    /// <see cref="SourceProcessIdCustomPropertyKey"/>/<see cref="SourceGraphHashCustomPropertyKey"/> custom properties move.
     /// </remarks>
     /// <param name="document">The edited document, deserialized through the library's own JSON converters.</param>
     /// <param name="definitionId">The workflow definition to update.</param>
@@ -381,6 +409,22 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN (imported at version {sourceVersion}, "
                 + $"currently at version {definition.Version}). The BPMN source stored on it no longer corresponds to this definition, so exporting it "
                 + "would silently return a document that is not what this definition currently is.");
+        }
+
+        // The version check above catches a publish or any other save that assigns a new version, but an unpublished
+        // draft is saved in place — same row, same version — so a designer save of the draft (e.g. an edit to a bound
+        // activity's inputs) moves the graph without moving the version. SourceGraphHashCustomPropertyKey catches that:
+        // a definition imported before this marker existed carries no value for it, so it falls back to the
+        // version-only check above rather than refusing every definition imported under the older behaviour.
+        if (definition.CustomProperties.TryGetValue<string>(SourceGraphHashCustomPropertyKey, out var sourceGraphHash)
+            && !string.IsNullOrEmpty(sourceGraphHash)
+            && sourceGraphHash != BpmnContentHash.OfGraph(definition.StringData))
+        {
+            throw new BpmnExportUnavailableException(
+                $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN: its activity graph no longer matches "
+                + "the graph the stored source was imported against, even though its version has not changed (an unpublished draft is saved in place). "
+                + "The BPMN source stored on it no longer corresponds to this definition, so exporting it would silently return a document that is "
+                + "not what this definition currently is.");
         }
 
         return xml;

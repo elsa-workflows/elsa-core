@@ -1,7 +1,5 @@
-using System.Buffers.Binary;
 using System.Globalization;
 using System.Security.Cryptography;
-using System.Text;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
@@ -41,29 +39,11 @@ internal static class BpmnDocumentETag
         var sourceXml = definition.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey, out var xml) ? xml : null;
 
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        Append(hash, definition.Id);
-        Append(hash, definition.Version.ToString(CultureInfo.InvariantCulture));
-        Append(hash, sourceXml);
-        Append(hash, definition.StringData);
+        BpmnContentHash.AppendField(hash, definition.Id);
+        BpmnContentHash.AppendField(hash, definition.Version.ToString(CultureInfo.InvariantCulture));
+        BpmnContentHash.AppendField(hash, sourceXml);
+        BpmnContentHash.AppendField(hash, definition.StringData);
 
         return $"\"{Convert.ToHexString(hash.GetHashAndReset())}\"";
-    }
-
-    private static void Append(IncrementalHash hash, string? value)
-    {
-        Span<byte> header = stackalloc byte[5];
-
-        if (value is null)
-        {
-            header[0] = 0;
-            hash.AppendData(header[..1]);
-            return;
-        }
-
-        var bytes = Encoding.UTF8.GetBytes(value);
-        header[0] = 1;
-        BinaryPrimitives.WriteInt32BigEndian(header[1..], bytes.Length);
-        hash.AppendData(header);
-        hash.AppendData(bytes);
     }
 }
