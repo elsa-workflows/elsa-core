@@ -49,6 +49,34 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await LogStore.Received(1).AddAsync(Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "Force-cancel skips Interrupted persist when the instance is already Finished")]
+    public async Task SkipsInterruptedPersistForFinishedInstance()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-finished", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
+            {
+                Id = "instance-finished",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Finished,
+                SubStatus = WorkflowSubStatus.Finished,
+                IsExecuting = false,
+            }));
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+        Assert.Contains("instance-finished", outcome.ForceCancelledInstanceIds);
+        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+        await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "Persistence failure during drain produces Reason=PersistenceFailure in payload")]
     public async Task PersistenceFailureRecordsReason()
     {
