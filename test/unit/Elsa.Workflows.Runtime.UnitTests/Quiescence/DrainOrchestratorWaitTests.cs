@@ -189,6 +189,64 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<bool>());
     }
 
+    [Fact(DisplayName = "A stalled first snapshot does not exclude a later instance from drain-induced Interrupted promote")]
+    public async Task IndependentSnapshotTimeoutDoesNotStarveLaterFinds()
+    {
+        var stalledHandle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-stalled", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        var recoveredHandle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-recovered", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(2);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { stalledHandle, recoveredHandle });
+
+        var stalled = new TaskCompletionSource<WorkflowInstance?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stalledFinds = 0;
+        InstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(f => f.Id == "instance-stalled"), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                if (Interlocked.Increment(ref stalledFinds) == 1)
+                    return new ValueTask<WorkflowInstance?>(stalled.Task);
+
+                return new ValueTask<WorkflowInstance?>(new WorkflowInstance
+                {
+                    Id = "instance-stalled",
+                    DefinitionId = "def-1",
+                    DefinitionVersionId = "ver-1",
+                    Version = 1,
+                    Status = WorkflowStatus.Finished,
+                    SubStatus = WorkflowSubStatus.Cancelled,
+                    IsExecuting = false,
+                });
+            });
+        InstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(f => f.Id == "instance-recovered"), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(new WorkflowInstance
+            {
+                Id = "instance-recovered",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Running,
+                SubStatus = WorkflowSubStatus.Executing,
+                IsExecuting = true,
+            }));
+        InstanceStore.TryMarkInterruptedAsync("instance-recovered", Arg.Any<CancellationToken>(), false).Returns(new ValueTask<bool>(true));
+
+        var sut = BuildSut();
+        var drainTask = sut.DrainAsync(DrainTrigger.OperatorForce).AsTask();
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while ((!stalledHandle.CancellationToken.IsCancellationRequested || !recoveredHandle.CancellationToken.IsCancellationRequested) && DateTime.UtcNow < deadline)
+            await Task.Delay(20);
+
+        Assert.True(stalledHandle.CancellationToken.IsCancellationRequested);
+        Assert.True(recoveredHandle.CancellationToken.IsCancellationRequested);
+        Assert.False(stalled.Task.IsCompleted);
+
+        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(8));
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.DidNotReceive().TryMarkInterruptedAsync("instance-stalled", Arg.Any<CancellationToken>(), Arg.Any<bool>());
+        await InstanceStore.Received().TryMarkInterruptedAsync("instance-recovered", Arg.Any<CancellationToken>(), false);
+    }
+
     [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]
     public async Task SkipsInterruptedPersistWhenMarkLosesTerminalRace()
     {

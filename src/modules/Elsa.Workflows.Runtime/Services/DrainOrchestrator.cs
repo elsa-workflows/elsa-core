@@ -312,13 +312,11 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // Timeout/error: exclude that id (prefer preserving user-cancel / #8052 over promoting
         // an unknown row). Then force-cancel every handle immediately.
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
-        using var overallSnapshotCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        overallSnapshotCts.CancelAfter(PreCancelSnapshotTimeout);
         foreach (var handle in live)
         {
             try
             {
-                using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(overallSnapshotCts.Token);
+                using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 perFindCts.CancelAfter(PreCancelSnapshotTimeout);
                 var snapshot = await instanceStore
                     .FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, perFindCts.Token)
