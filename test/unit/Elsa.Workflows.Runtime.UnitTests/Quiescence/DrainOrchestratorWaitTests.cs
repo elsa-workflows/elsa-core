@@ -146,7 +146,47 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]
+    [Fact(DisplayName = "Stalled pre-cancel FindAsync does not prevent force-cancel or drain completion")]
+    public async Task StalledSnapshotDoesNotBlockForceCancel()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-stalled", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        var stalled = new TaskCompletionSource<WorkflowInstance?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finds = 0;
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                if (Interlocked.Increment(ref finds) == 1)
+                    return new ValueTask<WorkflowInstance?>(stalled.Task);
+
+                return new ValueTask<WorkflowInstance?>(new WorkflowInstance
+                {
+                    Id = "instance-stalled",
+                    DefinitionId = "def-1",
+                    DefinitionVersionId = "ver-1",
+                    Version = 1,
+                    Status = WorkflowStatus.Running,
+                    IsExecuting = true,
+                });
+            });
+        InstanceStore.TryMarkInterruptedAsync("instance-stalled", Arg.Any<CancellationToken>(), false).Returns(new ValueTask<bool>(true));
+
+        var sut = BuildSut();
+        var drainTask = sut.DrainAsync(DrainTrigger.OperatorForce).AsTask();
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+        while (!handle.CancellationToken.IsCancellationRequested && DateTime.UtcNow < deadline)
+            await Task.Delay(20);
+
+        Assert.True(handle.CancellationToken.IsCancellationRequested, "Force-cancel must run even while the snapshot FindAsync is still stalled.");
+        Assert.False(stalled.Task.IsCompleted);
+
+        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+        Assert.Contains("instance-stalled", outcome.ForceCancelledInstanceIds);
+    }
     public async Task SkipsInterruptedPersistWhenMarkLosesTerminalRace()
     {
         var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-raced", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
