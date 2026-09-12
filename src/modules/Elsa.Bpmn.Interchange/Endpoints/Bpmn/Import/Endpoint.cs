@@ -1,8 +1,7 @@
 using Elsa.Authorization;
-using Bpmn.Interchange;
 using Bpmn.Semantics;
 using Elsa.Abstractions;
-using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -41,39 +40,14 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
 
         var xml = await BpmnUploadedFileReader.ReadTextAsync(Files[0], cancellationToken);
 
-        BpmnDocumentImportResult result;
+        var result = await BpmnImportExceptionCascade.RunAsync(
+            () => documentService.ImportAsync(xml, request.DefinitionId, request.Name, request.ProcessId, cancellationToken),
+            message => AddError(message),
+            Send.ErrorsAsync,
+            cancellationToken);
 
-        try
-        {
-            result = await documentService.ImportAsync(xml, request.DefinitionId, request.Name, request.ProcessId, cancellationToken);
-        }
-        catch (BpmnInterchangeException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+        if (result is null)
             return;
-        }
-        catch (BpmnBindingException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-        catch (BpmnCapabilityException exception)
-        {
-            AddCapabilityErrors(exception);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-
-        if (!result.ImportResult.Succeeded)
-        {
-            foreach (var validationError in result.ImportResult.ValidationErrors)
-                AddError(validationError.Message);
-
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
-            return;
-        }
 
         var definition = result.ImportResult.WorkflowDefinition;
 
@@ -84,23 +58,5 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
             Version = definition.Version,
             Analysis = BpmnImportAnalysisModel.From(result.Analysis)
         }, cancellationToken);
-    }
-
-    /// <remarks>
-    /// <see cref="BpmnCapabilityException"/> carries <see cref="BpmnCapabilityException.DrivingElementIds"/> as a
-    /// single flat list, already unioned across every missing capability — it does not say which element drove which
-    /// capability (unlike <c>BpmnCapabilityRequirements.DrivingElementIds</c>, which is per-capability, but that type
-    /// is gone by the time this catch clause sees the exception). Attributing the full, unioned list to each
-    /// capability individually would put elements next to a capability they may have nothing to do with, so this
-    /// reports the missing capabilities together with the combined element list once, rather than repeating it.
-    /// </remarks>
-    private void AddCapabilityErrors(BpmnCapabilityException exception)
-    {
-        var missingCapabilities = string.Join(", ", BpmnInterchangeDocumentService.IndividualCapabilities.Where(capability => exception.Missing.HasFlag(capability)));
-        var elementIds = string.Join(", ", exception.DrivingElementIds);
-
-        AddError(
-            $"This deployment does not declare the following BPMN host capabilities the document requires: {missingCapabilities}. "
-            + $"Offending elements (combined across all missing capabilities above, not attributable to any one of them): {elementIds}.");
     }
 }

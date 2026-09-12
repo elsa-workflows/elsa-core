@@ -14,7 +14,8 @@ using Elsa.Workflows.Management.Models;
 namespace Elsa.Bpmn.Interchange.Services;
 
 /// <summary>
-/// The one code path the Analyze, Import and Export endpoints all sit on top of.
+/// The one code path the Analyze, Import, Export and document (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>)
+/// endpoints all sit on top of.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,12 +33,14 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// throw away everything the reader retained to get there.
 /// </para>
 /// <para>
-/// <b>Export is only ever the document as imported, and that is a real limitation, not a detail.</b> Until BPMN-aware
-/// editing exists (a Studio concern, out of scope for this program), nothing re-serializes edits made through Elsa's
-/// own designer back into BPMN — <see cref="Export(WorkflowDefinition)"/> always returns the source text
-/// <see cref="ImportAsync"/> stored, never a document reflecting what the definition currently is. That is why it
-/// refuses outright, rather than returning something, when it cannot prove that text still matches the definition:
-/// see <see cref="SourceVersionCustomPropertyKey"/>.
+/// <b>Export is only ever the document as imported — through whichever path last imported it.</b>
+/// <see cref="Export(WorkflowDefinition)"/> never reconstructs a document from the Elsa activity tree; it always
+/// returns the source text the most recent successful <see cref="ImportAsync"/> stored. An edit made through Elsa's
+/// own designer, without going back through BPMN, is therefore never reflected — the graph moves on but the stored
+/// source describes the document as it stood before that edit, which is why staleness has to be provable rather than
+/// assumed; see <see cref="SourceVersionCustomPropertyKey"/>. An edit made through <see cref="ImportDocumentAsync"/>
+/// is different: it re-imports, so the stored source and the returned graph both move together, and
+/// <see cref="Export(WorkflowDefinition)"/> reflects it immediately afterward.
 /// </para>
 /// <para>
 /// <b>The stored source can go missing or stale after import, and each is refused with its own diagnosis.</b> BPMN
@@ -86,6 +89,19 @@ public sealed class BpmnInterchangeDocumentService(
     /// uses.
     /// </remarks>
     public const string SourceVersionCustomPropertyKey = "Bpmn:SourceVersion";
+
+    /// <summary>
+    /// The workflow definition custom property <see cref="ImportAsync"/> records the <c>processId</c> it bound the
+    /// definition's root scope from, at the moment it stores <see cref="SourceXmlCustomPropertyKey"/>.
+    /// </summary>
+    /// <remarks>
+    /// A document that declares more than one <c>&lt;process&gt;</c> needs a <c>processId</c> to disambiguate which
+    /// one a re-import should bind (see <see cref="ResolveRootDefinition"/>); this is what lets
+    /// <see cref="ImportDocumentAsync"/> re-import the same process a multi-process document was originally imported
+    /// from, without asking the caller to say so again on every edit. Recorded unconditionally, including for a
+    /// single-process document, so this is always derivable the same way rather than only when it happens to matter.
+    /// </remarks>
+    public const string SourceProcessIdCustomPropertyKey = "Bpmn:SourceProcessId";
 
     /// <summary>
     /// The host capabilities this deployment's BPMN runtime declares.
@@ -160,6 +176,7 @@ public sealed class BpmnInterchangeDocumentService(
             var persisted = importResult.WorkflowDefinition;
             persisted.CustomProperties[SourceXmlCustomPropertyKey] = xml;
             persisted.CustomProperties[SourceVersionCustomPropertyKey] = persisted.Version;
+            persisted.CustomProperties[SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId;
             await store.SaveAsync(persisted, cancellationToken);
         }
 
@@ -192,7 +209,61 @@ public sealed class BpmnInterchangeDocumentService(
     /// source was recorded.
     /// </exception>
     /// <exception cref="BpmnInterchangeException">The stored document cannot be read at all.</exception>
-    public byte[] Export(WorkflowDefinition definition)
+    public byte[] Export(WorkflowDefinition definition) => Export(ResolveSourceXml(definition));
+
+    /// <summary>
+    /// Resolves the BPMN source a workflow definition was imported from and reads it back as the neutral
+    /// <see cref="BpmnDefinitions"/> object model — the same shape <see cref="ImportDocumentAsync"/> accepts back —
+    /// through the same reader <see cref="ImportAsync"/> and <see cref="Export(string)"/> use, so retained extension
+    /// elements, foreign attributes and BPMN DI layout are present on the returned document exactly as the reader
+    /// retained them. Refuses rather than guessing when that source is missing or no longer trustworthy; see this
+    /// type's remarks for what "missing" and "stale" mean.
+    /// </summary>
+    /// <param name="definition">The workflow definition to read, as read from the store.</param>
+    /// <exception cref="BpmnExportUnavailableException">
+    /// The definition does not currently carry BPMN source, or it does but the definition has changed since the
+    /// source was recorded.
+    /// </exception>
+    /// <exception cref="BpmnInterchangeException">The stored document cannot be read at all.</exception>
+    public BpmnDefinitions ReadDocument(WorkflowDefinition definition)
+    {
+        var xml = ResolveSourceXml(definition);
+        return reader.Read(xml, new BpmnImportOptions()).Definitions;
+    }
+
+    /// <summary>
+    /// Accepts the whole <see cref="BpmnDefinitions"/> document — the shape <see cref="ReadDocument"/> returns —
+    /// writes it back out as BPMN 2.0 XML with <see cref="BpmnXmlWriter"/>, and imports the result through
+    /// <see cref="ImportAsync"/>, the same path <c>Import</c> runs. Analyze-then-commit sharing this one code path
+    /// with the read side is what keeps a preview unable to disagree with what this actually persists.
+    /// </summary>
+    /// <param name="document">The edited document, deserialized through the library's own JSON converters.</param>
+    /// <param name="definitionId">The workflow definition to update.</param>
+    /// <param name="processId">
+    /// The process to (re-)bind when the document declares more than one; not needed when it declares exactly one.
+    /// See <see cref="SourceProcessIdCustomPropertyKey"/> for where a caller re-importing an existing definition
+    /// finds the value that was used the first time.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <exception cref="BpmnInterchangeException">The document declares more than one process and <paramref name="processId"/> does not pick one.</exception>
+    /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
+    public Task<BpmnDocumentImportResult> ImportDocumentAsync(BpmnDefinitions document, string definitionId, string? processId, CancellationToken cancellationToken)
+    {
+        var xml = writer.Write(document);
+        return ImportAsync(xml, definitionId, name: null, processId, cancellationToken);
+    }
+
+    /// <summary>
+    /// The BPMN source a workflow definition was imported from, refusing rather than guessing when it is missing or
+    /// no longer trustworthy. See this type's remarks for what "missing" and "stale" mean and why each gets its own
+    /// message.
+    /// </summary>
+    /// <exception cref="BpmnExportUnavailableException">
+    /// The definition does not currently carry BPMN source, or it does but the definition has changed since the
+    /// source was recorded.
+    /// </exception>
+    private static string ResolveSourceXml(WorkflowDefinition definition)
     {
         if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var xml) || string.IsNullOrEmpty(xml))
         {
@@ -225,7 +296,7 @@ public sealed class BpmnInterchangeDocumentService(
                 + "would silently return a document that is not what this definition currently is.");
         }
 
-        return Export(xml);
+        return xml;
     }
 
     private static BpmnProcessDefinition ResolveRootDefinition(BpmnDefinitions definitions, string? processId)

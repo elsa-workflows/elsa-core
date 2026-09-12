@@ -82,15 +82,62 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 
 ## REST Endpoints
 
-`Elsa.Bpmn.Interchange` registers three routes, all under `bpmn/`:
+`Elsa.Bpmn.Interchange` registers five routes, all under `bpmn/`:
 
 | Method & route | Permission | What it does |
 | --- | --- | --- |
 | `POST bpmn/analyze` | `read:workflow-definitions` | Uploads a single `.bpmn` file (multipart) and returns the Info/Degraded/Dropped findings a read would produce, without persisting anything. |
 | `POST bpmn/import` | `write:workflow-definitions` | Uploads a single `.bpmn` file and persists it as a new or updated workflow definition (as a draft; it is not published). Optional form fields: `DefinitionId` (update an existing definition instead of creating one), `Name`, `ProcessId` (required when the document declares more than one process). |
 | `GET bpmn/definitions/{definitionId}/export` | `read:workflow-definitions` | Writes the workflow definition's BPMN source back out as `.bpmn` XML. Optional `VersionOptions` query parameter (`Latest`, `Published`, or a specific version), defaulting to `Latest`. |
+| `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries an `ETag` response header for the returned revision — see below. |
+| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
 
 Both `Analyze` and `Import` require exactly one uploaded file; zero or more than one returns `400 Bad Request`.
+
+### Optimistic concurrency on the document endpoints
+
+`GET` and `PUT` on `bpmn/definitions/{definitionId}/document` exchange a strong `ETag`, so a client that reads the
+document, and someone else writes the definition before it writes its own edit back, cannot silently overwrite that
+intervening write. The `ETag` is a SHA-256 hash of what the definition stores: its BPMN document (the `Bpmn:SourceXml`
+custom property), its activity graph, its version and its id. Any write that changes the stored document or the
+graph therefore invalidates it — another document `PUT`, a `POST bpmn/import` with the same `DefinitionId`, a save of
+the draft from the workflow designer — including when an unpublished draft is saved in place under the same version,
+which is the common case. The value is opaque and must be sent back verbatim.
+
+Because it is derived from content, identical stored content has an identical `ETag`: a `PUT` that writes back
+exactly what is stored returns the same `ETag` `GET` did. The first `PUT` after a `.bpmn` upload replaces the
+uploaded bytes with the writer's own rendering of the same document, so the stored document, and with it the `ETag`,
+changes once even when nothing was edited. A save that changes only the definition's other properties — its name,
+description or variables, say — leaves the document and the graph untouched and does not change the `ETag`; a
+document `PUT`, like `Import`, resets those properties regardless.
+
+`PUT` requires an `If-Match` request header carrying the `ETag` a prior `GET` (or `PUT`) returned:
+
+- **Missing, or the wildcard `*`** — `428 Precondition Required`. Neither says which revision the caller is
+  replacing (`*` matches whatever is stored), so the endpoint refuses rather than overwrite blindly, before doing any
+  import work or persisting anything.
+- **Anything other than exactly the definition's current `ETag`** — `412 Precondition Failed`, checked before any
+  import work and before anything is persisted. The comparison is exact: a weak (`W/`) tag or a list of tags never
+  matches. The definition was written since the caller last read it; `GET` the document again and reapply the edit.
+- **Exactly the current `ETag`** — the request proceeds exactly as before, and the response carries the `ETag` of
+  the draft as this `PUT` stored it.
+
+### The document endpoints and the JSON payload format
+
+The `document` GET/PUT pair exists for Studio (W21, part of #7909): Studio holds a BPMN process as the library's own
+JSON payload, not as `.bpmn` XML, and editing it — binding a task (W11), moving a shape (W14) — has to write that
+JSON back through the same path `Import` uses, or the stored BPMN source drifts out of sync with the definition (see
+`BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey`) and `Export` starts refusing with `422`.
+
+The request and response bodies on both routes are the `bpmnDefinitions` document exactly as `Bpmn.Model` serializes
+it: property names as `Bpmn.Model`'s own `[JsonPropertyName]` attributes declare them, and any enum as its underlying
+integer — **not** Elsa's own API-wide JSON conventions (which add a string-enum converter these bodies must not go
+through). A client reading or writing this JSON should use a plain `System.Text.Json` serializer with default
+options, not whatever conventions the rest of the Elsa API uses.
+
+A document that declares more than one `<process>` is re-imported against the same `processId` it was originally
+imported with — recorded on the workflow definition the first time it is imported, whether from `Import` or from a
+`document` `PUT`, so an edit to a multi-process document does not have to name the process again on every save.
 
 ### Capability refusal at import
 
@@ -105,9 +152,13 @@ still be refused by `Import` on capability grounds.
 
 `Export` does not reconstruct a `.bpmn` document from the Elsa activity graph a definition runs — that would discard
 everything the reader retained on import (foreign extension elements, foreign attributes, unrecognized children, BPMN
-DI layout). Instead, it returns exactly the document `Import` stored at import time. This has a real consequence
-until BPMN-aware editing exists in Studio: **edits made through Elsa's own designer, after import, are not reflected
-in what `Export` returns.**
+DI layout). Instead, it returns exactly the document the most recent successful import stored. This has a real
+consequence for one kind of edit: **an edit made through Elsa's own designer, without going back through BPMN, is not
+reflected in what `Export` returns** — the graph moves on, but the stored source still describes the document as it
+stood before that edit.
+
+An edit made through the `document` `PUT` endpoint above is different: it re-imports, so the stored source and the
+graph move together, and **`Export` reflects the edit immediately afterward.**
 
 `Export` also refuses outright, with `422 Unprocessable Entity`, rather than silently returning a stale or wrong
 document, in two situations:

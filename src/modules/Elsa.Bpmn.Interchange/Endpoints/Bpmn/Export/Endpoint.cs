@@ -1,7 +1,6 @@
 using Elsa.Authorization;
-using Bpmn.Interchange;
 using Elsa.Abstractions;
-using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
@@ -64,20 +63,14 @@ internal sealed class Export(IWorkflowDefinitionStore store, BpmnInterchangeDocu
             return;
         }
 
-        try
-        {
-            var bytes = documentService.Export(definition);
-            await Send.BytesAsync(bytes, $"{request.DefinitionId}.bpmn", "application/xml", cancellation: cancellationToken);
-        }
-        catch (BpmnExportUnavailableException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-        }
-        catch (BpmnInterchangeException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
-        }
+        await BpmnExportExceptionCascade.RunAsync(
+            async () =>
+            {
+                var bytes = documentService.Export(definition);
+                await Send.BytesAsync(bytes, $"{request.DefinitionId}.bpmn", "application/xml", cancellation: cancellationToken);
+            },
+            message => AddError(message),
+            Send.ErrorsAsync,
+            cancellationToken);
     }
 }
