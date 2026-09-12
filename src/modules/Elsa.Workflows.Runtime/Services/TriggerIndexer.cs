@@ -201,6 +201,12 @@ public class TriggerIndexer : ITriggerIndexer
         var triggerData = await TryGetTriggerDataAsync(trigger, triggerIndexingContext);
         var defaultTriggerName = triggerIndexingContext.TriggerName;
 
+        // A trigger that completed, returned no payloads, and declared that deliberate gets no row at all. One that threw never counts as having declined.
+        if (triggerData is { Count: 0 } && triggerIndexingContext.RegistersNoTriggers)
+            return new List<StoredTrigger>(0);
+
+        triggerData ??= [];
+
         // If no trigger payloads were returned, create a null payload.
         if (!triggerData.Any()) triggerData.Add(null!);
 
@@ -227,7 +233,10 @@ public class TriggerIndexer : ITriggerIndexer
         return triggers.ToList();
     }
 
-    private async Task<List<object>> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
+    /// <summary>
+    /// Returns the trigger's payloads, or <c>null</c> when it throws, so that a failure is told apart from a trigger that returned nothing.
+    /// </summary>
+    private async Task<List<object>?> TryGetTriggerDataAsync(ITrigger trigger, TriggerIndexingContext context)
     {
         try
         {
@@ -238,6 +247,6 @@ public class TriggerIndexer : ITriggerIndexer
             _logger.LogWarning(e, "Failed to get trigger data for activity {ActivityId}", trigger.Id);
         }
 
-        return new(0);
+        return null;
     }
 }
