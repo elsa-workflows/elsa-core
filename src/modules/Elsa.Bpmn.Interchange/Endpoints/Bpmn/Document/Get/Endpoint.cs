@@ -1,10 +1,9 @@
 using System.Net.Mime;
 using System.Text.Json;
 using Elsa.Authorization;
-using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Abstractions;
-using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
@@ -52,21 +51,15 @@ internal sealed class Get(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             return;
         }
 
-        try
-        {
-            var document = documentService.ReadDocument(definition);
-            var json = JsonSerializer.Serialize(document, BpmnDocumentJsonOptions.Value);
-            await Send.StringAsync(json, contentType: MediaTypeNames.Application.Json, cancellation: cancellationToken);
-        }
-        catch (BpmnExportUnavailableException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-        }
-        catch (BpmnInterchangeException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
-        }
+        await BpmnExportExceptionCascade.RunAsync(
+            async () =>
+            {
+                var document = documentService.ReadDocument(definition);
+                var json = JsonSerializer.Serialize(document, BpmnDocumentJsonOptions.Value);
+                await Send.StringAsync(json, contentType: MediaTypeNames.Application.Json, cancellation: cancellationToken);
+            },
+            message => AddError(message),
+            Send.ErrorsAsync,
+            cancellationToken);
     }
 }

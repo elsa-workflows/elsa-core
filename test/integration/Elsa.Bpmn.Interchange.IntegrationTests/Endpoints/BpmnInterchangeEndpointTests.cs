@@ -362,6 +362,47 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task DocumentPut_ForASingleProcessDefinitionImportedBeforeSourceProcessIdExisted_ReturnsOk()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        // Simulates a definition imported before ImportAsync started recording SourceProcessIdCustomPropertyKey.
+        await RemoveSourceProcessIdCustomPropertyAsync(definitionId);
+
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var documentJson = await getResponse.Content.ReadAsStringAsync();
+
+        using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+
+        // A single-process document does not need SourceProcessId to disambiguate anything, so the missing
+        // property does not stop the edit from succeeding.
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentPut_ForATwoProcessDefinitionImportedBeforeSourceProcessIdExisted_ReturnsBadRequestAndPersistsNoNewDraft()
+    {
+        var definitionId = await ImportTwoProcessDocumentAsync("first-process");
+        // Simulates a definition imported before ImportAsync started recording SourceProcessIdCustomPropertyKey:
+        // without it, Put has no way to know which of the document's two processes to re-bind.
+        await RemoveSourceProcessIdCustomPropertyAsync(definitionId);
+        var versionBeforePut = await LatestVersionOfAsync(definitionId);
+
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var documentJson = await getResponse.Content.ReadAsStringAsync();
+
+        using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+
+        Assert.True((int)putResponse.StatusCode is >= 400 and < 500, $"Expected a 4xx status code, got {(int)putResponse.StatusCode}.");
+        var body = await putResponse.Content.ReadAsStringAsync();
+        Assert.Contains("specify which one to import", body);
+        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+    }
+
     /// <summary>
     /// Re-serializes <paramref name="element"/> with every <c>extensionElements</c> array entry named
     /// <c>activityBinding</c> (in the <c>elsa:</c> namespace URI) removed, walking the whole document recursively.
@@ -465,6 +506,34 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return document.RootElement.GetProperty("definitionId").GetString()!;
+    }
+
+    /// <summary>Imports <c>two-process.bpmn</c>, picking <paramref name="processId"/>, and returns the resulting <c>definitionId</c>.</summary>
+    private async Task<string> ImportTwoProcessDocumentAsync(string processId)
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("two-process.bpmn"), "file");
+        content.Add(new StringContent(processId), "ProcessId");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("definitionId").GetString()!;
+    }
+
+    /// <summary>
+    /// Removes <see cref="BpmnInterchangeDocumentService.SourceProcessIdCustomPropertyKey"/> from the latest version of
+    /// <paramref name="definitionId"/>, simulating a definition imported before <c>ImportAsync</c> started recording it.
+    /// </summary>
+    private async Task RemoveSourceProcessIdCustomPropertyAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var definition = await store.FindAsync(filter);
+        Assert.NotNull(definition);
+        definition!.CustomProperties.Remove(BpmnInterchangeDocumentService.SourceProcessIdCustomPropertyKey);
+        await store.SaveAsync(definition);
     }
 
     private async Task<int> LatestVersionOfAsync(string definitionId)

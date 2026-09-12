@@ -1,10 +1,8 @@
 using System.Text.Json;
 using Elsa.Authorization;
-using Bpmn.Interchange;
 using Bpmn.Model;
-using Bpmn.Semantics;
 using Elsa.Abstractions;
-using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -28,7 +26,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document.Put;
 /// <c>Endpoints.Bpmn.Document.Get.Get</c> for the read side of this round trip.
 /// </remarks>
 [UsedImplicitly]
-internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumentService documentService) : ElsaEndpointWithoutRequest<Response>
+internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumentService documentService) : ElsaEndpointWithoutRequest<BpmnImportResponse>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -82,43 +80,18 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             ? storedProcessId
             : null;
 
-        BpmnDocumentImportResult result;
+        var result = await BpmnImportExceptionCascade.RunAsync(
+            () => documentService.ImportDocumentAsync(document, definitionId, processId, cancellationToken),
+            message => AddError(message),
+            Send.ErrorsAsync,
+            cancellationToken);
 
-        try
-        {
-            result = await documentService.ImportDocumentAsync(document, definitionId, processId, cancellationToken);
-        }
-        catch (BpmnInterchangeException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+        if (result is null)
             return;
-        }
-        catch (BpmnBindingException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-        catch (BpmnCapabilityException exception)
-        {
-            AddError(BpmnCapabilityErrorFormatter.Format(exception));
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-
-        if (!result.ImportResult.Succeeded)
-        {
-            foreach (var validationError in result.ImportResult.ValidationErrors)
-                AddError(validationError.Message);
-
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
-            return;
-        }
 
         var persisted = result.ImportResult.WorkflowDefinition;
 
-        await Send.OkAsync(new Response
+        await Send.OkAsync(new BpmnImportResponse
         {
             Id = persisted.Id,
             DefinitionId = persisted.DefinitionId,

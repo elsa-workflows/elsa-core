@@ -1,10 +1,13 @@
 using JetBrains.Annotations;
 
-namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Import;
+namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 
-/// <summary>The workflow definition a BPMN import produced, plus what the read cost.</summary>
+/// <summary>
+/// The workflow definition an import produced, plus what the read cost. Shared between <c>Import</c> and the
+/// document <c>Put</c> endpoint, since <c>Put</c> runs the same import path and reports the same shape for it.
+/// </summary>
 [PublicAPI]
-public sealed class Response
+public sealed class BpmnImportResponse
 {
     /// <summary>The persisted version's own id.</summary>
     public string Id { get; init; } = string.Empty;

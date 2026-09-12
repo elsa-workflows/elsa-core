@@ -1,8 +1,7 @@
 using Elsa.Authorization;
-using Bpmn.Interchange;
 using Bpmn.Semantics;
 using Elsa.Abstractions;
-using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -41,43 +40,18 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
 
         var xml = await BpmnUploadedFileReader.ReadTextAsync(Files[0], cancellationToken);
 
-        BpmnDocumentImportResult result;
+        var result = await BpmnImportExceptionCascade.RunAsync(
+            () => documentService.ImportAsync(xml, request.DefinitionId, request.Name, request.ProcessId, cancellationToken),
+            message => AddError(message),
+            Send.ErrorsAsync,
+            cancellationToken);
 
-        try
-        {
-            result = await documentService.ImportAsync(xml, request.DefinitionId, request.Name, request.ProcessId, cancellationToken);
-        }
-        catch (BpmnInterchangeException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+        if (result is null)
             return;
-        }
-        catch (BpmnBindingException exception)
-        {
-            AddError(exception.Message);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-        catch (BpmnCapabilityException exception)
-        {
-            AddCapabilityErrors(exception);
-            await Send.ErrorsAsync(StatusCodes.Status422UnprocessableEntity, cancellationToken);
-            return;
-        }
-
-        if (!result.ImportResult.Succeeded)
-        {
-            foreach (var validationError in result.ImportResult.ValidationErrors)
-                AddError(validationError.Message);
-
-            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
-            return;
-        }
 
         var definition = result.ImportResult.WorkflowDefinition;
 
-        await Send.OkAsync(new Response
+        await Send.OkAsync(new BpmnImportResponse
         {
             Id = definition.Id,
             DefinitionId = definition.DefinitionId,
@@ -85,11 +59,4 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
             Analysis = BpmnImportAnalysisModel.From(result.Analysis)
         }, cancellationToken);
     }
-
-    /// <remarks>
-    /// The message itself is shared with the document <c>Put</c> endpoint, which imports through the same
-    /// <see cref="BpmnInterchangeDocumentService"/> path and can fail this same way; see
-    /// <see cref="BpmnCapabilityErrorFormatter"/> for why the message reads the way it does.
-    /// </remarks>
-    private void AddCapabilityErrors(BpmnCapabilityException exception) => AddError(BpmnCapabilityErrorFormatter.Format(exception));
 }
