@@ -310,6 +310,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// retained them. Refuses rather than guessing when that source is missing or no longer trustworthy; see this
     /// type's remarks for what "missing" and "stale" mean.
     /// </summary>
+    /// <remarks>
+    /// <see cref="BpmnDefinitions"/> lists only top-level processes, so the returned document declares every
+    /// subprocess element but carries none of their bodies: the library hands those out as work bindings, not as
+    /// part of the document. <see cref="ImportDocumentAsync"/> restores them from the stored source rather than from
+    /// the document, which is also why nothing inside a nested scope can be edited through the document.
+    /// </remarks>
     /// <param name="definition">The workflow definition to read, as read from the store.</param>
     /// <exception cref="BpmnExportUnavailableException">
     /// The definition does not currently carry BPMN source, or it does but the definition has changed since the
@@ -336,6 +342,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// import logic's <c>preserveMetadataFrom</c> parameter, which this passes the existing definition to. Only the activity graph
     /// and the <see cref="SourceXmlCustomPropertyKey"/>/<see cref="SourceVersionCustomPropertyKey"/>/
     /// <see cref="SourceProcessIdCustomPropertyKey"/>/<see cref="SourceGraphHashCustomPropertyKey"/> custom properties move.
+    /// <para>
+    /// Nested scopes come from the stored source, not from <paramref name="document"/>, which cannot carry them (see
+    /// <see cref="ReadDocument"/>): every subprocess element <paramref name="document"/> still declares is written back
+    /// with the body stored for it, exactly as stored, and a subprocess element it no longer declares takes its stored
+    /// body with it. A subprocess element with no stored body — one added by this edit — is written as declared, empty.
+    /// </para>
     /// </remarks>
     /// <param name="document">The edited document, deserialized through the library's own JSON converters.</param>
     /// <param name="definitionId">The workflow definition to update.</param>
@@ -351,7 +363,10 @@ public sealed class BpmnInterchangeDocumentService(
     /// whole-definition import path, which would silently create a definition under <paramref name="definitionId"/>
     /// with reset metadata instead of reporting that this PUT's target disappeared.
     /// </exception>
-    /// <exception cref="BpmnInterchangeException">The document declares more than one process and <paramref name="processId"/> does not pick one.</exception>
+    /// <exception cref="BpmnInterchangeException">
+    /// The document declares more than one process and <paramref name="processId"/> does not pick one, or it declares a
+    /// subprocess element that has a stored body but no bindingRef to write that body back under.
+    /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public async Task<BpmnDocumentImportResult> ImportDocumentAsync(BpmnDefinitions document, string definitionId, string? processId, CancellationToken cancellationToken)
@@ -365,8 +380,131 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
         }
 
-        var xml = writer.Write(document);
+        var xml = writer.Write(document, StoredNestedScopesStillDeclaredBy(document, existingDefinition));
         return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: existingDefinition, cancellationToken);
+    }
+
+    /// <summary>
+    /// The stored work bindings <see cref="BpmnXmlWriter"/> needs to write every nested scope — embedded subprocess,
+    /// transaction or event subprocess — that <paramref name="document"/> still declares back out exactly as
+    /// <paramref name="definition"/>'s stored source has it, and nothing for a scope <paramref name="document"/> no
+    /// longer declares.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <see cref="BpmnDefinitions"/> lists only top-level processes. The body of a nested scope is not on its
+    /// subprocess element: the reader hands it out as that element's <see cref="BpmnWorkBinding.NestedProcess"/>
+    /// binding, and <see cref="BpmnXmlWriter"/> writes a subprocess whose binding it is not given as empty. The
+    /// document <see cref="ReadDocument"/> returns therefore never carries a nested body, so a document written back
+    /// without these bindings would silently replace every subprocess with an empty one. The stored source is the
+    /// only place the bodies still exist, so they are re-read from it here.
+    /// </para>
+    /// <para>
+    /// A stored body is matched to a subprocess element of the posted document by element id, which BPMN makes
+    /// unique across the whole document. It is never matched by bindingRef, so a subprocess element the posted
+    /// document removed matches nothing and its stored body is never written back, and a new element that reuses a
+    /// removed one's bindingRef does not inherit its body. The writer looks a body up by the element's own
+    /// bindingRef, so a kept body is handed over under the bindingRef the posted element carries.
+    /// </para>
+    /// <para>
+    /// Everything bound inside a kept scope comes along with it, not just the bodies of scopes nested further in:
+    /// a call activity's <c>vw:waitForCompletion="false"</c>, for one, lives only on its
+    /// <see cref="BpmnWorkBinding.CallProcess"/> binding. Nothing inside a kept scope can differ from what is stored,
+    /// because the document the client edited never carried it, so the stored bindings describe it exactly.
+    /// </para>
+    /// <para>
+    /// One thing the stored body holds is not its own: <c>Bpmn.Interchange</c> 0.2.0 reads a subprocess's
+    /// <c>multiInstanceLoopCharacteristics</c> onto the subprocess element, which is what the writer emits it from and,
+    /// at the top level, what the client edits, but also retains a copy as foreign content of the nested process the
+    /// element opens. Handed back, that copy would come first on the next read, overriding a marker the client changed
+    /// or removed, and every write would add another. So it is dropped from a kept body whenever the element carries a
+    /// marker in the model, as stored or as posted, and kept only as the sole record of one the reader could not
+    /// interpret.
+    /// </para>
+    /// <para>
+    /// A definition without stored source has no body to keep; its subprocesses are written as the document declares
+    /// them. The document <c>PUT</c> reaches that case only if the source disappears between its <c>If-Match</c> check
+    /// and this read: the precondition only matches a stored state a successful <c>GET</c> or <c>PUT</c> described,
+    /// and both need the source.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="BpmnInterchangeException">
+    /// A subprocess element with a stored body carries no bindingRef, so the writer cannot attach the body to it and
+    /// would write the subprocess empty.
+    /// </exception>
+    private IReadOnlyList<BpmnWorkBinding> StoredNestedScopesStillDeclaredBy(BpmnDefinitions document, WorkflowDefinition definition)
+    {
+        if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var storedXml) || string.IsNullOrEmpty(storedXml))
+            return [];
+
+        var stored = reader.Read(storedXml, new BpmnImportOptions());
+        var storedBindings = stored.Bindings;
+
+        // Every element carrying a multi-instance marker in the model, as stored or as posted.
+        var loopingElementIds = document.Processes
+            .Concat(stored.Definitions.Processes)
+            .Concat(storedBindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
+            .SelectMany(process => process.Elements)
+            .Where(element => element.LoopCharacteristics is not null)
+            .Select(element => element.ElementId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var kept = new List<BpmnWorkBinding>();
+
+        foreach (var process in document.Processes)
+        {
+            foreach (var subprocess in process.Elements.Where(element => element.ElementType == BpmnElementTypes.SubProcess))
+            {
+                // Last match wins, as it does inside the writer itself, should a malformed document repeat an id.
+                var body = storedBindings.OfType<BpmnWorkBinding.NestedProcess>().LastOrDefault(nested => nested.ElementId == subprocess.ElementId);
+
+                if (body is null)
+                    continue;
+
+                if (subprocess.BindingRef is null)
+                {
+                    throw new BpmnInterchangeException(
+                        $"Subprocess element '{subprocess.ElementId}' of process '{process.ProcessId}' carries no bindingRef, so the body stored for it cannot be written back with it. "
+                        + "The document does not carry a subprocess's body, so writing it without one would silently empty the subprocess. Send the element with the bindingRef the document GET returned.");
+                }
+
+                kept.Add(HandOver(body) with { BindingRef = subprocess.BindingRef });
+                KeepEverythingBoundInside(body.ElementId);
+            }
+        }
+
+        return kept;
+
+        // A nested process's bindings name the subprocess element's id as their process (see BpmnWorkBinding.ProcessId).
+        void KeepEverythingBoundInside(string scopeId)
+        {
+            foreach (var binding in storedBindings.Where(binding => binding.ProcessId == scopeId))
+            {
+                if (binding is not BpmnWorkBinding.NestedProcess nested)
+                {
+                    kept.Add(binding);
+                    continue;
+                }
+
+                kept.Add(HandOver(nested));
+                KeepEverythingBoundInside(nested.ElementId);
+            }
+        }
+
+        BpmnWorkBinding.NestedProcess HandOver(BpmnWorkBinding.NestedProcess nested) =>
+            loopingElementIds.Contains(nested.ElementId) ? WithoutRetainedLoopMarker(nested) : nested;
+    }
+
+    /// <summary>
+    /// <paramref name="nested"/> without the copy of its subprocess element's multi-instance marker the reader also
+    /// retained on it; see <see cref="StoredNestedScopesStillDeclaredBy"/>'s remarks.
+    /// </summary>
+    private static BpmnWorkBinding.NestedProcess WithoutRetainedLoopMarker(BpmnWorkBinding.NestedProcess nested)
+    {
+        var marker = new BpmnQName(BpmnXmlNames.Model.NamespaceName, "multiInstanceLoopCharacteristics");
+        var extensions = nested.Definition.Extensions;
+        var foreignChildren = extensions.ForeignChildren.Where(child => child.Element.Name != marker).ToList();
+        return nested with { Definition = nested.Definition with { Extensions = extensions with { ForeignChildren = foreignChildren } } };
     }
 
     /// <summary>

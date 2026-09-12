@@ -105,8 +105,8 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 | `POST bpmn/analyze` | `read:workflow-definitions` | Uploads a single `.bpmn` file (multipart) and returns the Info/Degraded/Dropped findings a read would produce, without persisting anything. |
 | `POST bpmn/import` | `write:workflow-definitions` | Uploads a single `.bpmn` file and persists it as a new or updated workflow definition (as a draft; it is not published). Optional form fields: `DefinitionId` (update an existing definition instead of creating one), `Name`, `ProcessId` (required when the document declares more than one process). |
 | `GET bpmn/definitions/{definitionId}/export` | `read:workflow-definitions` | Writes the workflow definition's BPMN source back out as `.bpmn` XML. Optional `VersionOptions` query parameter (`Latest`, `Published`, or a specific version), defaulting to `Latest`. |
-| `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries an `ETag` response header for the returned revision — see below. |
-| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Only the activity graph and the `Bpmn:*` custom properties change; the definition's name, description, variables, inputs, outputs, outcomes, options, tool version and any other custom property are carried forward unchanged, unlike `POST bpmn/import`, which stays a whole-definition import (see below). Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
+| `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. That document declares every subprocess but not what is inside one — see *Nested scopes* below. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries an `ETag` response header for the returned revision — see below. |
+| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, with every subprocess it still declares keeping the body stored for it (see *Nested scopes* below), and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Only the activity graph and the `Bpmn:*` custom properties change; the definition's name, description, variables, inputs, outputs, outcomes, options, tool version and any other custom property are carried forward unchanged, unlike `POST bpmn/import`, which stays a whole-definition import (see below). Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
 
 Both `Analyze` and `Import` require exactly one uploaded file; zero or more than one returns `400 Bad Request`.
 
@@ -153,6 +153,31 @@ it: property names as `Bpmn.Model`'s own `[JsonPropertyName]` attributes declare
 integer — **not** Elsa's own API-wide JSON conventions (which add a string-enum converter these bodies must not go
 through). A client reading or writing this JSON should use a plain `System.Text.Json` serializer with default
 options, not whatever conventions the rest of the Elsa API uses.
+
+**Nested scopes.** `bpmnDefinitions` lists only top-level processes. The body of an embedded subprocess, a
+transaction or an event subprocess — its elements, flows and `elsa:` bindings, and any subprocess nested further in —
+is not part of that document: the library carries it as the subprocess element's work binding instead, so `GET`
+returns each subprocess element with nothing inside it. `PUT` does not take the body from the posted document; it
+restores it from the definition's stored BPMN source:
+
+- Every subprocess element the posted document still declares, matched by element id, is written back with the body
+  stored for it, exactly as stored — including anything the stored source carries only in a work binding, such as a
+  call activity's `vw:waitForCompletion="false"`.
+- A subprocess element the posted document no longer declares, or has turned into another kind of element, takes its
+  stored body with it; nothing of that body is written back, not even under a new element that reuses its
+  `bindingRef`. A subprocess element with no stored body — one this edit adds — is written as posted, empty.
+- The subprocess element itself is the posted one: its name, flags, boundary events and multi-instance marker come
+  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` 0.2.0 also keeps a
+  copy of an interpreted marker inside the body it reads; `PUT` drops that copy so it cannot override the posted
+  marker or pile up on every write. `Export` still writes that copy alongside the element's own marker.)
+- A subprocess element that has a stored body but no `bindingRef` is refused with `400 Bad Request` before anything
+  is persisted: the writer attaches a body through the element's `bindingRef`, so writing it would silently empty
+  the subprocess. Send each element back with the `bindingRef` `GET` returned.
+
+Nothing inside a nested scope can therefore be edited through the document endpoints, only its subprocess element
+and its layout: the document's BPMN DI carries the shapes of nested elements too, and `PUT` writes them as posted. A
+definition without stored BPMN source has no bodies to restore; the `If-Match` precondition only matches a stored state
+a successful `GET` or `PUT` described, and both need the source.
 
 A document that declares more than one `<process>` is re-imported against the same `processId` it was originally
 imported with — recorded on the workflow definition the first time it is imported, whether from `Import` or from a
@@ -240,8 +265,9 @@ FastEndpoints' process-wide `Config.ErrOpts.ResponseBuilder`, which would have r
 response, not just these — see `Elsa.Bpmn.Interchange.Endpoints.Bpmn.BpmnErrorResponse`'s remarks.
 
 Not every 4xx these endpoints send carries a code: a plain `404 Not Found` for a `definitionId` that does not exist,
-a `400 Bad Request` from malformed JSON or an unparseable `VersionOptions`, and a `400 Bad Request` for a document
-that names more than one process without saying which, are unchanged and uncoded.
+a `400 Bad Request` from malformed JSON or an unparseable `VersionOptions`, a `400 Bad Request` for a document
+that names more than one process without saying which, and a document `PUT`'s `400 Bad Request` for a subprocess
+element that has a stored body but no `bindingRef`, are uncoded.
 
 | Code (`Elsa.Bpmn.Interchange.BpmnErrorCodes`) | Sent by | Status | `data` |
 | --- | --- | --- | --- |
