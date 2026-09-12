@@ -19,6 +19,22 @@ elsa.AddBpmnInterchange();
 
 `BpmnInterchangeFeature` depends on `BpmnFeature`; calling `AddBpmnInterchange()` pulls in both.
 
+### Trying it
+
+The sample host `src/apps/Elsa.Server.Web` has BPMN interchange enabled (`.UseBpmnInterchange()` in its `Program.cs`), so it can be used to try the analyze endpoint against a real server. Sign in with one of the development users (e.g. `admin`/`password`, see `appsettings.Development.json`) to obtain a bearer token, then call the endpoint:
+
+```bash
+TOKEN=$(curl -s -X POST https://localhost:5001/elsa/api/identity/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"password"}' | jq -r .accessToken)
+
+curl -s -X POST https://localhost:5001/elsa/api/bpmn/analyze \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/camunda-order-process.bpmn"
+```
+
+This returns a JSON body of process ids, element counts, and findings (e.g. informational notes about unbound service tasks or retained vendor extensions).
+
 ## BpmnProcess Activity
 
 `BpmnProcess` is a `Container` that wraps one BPMN scope. It drives the `Bpmn.Semantics` interpreter and applies the continuations the interpreter returns to its own `ActivityExecutionContext`. Key properties:
