@@ -275,9 +275,65 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     {
         using var content = new StringContent("{}", Encoding.UTF8, "application/json");
 
-        var response = await PutAuthenticatedAsync("bpmn/definitions/does-not-exist/document", content, "workflows/definitions:write");
+        var response = await PutAuthenticatedAsync("bpmn/definitions/does-not-exist/document", content, null, "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentPut_WithoutIfMatch_ReturnsPreconditionRequired()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var versionBeforePut = await LatestVersionOfAsync(definitionId);
+
+        using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, null, "workflows/definitions:write");
+
+        Assert.Equal((HttpStatusCode)428, response.StatusCode);
+        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task DocumentPut_WithAStaleIfMatch_ReturnsPreconditionFailedAndPersistsNoNewDraft()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var staleETag = ETagOf(getResponse);
+        var documentJson = await getResponse.Content.ReadAsStringAsync();
+
+        // An intervening PUT, using the current (not yet stale) ETag, moves the definition on to a new revision.
+        using var firstPutContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
+        var firstPutResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", firstPutContent, staleETag, "workflows/definitions:write");
+        Assert.Equal(HttpStatusCode.OK, firstPutResponse.StatusCode);
+        var versionAfterFirstPut = await LatestVersionOfAsync(definitionId);
+
+        // The same, now-stale ETag from the original GET is rejected against the definition's new revision.
+        using var secondPutContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
+        var secondPutResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", secondPutContent, staleETag, "workflows/definitions:write");
+
+        Assert.Equal((HttpStatusCode)412, secondPutResponse.StatusCode);
+        Assert.Equal(versionAfterFirstPut, await LatestVersionOfAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task DocumentPut_WithTheCurrentIfMatch_ReturnsOkWithANewDifferentETag()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var currentETag = ETagOf(getResponse);
+        var documentJson = await getResponse.Content.ReadAsStringAsync();
+
+        using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, currentETag, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        var newETag = ETagOf(putResponse);
+        Assert.NotNull(newETag);
+        Assert.NotEqual(currentETag, newETag);
     }
 
     [Fact]
@@ -286,8 +342,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var definitionId = await ImportCamundaOrderProcessAsync();
         var versionBeforePut = await LatestVersionOfAsync(definitionId);
 
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
         using var content = new StringContent("{ not valid json", Encoding.UTF8, "application/json");
-        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, "workflows/definitions:write");
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, ETagOf(getResponse), "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
@@ -317,7 +376,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var putContent = new ByteArrayContent(stream.ToArray());
         putContent.Headers.ContentType = new("application/json");
 
-        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
         var body = await putResponse.Content.ReadAsStringAsync();
@@ -335,7 +394,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
-        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
         using var putResult = JsonDocument.Parse(await putResponse.Content.ReadAsStringAsync());
@@ -357,7 +416,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var content = new StringContent("{}", Encoding.UTF8, "application/json");
 
         // Authenticated, but only holds the read permission Get needs, not the write permission Put needs.
-        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, "workflows/definitions:view");
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, null, "workflows/definitions:view");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -374,7 +433,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
-        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
         // A single-process document does not need SourceProcessId to disambiguate anything, so the missing
         // property does not stop the edit from succeeding.
@@ -395,7 +454,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
-        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
         Assert.True((int)putResponse.StatusCode is >= 400 and < 500, $"Expected a 4xx status code, got {(int)putResponse.StatusCode}.");
         var body = await putResponse.Content.ReadAsStringAsync();
@@ -422,13 +481,8 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
                 break;
             case JsonValueKind.Array:
                 writer.WriteStartArray();
-                foreach (var item in element.EnumerateArray())
-                {
-                    if (IsActivityBindingExtensionElement(item))
-                        continue;
-
+                foreach (var item in element.EnumerateArray().Where(item => !IsActivityBindingExtensionElement(item)))
                     WriteWithoutActivityBindingExtensions(item, writer);
-                }
                 writer.WriteEndArray();
                 break;
             default:
@@ -489,12 +543,19 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         return await HttpClient.SendAsync(request);
     }
 
-    private async Task<HttpResponseMessage> PutAuthenticatedAsync(string requestUri, HttpContent content, params string[] permissions)
+    private async Task<HttpResponseMessage> PutAuthenticatedAsync(string requestUri, HttpContent content, string? ifMatch, params string[] permissions)
     {
         using var request = new HttpRequestMessage(HttpMethod.Put, requestUri) { Content = content };
         request.Headers.Add(TestAuthenticationHandler.PermissionHeader, string.Join(",", permissions));
+
+        if (ifMatch is not null)
+            request.Headers.Add("If-Match", ifMatch);
+
         return await HttpClient.SendAsync(request);
     }
+
+    /// <summary>The ETag a prior <c>document</c> GET or PUT response carried, for use as the next PUT's <c>If-Match</c>.</summary>
+    private static string? ETagOf(HttpResponseMessage response) => response.Headers.ETag?.Tag;
 
     /// <summary>Imports <c>camunda-order-process.bpmn</c> through the real endpoint and returns the resulting <c>definitionId</c>.</summary>
     private async Task<string> ImportCamundaOrderProcessAsync()

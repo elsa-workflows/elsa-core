@@ -56,6 +56,7 @@ internal sealed class Get(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             {
                 var document = documentService.ReadDocument(definition);
                 var json = JsonSerializer.Serialize(document, BpmnDocumentJsonOptions.Value);
+                HttpContext.Response.Headers.ETag = BpmnDocumentETag.From(definition);
                 await Send.StringAsync(json, contentType: MediaTypeNames.Application.Json, cancellation: cancellationToken);
             },
             message => AddError(message),

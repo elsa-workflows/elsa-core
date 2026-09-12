@@ -51,7 +51,7 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
 
         var definition = result.ImportResult.WorkflowDefinition;
 
-        await Send.OkAsync(new BpmnImportResponse
+        await Send.OkAsync(new Response
         {
             Id = definition.Id,
             DefinitionId = definition.DefinitionId,

@@ -89,10 +89,37 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 | `POST bpmn/analyze` | `read:workflow-definitions` | Uploads a single `.bpmn` file (multipart) and returns the Info/Degraded/Dropped findings a read would produce, without persisting anything. |
 | `POST bpmn/import` | `write:workflow-definitions` | Uploads a single `.bpmn` file and persists it as a new or updated workflow definition (as a draft; it is not published). Optional form fields: `DefinitionId` (update an existing definition instead of creating one), `Name`, `ProcessId` (required when the document declares more than one process). |
 | `GET bpmn/definitions/{definitionId}/export` | `read:workflow-definitions` | Writes the workflow definition's BPMN source back out as `.bpmn` XML. Optional `VersionOptions` query parameter (`Latest`, `Published`, or a specific version), defaulting to `Latest`. |
-| `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. |
-| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns. |
+| `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries an `ETag` response header for the returned revision — see below. |
+| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
 
 Both `Analyze` and `Import` require exactly one uploaded file; zero or more than one returns `400 Bad Request`.
+
+### Optimistic concurrency on the document endpoints
+
+`GET` and `PUT` on `bpmn/definitions/{definitionId}/document` exchange a strong `ETag`, so a client that reads the
+document, and someone else saves an edit before it writes its own back, cannot silently overwrite that intervening
+edit. The `ETag` is derived from three numbers, quoted together as a single strong validator, e.g. `"3-3-4"`: the
+workflow definition's own version number, its `Bpmn:SourceVersion` custom property
+(`BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey` — the same pair `Export`'s staleness check already
+compares), and its `Bpmn:DocumentRevision` custom property
+(`BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey`). The first two are not guaranteed to change on
+every save — an unpublished draft is edited in place, keeping the same version across repeated saves, including a
+save whose document is unchanged from the last — so `DocumentRevision` exists specifically to guarantee that a
+successful `PUT` always produces a different `ETag`, incrementing on every successful import regardless of whether
+`Version` did. None of the three numbers is individually exposed or meant to be parsed by a client; the whole quoted
+value is opaque and must be sent back verbatim.
+
+`PUT` requires an `If-Match` request header carrying the `ETag` a prior `GET` (or `PUT`) returned:
+
+- **Missing entirely** — `428 Precondition Required`. The endpoint cannot tell whether the caller's copy is current,
+  so it refuses to guess, before doing any import work or persisting anything.
+- **Present but not equal to the definition's current `ETag`** — `412 Precondition Failed`, checked before any
+  import work and before anything is persisted. The definition changed since the caller last read it.
+- **Present and current** — the request proceeds exactly as before, and the response carries the resulting draft's
+  new `ETag`, which will always differ from the one sent in `If-Match`.
+
+A client that only ever reads with `GET` and writes back through `PUT` on the same document, without holding it open
+across an unrelated edit, will always see its own `If-Match` match.
 
 ### The document endpoints and the JSON payload format
 

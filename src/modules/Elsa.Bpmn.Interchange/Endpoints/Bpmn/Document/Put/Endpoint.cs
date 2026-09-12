@@ -3,6 +3,7 @@ using Elsa.Authorization;
 using Bpmn.Model;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Import;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -26,7 +27,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document.Put;
 /// <c>Endpoints.Bpmn.Document.Get.Get</c> for the read side of this round trip.
 /// </remarks>
 [UsedImplicitly]
-internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumentService documentService) : ElsaEndpointWithoutRequest<BpmnImportResponse>
+internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumentService documentService) : ElsaEndpointWithoutRequest<Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -47,6 +48,34 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             await Send.NotFoundAsync(cancellationToken);
             return;
         }
+
+        // Optimistic concurrency: a client that GETs the document, then PUTs it back after someone else has saved in
+        // between, must not silently replace that intervening edit. The client is required to carry the ETag its GET
+        // returned as If-Match; a missing header cannot express "I know what I'm overwriting" at all, and a stale one
+        // proves the client's copy is no longer current. Both are checked, and refused, before any import work runs
+        // or anything is persisted.
+        if (!HttpContext.Request.Headers.TryGetValue("If-Match", out var ifMatch) || ifMatch.Count == 0 || string.IsNullOrWhiteSpace(ifMatch[0]))
+        {
+            AddError("An If-Match header carrying the ETag from a prior GET of this document is required to PUT it back, so an intervening edit is not silently overwritten.");
+            await Send.ErrorsAsync(StatusCodes.Status428PreconditionRequired, cancellationToken);
+            return;
+        }
+
+        var currentETag = BpmnDocumentETag.From(definition);
+
+        if (ifMatch[0] != currentETag)
+        {
+            AddError($"The document has changed since it was last read (current ETag {currentETag}, If-Match {ifMatch[0]}). Re-read the document and reapply the edit.");
+            await Send.ErrorsAsync(StatusCodes.Status412PreconditionFailed, cancellationToken);
+            return;
+        }
+
+        // Read from this pristine copy, before ImportDocumentAsync below mutates the same tracked instance in place
+        // (an unpublished draft is edited, not replaced) and discards its CustomProperties as a side effect of
+        // applying the new model — see BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey's remarks.
+        var previousDocumentRevision = definition.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey, out var storedRevision)
+            ? storedRevision
+            : -1;
 
         string body;
 
@@ -91,7 +120,14 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
 
         var persisted = result.ImportResult.WorkflowDefinition;
 
-        await Send.OkAsync(new BpmnImportResponse
+        // Set unconditionally, so the ETag always changes on a successful PUT even when Version and SourceVersion
+        // do not (an unpublished draft edited in place, or a document that comes back byte-for-byte unchanged).
+        persisted.CustomProperties[BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey] = previousDocumentRevision + 1;
+        await store.SaveAsync(persisted, cancellationToken);
+
+        HttpContext.Response.Headers.ETag = BpmnDocumentETag.From(persisted);
+
+        await Send.OkAsync(new Response
         {
             Id = persisted.Id,
             DefinitionId = persisted.DefinitionId,
