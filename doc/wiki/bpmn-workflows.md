@@ -90,7 +90,7 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 | `POST bpmn/import` | `write:workflow-definitions` | Uploads a single `.bpmn` file and persists it as a new or updated workflow definition (as a draft; it is not published). Optional form fields: `DefinitionId` (update an existing definition instead of creating one), `Name`, `ProcessId` (required when the document declares more than one process). |
 | `GET bpmn/definitions/{definitionId}/export` | `read:workflow-definitions` | Writes the workflow definition's BPMN source back out as `.bpmn` XML. Optional `VersionOptions` query parameter (`Latest`, `Published`, or a specific version), defaulting to `Latest`. |
 | `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries an `ETag` response header for the returned revision — see below. |
-| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
+| `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Only the activity graph and the `Bpmn:*` custom properties change; the definition's name, description, variables, inputs, outputs, outcomes, options, tool version and any other custom property are carried forward unchanged, unlike `POST bpmn/import`, which stays a whole-definition import (see below). Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
 
 Both `Analyze` and `Import` require exactly one uploaded file; zero or more than one returns `400 Bad Request`.
 
@@ -109,7 +109,9 @@ exactly what is stored returns the same `ETag` `GET` did. The first `PUT` after 
 uploaded bytes with the writer's own rendering of the same document, so the stored document, and with it the `ETag`,
 changes once even when nothing was edited. A save that changes only the definition's other properties — its name,
 description or variables, say — leaves the document and the graph untouched and does not change the `ETag`; a
-document `PUT`, like `Import`, resets those properties regardless.
+document `PUT` leaves those properties as that save left them, since it edits the document, not the rest of the
+definition — see the next section. `POST bpmn/import` with the same `DefinitionId` is different: it is a
+whole-definition import and resets them from the document, same as it always has.
 
 `PUT` requires an `If-Match` request header carrying the `ETag` a prior `GET` (or `PUT`) returned:
 
@@ -138,6 +140,15 @@ options, not whatever conventions the rest of the Elsa API uses.
 A document that declares more than one `<process>` is re-imported against the same `processId` it was originally
 imported with — recorded on the workflow definition the first time it is imported, whether from `Import` or from a
 `document` `PUT`, so an edit to a multi-process document does not have to name the process again on every save.
+
+**The document `PUT` edits the BPMN document, not the whole definition.** Only the activity graph the newly bound
+document produces and the `Bpmn:*` custom properties (`SourceXml`, `SourceVersion`, `SourceProcessId`) change; the
+definition's name, description, variables, inputs, outputs, outcomes, options, tool version and every other custom
+property are carried forward exactly as they stood before the `PUT`. This is what lets Studio's binding UX (elsa-
+studio#1001) save a binding change through this endpoint without silently resetting metadata the author set some
+other way — a renamed definition, variables added on the draft, a description. `POST bpmn/import` with a
+`DefinitionId` is unaffected by this: it remains a whole-definition import, building the definition from the
+uploaded document alone and replacing all of the above, exactly as it always has.
 
 ### Capability refusal at import
 
