@@ -154,11 +154,7 @@ public sealed class SerializationTypeResolverTests
     [Fact]
     public void When_ConfigureWorkflowsFeature_Then_RegistersCoreAliases()
     {
-        var services = new ServiceCollection();
-        var module = services.CreateModule();
-        module.UseWorkflows();
-        module.Apply();
-        using var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = CreateWorkflowsServices();
         var registry = serviceProvider.GetRequiredService<ISerializationTypeRegistry>();
 
         var aliasRegistered = registry.TryGetAlias(typeof(NullReferenceException), out var alias);
@@ -187,11 +183,7 @@ public sealed class SerializationTypeResolverTests
     [Fact]
     public void When_ConfigureWorkflowsFeature_Then_WorkflowOptionsRoundTripActivationStrategyType()
     {
-        var services = new ServiceCollection();
-        var module = services.CreateModule();
-        module.UseWorkflows();
-        module.Apply();
-        using var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = CreateWorkflowsServices();
         var serializer = serviceProvider.GetRequiredService<IApiSerializer>();
         var strategyType = typeof(Elsa.Workflows.ActivationValidators.AllowAlwaysStrategy);
 
@@ -366,6 +358,15 @@ public sealed class SerializationTypeResolverTests
 
         Assert.True(SerializationTypeResolver.TryResolveType(_workflowJsonTypeRegistry, typeAlias, out var result));
         Assert.Equal(typeof(LateRegisteredPayload), result);
+    }
+
+    private static ServiceProvider CreateWorkflowsServices()
+    {
+        var services = new ServiceCollection();
+        var module = services.CreateModule();
+        module.UseWorkflows();
+        module.Apply();
+        return services.BuildServiceProvider();
     }
 
     private static JsonSerializerOptions CreateOptions(ISerializationTypeRegistry workflowJsonTypeRegistry) => new()

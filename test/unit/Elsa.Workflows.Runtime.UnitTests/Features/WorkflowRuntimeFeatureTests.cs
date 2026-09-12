@@ -1,7 +1,9 @@
 using System.Reflection;
+using Elsa.Common.Serialization;
+using Elsa.Extensions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Extensions;
+using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Features;
@@ -12,7 +14,6 @@ using Elsa.Workflows.Runtime.Providers;
 using NSubstitute;
 using RuntimeFeature = Elsa.Workflows.Runtime.Features.WorkflowRuntimeFeature;
 using ShellRuntimeFeature = Elsa.Workflows.Runtime.ShellFeatures.WorkflowRuntimeFeature;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Features;
 
@@ -150,10 +151,11 @@ public class WorkflowRuntimeFeatureTests
         var options = new SerializationTypeOptions();
 
         RegisterWorkflowTypeAliases(_feature, options);
+        var registry = SerializationTypeTestHelpers.CreateRegistry(options);
 
-        AssertActivationStrategyAlias(options, typeof(SingletonStrategy), nameof(SingletonStrategy));
-        AssertActivationStrategyAlias(options, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
-        AssertActivationStrategyAlias(options, typeof(CorrelationStrategy), nameof(CorrelationStrategy));
+        AssertActivationStrategyAlias(options, registry, typeof(SingletonStrategy), nameof(SingletonStrategy));
+        AssertActivationStrategyAlias(options, registry, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
+        AssertActivationStrategyAlias(options, registry, typeof(CorrelationStrategy), nameof(CorrelationStrategy));
     }
 
     [Fact]
@@ -162,10 +164,11 @@ public class WorkflowRuntimeFeatureTests
         var options = new SerializationTypeOptions();
 
         RegisterWorkflowTypeAliases(_shellFeature, options);
+        var registry = SerializationTypeTestHelpers.CreateRegistry(options);
 
-        AssertActivationStrategyAlias(options, typeof(SingletonStrategy), nameof(SingletonStrategy));
-        AssertActivationStrategyAlias(options, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
-        AssertActivationStrategyAlias(options, typeof(CorrelationStrategy), nameof(CorrelationStrategy));
+        AssertActivationStrategyAlias(options, registry, typeof(SingletonStrategy), nameof(SingletonStrategy));
+        AssertActivationStrategyAlias(options, registry, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
+        AssertActivationStrategyAlias(options, registry, typeof(CorrelationStrategy), nameof(CorrelationStrategy));
     }
 
     [Fact]
@@ -237,10 +240,8 @@ public class WorkflowRuntimeFeatureTests
             .Invoke(feature, new object[] { options });
     }
 
-    private static void AssertActivationStrategyAlias(SerializationTypeOptions options, Type strategyType, string alias)
+    private static void AssertActivationStrategyAlias(SerializationTypeOptions options, ISerializationTypeRegistry registry, Type strategyType, string alias)
     {
-        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
-
         Assert.Equal(strategyType, options.AliasTypeDictionary[alias]);
         Assert.Equal(alias, options.TypeAliasDictionary[strategyType]);
         Assert.True(registry.TryGetType(strategyType.GetSimpleAssemblyQualifiedName(), out var legacyType));
