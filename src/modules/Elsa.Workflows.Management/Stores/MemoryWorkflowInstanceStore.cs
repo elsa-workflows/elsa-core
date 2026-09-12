@@ -14,6 +14,7 @@ namespace Elsa.Workflows.Management.Stores;
 public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 {
     private readonly MemoryStore<WorkflowInstance> _store;
+    private readonly object _sync = new();
 
     /// <summary>
     /// Constructor.
@@ -171,13 +172,26 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
-        var instance = _store.Find(x => x.Id == workflowInstanceId);
-        if (instance is null || instance.Status == WorkflowStatus.Finished)
-            return ValueTask.FromResult(false);
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId);
+            if (instance is null || instance.Status == WorkflowStatus.Finished)
+                return ValueTask.FromResult(false);
 
-        instance.SubStatus = WorkflowSubStatus.Interrupted;
-        instance.IsExecuting = false;
-        return ValueTask.FromResult(true);
+            instance.SubStatus = WorkflowSubStatus.Interrupted;
+            instance.IsExecuting = false;
+
+            // A runner can complete in-place on the same object. If Status became Finished,
+            // do not keep Interrupted or report success — drain would otherwise log a false interrupt.
+            if (instance.Status == WorkflowStatus.Finished)
+            {
+                instance.SubStatus = WorkflowSubStatus.Finished;
+                instance.IsExecuting = false;
+                return ValueTask.FromResult(false);
+            }
+
+            return ValueTask.FromResult(true);
+        }
     }
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;

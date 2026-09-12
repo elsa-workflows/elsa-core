@@ -97,6 +97,39 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.NotSame(staleRunning, instance);
     }
 
+    [Fact(DisplayName = "TryMarkInterruptedAsync does not leave Finished+Interrupted when completion races the mark")]
+    public async Task TryMarkInterrupted_DoesNotLeaveFinishedInterruptedOnInPlaceCompletion()
+    {
+        for (var i = 0; i < 200; i++)
+        {
+            var instance = new WorkflowInstance
+            {
+                Id = "inplace-1",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Running,
+                SubStatus = WorkflowSubStatus.Executing,
+                IsExecuting = true,
+            };
+            var store = CreateStore(instance);
+
+            var mark = Task.Run(() => store.TryMarkInterruptedAsync(instance.Id).AsTask());
+            var complete = Task.Run(() =>
+            {
+                instance.Status = WorkflowStatus.Finished;
+                instance.SubStatus = WorkflowSubStatus.Finished;
+                instance.IsExecuting = false;
+            });
+
+            await Task.WhenAll(mark, complete);
+
+            Assert.False(
+                instance.Status == WorkflowStatus.Finished && instance.SubStatus == WorkflowSubStatus.Interrupted,
+                $"Finished+Interrupted after in-place completion race (iteration {i}).");
+        }
+    }
+
     private static MemoryWorkflowInstanceStore CreateStore(WorkflowInstance instance)
     {
         var store = new MemoryWorkflowInstanceStore(new MemoryStore<WorkflowInstance>());
