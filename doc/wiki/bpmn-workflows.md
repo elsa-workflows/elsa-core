@@ -195,6 +195,54 @@ document, in three situations:
 
 A missing `definitionId` returns `404 Not Found`.
 
+### Error codes on refusals
+
+**Every code below is a compatibility surface.** A client (Studio's own BPMN designer among them) matches on the
+`code`, and on the `data` fields a code documents, rather than on the message — the message may be reworded without
+notice.
+
+`bpmn/import`, `bpmn/definitions/{id}/export`, and the document `GET`/`PUT` endpoints report most of their
+BPMN-specific refusals as an additive envelope alongside the usual FastEndpoints error body shape (`statusCode`,
+`message`, `errors`):
+
+```json
+{
+  "statusCode": 422,
+  "message": "One or more errors occurred!",
+  "errors": { "generalErrors": ["<the human-readable message>"] },
+  "code": "bpmn.import.capability-unsupported",
+  "data": { "capabilities": ["ScopeSignalling"], "elementIds": ["Task_1"] }
+}
+```
+
+`statusCode`, `message` and `errors` are exactly what FastEndpoints' own `ErrorResponse` would have sent for
+`AddError("<the human-readable message>")` — a client that only reads those three keys today (e.g. Studio's
+`ValidationApiExceptionExtensions.GetValidationErrorsFromContent`) keeps working unchanged. `code` and `data` are
+additive. `data` is omitted when a code carries none. This deployment does not use FastEndpoints'
+`ProblemDetails` response, and this envelope is written by the endpoint itself rather than by replacing
+FastEndpoints' process-wide `Config.ErrOpts.ResponseBuilder`, which would have reshaped every endpoint's error
+response, not just these — see `Elsa.Bpmn.Interchange.Endpoints.Bpmn.BpmnErrorResponse`'s remarks.
+
+Not every 4xx these endpoints send carries a code: a plain `404 Not Found` for a `definitionId` that does not exist,
+a `400 Bad Request` from malformed JSON or an unparseable `VersionOptions`, and a `400 Bad Request` for a document
+that names more than one process without saying which, are unchanged and uncoded.
+
+| Code (`Elsa.Bpmn.Interchange.BpmnErrorCodes`) | Sent by | Status | `data` |
+| --- | --- | --- | --- |
+| `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
+| `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
+| `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |
+| `bpmn.export.source-stale` | `GET .../export`, document `GET` | 422 | — |
+| `bpmn.export.source-version-unknown` | `GET .../export`, document `GET` | 422 | — |
+| `bpmn.document.not-found` | document `PUT` | 404 | — |
+| `bpmn.document.precondition-required` | document `PUT` | 428 | — |
+| `bpmn.document.precondition-failed` | document `PUT` | 412 | — |
+
+See each constant's XML doc in `Elsa.Bpmn.Interchange.BpmnErrorCodes` for exactly which situation it names.
+`bpmn.export.source-version-unknown` is not reachable through `Import` or the document `PUT` themselves — both
+always record a source version alongside the source text — only through custom properties edited or migrated some
+other way; it is kept, and coded, as a defence against that combination arising.
+
 ## Execution State Persistence
 
 The BPMN interpreter's execution state (`BpmnExecutionState`) and the scope's `BpmnWorkLedger` are both serialized as JSON strings in `ActivityExecutionContext.Properties` when the workflow suspends. The state is pruned before each persist: consumed tokens are removed so the serialized size stays bounded regardless of how many evaluations a long-running scope has processed.

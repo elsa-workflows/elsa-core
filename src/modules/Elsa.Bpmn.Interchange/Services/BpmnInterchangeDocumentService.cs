@@ -385,7 +385,8 @@ public sealed class BpmnInterchangeDocumentService(
             throw new BpmnExportUnavailableException(
                 $"Workflow definition '{definition.DefinitionId}' does not currently carry BPMN source, so it cannot be exported as BPMN 2.0 XML. "
                 + "Either it was never imported from a BPMN document, or a later save replaced its custom properties wholesale and removed the "
-                + $"'{SourceXmlCustomPropertyKey}' entry as a side effect of editing something else.");
+                + $"'{SourceXmlCustomPropertyKey}' entry as a side effect of editing something else.",
+                BpmnExportUnavailableReason.NotImported);
         }
 
         if (!definition.CustomProperties.TryGetValue<int>(SourceVersionCustomPropertyKey, out var sourceVersion))
@@ -400,7 +401,8 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definition.DefinitionId}' carries BPMN source, but not the definition version it was recorded against, so "
                 + "whether that source still matches this definition cannot be verified. It does not mean this definition was never imported from "
                 + "BPMN, and it does not mean the source is stale — there is simply no version recorded to compare against. Re-import the document to "
-                + "record a complete, exportable source.");
+                + "record a complete, exportable source.",
+                BpmnExportUnavailableReason.SourceVersionUnknown);
         }
 
         if (sourceVersion != definition.Version)
@@ -408,7 +410,8 @@ public sealed class BpmnInterchangeDocumentService(
             throw new BpmnExportUnavailableException(
                 $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN (imported at version {sourceVersion}, "
                 + $"currently at version {definition.Version}). The BPMN source stored on it no longer corresponds to this definition, so exporting it "
-                + "would silently return a document that is not what this definition currently is.");
+                + "would silently return a document that is not what this definition currently is.",
+                BpmnExportUnavailableReason.SourceStale);
         }
 
         // The version check above catches a publish or any other save that assigns a new version, but an unpublished
@@ -424,7 +427,8 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN: its activity graph no longer matches "
                 + "the graph the stored source was imported against, even though its version has not changed (an unpublished draft is saved in place). "
                 + "The BPMN source stored on it no longer corresponds to this definition, so exporting it would silently return a document that is "
-                + "not what this definition currently is.");
+                + "not what this definition currently is.",
+                BpmnExportUnavailableReason.SourceStale);
         }
 
         return xml;

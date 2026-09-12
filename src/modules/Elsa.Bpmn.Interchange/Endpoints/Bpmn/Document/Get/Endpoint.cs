@@ -51,7 +51,7 @@ internal sealed class Get(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             return;
         }
 
-        await BpmnExportExceptionCascade.RunAsync(
+        await BpmnExportErrorResponses.RunAsync(
             async () =>
             {
                 var document = documentService.ReadDocument(definition);
@@ -59,6 +59,7 @@ internal sealed class Get(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
                 HttpContext.Response.Headers.ETag = BpmnDocumentETag.From(definition);
                 await Send.StringAsync(json, contentType: MediaTypeNames.Application.Json, cancellation: cancellationToken);
             },
+            HttpContext.Response,
             message => AddError(message),
             Send.ErrorsAsync,
             cancellationToken);

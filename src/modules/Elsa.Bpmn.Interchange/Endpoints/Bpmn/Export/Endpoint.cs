@@ -63,12 +63,13 @@ internal sealed class Export(IWorkflowDefinitionStore store, BpmnInterchangeDocu
             return;
         }
 
-        await BpmnExportExceptionCascade.RunAsync(
+        await BpmnExportErrorResponses.RunAsync(
             async () =>
             {
                 var bytes = documentService.Export(definition);
                 await Send.BytesAsync(bytes, $"{request.DefinitionId}.bpmn", "application/xml", cancellation: cancellationToken);
             },
+            HttpContext.Response,
             message => AddError(message),
             Send.ErrorsAsync,
             cancellationToken);

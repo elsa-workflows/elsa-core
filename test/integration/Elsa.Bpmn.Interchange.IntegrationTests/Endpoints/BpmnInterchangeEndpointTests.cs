@@ -143,6 +143,9 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, CodeOf(body));
+        Assert.Contains("nothing binds it to an Elsa activity", body);
     }
 
     [Fact]
@@ -176,7 +179,22 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ExportNotImported, CodeOf(body));
         Assert.Contains("does not currently carry BPMN source", body);
+    }
+
+    [Fact]
+    public async Task Export_OfADefinitionWithAChangedGraphAfterADesignerSave_ReturnsUnprocessableEntityCodedAsStale()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        await SaveDraftFromTheDesignerAsync(definitionId);
+
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ExportSourceStale, CodeOf(body));
+        Assert.Contains("has changed since it was imported", body);
     }
 
     [Fact]
@@ -245,7 +263,22 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ExportNotImported, CodeOf(body));
         Assert.Contains("does not currently carry BPMN source", body);
+    }
+
+    [Fact]
+    public async Task DocumentGet_OfADefinitionWithAChangedGraphAfterADesignerSave_ReturnsUnprocessableEntityCodedAsStale()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        await SaveDraftFromTheDesignerAsync(definitionId);
+
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ExportSourceStale, CodeOf(body));
+        Assert.Contains("has changed since it was imported", body);
     }
 
     [Fact]
@@ -294,6 +327,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, null, "workflows/definitions:write");
 
         Assert.Equal((HttpStatusCode)428, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.DocumentPreconditionRequired, CodeOf(await response.Content.ReadAsStringAsync()));
         Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
     }
 
@@ -309,6 +343,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var response = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), "*");
 
         Assert.Equal(HttpStatusCode.PreconditionRequired, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.DocumentPreconditionRequired, CodeOf(await response.Content.ReadAsStringAsync()));
         Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
     }
 
@@ -444,6 +479,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
         var body = await putResponse.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, CodeOf(body));
         Assert.Contains("nothing binds it to an Elsa activity", body);
         Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
     }
@@ -674,6 +710,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// <summary>The ETag a prior <c>document</c> GET or PUT response carried, for use as the next PUT's <c>If-Match</c>.</summary>
     private static string? ETagOf(HttpResponseMessage response) => response.Headers.ETag?.Tag;
 
+    /// <summary>The <c>code</c> field of a coded BPMN error response body (see <see cref="BpmnErrorCodes"/>), or <c>null</c> if it carries none.</summary>
+    private static string? CodeOf(string body)
+    {
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.TryGetProperty("code", out var code) ? code.GetString() : null;
+    }
+
     /// <summary>GETs the document of <paramref name="definitionId"/>, asserting it succeeded, and returns its ETag and body.</summary>
     private async Task<(string? ETag, string Json)> GetDocumentAsync(string definitionId)
     {
@@ -697,6 +740,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var response = await PutDocumentAsync(definitionId, documentJson, staleETag);
 
         Assert.Equal(HttpStatusCode.PreconditionFailed, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.DocumentPreconditionFailed, CodeOf(await response.Content.ReadAsStringAsync()));
         Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
     }
 
