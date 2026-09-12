@@ -11,13 +11,29 @@ Elsa supports running BPMN 2.0 processes as first-class workflow activities. Two
 
 ```csharp
 // Execution support only (use when you build BpmnProcess in code).
-elsa.AddBpmn();
+elsa.UseBpmn();
 
 // Execution + XML interchange (use when importing .bpmn files).
-elsa.AddBpmnInterchange();
+elsa.UseBpmnInterchange();
 ```
 
-`BpmnInterchangeFeature` depends on `BpmnFeature`; calling `AddBpmnInterchange()` pulls in both.
+`BpmnInterchangeFeature` depends on `BpmnFeature`; calling `UseBpmnInterchange()` pulls in both.
+
+### Trying it
+
+The sample host `src/apps/Elsa.Server.Web` has BPMN interchange enabled (`.UseBpmnInterchange()` in its `Program.cs`), so it can be used to try the analyze endpoint against a real server. If you have not already trusted the local ASP.NET Core development certificate, run `dotnet dev-certs https --trust` once, otherwise the `curl` calls below will fail TLS verification. Sign in with one of the development users (e.g. `admin`/`password`, see `appsettings.Development.json`) to obtain a bearer token, then call the endpoint:
+
+```bash
+TOKEN=$(curl -s -X POST https://localhost:5001/elsa/api/identity/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"password"}' | jq -r .accessToken)
+
+curl -s -X POST https://localhost:5001/elsa/api/bpmn/analyze \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/camunda-order-process.bpmn"
+```
+
+This returns a JSON body of process ids, element counts, and findings (e.g. informational notes about unbound service tasks or retained vendor extensions).
 
 ## BpmnProcess Activity
 

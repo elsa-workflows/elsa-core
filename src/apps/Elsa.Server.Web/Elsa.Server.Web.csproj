@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <ItemGroup>
+		<ProjectReference Include="..\..\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Caching\Elsa.Caching.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Common\Elsa.Common.csproj" />
 		<ProjectReference Include="..\..\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
