@@ -368,6 +368,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [InlineData("subprocess-boundary-events.bpmn")]
     [InlineData("transaction-compensation.bpmn")]
     [InlineData("nested-subprocesses.bpmn")]
+    [InlineData("top-level-call-activity.bpmn")]
     public async Task DocumentPut_OfUnchangedContent_ReturnsTheETagTheGetReturned(string assetFileName)
     {
         // The nested fixtures prove the subprocess bodies a PUT writes back from the stored document come out

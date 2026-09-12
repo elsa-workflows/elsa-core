@@ -392,8 +392,10 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
         }
 
-        var bindingsToCarryAcross = StoredNestedScopesStillDeclaredBy(document, existingDefinition)
-            .Concat(StoredCallOptionsStillApplicableTo(document, existingDefinition))
+        var stored = ReadStoredSource(existingDefinition);
+
+        var bindingsToCarryAcross = StoredNestedScopesStillDeclaredBy(document, stored)
+            .Concat(StoredCallOptionsStillApplicableTo(document, stored))
             .ToList();
 
         var xml = writer.Write(document, bindingsToCarryAcross);
@@ -401,9 +403,23 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
+    /// Reads and parses the BPMN source stored on <paramref name="definition"/>'s <see cref="SourceXmlCustomPropertyKey"/>
+    /// custom property once, for <see cref="StoredNestedScopesStillDeclaredBy"/> and
+    /// <see cref="StoredCallOptionsStillApplicableTo"/> to share, rather than each independently re-reading and
+    /// re-parsing the same stored text. <c>null</c> when the definition carries no stored source at all.
+    /// </summary>
+    private BpmnImportResult? ReadStoredSource(WorkflowDefinition definition)
+    {
+        if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var storedXml) || string.IsNullOrEmpty(storedXml))
+            return null;
+
+        return reader.Read(storedXml, new BpmnImportOptions());
+    }
+
+    /// <summary>
     /// The stored work bindings <see cref="BpmnXmlWriter"/> needs to write every nested scope — embedded subprocess,
     /// transaction or event subprocess — that <paramref name="document"/> still declares back out exactly as
-    /// <paramref name="definition"/>'s stored source has it, and nothing for a scope <paramref name="document"/> no
+    /// <paramref name="stored"/> has it, and nothing for a scope <paramref name="document"/> no
     /// longer declares.
     /// </summary>
     /// <remarks>
@@ -449,12 +465,11 @@ public sealed class BpmnInterchangeDocumentService(
     /// A subprocess element with a stored body carries no bindingRef, so the writer cannot attach the body to it and
     /// would write the subprocess empty.
     /// </exception>
-    private IReadOnlyList<BpmnWorkBinding> StoredNestedScopesStillDeclaredBy(BpmnDefinitions document, WorkflowDefinition definition)
+    private IReadOnlyList<BpmnWorkBinding> StoredNestedScopesStillDeclaredBy(BpmnDefinitions document, BpmnImportResult? stored)
     {
-        if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var storedXml) || string.IsNullOrEmpty(storedXml))
+        if (stored is null)
             return [];
 
-        var stored = reader.Read(storedXml, new BpmnImportOptions());
         var storedBindings = stored.Bindings;
 
         // Every element carrying a multi-instance marker in the model, as stored or as posted.
@@ -555,12 +570,11 @@ public sealed class BpmnInterchangeDocumentService(
     /// waiting default this method exists to avoid, not data loss.
     /// </para>
     /// </remarks>
-    private IReadOnlyList<BpmnWorkBinding> StoredCallOptionsStillApplicableTo(BpmnDefinitions document, WorkflowDefinition definition)
+    private IReadOnlyList<BpmnWorkBinding> StoredCallOptionsStillApplicableTo(BpmnDefinitions document, BpmnImportResult? stored)
     {
-        if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var storedXml) || string.IsNullOrEmpty(storedXml))
+        if (stored is null)
             return [];
 
-        var stored = reader.Read(storedXml, new BpmnImportOptions());
         var storedCalls = stored.Bindings.OfType<BpmnWorkBinding.CallProcess>().ToList();
 
         var kept = new List<BpmnWorkBinding>();
