@@ -581,18 +581,17 @@ public sealed class BpmnInterchangeDocumentService(
 
         foreach (var process in document.Processes)
         {
-            foreach (var element in process.Elements.Where(element => element.ElementType == BpmnElementTypes.CallActivity))
+            // An element with no bindingRef to hand a kept call over under is skipped rather than refused.
+            foreach (var element in process.Elements.Where(element =>
+                         element.ElementType == BpmnElementTypes.CallActivity && element.BindingRef is not null))
             {
-                if (element.BindingRef is null)
-                    continue;
-
                 // Last match wins, as it does inside the writer itself, should a malformed document repeat an id.
                 var call = storedCalls.LastOrDefault(candidate => candidate.ElementId == element.ElementId);
 
                 if (call is null || !string.Equals(call.CalledElement, CalledElementOf(element), StringComparison.Ordinal))
                     continue;
 
-                kept.Add(call with { BindingRef = element.BindingRef });
+                kept.Add(call with { BindingRef = element.BindingRef! });
             }
         }
 
