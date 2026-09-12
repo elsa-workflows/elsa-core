@@ -945,14 +945,14 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     /// <summary>
-    /// Marks the latest version of <paramref name="definitionId"/> published, directly on the stored row. See
-    /// <see cref="PublishSimulation.MarkLatestPublishedAsync"/> for why publish is simulated rather than real.
+    /// Publishes the latest version of <paramref name="definitionId"/> through the real
+    /// <see cref="IWorkflowDefinitionPublisher"/>. See <see cref="PublishSimulation.PublishLatestAsync"/>.
     /// </summary>
     private async Task MarkLatestPublishedAsync(string definitionId)
     {
         using var scope = _app!.Services.CreateScope();
-        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        await PublishSimulation.MarkLatestPublishedAsync(store, definitionId);
+        var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
+        await PublishSimulation.PublishLatestAsync(publisher, definitionId);
     }
 
     /// <summary>
