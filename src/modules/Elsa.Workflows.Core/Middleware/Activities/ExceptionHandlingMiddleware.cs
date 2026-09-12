@@ -1,6 +1,9 @@
+using Elsa.Common;
 using Elsa.Extensions;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Signals;
+using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Middleware.Activities;
@@ -43,7 +46,18 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
                 return;
             }
 
-            await HandleIncidentAsync(context);
+            try
+            {
+                await HandleIncidentAsync(context);
+            }
+            catch (Exception strategyException) when (strategyException is not OperationCanceledException)
+            {
+                // The incident strategy raised its own exception. Letting it escape would push the fault up to the
+                // workflow-level exception middleware, which records an incident attributed to the workflow root rather
+                // than the activity whose strategy broke. Capture it here so the operator sees the activity that
+                // actually failed, and so the activity pipeline still ends in the faulted state it was already in.
+                RecordStrategyFailure(context, strategyException);
+            }
         }
     }
 
@@ -90,5 +104,28 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
     {
         var strategy = await incidentStrategyResolver.ResolveStrategyAsync(context);
         strategy.HandleIncident(context);
+    }
+
+    /// <summary>
+    /// Records an incident attributed to the activity whose incident strategy threw, so that the failure surfaces
+    /// against the right activity rather than being misattributed to the workflow root when the workflow-level
+    /// exception middleware would otherwise catch and report it.
+    /// </summary>
+    private void RecordStrategyFailure(ActivityExecutionContext context, Exception strategyException)
+    {
+        var systemClock = context.GetRequiredService<ISystemClock>();
+        var now = systemClock.UtcNow;
+        var activity = context.Activity;
+        var exceptionState = ExceptionState.FromException(strategyException);
+        var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, strategyException.Message, exceptionState, now, context.Id);
+
+        context.WorkflowExecutionContext.Incidents.Add(incident);
+        context.WorkflowExecutionContext.AddExecutionLogEntry("Faulted", strategyException.Message, exceptionState);
+
+        logger.LogError(
+            strategyException,
+            "An incident strategy threw while handling the fault of activity {ActivityId} of type {ActivityType}. Recording an incident attributed to that activity.",
+            activity.Id,
+            activity.Type);
     }
 }
