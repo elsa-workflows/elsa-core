@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                   id="Definitions_message-start-order-process"
+                   targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_OrderPlaced" name="OrderPlaced" />
+  <bpmn:process id="message-start-order-process" name="Message Start Order Process" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1" name="Order Placed">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_1" messageRef="Message_OrderPlaced" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="NotifyWarehouse" name="Notify Warehouse">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Notifying the warehouse"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_1" name="Order Handled">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="NotifyWarehouse" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="NotifyWarehouse" targetRef="EndEvent_1" />
+  </bpmn:process>
+</bpmn:definitions>

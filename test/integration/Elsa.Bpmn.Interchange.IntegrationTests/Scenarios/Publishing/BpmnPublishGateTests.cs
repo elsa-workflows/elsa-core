@@ -109,11 +109,8 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
             new BpmnProcessDefinition(ProcessId, Elements: [BoundElement("approve", BpmnElementTypes.UserTask, new WriteLine("approved"))]),
             [new BpmnWorkBinding.UnboundTask(ProcessId, "approve", Ref("approve"), BpmnBindingSlot.Primary, BpmnElementTypes.UserTask)]);
 
-        // Bind always marks the scope it returns as root position (see its own remarks); this fixture declares no
-        // start event; clearing it keeps the unrelated "a startable trigger needs a payload" runtime validation out
-        // of what is being asserted here.
-        scope.IsRootScope = false;
-
+        // Bind marks the scope it returns as root position (see its own remarks), and it is left that way: a root
+        // scope with no event-defined start registers no trigger, so the runtime's trigger validation passes it too (#8078).
         var definitionId = await SaveDraftAsync(scope);
         var result = await PublishAsync(definitionId);
 

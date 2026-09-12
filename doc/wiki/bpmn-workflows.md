@@ -42,9 +42,22 @@ This returns a JSON body of process ids, element counts, and findings (e.g. info
 - **`Process`** — the `BpmnProcessDefinition` from the `Bpmn.Interchange` reader.
 - **`WorkBindings`** — a `Dictionary<string, string>` mapping each BPMN binding ref to an Elsa activity id. The scope host uses this map to look up child activity execution contexts when the interpreter signals work completion, faulting, or escalation.
 - **`Activities`** — the Elsa activities bound to this scope (one per `BpmnWorkBinding`).
-- **`IsRootScope`** — left `false` on every scope the binder produces; the caller sets it to `true` to mark the outermost scope as a workflow entry point.
+- **`IsRootScope`** — marks the outermost scope as the workflow's entry point, the only scope whose start events can register workflow triggers (see *Start events and workflow triggers* below). `BpmnWorkBinder.Bind` and an import set it on the scope they return; every nested scope the binder produces leaves it `false`.
 
 `BpmnProcess` completes with the interpreter's outcome name — `BpmnInterpreter.DoneOutcomeName` ("Done") normally, or `BpmnInterpreter.CancelledOutcomeName` ("Cancelled") when a cancel end event cancelled a transaction. It does **not** complete with `Outcomes.Default`. Both outcomes are declared flow ports (`[FlowNode(BpmnInterpreter.DoneOutcomeName, BpmnInterpreter.CancelledOutcomeName)]`), so connections from it target one of them explicitly.
+
+### Start events and workflow triggers
+
+A root scope registers one workflow trigger per start event that declares how the process is started:
+
+- A message or signal start registers an `EventStimulus` on the resolved message or signal name, so an ordinary `PublishEvent` with that name starts the workflow.
+- A recurring timer start (`<timeCycle>`) registers through `Elsa.Scheduling`'s own `Timer` or `Cron` trigger.
+
+A process whose start events are all plain (none) start events, which covers most Camunda models, registers no trigger at all. It is started directly, through the workflow execution API, and publishes like any other workflow without a trigger. `BpmnProcess` declares this to the trigger indexer through `TriggerIndexingContext.RegistersNoTriggers`, so the indexer does not store the `null`-payload placeholder it keeps for other triggers that return no payloads.
+
+A start event that declares a message, signal or timer the scope cannot register, such as a timer whose interval is not a positive ISO-8601 duration, is logged and skipped. The scope's other start events still register. If that leaves the scope with nothing to register, publication fails with `Trigger should have a payload`, so the process is not published as though the start had never been declared. Nested scopes (subprocess and event-subprocess bodies, or a scope nested through a `Flowchart`) never register triggers of their own.
+
+Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnProcessTriggerTests.cs` and `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Publishing/BpmnStartTriggerPublishTests.cs`.
 
 ## Work Ledger
 
