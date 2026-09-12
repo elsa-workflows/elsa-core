@@ -8,13 +8,14 @@ namespace Elsa.Workflows.Runtime;
 /// <remarks>
 /// Disjoint from the timeout-based <c>RestartInterruptedWorkflowsTask</c> recurring task: that task filters
 /// <c>IsExecuting = true</c> with a stale <c>UpdatedAt</c>; this scan filters <see cref="WorkflowSubStatus.Interrupted"/>
-/// (which has <c>IsExecuting = false</c>). The two filters never overlap, so an instance is recovered by exactly
-/// one mechanism — see FR-022 and research R4.
+/// and <see cref="WorkflowStatus.Running"/> (Interrupted instances have <c>IsExecuting = false</c>). The two
+/// filters never overlap, so an instance is recovered by exactly one mechanism — see FR-022 and research R4.
+/// Terminal <c>Finished+Interrupted</c> rows from a drain/runner race are excluded so they are not requeued.
 /// </remarks>
 public interface IInterruptedRecoveryScanner
 {
     /// <summary>
-    /// Enumerates instances in the <see cref="WorkflowSubStatus.Interrupted"/> sub-status, requeues each via
+    /// Enumerates running instances in the <see cref="WorkflowSubStatus.Interrupted"/> sub-status, requeues each via
     /// <c>IWorkflowRestarter</c>, and returns the count successfully requeued.
     /// </summary>
     ValueTask<int> ScanAndRequeueAsync(CancellationToken cancellationToken);

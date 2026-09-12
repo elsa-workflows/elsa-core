@@ -325,8 +325,10 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // The handle disposes when ExecutionCycleTrackingMiddleware exits its `using` block, which
         // is after the workflow runner has finished its commit. We want runners' terminal
         // commits to land before we overwrite the sub-status with Interrupted — but we
-        // bound the wait so a non-cancellable activity cannot block drain, accepting the
-        // runner-clobber race for that one instance (the recovery scan picks it up).
+        // bound the wait so a non-cancellable activity cannot block drain. PersistInterruptedAsync
+        // applies Interrupted only via a store-level compare-and-set that refuses already-terminal
+        // rows, so a late Finished commit is not overwritten (the recovery scan only requeues
+        // Running+Interrupted).
         // Total wall time for this phase is at most ForceCancelSettleTimeout regardless
         // of N.
         var settleTasks = live.Select(async handle =>
@@ -420,13 +422,29 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             return;
         }
 
+        if (instance.Status == WorkflowStatus.Finished)
+        {
+            _logger.LogInformation(
+                "Skipping Interrupted persist for instance {InstanceId}: already in terminal status {Status}/{SubStatus}.",
+                instance.Id, instance.Status, instance.SubStatus);
+            return;
+        }
+
         var actualReason = reason;
 
         try
         {
-            instance.SubStatus = WorkflowSubStatus.Interrupted;
-            instance.IsExecuting = false;
-            await instanceStore.SaveAsync(instance, cancellationToken);
+            // Conditional write: do not SaveAsync the Find snapshot. A runner can commit Finished
+            // between the read and a full-entity save, which would revert Status to Running and
+            // let startup recovery requeue a completed instance.
+            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken);
+            if (!marked)
+            {
+                _logger.LogInformation(
+                    "Skipping Interrupted persist for instance {InstanceId}: a concurrent persist already left it in a terminal status.",
+                    instance.Id);
+                return;
+            }
         }
         catch (Exception ex) when (!ex.IsFatal())
         {

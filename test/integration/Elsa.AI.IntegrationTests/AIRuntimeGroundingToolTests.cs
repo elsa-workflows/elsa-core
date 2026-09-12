@@ -116,6 +116,17 @@ public class AIRuntimeGroundingToolTests
         public ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) => ValueTask.FromResult(0L);
         public Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+        public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+        {
+            var instance = _instances.FirstOrDefault(x => x.Id == workflowInstanceId);
+            if (instance is null || instance.Status == WorkflowStatus.Finished)
+                return ValueTask.FromResult(false);
+
+            instance.SubStatus = WorkflowSubStatus.Interrupted;
+            instance.IsExecuting = false;
+            return ValueTask.FromResult(true);
+        }
+
         private IEnumerable<WorkflowInstance> Apply(WorkflowInstanceFilter filter)
         {
             var query = _instances.AsEnumerable();
