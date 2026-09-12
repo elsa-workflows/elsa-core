@@ -518,6 +518,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Null(metadataAfterImport.Description);
         Assert.Equal(string.Empty, metadataAfterImport.VariableSummary);
         Assert.Null(metadataAfterImport.UsableAsActivity);
+        Assert.Equal(string.Empty, metadataAfterImport.InputSummary);
+        Assert.Equal(string.Empty, metadataAfterImport.OutputSummary);
+        Assert.Equal(string.Empty, metadataAfterImport.OutcomeSummary);
+        Assert.Null(metadataAfterImport.ToolVersion);
+        Assert.False(metadataAfterImport.IsReadonly);
         Assert.Null(metadataAfterImport.CustomPropertyValue);
     }
 
@@ -714,9 +719,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
     /// <summary>
     /// Renames the latest draft of <paramref name="definitionId"/> and sets a description, a variable, an
-    /// activity-usable option and a custom property on it — the non-BPMN metadata a document PUT must leave
-    /// untouched, set the way Studio's own definitions API would (<see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/>
-    /// then <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/>).
+    /// activity-usable option, an input, an output, an outcome, a tool version, the read-only flag and a custom
+    /// property on it — the non-BPMN metadata a document PUT must leave untouched, set the way Studio's own
+    /// definitions API would (<see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/> then
+    /// <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/>).
     /// </summary>
     private async Task SetNonBpmnMetadataOnDraftAsync(string definitionId)
     {
@@ -729,21 +735,49 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         draft.Description = "Handles a customer order end to end.";
         draft.Variables = [new Variable<string>("OrderReference", "unset")];
         draft.Options.UsableAsActivity = true;
+        draft.Inputs = [new InputDefinition { Name = "CustomerId", Type = typeof(string) }];
+        draft.Outputs = [new OutputDefinition { Name = "OrderId", Type = typeof(string) }];
+        draft.Outcomes = ["Fulfilled"];
+        draft.ToolVersion = new Version(1, 2, 3);
+        draft.IsReadonly = true;
         draft.CustomProperties["Custom:Owner"] = "fulfillment-team-lead";
 
         await publisher.SaveDraftAsync(draft);
     }
 
     /// <summary>A snapshot of everything <see cref="SetNonBpmnMetadataOnDraftAsync"/> sets, for before/after comparison.</summary>
-    private sealed record CapturedMetadata(string? Name, string? Description, string VariableSummary, bool? UsableAsActivity, string? CustomPropertyValue);
+    private sealed record CapturedMetadata(
+        string? Name,
+        string? Description,
+        string VariableSummary,
+        bool? UsableAsActivity,
+        string InputSummary,
+        string OutputSummary,
+        string OutcomeSummary,
+        Version? ToolVersion,
+        bool IsReadonly,
+        string? CustomPropertyValue);
 
     private async Task<CapturedMetadata> CaptureMetadataAsync(string definitionId)
     {
         var definition = await FindLatestDefinitionAsync(definitionId);
         var variableSummary = string.Join(";", definition.Variables.Select(variable => $"{variable.Name}={variable.Value}"));
+        var inputSummary = string.Join(";", definition.Inputs.Select(input => $"{input.Name}:{input.Type}"));
+        var outputSummary = string.Join(";", definition.Outputs.Select(output => $"{output.Name}:{output.Type}"));
+        var outcomeSummary = string.Join(";", definition.Outcomes);
         definition.CustomProperties.TryGetValue<string>("Custom:Owner", out var customPropertyValue);
 
-        return new(definition.Name, definition.Description, variableSummary, definition.Options.UsableAsActivity, customPropertyValue);
+        return new(
+            definition.Name,
+            definition.Description,
+            variableSummary,
+            definition.Options.UsableAsActivity,
+            inputSummary,
+            outputSummary,
+            outcomeSummary,
+            definition.ToolVersion,
+            definition.IsReadonly,
+            customPropertyValue);
     }
 
     private async Task<WorkflowDefinition> FindLatestDefinitionAsync(string definitionId)
