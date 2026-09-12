@@ -311,7 +311,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
     /// designer save — <see cref="IWorkflowDefinitionPublisher.GetDraftAsync(string, VersionOptions, CancellationToken)"/>
     /// then <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/> — that carries the published version 1 to a
     /// draft version 2, the shape a publish followed by any ordinary save takes. See
-    /// <see cref="PublishSimulation.PublishLatestAsync"/>.
+    /// <see cref="DefinitionPublishing.PublishLatestAsync"/>.
     /// </summary>
     private async Task<string> ImportThenPublishAsync()
     {
@@ -320,7 +320,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         Assert.True(imported.ImportResult.Succeeded);
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
-        await PublishSimulation.PublishLatestAsync(DefinitionPublisher, definitionId);
+        await DefinitionPublishing.PublishLatestAsync(DefinitionPublisher, definitionId);
 
         return definitionId;
     }

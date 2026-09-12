@@ -946,13 +946,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
     /// <summary>
     /// Publishes the latest version of <paramref name="definitionId"/> through the real
-    /// <see cref="IWorkflowDefinitionPublisher"/>. See <see cref="PublishSimulation.PublishLatestAsync"/>.
+    /// <see cref="IWorkflowDefinitionPublisher"/>. See <see cref="DefinitionPublishing.PublishLatestAsync"/>.
     /// </summary>
     private async Task MarkLatestPublishedAsync(string definitionId)
     {
         using var scope = _app!.Services.CreateScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
-        await PublishSimulation.PublishLatestAsync(publisher, definitionId);
+        await DefinitionPublishing.PublishLatestAsync(publisher, definitionId);
     }
 
     /// <summary>

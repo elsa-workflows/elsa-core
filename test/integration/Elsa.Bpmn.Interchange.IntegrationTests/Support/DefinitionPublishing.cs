@@ -8,7 +8,7 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Support;
 /// one place every test that needs a published-then-edited definition goes through, rather than each duplicating
 /// this call and its success assertion.
 /// </summary>
-internal static class PublishSimulation
+internal static class DefinitionPublishing
 {
     /// <summary>
     /// Publishes the latest version of <paramref name="definitionId"/> via <paramref name="publisher"/>, asserting
