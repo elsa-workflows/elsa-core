@@ -419,7 +419,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// element opens. Handed back, that copy would come first on the next read, overriding a marker the client changed
     /// or removed, and every write would add another. So it is dropped from a kept body whenever the element carries a
     /// marker in the model, as stored or as posted, and kept only as the sole record of one the reader could not
-    /// interpret.
+    /// interpret. This is tracked upstream as <see href="https://github.com/valence-works/bpmn/issues/21">valence-works/bpmn#21</see>;
+    /// remove this workaround once a <c>Bpmn.Interchange</c> release containing that fix is adopted.
     /// </para>
     /// <para>
     /// A definition without stored source has no body to keep; its subprocesses are written as the document declares

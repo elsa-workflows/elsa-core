@@ -308,7 +308,9 @@ public class BpmnDocumentRoundTripTests : BpmnBindingTestBase
     /// onto its element and retains a copy as foreign content of the nested process it opens, so <c>Export</c>, which
     /// writes exactly what it read, emits the marker twice: once from the element, once from the retained copy, at the
     /// position the stored document had it. That position moves when a document <c>PUT</c> rewrites the stored document,
-    /// even though the marker does not. Comparing the distinct markers still fails on a marker lost or changed.
+    /// even though the marker does not. Comparing the distinct markers still fails on a marker lost or changed. Tracked
+    /// upstream as <see href="https://github.com/valence-works/bpmn/issues/21">valence-works/bpmn#21</see>; remove this
+    /// workaround once a <c>Bpmn.Interchange</c> release containing that fix is adopted.
     /// </summary>
     private static string ComparableContentOf(XElement element)
     {
