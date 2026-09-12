@@ -350,7 +350,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [Fact]
     public async Task DocumentPut_WithTheCurrentIfMatch_ReturnsOkWithANewETagWhenTheContentChanged()
     {
-        var definitionId = await ImportCamundaOrderProcessWrittenBackAsync();
+        var definitionId = await ImportWrittenBackAsync("camunda-order-process.bpmn");
         var (currentETag, documentJson) = await GetDocumentAsync(definitionId);
 
         var putResponse = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), currentETag);
@@ -363,10 +363,17 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Equal(newETag, (await GetDocumentAsync(definitionId)).ETag);
     }
 
-    [Fact]
-    public async Task DocumentPut_OfUnchangedContent_ReturnsTheETagTheGetReturned()
+    [Theory]
+    [InlineData("camunda-order-process.bpmn")]
+    [InlineData("subprocess-boundary-events.bpmn")]
+    [InlineData("transaction-compensation.bpmn")]
+    [InlineData("nested-subprocesses.bpmn")]
+    public async Task DocumentPut_OfUnchangedContent_ReturnsTheETagTheGetReturned(string assetFileName)
     {
-        var definitionId = await ImportCamundaOrderProcessWrittenBackAsync();
+        // The nested fixtures prove the subprocess bodies a PUT writes back from the stored document come out
+        // byte-identical every time, including a multi-instance subprocess, top-level or nested, whose marker the library
+        // also retains in the body and would otherwise write one more copy of on every PUT.
+        var definitionId = await ImportWrittenBackAsync(assetFileName);
         var (currentETag, documentJson) = await GetDocumentAsync(definitionId);
 
         var putResponse = await PutDocumentAsync(definitionId, documentJson, currentETag);
@@ -379,7 +386,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [Fact]
     public async Task DocumentPut_AfterAnInterveningDocumentPut_ReturnsPreconditionFailedAndOverwritesNothing()
     {
-        var definitionId = await ImportCamundaOrderProcessWrittenBackAsync();
+        var definitionId = await ImportWrittenBackAsync("camunda-order-process.bpmn");
         var (staleETag, documentJson) = await GetDocumentAsync(definitionId);
         var storedBeforeInterveningPut = await LatestStoredAsync(definitionId);
 
@@ -856,10 +863,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     /// <summary>Imports <c>camunda-order-process.bpmn</c> through the real endpoint and returns the resulting <c>definitionId</c>.</summary>
-    private async Task<string> ImportCamundaOrderProcessAsync()
+    private Task<string> ImportCamundaOrderProcessAsync() => ImportAssetAsync("camunda-order-process.bpmn");
+
+    /// <summary>Imports the fixture <paramref name="assetFileName"/> through the real endpoint and returns the resulting <c>definitionId</c>.</summary>
+    private async Task<string> ImportAssetAsync(string assetFileName)
     {
         using var content = new MultipartFormDataContent();
-        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
+        AddBpmnFile(content, ReadAsset(assetFileName), "file");
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -868,13 +878,14 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     /// <summary>
-    /// Imports <c>camunda-order-process.bpmn</c> and writes its document straight back once through the document PUT, so
-    /// what is stored is the writer's own rendering of it rather than the uploaded bytes. From there only an actual edit
-    /// changes the stored content, which is what lets a test attribute an ETag change — or its absence — to one write.
+    /// Imports the fixture <paramref name="assetFileName"/> and writes its document straight back once through the
+    /// document PUT, so what is stored is the writer's own rendering of it rather than the uploaded bytes. From there only
+    /// an actual edit changes the stored content, which is what lets a test attribute an ETag change — or its absence — to
+    /// one write.
     /// </summary>
-    private async Task<string> ImportCamundaOrderProcessWrittenBackAsync()
+    private async Task<string> ImportWrittenBackAsync(string assetFileName)
     {
-        var definitionId = await ImportCamundaOrderProcessAsync();
+        var definitionId = await ImportAssetAsync(assetFileName);
         var (etag, documentJson) = await GetDocumentAsync(definitionId);
         var response = await PutDocumentAsync(definitionId, documentJson, etag);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
