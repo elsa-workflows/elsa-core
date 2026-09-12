@@ -84,6 +84,7 @@ public class DeadlineBreachEndToEndTests
             CancellationToken.None)).ToList();
 
         Assert.NotEmpty(interruptedInstances);
+        Assert.Equal(WorkflowStatus.Running, interruptedInstances[0].Status);
         Assert.False(interruptedInstances[0].IsExecuting,
             "An Interrupted instance must have IsExecuting=false so the existing timeout-based crash recovery does not also pick it up.");
 
