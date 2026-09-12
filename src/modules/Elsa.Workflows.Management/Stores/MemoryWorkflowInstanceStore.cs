@@ -174,29 +174,31 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
         // Same lock as Save/Update so a runner's terminal persist cannot land between the
-        // interruptible check and the Interrupted mutations.
+        // non-terminal check and the Interrupted mutations.
         lock (_sync)
         {
             var instance = _store.Find(x => x.Id == workflowInstanceId);
-            if (instance is null || IsNaturallyCompleted(instance))
+            if (instance is null)
                 return ValueTask.FromResult(false);
 
-            // Finished/Cancelled is interruptible only when the caller has already established
-            // drain origin (deadline breach / operator force). Promote to Running+Interrupted
-            // so the recovery scan can requeue it.
+            if (instance.Status == WorkflowStatus.Finished)
+            {
+                if (!allowFinishedCancelled || instance.SubStatus != WorkflowSubStatus.Cancelled)
+                    return ValueTask.FromResult(false);
+            }
+
             instance.Status = WorkflowStatus.Running;
             instance.SubStatus = WorkflowSubStatus.Interrupted;
             instance.IsExecuting = false;
 
-            // In-place completion on the same object does not take this lock. If a natural
-            // completion landed, do not keep Interrupted or report success.
+            // In-place completion on the same object does not take this lock. If Status became
+            // Finished, do not keep Interrupted or report success.
             if (instance.Status == WorkflowStatus.Finished)
             {
-                if (instance.SubStatus == WorkflowSubStatus.Interrupted)
-                    instance.SubStatus = WorkflowSubStatus.Finished;
+                instance.SubStatus = WorkflowSubStatus.Finished;
                 instance.IsExecuting = false;
                 return ValueTask.FromResult(false);
             }
@@ -204,13 +206,6 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             return ValueTask.FromResult(true);
         }
     }
-
-    /// <summary>
-    /// Naturally completed rows must not be interrupted. Finished/Cancelled is the opposite:
-    /// that is the expected runner commit after a drain force-cancel and is interruptible.
-    /// </summary>
-    private static bool IsNaturallyCompleted(WorkflowInstance instance) =>
-        instance.Status == WorkflowStatus.Finished && instance.SubStatus != WorkflowSubStatus.Cancelled;
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 

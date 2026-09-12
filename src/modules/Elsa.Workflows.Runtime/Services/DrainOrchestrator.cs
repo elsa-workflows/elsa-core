@@ -300,10 +300,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             ? WorkflowInterruptedPayload.ReasonOperatorForce
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
-        // Snapshot before Phase A: a user-cancelled instance can still have its original
-        // execution cycle live. Those Finished/Cancelled rows must stay cancelled. Only
-        // instances that are not already Cancelled are drain-induced and may be promoted
-        // after the runner commits Cancelled in response to handle.Cancel().
+        // Snapshot before Phase A. Same-cycle user cancel and drain force-cancel both persist
+        // Finished/Cancelled; scoping promote to this drain's force-cancelled ids that were
+        // not already Cancelled is enough for 3.8.1. Do not redesign Cancelled.
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var handle in live)
         {
@@ -448,12 +447,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         try
         {
-            // Conditional write: do not SaveAsync the Find snapshot. A runner can commit a natural
-            // completion between the read and a full-entity save, which would revert Status to
-            // Running and let startup recovery requeue a completed instance. Drain-induced
-            // Finished/Cancelled (runner commit after handle.Cancel) is interruptible; a
-            // user-cancelled snapshot is not.
-            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken);
+            // Conditional write: do not SaveAsync the Find snapshot. Default TryMark refuses
+            // every Finished row (#8052). Drain alone may set allowFinishedCancelled when
+            // this id is in the force-cancelled set and the runner committed Cancelled.
+            var allowFinishedCancelled = instance.Status == WorkflowStatus.Finished
+                && instance.SubStatus == WorkflowSubStatus.Cancelled
+                && drainInducedInstanceIds.Contains(instance.Id);
+            var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken, allowFinishedCancelled);
             if (!marked)
             {
                 _logger.LogInformation(

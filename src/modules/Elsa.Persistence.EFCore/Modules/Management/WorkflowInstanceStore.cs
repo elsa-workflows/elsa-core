@@ -194,11 +194,11 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+    public async ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false)
     {
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var updated = await dbContext.WorkflowInstances
-            .Where(x => x.Id == workflowInstanceId && (x.Status != WorkflowStatus.Finished || x.SubStatus == WorkflowSubStatus.Cancelled))
+            .Where(x => x.Id == workflowInstanceId && (x.Status != WorkflowStatus.Finished || (allowFinishedCancelled && x.SubStatus == WorkflowSubStatus.Cancelled)))
             .ExecuteUpdateAsync(
                 setters => setters
                     .SetProperty(x => x.Status, WorkflowStatus.Running)

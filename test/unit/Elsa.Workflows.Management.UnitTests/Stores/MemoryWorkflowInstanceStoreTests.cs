@@ -31,8 +31,8 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.False(instance.IsExecuting);
     }
 
-    [Fact(DisplayName = "TryMarkInterruptedAsync promotes Finished/Cancelled to Running+Interrupted")]
-    public async Task TryMarkInterrupted_MarksCancelledInstance()
+    [Fact(DisplayName = "TryMarkInterruptedAsync refuses Finished/Cancelled unless allowFinishedCancelled is set")]
+    public async Task TryMarkInterrupted_DoesNotOverwriteCancelledInstanceByDefault()
     {
         var store = CreateStore(new WorkflowInstance
         {
@@ -47,12 +47,58 @@ public class MemoryWorkflowInstanceStoreTests
 
         var marked = await store.TryMarkInterruptedAsync("cancelled-1");
 
+        Assert.False(marked);
+        var instance = await store.FindAsync(new() { Id = "cancelled-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(WorkflowStatus.Finished, instance.Status);
+        Assert.Equal(WorkflowSubStatus.Cancelled, instance.SubStatus);
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync promotes Finished/Cancelled only when allowFinishedCancelled is true")]
+    public async Task TryMarkInterrupted_PromotesCancelledWhenAllowed()
+    {
+        var store = CreateStore(new WorkflowInstance
+        {
+            Id = "cancelled-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Finished,
+            SubStatus = WorkflowSubStatus.Cancelled,
+            IsExecuting = false,
+        });
+
+        var marked = await store.TryMarkInterruptedAsync("cancelled-1", allowFinishedCancelled: true);
+
         Assert.True(marked);
         var instance = await store.FindAsync(new() { Id = "cancelled-1" });
         Assert.NotNull(instance);
         Assert.Equal(WorkflowStatus.Running, instance.Status);
         Assert.Equal(WorkflowSubStatus.Interrupted, instance.SubStatus);
         Assert.False(instance.IsExecuting);
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync still refuses Finished/Finished when allowFinishedCancelled is true")]
+    public async Task TryMarkInterrupted_DoesNotOverwriteFinishedEvenWhenCancelledAllowed()
+    {
+        var store = CreateStore(new WorkflowInstance
+        {
+            Id = "finished-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Finished,
+            SubStatus = WorkflowSubStatus.Finished,
+            IsExecuting = false,
+        });
+
+        var marked = await store.TryMarkInterruptedAsync("finished-1", allowFinishedCancelled: true);
+
+        Assert.False(marked);
+        var instance = await store.FindAsync(new() { Id = "finished-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(WorkflowStatus.Finished, instance.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, instance.SubStatus);
     }
 
     [Fact(DisplayName = "TryMarkInterruptedAsync does not overwrite a Finished instance")]
