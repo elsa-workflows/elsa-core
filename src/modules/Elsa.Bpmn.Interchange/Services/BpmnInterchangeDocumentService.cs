@@ -317,6 +317,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// finds the value that was used the first time.
     /// </param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <exception cref="Exceptions.BpmnDefinitionNotFoundException">
+    /// The workflow definition to edit no longer exists — e.g. it was deleted between the PUT endpoint's own
+    /// existence/ETag check and this lookup. A missing preservation source must never fall through to the
+    /// whole-definition import path, which would silently create a definition under <paramref name="definitionId"/>
+    /// with reset metadata instead of reporting that this PUT's target disappeared.
+    /// </exception>
     /// <exception cref="BpmnInterchangeException">The document declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
@@ -324,6 +330,13 @@ public sealed class BpmnInterchangeDocumentService(
     {
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var existingDefinition = await store.FindAsync(filter, cancellationToken);
+
+        if (existingDefinition is null)
+        {
+            throw new BpmnDefinitionNotFoundException(
+                $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
+        }
+
         var xml = writer.Write(document);
         return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: existingDefinition, cancellationToken);
     }
