@@ -118,6 +118,44 @@ public class HttpWorkflowsMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WithTenantPrefixedWorkflowPath_StillResolvesRoute()
+    {
+        var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var stimulusHasher = new CapturingStimulusHasher();
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        routeMatcher.Match("/{tenantPrefix}/workflows/colliding", "/acme/workflows/colliding").Returns(new RouteValueDictionary(new Dictionary<string, object?> { ["tenantPrefix"] = "acme" }));
+        var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/{tenantPrefix}/workflows/colliding")]))
+            .AddSingleton<IStimulusHasher>(stimulusHasher)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/acme/workflows/colliding";
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.False(nextCalled);
+        routeMatcher.Received(1).Match("/{tenantPrefix}/workflows/colliding", "/acme/workflows/colliding");
+        Assert.Equal("/colliding", stimulusHasher.LastPayload?.Path);
+        Assert.NotNull(bookmarkStore.LastFilter);
+    }
+
+    [Fact]
     public async Task HandleWorkflowFaultAsync_UsesReloadedWorkflowState_WhenAvailable()
     {
         var workflowState = CreateFaultedWorkflowState("workflow-1");
@@ -330,6 +368,17 @@ public class HttpWorkflowsMiddlewareTests
     private class FixedStimulusHasher : IStimulusHasher
     {
         public string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null) => BookmarkHash;
+    }
+
+    private class CapturingStimulusHasher : IStimulusHasher
+    {
+        public HttpEndpointBookmarkPayload? LastPayload { get; private set; }
+
+        public string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null)
+        {
+            LastPayload = payload as HttpEndpointBookmarkPayload;
+            return BookmarkHash;
+        }
     }
 
     private class ExactRouteMatcher : IRouteMatcher
