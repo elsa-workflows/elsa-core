@@ -187,6 +187,8 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Contains("instance-stalled", outcome.ForceCancelledInstanceIds);
     }
+
+    [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]
     public async Task SkipsInterruptedPersistWhenMarkLosesTerminalRace()
     {
         var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-raced", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
