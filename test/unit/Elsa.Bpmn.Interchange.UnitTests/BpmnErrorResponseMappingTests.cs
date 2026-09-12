@@ -56,6 +56,21 @@ public class BpmnErrorResponseMappingTests
         Assert.Null(response.Data);
     }
 
+    [Fact(DisplayName = "A duplicate-element-id refusal is coded bpmn.import.duplicate-element-id, carrying the duplicated ids as data")]
+    public void DuplicateElementIdResponseFor_CarriesTheCodeAndTheStructuredData()
+    {
+        var exception = new BpmnDuplicateElementIdException("The document declares the same element id more than once: Outer.", ["Outer"]);
+
+        var response = BpmnImportErrorResponses.DuplicateElementIdResponseFor(exception);
+
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, response.Code);
+        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
+        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
+
+        dynamic data = response.Data!;
+        Assert.Equal(new[] { "Outer" }, (IReadOnlyList<string>)data.ElementIds);
+    }
+
     [Fact(DisplayName = "A definition-not-found refusal is coded bpmn.document.not-found")]
     public void NotFoundResponseFor_CarriesTheCode()
     {

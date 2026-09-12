@@ -226,6 +226,13 @@ public sealed class BpmnInterchangeDocumentService(
         CancellationToken cancellationToken)
     {
         var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
+
+        // Before anything below walks into a nested process by matching an id, refuse a document that repeats one:
+        // see EnsureElementIdsUnique's remarks for why that walk is otherwise not provably finite. reader.Read itself
+        // never recurses this way — it walks the XML's own element tree, not an id lookup — so it is safe to call
+        // first and check its result.
+        EnsureElementIdsUnique(result.Definitions.Processes, result.Bindings);
+
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
         EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
@@ -384,7 +391,15 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
         }
 
-        var xml = writer.Write(document, StoredNestedScopesStillDeclaredBy(document, existingDefinition));
+        var storedNestedScopes = StoredNestedScopesStillDeclaredBy(document, existingDefinition);
+
+        // Unlike ImportAsync's xml, writer.Write itself is one of the sites that walks nested processes by matching
+        // an id (see EnsureElementIdsUnique's remarks), and it runs before ImportCoreAsync — and the same check
+        // inside it — ever sees this document. So it is checked here too, against exactly the inputs writer.Write is
+        // about to receive, before that call rather than after it.
+        EnsureElementIdsUnique(document.Processes, storedNestedScopes);
+
+        var xml = writer.Write(document, storedNestedScopes);
         return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: existingDefinition, cancellationToken);
     }
 
@@ -593,6 +608,57 @@ public sealed class BpmnInterchangeDocumentService(
 
         throw new BpmnInterchangeException(
             $"The document declares {definitions.Processes.Count} processes ({declared}); specify which one to import.");
+    }
+
+    /// <summary>
+    /// Refuses a document that declares the same element id more than once, naming the duplicated ids.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// BPMN requires every element id to be unique within a document. The library's own reader tolerates a repeat —
+    /// <c>BpmnXmlReader</c> walks the XML's own element tree, so it terminates regardless of what any id says — but
+    /// nothing downstream of it does: this type's own <c>EnsureCapabilitiesSatisfied</c> and <c>BpmnWorkBinder.BindScope</c>
+    /// both find "the nested processes belonging to this scope" by matching <see cref="BpmnWorkBinding.ProcessId"/>
+    /// against the scope's own id, and <c>Bpmn.Interchange</c>'s own <c>BpmnXmlWriter</c> does the same by matching
+    /// <see cref="BpmnWorkBinding.BindingRef"/>. A <see cref="BpmnWorkBinding.NestedProcess"/>'s own
+    /// <see cref="BpmnProcessDefinition.ProcessId"/> is always the element id of the subprocess element that opens
+    /// it, so a subprocess nested inside another subprocess that reuses its parent's id makes that lookup find its
+    /// own parent — or itself — again on every step down. Each of those three walks then recurses without ever
+    /// terminating and crashes the process outright: .NET cannot catch a <see cref="StackOverflowException"/>. This
+    /// runs before any of them does, so a document like that is refused rather than crashing the server.
+    /// </para>
+    /// <para>
+    /// Once every element id is unique, that recursion is provably finite without a separate depth guard: a scope's
+    /// nested processes can then only ever be the ones its own <see cref="BpmnWorkBinding.ProcessId"/> or
+    /// <see cref="BpmnWorkBinding.BindingRef"/> actually names, so the walk can only ever follow the tree the
+    /// document's own nesting describes.
+    /// </para>
+    /// </remarks>
+    /// <param name="processes">The document's own top-level process bodies.</param>
+    /// <param name="bindings">
+    /// Every binding across the same processes, so every subprocess body nested inside them — which is not one of
+    /// <paramref name="processes"/> itself, and carries elements <paramref name="processes"/> does not enumerate —
+    /// is covered too.
+    /// </param>
+    /// <exception cref="BpmnDuplicateElementIdException">An element id is declared more than once.</exception>
+    internal static void EnsureElementIdsUnique(IEnumerable<BpmnProcessDefinition> processes, IReadOnlyList<BpmnWorkBinding> bindings)
+    {
+        var duplicateIds = processes
+            .Concat(bindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
+            .SelectMany(process => process.Elements)
+            .GroupBy(element => element.ElementId, StringComparer.Ordinal)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+
+        if (duplicateIds.Count == 0)
+            return;
+
+        throw new BpmnDuplicateElementIdException(
+            $"The document declares the same element id more than once, which BPMN requires to be unique: {string.Join(", ", duplicateIds)}. "
+            + "This is most often a subprocess nested inside another subprocess that reuses its parent's id. Reading or writing such a document "
+            + "cannot be done safely, so it is refused rather than attempted.",
+            duplicateIds);
     }
 
     /// <summary>
