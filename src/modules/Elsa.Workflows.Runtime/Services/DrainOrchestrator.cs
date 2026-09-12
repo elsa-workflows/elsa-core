@@ -307,12 +307,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             ? WorkflowInterruptedPayload.ReasonOperatorForce
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
-        // Snapshot before Phase A, bounded so a stalled FindAsync cannot block Cancel.
-        // Only a successful read that is clearly not already Cancelled joins drainInduced.
-        // Timeout/error: exclude that id (prefer preserving user-cancel / #8052 over promoting
-        // an unknown row). Then force-cancel every handle immediately.
+        // Snapshot before Phase A. Each Find has its own 250ms budget so a stalled
+        // first read cannot starve later instances. Finds run concurrently so Phase A
+        // Cancel waits ~one per-find timeout, not N×timeout. Timeout/error: exclude
+        // that id (prefer preserving user-cancel / #8052 over promoting an unknown row).
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var handle in live)
+        var snapshotTasks = live.Select(async handle =>
         {
             try
             {
@@ -324,12 +324,20 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                     .WaitAsync(perFindCts.Token)
                     .ConfigureAwait(false);
                 if (snapshot is null || snapshot.SubStatus != WorkflowSubStatus.Cancelled)
-                    drainInducedInstanceIds.Add(handle.WorkflowInstanceId);
+                    return handle.WorkflowInstanceId;
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
                 _logger.LogWarning(ex, "Pre-cancel snapshot for instance {InstanceId} timed out or failed; excluding from drain-induced promote.", handle.WorkflowInstanceId);
             }
+
+            return null;
+        });
+
+        foreach (var instanceId in await Task.WhenAll(snapshotTasks).ConfigureAwait(false))
+        {
+            if (instanceId is not null)
+                drainInducedInstanceIds.Add(instanceId);
         }
 
         // Force-cancel proceeds in three phases. The split exists because cancelling and

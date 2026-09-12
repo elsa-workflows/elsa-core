@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.HostedServices;
@@ -245,6 +246,61 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.Equal(2, outcome.ExecutionCyclesForceCancelledCount);
         await InstanceStore.DidNotReceive().TryMarkInterruptedAsync("instance-stalled", Arg.Any<CancellationToken>(), Arg.Any<bool>());
         await InstanceStore.Received().TryMarkInterruptedAsync("instance-recovered", Arg.Any<CancellationToken>(), false);
+    }
+
+    [Fact(DisplayName = "Many stalled pre-cancel Finds do not serialize Phase A Cancel behind N snapshot timeouts")]
+    public async Task ParallelStalledSnapshotsDoNotSerializeForceCancel()
+    {
+        const int count = 8;
+        var handles = Enumerable.Range(0, count)
+            .Select(i => new ExecutionCycleHandle(Guid.NewGuid(), $"instance-stalled-{i}", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None))
+            .ToArray();
+        ExecutionCycleRegistry.ActiveCount.Returns(count);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(handles);
+
+        var hang = new TaskCompletionSource<WorkflowInstance?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+            {
+                var id = ci.Arg<WorkflowInstanceFilter>().Id!;
+                lock (seen)
+                {
+                    if (seen.Add(id))
+                        return new ValueTask<WorkflowInstance?>(hang.Task);
+                }
+
+                return new ValueTask<WorkflowInstance?>(new WorkflowInstance
+                {
+                    Id = id,
+                    DefinitionId = "def-1",
+                    DefinitionVersionId = "ver-1",
+                    Version = 1,
+                    Status = WorkflowStatus.Finished,
+                    SubStatus = WorkflowSubStatus.Cancelled,
+                    IsExecuting = false,
+                });
+            });
+
+        var sut = BuildSut();
+        var started = Stopwatch.StartNew();
+        var drainTask = sut.DrainAsync(DrainTrigger.OperatorForce).AsTask();
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+        while (handles.Any(h => !h.CancellationToken.IsCancellationRequested) && DateTime.UtcNow < deadline)
+            await Task.Delay(10);
+
+        var cancelElapsed = started.Elapsed;
+        Assert.All(handles, h => Assert.True(h.CancellationToken.IsCancellationRequested));
+        Assert.True(
+            cancelElapsed < TimeSpan.FromSeconds(1),
+            $"Phase A Cancel waited {cancelElapsed}; concurrent snapshots must finish in ~one 250ms window, not {count}×250ms.");
+        Assert.False(hang.Task.IsCompleted);
+
+        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(8));
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(count, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<bool>());
     }
 
     [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]
