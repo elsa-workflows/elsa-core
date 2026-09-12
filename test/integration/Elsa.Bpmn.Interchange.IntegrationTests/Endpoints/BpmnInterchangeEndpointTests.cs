@@ -945,21 +945,14 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     /// <summary>
-    /// Marks the latest version of <paramref name="definitionId"/> published, directly on the stored row, rather
-    /// than through <see cref="IWorkflowDefinitionPublisher.PublishAsync(string, CancellationToken)"/>, which runs
-    /// the runtime's own trigger-payload validation gate — orthogonal to what a test using this exercises, and not
-    /// satisfied by the camunda-order-process.bpmn fixture these tests otherwise read unmodified. Only "this row is
-    /// the published version <see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/> branches on" matters here.
+    /// Marks the latest version of <paramref name="definitionId"/> published, directly on the stored row. See
+    /// <see cref="PublishSimulation.MarkLatestPublishedAsync"/> for why publish is simulated rather than real.
     /// </summary>
     private async Task MarkLatestPublishedAsync(string definitionId)
     {
         using var scope = _app!.Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
-        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
-        var definition = await store.FindAsync(filter);
-        Assert.NotNull(definition);
-        definition!.IsPublished = true;
-        await store.SaveAsync(definition);
+        await PublishSimulation.MarkLatestPublishedAsync(store, definitionId);
     }
 
     /// <summary>

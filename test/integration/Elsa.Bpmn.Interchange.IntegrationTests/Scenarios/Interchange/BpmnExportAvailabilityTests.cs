@@ -310,17 +310,9 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
     /// Imports the standard fixture and marks the resulting draft published, so a test can go on to exercise a
     /// designer save — <see cref="IWorkflowDefinitionPublisher.GetDraftAsync(string, VersionOptions, CancellationToken)"/>
     /// then <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/> — that carries the published version 1 to a
-    /// draft version 2, the shape a publish followed by any ordinary save takes.
+    /// draft version 2, the shape a publish followed by any ordinary save takes. See
+    /// <see cref="PublishSimulation.MarkLatestPublishedAsync"/> for why publish is simulated rather than real.
     /// </summary>
-    /// <remarks>
-    /// Sets <see cref="WorkflowDefinition.IsPublished"/> directly on the stored row rather than going through
-    /// <see cref="IWorkflowDefinitionPublisher.PublishAsync(string, CancellationToken)"/>, which runs the runtime's
-    /// own trigger-payload validation gate — orthogonal to this finding, and not satisfied by the camunda fixture
-    /// this test suite otherwise reads unmodified. Only "this row is the published version other code branches on"
-    /// matters here, which is what <see cref="IWorkflowDefinitionPublisher.GetDraftAsync(string, VersionOptions, CancellationToken)"/>
-    /// itself keys off, so this puts the definition in the same state a successful publish would without exercising
-    /// that unrelated gate.
-    /// </remarks>
     private async Task<string> ImportThenPublishAsync()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
@@ -328,9 +320,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         Assert.True(imported.ImportResult.Succeeded);
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
-        var stored = await FindLatestAsync(definitionId);
-        stored.IsPublished = true;
-        await DefinitionStore.SaveAsync(stored);
+        await PublishSimulation.MarkLatestPublishedAsync(DefinitionStore, definitionId);
 
         return definitionId;
     }
