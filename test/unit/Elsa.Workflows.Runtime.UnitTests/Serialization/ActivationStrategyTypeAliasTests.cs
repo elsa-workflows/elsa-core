@@ -1,7 +1,11 @@
 using System.Text.Json;
+using Elsa.Common.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime.ActivationValidators;
+using Elsa.Workflows.Serialization.Converters;
+using Elsa.Workflows.Services;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Serialization;
 
@@ -18,7 +22,7 @@ public class ActivationStrategyTypeAliasTests
     [MemberData(nameof(BuiltInActivationStrategies))]
     public void When_RegisterRuntimeAliases_Then_ResolvesPreferredAndLegacyNames(Type strategyType, string alias)
     {
-        var registry = ActivationStrategyAliasTestHelpers.CreateRegistry();
+        var registry = CreateRegistry();
 
         Assert.True(registry.TryGetAlias(strategyType, out var registeredAlias));
         Assert.Equal(alias, registeredAlias);
@@ -32,7 +36,7 @@ public class ActivationStrategyTypeAliasTests
     [MemberData(nameof(BuiltInActivationStrategies))]
     public void When_DeserializeWorkflowOptions_Then_ResolvesActivationStrategyType(Type strategyType, string alias)
     {
-        var options = ActivationStrategyAliasTestHelpers.CreateJsonOptions();
+        var options = CreateJsonOptions();
 
         var byAlias = JsonSerializer.Deserialize<WorkflowOptions>($$"""{"activationStrategyType":{{JsonSerializer.Serialize(alias)}}}""", options);
         Assert.Equal(strategyType, byAlias!.ActivationStrategyType);
@@ -47,4 +51,18 @@ public class ActivationStrategyTypeAliasTests
         var roundTrip = JsonSerializer.Deserialize<WorkflowOptions>(serialized, options);
         Assert.Equal(strategyType, roundTrip!.ActivationStrategyType);
     }
+
+    private static ISerializationTypeRegistry CreateRegistry()
+    {
+        var options = new SerializationTypeOptions();
+        WorkflowRuntimeTypeAliasRegistrar.Register(options, []);
+        return new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions() => new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new TypeJsonConverter(CreateRegistry()) }
+    };
 }

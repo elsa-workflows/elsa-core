@@ -3,7 +3,6 @@ using Elsa.Common.Serialization;
 using Elsa.Extensions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
-using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Features;
@@ -151,7 +150,7 @@ public class WorkflowRuntimeFeatureTests
         var options = new SerializationTypeOptions();
 
         RegisterWorkflowTypeAliases(_feature, options);
-        var registry = SerializationTypeTestHelpers.CreateRegistry(options);
+        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
 
         AssertActivationStrategyAlias(options, registry, typeof(SingletonStrategy), nameof(SingletonStrategy));
         AssertActivationStrategyAlias(options, registry, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));
@@ -164,7 +163,7 @@ public class WorkflowRuntimeFeatureTests
         var options = new SerializationTypeOptions();
 
         RegisterWorkflowTypeAliases(_shellFeature, options);
-        var registry = SerializationTypeTestHelpers.CreateRegistry(options);
+        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
 
         AssertActivationStrategyAlias(options, registry, typeof(SingletonStrategy), nameof(SingletonStrategy));
         AssertActivationStrategyAlias(options, registry, typeof(CorrelatedSingletonStrategy), nameof(CorrelatedSingletonStrategy));

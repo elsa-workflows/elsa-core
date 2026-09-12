@@ -1,7 +1,9 @@
 using Elsa.Extensions;
-using Elsa.Testing.Shared;
 using Elsa.Workflows.ActivationValidators;
 using Elsa.Workflows.Api.Endpoints.WorkflowActivationStrategies.List;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Services;
+using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowActivationStrategies;
 
@@ -10,8 +12,10 @@ public class ListTests
     [Fact]
     public async Task ExecuteAsync_ReturnsWorkflowJsonTypeIdentifier_ForActivationStrategyTypeName()
     {
-        var registry = SerializationTypeTestHelpers.CreateRegistry(options =>
-            options.AddTypeAliasWithLegacyName<AllowAlwaysStrategy>(nameof(AllowAlwaysStrategy)));
+        var options = new SerializationTypeOptions();
+        options.RegisterTypeAlias(typeof(AllowAlwaysStrategy), nameof(AllowAlwaysStrategy));
+        options.RegisterLegacySimpleAssemblyQualifiedName(typeof(AllowAlwaysStrategy));
+        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
         var endpoint = new List([new AllowAlwaysStrategy()], registry);
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
