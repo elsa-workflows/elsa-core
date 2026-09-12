@@ -20,11 +20,28 @@ internal static class BpmnCapabilityErrorFormatter
     /// <summary>The message an endpoint reports for <paramref name="exception"/>.</summary>
     public static string Format(BpmnCapabilityException exception)
     {
-        var missingCapabilities = string.Join(", ", BpmnInterchangeDocumentService.IndividualCapabilities.Where(capability => exception.Missing.HasFlag(capability)));
+        var missingCapabilities = string.Join(", ", MissingCapabilityNames(exception));
         var elementIds = string.Join(", ", exception.DrivingElementIds);
 
         return
             $"This deployment does not declare the following BPMN host capabilities the document requires: {missingCapabilities}. "
             + $"Offending elements (combined across all missing capabilities above, not attributable to any one of them): {elementIds}.";
     }
+
+    /// <summary>
+    /// The structured <c>data</c> the <see cref="BpmnErrorCodes.ImportCapabilityUnsupported"/> response carries
+    /// alongside <see cref="Format"/>'s message: the missing capability names and the offending element ids, under
+    /// the same "combined, not attributable to any one capability" caveat <see cref="Format"/>'s remarks explain.
+    /// </summary>
+    public static object DataFor(BpmnCapabilityException exception) => new
+    {
+        Capabilities = MissingCapabilityNames(exception),
+        ElementIds = exception.DrivingElementIds
+    };
+
+    private static IReadOnlyList<string> MissingCapabilityNames(BpmnCapabilityException exception) =>
+        BpmnInterchangeDocumentService.IndividualCapabilities
+            .Where(capability => exception.Missing.HasFlag(capability))
+            .Select(capability => capability.ToString())
+            .ToList();
 }
