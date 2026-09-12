@@ -184,8 +184,9 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             if (instance is null || IsNaturallyCompleted(instance))
                 return ValueTask.FromResult(false);
 
-            // Finished/Cancelled is the runner's commit after drain force-cancel. Promote to
-            // Running+Interrupted so the recovery scan (Running+Interrupted) can requeue it.
+            // Finished/Cancelled is interruptible only when the caller has already established
+            // drain origin (deadline breach / operator force). Promote to Running+Interrupted
+            // so the recovery scan can requeue it.
             instance.Status = WorkflowStatus.Running;
             instance.SubStatus = WorkflowSubStatus.Interrupted;
             instance.IsExecuting = false;

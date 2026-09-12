@@ -184,7 +184,9 @@ public interface IWorkflowInstanceStore
     /// <see cref="WorkflowInstance.SubStatus"/> to <see cref="WorkflowSubStatus.Interrupted"/>, and
     /// <see cref="WorkflowInstance.IsExecuting"/> to <c>false</c> when the stored instance is still
     /// <see cref="WorkflowStatus.Running"/> or is <see cref="WorkflowStatus.Finished"/> with
-    /// <see cref="WorkflowSubStatus.Cancelled"/> (the runner's commit after a drain force-cancel).
+    /// <see cref="WorkflowSubStatus.Cancelled"/>. Callers must invoke this only for drain-induced
+    /// interruptions (deadline breach / operator force-cancel). An ordinary user cancellation
+    /// that happens to be <see cref="WorkflowSubStatus.Cancelled"/> must not be passed in.
     /// </summary>
     /// <returns>
     /// <c>true</c> when the interrupt markers were applied; <c>false</c> when the instance is missing or already
