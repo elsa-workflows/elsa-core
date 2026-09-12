@@ -25,4 +25,21 @@ public class ListTests
         Assert.True(registry.TryGetType(typeof(AllowAlwaysStrategy).GetSimpleAssemblyQualifiedName(), out var legacyType));
         Assert.Equal(typeof(AllowAlwaysStrategy), legacyType);
     }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenOnlyLegacyNameIsRegistered_AdvertisesResolvableIdentifier()
+    {
+        var options = new SerializationTypeOptions();
+        options.RegisterLegacySimpleAssemblyQualifiedName(typeof(AllowAlwaysStrategy));
+        var registry = new SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(options));
+        var endpoint = new List([new AllowAlwaysStrategy()], registry);
+
+        var response = await endpoint.ExecuteAsync(CancellationToken.None);
+
+        var descriptor = Assert.Single(response.Items);
+        var expectedTypeName = typeof(AllowAlwaysStrategy).GetSimpleAssemblyQualifiedName();
+        Assert.Equal(expectedTypeName, descriptor.TypeName);
+        Assert.True(registry.TryGetType(descriptor.TypeName, out var resolvedType));
+        Assert.Equal(typeof(AllowAlwaysStrategy), resolvedType);
+    }
 }

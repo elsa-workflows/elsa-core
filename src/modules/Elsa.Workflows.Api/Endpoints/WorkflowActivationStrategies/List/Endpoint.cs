@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Elsa.Abstractions;
+using Elsa.Extensions;
 using Elsa.Models;
 using Elsa.Workflows;
 using Humanizer;
@@ -39,7 +40,7 @@ internal record WorkflowActivationStrategyDescriptor(string DisplayName, string 
         var displayName = displayNameAttribute?.DisplayName ?? displayAttribute?.Name ?? type.Name.Replace("Strategy", "").Humanize();
         var description = descriptionAttribute?.Description ?? displayAttribute?.Description ?? "";
 
-        var typeName = workflowJsonTypeRegistry.TryGetAlias(type, out var alias) ? alias : type.FullName!;
+        var typeName = workflowJsonTypeRegistry.TryGetAlias(type, out var alias) ? alias : type.GetSimpleAssemblyQualifiedName();
         return new WorkflowActivationStrategyDescriptor(displayName, description, typeName);
     }
 }
