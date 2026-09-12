@@ -11,13 +11,13 @@ Elsa supports running BPMN 2.0 processes as first-class workflow activities. Two
 
 ```csharp
 // Execution support only (use when you build BpmnProcess in code).
-elsa.AddBpmn();
+elsa.UseBpmn();
 
 // Execution + XML interchange (use when importing .bpmn files).
-elsa.AddBpmnInterchange();
+elsa.UseBpmnInterchange();
 ```
 
-`BpmnInterchangeFeature` depends on `BpmnFeature`; calling `AddBpmnInterchange()` pulls in both.
+`BpmnInterchangeFeature` depends on `BpmnFeature`; calling `UseBpmnInterchange()` pulls in both.
 
 ### Trying it
 
