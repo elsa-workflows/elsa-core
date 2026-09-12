@@ -13,4 +13,5 @@ internal static class BpmnXNamespaces
     public static readonly XNamespace Dc = "http://www.omg.org/spec/DD/20100524/DC";
     public static readonly XNamespace Di = "http://www.omg.org/spec/DD/20100524/DI";
     public static readonly XNamespace Bpmn = "http://www.omg.org/spec/BPMN/20100524/MODEL";
+    public static readonly XNamespace Vw = "https://bpmn.valenceworks.io/schema/bpmn";
 }
