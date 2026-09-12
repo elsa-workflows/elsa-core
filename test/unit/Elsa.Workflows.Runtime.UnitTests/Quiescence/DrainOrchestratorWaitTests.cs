@@ -80,6 +80,34 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "Force-cancel persists Interrupted when the runner already committed Finished/Cancelled")]
+    public async Task PersistsInterruptedForCancelledInstance()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-cancelled", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance
+            {
+                Id = "instance-cancelled",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Finished,
+                SubStatus = WorkflowSubStatus.Cancelled,
+                IsExecuting = false,
+            }));
+        InstanceStore.TryMarkInterruptedAsync("instance-cancelled", Arg.Any<CancellationToken>()).Returns(new ValueTask<bool>(true));
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.Received(1).TryMarkInterruptedAsync("instance-cancelled", Arg.Any<CancellationToken>());
+        await LogStore.Received(1).AddAsync(Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName), Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]
     public async Task SkipsInterruptedPersistWhenMarkLosesTerminalRace()
     {

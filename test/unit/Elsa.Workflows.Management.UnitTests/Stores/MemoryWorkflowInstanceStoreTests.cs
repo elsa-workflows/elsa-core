@@ -31,6 +31,30 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.False(instance.IsExecuting);
     }
 
+    [Fact(DisplayName = "TryMarkInterruptedAsync promotes Finished/Cancelled to Running+Interrupted")]
+    public async Task TryMarkInterrupted_MarksCancelledInstance()
+    {
+        var store = CreateStore(new WorkflowInstance
+        {
+            Id = "cancelled-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Finished,
+            SubStatus = WorkflowSubStatus.Cancelled,
+            IsExecuting = false,
+        });
+
+        var marked = await store.TryMarkInterruptedAsync("cancelled-1");
+
+        Assert.True(marked);
+        var instance = await store.FindAsync(new() { Id = "cancelled-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(WorkflowStatus.Running, instance.Status);
+        Assert.Equal(WorkflowSubStatus.Interrupted, instance.SubStatus);
+        Assert.False(instance.IsExecuting);
+    }
+
     [Fact(DisplayName = "TryMarkInterruptedAsync does not overwrite a Finished instance")]
     public async Task TryMarkInterrupted_DoesNotOverwriteFinishedInstance()
     {

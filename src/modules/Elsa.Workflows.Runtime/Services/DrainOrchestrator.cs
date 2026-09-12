@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Elsa.Common;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -323,12 +324,11 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         // Phase B — wait for every runner to settle in parallel under a shared deadline.
         // The handle disposes when ExecutionCycleTrackingMiddleware exits its `using` block, which
-        // is after the workflow runner has finished its commit. We want runners' terminal
-        // commits to land before we overwrite the sub-status with Interrupted — but we
-        // bound the wait so a non-cancellable activity cannot block drain. PersistInterruptedAsync
-        // applies Interrupted only via a store-level compare-and-set that refuses already-terminal
-        // rows, so a late Finished commit is not overwritten (the recovery scan only requeues
-        // Running+Interrupted).
+        // is after the workflow runner has finished its commit. We want that commit to land first
+        // so PersistInterruptedAsync can overwrite Finished/Cancelled (the runner's reaction to
+        // force-cancel) with Running+Interrupted. Naturally completed rows (Finished/Finished or
+        // Finished/Faulted) are refused so completed work is not requeued. Bound the wait so a
+        // non-cancellable activity cannot block drain.
         // Total wall time for this phase is at most ForceCancelSettleTimeout regardless
         // of N.
         var settleTasks = live.Select(async handle =>
@@ -422,7 +422,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             return;
         }
 
-        if (instance.Status == WorkflowStatus.Finished)
+        if (IsNaturallyCompleted(instance))
         {
             _logger.LogInformation(
                 "Skipping Interrupted persist for instance {InstanceId}: already in terminal status {Status}/{SubStatus}.",
@@ -434,9 +434,10 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         try
         {
-            // Conditional write: do not SaveAsync the Find snapshot. A runner can commit Finished
-            // between the read and a full-entity save, which would revert Status to Running and
-            // let startup recovery requeue a completed instance.
+            // Conditional write: do not SaveAsync the Find snapshot. A runner can commit a natural
+            // completion between the read and a full-entity save, which would revert Status to
+            // Running and let startup recovery requeue a completed instance. Finished/Cancelled is
+            // interruptible: that is the runner's commit after drain force-cancel.
             var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken);
             if (!marked)
             {
@@ -477,4 +478,11 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             .Select(s => new IngressSourceFinalState(s.Name, s.State, s.LastError, WasForceStopped: s.State == IngressSourceState.PauseFailed && s.LastError is not null))
             .ToArray();
     }
+
+    /// <summary>
+    /// Naturally completed rows must not be interrupted. Finished/Cancelled is the runner's
+    /// commit after drain force-cancel and remains interruptible.
+    /// </summary>
+    private static bool IsNaturallyCompleted(WorkflowInstance instance) =>
+        instance.Status == WorkflowStatus.Finished && instance.SubStatus != WorkflowSubStatus.Cancelled;
 }

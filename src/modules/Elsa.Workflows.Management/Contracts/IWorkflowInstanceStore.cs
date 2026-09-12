@@ -180,12 +180,16 @@ public interface IWorkflowInstanceStore
     Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets <see cref="WorkflowInstance.SubStatus"/> to <see cref="WorkflowSubStatus.Interrupted"/> and
-    /// <see cref="WorkflowInstance.IsExecuting"/> to <c>false</c> only if the stored instance is still non-terminal.
+    /// Sets <see cref="WorkflowInstance.Status"/> to <see cref="WorkflowStatus.Running"/>,
+    /// <see cref="WorkflowInstance.SubStatus"/> to <see cref="WorkflowSubStatus.Interrupted"/>, and
+    /// <see cref="WorkflowInstance.IsExecuting"/> to <c>false</c> when the stored instance is still
+    /// <see cref="WorkflowStatus.Running"/> or is <see cref="WorkflowStatus.Finished"/> with
+    /// <see cref="WorkflowSubStatus.Cancelled"/> (the runner's commit after a drain force-cancel).
     /// </summary>
     /// <returns>
     /// <c>true</c> when the interrupt markers were applied; <c>false</c> when the instance is missing or already
-    /// <see cref="WorkflowStatus.Finished"/>. Implementations must not overwrite a concurrent terminal commit.
+    /// naturally completed (<see cref="WorkflowSubStatus.Finished"/> or <see cref="WorkflowSubStatus.Faulted"/>).
+    /// Implementations must not overwrite a concurrent naturally completed commit.
     /// </returns>
     ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default);
 }
