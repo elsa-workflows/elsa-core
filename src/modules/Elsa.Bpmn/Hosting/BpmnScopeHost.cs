@@ -1,4 +1,6 @@
+using System.Globalization;
 using Bpmn.Model;
+using Bpmn.Model.State;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Exceptions;
@@ -7,6 +9,7 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Signals;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Bpmn.Hosting;
 
@@ -151,6 +154,8 @@ internal sealed class BpmnScopeHost
         var evaluation = Interpreter.OnWorkFaulted(new BpmnWorkFaultedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message));
 
+        ProjectDiagnostics(evaluation.State, memory.State);
+
         memory.State = evaluation.State.Prune();
         memory.SaveState();
 
@@ -182,6 +187,12 @@ internal sealed class BpmnScopeHost
             if (evaluation is null)
                 return;
 
+            // Diagnostics are audit-only and capped: projecting from persisted state later would lose whatever
+            // Prune() already dropped, so this runs on the evaluation's own state, before pruning. memory.State is
+            // still what was loaded before this evaluation ran -- the prior state -- since it is not overwritten
+            // until after this call.
+            ProjectDiagnostics(evaluation.State, memory.State);
+
             // Persist the state before acting on the commands: a command applied against a state that was never
             // recorded is how a crash produces work with no token behind it.
             memory.State = evaluation.State.Prune();
@@ -207,6 +218,115 @@ internal sealed class BpmnScopeHost
             default:
                 throw new NotSupportedException($"The BPMN continuation '{evaluation.Continuation.GetType().Name}' is not supported by this host.");
         }
+    }
+
+    /// <summary>
+    /// Projects every diagnostic the interpreter has appended since the last evaluation onto this scope's own
+    /// execution log, keyed by element id. Under Option A only bound work has an activity id, so a gateway, an
+    /// intermediate event or a sequence flow has nothing else in the journal to say where a token went; this is
+    /// write-only and never read back by the interpreter or this host.
+    /// </summary>
+    /// <remarks>
+    /// Runs on <see cref="_context"/> — this scope's own context — and never a child's: the diagnostic describes
+    /// this scope's decision about a child, and the child may already be torn down by the time this runs. Called
+    /// with the evaluation's own <see cref="BpmnEvaluation.State"/>, before <c>Prune()</c> caps
+    /// <see cref="BpmnExecutionState.Diagnostics"/> at 200 entries, because projecting from what was actually
+    /// persisted would lose whatever pruning already dropped. The last diagnostic id it has projected is kept in
+    /// <see cref="BpmnScopeMemory.DiagnosticsCursorPropertyKey"/> so a resumed scope does not re-emit one a
+    /// previous evaluation already turned into a journal entry.
+    /// </remarks>
+    /// <param name="state">The evaluation's own state, not yet pruned.</param>
+    /// <param name="priorState">
+    /// The state this scope had persisted before this evaluation ran, or <c>null</c> for a scope that has never
+    /// been evaluated before. When the cursor property is absent -- a scope persisted before diagnostics projection
+    /// existed -- its diagnostics are already accounted for, not new: the cursor is seeded from the highest valid
+    /// sequence among <paramref name="priorState"/>'s own diagnostics before anything is projected, so only what
+    /// this evaluation produced gets journaled. A genuinely new scope has no prior state and still starts at zero.
+    /// </param>
+    private void ProjectDiagnostics(BpmnExecutionState state, BpmnExecutionState? priorState)
+    {
+        var storedCursor = BpmnScopeMemory.Read<BpmnDiagnosticsCursor>(_context, BpmnScopeMemory.DiagnosticsCursorPropertyKey)?.LastSequence;
+        var lastProjectedSequence = storedCursor ?? SeedCursorFrom(priorState);
+        var highWaterMark = lastProjectedSequence;
+
+        foreach (var diagnostic in state.Diagnostics)
+        {
+            if (!TryGetDiagnosticSequence(diagnostic.DiagnosticId, out var sequence))
+            {
+                _context.GetRequiredService<ILogger<BpmnScopeHost>>()
+                    .LogWarning("BPMN diagnostic id '{DiagnosticId}' is not in the expected 'diag:N' format and was skipped for projection.", diagnostic.DiagnosticId);
+                continue;
+            }
+
+            if (sequence <= lastProjectedSequence)
+                continue;
+
+            highWaterMark = Math.Max(highWaterMark, sequence);
+
+            // Only a diagnostic that names neither an element nor a flow is scope-level and already journaled as the
+            // activity's own lifecycle: the terminal "Completed" summary. Everything else -- including a start
+            // event's own token emission, and a boundary event's token emission when it has no inbound flow (an
+            // error or cancel boundary fires without one) -- names an element or a flow and is projected.
+            if (string.IsNullOrEmpty(diagnostic.ElementId) && string.IsNullOrEmpty(diagnostic.FlowId))
+                continue;
+
+            var payload = new BpmnDiagnosticLogPayload(
+                diagnostic.DiagnosticId,
+                diagnostic.ElementId,
+                diagnostic.FlowId,
+                diagnostic.TokenId,
+                diagnostic.Kind.ToString(),
+                diagnostic.Details);
+
+            _context.AddExecutionLogEntry(diagnostic.Kind.ToString(), diagnostic.Message, BpmnDiagnosticEventNames.Source, payload);
+        }
+
+        if (highWaterMark != lastProjectedSequence)
+            BpmnScopeMemory.Write(_context, BpmnScopeMemory.DiagnosticsCursorPropertyKey, new BpmnDiagnosticsCursor(highWaterMark));
+    }
+
+    /// <summary>
+    /// The starting cursor for a scope that has no <see cref="BpmnScopeMemory.DiagnosticsCursorPropertyKey"/> yet:
+    /// the highest valid sequence already present in <paramref name="priorState"/>'s diagnostics, or zero when there
+    /// is no prior state at all. A scope persisted before diagnostics projection existed has diagnostics in its
+    /// state but no cursor; treating that absence as zero would make its next evaluation journal every one of those
+    /// already-historical diagnostics as if they were new.
+    /// </summary>
+    private static int SeedCursorFrom(BpmnExecutionState? priorState)
+    {
+        var highest = 0;
+
+        if (priorState is null)
+            return highest;
+
+        foreach (var diagnostic in priorState.Diagnostics)
+        {
+            if (TryGetDiagnosticSequence(diagnostic.DiagnosticId, out var sequence) && sequence > highest)
+                highest = sequence;
+        }
+
+        return highest;
+    }
+
+    /// <summary>
+    /// The numeric ordinal in a diagnostic id (<c>diag:N</c>) — a pure function of the interpreter's own
+    /// mutation-order sequence, so it sorts the same as arrival order. Never throws: an id that does not match the
+    /// expected format fails to parse rather than faulting the evaluation, since this runs on every evaluation.
+    /// </summary>
+    /// <remarks>
+    /// Requires the exact ordinal prefix <c>diag:</c> and a non-negative integer suffix with no leading sign, digit
+    /// grouping or surrounding whitespace: a malformed id that happened to parse as a large number would poison the
+    /// durable cursor and silently drop every later, genuinely valid, lower-sequence diagnostic forever.
+    /// </remarks>
+    internal static bool TryGetDiagnosticSequence(string diagnosticId, out int sequence)
+    {
+        const string prefix = "diag:";
+
+        if (diagnosticId.StartsWith(prefix, StringComparison.Ordinal))
+            return int.TryParse(diagnosticId.AsSpan(prefix.Length), NumberStyles.None, CultureInfo.InvariantCulture, out sequence);
+
+        sequence = 0;
+        return false;
     }
 
     /// <summary>
