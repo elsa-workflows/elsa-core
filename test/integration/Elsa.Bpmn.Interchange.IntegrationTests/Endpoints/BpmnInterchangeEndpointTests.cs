@@ -224,6 +224,187 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task DocumentGet_OfAMissingDefinition_ReturnsNotFound()
+    {
+        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/document", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentGet_OfADefinitionNeverImportedFromBpmn_ReturnsUnprocessableEntity()
+    {
+        var definitionId = await CreateNonBpmnDefinitionAsync();
+
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Contains("does not currently carry BPMN source", body);
+    }
+
+    [Fact]
+    public async Task DocumentGet_OfAFreshlyImportedDefinition_ReturnsOkWithTheLibraryFormatDocument()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+
+        var body = await response.Content.ReadAsStringAsync();
+        using var document = JsonDocument.Parse(body);
+        Assert.Contains("order-process", document.RootElement.GetProperty("processes").EnumerateArray().Select(process => process.GetProperty("processId").GetString()));
+    }
+
+    [Fact]
+    public async Task DocumentGet_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        // Authenticated, but only holds the write permission Put needs, not the read permission Get needs.
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentPut_OfAMissingDefinition_ReturnsNotFound()
+    {
+        using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        var response = await PutAuthenticatedAsync("bpmn/definitions/does-not-exist/document", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentPut_WithMalformedJson_ReturnsBadRequestAndPersistsNoNewDraft()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var versionBeforePut = await LatestVersionOfAsync(definitionId);
+
+        using var content = new StringContent("{ not valid json", Encoding.UTF8, "application/json");
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task DocumentPut_ThatRemovesARequiredActivityBinding_ReturnsUnprocessableEntityAndPersistsNoNewDraft()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var versionBeforePut = await LatestVersionOfAsync(definitionId);
+
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var documentJson = await getResponse.Content.ReadAsStringAsync();
+
+        // Strips the one <elsa:activityBinding> the document carries (on "NotifyWarehouse"), reproducing exactly
+        // what Import itself refuses for unbound-task-process.bpmn: a task-family element the document describes
+        // but does not say how to perform.
+        using var editedDocument = JsonDocument.Parse(documentJson);
+        using var stream = new MemoryStream();
+
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            WriteWithoutActivityBindingExtensions(editedDocument.RootElement, writer);
+        }
+
+        using var putContent = new ByteArrayContent(stream.ToArray());
+        putContent.Headers.ContentType = new("application/json");
+
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        var body = await putResponse.Content.ReadAsStringAsync();
+        Assert.Contains("nothing binds it to an Elsa activity", body);
+        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task DocumentPut_UnchangedDocument_ReturnsOkAndTheSameFindingsAsImport()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var documentJson = await getResponse.Content.ReadAsStringAsync();
+
+        using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
+        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        using var putResult = JsonDocument.Parse(await putResponse.Content.ReadAsStringAsync());
+        Assert.Equal(definitionId, putResult.RootElement.GetProperty("definitionId").GetString());
+        Assert.Contains(
+            "order-process",
+            putResult.RootElement.GetProperty("analysis").GetProperty("processIds").EnumerateArray().Select(processId => processId.GetString()));
+
+        var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        var exportedXml = await exportResponse.Content.ReadAsStringAsync();
+        Assert.Contains("order-process", exportedXml);
+    }
+
+    [Fact]
+    public async Task DocumentPut_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        using var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+        // Authenticated, but only holds the read permission Get needs, not the write permission Put needs.
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>
+    /// Re-serializes <paramref name="element"/> with every <c>extensionElements</c> array entry named
+    /// <c>activityBinding</c> (in the <c>elsa:</c> namespace URI) removed, walking the whole document recursively.
+    /// </summary>
+    private static void WriteWithoutActivityBindingExtensions(JsonElement element, Utf8JsonWriter writer)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                writer.WriteStartObject();
+                foreach (var property in element.EnumerateObject())
+                {
+                    writer.WritePropertyName(property.Name);
+                    WriteWithoutActivityBindingExtensions(property.Value, writer);
+                }
+                writer.WriteEndObject();
+                break;
+            case JsonValueKind.Array:
+                writer.WriteStartArray();
+                foreach (var item in element.EnumerateArray())
+                {
+                    if (IsActivityBindingExtensionElement(item))
+                        continue;
+
+                    WriteWithoutActivityBindingExtensions(item, writer);
+                }
+                writer.WriteEndArray();
+                break;
+            default:
+                element.WriteTo(writer);
+                break;
+        }
+    }
+
+    private static bool IsActivityBindingExtensionElement(JsonElement element) =>
+        element.ValueKind == JsonValueKind.Object
+        && element.TryGetProperty("name", out var name)
+        && name.ValueKind == JsonValueKind.Object
+        && name.TryGetProperty("localName", out var localName)
+        && localName.GetString() == "activityBinding"
+        && name.TryGetProperty("ns", out var ns)
+        && ns.GetString() == "https://elsaworkflows.io/schemas/bpmn/v1";
+
     private async Task<string> CreateNonBpmnDefinitionAsync()
     {
         using var scope = _app!.Services.CreateScope();
@@ -265,6 +446,35 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var request = new HttpRequestMessage(HttpMethod.Get, requestUri);
         request.Headers.Add(TestAuthenticationHandler.PermissionHeader, string.Join(",", permissions));
         return await HttpClient.SendAsync(request);
+    }
+
+    private async Task<HttpResponseMessage> PutAuthenticatedAsync(string requestUri, HttpContent content, params string[] permissions)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, requestUri) { Content = content };
+        request.Headers.Add(TestAuthenticationHandler.PermissionHeader, string.Join(",", permissions));
+        return await HttpClient.SendAsync(request);
+    }
+
+    /// <summary>Imports <c>camunda-order-process.bpmn</c> through the real endpoint and returns the resulting <c>definitionId</c>.</summary>
+    private async Task<string> ImportCamundaOrderProcessAsync()
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return document.RootElement.GetProperty("definitionId").GetString()!;
+    }
+
+    private async Task<int> LatestVersionOfAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var definition = await store.FindAsync(filter);
+        Assert.NotNull(definition);
+        return definition!.Version;
     }
 
     private sealed class TestAuthenticationHandler(

@@ -87,20 +87,9 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
     }
 
     /// <remarks>
-    /// <see cref="BpmnCapabilityException"/> carries <see cref="BpmnCapabilityException.DrivingElementIds"/> as a
-    /// single flat list, already unioned across every missing capability — it does not say which element drove which
-    /// capability (unlike <c>BpmnCapabilityRequirements.DrivingElementIds</c>, which is per-capability, but that type
-    /// is gone by the time this catch clause sees the exception). Attributing the full, unioned list to each
-    /// capability individually would put elements next to a capability they may have nothing to do with, so this
-    /// reports the missing capabilities together with the combined element list once, rather than repeating it.
+    /// The message itself is shared with the document <c>Put</c> endpoint, which imports through the same
+    /// <see cref="BpmnInterchangeDocumentService"/> path and can fail this same way; see
+    /// <see cref="BpmnCapabilityErrorFormatter"/> for why the message reads the way it does.
     /// </remarks>
-    private void AddCapabilityErrors(BpmnCapabilityException exception)
-    {
-        var missingCapabilities = string.Join(", ", BpmnInterchangeDocumentService.IndividualCapabilities.Where(capability => exception.Missing.HasFlag(capability)));
-        var elementIds = string.Join(", ", exception.DrivingElementIds);
-
-        AddError(
-            $"This deployment does not declare the following BPMN host capabilities the document requires: {missingCapabilities}. "
-            + $"Offending elements (combined across all missing capabilities above, not attributable to any one of them): {elementIds}.");
-    }
+    private void AddCapabilityErrors(BpmnCapabilityException exception) => AddError(BpmnCapabilityErrorFormatter.Format(exception));
 }

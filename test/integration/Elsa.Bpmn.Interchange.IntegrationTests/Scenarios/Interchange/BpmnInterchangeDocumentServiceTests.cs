@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using Bpmn.Interchange;
+using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -15,11 +16,11 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 /// </summary>
 public class BpmnInterchangeDocumentServiceTests(ITestOutputHelper testOutputHelper) : BpmnInterchangeTestBase(testOutputHelper)
 {
-    private static readonly XNamespace Camunda = "http://camunda.org/schema/1.0/bpmn";
-    private static readonly XNamespace Elsa = "https://elsaworkflows.io/schemas/bpmn/v1";
-    private static readonly XNamespace Dc = "http://www.omg.org/spec/DD/20100524/DC";
-    private static readonly XNamespace Di = "http://www.omg.org/spec/DD/20100524/DI";
-    private static readonly XNamespace Bpmn = "http://www.omg.org/spec/BPMN/20100524/MODEL";
+    private static readonly XNamespace Camunda = BpmnXNamespaces.Camunda;
+    private static readonly XNamespace Elsa = BpmnXNamespaces.Elsa;
+    private static readonly XNamespace Dc = BpmnXNamespaces.Dc;
+    private static readonly XNamespace Di = BpmnXNamespaces.Di;
+    private static readonly XNamespace Bpmn = BpmnXNamespaces.Bpmn;
 
     [Fact(DisplayName = "Analyze and Import report the same findings for the same document")]
     public async Task Analyze_AndImport_ReportTheSameFindings()
