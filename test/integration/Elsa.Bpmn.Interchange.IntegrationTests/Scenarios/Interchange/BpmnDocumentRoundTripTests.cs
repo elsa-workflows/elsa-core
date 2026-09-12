@@ -38,6 +38,7 @@ public class BpmnDocumentRoundTripTests : BpmnBindingTestBase
     private static readonly XNamespace Elsa = BpmnXNamespaces.Elsa;
     private static readonly XNamespace Di = BpmnXNamespaces.Di;
     private static readonly XNamespace Bpmn = BpmnXNamespaces.Bpmn;
+    private static readonly XNamespace Vw = BpmnXNamespaces.Vw;
 
     public BpmnDocumentRoundTripTests(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
     {
@@ -55,6 +56,7 @@ public class BpmnDocumentRoundTripTests : BpmnBindingTestBase
     [InlineData("transaction-compensation.bpmn")]
     [InlineData("nested-subprocesses.bpmn")]
     [InlineData("camunda-multi-instance-subprocess.bpmn")]
+    [InlineData("top-level-call-activity.bpmn")]
     public async Task ReadDocument_ThenImportDocumentAsyncUnchanged_ExportsContentEqualToTheOriginal(string assetFileName)
     {
         var stored = await ImportAssetAsync(assetFileName);
@@ -98,6 +100,78 @@ public class BpmnDocumentRoundTripTests : BpmnBindingTestBase
         var addedBinding = addedTask.Descendants(Elsa + "activityBinding").Single();
         Assert.Equal("Elsa.WriteLine", addedBinding.Attribute("activityType")?.Value);
         Assert.Contains("Archiving the order", addedBinding.Descendants(Elsa + "input").Single().Value);
+    }
+
+    [Fact(DisplayName = "Posting a document back with an unrelated task's binding edited keeps a top-level call activity's fire-and-forget flag")]
+    public async Task ImportDocumentAsync_WithAnUnrelatedTasksBindingEdited_KeepsATopLevelCallActivitysFireAndForgetFlag()
+    {
+        var stored = await ImportAssetAsync("top-level-call-activity.bpmn");
+
+        var document = DocumentService.ReadDocument(stored);
+        var process = Assert.Single(document.Processes);
+        var logCompletion = process.Elements.Single(element => element.ElementId == "LogCompletion");
+
+        var newBinding = Format.Write(new WriteLine("Completed, for real this time"));
+        var editedLogCompletion = WithOverrides(logCompletion, extensions: BpmnActivityBindingFormat.Attach(logCompletion.Extensions, newBinding));
+        var editedProcess = process with { Elements = process.Elements.Select(element => element.ElementId == "LogCompletion" ? editedLogCompletion : element).ToList() };
+
+        var updated = await PutAsync(stored, document with { Processes = [editedProcess] });
+
+        // The edit shows up...
+        var editedTask = updated.Descendants(Bpmn + "serviceTask").Single(element => element.Attribute("id")?.Value == "LogCompletion");
+        Assert.Contains("Completed, for real this time", editedTask.Descendants(Elsa + "input").Single().Value);
+
+        // ...and the unrelated call activity's fire-and-forget flag, which the document itself never carried, still
+        // came from its stored work binding rather than a freshly bound, default-waiting one.
+        var callActivity = updated.Descendants(Bpmn + "callActivity").Single(element => element.Attribute("id")?.Value == "NotifyDownstream");
+        Assert.Equal("false", callActivity.Attribute(Vw + "waitForCompletion")?.Value);
+        Assert.Equal("notification-workflow", callActivity.Attribute("calledElement")?.Value);
+    }
+
+    [Fact(DisplayName = "Posting a document back with a call activity's calledElement changed does not resurrect the stored fire-and-forget flag")]
+    public async Task ImportDocumentAsync_WhenACallActivitysCalledElementChanges_DoesNotResurrectTheStoredFireAndForgetFlag()
+    {
+        var stored = await ImportAssetAsync("top-level-call-activity.bpmn");
+
+        var document = DocumentService.ReadDocument(stored);
+        var process = Assert.Single(document.Processes);
+        var notifyDownstream = process.Elements.Single(element => element.ElementId == "NotifyDownstream");
+
+        const string newCalledElement = "a-different-workflow";
+        var editedProperties = new Dictionary<string, string>(notifyDownstream.Properties) { [BpmnXmlReader.CalledElementPropertyKey] = newCalledElement };
+        var editedNotifyDownstream = WithOverrides(notifyDownstream, properties: editedProperties);
+        var editedProcess = process with { Elements = process.Elements.Select(element => element.ElementId == "NotifyDownstream" ? editedNotifyDownstream : element).ToList() };
+
+        var updated = await PutAsync(stored, document with { Processes = [editedProcess] });
+
+        // The client's new calledElement is honoured...
+        var callActivity = updated.Descendants(Bpmn + "callActivity").Single(element => element.Attribute("id")?.Value == "NotifyDownstream");
+        Assert.Equal(newCalledElement, callActivity.Attribute("calledElement")?.Value);
+
+        // ...and the call binds fresh rather than inheriting the fire-and-forget flag stored against the process it
+        // used to call: the client changed what is called, so the options that went with the old call do not survive.
+        Assert.Null(callActivity.Attribute(Vw + "waitForCompletion"));
+    }
+
+    [Fact(DisplayName = "Posting a document back with a top-level call activity stripped of its bindingRef does not crash, and the call binds fresh")]
+    public async Task ImportDocumentAsync_WhenATopLevelCallActivityCarriesNoBindingRef_DoesNotCrashAndBindsFresh()
+    {
+        var stored = await ImportAssetAsync("top-level-call-activity.bpmn");
+
+        var document = DocumentService.ReadDocument(stored);
+        var process = Assert.Single(document.Processes);
+        var notifyDownstream = process.Elements.Single(element => element.ElementId == "NotifyDownstream");
+
+        var editedNotifyDownstream = WithOverrides(notifyDownstream, clearBindingRef: true);
+        var editedProcess = process with { Elements = process.Elements.Select(element => element.ElementId == "NotifyDownstream" ? editedNotifyDownstream : element).ToList() };
+
+        // Neither writing the document nor importing it back throws just because there is nothing to hand the stored
+        // call options over under; the worst outcome is the fresh, waiting default below, not a crashed PUT.
+        var updated = await PutAsync(stored, document with { Processes = [editedProcess] });
+
+        var callActivity = updated.Descendants(Bpmn + "callActivity").Single(element => element.Attribute("id")?.Value == "NotifyDownstream");
+        Assert.Equal("notification-workflow", callActivity.Attribute("calledElement")?.Value);
+        Assert.Null(callActivity.Attribute(Vw + "waitForCompletion"));
     }
 
     [Fact(DisplayName = "Importing a document against a definition id that does not exist refuses rather than creating one")]
@@ -287,6 +361,35 @@ public class BpmnDocumentRoundTripTests : BpmnBindingTestBase
         edit?.Invoke(json);
         return json.Deserialize<BpmnDefinitions>(BpmnDocumentJsonOptions.Value)!;
     }
+
+    /// <summary>
+    /// A copy of <paramref name="element"/> with <paramref name="extensions"/> or <paramref name="properties"/>
+    /// overridden and everything else carried across unchanged. <see cref="BpmnElement"/> is an immutable plain class,
+    /// not a record, so it has no <c>with</c> expression of its own.
+    /// </summary>
+    private static BpmnElement WithOverrides(
+        BpmnElement element,
+        BpmnExtensions? extensions = null,
+        IReadOnlyDictionary<string, string>? properties = null,
+        string? bindingRef = null,
+        bool clearBindingRef = false) => new(
+        elementId: element.ElementId,
+        elementType: element.ElementType,
+        name: element.Name,
+        bindingRef: clearBindingRef ? null : bindingRef ?? element.BindingRef,
+        laneId: element.LaneId,
+        defaultFlowId: element.DefaultFlowId,
+        eventDefinitions: element.EventDefinitions,
+        properties: properties ?? element.Properties,
+        attachedToRef: element.AttachedToRef,
+        cancelActivity: element.CancelActivity,
+        loopCharacteristics: element.LoopCharacteristics,
+        isForCompensation: element.IsForCompensation,
+        compensationHandlerElementId: element.CompensationHandlerElementId,
+        isTransaction: element.IsTransaction,
+        triggeredByEvent: element.TriggeredByEvent,
+        listenerBindingRef: element.ListenerBindingRef,
+        extensions: extensions ?? element.Extensions);
 
     private static BpmnDefinitions WithBindingRef(BpmnDefinitions document, string elementId, string? bindingRef) =>
         ThroughTheDocumentEndpoints(document, json => ElementOf(json, elementId)["bindingRef"] = bindingRef);
