@@ -49,33 +49,27 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             return;
         }
 
-        // Optimistic concurrency: a client that GETs the document, then PUTs it back after someone else has saved in
-        // between, must not silently replace that intervening edit. The client is required to carry the ETag its GET
-        // returned as If-Match; a missing header cannot express "I know what I'm overwriting" at all, and a stale one
-        // proves the client's copy is no longer current. Both are checked, and refused, before any import work runs
-        // or anything is persisted.
-        if (!HttpContext.Request.Headers.TryGetValue("If-Match", out var ifMatch) || ifMatch.Count == 0 || string.IsNullOrWhiteSpace(ifMatch[0]))
+        // Optimistic concurrency: a client that GETs the document, then PUTs it back after someone else has written the
+        // definition in between, must not silently replace that intervening write. The client is required to carry the
+        // ETag its GET returned as If-Match. A missing header cannot express "I know what I'm overwriting" at all, and
+        // neither can "*", which matches whatever is stored — so both are refused as 428 rather than honoured. Anything
+        // else must be exactly the current strong ETag (a weak W/ tag or a list never is), or it proves the client's copy
+        // is no longer current. All of this is checked before any import work runs or anything is persisted.
+        var ifMatch = HttpContext.Request.Headers.IfMatch.ToString().Trim();
+
+        if (ifMatch is "" or "*")
         {
-            AddError("An If-Match header carrying the ETag from a prior GET of this document is required to PUT it back, so an intervening edit is not silently overwritten.");
+            AddError("An If-Match header carrying the ETag from a prior GET of this document is required to PUT it back, so an intervening edit is not silently overwritten. The wildcard \"*\" is not accepted.");
             await Send.ErrorsAsync(StatusCodes.Status428PreconditionRequired, cancellationToken);
             return;
         }
 
-        var currentETag = BpmnDocumentETag.From(definition);
-
-        if (ifMatch[0] != currentETag)
+        if (!string.Equals(ifMatch, BpmnDocumentETag.From(definition), StringComparison.Ordinal))
         {
-            AddError($"The document has changed since it was last read (current ETag {currentETag}, If-Match {ifMatch[0]}). Re-read the document and reapply the edit.");
+            AddError("The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
             await Send.ErrorsAsync(StatusCodes.Status412PreconditionFailed, cancellationToken);
             return;
         }
-
-        // Read from this pristine copy, before ImportDocumentAsync below mutates the same tracked instance in place
-        // (an unpublished draft is edited, not replaced) and discards its CustomProperties as a side effect of
-        // applying the new model — see BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey's remarks.
-        var previousDocumentRevision = definition.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey, out var storedRevision)
-            ? storedRevision
-            : -1;
 
         string body;
 
@@ -120,11 +114,9 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
 
         var persisted = result.ImportResult.WorkflowDefinition;
 
-        // Set unconditionally, so the ETag always changes on a successful PUT even when Version and SourceVersion
-        // do not (an unpublished draft edited in place, or a document that comes back byte-for-byte unchanged).
-        persisted.CustomProperties[BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey] = previousDocumentRevision + 1;
-        await store.SaveAsync(persisted, cancellationToken);
-
+        // The definition exactly as ImportDocumentAsync's final save wrote it, so the ETag names the state this PUT
+        // produced. Reloading it from the store instead could pick up a write that landed after that save and hand the
+        // client a validator for content it never saw, letting its next PUT overwrite that write silently.
         HttpContext.Response.Headers.ETag = BpmnDocumentETag.From(persisted);
 
         await Send.OkAsync(new Response

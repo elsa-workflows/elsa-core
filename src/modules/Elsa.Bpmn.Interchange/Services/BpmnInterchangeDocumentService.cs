@@ -104,22 +104,6 @@ public sealed class BpmnInterchangeDocumentService(
     public const string SourceProcessIdCustomPropertyKey = "Bpmn:SourceProcessId";
 
     /// <summary>
-    /// A counter the document <c>Put</c> endpoint increments on every successful edit, for the document
-    /// <c>Get</c>/<c>Put</c> endpoints' optimistic-concurrency <c>ETag</c>. Not written by <see cref="ImportAsync"/>
-    /// itself, since only the document endpoints need it.
-    /// </summary>
-    /// <remarks>
-    /// The definition's own <c>Version</c> is not, by itself, guaranteed to change on every save: an unpublished
-    /// draft is edited in place by <see cref="IWorkflowDefinitionImporter"/>, keeping the same version number (and
-    /// the same row) across repeated saves, including a save whose document is byte-for-byte unchanged from the
-    /// last. <see cref="SourceVersionCustomPropertyKey"/> mirrors <c>Version</c> for exactly this reason and so does
-    /// not change either. This counter exists specifically to give the document endpoints' <c>ETag</c> a value that
-    /// always changes on a successful <c>PUT</c>, whether or not <c>Version</c> did — see <c>BpmnDocumentETag</c>,
-    /// which combines all three.
-    /// </remarks>
-    public const string DocumentRevisionCustomPropertyKey = "Bpmn:DocumentRevision";
-
-    /// <summary>
     /// The host capabilities this deployment's BPMN runtime declares.
     /// </summary>
     /// <remarks>

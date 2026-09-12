@@ -3,13 +3,16 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Elsa;
+using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Interchange.Features;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -294,46 +297,106 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
-    public async Task DocumentPut_WithAStaleIfMatch_ReturnsPreconditionFailedAndPersistsNoNewDraft()
+    public async Task DocumentPut_WithAWildcardIfMatch_ReturnsPreconditionRequiredAndOverwritesNothing()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
+        var (_, documentJson) = await GetDocumentAsync(definitionId);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
 
-        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
-        var staleETag = ETagOf(getResponse);
-        var documentJson = await getResponse.Content.ReadAsStringAsync();
+        // "*" matches whatever is currently stored, so honouring it would be exactly the blind overwrite the required
+        // If-Match exists to prevent.
+        var response = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), "*");
 
-        // An intervening PUT, using the current (not yet stale) ETag, moves the definition on to a new revision.
-        using var firstPutContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
-        var firstPutResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", firstPutContent, staleETag, "workflows/definitions:write");
-        Assert.Equal(HttpStatusCode.OK, firstPutResponse.StatusCode);
-        var versionAfterFirstPut = await LatestVersionOfAsync(definitionId);
-
-        // The same, now-stale ETag from the original GET is rejected against the definition's new revision.
-        using var secondPutContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
-        var secondPutResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", secondPutContent, staleETag, "workflows/definitions:write");
-
-        Assert.Equal((HttpStatusCode)412, secondPutResponse.StatusCode);
-        Assert.Equal(versionAfterFirstPut, await LatestVersionOfAsync(definitionId));
+        Assert.Equal(HttpStatusCode.PreconditionRequired, response.StatusCode);
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
     }
 
     [Fact]
-    public async Task DocumentPut_WithTheCurrentIfMatch_ReturnsOkWithANewDifferentETag()
+    public async Task DocumentPut_WithTheCurrentIfMatch_ReturnsOkWithANewETagWhenTheContentChanged()
     {
-        var definitionId = await ImportCamundaOrderProcessAsync();
+        var definitionId = await ImportCamundaOrderProcessWrittenBackAsync();
+        var (currentETag, documentJson) = await GetDocumentAsync(definitionId);
 
-        var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
-        var currentETag = ETagOf(getResponse);
-        var documentJson = await getResponse.Content.ReadAsStringAsync();
-
-        using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
-        var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, currentETag, "workflows/definitions:write");
+        var putResponse = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), currentETag);
 
         Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
         var newETag = ETagOf(putResponse);
         Assert.NotNull(newETag);
         Assert.NotEqual(currentETag, newETag);
+        // The returned ETag names what was stored, so it is exactly what the next GET hands out.
+        Assert.Equal(newETag, (await GetDocumentAsync(definitionId)).ETag);
+    }
+
+    [Fact]
+    public async Task DocumentPut_OfUnchangedContent_ReturnsTheETagTheGetReturned()
+    {
+        var definitionId = await ImportCamundaOrderProcessWrittenBackAsync();
+        var (currentETag, documentJson) = await GetDocumentAsync(definitionId);
+
+        var putResponse = await PutDocumentAsync(definitionId, documentJson, currentETag);
+
+        // Content-addressed: writing back exactly what is stored overwrites nothing, so the validator stays the same.
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        Assert.Equal(currentETag, ETagOf(putResponse));
+    }
+
+    [Fact]
+    public async Task DocumentPut_AfterAnInterveningDocumentPut_ReturnsPreconditionFailedAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessWrittenBackAsync();
+        var (staleETag, documentJson) = await GetDocumentAsync(definitionId);
+        var storedBeforeInterveningPut = await LatestStoredAsync(definitionId);
+
+        var interveningPut = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), staleETag);
+        Assert.Equal(HttpStatusCode.OK, interveningPut.StatusCode);
+
+        // A layout-only edit to an unpublished draft: same row, same version, same activity graph — only the stored
+        // document moved, so this is the case that proves the document itself is part of the ETag.
+        var storedAfterInterveningPut = await LatestStoredAsync(definitionId);
+        Assert.Equal(storedBeforeInterveningPut with { SourceXml = storedAfterInterveningPut.SourceXml }, storedAfterInterveningPut);
+        Assert.NotEqual(storedBeforeInterveningPut.SourceXml, storedAfterInterveningPut.SourceXml);
+
+        await AssertStalePutIsRefusedAsync(definitionId, documentJson, staleETag);
+    }
+
+    [Fact]
+    public async Task DocumentPut_AfterAnInterveningImportIntoTheSameDefinition_ReturnsPreconditionFailedAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (staleETag, documentJson) = await GetDocumentAsync(definitionId);
+        var storedBeforeImport = await LatestStoredAsync(definitionId);
+
+        // A different document declaring the same process, so the stale PUT below would bind cleanly and silently
+        // replace it if the precondition let it through.
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn").Replace("Order Handled", "Order Shipped"), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+        var importResponse = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+
+        // Imported into the unpublished draft in place: same row, same version.
+        var storedAfterImport = await LatestStoredAsync(definitionId);
+        Assert.Equal((storedBeforeImport.Id, storedBeforeImport.Version), (storedAfterImport.Id, storedAfterImport.Version));
+
+        await AssertStalePutIsRefusedAsync(definitionId, documentJson, staleETag);
+    }
+
+    [Fact]
+    public async Task DocumentPut_AfterAnInterveningDesignerSaveOfTheDraft_ReturnsPreconditionFailedAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (staleETag, documentJson) = await GetDocumentAsync(definitionId);
+        var storedBeforeSave = await LatestStoredAsync(definitionId);
+
+        await SaveDraftFromTheDesignerAsync(definitionId);
+
+        // Saved in place with every custom property carried forward: same row, same version, same stored document —
+        // only the activity graph moved, so this is the case that proves the graph itself is part of the ETag.
+        var storedAfterSave = await LatestStoredAsync(definitionId);
+        Assert.Equal(storedBeforeSave with { StringData = storedAfterSave.StringData }, storedAfterSave);
+        Assert.NotEqual(storedBeforeSave.StringData, storedAfterSave.StringData);
+
+        await AssertStalePutIsRefusedAsync(definitionId, documentJson, staleETag);
     }
 
     [Fact]
@@ -557,6 +620,62 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// <summary>The ETag a prior <c>document</c> GET or PUT response carried, for use as the next PUT's <c>If-Match</c>.</summary>
     private static string? ETagOf(HttpResponseMessage response) => response.Headers.ETag?.Tag;
 
+    /// <summary>GETs the document of <paramref name="definitionId"/>, asserting it succeeded, and returns its ETag and body.</summary>
+    private async Task<(string? ETag, string Json)> GetDocumentAsync(string definitionId)
+    {
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return (ETagOf(response), await response.Content.ReadAsStringAsync());
+    }
+
+    private Task<HttpResponseMessage> PutDocumentAsync(string definitionId, string documentJson, string? ifMatch) =>
+        PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", new StringContent(documentJson, Encoding.UTF8, "application/json"), ifMatch, "workflows/definitions:write");
+
+    /// <summary>
+    /// PUTs <paramref name="documentJson"/> with <paramref name="staleETag"/> and asserts it is refused with 412 and leaves
+    /// the stored definition exactly as it was. The version alone cannot show that: an unpublished draft is overwritten in
+    /// place, under the same version, which is precisely the overwrite this is checking did not happen.
+    /// </summary>
+    private async Task AssertStalePutIsRefusedAsync(string definitionId, string documentJson, string? staleETag)
+    {
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+
+        var response = await PutDocumentAsync(definitionId, documentJson, staleETag);
+
+        Assert.Equal(HttpStatusCode.PreconditionFailed, response.StatusCode);
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    /// <summary>Moves the document's first diagram shape to the right — a layout-only edit, the kind W14 makes.</summary>
+    private static string WithFirstShapeMoved(string documentJson)
+    {
+        var document = JsonNode.Parse(documentJson)!;
+        var bounds = document["diagrams"]![0]!["plane"]!["shapes"]![0]!["bounds"]!;
+        bounds["x"] = bounds["x"]!.GetValue<double>() + 10;
+        return document.ToJsonString();
+    }
+
+    /// <summary>
+    /// Saves the latest draft of <paramref name="definitionId"/> the way the workflow-definition save endpoint Studio's
+    /// designer calls does — <see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/>, a re-serialized root, then
+    /// <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/> — with the bound activity's text edited and every custom
+    /// property, the stored BPMN source included, carried forward as Studio sends them back.
+    /// </summary>
+    private async Task SaveDraftFromTheDesignerAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var serializer = scope.ServiceProvider.GetRequiredService<IActivitySerializer>();
+        var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest);
+        Assert.NotNull(draft);
+
+        var root = Assert.IsType<BpmnProcess>(serializer.Deserialize(draft!.StringData!));
+        Assert.Single(root.Activities.OfType<WriteLine>()).Text = new("Notifying the warehouse, edited in the designer");
+        draft.StringData = serializer.Serialize(root);
+
+        await publisher.SaveDraftAsync(draft);
+    }
+
     /// <summary>Imports <c>camunda-order-process.bpmn</c> through the real endpoint and returns the resulting <c>definitionId</c>.</summary>
     private async Task<string> ImportCamundaOrderProcessAsync()
     {
@@ -567,6 +686,20 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return document.RootElement.GetProperty("definitionId").GetString()!;
+    }
+
+    /// <summary>
+    /// Imports <c>camunda-order-process.bpmn</c> and writes its document straight back once through the document PUT, so
+    /// what is stored is the writer's own rendering of it rather than the uploaded bytes. From there only an actual edit
+    /// changes the stored content, which is what lets a test attribute an ETag change — or its absence — to one write.
+    /// </summary>
+    private async Task<string> ImportCamundaOrderProcessWrittenBackAsync()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+        var response = await PutDocumentAsync(definitionId, documentJson, etag);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return definitionId;
     }
 
     /// <summary>Imports <c>two-process.bpmn</c>, picking <paramref name="processId"/>, and returns the resulting <c>definitionId</c>.</summary>
@@ -597,15 +730,24 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         await store.SaveAsync(definition);
     }
 
-    private async Task<int> LatestVersionOfAsync(string definitionId)
+    private async Task<int> LatestVersionOfAsync(string definitionId) => (await LatestStoredAsync(definitionId)).Version;
+
+    /// <summary>
+    /// A snapshot of the latest version of <paramref name="definitionId"/>: its id, version, activity graph and stored BPMN
+    /// document — everything a document PUT rewrites that the document ETag covers.
+    /// </summary>
+    private async Task<StoredDefinition> LatestStoredAsync(string definitionId)
     {
         using var scope = _app!.Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await store.FindAsync(filter);
         Assert.NotNull(definition);
-        return definition!.Version;
+        definition!.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey, out var sourceXml);
+        return new(definition.Id, definition.Version, definition.StringData, sourceXml);
     }
+
+    private sealed record StoredDefinition(string Id, int Version, string? StringData, string? SourceXml);
 
     private sealed class TestAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,

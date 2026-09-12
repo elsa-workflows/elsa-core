@@ -97,29 +97,30 @@ Both `Analyze` and `Import` require exactly one uploaded file; zero or more than
 ### Optimistic concurrency on the document endpoints
 
 `GET` and `PUT` on `bpmn/definitions/{definitionId}/document` exchange a strong `ETag`, so a client that reads the
-document, and someone else saves an edit before it writes its own back, cannot silently overwrite that intervening
-edit. The `ETag` is derived from three numbers, quoted together as a single strong validator, e.g. `"3-3-4"`: the
-workflow definition's own version number, its `Bpmn:SourceVersion` custom property
-(`BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey` — the same pair `Export`'s staleness check already
-compares), and its `Bpmn:DocumentRevision` custom property
-(`BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey`). The first two are not guaranteed to change on
-every save — an unpublished draft is edited in place, keeping the same version across repeated saves, including a
-save whose document is unchanged from the last — so `DocumentRevision` exists specifically to guarantee that a
-successful `PUT` always produces a different `ETag`, incrementing on every successful import regardless of whether
-`Version` did. None of the three numbers is individually exposed or meant to be parsed by a client; the whole quoted
-value is opaque and must be sent back verbatim.
+document, and someone else writes the definition before it writes its own edit back, cannot silently overwrite that
+intervening write. The `ETag` is a SHA-256 hash of what the definition stores: its BPMN document (the `Bpmn:SourceXml`
+custom property), its activity graph, its version and its id. Any write that changes the stored document or the
+graph therefore invalidates it — another document `PUT`, a `POST bpmn/import` with the same `DefinitionId`, a save of
+the draft from the workflow designer — including when an unpublished draft is saved in place under the same version,
+which is the common case. The value is opaque and must be sent back verbatim.
+
+Because it is derived from content, identical stored content has an identical `ETag`: a `PUT` that writes back
+exactly what is stored returns the same `ETag` `GET` did. The first `PUT` after a `.bpmn` upload replaces the
+uploaded bytes with the writer's own rendering of the same document, so the stored document, and with it the `ETag`,
+changes once even when nothing was edited. A save that changes only the definition's other properties — its name,
+description or variables, say — leaves the document and the graph untouched and does not change the `ETag`; a
+document `PUT`, like `Import`, resets those properties regardless.
 
 `PUT` requires an `If-Match` request header carrying the `ETag` a prior `GET` (or `PUT`) returned:
 
-- **Missing entirely** — `428 Precondition Required`. The endpoint cannot tell whether the caller's copy is current,
-  so it refuses to guess, before doing any import work or persisting anything.
-- **Present but not equal to the definition's current `ETag`** — `412 Precondition Failed`, checked before any
-  import work and before anything is persisted. The definition changed since the caller last read it.
-- **Present and current** — the request proceeds exactly as before, and the response carries the resulting draft's
-  new `ETag`, which will always differ from the one sent in `If-Match`.
-
-A client that only ever reads with `GET` and writes back through `PUT` on the same document, without holding it open
-across an unrelated edit, will always see its own `If-Match` match.
+- **Missing, or the wildcard `*`** — `428 Precondition Required`. Neither says which revision the caller is
+  replacing (`*` matches whatever is stored), so the endpoint refuses rather than overwrite blindly, before doing any
+  import work or persisting anything.
+- **Anything other than exactly the definition's current `ETag`** — `412 Precondition Failed`, checked before any
+  import work and before anything is persisted. The comparison is exact: a weak (`W/`) tag or a list of tags never
+  matches. The definition was written since the caller last read it; `GET` the document again and reapply the edit.
+- **Exactly the current `ETag`** — the request proceeds exactly as before, and the response carries the `ETag` of
+  the draft as this `PUT` stored it.
 
 ### The document endpoints and the JSON payload format
 

@@ -1,3 +1,7 @@
+using System.Buffers.Binary;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
@@ -5,34 +9,61 @@ using Elsa.Workflows.Management.Entities;
 namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 
 /// <summary>
-/// The strong <c>ETag</c> the document <c>Get</c> and <c>Put</c> endpoints exchange for optimistic concurrency,
-/// derived from the workflow definition's own <c>Version</c>, its
-/// <see cref="BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey"/> custom property, and its
-/// <see cref="BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey"/> custom property.
+/// The strong <c>ETag</c> the document <c>Get</c> and <c>Put</c> endpoints exchange for optimistic concurrency: a
+/// SHA-256 hash over the stored workflow definition's id, its version, its BPMN source
+/// (<see cref="BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey"/>) and its serialized activity graph
+/// (<see cref="WorkflowDefinition.StringData"/>).
 /// </summary>
 /// <remarks>
-/// <c>Version</c> and <see cref="BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey"/> are the same
-/// revision notion <c>Export</c>'s staleness check already uses, so they are included here too rather than
-/// inventing an unrelated one. Neither is guaranteed to change on every save, though — an unpublished draft is
-/// edited in place, keeping the same version across repeated saves — so
-/// <see cref="BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey"/> is included specifically to
-/// guarantee that a successful <c>PUT</c> always produces a different <c>ETag</c> from the one it required as
-/// <c>If-Match</c>. Both endpoints only ever compute this once <see cref="BpmnInterchangeDocumentService.ReadDocument"/>
-/// or <see cref="BpmnInterchangeDocumentService.ImportDocumentAsync"/> has already succeeded.
+/// <para>
+/// Content-derived rather than a stored counter, because no counter survives every writer. An unpublished draft is
+/// edited in place — same row, same version — and both <see cref="Elsa.Workflows.Management.IWorkflowDefinitionImporter"/>
+/// (behind <c>Import</c> and the document <c>Put</c>) and the workflow-definition save endpoint the designer uses
+/// replace <c>CustomProperties</c> wholesale with the caller's, so a counter kept there is wiped, or carried forward
+/// unchanged, by exactly the writes it would have to record. What those writes do change is the content: a document
+/// <c>Put</c> or an <c>Import</c> rewrites the stored source, a designer save rewrites the graph, and a save that drops
+/// the source hashes differently from one that keeps it. The id and version tie the value to one stored row, so a new
+/// draft version of identical content still gets a different one.
+/// </para>
+/// <para>
+/// Identical stored content yields an identical <c>ETag</c>, which is what a strong validator means — it names a
+/// representation — so a <c>Put</c> that writes back exactly what is stored returns the value <c>Get</c> did, having
+/// overwritten nothing. Every input is length-prefixed and an absent one is marked distinctly from an empty one, so
+/// no two different sets of inputs feed the hash the same bytes. The value is opaque to clients, which must send it
+/// back verbatim.
+/// </para>
 /// </remarks>
 internal static class BpmnDocumentETag
 {
-    /// <summary>Computes the quoted strong ETag for <paramref name="definition"/>'s current revision.</summary>
+    /// <summary>Computes the quoted strong ETag for <paramref name="definition"/> as it is stored.</summary>
     public static string From(WorkflowDefinition definition)
     {
-        var sourceVersion = definition.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var version)
-            ? version
-            : -1;
+        var sourceXml = definition.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey, out var xml) ? xml : null;
 
-        var documentRevision = definition.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.DocumentRevisionCustomPropertyKey, out var revision)
-            ? revision
-            : -1;
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        Append(hash, definition.Id);
+        Append(hash, definition.Version.ToString(CultureInfo.InvariantCulture));
+        Append(hash, sourceXml);
+        Append(hash, definition.StringData);
 
-        return $"\"{definition.Version}-{sourceVersion}-{documentRevision}\"";
+        return $"\"{Convert.ToHexString(hash.GetHashAndReset())}\"";
+    }
+
+    private static void Append(IncrementalHash hash, string? value)
+    {
+        Span<byte> header = stackalloc byte[5];
+
+        if (value is null)
+        {
+            header[0] = 0;
+            hash.AppendData(header[..1]);
+            return;
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(value);
+        header[0] = 1;
+        BinaryPrimitives.WriteInt32BigEndian(header[1..], bytes.Length);
+        hash.AppendData(header);
+        hash.AppendData(bytes);
     }
 }
