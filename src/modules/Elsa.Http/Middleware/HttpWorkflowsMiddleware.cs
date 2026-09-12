@@ -44,7 +44,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         string matchingPath;
 
-        if (string.IsNullOrWhiteSpace(basePath) || path.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(basePath) || IsBasePathMatch(path, basePath))
         {
             matchingPath = GetMatchingRoute(serviceProvider, path).Route.Route;
             matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
@@ -265,16 +265,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         // Replace the original cancellation token with the combined one.
         httpContext.RequestAborted = combinedTokenSource.Token;
 
-        try
-        {
-            // Execute the action.
-            return await action(httpContext.RequestAborted);
-        }
-        finally
-        {
-            // Restore the original cancellation token.
-            httpContext.RequestAborted = originalCancellationToken;
-        }
+        // Execute the action.
+        var result = await action(httpContext.RequestAborted);
+
+        // Restore the original cancellation token.
+        httpContext.RequestAborted = originalCancellationToken;
+
+        return result;
     }
 
     private RouteMatch GetMatchingRoute(IServiceProvider serviceProvider, string path)
@@ -315,7 +312,13 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         return remainingSegments.Any() ? $"/{string.Join('/', remainingSegments)}" : "/";
     }
 
-    private static bool CouldContainBasePath(string route, string basePath) => route.Contains(basePath, StringComparison.OrdinalIgnoreCase);
+    private static bool IsBasePathMatch(string route, string basePath) =>
+        basePath == "/" ||
+        string.Equals(route, basePath, StringComparison.OrdinalIgnoreCase) ||
+        route.StartsWith($"{basePath}/", StringComparison.OrdinalIgnoreCase);
+
+    private static bool CouldContainBasePath(string route, string basePath) =>
+        FindSegmentSequence(GetRouteSegments(route), GetRouteSegments(basePath)) >= 0;
 
     private static bool IsSupportedBasePathIndex(string[] routeSegments, int basePathIndex) => basePathIndex == 0 || basePathIndex == 1 && routeSegments.Length > 0 && IsRouteParameterSegment(routeSegments[0]);
 
@@ -427,9 +430,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken);
-        var workflowState = workflowInstance?.WorkflowState ?? workflowExecutionResult.WorkflowState;
-        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState, cancellationToken));
+        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))!;
+        await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState.WorkflowState, cancellationToken));
         return true;
     }
 
