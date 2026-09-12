@@ -89,6 +89,34 @@ public class HttpWorkflowsMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WithNonTenantPrefixedBasePathSegment_CallsNext()
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([]))
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/api/workflows/colliding";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+    }
+
+    [Fact]
     public async Task InvokeAsync_WithConfiguredBasePathAndMatchingPath_StillResolvesRoute()
     {
         var routeMatcher = Substitute.For<IRouteMatcher>();

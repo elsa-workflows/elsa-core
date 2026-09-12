@@ -42,15 +42,32 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var path = httpContext.Request.Path.Value!.NormalizeRoute();
         var basePath = options.Value.BasePath?.ToString().NormalizeRoute();
 
-        // If the request path does not match the configured base path to handle workflows, then skip.
-        if (!string.IsNullOrWhiteSpace(basePath) && !ContainsRoute(path, basePath))
-        {
-            await next(httpContext);
-            return;
-        }
+        string matchingPath;
 
-        var matchingPath = GetMatchingRoute(serviceProvider, path).Route;
-        matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
+        if (string.IsNullOrWhiteSpace(basePath) || path.StartsWith(basePath, StringComparison.OrdinalIgnoreCase))
+        {
+            matchingPath = GetMatchingRoute(serviceProvider, path).Route.Route;
+            matchingPath = TryStripBasePath(matchingPath, basePath) ?? matchingPath;
+        }
+        else
+        {
+            if (!CouldContainBasePath(path, basePath))
+            {
+                await next(httpContext);
+                return;
+            }
+
+            var routeMatch = GetMatchingRoute(serviceProvider, path);
+            var resolvedMatchingPath = routeMatch.IsMatch ? TryStripBasePath(routeMatch.Route.Route, basePath) : null;
+
+            if (resolvedMatchingPath == null)
+            {
+                await next(httpContext);
+                return;
+            }
+
+            matchingPath = resolvedMatchingPath;
+        }
 
         // Graceful-shutdown gate: when the runtime is paused or draining, we don't accept new HTTP-triggered work.
         // The ingress source registry visibility is provided by HttpTriggerIngressSource — this is the actual mechanism.
@@ -260,7 +277,7 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         }
     }
 
-    private HttpRouteData GetMatchingRoute(IServiceProvider serviceProvider, string path)
+    private RouteMatch GetMatchingRoute(IServiceProvider serviceProvider, string path)
     {
         var routeMatcher = serviceProvider.GetRequiredService<IRouteMatcher>();
         var routeTable = serviceProvider.GetRequiredService<IRouteTable>();
@@ -276,9 +293,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             };
 
         var matchingRoute = matchingRouteQuery.FirstOrDefault();
-        var routeTemplate = matchingRoute?.route ?? new HttpRouteData(path);
 
-        return routeTemplate;
+        return matchingRoute == null
+            ? new(new HttpRouteData(path), false)
+            : new(matchingRoute.route, true);
     }
 
     private static string? TryStripBasePath(string route, string? basePath)
@@ -290,14 +308,16 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         var basePathSegments = GetRouteSegments(basePath);
         var basePathIndex = FindSegmentSequence(routeSegments, basePathSegments);
 
-        if (basePathIndex < 0)
+        if (basePathIndex < 0 || !IsSupportedBasePathIndex(routeSegments, basePathIndex))
             return null;
 
         var remainingSegments = routeSegments.Skip(basePathIndex + basePathSegments.Length);
         return remainingSegments.Any() ? $"/{string.Join('/', remainingSegments)}" : "/";
     }
 
-    private static bool ContainsRoute(string route, string basePath) => TryStripBasePath(route, basePath) != null;
+    private static bool CouldContainBasePath(string route, string basePath) => route.Contains(basePath, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSupportedBasePathIndex(string[] routeSegments, int basePathIndex) => basePathIndex == 0 || basePathIndex == 1 && routeSegments.Length > 0 && IsRouteParameterSegment(routeSegments[0]);
 
     private static int FindSegmentSequence(string[] routeSegments, string[] candidateSegments)
     {
@@ -325,6 +345,10 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
     }
 
     private static string[] GetRouteSegments(string route) => route.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+    private static bool IsRouteParameterSegment(string segment) => segment.StartsWith('{') && segment.EndsWith('}');
+
+    private record RouteMatch(HttpRouteData Route, bool IsMatch);
 
     private async Task<string?> GetCorrelationIdAsync(IServiceProvider serviceProvider, HttpContext httpContext, CancellationToken cancellationToken)
     {
