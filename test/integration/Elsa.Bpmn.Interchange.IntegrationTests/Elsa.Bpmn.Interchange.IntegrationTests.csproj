@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Bpmn.Interchange]*</Include>
+        <Threshold>1</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="Assets\*.bpmn" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+</Project>

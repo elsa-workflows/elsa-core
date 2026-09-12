@@ -1,0 +1,310 @@
+using System.Security.Claims;
+using System.Text.Json;
+using Elsa.Common;
+using Elsa.Common.Models;
+using Elsa.ExternalAuthentication.Models;
+
+namespace Elsa.ExternalAuthentication.Contracts;
+
+public interface IExternalAuthenticationAdapter
+{
+    string Type { get; }
+    ExternalAuthenticationAdapterDescriptor Describe();
+    ValueTask<ConnectionValidationResult> ValidateAsync(ConnectionValidationContext context, CancellationToken cancellationToken = default);
+    ValueTask<ExternalAuthorizationRequest> CreateAuthorizationRequestAsync(ExternalAuthorizationContext context, CancellationToken cancellationToken = default);
+    ValueTask<ExternalAuthenticationResult> AuthenticateCallbackAsync(ExternalCallbackContext context, CancellationToken cancellationToken = default);
+    ValueTask<ConnectionTestResult> TestAsync(ConnectionTestContext context, CancellationToken cancellationToken = default);
+    ValueTask<ExternalLogoutRequest?> CreateLogoutRequestAsync(ExternalLogoutContext context, CancellationToken cancellationToken = default);
+}
+
+public interface IExternalAuthenticationAdapterRegistry
+{
+    IReadOnlyCollection<ExternalAuthenticationAdapterDescriptor> ListDescriptors();
+    bool TryGet(string type, out IExternalAuthenticationAdapter adapter);
+}
+
+public interface IUnlinkedIdentityPolicyRegistry
+{
+    IReadOnlyCollection<UnlinkedIdentityPolicyDescriptor> ListDescriptors();
+    bool TryGet(string type, out IUnlinkedIdentityPolicy policy);
+}
+
+public interface IPermissionGrantSourceRegistry
+{
+    IReadOnlyCollection<PermissionGrantSourceDescriptor> ListDescriptors();
+    bool TryGet(string type, out IPermissionGrantSource source);
+}
+
+public interface IExternalUserMatcherRegistry
+{
+    IReadOnlyCollection<ExternalUserMatcherDescriptor> ListDescriptors();
+    bool TryGet(string type, out IExternalUserMatcher matcher);
+}
+
+public interface IAdapterSettingsMigration
+{
+    string AdapterType { get; }
+    int FromVersion { get; }
+    int ToVersion { get; }
+    ValueTask<JsonElement> MigrateAsync(JsonElement settings, CancellationToken cancellationToken = default);
+}
+
+public interface IAdapterSettingsMigrationService
+{
+    ValueTask<AdapterSettingsMigrationResult> MigrateAsync(
+        string adapterType,
+        int settingsVersion,
+        JsonElement settings,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IIdentityProviderConnectionSource
+{
+    string Name { get; }
+    ConnectionSourceOwnership Ownership { get; }
+    ValueTask<ConnectionSourceSnapshot> GetSnapshotAsync(ConnectionScope scope, CancellationToken cancellationToken = default);
+}
+
+public interface IIdentityProviderConnectionRegistry
+{
+    ValueTask<EffectiveConnectionRegistry> GetAsync(string targetTenantId, CancellationToken cancellationToken = default);
+    ValueTask<EffectiveIdentityProviderConnection?> FindByKeyAsync(string targetTenantId, string key, CancellationToken cancellationToken = default);
+    ValueTask<EffectiveIdentityProviderConnection?> FindByIdAsync(string targetTenantId, string connectionId, CancellationToken cancellationToken = default);
+}
+
+public interface IIdentityProviderConnectionValidityAssessor
+{
+    ValueTask<EffectiveIdentityProviderConnection> AssessAsync(
+        EffectiveIdentityProviderConnection connection,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IIdentityProviderConnectionStore
+{
+    ValueTask<Page<IdentityProviderConnection>> FindAsync(ConnectionFilter filter, CancellationToken cancellationToken = default);
+    ValueTask<IdentityProviderConnection?> FindByIdAsync(string id, CancellationToken cancellationToken = default);
+    ValueTask<ConnectionMutationResult> CreateAsync(IdentityProviderConnection connection, CancellationToken cancellationToken = default);
+    ValueTask<ConnectionMutationResult> UpdateAsync(IdentityProviderConnection connection, long expectedRevision, CancellationToken cancellationToken = default);
+}
+
+public interface ISecretBindingResolver
+{
+    string Type { get; }
+    ValueTask<SecretBindingState> GetStateAsync(SecretBinding binding, CancellationToken cancellationToken = default);
+    ValueTask<ResolvedSecretBinding> ResolveAsync(SecretBinding binding, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Optionally accepts a secret value once and stages it through a managed secret backend.</summary>
+public interface IManagedSecretBindingWriter
+{
+    string ResolverType { get; }
+    string DisplayName { get; }
+    /// <summary>
+    /// Stores the value under a fresh reference that is not used by any live binding.
+    /// Implementations must not rotate or overwrite an existing reference.
+    /// </summary>
+    ValueTask<SecretBinding> StageAsync(ManagedSecretBindingWriteRequest request, CancellationToken cancellationToken = default);
+    ValueTask RemoveAsync(SecretBinding binding, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Write-only input for a managed connection secret. Implementations must not expose <see cref="Value"/>.</summary>
+public sealed record ManagedSecretBindingWriteRequest(string ConnectionId, string FieldName, SensitiveString Value);
+
+/// <summary>Creates keyed, non-reversible storage keys for opaque browser handles.</summary>
+public interface IExternalAuthenticationHandleHasher
+{
+    string Hash(string value);
+}
+
+public interface IUnlinkedIdentityPolicy
+{
+    string Type { get; }
+    UnlinkedIdentityPolicyDescriptor Describe();
+    ValueTask<UnlinkedIdentityDecision> EvaluateAsync(UnlinkedIdentityContext context, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Trusted deployed extension that may identify one Elsa user for an unlinked external identity.</summary>
+public interface IExternalUserMatcher
+{
+    string Type { get; }
+    ExternalUserMatcherDescriptor Describe();
+    ValueTask<ExternalUserMatchResult> MatchAsync(ExternalUserMatcherContext context, CancellationToken cancellationToken = default);
+}
+
+public interface IExternalIdentityResolver
+{
+    ValueTask<ExternalIdentityResolution> ResolveAsync(ExternalIdentityResolutionContext context, CancellationToken cancellationToken = default);
+}
+
+/// <summary>Optionally records completed sign-ins for an external identity resolver or provisioner.</summary>
+public interface IExternalIdentitySignInTracker
+{
+    /// <summary>
+    /// Records a completed sign-in for the tenant-scoped external identity link without changing its other metadata.
+    /// Concurrent calls must preserve the latest timestamp.
+    /// </summary>
+    ValueTask<bool> RecordSuccessfulSignInAsync(
+        string tenantId,
+        string connectionKey,
+        ExternalIdentity identity,
+        string userId,
+        DateTimeOffset signedInAt,
+        CancellationToken cancellationToken = default);
+}
+
+public interface IExternalIdentityProvisioner
+{
+    /// <summary>
+    /// Finds the link for a normalized external identity without exposing its persisted subject representation.
+    /// </summary>
+    ValueTask<ExternalIdentityLink?> FindLinkAsync(string tenantId, string connectionKey, ExternalIdentity identity, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Creates the requested link and, when requested, its credential-less user; compensates a losing writer; or returns the winner of a concurrent operation.
+    /// </summary>
+    ValueTask<ProvisioningResult> CreateLinkOrGetExistingAsync(ProvisioningRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Atomically removes the tenant-scoped link identified by <see cref="ExternalIdentityLinkReplaceRequest.LinkId"/>
+    /// and creates its replacement, or returns the conflicting link without changing the original.
+    /// </summary>
+    ValueTask<ExternalIdentityLinkReplaceResult> ReplaceAsync(ExternalIdentityLinkReplaceRequest request, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("This external identity provisioner does not support atomic link replacement.");
+}
+
+/// <summary>
+/// Provides tenant-bounded administration of existing external identity links.
+/// Creation remains on <see cref="IExternalIdentityProvisioner"/> so administrator prelinks and JIT provisioning use the same atomic tuple operation.
+/// </summary>
+public interface IExternalIdentityLinkManagementStore
+{
+    ValueTask<Page<ExternalIdentityLink>> FindAsync(ExternalIdentityLinkFilter filter, CancellationToken cancellationToken = default);
+    ValueTask<bool> DeleteAsync(string tenantId, string linkId, CancellationToken cancellationToken = default);
+}
+
+public interface IPermissionGrantSource
+{
+    string Type { get; }
+    PermissionGrantSourceDescriptor Describe();
+    ValueTask<PermissionGrantResult> GetGrantsAsync(PermissionGrantContext context, CancellationToken cancellationToken = default);
+}
+
+public interface IPermissionDelegationAuthorizer
+{
+    ValueTask<PermissionDelegationResult> AuthorizeAsync(ClaimsPrincipal actor, IReadOnlyCollection<GrantSourceSelection> selections, CancellationToken cancellationToken = default);
+}
+
+public interface IPermissionGrantResolver
+{
+    ValueTask<PermissionGrantResult> ResolveAsync(PermissionGrantResolutionContext context, CancellationToken cancellationToken = default);
+}
+
+public interface IExternalAuthenticationStateStore
+{
+    ValueTask PutAsync<T>(string purpose, string handleHash, T value, DateTimeOffset expiresAt, CancellationToken cancellationToken = default);
+    ValueTask<TakeResult<T>> TryTakeAsync<T>(string purpose, string handleHash, CancellationToken cancellationToken = default);
+}
+
+public interface IAuthorizationGrantStore
+{
+    ValueTask SaveAsync(AuthorizationGrant grant, CancellationToken cancellationToken = default);
+    ValueTask<TakeResult<AuthorizationGrant>> TryTakeAsync(string codeHash, CancellationToken cancellationToken = default);
+}
+
+public interface IExternalAuthenticationSessionStore
+{
+    ValueTask<IReadOnlyCollection<ExternalAuthenticationSession>> FindAsync(ExternalAuthenticationSessionFilter filter, CancellationToken cancellationToken = default);
+    ValueTask<ExternalAuthenticationSession?> FindByIdAsync(string sessionId, CancellationToken cancellationToken = default);
+    ValueTask<ExternalAuthenticationSession?> FindByRefreshTokenHashAsync(string refreshTokenHash, CancellationToken cancellationToken = default);
+    ValueTask SaveAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default);
+    ValueTask<ExternalAuthenticationSessionRotationResult> TryRotateRefreshTokenAsync(string sessionId, string refreshTokenHash, long expectedGeneration, string nextRefreshTokenHash, DateTimeOffset refreshedAt, CancellationToken cancellationToken = default);
+    ValueTask<bool> RevokeAsync(string sessionId, string reason, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
+    ValueTask<int> RevokeActiveForConnectionAsync(string connectionKey, string reason, DateTimeOffset revokedAt, CancellationToken cancellationToken = default);
+}
+
+public interface IPreviewResultStore
+{
+    ValueTask SaveAsync(PreviewResult result, CancellationToken cancellationToken = default);
+    ValueTask<TakeResult<PreviewResult>> TryTakeAsync(string handleHash, string administratorId, CancellationToken cancellationToken = default);
+}
+
+public interface IConnectionObservationStore
+{
+    ValueTask<ConnectionObservation?> FindLatestAsync(string connectionId, CancellationToken cancellationToken = default);
+    ValueTask SaveLatestAsync(ConnectionObservation observation, CancellationToken cancellationToken = default);
+}
+
+public interface IConnectionRegistryVersionStore
+{
+    ValueTask<long> GetVersionAsync(CancellationToken cancellationToken = default);
+    ValueTask<long> AdvanceAsync(CancellationToken cancellationToken = default);
+    ValueTask<bool> IsCurrentAsync(long version, CancellationToken cancellationToken = default);
+}
+
+public interface IExternalAuthenticationTokenIssuer
+{
+    ValueTask<ExternalTokenResponse> IssueAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default);
+    ValueTask<ExternalTokenResponse> RefreshAsync(string clientId, SensitiveString refreshToken, CancellationToken cancellationToken = default);
+}
+
+public sealed record ResolvedSecretBinding(SensitiveString Value, string GenerationFingerprint);
+
+public sealed record ConnectionSourceSnapshot(ConnectionScope Scope, string Version, IReadOnlyCollection<IdentityProviderConnection> Connections);
+
+public sealed record IdentityProviderConnectionReference(
+    string Id,
+    string DisplayName,
+    ConnectionSourceOwnership Ownership);
+
+public sealed record EffectiveIdentityProviderConnection(
+    IdentityProviderConnection Connection,
+    ConnectionSourceOwnership Ownership,
+    ConnectionScope Scope,
+    ConnectionValidity Validity,
+    bool IsShadowed,
+    string SourceName)
+{
+    public IdentityProviderConnectionReference? ShadowedBy { get; init; }
+    public IReadOnlyCollection<IdentityProviderConnectionReference> Shadows { get; init; } = [];
+}
+
+public sealed record EffectiveConnectionRegistry(
+    IReadOnlyCollection<EffectiveIdentityProviderConnection> Connections,
+    IReadOnlyCollection<LoginMethod> LoginMethods,
+    string SourceVersion);
+
+public sealed record ConnectionValidationContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, ISystemClock Clock);
+
+public sealed record ExternalAuthorizationContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, BrokerTransaction Transaction, string CorrelationState, ISystemClock Clock);
+
+public sealed record ExternalCallbackContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, BrokerTransaction Transaction, string CorrelationState, IReadOnlyDictionary<string, IReadOnlyCollection<string>> Parameters, ISystemClock Clock);
+
+public sealed record ConnectionTestContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, ISystemClock Clock);
+
+public sealed record ExternalLogoutContext(EffectiveIdentityProviderConnection Connection, IReadOnlyDictionary<string, ResolvedSecretBinding> Secrets, BrokerTransaction Transaction, string CorrelationState, ISystemClock Clock, SensitiveString? UpstreamLogoutHint = null);
+
+public sealed record UnlinkedIdentityContext(string TargetTenantId, EffectiveIdentityProviderConnection Connection, ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, JsonElement Settings);
+public sealed record ExternalUserMatcherContext(string TargetTenantId, EffectiveIdentityProviderConnection Connection, ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, JsonElement Settings);
+
+public abstract record UnlinkedIdentityDecision
+{
+    private UnlinkedIdentityDecision() { }
+    public sealed record Reject(string SafeReason) : UnlinkedIdentityDecision;
+    public sealed record CreateUser(UserCreationProposal Proposal) : UnlinkedIdentityDecision;
+    public sealed record LinkExistingUser(string UserId, string AuthorizationBasis) : UnlinkedIdentityDecision;
+}
+
+public sealed record ExternalIdentityResolutionContext(string TargetTenantId, EffectiveIdentityProviderConnection Connection, ExternalIdentity Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims);
+
+public sealed record PermissionGrantContext(string TargetTenantId, string UserId, EffectiveIdentityProviderConnection Connection, ExternalIdentity? Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims, GrantSourceSelection Selection);
+public sealed record PermissionGrantResolutionContext(string TargetTenantId, string UserId, EffectiveIdentityProviderConnection Connection, ExternalIdentity? Identity, IReadOnlyDictionary<string, IReadOnlyCollection<string>> ProjectedClaims);
+
+public abstract record ExternalAuthenticationSessionRotationResult
+{
+    private ExternalAuthenticationSessionRotationResult() { }
+    public sealed record Rotated(ExternalAuthenticationSession Session) : ExternalAuthenticationSessionRotationResult;
+    public sealed record NotFound : ExternalAuthenticationSessionRotationResult;
+    public sealed record Expired : ExternalAuthenticationSessionRotationResult;
+    public sealed record Reused : ExternalAuthenticationSessionRotationResult;
+    public sealed record Revoked : ExternalAuthenticationSessionRotationResult;
+}

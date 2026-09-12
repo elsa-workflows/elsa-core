@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Models;
@@ -30,7 +31,7 @@ public class Submit : ElsaEndpoint<AlterationPlanParams, Response>
     public override void Configure()
     {
         Post("/alterations/submit");
-        ConfigurePermissions("run:alterations");
+        RequirePermission(Elsa.Alterations.Permissions.AlterationPermissions.Alterations, CoreVerbs.Execute);
     }
 
     /// <inheritdoc />

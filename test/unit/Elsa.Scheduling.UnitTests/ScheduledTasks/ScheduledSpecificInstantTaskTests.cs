@@ -1,9 +1,12 @@
 using Elsa.Common;
 using Elsa.Mediator.Contracts;
+using Elsa.Scheduling.Options;
 using Elsa.Scheduling.ScheduledTasks;
+using Elsa.Scheduling.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Scheduling.UnitTests.ScheduledTasks;
 
@@ -17,6 +20,12 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
     private readonly ServiceProvider _serviceProvider;
     private readonly ISystemClock _systemClock;
     private readonly ILogger<ScheduledSpecificInstantTask> _logger;
+    private readonly PastDueScheduleStaggerer _pastDueScheduleStaggerer = new(OptionsFactory.Create(new SchedulingOptions
+    {
+        MinimumPastDueScheduleDelay = TimeSpan.FromMilliseconds(10),
+        PastDueScheduleStaggerInterval = TimeSpan.FromMilliseconds(25),
+        PastDueScheduleStaggerWindow = TimeSpan.FromMilliseconds(100)
+    }));
     private readonly List<ScheduledSpecificInstantTask> _tasksToDispose = new();
 
     public ScheduledSpecificInstantTaskTests()
@@ -39,7 +48,8 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
             startAt ?? DefaultNow.AddMinutes(5),
             systemClock ?? _systemClock,
             _serviceProvider.CreateScope().ServiceProvider.GetRequiredService<IServiceScopeFactory>(),
-            _logger
+            _logger,
+            _pastDueScheduleStaggerer
         );
         _tasksToDispose.Add(scheduledTask);
         return scheduledTask;
@@ -60,10 +70,10 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
             Arg.Any<Func<object, Exception?, string>>());
     }
 
-    private void AssertWarningLogged(int expectedCount = 1)
+    private void AssertDebugLogged(int expectedCount = 1)
     {
         _logger.Received(expectedCount).Log(
-            LogLevel.Warning,
+            LogLevel.Debug,
             Arg.Any<EventId>(),
             Arg.Any<object>(),
             Arg.Any<Exception>(),
@@ -85,31 +95,58 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
     }
 
     [Fact]
-    public void Schedule_WithZeroDelay_ShouldUseMinimumDelay()
+    public void Schedule_WithZeroDelay_ShouldUseCatchUpDelay()
     {
         // Arrange - simulate a case where startAt is exactly now
         SetupSystemClock(DefaultNow);
         var startAt = DefaultNow; // delay = 0
 
-        // Act - Should adjust to 1ms minimum delay
+        // Act - Should adjust to a bounded catch-up delay
         CreateScheduledTask(startAt: startAt);
 
-        // Assert - Should not crash and should log warning
-        AssertWarningLogged();
+        AssertDebugLogged();
     }
 
     [Fact]
-    public void Schedule_WithNegativeDelay_ShouldUseMinimumDelay()
+    public void Schedule_WithNegativeDelay_ShouldUseCatchUpDelay()
     {
         // Arrange - simulate a case where startAt is in the past
         SetupSystemClock(DefaultNow);
         var startAt = DefaultNow.AddMinutes(-1); // Past time
 
-        // Act - Should adjust to 1ms minimum delay
+        // Act - Should adjust to a bounded catch-up delay
         CreateScheduledTask(startAt: startAt);
 
-        // Assert - Should log a warning
-        AssertWarningLogged();
+        AssertDebugLogged();
+    }
+
+    [Fact]
+    public void Schedule_WithMultiplePastDueTasks_ShouldStaggerCatchUp()
+    {
+        SetupSystemClock(DefaultNow);
+
+        CreateScheduledTask(startAt: DefaultNow.AddMinutes(-1));
+        CreateScheduledTask(startAt: DefaultNow.AddMinutes(-1));
+        CreateScheduledTask(startAt: DefaultNow.AddMinutes(-1));
+
+        _logger.Received(1).Log(
+            LogLevel.Debug,
+            Arg.Any<EventId>(),
+            Arg.Is<object>(x => x.ToString()!.Contains("00:00:00.0100000")),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
+        _logger.Received(1).Log(
+            LogLevel.Debug,
+            Arg.Any<EventId>(),
+            Arg.Is<object>(x => x.ToString()!.Contains("00:00:00.0350000")),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
+        _logger.Received(1).Log(
+            LogLevel.Debug,
+            Arg.Any<EventId>(),
+            Arg.Is<object>(x => x.ToString()!.Contains("00:00:00.0600000")),
+            Arg.Any<Exception>(),
+            Arg.Any<Func<object, Exception?, string>>());
     }
 
     [Fact]

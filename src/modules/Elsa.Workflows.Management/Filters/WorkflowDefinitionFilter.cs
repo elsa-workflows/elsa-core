@@ -23,6 +23,11 @@ public class WorkflowDefinitionFilter
     public ICollection<string>? Ids { get; set; }
 
     /// <summary>
+    /// Filter by label IDs associated with workflow definition versions. An optional filter provider resolves these IDs into version IDs before the store query is executed; any matching label ID qualifies a version, while an omitted or empty collection leaves the results unfiltered. The workflow-definition list endpoint requires label view permission for a non-empty collection.
+    /// </summary>
+    public ICollection<string>? LabelIds { get; set; }
+
+    /// <summary>
     /// Filter by the ID of the workflow definition.
     /// </summary>
     public string? DefinitionId { get; set; }

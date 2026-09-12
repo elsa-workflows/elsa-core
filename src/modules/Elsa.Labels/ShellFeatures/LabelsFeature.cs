@@ -1,8 +1,11 @@
 using CShells.Features;
+using Elsa.Common.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
 using Elsa.Labels.Services;
+using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Workflows.Management;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,10 +14,11 @@ namespace Elsa.Labels.ShellFeatures;
 /// <summary>
 /// Enables functionality to tag workflows with labels.
 /// </summary>
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "Labels",
     Description = "Enables functionality to tag workflows with labels",
-    DependsOn = ["Mediator"])]
+    DependsOn = [typeof(MediatorFeature)])]
 [UsedImplicitly]
 public class LabelsFeature : IShellFeature
 {
@@ -34,7 +38,8 @@ public class LabelsFeature : IShellFeature
             .AddMemoryStore<Label, InMemoryLabelStore>()
             .AddMemoryStore<WorkflowDefinitionLabel, InMemoryWorkflowDefinitionLabelStore>()
             .AddScoped(LabelStore)
-            .AddScoped(WorkflowDefinitionLabelStore);
+            .AddScoped(WorkflowDefinitionLabelStore)
+            .AddScoped<IWorkflowDefinitionFilterProvider, WorkflowDefinitionLabelFilterProvider>();
 
         services.AddNotificationHandlersFrom(GetType());
     }

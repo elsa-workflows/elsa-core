@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.ComponentModel;
 using System.Reflection;
 using Elsa.Abstractions;
@@ -30,7 +31,7 @@ internal class List : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/descriptors/variables");
-        ConfigurePermissions("read:*", "read:variable-descriptors");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsVariables, CoreVerbs.View);
     }
 
     /// <inheritdoc />

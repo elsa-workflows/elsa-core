@@ -25,8 +25,8 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                 columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
                 unique: true);
 
-            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_WorkflowExecutionLogRecord_ActivityNodeId\"");
-            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_ActivityExecutionRecord_ActivityNodeId\"");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_WorkflowExecutionLogRecord_ActivityNodeId\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_ActivityExecutionRecord_ActivityNodeId\";");
         }
 
         /// <inheritdoc />

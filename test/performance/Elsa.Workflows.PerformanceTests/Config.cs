@@ -8,6 +8,7 @@ public class Config : ManualConfig
 {
     public Config()
     {
+        BuildTimeout = TimeSpan.FromMinutes(5);
         AddExporter(MarkdownExporter.GitHub);
         AddDiagnoser(MemoryDiagnoser.Default);
     }

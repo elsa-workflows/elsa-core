@@ -1,5 +1,5 @@
 using Elsa.Common;
-using Elsa.Dashboard.Api.Models;
+using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Services;
 
 namespace Elsa.Dashboard.Api.UnitTests;

@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Management;
 /// <summary>
 /// Configures the management feature to use Sqlite persistence.
 /// </summary>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Workflows")]
 [ShellFeature(
     DisplayName = "Sqlite Workflow Definition Persistence",
     Description = "Provides Sqlite persistence for workflow definitions",
-    DependsOn = ["WorkflowManagement", "WorkflowDefinitions"])]
+    DependsOn = [typeof(WorkflowManagementFeature), typeof(WorkflowDefinitionsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow definitions in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteWorkflowDefinitionPersistenceShellFeature

@@ -71,7 +71,6 @@ public record AITurnRequest
     public IReadOnlyCollection<AIMessage> Messages { get; init; } = [];
     public IReadOnlyCollection<AIResolvedContext> Context { get; init; } = [];
     public IReadOnlyCollection<AIToolDefinition> Tools { get; init; } = [];
-    public IReadOnlyCollection<AIToolTurnResult> ToolResults { get; init; } = [];
     public string? Agent { get; init; }
     public AIProviderConfiguration? ProviderConfiguration { get; init; }
 }
@@ -85,11 +84,11 @@ public record AIProviderConfiguration
     public string? Endpoint { get; init; }
 }
 
-public record AIToolTurnResult
+public record AIProviderToolInvocation
 {
-    public string ToolCallId { get; init; } = default!;
+    public string Id { get; init; } = Guid.NewGuid().ToString("N");
     public string ToolName { get; init; } = default!;
-    public AIToolResult Result { get; init; } = new();
+    public JsonObject Arguments { get; init; } = [];
 }
 
 public record AIProviderEvent

@@ -10,4 +10,11 @@ public class ActivityRegistryPopulator(IEnumerable<IActivityProvider> providers,
     {
         await registry.RefreshDescriptorsAsync(providers, cancellationToken);
     }
+
+    /// <inheritdoc />
+    public async Task EnsureRegistryPopulatedAsync(CancellationToken cancellationToken)
+    {
+        foreach (var provider in providers)
+            await registry.EnsureDescriptorsAsync(provider, cancellationToken);
+    }
 }

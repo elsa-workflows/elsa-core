@@ -72,13 +72,28 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
     private static string ResolveConfiguredInstanceName(string value, string source, ILogger logger)
     {
         var instanceName = value.Trim();
+        var isTooLong = instanceName.Length > ConfiguredInstanceNameMaxLength;
+        var hasInvalidCharacters = !IsValidConfiguredInstanceName(instanceName);
 
-        if (!IsValidConfiguredInstanceName(instanceName))
-            throw new InvalidOperationException(
+        if (hasInvalidCharacters)
+        {
+            var errors = new List<string>
+            {
                 $"The configured application instance name from {source} contains invalid characters. " +
-                "Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a letter or number.");
+                "Use only letters, numbers, periods, hyphens, or underscores, and start and end the value with a letter or number."
+            };
 
-        if (instanceName.Length <= ConfiguredInstanceNameMaxLength)
+            if (isTooLong)
+            {
+                errors.Add(
+                    $"The configured application instance name from {source} is {instanceName.Length} characters long, but it must be {ConfiguredInstanceNameMaxLength} characters or fewer. " +
+                    $"The value is used to create per-instance transport entities such as '{instanceName}{TriggerChangeTokenSignalEndpointNameSuffix}', which must fit within Azure Service Bus's {AzureServiceBusSubscriptionNameMaxLength}-character subscription name limit.");
+            }
+
+            throw new InvalidOperationException(string.Join(" ", errors));
+        }
+
+        if (!isTooLong)
             return instanceName;
 
         var shortenedName = ShortenConfiguredInstanceName(instanceName);
@@ -96,10 +111,8 @@ public class ConfiguredApplicationInstanceNameProvider : IApplicationInstanceNam
 
     private static bool IsValidConfiguredInstanceName(string instanceName)
     {
-        if (instanceName.Length == 0)
-            return false;
-
-        return IsAsciiLetterOrDigit(instanceName[0])
+        return instanceName.Length > 0
+            && IsAsciiLetterOrDigit(instanceName[0])
             && IsAsciiLetterOrDigit(instanceName[^1])
             && instanceName.All(c => IsAsciiLetterOrDigit(c) || c is '.' or '-' or '_');
     }

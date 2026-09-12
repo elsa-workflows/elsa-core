@@ -206,6 +206,19 @@ public static class JsonActivityConstructorContextHelper
 
             var output = Activator.CreateInstance(wrappedType, variable)!;
 
+            if (propertyElement.TryGetProperty("converter", out var converterElement) &&
+                converterElement.ValueKind == JsonValueKind.Object &&
+                converterElement.TryGetProperty("id", out var converterIdElement))
+            {
+                var settings = converterElement.TryGetProperty("settings", out var settingsElement)
+                    ? settingsElement
+                    : (JsonElement?)null;
+                var converterId = converterIdElement.ValueKind == JsonValueKind.String
+                    ? converterIdElement.GetString()
+                    : null;
+                ((Output)output).Converter = new(converterId ?? string.Empty, settings);
+            }
+
             activity.SyntheticProperties[outputName] = output!;
         }
     }

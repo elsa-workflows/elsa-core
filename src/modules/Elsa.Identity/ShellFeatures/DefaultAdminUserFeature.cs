@@ -2,7 +2,7 @@ using CShells.Features;
 using Elsa.Extensions;
 using Elsa.Identity.HostedServices;
 using Elsa.Identity.Options;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,10 +11,12 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Feature that initializes an admin user from configuration if provided.
 /// </summary>
+[ManifestFeatureCategory("Identity")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Default Admin User Initialization",
     Description = "Initializes a default admin user from configuration if provided",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(IdentityFeature)])]
 [UsedImplicitly]
 public class DefaultAdminUserFeature : IShellFeature
 {

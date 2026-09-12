@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12");
+                .HasAnnotation("ProductVersion", "9.0.17");
 
             modelBuilder.Entity("Elsa.Identity.Entities.Application", b =>
                 {
@@ -57,16 +57,16 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Application_ClientId");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Application_Name");
-
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Application_TenantId");
+
+                    b.HasIndex("TenantId", "ClientId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Application_TenantId_ClientId");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Application_TenantId_Name");
 
                     b.ToTable("Applications", "Elsa");
                 });
@@ -90,12 +90,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Role_Name");
-
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Role_TenantId");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Role_TenantId_Name");
 
                     b.ToTable("Roles", "Elsa");
                 });
@@ -106,11 +106,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
                         .HasColumnType("TEXT");
 
                     b.Property<string>("HashedPassword")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("HashedPasswordSalt")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -127,12 +125,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_User_Name");
-
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_User_TenantId");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_User_TenantId_Name");
 
                     b.ToTable("Users", "Elsa");
                 });

@@ -1,0 +1,277 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Bpmn.Model;
+using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
+
+namespace Elsa.Bpmn.Interchange.Binding;
+
+/// <summary>
+/// The <c>elsa:</c> vendor extension that records which Elsa activity performs a BPMN task the document describes but
+/// does not implement, and the one place the names making up that format are defined.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>Where it lives.</b> Inside the BPMN document, as a vendor extension on the element it binds — not in a side
+/// envelope. An exported <c>.bpmn</c> is therefore self-contained and re-importable by itself. <c>Bpmn.Interchange</c>
+/// retains any extension element it does not own as typed foreign content and writes it back where it came from, which
+/// is what makes this survive a read-modify-write cycle; the library never interprets it.
+/// </para>
+/// <para>
+/// <b>The format.</b> Namespace URI <c>https://elsaworkflows.io/schemas/bpmn/v1</c>, conventional prefix <c>elsa</c>.
+/// One <c>&lt;elsa:activityBinding&gt;</c> element inside the BPMN element's <c>&lt;bpmn:extensionElements&gt;</c>:
+/// </para>
+/// <list type="table">
+///   <item>
+///     <term><c>activityType</c> — attribute, required</term>
+///     <description>
+///       The Elsa activity type name as the activity registry keys it, e.g. <c>Elsa.WriteLine</c>. This is
+///       <see cref="IActivity.Type"/>, not a CLR type name.
+///     </description>
+///   </item>
+///   <item>
+///     <term><c>&lt;elsa:input name="…"&gt;</c> — child element, zero or more, <c>name</c> unique within the binding</term>
+///     <description>
+///       One per configured activity input — every property <see cref="IActivityDescriber.GetInputProperties"/> reports
+///       for the activity's CLR type, which is both every <c>Input&lt;T&gt;</c>-typed property and every plain-typed
+///       property carrying <c>[Input]</c> (e.g. <c>Switch.Cases</c>); that is the same enumeration
+///       <c>ActivityDescriptor.Inputs</c> is built from, so this format writes exactly the inputs Elsa itself considers
+///       the activity to have. <c>name</c> is the input's property name as it appears in the activity's own JSON
+///       (camelCase). The element's text is that single input value serialized by Elsa's configured activity
+///       serializer — the same serializer a stored workflow definition is written and read through — so its shape
+///       depends on how the activity declares the input: an <c>Input&lt;T&gt;</c>-typed property carries the
+///       <c>{"typeName":…,"expression":…}</c> wrapper, which is what makes every expression type Elsa knows about
+///       round-trip unchanged, while a plain-typed property carrying <c>[Input]</c> (e.g. <c>Switch.Cases</c>) carries
+///       that value's own JSON — a collection such as <c>Switch.Cases</c> exports as a JSON array, not the wrapper.
+///       No second encoding of activity inputs has to be kept in step with Elsa's own; an implementer must not assume
+///       a single wrapper shape, only that the text is whatever Elsa's activity serializer produced for that input and
+///       that reading it back through the same serializer reconstructs it. A second <c>&lt;elsa:input&gt;</c> naming an
+///       input already declared is refused rather than silently taking the later one, and a <c>name</c> the activity
+///       type does not declare an input for is refused rather than importing an activity quietly missing that configuration — Elsa's
+///       deserializer ignores an unknown JSON member without complaint, so nothing else would ever say so. Both are
+///       refused the same way an unregistered activity type or a call activity with no <c>calledElement</c> is refused
+///       elsewhere in this binder.
+///     </description>
+///   </item>
+/// </list>
+/// <para>
+/// <b>Escaping.</b> An input's text is JSON, carried as ordinary XML element text — not wrapped in
+/// <c>&lt;![CDATA[…]]&gt;</c>. <c>&lt;</c>, <c>&gt;</c> and <c>&amp;</c> inside the JSON (for example, inside a string
+/// literal) are therefore XML-escaped as <c>&amp;lt;</c>, <c>&amp;gt;</c> and <c>&amp;amp;</c> the way any XML text
+/// node escapes them; <c>Bpmn.Interchange</c> reads and writes this content through <c>System.Xml.Linq</c>, whose
+/// standard text-node escaping decodes it back to the original JSON automatically. Nothing else needs to escape or
+/// unescape this text: <see cref="Write"/> hands the writer plain JSON, and <see cref="Read"/> reads
+/// <see cref="BpmnExtensionElement.Value"/> already decoded.
+/// </para>
+/// <para>Example, an <c>Input&lt;T&gt;</c>-typed input wrapped as an expression:</para>
+/// <code>
+/// &lt;bpmn:serviceTask id="notify"&gt;
+///   &lt;bpmn:extensionElements&gt;
+///     &lt;elsa:activityBinding activityType="Elsa.WriteLine"&gt;
+///       &lt;elsa:input name="text"&gt;{"typeName":"String","expression":{"type":"JavaScript","value":"getMessage()"}}&lt;/elsa:input&gt;
+///     &lt;/elsa:activityBinding&gt;
+///   &lt;/bpmn:extensionElements&gt;
+/// &lt;/bpmn:serviceTask&gt;
+/// </code>
+/// <para>Example, an <c>[Input]</c>-attributed plain-typed input carrying its own JSON shape (here, an array):</para>
+/// <code>
+/// &lt;bpmn:exclusiveGateway id="route"&gt;
+///   &lt;bpmn:extensionElements&gt;
+///     &lt;elsa:activityBinding activityType="Elsa.Switch"&gt;
+///       &lt;elsa:input name="cases"&gt;[{"label":"case one","condition":{"type":"Literal","value":true}}]&lt;/elsa:input&gt;
+///     &lt;/elsa:activityBinding&gt;
+///   &lt;/bpmn:extensionElements&gt;
+/// &lt;/bpmn:exclusiveGateway&gt;
+/// </code>
+/// <para>
+/// <b>Position is the key.</b> The element it sits inside is the element it binds; nothing records a binding ref.
+/// That is deliberate: a binding ref is derived by the reader from the element id and a configurable prefix
+/// (<c>BpmnImportOptions.BindingRefPrefix</c>), so writing one into the document would make an exported file depend on
+/// the import setting that happened to be in force when it was produced.
+/// </para>
+/// <para>
+/// <b>This is a compatibility surface.</b> Changing <see cref="NamespaceUri"/>, <see cref="BindingElementName"/>,
+/// <see cref="ActivityTypeAttributeName"/>, <see cref="InputElementName"/> or <see cref="InputNameAttributeName"/>
+/// breaks every previously exported <c>.bpmn</c> file: the old element stops being recognised and silently becomes
+/// unrelated foreign content, which reads back as a task nobody bound. Anything that reads or writes this shape —
+/// Elsa Studio included — has to agree with these constants, so a change here is a versioning decision, not a rename.
+/// </para>
+/// <para>
+/// <b>Disclosure.</b> An exported <c>.bpmn</c> carries the binding configuration verbatim, which includes input
+/// expressions: literal values, JavaScript, C#, Liquid, connection or endpoint names — whatever the author put on the
+/// activity. Exporting a process is therefore a disclosure of its implementation detail, and a <c>.bpmn</c> from a
+/// production tenant should be handled with the same care as the workflow definition it was built from. Nothing is
+/// redacted, on purpose: a quietly redacted export produces a file that still looks executable and is not, and the
+/// failure only shows up as wrong behaviour after someone re-imports it.
+/// </para>
+/// </remarks>
+public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerializer, IActivityDescriber activityDescriber)
+{
+    /// <summary>The namespace URI of the <c>elsa:</c> BPMN vendor extension. See the remarks on this type before changing it.</summary>
+    public const string NamespaceUri = "https://elsaworkflows.io/schemas/bpmn/v1";
+
+    /// <summary>The conventional prefix for <see cref="NamespaceUri"/>. Cosmetic in XML, but used verbatim in diagnostics.</summary>
+    public const string NamespacePrefix = "elsa";
+
+    /// <summary>The local name of the binding element.</summary>
+    public const string BindingElementName = "activityBinding";
+
+    /// <summary>The local name of the attribute naming the Elsa activity type.</summary>
+    public const string ActivityTypeAttributeName = "activityType";
+
+    /// <summary>The local name of a single-input child element.</summary>
+    public const string InputElementName = "input";
+
+    /// <summary>The local name of the attribute naming the input an <see cref="InputElementName"/> element configures.</summary>
+    public const string InputNameAttributeName = "name";
+
+    private static readonly BpmnQName BindingQName = new(NamespaceUri, BindingElementName);
+    private static readonly BpmnQName InputQName = new(NamespaceUri, InputElementName);
+
+    /// <summary>
+    /// The activity binding declared on the given retained content, or <c>null</c> when it declares none.
+    /// </summary>
+    public static BpmnExtensionElement? Find(BpmnExtensions? extensions) =>
+        extensions?.ExtensionElements.FirstOrDefault(element => element.Name == BindingQName);
+
+    /// <summary>
+    /// The given retained content with <paramref name="binding"/> as its activity binding, replacing any it already
+    /// carried and leaving every other retained element in place.
+    /// </summary>
+    /// <remarks>
+    /// Adding rather than replacing would leave two <c>activityBinding</c> elements on one BPMN element, and a reader
+    /// taking the first of them would silently apply the older one.
+    /// </remarks>
+    public static BpmnExtensions Attach(BpmnExtensions? extensions, BpmnExtensionElement binding)
+    {
+        extensions ??= BpmnExtensions.Empty;
+
+        return extensions with
+        {
+            ExtensionElements = extensions.ExtensionElements.Where(element => element.Name != BindingQName).Append(binding).ToList()
+        };
+    }
+
+    /// <summary>
+    /// The binding element declaring that <paramref name="activity"/> performs the work, with each of its configured
+    /// inputs serialized.
+    /// </summary>
+    public BpmnExtensionElement Write(IActivity activity)
+    {
+        // The same set IActivityDescriber.DescribeActivityAsync builds an ActivityDescriptor.Inputs from — every
+        // property carrying an Input<T>, and every plain-typed property carrying [Input] (e.g. Switch.Cases). Filtering
+        // on "derives from Input" alone, as this used to, silently drops the latter kind's configuration from the
+        // export.
+        //
+        // Ordered by name so that exporting the same activity twice produces the same bytes, which is what makes a
+        // .bpmn file diffable and a round-trip test meaningful.
+        var inputs = activityDescriber.GetInputProperties(activity.GetType())
+            .Select(property => (Name: JsonNamingPolicy.CamelCase.ConvertName(property.Name), Value: property.GetValue(activity)))
+            .Where(input => input.Value is not null)
+            .OrderBy(input => input.Name, StringComparer.Ordinal)
+            .Select(input => new BpmnExtensionElement(InputQName, [Attribute(InputNameAttributeName, input.Name)], null, activitySerializer.Serialize(input.Value!)))
+            .ToList();
+
+        return new(BindingQName, [Attribute(ActivityTypeAttributeName, activity.Type)], inputs);
+    }
+
+    /// <summary>
+    /// The activity a binding element declares, built through Elsa's own activity serializer so that it is
+    /// indistinguishable from the same activity loaded out of a stored workflow definition.
+    /// </summary>
+    /// <exception cref="BpmnBindingException">
+    /// The element is malformed, names an activity type nothing registered, or names an input the activity type does
+    /// not declare.
+    /// </exception>
+    public IActivity Read(BpmnExtensionElement element)
+    {
+        var activityType = AttributeOf(element, ActivityTypeAttributeName)
+                           ?? throw new BpmnBindingException($"An <{NamespacePrefix}:{BindingElementName}> element declares no '{ActivityTypeAttributeName}', so there is nothing to build.");
+
+        var activityJson = new JsonObject
+        {
+            ["type"] = activityType
+        };
+
+        // Every name seen so far, in the order the document declares them, so a second <elsa:input> with the same
+        // name is refused rather than silently overwriting activityJson[name] and leaving the earlier one's
+        // configuration invisible.
+        var seenInputNames = new List<string>();
+        var seenInputNameSet = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var input in element.Children.Where(child => child.Name == InputQName))
+        {
+            var name = AttributeOf(input, InputNameAttributeName)
+                       ?? throw new BpmnBindingException($"An <{NamespacePrefix}:{InputElementName}> element of the '{activityType}' binding declares no '{InputNameAttributeName}'.");
+
+            if (!seenInputNameSet.Add(name))
+                throw new BpmnBindingException($"The '{activityType}' binding declares the input '{name}' more than once. Each <{NamespacePrefix}:{InputElementName}> must name a distinct input.");
+
+            seenInputNames.Add(name);
+            activityJson[name] = Parse(input.Value, name, activityType);
+        }
+
+        IActivity activity;
+
+        try
+        {
+            activity = activitySerializer.Deserialize(activityJson.ToJsonString());
+        }
+        catch (Exception exception) when (exception is JsonException or NotSupportedException)
+        {
+            throw new BpmnBindingException($"The binding to activity type '{activityType}' could not be deserialized: {exception.Message}");
+        }
+
+        // Elsa's activity serializer answers an unregistered type with a NotFoundActivity rather than throwing, and
+        // that placeholder only fails once it executes — by which time the workflow has already started and the
+        // process is mid-flight. Refusing at bind time turns "this .bpmn needs a module you have not installed" into a
+        // sentence naming the type, at the point where someone can still do something about it.
+        if (activity is NotFoundActivity)
+            throw new BpmnBindingException($"The binding names activity type '{activityType}', which is not registered in this application. Install or enable the module providing it before importing this document.");
+
+        // Elsa's own JSON deserialization ignores a member the target type does not declare, so a mistyped or
+        // stale input name would otherwise import silently as an activity missing that configuration, with no
+        // diagnostic anywhere. IActivityDescriber.GetInputProperties is the same enumeration Write reads from and
+        // ActivityDescriptor.Inputs is built from, so a name is accepted here exactly when Write could have produced
+        // it.
+        if (seenInputNames.Count > 0)
+        {
+            var declaredInputNames = activityDescriber.GetInputProperties(activity.GetType())
+                .Select(property => JsonNamingPolicy.CamelCase.ConvertName(property.Name))
+                .ToHashSet(StringComparer.Ordinal);
+
+            var undeclaredInputNames = seenInputNames.Where(name => !declaredInputNames.Contains(name)).ToList();
+
+            if (undeclaredInputNames.Count > 0)
+            {
+                var noun = undeclaredInputNames.Count == 1 ? "an input" : "inputs";
+                var names = string.Join(", ", undeclaredInputNames.Select(name => $"'{name}'"));
+
+                throw new BpmnBindingException($"The '{activityType}' binding declares {noun} {names}, which '{activityType}' does not have.");
+            }
+        }
+
+        return activity;
+    }
+
+    private static JsonNode? Parse(string? json, string inputName, string activityType)
+    {
+        try
+        {
+            return JsonNode.Parse(json ?? "null");
+        }
+        catch (JsonException exception)
+        {
+            throw new BpmnBindingException($"Input '{inputName}' of the '{activityType}' binding does not hold valid JSON: {exception.Message}");
+        }
+    }
+
+    private static BpmnForeignAttribute Attribute(string name, string value) => new(new(null, name), value);
+
+    // An unprefixed XML attribute belongs to no namespace, which is what the reader records for these; comparing on
+    // the local name alone would also match a same-named attribute some other vendor put in its own namespace.
+    private static string? AttributeOf(BpmnExtensionElement element, string name) =>
+        element.Attributes.FirstOrDefault(attribute => string.IsNullOrEmpty(attribute.Name.Namespace) && attribute.Name.LocalName == name)?.Value;
+}

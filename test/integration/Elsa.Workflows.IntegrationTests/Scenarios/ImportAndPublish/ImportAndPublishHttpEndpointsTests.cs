@@ -9,10 +9,12 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.ImportAndPublish;
 public class ImportAndPublishHttpEndpointsTests
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
+    private readonly ITestOutputHelper _testOutputHelper;
     private readonly IServiceProvider _services;
 
     public ImportAndPublishHttpEndpointsTests(ITestOutputHelper testOutputHelper)
     {
+        _testOutputHelper = testOutputHelper;
         _services = new TestApplicationBuilder(testOutputHelper)
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(configure => configure.UseHttp())
@@ -62,6 +64,43 @@ public class ImportAndPublishHttpEndpointsTests
 
         // Assert second workflow.
         Assert.False(result.Succeeded);
+        Assert.Single(result.ValidationErrors);
+        Assert.Equal("The /test path and get method are already in use by another workflow!", result.ValidationErrors.Single().Message);
+    }
+
+    [Fact(DisplayName = "Http endpoint workflow with duplicate path and method should publish successfully when FailOnValidationErrors is disabled.")]
+    public async Task ImportAndPublish_ShouldSucceed_WithTwoHttpEndpointSamePathMethod_WhenFailOnValidationErrorsDisabled()
+    {
+        // Opt out of strict publishing.
+        var services = new TestApplicationBuilder(_testOutputHelper)
+            .WithCapturingTextWriter(_capturingTextWriter)
+            .ConfigureElsa(configure => configure
+                .UseHttp()
+                .UseWorkflowManagement(management => management.UseFailOnValidationErrors(false)))
+            .Build();
+
+        // Populate registries.
+        await services.PopulateRegistriesAsync();
+
+        // Import first workflow.
+        var workflowDefinition = await services.ImportWorkflowDefinitionAsync($"Scenarios/ImportAndPublish/Workflows/http-workflow.json");
+
+        // Publish first workflow.
+        IWorkflowDefinitionPublisher workflowDefinitionPublisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
+
+        // Assert first workflow.
+        Assert.True(result.Succeeded);
+        Assert.Empty(result.ValidationErrors);
+
+        // Import second workflow.
+        workflowDefinition = await services.ImportWorkflowDefinitionAsync($"Scenarios/ImportAndPublish/Workflows/http-workflow.json");
+
+        // Publish second workflow.
+        result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
+
+        // Assert: publishing succeeds while the validation error is surfaced as a warning.
+        Assert.True(result.Succeeded);
         Assert.Single(result.ValidationErrors);
         Assert.Equal("The /test path and get method are already in use by another workflow!", result.ValidationErrors.Single().Message);
     }

@@ -1,5 +1,6 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Services;
 using Elsa.Extensions;
@@ -11,6 +12,7 @@ using Elsa.Workflows.Management.Providers;
 using Elsa.Workflows.Management.Services;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.PortResolvers;
+using Elsa.Workflows.Serialization.Serializers;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -183,5 +185,8 @@ public class ActivityTestFixture
         services.AddSingleton<IActivityExecutionContextSchedulerStrategy, FakeActivityExecutionContextSchedulerStrategy>();
         services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddScoped<IWorkflowStateExtractor, WorkflowStateExtractor>();
+        services.AddOptions();
+        services.AddSingleton<ISerializationTypeRegistry, SerializationTypeRegistry>();
+        services.AddSingleton<IPayloadSerializer, JsonPayloadSerializer>();
     }
 }

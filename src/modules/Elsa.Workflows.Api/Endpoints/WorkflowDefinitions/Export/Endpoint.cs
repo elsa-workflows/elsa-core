@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Management;
@@ -16,7 +17,7 @@ internal class Export(IWorkflowDefinitionExporter exporter) : ElsaEndpoint<Reque
     {
         Routes("/bulk-actions/export/workflow-definitions", "/workflow-definitions/{definitionId}/export");
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     /// <inheritdoc />

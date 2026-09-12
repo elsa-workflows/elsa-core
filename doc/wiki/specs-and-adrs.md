@@ -25,6 +25,9 @@ Current ADRs:
 | [0008](../adr/0008-empty-string-as-default-tenant-id.md) | Empty string as default tenant ID. |
 | [0009](../adr/0009-asterisk-sentinel-value-for-tenant-agnostic-entities.md) | Asterisk sentinel value for tenant-agnostic entities. |
 | [0010](../adr/0010-default-admin-user-bootstrap-for-initial-identity-access.md) | Default admin user bootstrap for initial identity access. |
+| [0011](../adr/0011-output-conversion-at-binding-is-synchronous.md) | Output conversion occurs synchronously at the binding boundary. |
+| [0012](../adr/0012-output-converters-use-explicit-stable-identities.md) | Output converters use explicit stable identities. |
+| [0013](../adr/0013-output-converter-discovery-is-server-owned.md) | Output converter discovery is server-owned. |
 
 ## Active And Recent Specs
 
@@ -38,7 +41,14 @@ Current ADRs:
 | [006 diagnostics console logs](../../specs/006-diagnostics-console-logs/spec.md) | Diagnostics | Defines capture, buffering, endpoints, SignalR hub, permissions, source identity, and redaction for raw console output. |
 | [006 state machine activity](../../specs/006-state-machine-activity/spec.md) | Workflow core | Adds a state machine activity with named states and trigger-driven transitions to the workflow engine. |
 | [007 secrets module](../../specs/007-secrets-module/spec.md) | Secrets | Revamps the secrets module with named secrets, pluggable stores, extensible secret types, secret picker UX, permissions, import/export encryption support, and migration from existing sensitive fields. |
+| [008 diagnostics OpenTelemetry](../../specs/008-diagnostics-otel/spec.md) | Diagnostics | Defines the first-party OTLP ingestion backend, trace/metric/log storage and query APIs, live SignalR streaming, and Studio-facing telemetry investigation. |
+| [008 Weaver AI copilot](../../specs/008-weaver-ai-copilot/spec.md) | AI | Implements Weaver, an agentic workflow assistant with streaming chat, context resolution, reviewable proposals, audit, and Studio integration. |
 | [009 operational dashboard](../../specs/009-operational-dashboard/prd.md) | Dashboard API | PRD for a read-only backend dashboard API module exposing workflow activity aggregates, health signals, and operational summaries without requiring Studio to orchestrate many separate requests. |
+| [010 workflow JSON hardening](../../specs/010-workflow-json-hardening/spec.md) | Workflow core | Introduces dedicated type aliases for workflow JSON, rejects unknown/unsafe CLR names, and preserves backward-compatible reads for selected legacy identifiers. |
+| [011 persistence vNext](../../specs/011-persistence-vnext/spec.md) | Persistence | Provider-neutral module-owned storage manifests, portable document/index store, relational and MongoDB physicalization, and schema versioning without per-provider migration packages. |
+| [012 output converters](../../specs/012-output-converters/spec.md) | Workflow core | Extensible, explicitly-identified output converters that transform an activity's native output at the binding boundary before writing the destination variable or workflow output. |
+| [012 external authentication](../../specs/012-external-authentication/spec.md) | Security | Server-brokered external identity providers: Identity Provider Connections, OpenID Connect adapter, linked identity resolution, configurable unlinked-identity policies, and EF Core persistence across all providers. |
+| [012 weaver grounding tools](../../specs/012-weaver-grounding-tools/spec.md) | AI | Grounds Weaver in real Elsa server data: activity registry discovery, workflow definition inspection, instance and incident investigation, and proposal-based workflow authoring with validation. |
 
 Each spec folder usually contains:
 
@@ -93,6 +103,50 @@ For runtime behavior, read in this order:
 3. [specs/007-secrets-module/plan.md](../../specs/007-secrets-module/plan.md)
 4. `Elsa.Secrets` feature and contracts
 5. secrets unit tests
+
+## Reading Order For Output Converters Work
+
+1. [Output Converters wiki page](output-converters.md)
+2. [ADR 0011](../adr/0011-output-conversion-at-binding-is-synchronous.md)
+3. [ADR 0012](../adr/0012-output-converters-use-explicit-stable-identities.md)
+4. [ADR 0013](../adr/0013-output-converter-discovery-is-server-owned.md)
+5. [specs/012-output-converters/plan.md](../../specs/012-output-converters/plan.md)
+6. output converter contracts and implementation in `Elsa.Workflows.Core`
+
+## Reading Order For AI Copilot Work
+
+1. [specs/008-weaver-ai-copilot/spec.md](../../specs/008-weaver-ai-copilot/spec.md)
+2. [specs/008-weaver-ai-copilot/plan.md](../../specs/008-weaver-ai-copilot/plan.md)
+3. `Elsa.AI.Abstractions` contracts
+4. `Elsa.AI.Host` feature and endpoints
+5. `Elsa.AI.Copilot` adapter and options
+6. AI unit and integration tests
+
+## Reading Order For External Authentication Work
+
+1. [specs/012-external-authentication/spec.md](../../specs/012-external-authentication/spec.md)
+2. [specs/012-external-authentication/plan.md](../../specs/012-external-authentication/plan.md)
+3. [Identity, Tenancy, And Security](identity-tenancy-security.md)
+4. `Elsa.ExternalAuthentication` feature and contracts
+5. `Elsa.ExternalAuthentication.OpenIdConnect` adapter
+6. `Elsa.ExternalAuthentication.Persistence.EFCore` and provider packages
+
+## Reading Order For BPMN Work
+
+1. [bpmn-workflows.md](bpmn-workflows.md)
+2. `Elsa.Bpmn/Activities/BpmnProcess.cs` — the scope activity
+3. `Elsa.Bpmn/Hosting/BpmnWorkLedger.cs` and `BpmnWorkBinder.cs` — work tracking and binding
+4. `Elsa.Bpmn.Interchange/Binding/BpmnActivityBindingFormat.cs` — `elsa:` vendor extension
+5. `Elsa.Bpmn.Interchange/Features/BpmnInterchangeFeature.cs` — feature registration
+6. `test/integration/Elsa.Bpmn.IntegrationTests` and `Elsa.Bpmn.Interchange.IntegrationTests`
+
+## Reading Order For Persistence vNext Work
+
+1. [Persistence wiki page](persistence.md) — Persistence vNext section
+2. [specs/011-persistence-vnext/spec.md](../../specs/011-persistence-vnext/spec.md)
+3. [specs/011-persistence-vnext/roadmap.md](../../specs/011-persistence-vnext/roadmap.md)
+4. `Elsa.Persistence.VNext` core abstractions
+5. `Elsa.Persistence.VNext.Relational`, `Sqlite`, `PostgreSql`, `SqlServer`, `MongoDb` providers
 
 ## When To Write An ADR
 

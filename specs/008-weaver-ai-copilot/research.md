@@ -29,9 +29,23 @@
 - Expose Copilot SDK types in server contracts: rejected because it would make Elsa public APIs depend on preview runtime details.
 - Build provider-specific behavior into `Elsa.AI.Host`: rejected because provider isolation is a core architectural requirement.
 
+## Decision: Let Copilot SDK own the agent loop
+
+**Rationale**: Weaver's strategic provider is GitHub Copilot SDK, not a generic chat-completion abstraction. The SDK already provides session creation/resume, streaming events, model selection, custom tools, permission handlers, hooks, custom agents, MCP server configuration, and persisted session state. Reimplementing the tool-call/continuation loop in `Elsa.AI.Host` would duplicate the SDK, reduce Copilot capabilities to a lowest-common-denominator protocol, and make custom agents/MCP/hooks harder to expose correctly.
+
+`Elsa.AI.Host` therefore prepares tenant-safe context, resolves the authorized tool set, records audit events, persists Elsa conversations/proposals, and maps provider events. `Elsa.AI.Copilot` creates/resumes Copilot SDK sessions, registers Elsa tools as SDK callbacks, configures Copilot agents/MCP/hooks, and streams SDK session events back as Elsa-owned events.
+
+**Sources**: [GitHub Copilot SDK agent loop](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/agent-loop), [GitHub Copilot SDK custom tools](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/tools), [GitHub Copilot SDK custom agents](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/custom-agents), [GitHub Copilot SDK MCP](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/mcp), [GitHub Copilot SDK hooks](https://docs.github.com/en/copilot/how-tos/copilot-sdk/features/hooks)
+
+**Alternatives considered**:
+
+- Keep `Elsa.AI.Host` as the agent loop and treat Copilot as a stream of `tool.call` events: rejected because it loses SDK-native behavior and forces Elsa to own continuation semantics.
+- Pass Copilot SDK types through Studio and Elsa contracts: rejected because it couples public Elsa APIs to a provider SDK and weakens provider isolation.
+- Build a broad provider abstraction first: rejected because no second provider requirement is proven and it would likely constrain the Copilot-native MVP.
+
 ## Decision: Translate provider events into Elsa stream events
 
-**Rationale**: Copilot SDK emits assistant deltas, tool execution lifecycle events, permission/user-input events, session lifecycle events, and sub-agent events. Elsa should map those into stable `AIStreamEvent` contracts for Studio.
+**Rationale**: Copilot SDK emits assistant deltas, reasoning events, tool execution lifecycle events, permission/user-input events, session lifecycle events, and sub-agent events. Elsa should map those into stable `AIStreamEvent` contracts for Studio without leaking provider SDK types.
 
 **Sources**: [Streaming events in the Copilot SDK](https://docs.github.com/en/enterprise-cloud%40latest/copilot/how-tos/copilot-sdk/use-copilot-sdk/streaming-events)
 

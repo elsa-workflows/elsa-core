@@ -228,6 +228,21 @@ public static class ExpressionExecutionContextExtensions
         }
 
         /// <summary>
+        /// Sets an already converted value on the destination referenced by the specified output.
+        /// </summary>
+        public void SetBoundValue(Output output, object? value)
+        {
+            var outputMemoryBlockReference = output.MemoryBlockReference();
+            context.Set(outputMemoryBlockReference, value);
+
+            var workflowExecutionContext = context.GetWorkflowExecutionContext();
+            var workflowOutputDefinition = workflowExecutionContext.Workflow.Outputs.FirstOrDefault(x => x.Name == outputMemoryBlockReference.Id);
+
+            if (workflowOutputDefinition != null)
+                workflowExecutionContext.Output[workflowOutputDefinition.Name] = value!;
+        }
+
+        /// <summary>
         /// Returns a dictionary of memory block keys and values across scopes.
         /// </summary>
         public IDictionary<string, object> ReadAndFlattenMemoryBlocks() =>

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
@@ -11,7 +12,7 @@ internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpointWitho
     public override void Configure()
     {
         Delete("/bookmark-queue/dead-letters/{id}");
-        ConfigurePermissions(PermissionNames.DeleteBookmarkQueueDeadLetters);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.BookmarkQueueDeadLetters, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

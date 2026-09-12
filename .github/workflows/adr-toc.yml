@@ -1,0 +1,27 @@
+# Keeps doc/adr/toc.md generated rather than hand-edited. The index drifted from the records it indexes
+# because every ADR merge conflict asked a human to retype it; this fails the pull request instead.
+name: ADR index
+
+on:
+  pull_request:
+    paths:
+      - 'doc/adr/**'
+      - 'scripts/adr/**'
+      - '.github/workflows/adr-toc.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  check-toc:
+    name: doc/adr/toc.md is up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        # Pinned to an immutable commit so retargeting the v4 tag upstream cannot change what runs
+        # here, matching how update-wiki.yml already pins this action.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Check the generated index
+        run: ./scripts/adr/generate-toc.sh --check

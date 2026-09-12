@@ -194,7 +194,7 @@ def render_discord(
     intro = discord_intro(product, version, release_kind)
     highlight_text = render_discord_highlights(highlights)
     upgrade_notes = render_upgrade_notes(release_kind)
-    validation = render_validation_note(release_kind)
+    validation = render_validation_note(release_kind, version)
 
     return f"""\
 :rocket: **{heading}**
@@ -264,10 +264,11 @@ def render_upgrade_notes(release_kind: str) -> str:
     return f"{heading}\n{body}"
 
 
-def render_validation_note(release_kind: str) -> str:
+def render_validation_note(release_kind: str, version: str) -> str:
     if release_kind == "stable":
-        return """### :raised_hands: Feedback welcome
-Please report issues, regressions, or upgrade notes you run into so we can keep improving the 3.7 line."""
+        release_line = ".".join(version.split(".")[:2]) if "." in version else version
+        return f"""### :raised_hands: Feedback welcome
+Please report issues, regressions, or upgrade notes you run into so we can keep improving the {release_line} line."""
 
     return """### :test_tube: Please test it
 This release is intended for testing and validation before the final stable release. Feedback, bug reports, and PRs are very welcome :raised_hands:"""

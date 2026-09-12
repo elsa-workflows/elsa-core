@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Reflection;
+using Elsa.Common.Models;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Middleware;
 using Elsa.Http.Options;
@@ -291,6 +292,13 @@ public class HttpWorkflowsMiddlewareTests
             LastFilter = filter;
             _ = Filter(filter).ToList();
             return new([]);
+        }
+
+        public ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
+        {
+            LastFilter = filter;
+            var results = Filter(filter).ToList();
+            return new(Page.Of(results, results.Count));
         }
 
         public ValueTask<long> DeleteAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)

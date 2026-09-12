@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.AI.Host\Elsa.AI.Host.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.AI.Copilot\Elsa.AI.Copilot.csproj" />

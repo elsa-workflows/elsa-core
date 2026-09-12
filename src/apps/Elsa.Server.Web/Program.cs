@@ -96,9 +96,11 @@ services
             })
             .UseWorkflowsApi()
             .UseDashboardApi()
+            .UseWorkflowRuntimeDashboard()
             .UseFluentStorageProvider()
             .UseElsaScriptBlobStorage()
             .UseScheduling()
+            .UseBpmnInterchange()
             .UseCSharp(options =>
             {
                 configuration.GetSection("Scripting:CSharp").Bind(options);
@@ -148,7 +150,11 @@ services
         }
 
         if(useStructuredLogs)
-            elsa.UseStructuredLogs();
+        {
+            elsa
+                .UseStructuredLogs()
+                .UseStructuredLogsDashboard();
+        }
         
         ConfigureForTest?.Invoke(elsa);
     });

@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="Humanizer.Core" />
+        <PackageReference Include="JsonSchema.Net" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Logging" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text.Json;
 using Elsa.Abstractions;
 using Elsa.AI.Abstractions.Contracts;
@@ -21,7 +22,7 @@ public class Endpoint(
     public override void Configure()
     {
         Post("/ai/chat");
-        ConfigurePermissions(AIPermissions.Chat);
+        RequirePermission(Elsa.AI.Host.Permissions.AIResourcePermissions.Chat, CoreVerbs.Execute);
     }
 
     public override async Task HandleAsync(AIChatRequest request, CancellationToken cancellationToken)
@@ -37,7 +38,7 @@ public class Endpoint(
             TenantId = AIHttpContextIdentity.GetTenantId(HttpContext),
             UserId = AIHttpContextIdentity.GetActorId(HttpContext),
             UserPermissions = userPermissions,
-            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, userPermissions),
+            Agent = AIHttpContextIdentity.GetAuthorizedAgent(request.Agent, options.Value, HttpContext.User),
             ProviderName = null
         };
         var response = HttpContext.Response;

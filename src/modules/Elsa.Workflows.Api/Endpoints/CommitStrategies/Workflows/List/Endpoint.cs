@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.CommitStates;
@@ -16,7 +17,7 @@ internal class List(ICommitStrategyRegistry registry) : ElsaEndpointWithoutReque
     public override void Configure()
     {
         Get("/descriptors/commit-strategies/workflows");
-        ConfigurePermissions("read:commit-strategies");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsCommitStrategies, CoreVerbs.View);
     }
 
     public override Task<ListResponse<CommitStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)

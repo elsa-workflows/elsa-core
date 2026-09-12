@@ -5,7 +5,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.ConsoleLogs.Dashboard\Elsa.Diagnostics.ConsoleLogs.Dashboard.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.StructuredLogs.Dashboard\Elsa.Diagnostics.StructuredLogs.Dashboard.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Dashboard.Api\Elsa.Dashboard.Api.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime.Dashboard\Elsa.Workflows.Runtime.Dashboard.csproj" />
     </ItemGroup>
 
 </Project>

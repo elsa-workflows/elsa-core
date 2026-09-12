@@ -15,6 +15,11 @@ public class Output : Argument
     public Output(Func<MemoryBlockReference> memoryBlockReference) : base(memoryBlockReference)
     {
     }
+
+    /// <summary>
+    /// Gets or sets the optional converter applied to the value delivered by this binding.
+    /// </summary>
+    public OutputConverterConfiguration? Converter { get; set; }
 }
 
 public class Output<T> : Output

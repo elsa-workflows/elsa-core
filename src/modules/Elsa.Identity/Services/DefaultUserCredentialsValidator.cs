@@ -49,6 +49,9 @@ public class DefaultUserCredentialsValidator : IUserCredentialsValidator
         if (user == null)
             return null;
 
+        if (string.IsNullOrEmpty(user.HashedPassword) || string.IsNullOrEmpty(user.HashedPasswordSalt))
+            return null;
+
         var isValidPassword = _secretHasher.VerifySecret(password, user.HashedPassword, user.HashedPasswordSalt, out var needsRehash);
 
         if (!isValidPassword)

@@ -22,15 +22,15 @@ public class OpenTelemetryHubTests
     [Fact]
     public async Task SubscribeAsync_WhenUserLacksPermission_DeniesAccess()
     {
-        var hub = CreateHub(new TestLiveFeed(), "write:diagnostics:opentelemetry");
+        var hub = CreateHub(new TestLiveFeed(), "diagnostics/opentelemetry:write");
 
         await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(new()));
     }
 
     [Theory]
-    [InlineData(OpenTelemetryPermissions.Read)]
+    [InlineData("diagnostics/opentelemetry:view")]
     [InlineData(PermissionNames.All)]
-    [InlineData("read:*")]
+    [InlineData("*:view")]
     public async Task SubscribeAsync_WhenUserCanRead_ForwardsItemsToCaller(string permission)
     {
         var liveFeed = new TestLiveFeed(new OpenTelemetryStreamItem { Trace = Trace("trace-1") });
@@ -49,7 +49,7 @@ public class OpenTelemetryHubTests
     [Fact]
     public async Task SubscribeAsync_WhenFilterTimeRangeIsInvalid_RejectsFilter()
     {
-        var hub = CreateHub(new TestLiveFeed(), OpenTelemetryPermissions.Read);
+        var hub = CreateHub(new TestLiveFeed(), "diagnostics/opentelemetry:view");
 
         await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(new OpenTelemetryTraceFilter
         {

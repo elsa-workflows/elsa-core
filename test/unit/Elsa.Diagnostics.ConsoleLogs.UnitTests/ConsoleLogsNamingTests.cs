@@ -6,9 +6,11 @@ namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 public class ConsoleLogsNamingTests
 {
     [Fact]
+    // Pins the resource name, not the legacy permission string: the convention worth holding is that
+    // this module is called 'diagnostics/console-logs' wherever it appears.
     public void Permission_UsesDiagnosticsConsoleLogsName()
     {
-        Assert.Equal("read:diagnostics:console-logs", ConsoleLogsPermissions.Read);
+        Assert.Equal("diagnostics/console-logs", ConsoleLogsResourcePermissions.ConsoleLogs);
     }
 
     [Fact]

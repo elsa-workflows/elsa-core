@@ -15,12 +15,12 @@ public class User : Entity
     /// <summary>
     /// Gets or sets the hashed password.
     /// </summary>
-    public string HashedPassword { get; set; } = null!;
+    public string? HashedPassword { get; set; }
 
     /// <summary>
     /// Gets or sets the hashed password salt.
     /// </summary>
-    public string HashedPasswordSalt { get; set; } = null!;
+    public string? HashedPasswordSalt { get; set; }
 
     /// <summary>
     /// Gets or sets the roles.

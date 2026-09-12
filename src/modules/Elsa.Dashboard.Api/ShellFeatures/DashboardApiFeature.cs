@@ -1,15 +1,19 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.Dashboard.Api.Extensions;
+using Elsa.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Dashboard.Api.ShellFeatures;
 
+[ManifestFeatureCategory("Dashboard")]
+[ManifestFeatureCategory("API")]
 [ShellFeature(
     DisplayName = "Dashboard API",
     Description = "Provides operational dashboard API endpoints for Elsa Studio",
-    DependsOn = ["ElsaFastEndpoints", "WorkflowInstances", "WorkflowRuntime"])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class DashboardApiFeature : IFastEndpointsShellFeature
 {

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using CShells.Lifecycle;
 using Elsa.Abstractions;
 using Elsa.Shells.Api.Endpoints.Shells;
@@ -13,26 +14,53 @@ internal class Reload(IShellRegistry shellRegistry, IApiSerializer apiSerializer
     public override void Configure()
     {
         Post("/shells/{shellId}/reload");
-        ConfigurePermissions("actions:shells:reload");
+        RequirePermission(Elsa.Shells.Api.Permissions.ShellPermissions.Shells, "reload");
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var shellId = Route<string>("shellId")!;
-        var result = await shellRegistry.ReloadAsync(shellId, cancellationToken);
+        ReloadResult result;
 
-        // CShells 0.0.15 surfaces failures via ReloadResult.Error rather than throwing — translate to 404
-        // (which historically signalled "blueprint not found") for any composition / initialization error.
-        if (result.Error is not null)
+        try
         {
-            var failedResponse = new ShellReloadResponse
+            result = await shellRegistry.ReloadAsync(shellId, cancellationToken);
+        }
+        catch (ShellBlueprintNotFoundException ex)
+        {
+            var notFoundResponse = new ShellReloadResponse
             {
                 Status = ShellReloadStatus.NotFound,
                 RequestedShellId = shellId,
                 Timestamp = DateTimeOffset.UtcNow,
+                Message = ex.Message
+            };
+            await SendResponseAsync(notFoundResponse, StatusCodes.Status404NotFound, cancellationToken);
+            return;
+        }
+        catch (ShellBlueprintUnavailableException ex)
+        {
+            var unavailableResponse = new ShellReloadResponse
+            {
+                Status = ShellReloadStatus.Failed,
+                RequestedShellId = shellId,
+                Timestamp = DateTimeOffset.UtcNow,
+                Message = ex.Message
+            };
+            await SendResponseAsync(unavailableResponse, StatusCodes.Status503ServiceUnavailable, cancellationToken);
+            return;
+        }
+
+        if (result.Error is not null)
+        {
+            var failedResponse = new ShellReloadResponse
+            {
+                Status = ShellReloadStatus.Failed,
+                RequestedShellId = shellId,
+                Timestamp = DateTimeOffset.UtcNow,
                 Message = result.Error.Message
             };
-            await SendResponseAsync(failedResponse, StatusCodes.Status404NotFound, cancellationToken);
+            await SendResponseAsync(failedResponse, StatusCodes.Status503ServiceUnavailable, cancellationToken);
             return;
         }
 

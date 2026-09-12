@@ -21,7 +21,10 @@ internal class SecretConfiguration : IEntityTypeConfiguration<Secret>
         builder.Property(x => x.StoreName).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Scope).HasMaxLength(200);
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
-        builder.HasIndex(SecretShadowPropertyNames.NormalizedName).HasDatabaseName($"IX_{nameof(Secret)}_{SecretShadowPropertyNames.NormalizedName}").IsUnique();
+        // Uniqueness is per tenant, matching what User, Role and Application moved to in the same release.
+        // A global unique index would make the name a shared resource across tenants: the second tenant to
+        // want a secret called "smtp-password" simply could not create one.
+        builder.HasIndex("TenantId", SecretShadowPropertyNames.NormalizedName).HasDatabaseName($"IX_{nameof(Secret)}_TenantId_{SecretShadowPropertyNames.NormalizedName}").IsUnique();
         builder.HasIndex(x => x.TypeName).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.TypeName)}");
         builder.HasIndex(x => x.StoreName).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.StoreName)}");
         builder.HasIndex(x => x.Scope).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.Scope)}");

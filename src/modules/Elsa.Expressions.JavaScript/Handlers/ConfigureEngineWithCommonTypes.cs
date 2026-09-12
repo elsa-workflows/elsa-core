@@ -10,21 +10,21 @@ namespace Elsa.Expressions.JavaScript.Handlers;
 /// A handler that configures the Jint engine with common types.
 /// </summary>
 [UsedImplicitly]
-public class ConfigureEngineWithCommonTypes : INotificationHandler<EvaluatingJavaScript>
+public class ConfigureEngineWithCommonTypes : INotificationHandler<CreatingJavaScriptEngine>
 {
     /// <inheritdoc />
-    public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
+    public Task HandleAsync(CreatingJavaScriptEngine notification, CancellationToken cancellationToken)
     {
-        var engine = notification.Engine;
-        
-        // Add common .NET types.
-        engine.RegisterType<DateTime>();
-        engine.RegisterType<DateTimeOffset>();
-        engine.RegisterType<TimeSpan>();
-        engine.RegisterType<Guid>();
-        engine.RegisterType<Random>();
-        engine.RegisterType<LogPersistenceMode>();
-        
+        var options = notification.Options;
+
+        // Add common .NET types. Each one is described the first time a script reads its name.
+        options.RegisterType<DateTime>();
+        options.RegisterType<DateTimeOffset>();
+        options.RegisterType<TimeSpan>();
+        options.RegisterType<Guid>();
+        options.RegisterType<Random>();
+        options.RegisterType<LogPersistenceMode>();
+
         return Task.CompletedTask;
     }
 }

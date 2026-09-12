@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Management.Activities.HostMethod;
 /// Inputs come from public properties and method parameters.
 /// </summary>
 [UsedImplicitly]
-public class HostMethodActivityProvider(IOptions<HostMethodActivitiesOptions> options, IHostMethodActivityDescriber hostMethodActivityDescriber) : IActivityProvider
+public class HostMethodActivityProvider(IOptions<HostMethodActivitiesOptions> options, IHostMethodActivityDescriber hostMethodActivityDescriber) : ITenantAgnosticActivityProvider
 {
     public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
     {

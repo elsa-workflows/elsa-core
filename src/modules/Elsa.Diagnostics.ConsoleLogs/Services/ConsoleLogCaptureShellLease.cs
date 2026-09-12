@@ -1,5 +1,4 @@
 using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.Core.Capture;
 using CShells.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 

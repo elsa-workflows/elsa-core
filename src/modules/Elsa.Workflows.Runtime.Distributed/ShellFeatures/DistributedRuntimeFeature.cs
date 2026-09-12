@@ -1,20 +1,25 @@
 using CShells.Features;
 using Elsa.Common;
 using Elsa.Extensions;
+using Elsa.Resilience.ShellFeatures;
 using Elsa.Workflows.Runtime.Distributed.StartupTasks;
+using Elsa.Workflows.Runtime.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.Runtime.Distributed.ShellFeatures;
 
 /// <summary>
 /// Installs and configures distributed workflow runtime features.
 /// </summary>
+[ManifestFeatureCategory("Workflows")]
+[ManifestFeatureCategory("Infrastructure")]
 [ShellFeature(
     DisplayName = "Distributed Runtime",
     Description = "Provides distributed workflow runtime capabilities",
-    DependsOn = ["WorkflowRuntime", "Resilience"])]
+    DependsOn = [typeof(WorkflowRuntimeFeature), typeof(ResilienceFeature)])]
 [UsedImplicitly]
 public class DistributedRuntimeFeature : IShellFeature
 {

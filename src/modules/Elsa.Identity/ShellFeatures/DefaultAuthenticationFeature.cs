@@ -4,9 +4,7 @@ using Elsa.Extensions;
 using Elsa.Identity.Constants;
 using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
-using Elsa.Options;
-using Elsa.PackageManifest.Generator.Hints;
-using Elsa.Requirements;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -17,10 +15,12 @@ namespace Elsa.Identity.ShellFeatures;
 /// <summary>
 /// Provides an authorization feature that configures the system with JWT bearer and API key authentication.
 /// </summary>
+[ManifestFeatureCategory("Identity")]
+[ManifestFeatureCategory("Security")]
 [ShellFeature(
     DisplayName = "Default Authentication",
     Description = "Provides JWT bearer and API key authentication",
-    DependsOn = ["Identity"])]
+    DependsOn = [typeof(IdentityFeature)])]
 [UsedImplicitly]
 public class DefaultAuthenticationFeature : IShellFeature
 {
@@ -54,11 +54,6 @@ public class DefaultAuthenticationFeature : IShellFeature
         RestartRequired = true)]
     public bool UseDevelopmentAdminApiKey { get; set; }
 
-    /// <summary>
-    /// Gets or sets whether localhost requests may satisfy the security-root permission requirement without other credentials.
-    /// </summary>
-    public bool EnableLocalHostPermissionGrant { get; set; }
-
     public void ConfigureServices(IServiceCollection services)
     {
         var resolvedAdminApiKey = UseDevelopmentAdminApiKey ? AdminApiKeyProvider.DevelopmentApiKey : AdminApiKey;
@@ -67,7 +62,6 @@ public class DefaultAuthenticationFeature : IShellFeature
 
         services.ConfigureOptions<ConfigureJwtBearerOptions>();
         services.AddIdentityTokenOptionsValidation();
-        services.Configure<LocalHostPermissionRequirementOptions>(options => options.EnableLocalHostPermissionGrant = EnableLocalHostPermissionGrant);
         services.Configure<AdminApiKeyOptions>(options =>
         {
             options.ApiKey = resolvedAdminApiKey;
@@ -93,17 +87,11 @@ public class DefaultAuthenticationFeature : IShellFeature
         else
             authBuilder.AddApiKeyInAuthorizationHeader<DefaultApiKeyProvider>();
 
-        services.AddScoped<IAuthorizationHandler, LocalHostRequirementHandler>();
-        services.AddScoped<IAuthorizationHandler, LocalHostPermissionRequirementHandler>();
         services.AddScoped(ApiKeyProviderType);
         services.AddScoped<IApiKeyProvider>(sp => (IApiKeyProvider)sp.GetRequiredService(ApiKeyProviderType));
 
-        services.AddAuthorization(options =>
-        {
-            if (EnableLocalHostPermissionGrant)
-                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.AddRequirements(new LocalHostPermissionRequirement()));
-            else
-                options.AddPolicy(IdentityPolicyNames.SecurityRoot, policy => policy.RequireAuthenticatedUser());
-        });
+        // No SecurityRoot policy: it was retired in favour of endpoint permissions (ADR 0010). Authorization
+        // services are still registered so the permission requirement handler runs.
+        services.AddAuthorization();
     }
 }

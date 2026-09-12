@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Labels.ShellFeatures;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,12 @@ namespace Elsa.Persistence.EFCore.PostgreSql.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use PostgreSql persistence.
 /// </summary>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "PostgreSql Label Persistence",
     Description = "Provides PostgreSql persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("postgresql-database", "database", Reason = "Stores workflow label data in PostgreSQL.", Providers = new[] { "PostgreSQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class PostgreSqlLabelPersistenceFeature

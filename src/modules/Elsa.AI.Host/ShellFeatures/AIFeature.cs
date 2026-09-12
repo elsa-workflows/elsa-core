@@ -2,16 +2,19 @@ using CShells.FastEndpoints.Features;
 using CShells.Features;
 using Elsa.AI.Host.Options;
 using Elsa.Extensions;
+using Elsa.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.AI.Host.ShellFeatures;
 
+[ManifestFeatureCategory("AI")]
 [ShellFeature(
     "AI",
     DisplayName = "AI Host",
     Description = "Hosts Weaver AI orchestration, governed tools, proposals, and audit services",
-    DependsOn = ["ElsaFastEndpoints"])]
+    DependsOn = [typeof(ElsaFastEndpointsFeature)])]
 [UsedImplicitly]
 public class AIFeature : IFastEndpointsShellFeature
 {

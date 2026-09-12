@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Security;
@@ -18,7 +19,7 @@ internal class Endpoint(
     public override void Configure()
     {
         Post("/workflow-definitions/{definitionId}/dispatch");
-        ConfigurePermissions("exec:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Execute);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
@@ -33,10 +34,10 @@ internal class Endpoint(
             return;
         }
 
-        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
-            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+            await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
             return;
         }
         

@@ -48,13 +48,13 @@ public class CachingTriggerStore(ITriggerStore decoratedStore, ICacheManager cac
 
     public async ValueTask<Page<StoredTrigger>> FindManyAsync(TriggerFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var cacheKey = hasher.Hash(filter);
+        var cacheKey = hasher.Hash(filter, pageArgs);
         return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, pageArgs, cancellationToken)))!;
     }
 
     public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
     {
-        var cacheKey = hasher.Hash(filter);
+        var cacheKey = hasher.Hash(filter, pageArgs, order);
         return (await GetOrCreateAsync(cacheKey, async () => await decoratedStore.FindManyAsync(filter, pageArgs, order, cancellationToken)))!;
     }
 

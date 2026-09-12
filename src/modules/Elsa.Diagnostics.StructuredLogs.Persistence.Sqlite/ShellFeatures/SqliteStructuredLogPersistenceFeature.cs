@@ -1,7 +1,7 @@
 using CShells.Features;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.ShellFeatures;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Extensions;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +10,8 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.ShellFeatures;
 /// <summary>
 /// Provides SQLite persistence for diagnostics structured logs.
 /// </summary>
+[ManifestFeatureCategory("Diagnostics")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "SQLite Structured Log Persistence",
     Description = "Provides SQLite persistence for diagnostics structured logs",

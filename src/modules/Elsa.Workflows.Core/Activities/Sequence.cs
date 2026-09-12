@@ -10,6 +10,9 @@ namespace Elsa.Workflows.Activities;
 /// <summary>
 /// Execute a set of activities in sequence.
 /// </summary>
+/// <remarks>
+/// Rescheduled direct children retain completion callback ownership by this sequence.
+/// </remarks>
 [Category("Workflows")]
 [Activity("Elsa", "Workflows", "Execute a set of activities in sequence.")]
 [PublicAPI]
@@ -22,6 +25,7 @@ public class Sequence : Container
     public Sequence([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
         OnSignalReceived<BreakSignal>(OnBreakSignalReceived);
+        OnSignalReceived<ScheduleChildActivity>(OnScheduleChildActivityAsync);
     }
 
     /// <inheritdoc />
@@ -66,6 +70,25 @@ public class Sequence : Container
         }
 
         await HandleItemAsync(targetContext, childContext);
+    }
+
+    private async ValueTask OnScheduleChildActivityAsync(ScheduleChildActivity signal, SignalContext context)
+    {
+        var sequenceContext = context.ReceiverActivityExecutionContext;
+        var childActivity = signal.ActivityExecutionContext?.Activity ?? signal.Activity;
+
+        if (childActivity == null || !Activities.Contains(childActivity))
+        {
+            return;
+        }
+
+        context.StopPropagation();
+        await sequenceContext.ScheduleActivityAsync(childActivity, new ScheduleWorkOptions
+        {
+            ExistingActivityExecutionContext = signal.ActivityExecutionContext,
+            CompletionCallback = OnChildCompleted,
+            Input = signal.Input
+        });
     }
 
     private void OnBreakSignalReceived(BreakSignal signal, SignalContext signalContext)

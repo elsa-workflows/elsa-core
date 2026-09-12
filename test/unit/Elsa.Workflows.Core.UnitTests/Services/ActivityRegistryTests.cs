@@ -425,6 +425,112 @@ public class ActivityRegistryTests
         AssertDescriptor(result, CurrentTenant, 2);
     }
 
+    [Fact]
+    public async Task EnsureDescriptorsAsync_InitializesTenantAgnosticProviderOnlyOnce_WhenCalledRepeatedly()
+    {
+        // Arrange
+        var provider = new CountingTenantAgnosticProvider();
+
+        // Act
+        await _registry.EnsureDescriptorsAsync(provider);
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Assert
+        Assert.Equal(1, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task EnsureDescriptorsAsync_InitializesTenantAgnosticProviderOnlyOnce_WhenCalledConcurrently()
+    {
+        // Arrange
+        var provider = new BlockingTenantAgnosticProvider();
+        var initializationTasks = Enumerable.Range(0, 8)
+            .Select(_ => _registry.EnsureDescriptorsAsync(provider))
+            .ToArray();
+
+        await provider.FirstCallStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await Task.Yield();
+        provider.Release();
+
+        // Act
+        await Task.WhenAll(initializationTasks);
+
+        // Assert
+        Assert.Equal(1, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task EnsureDescriptorsAsync_RetriesTenantAgnosticProvider_AfterFailure()
+    {
+        // Arrange
+        var provider = new CountingTenantAgnosticProvider([new InvalidOperationException("Expected failure")]);
+
+        // Act
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _registry.EnsureDescriptorsAsync(provider));
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Assert
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task EnsureDescriptorsAsync_RetriesTenantAgnosticProvider_AfterCancellation()
+    {
+        // Arrange
+        var provider = new CountingTenantAgnosticProvider([new OperationCanceledException()]);
+
+        // Act
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _registry.EnsureDescriptorsAsync(provider));
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Assert
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task EnsureDescriptorsAsync_ReinitializesTenantAgnosticProvider_AfterRegistryIsCleared()
+    {
+        // Arrange
+        var provider = new CountingTenantAgnosticProvider();
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Act
+        _registry.Clear();
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Assert
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task EnsureDescriptorsAsync_ReinitializesTenantAgnosticProvider_AfterProviderIsCleared()
+    {
+        // Arrange
+        var provider = new CountingTenantAgnosticProvider();
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Act
+        _registry.ClearProvider(provider.GetType());
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Assert
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task EnsureDescriptorsAsync_RefreshesTenantSensitiveProvider_OnEveryCall()
+    {
+        // Arrange
+        var provider = new CountingTenantSensitiveProvider();
+
+        // Act
+        await _registry.EnsureDescriptorsAsync(provider);
+        await _registry.EnsureDescriptorsAsync(provider);
+
+        // Assert
+        Assert.Equal(2, provider.CallCount);
+    }
+
 
     private ActivityDescriptor CreateDescriptor(string typeName, int version, string? tenantId) =>
         new()
@@ -462,6 +568,75 @@ public class ActivityRegistryTests
         public IEnumerable<ActivityDescriptor> Descriptors { get; set; } = descriptors;
 
         public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default) => new(Descriptors);
+    }
+
+    private sealed class CountingTenantAgnosticProvider(IEnumerable<Exception>? failures = null) : ITenantAgnosticActivityProvider
+    {
+        private readonly Queue<Exception> _failures = new(failures ?? []);
+        private int _callCount;
+
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _callCount);
+
+            if (_failures.TryDequeue(out var failure))
+                return ValueTask.FromException<IEnumerable<ActivityDescriptor>>(failure);
+
+            return new([new ActivityDescriptor
+            {
+                TypeName = nameof(CountingTenantAgnosticProvider),
+                Version = 1,
+                TenantId = Tenant.AgnosticTenantId,
+                Kind = ActivityKind.Action
+            }]);
+        }
+    }
+
+    private sealed class BlockingTenantAgnosticProvider : ITenantAgnosticActivityProvider
+    {
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _callCount;
+
+        public TaskCompletionSource FirstCallStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        public async ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _callCount);
+            FirstCallStarted.TrySetResult();
+            await _release.Task.WaitAsync(cancellationToken);
+
+            return [new ActivityDescriptor
+            {
+                TypeName = nameof(BlockingTenantAgnosticProvider),
+                Version = 1,
+                TenantId = Tenant.AgnosticTenantId,
+                Kind = ActivityKind.Action
+            }];
+        }
+
+        public void Release() => _release.TrySetResult();
+    }
+
+    private sealed class CountingTenantSensitiveProvider : IActivityProvider
+    {
+        private int _callCount;
+
+        public int CallCount => Volatile.Read(ref _callCount);
+
+        public ValueTask<IEnumerable<ActivityDescriptor>> GetDescriptorsAsync(CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _callCount);
+            return new([new ActivityDescriptor
+            {
+                TypeName = nameof(CountingTenantSensitiveProvider),
+                Version = 1,
+                TenantId = CurrentTenant,
+                Kind = ActivityKind.Action
+            }]);
+        }
     }
 
 }

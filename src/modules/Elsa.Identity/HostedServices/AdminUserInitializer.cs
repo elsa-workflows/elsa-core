@@ -48,7 +48,21 @@ public class AdminUserInitializer(
         }
         else
         {
-            logger.LogInformation("Admin role '{RoleName}' already exists. Skipping creation.", adminRoleName);
+            var missingPermissions = adminRolePermissions.Except(existingRole.Permissions, StringComparer.Ordinal).ToArray();
+
+            if (missingPermissions.Length == 0)
+            {
+                logger.LogInformation("Admin role '{RoleName}' already exists with all configured permissions.", adminRoleName);
+            }
+            else
+            {
+                existingRole.Permissions = existingRole.Permissions.Concat(missingPermissions).ToList();
+                await roleStore.SaveAsync(existingRole, cancellationToken);
+                logger.LogInformation(
+                    "Admin role '{RoleName}' updated successfully with {PermissionCount} missing configured permissions.",
+                    adminRoleName,
+                    missingPermissions.Length);
+            }
         }
         
         var roleToAssign = adminRoleName;

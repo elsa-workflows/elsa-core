@@ -105,7 +105,7 @@ Scheduled workflows typically create trigger or bookmark payloads that the sched
 - [Bookmarks](../../src/modules/Elsa.Scheduling/Bookmarks)
 - [Services](../../src/modules/Elsa.Scheduling/Services)
 - [Handlers](../../src/modules/Elsa.Scheduling/Handlers)
-- [HostedServices](../../src/modules/Elsa.Scheduling/HostedServices)
+- [StartupTasks](../../src/modules/Elsa.Scheduling/StartupTasks)
 - [TriggerPayloadValidators](../../src/modules/Elsa.Scheduling/TriggerPayloadValidators)
 
 The scheduler integrates with tenancy by reacting to tenant activation/deletion events.

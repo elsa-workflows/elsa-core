@@ -1,19 +1,22 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
-using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.ShellFeatures;
+using Elsa.Secrets.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.Persistence.EFCore.MySql.ShellFeatures;
 
+[ManifestFeatureCategory("Secrets")]
+[ManifestFeatureCategory("Persistence")]
 [ShellFeature(
     DisplayName = "MySql Secrets Persistence",
     Description = "Provides MySql persistence for secrets",
-    DependsOn = ["Secrets"])]
+    DependsOn = [typeof(SecretsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("mysql-database", "database", Reason = "Stores secrets data in MySQL.", Providers = new[] { "MySQL" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class MySqlSecretsPersistenceShellFeature : EFCoreSecretsPersistenceShellFeatureBase

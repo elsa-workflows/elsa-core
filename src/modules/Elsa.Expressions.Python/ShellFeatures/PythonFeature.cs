@@ -1,13 +1,16 @@
 using CShells.Features;
-using Elsa.Expressions.Python.ActivityDescriptorModifiers;
+using Elsa.Common.ShellFeatures;
 using Elsa.Expressions.Python.Activities;
+using Elsa.Expressions.Python.ActivityDescriptorModifiers;
 using Elsa.Expressions.Python.Contracts;
 using Elsa.Expressions.Python.HostedServices;
 using Elsa.Expressions.Python.Options;
 using Elsa.Expressions.Python.Providers;
 using Elsa.Expressions.Python.Services;
+using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,10 +19,12 @@ namespace Elsa.Expressions.Python.ShellFeatures;
 /// <summary>
 /// Installs Python integration.
 /// </summary>
+[ManifestFeatureCategory("Expressions")]
+[ManifestFeatureCategory("Scripting")]
 [ShellFeature(
     DisplayName = "Python Expressions",
     Description = "Provides Python expression evaluation capabilities for workflows",
-    DependsOn = ["Mediator", "Expressions"])]
+    DependsOn = [typeof(MediatorFeature), typeof(ExpressionsFeature)])]
 [UsedImplicitly]
 public class PythonFeature : IShellFeature
 {

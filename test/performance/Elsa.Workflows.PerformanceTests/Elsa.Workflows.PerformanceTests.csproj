@@ -2,6 +2,7 @@
     
     <ItemGroup>
       <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj" />
     </ItemGroup>
 
 </Project>

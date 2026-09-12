@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
@@ -14,7 +15,7 @@ public class BulkCancel(IWorkflowCancellationService workflowCancellationService
     public override void Configure()
     {
         Post("/bulk-actions/cancel/workflow-instances/");
-        ConfigurePermissions("cancel:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, "cancel");
     }
 
     /// <inheritdoc />

@@ -1,8 +1,9 @@
 using System.Reflection;
 using CShells.Features;
-using Elsa.PackageManifest.Generator.Hints;
+using Elsa.Labels.ShellFeatures;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Labels;
+using Elsa.Platform.PackageManifest.Generator.Hints;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,10 +13,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.ShellFeatures.Labels;
 /// <summary>
 /// Configures the labels feature to use Sqlite persistence.
 /// </summary>
+[ManifestFeatureCategory("Persistence")]
+[ManifestFeatureCategory("Labels")]
 [ShellFeature(
     DisplayName = "Sqlite Label Persistence",
     Description = "Provides Sqlite persistence for label management",
-    DependsOn = ["Labels"])]
+    DependsOn = [typeof(LabelsFeature)])]
 [UsedImplicitly]
 [ManifestInfrastructure("sqlite-database", "database", Reason = "Stores workflow label data in SQLite.", Providers = new[] { "SQLite" }, ConfigurationKeys = new[] { "ConnectionString" })]
 public class SqliteLabelPersistenceShellFeature

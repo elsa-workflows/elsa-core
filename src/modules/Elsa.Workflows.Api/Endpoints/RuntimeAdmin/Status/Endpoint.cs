@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using FastEndpoints;
@@ -15,7 +16,7 @@ internal sealed class StatusEndpoint(IWorkflowRuntimeAdminService admin) : ElsaE
     public override void Configure()
     {
         Get("/admin/workflow-runtime/status");
-        ConfigurePermissions(PermissionNames.ManageWorkflowRuntime);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Runtime, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken ct)

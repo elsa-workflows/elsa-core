@@ -8,7 +8,7 @@ namespace Elsa.Persistence.EFCore.Modules.Identity;
 /// <summary>
 /// An EF Core implementation of <see cref="IRoleStore"/>.
 /// </summary>
-public class EFCoreRoleStore : IRoleStore
+public class EFCoreRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
 {
     private readonly EntityStore<IdentityElsaDbContext, Role> _applicationStore;
 
@@ -36,6 +36,17 @@ public class EFCoreRoleStore : IRoleStore
     public async Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
         await _applicationStore.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The delete is issued as a single <c>DELETE ... WHERE</c> statement and the affected-row count it returns is
+    /// the database's own verdict on which caller removed the row, so two concurrent callers cannot both observe
+    /// <see langword="true"/>.
+    /// </remarks>
+    public async Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default)
+    {
+        return await _applicationStore.DeleteWhereAsync(query => Filter(query, new RoleFilter { Id = roleId }), cancellationToken) > 0;
     }
 
     /// <inheritdoc />

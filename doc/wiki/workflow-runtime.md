@@ -99,6 +99,8 @@ Triggers start workflows. Bookmarks resume suspended workflow instances. Runtime
 - [BookmarkBoundWorkflowService](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkBoundWorkflowService.cs)
 - [TriggerBoundWorkflowService](../../src/modules/Elsa.Workflows.Runtime/Services/TriggerBoundWorkflowService.cs)
 
+The indexer stores one trigger per payload an [ITrigger](../../src/modules/Elsa.Workflows.Core/Contracts/ITrigger.cs) activity that can start the workflow returns. A trigger that returns no payloads, or throws while producing them, is stored as a single placeholder row with a `null` payload. [ValidateWorkflowRequestHandler](../../src/modules/Elsa.Workflows.Runtime/Handlers/ValidateWorkflowRequestHandler.cs) reports that row as `Trigger should have a payload`, so publication is refused. A trigger whose decision to register anything depends on its own configuration, and that has nothing to register as configured, sets [TriggerIndexingContext.RegistersNoTriggers](../../src/modules/Elsa.Workflows.Core/Contexts/TriggerIndexingContext.cs) and returns no payloads. The indexer then stores no row for it. The flag is ignored when the trigger returns payloads or throws. `BpmnProcess` uses it for a process with only plain start events (see [BPMN Workflows](bpmn-workflows.md)).
+
 Bookmark queue processing is handled by:
 
 - [StoreBookmarkQueue](../../src/modules/Elsa.Workflows.Runtime/Services/StoreBookmarkQueue.cs)
@@ -159,10 +161,10 @@ Ingress source adapters are currently registered by modules such as HTTP and Sch
 
 The workflow API includes runtime admin endpoints:
 
-- `GET /elsa/api/admin/workflow-runtime/status`
-- `POST /elsa/api/admin/workflow-runtime/pause`
-- `POST /elsa/api/admin/workflow-runtime/resume`
-- `POST /elsa/api/admin/workflow-runtime/force-drain`
+- `GET /elsa/api/admin/workflow-runtime/status`: requires `read:workflow-runtime`; `ManageWorkflowRuntime` is also accepted for backward compatibility.
+- `POST /elsa/api/admin/workflow-runtime/pause`: requires `ManageWorkflowRuntime`.
+- `POST /elsa/api/admin/workflow-runtime/resume`: requires `ManageWorkflowRuntime`.
+- `POST /elsa/api/admin/workflow-runtime/force-drain`: requires `ManageWorkflowRuntime`.
 
 Endpoint code lives under [Elsa.Workflows.Api/Endpoints/RuntimeAdmin](../../src/modules/Elsa.Workflows.Api/Endpoints/RuntimeAdmin). The service behind these endpoints is [WorkflowRuntimeAdminService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowRuntimeAdminService.cs).
 

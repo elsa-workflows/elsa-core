@@ -18,22 +18,25 @@ internal class Configurations : IEntityTypeConfiguration<User>, IEntityTypeConfi
 
     public void Configure(EntityTypeBuilder<User> builder)
     {
-        builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(User)}_{nameof(User.Name)}").IsUnique();
+        // Uniqueness is per tenant, not global. A global unique index made it impossible for two tenants
+        // to hold a role or user of the same name -- so "roles are configurable per tenant" could not be
+        // true, however the rest of the stack behaved.
+        builder.HasIndex(x => new { x.TenantId, x.Name }).HasDatabaseName($"IX_{nameof(User)}_{nameof(User.TenantId)}_{nameof(User.Name)}").IsUnique();
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(User)}_{nameof(User.TenantId)}");
         builder.Property(x => x.Roles).HasColumnName("Roles").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
     }
 
     public void Configure(EntityTypeBuilder<Application> builder)
     {
-        builder.HasIndex(x => x.ClientId).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.ClientId)}").IsUnique();
-        builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.Name)}").IsUnique();
+        builder.HasIndex(x => new { x.TenantId, x.ClientId }).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.TenantId)}_{nameof(Application.ClientId)}").IsUnique();
+        builder.HasIndex(x => new { x.TenantId, x.Name }).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.TenantId)}_{nameof(Application.Name)}").IsUnique();
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(Application)}_{nameof(Application.TenantId)}");
         builder.Property(x => x.Roles).HasColumnName("Roles").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
     }
 
     public void Configure(EntityTypeBuilder<Role> builder)
     {
-        builder.HasIndex(x => x.Name).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.Name)}").IsUnique();
+        builder.HasIndex(x => new { x.TenantId, x.Name }).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.TenantId)}_{nameof(Role.Name)}").IsUnique();
         builder.HasIndex(x => x.TenantId).HasDatabaseName($"IX_{nameof(Role)}_{nameof(Role.TenantId)}");
         builder.Property(x => x.Permissions).HasColumnName("Permissions").HasConversion(StringCollectionToStringConverter, StringToStringCollectionConverter).IsRequired().Metadata.SetValueComparer(StringCollectionComparer);
     }

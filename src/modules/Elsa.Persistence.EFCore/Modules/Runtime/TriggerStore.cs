@@ -8,7 +8,6 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
-using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Runtime;
 
@@ -50,8 +49,8 @@ public class EFCoreTriggerStore(
 
     public async ValueTask<Page<StoredTrigger>> FindManyAsync<TProp>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TProp> order, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(filter.Apply, OnLoadAsync, cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(order).Paginate(pageArgs).OrderBy(order), OnLoadAsync, cancellationToken).ToList();
+        var count = await store.CountAsync(filter.Apply, filter.TenantAgnostic, cancellationToken);
+        var results = (await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(order).Paginate(pageArgs).OrderBy(order), OnLoadAsync, filter.TenantAgnostic, cancellationToken)).ToList();
         return new(results, count);
     }
 

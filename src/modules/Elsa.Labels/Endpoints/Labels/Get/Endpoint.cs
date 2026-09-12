@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using FastEndpoints;
@@ -16,7 +17,7 @@ internal class Get : ElsaEndpoint<Request, Response, LabelMapper>
     public override void Configure()
     {
         Get("/labels/{id}");
-        ConfigurePermissions("read:labels");
+        RequirePermission(Elsa.Labels.Permissions.LabelPermissions.Labels, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

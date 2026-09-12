@@ -256,11 +256,12 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         try
         {
+            // Execute the action.
             return await action(httpContext.RequestAborted);
         }
         finally
         {
-            // Restore the original cancellation token even when execution faults or is canceled.
+            // Restore the original cancellation token.
             httpContext.RequestAborted = originalCancellationToken;
         }
     }
@@ -363,7 +364,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
 
         var httpEndpointFaultHandler = serviceProvider.GetRequiredService<IHttpEndpointFaultHandler>();
         var workflowInstanceManager = serviceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        var workflowState = (await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken))?.WorkflowState ?? workflowExecutionResult.WorkflowState;
+        var workflowInstance = await workflowInstanceManager.FindByIdAsync(workflowExecutionResult.WorkflowState.Id, cancellationToken);
+        var workflowState = workflowInstance?.WorkflowState ?? workflowExecutionResult.WorkflowState;
         await httpEndpointFaultHandler.HandleAsync(new(httpContext, workflowState, cancellationToken));
         return true;
     }

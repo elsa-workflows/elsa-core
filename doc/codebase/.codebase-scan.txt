@@ -1,0 +1,398 @@
+
+=== DIRECTORY TREE (max depth 3, source files only) ===
+.DS_Store
+.agents
+.agents/skills
+.agents/skills/elsa-release
+.agents/skills/elsa-release/SKILL.md
+.agents/skills/elsa-release/agents
+.agents/skills/elsa-release/scripts
+.agents/skills/elsa-release-announcements
+.agents/skills/elsa-release-announcements/SKILL.md
+.agents/skills/elsa-release-announcements/agents
+.agents/skills/elsa-release-announcements/scripts
+.agents/skills/elsa-roadmap-refresh
+.agents/skills/elsa-roadmap-refresh/SKILL.md
+.agents/skills/elsa-roadmap-refresh/agents
+.agents/skills/greploop
+.agents/skills/greploop/LICENSE
+.agents/skills/greploop/SKILL.md
+.agents/skills/greploop/references
+.agents/skills/speckit-analyze
+.agents/skills/speckit-analyze/SKILL.md
+.agents/skills/speckit-checklist
+.agents/skills/speckit-checklist/SKILL.md
+.agents/skills/speckit-clarify
+.agents/skills/speckit-clarify/SKILL.md
+.agents/skills/speckit-constitution
+.agents/skills/speckit-constitution/SKILL.md
+.agents/skills/speckit-git-commit
+.agents/skills/speckit-git-commit/SKILL.md
+.agents/skills/speckit-git-feature
+.agents/skills/speckit-git-feature/SKILL.md
+.agents/skills/speckit-git-initialize
+.agents/skills/speckit-git-initialize/SKILL.md
+.agents/skills/speckit-git-remote
+.agents/skills/speckit-git-remote/SKILL.md
+.agents/skills/speckit-git-validate
+.agents/skills/speckit-git-validate/SKILL.md
+.agents/skills/speckit-implement
+.agents/skills/speckit-implement/SKILL.md
+.agents/skills/speckit-plan
+.agents/skills/speckit-plan/SKILL.md
+.agents/skills/speckit-specify
+.agents/skills/speckit-specify/SKILL.md
+.agents/skills/speckit-tasks
+.agents/skills/speckit-tasks/SKILL.md
+.agents/skills/speckit-taskstoissues
+.agents/skills/speckit-taskstoissues/SKILL.md
+.claude
+.claude/skills
+.claude/skills/greploop
+.claude/skills/greploop/LICENSE
+.claude/skills/greploop/SKILL.md
+.claude/skills/greploop/references
+.claude/skills/speckit-analyze
+.claude/skills/speckit-analyze/SKILL.md
+.claude/skills/speckit-checklist
+.claude/skills/speckit-checklist/SKILL.md
+.claude/skills/speckit-clarify
+.claude/skills/speckit-clarify/SKILL.md
+.claude/skills/speckit-constitution
+.claude/skills/speckit-constitution/SKILL.md
+.claude/skills/speckit-git-commit
+.claude/skills/speckit-git-commit/SKILL.md
+.claude/skills/speckit-git-feature
+.claude/skills/speckit-git-feature/SKILL.md
+.claude/skills/speckit-git-initialize
+.claude/skills/speckit-git-initialize/SKILL.md
+.claude/skills/speckit-git-remote
+.claude/skills/speckit-git-remote/SKILL.md
+.claude/skills/speckit-git-validate
+.claude/skills/speckit-git-validate/SKILL.md
+.claude/skills/speckit-implement
+.claude/skills/speckit-implement/SKILL.md
+.claude/skills/speckit-plan
+.claude/skills/speckit-plan/SKILL.md
+.claude/skills/speckit-specify
+.claude/skills/speckit-specify/SKILL.md
+.claude/skills/speckit-tasks
+.claude/skills/speckit-tasks/SKILL.md
+.claude/skills/speckit-taskstoissues
+.claude/skills/speckit-taskstoissues/SKILL.md
+.claude/worktrees
+.config
+.config/dotnet-tools.json
+.editorconfig
+.github
+.github/ISSUE_TEMPLATE
+.github/ISSUE_TEMPLATE/bug_report.md
+.github/ISSUE_TEMPLATE/documentation.md
+.github/ISSUE_TEMPLATE/feature_request.md
+.github/ISSUE_TEMPLATE/improvement.md
+.github/ISSUE_TEMPLATE/performance.md
+.github/ISSUE_TEMPLATE/task.md
+.github/agents
+.github/agents/copilot-instructions.md
+.github/agents/release-notes.agent.md
+.github/agents/speckit.analyze.agent.md
+.github/agents/speckit.checklist.agent.md
+.github/agents/speckit.clarify.agent.md
+.github/agents/speckit.constitution.agent.md
+.github/agents/speckit.git.commit.agent.md
+.github/agents/speckit.git.feature.agent.md
+.github/agents/speckit.git.initialize.agent.md
+.github/agents/speckit.git.remote.agent.md
+.github/agents/speckit.git.validate.agent.md
+.github/agents/speckit.implement.agent.md
+.github/agents/speckit.plan.agent.md
+.github/agents/speckit.specify.agent.md
+.github/agents/speckit.tasks.agent.md
+.github/agents/speckit.taskstoissues.agent.md
+.github/copilot-instructions.md
+.github/copilot-release-notes-playbook.md
+.github/dependabot.yml
+.github/prompts
+.github/prompts/speckit.analyze.prompt.md
+.github/prompts/speckit.checklist.prompt.md
+.github/prompts/speckit.clarify.prompt.md
+.github/prompts/speckit.constitution.prompt.md
+.github/prompts/speckit.git.commit.prompt.md
+.github/prompts/speckit.git.feature.prompt.md
+.github/prompts/speckit.git.initialize.prompt.md
+.github/prompts/speckit.git.remote.prompt.md
+.github/prompts/speckit.git.validate.prompt.md
+.github/prompts/speckit.implement.prompt.md
+.github/prompts/speckit.plan.prompt.md
+.github/prompts/speckit.specify.prompt.md
+.github/prompts/speckit.tasks.prompt.md
+.github/prompts/speckit.taskstoissues.prompt.md
+.github/pull_request_template.md
+.github/workflows
+.github/workflows/bounty.yml
+.github/workflows/claude-code-review.yml
+.github/workflows/claude.yml
+.github/workflows/copilot-setup-steps.yml
+.github/workflows/docker-ca.yml
+.github/workflows/greploop.yml
+.github/workflows/packages.yml
+.github/workflows/pr.yml
+.github/workflows/stale.yml
+.github/workflows/update-wiki.yml
+.gitignore
+.idea
+.idea/.idea.Elsa
+.idea/.idea.Elsa/.idea
+.idea/.idea.Elsa/.idea/.gitignore
+.idea/.idea.Elsa/.idea/.name
+.idea/.idea.Elsa/.idea/copilotDiffState.xml
+.idea/.idea.Elsa/.idea/dataSources
+.idea/.idea.Elsa/.idea/dataSources.local.xml
+.idea/.idea.Elsa/.idea/dataSources.xml
+.idea/.idea.Elsa/.idea/db-forest-config.xml
+.idea/.idea.Elsa/.idea/encodings.xml
+.idea/.idea.Elsa/.idea/indexLayout.xml
+.idea/.idea.Elsa/.idea/jsonSchemas.xml
+.idea/.idea.Elsa/.idea/projectSettingsUpdater.xml
+.idea/.idea.Elsa/.idea/vcs.xml
+.idea/.idea.Elsa/.idea/workspace.xml
+.nuke
+.nuke/build.schema.json
+.nuke/parameters.json
+.nuke/temp
+.nuke/temp/build.2026-07-14_22-59-48.log
+.nuke/temp/build.log
+.specify
+.specify/extensions
+.specify/extensions/.registry
+.specify/extensions/git
+.specify/extensions/git/README.md
+.specify/extensions/git/commands
+.specify/extensions/git/config-template.yml
+.specify/extensions/git/extension.yml
+.specify/extensions/git/git-config.yml
+.specify/extensions/git/scripts
+.specify/extensions.yml
+.specify/feature.json
+.specify/init-options.json
+.specify/integration.json
+.specify/integrations
+.specify/integrations/claude
+.specify/integrations/claude/scripts
+.specify/integrations/claude.manifest.json
+.specify/integrations/codex.manifest.json
+.specify/integrations/speckit.manifest.json
+.specify/memory
+.specify/memory/constitution.md
+.specify/scripts
+.specify/scripts/bash
+.specify/scripts/bash/check-prerequisites.sh
+.specify/scripts/bash/common.sh
+.specify/scripts/bash/create-new-feature.sh
+.specify/scripts/bash/setup-plan.sh
+.specify/scripts/bash/setup-tasks.sh
+.specify/scripts/bash/update-agent-context.sh
+.specify/templates
+.specify/templates/agent-file-template.md
+.specify/templates/checklist-template.md
+.specify/templates/constitution-template.md
+.specify/templates/plan-template.md
+.specify/templates/spec-template.md
+.specify/templates/tasks-template.md
+.specify/workflows
+
+=== STACK DETECTION (manifest files) ===
+
+--- Elsa.sln ---
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34003.232
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{61017E64-6D00-49CB-9E81-5002DC8F7D5F}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+		src\PackageManifestHints.cs = src\PackageManifestHints.cs
+		src\PackageManifest.props = src\PackageManifest.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "common", "common", "{C6658DE0-2B2F-47F0-BB61-2CA66D435C09}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{7D21EB5E-D6B4-48A5-A9BC-A26387A65F0B}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		icon.png = icon.png
+		NuGet.Config = NuGet.Config
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "modules", "modules", "{5BA4A8FA-F7F4-45B3-AEC8-8886D35AAC79}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}"
+	ProjectSection(SolutionItems) = preProject
+		test\Directory.Build.props = test\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Api", "src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj", "{C9539BD8-D2AE-4A8D-8281-71A05B3FBF31}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Core", "src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj", "{169E2C9B-6687-427F-A278-30BF849BFEDC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Management", "src\modules\Elsa.Workflows.Management\Elsa.Workflows.Management.csproj", "{2DD5D66B-85E9-4AF9-911C-C9F963234159}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.Runtime", "src\modules\Elsa.Workflows.Runtime\Elsa.Workflows.Runtime.csproj", "{8A050229-DB79-4E0B-9AFF-7565E87F2954}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Features", "src\common\Elsa.Features\Elsa.Features.csproj", "{C237BA1A-3A7D-4AB2-BE09-2696F3C082A4}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Expressions", "src\modules\Elsa.Expressions\Elsa.Expressions.csproj", "{80529478-A383-4FEA-B744-C71264969E9A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Common", "src\common\Elsa.Api.Common\Elsa.Api.Common.csproj", "{39CD855E-83B1-4A96-93F7-01608211EBE3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Identity", "src\modules\Elsa.Identity\Elsa.Identity.csproj", "{30B49E42-AE61-4F7C-981F-923F07BB3986}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Common", "src\modules\Elsa.Common\Elsa.Common.csproj", "{D229105F-6879-4452-9189-75DE060C0F4C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{986E5482-0482-448C-B9E4-EC67A9474B85}"
+	ProjectSection(SolutionItems) = preProject
+		docker\.dockerignore = docker\.dockerignore
+		docker\docker-compose.yml = docker\docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit", "unit", "{18453B51-25EB-4317-A4B3-B10518252E92}"
+	ProjectSection(SolutionItems) = preProject
+		test\unit\Directory.Build.props = test\unit\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "integration", "integration", "{1B8D5897-902E-4632-8698-E89CAF3DDF54}"
+	ProjectSection(SolutionItems) = preProject
+		test\integration\Directory.Build.props = test\integration\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "component", "component", "{08B41FFA-CEE3-46A7-B5C0-3EB65D37A16C}"
+	ProjectSection(SolutionItems) = preProject
+		test\component\Directory.Build.props = test\component\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Workflows.IntegrationTests", "test\integration\Elsa.Workflows.IntegrationTests\Elsa.Workflows.IntegrationTests.csproj", "{E9652738-2B3D-4357-B84B-54F0EA161382}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{89608AA5-5ADE-4832-AC7B-871C4AE64210}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Elsa.Api.Client", "src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj", "{1FCB2200-28B8-4703-8E89-73241AAED047}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "expressions", "expressions", "{6EF07978-A6D2-40EB-891D-7D70C5F37E76}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "security", "security", "{5948B0A5-7873-4DBB-BA03-EB283D6EA91B}"
+
+[TRUNCATED] Showing first 80 of 2359 lines.
+
+=== ENTRY POINTS ===
+No common entry points found. Check 'main' or 'scripts.start' in manifest files above.
+
+=== LINTING AND FORMATTING CONFIG ===
+Found: .editorconfig
+
+=== ENVIRONMENT VARIABLE TEMPLATES ===
+No .env.example or .env.template found. Identify required environment variables by searching the code and config for environment variable reads.
+
+=== TODO / FIXME / HACK (production code only, test dirs excluded) ===
+src/common/Elsa.Mediator/Middleware/Notification/Components/NotificationLoggingMiddleware.cs:20: // TODO: Log notification.
+src/modules/Elsa.Http.Webhooks/ShellFeatures/WebhooksFeature.cs:28: // TODO: Configure HTTP client with configurable parameters and resilience.
+src/modules/Elsa.Alterations/Services/DefaultAlterationRunner.cs:91: // TODO: Importing back into the workflow runtime makes sense, but this also causes another SAVE ction of the workflow instance in the DB, which also happens in the previous step during the commit action.
+src/modules/Elsa.Expressions.Liquid/Services/LiquidTemplateManager.cs:61: // TODO: add signal based cache invalidation.
+src/modules/Elsa.Http/Parsers/TextHtmlHttpContentParser.cs:8: // TODO: found a library to use a Html Content Parser and use a complexe object Type, until this, this class allow to accept request send using text/html content-type
+src/modules/Elsa.Http/DownloadableContentHandlers/UrlDownloadableContentHandler.cs:35: // TODO: Uncomment the next two lines if we implement file caching for this handler.
+src/modules/Elsa.Http/Activities/WriteFileHttpResponse.cs:153: // TODO: Delete the cached file after the workflow completes.
+src/modules/Elsa.Workflows.Core/Contexts/WorkflowExecutionContext.cs:709: // TODO: Check if we should not use the target subStatus here instead.
+src/modules/Elsa.Workflows.Core/Extensions/ActivityExecutionContextExtensions.InputEvaluation.cs:156: // TODO: Disable filtering for now until we redesign log sanitization.
+src/modules/Elsa.Workflows.Core/Activities/ParallelForEachT.cs:73: // TODO: This should be configurable, because this won't work for e.g. file streams and other non-serializable types.
+src/modules/Elsa.Workflows.Core/Services/WorkflowStateExtractor.cs:79: // TODO: This is a temporary solution. We need to find a better way to handle this.
+src/modules/Elsa.Workflows.Management/Mappers/WorkflowDefinitionMapper.cs:96: // TODO: Remove this in the future when users have migrated workflows to use the new UsableAsActivity options property.
+src/modules/Elsa.Workflows.Management/Mappers/VariableDefinitionMapper.cs:108: // TODO: The following code handles backward compatibility with variable definitions referencing older .NET type namespaces.
+
+=== GIT RECENT COMMITS (last 20) ===
+ff10a6810 refactor: update package reference configuration
+e59a0f172 Merge remote-tracking branch 'origin/release/3.8.0' into release/3.8.0
+103028452 feat: introduce HTTP webhooks module
+46b29d6ef Merge pull request #7901 from DenDeline/bugfix/7900-tenant-request-services
+c557c455a Merge release/3.8.0 into bugfix/7900-tenant-request-services
+dacad1464 Merge pull request #7905 from elsa-workflows/codex/pr-7903-review-fixes
+286a0d83d Harden external identity race compensation
+d10dbdd48 Merge branch 'codex/pr-7903-review-fixes' into release/3.8.0
+f4d749d3f Merge branch 'codex/auth-refinements' into release/3.8.0
+fe125ac33 Fix external authentication review findings
+ed50e1cc9 Merge pull request #7904 from elsa-workflows/codex/fix-7306-tenant-agnostic-registry-population
+1b74bb94c fix: validate external login methods before discovery
+542058971 Avoid repeated tenant-agnostic registry population
+a24a6fe26 Add test to validate complete configuration requirements for connections
+a60b5a36b Refine test for archived connections in shadow relationships; introduce `IsAvailableForAuthentication` helper for improved connection filtering logic.
+572cd325b Merge compact external authentication secret IDs
+119f49f7a fix: simplify external authentication secret IDs
+9f09aca3f Refine test to ensure archived connections do not participate as active shadows; update shadow relationship management to exclude archived entries.
+14f373528 Add test for handling archived database overrides in connection shadows
+6e3ed5c4e Remove migration for external authentication in EFCore.Sqlite module
+
+=== HIGH-CHURN FILES (last 90 days, top 20) ===
+  35 Elsa.sln
+  28 Directory.Packages.props
+  18 src/apps/Elsa.ModularServer.Web/appsettings.json
+  15 src/apps/Elsa.Server.Web/Program.cs
+  14 src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj
+  12 AGENTS.md
+  12 src/modules/Elsa.Workflows.Runtime/HealthChecks/ElsaWorkflowPersistenceHealthCheck.cs
+  11 src/modules/Elsa.Identity/ShellFeatures/IdentityFeature.cs
+  11 src/modules/Elsa.Identity/Services/DefaultSecretHasher.cs
+  10 src/modules/Elsa.Workflows.Core/Services/ActivityRegistry.cs
+  10 src/apps/Elsa.ModularServer.Web/Program.cs
+  10 src/modules/Elsa.Workflows.Runtime/ShellFeatures/WorkflowRuntimeFeature.cs
+  10 test/unit/Elsa.Identity.UnitTests/Services/DefaultSecretHasherTests.cs
+  10 src/modules/Elsa.Workflows.Runtime/HealthChecks/ElsaDistributedLockHealthCheck.cs
+  10 test/unit/Elsa.Workflows.Runtime.UnitTests/HealthChecks/ElsaDistributedLockHealthCheckTests.cs
+   9 test/integration/Elsa.ExternalAuthentication.IntegrationTests/Persistence/ExternalAuthenticationPersistenceTests.cs
+   9 test/integration/Elsa.ExternalAuthentication.IntegrationTests/Connections/ConnectionManagementTests.cs
+   9 src/modules/Elsa.Hosting.Management/Services/ConfiguredApplicationInstanceNameProvider.cs
+   9 test/unit/Elsa.Hosting.Management.UnitTests/Services/ConfiguredApplicationInstanceNameProviderTests.cs
+   9 src/modules/Elsa.Workflows.Core/ShellFeatures/WorkflowsFeature.cs
+
+=== MONOREPO SIGNALS ===
+No monorepo signals detected.
+
+=== CODE METRICS ===
+Total files scanned: 5427
+Total lines of code: 319973
+
+Files by language:
+  C#: 4365
+  Other: 1044
+  Java: 6
+  Python: 4
+  JavaScript: 4
+  TypeScript: 2
+  TypeScript/React: 2
+
+Top 10 largest files:
+design/artwork/elsa-logo-art.psd: 13979.6KB
+design/video/exports/elsa-workflows-readme.gif: 10791.9KB
+design/artwork/elsa-v3-avatar.png: 5827.9KB
+design/video/exports/elsa-workflows-readme.mp4: 3582.4KB
+design/artwork/creative-elsa-animation.gif: 3461.2KB
+src/apps/Elsa.ModularServer.Web/elsa_workflows.db-wal: 3218.8KB
+design/artwork/elsa-waves.mp4: 3178.4KB
+design/logo/Esla_Source.ai: 2043.9KB
+src/apps/Elsa.ModularServer.Web/elsa_logs.db: 1516.0KB
+design/logo/Elsa.ai: 914.8KB
+
+=== CI/CD PIPELINES ===
+CI/CD: GitHub Actions
+
+=== CONTAINERS & ORCHESTRATION ===
+No containerization configs detected.
+
+=== SECURITY & COMPLIANCE ===
+No security configs detected.
+
+=== PERFORMANCE & TESTING ===
+No performance testing configs detected.
+
+=== SCAN COMPLETE ===

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
@@ -17,7 +18,7 @@ internal class List(IEnumerable<IIncidentStrategy> strategies, ISerializationTyp
     public override void Configure()
     {
         Get("/descriptors/incident-strategies");
-        ConfigurePermissions("read:incident-strategies");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsIncidentStrategies, CoreVerbs.View);
     }
 
     public override Task<ListResponse<IncidentStrategyDescriptor>> ExecuteAsync(CancellationToken cancellationToken)

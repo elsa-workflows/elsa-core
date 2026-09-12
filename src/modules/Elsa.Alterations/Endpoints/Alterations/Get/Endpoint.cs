@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Filters;
@@ -25,7 +26,7 @@ public class Get : ElsaEndpointWithoutRequest<Response>
     public override void Configure()
     {
         Get("/alterations/{id}");
-        ConfigurePermissions("read:alterations");
+        RequirePermission(Elsa.Alterations.Permissions.AlterationPermissions.Alterations, CoreVerbs.View);
     }
 
     /// <inheritdoc />
