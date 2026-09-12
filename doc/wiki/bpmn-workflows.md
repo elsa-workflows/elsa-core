@@ -28,7 +28,7 @@ elsa.AddBpmnInterchange();
 - **`Activities`** — the Elsa activities bound to this scope (one per `BpmnWorkBinding`).
 - **`IsRootScope`** — left `false` on every scope the binder produces; the caller sets it to `true` to mark the outermost scope as a workflow entry point.
 
-`BpmnProcess` completes with the interpreter's outcome name (e.g. `BpmnInterpreter.DoneOutcomeName`). It does **not** complete with `Outcomes.Default`, so connections from it must target explicit outcome ports.
+`BpmnProcess` completes with the interpreter's outcome name — `BpmnInterpreter.DoneOutcomeName` ("Done") normally, or `BpmnInterpreter.CancelledOutcomeName` ("Cancelled") when a cancel end event cancelled a transaction. It does **not** complete with `Outcomes.Default`. Both outcomes are declared flow ports (`[FlowNode(BpmnInterpreter.DoneOutcomeName, BpmnInterpreter.CancelledOutcomeName)]`), so connections from it target one of them explicitly.
 
 ## Work Ledger
 

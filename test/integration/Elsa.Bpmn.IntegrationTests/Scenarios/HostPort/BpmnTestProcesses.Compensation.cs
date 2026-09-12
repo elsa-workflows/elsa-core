@@ -192,6 +192,23 @@ internal static partial class BpmnTestProcesses
     }
 
     /// <summary>
+    /// A root scope that is itself a transaction, cancelled from within by its own cancel end event — nothing nests
+    /// it, so the scope's own completion outcome is <c>Cancelled</c> rather than <c>Done</c>.
+    /// </summary>
+    public static BpmnProcess CancelledTransaction(BpmnTestLog log)
+    {
+        var definition = new BpmnProcessBuilder("cancelled-transaction")
+            .Transaction()
+            .StartEvent("start")
+            .Task("work", bindingRef: BindingRef("work"))
+            .EndEvent("cancelled", null, Cancel())
+            .ConnectSequence("start", "work", "cancelled")
+            .Build();
+
+        return Scope("scope", definition, Immediate("work", log));
+    }
+
+    /// <summary>
     /// A transaction subprocess that starts a compensation replay on one branch and cancels itself on the other while
     /// that replay is still running, so the replay's claimed-but-unrun log entries are torn down mid-run.
     /// </summary>

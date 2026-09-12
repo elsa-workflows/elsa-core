@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Xml;
 using Bpmn.Model;
+using Bpmn.Semantics;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Signals;
 using Elsa.Extensions;
@@ -9,6 +10,7 @@ using Elsa.Scheduling;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -33,13 +35,15 @@ namespace Elsa.Bpmn.Activities;
 /// continuation, and its outcome is what a conditional sequence flow in the enclosing scope selects on.
 /// </para>
 /// <para>
-/// Composing this activity into a <c>Flowchart</c>: it completes with only the interpreter's outcome name (e.g.
-/// <c>BpmnInterpreter.DoneOutcomeName</c>, and <c>CancelledOutcomeName</c> where relevant) — not with
-/// <c>Outcomes.Default</c>, which an ordinary activity's null result also produces and which additionally matches a
-/// null-port connection. A <c>Connection</c> built with the default/null-port shorthand will therefore never fire
-/// from this activity; always target an explicit outcome port.
+/// Composing this activity into a <c>Flowchart</c>: it completes with only the interpreter's outcome name —
+/// <see cref="BpmnInterpreter.DoneOutcomeName"/> normally, or <see cref="BpmnInterpreter.CancelledOutcomeName"/>
+/// when a cancel end event cancelled a transaction — never with <c>Outcomes.Default</c>, which an ordinary
+/// activity's null result also produces and which additionally matches a null-port connection. Both outcomes are
+/// declared flow ports, so a <c>Connection</c> targets one of them explicitly; the default/null-port shorthand will
+/// never fire from this activity.
 /// </para>
 /// </remarks>
+[FlowNode(BpmnInterpreter.DoneOutcomeName, BpmnInterpreter.CancelledOutcomeName)]
 [Activity("Elsa", "BPMN", "Executes a BPMN process scope.")]
 [System.ComponentModel.Browsable(false)]
 public class BpmnProcess : Container, ITrigger
