@@ -166,11 +166,11 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
                     DefinitionId = "def-1",
                     DefinitionVersionId = "ver-1",
                     Version = 1,
-                    Status = WorkflowStatus.Running,
-                    IsExecuting = true,
+                    Status = WorkflowStatus.Finished,
+                    SubStatus = WorkflowSubStatus.Cancelled,
+                    IsExecuting = false,
                 });
             });
-        InstanceStore.TryMarkInterruptedAsync("instance-stalled", Arg.Any<CancellationToken>(), false).Returns(new ValueTask<bool>(true));
 
         var sut = BuildSut();
         var drainTask = sut.DrainAsync(DrainTrigger.OperatorForce).AsTask();
@@ -186,6 +186,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Assert.Equal(DrainResult.Forced, outcome.OverallResult);
         Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
         Assert.Contains("instance-stalled", outcome.ForceCancelledInstanceIds);
+        await InstanceStore.DidNotReceive().TryMarkInterruptedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>(), Arg.Any<bool>());
     }
 
     [Fact(DisplayName = "Force-cancel skips Interrupted persist when TryMarkInterrupted loses the terminal race")]

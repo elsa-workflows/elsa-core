@@ -308,29 +308,29 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
 
         // Snapshot before Phase A, bounded so a stalled FindAsync cannot block Cancel.
-        // Same-cycle user cancel and drain force-cancel both persist Finished/Cancelled;
-        // only a successfully observed Cancelled row is preserved. Unknown / timed-out
-        // pre-state is not treated as already Cancelled.
-        var alreadyUserCancelledIds = new HashSet<string>(StringComparer.Ordinal);
-        using (var snapshotCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        // Only a successful read that is clearly not already Cancelled joins drainInduced.
+        // Timeout/error: exclude that id (prefer preserving user-cancel / #8052 over promoting
+        // an unknown row). Then force-cancel every handle immediately.
+        var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        using var overallSnapshotCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        overallSnapshotCts.CancelAfter(PreCancelSnapshotTimeout);
+        foreach (var handle in live)
         {
-            snapshotCts.CancelAfter(PreCancelSnapshotTimeout);
             try
             {
-                foreach (var handle in live)
-                {
-                    var snapshot = await instanceStore
-                        .FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, snapshotCts.Token)
-                        .AsTask()
-                        .WaitAsync(snapshotCts.Token)
-                        .ConfigureAwait(false);
-                    if (snapshot?.SubStatus == WorkflowSubStatus.Cancelled)
-                        alreadyUserCancelledIds.Add(handle.WorkflowInstanceId);
-                }
+                using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(overallSnapshotCts.Token);
+                perFindCts.CancelAfter(PreCancelSnapshotTimeout);
+                var snapshot = await instanceStore
+                    .FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, perFindCts.Token)
+                    .AsTask()
+                    .WaitAsync(perFindCts.Token)
+                    .ConfigureAwait(false);
+                if (snapshot is null || snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                    drainInducedInstanceIds.Add(handle.WorkflowInstanceId);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
-                _logger.LogWarning(ex, "Pre-cancel instance snapshot timed out or failed; proceeding to force-cancel.");
+                _logger.LogWarning(ex, "Pre-cancel snapshot for instance {InstanceId} timed out or failed; excluding from drain-induced promote.", handle.WorkflowInstanceId);
             }
         }
 
@@ -395,7 +395,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             try
             {
                 using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
-                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, alreadyUserCancelledIds, persistCts.Token);
+                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, persistCts.Token);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
@@ -412,7 +412,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         ExecutionCycleHandle handle,
         string generationId,
         string reason,
-        HashSet<string> alreadyUserCancelledIds,
+        HashSet<string> drainInducedInstanceIds,
         CancellationToken cancellationToken)
     {
         var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
@@ -458,7 +458,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             return;
         }
 
-        if (ShouldSkipInterruptedPersist(instance, alreadyUserCancelledIds))
+        if (ShouldSkipInterruptedPersist(instance, drainInducedInstanceIds))
         {
             _logger.LogInformation(
                 "Skipping Interrupted persist for instance {InstanceId}: already in terminal status {Status}/{SubStatus}.",
@@ -475,7 +475,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             // this id is in the force-cancelled set and the runner committed Cancelled.
             var allowFinishedCancelled = instance.Status == WorkflowStatus.Finished
                 && instance.SubStatus == WorkflowSubStatus.Cancelled
-                && !alreadyUserCancelledIds.Contains(instance.Id);
+                && drainInducedInstanceIds.Contains(instance.Id);
             var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken, allowFinishedCancelled);
             if (!marked)
             {
@@ -519,17 +519,16 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
     /// <summary>
     /// Skip persist when the row is already a real terminal outcome: natural completion,
-    /// fault, or a user cancellation successfully observed as Cancelled before force-cancel.
-    /// Drain-induced Finished/Cancelled (not successfully observed as already Cancelled) is
-    /// interruptible so deadline-breach recovery can requeue it.
+    /// fault, already Cancelled, or unknown pre-state (snapshot timeout). Only ids that
+    /// snapshot clearly showed were not already Cancelled may be promoted.
     /// </summary>
-    private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> alreadyUserCancelledIds)
+    private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> drainInducedInstanceIds)
     {
         if (instance.Status != WorkflowStatus.Finished)
             return false;
 
         if (instance.SubStatus == WorkflowSubStatus.Cancelled)
-            return alreadyUserCancelledIds.Contains(instance.Id);
+            return !drainInducedInstanceIds.Contains(instance.Id);
 
         return true;
     }
