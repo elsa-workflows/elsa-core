@@ -640,13 +640,39 @@ public sealed class BpmnInterchangeDocumentService(
     /// <paramref name="processes"/> itself, and carries elements <paramref name="processes"/> does not enumerate —
     /// is covered too.
     /// </param>
-    /// <exception cref="BpmnDuplicateElementIdException">An element id is declared more than once.</exception>
+    /// <remarks>
+    /// A top-level <see cref="BpmnProcessDefinition"/>'s own <see cref="BpmnProcessDefinition.ProcessId"/> is a scope
+    /// id in exactly the same id-space as every element id below it: <c>EnsureCapabilitiesSatisfied</c>,
+    /// <c>BpmnWorkBinder.BindScope</c> and <c>Bpmn.Interchange</c>'s own <c>BpmnXmlWriter</c> all find "the nested
+    /// processes belonging to this scope" by matching a <see cref="BpmnWorkBinding.NestedProcess"/>'s owner id
+    /// against a <see cref="BpmnProcessDefinition.ProcessId"/> — a top-level process's own <em>id</em>, not one of
+    /// its declared elements, so nothing below ever puts it in the pool checked for uniqueness on its own. A
+    /// subprocess reusing that id (e.g. <c>&lt;process id="P"&gt;&lt;subProcess id="P"&gt;</c>) makes that lookup
+    /// find the top-level scope again instead of terminating — the same class of infinite recursion a repeated
+    /// element id causes — so it is added here explicitly, once per top-level process.
+    /// <para>
+    /// A <em>nested</em> process definition's own <see cref="BpmnProcessDefinition.ProcessId"/> needs no equivalent
+    /// addition: it is always exactly the <see cref="BpmnWorkBinding.ElementId"/> of the subprocess
+    /// element that opens it, by construction of the library's own reader, and that element id is already in the
+    /// pool below as one of its <em>owner</em>'s elements. Adding it a second time would flag every ordinary
+    /// subprocess as a duplicate of itself; the legitimate pairing is counted once by not adding it again here.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="BpmnDuplicateElementIdException">An element id, or a top-level process id, is declared more than once.</exception>
     internal static void EnsureElementIdsUnique(IEnumerable<BpmnProcessDefinition> processes, IReadOnlyList<BpmnWorkBinding> bindings)
     {
-        var duplicateIds = processes
+        var processList = processes as IReadOnlyCollection<BpmnProcessDefinition> ?? processes.ToList();
+
+        var processIds = processList.Select(process => process.ProcessId);
+
+        var elementIds = processList
             .Concat(bindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
             .SelectMany(process => process.Elements)
-            .GroupBy(element => element.ElementId, StringComparer.Ordinal)
+            .Select(element => element.ElementId);
+
+        var duplicateIds = processIds
+            .Concat(elementIds)
+            .GroupBy(id => id, StringComparer.Ordinal)
             .Where(group => group.Count() > 1)
             .Select(group => group.Key)
             .ToList();

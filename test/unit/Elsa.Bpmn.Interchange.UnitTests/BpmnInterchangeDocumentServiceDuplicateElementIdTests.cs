@@ -49,6 +49,37 @@ public class BpmnInterchangeDocumentServiceDuplicateElementIdTests
         Assert.Equal(["Outer"], exception.DuplicateElementIds);
     }
 
+    [Fact(DisplayName = "A subprocess reusing its parent top-level process's own id is refused, naming that id")]
+    public void EnsureElementIdsUnique_RefusesASubprocessReusingItsParentTopLevelProcessesOwnId()
+    {
+        // <process id="P"><subProcess id="P">...</subProcess></process>: the subprocess element id equals the
+        // top-level process's own ProcessId. Before the fix, a top-level process's own id was never added to the
+        // pool checked for uniqueness (only its Elements were), so "P" appeared only once — as the subprocess
+        // element inside root.Elements — and this collision went undetected.
+        var subProcessElement = new BpmnElement("P", BpmnElementTypes.SubProcess, bindingRef: "node-p");
+        var root = new BpmnProcessDefinition("P", Elements: [subProcessElement]);
+        var subProcessBody = new BpmnProcessDefinition("P");
+
+        BpmnWorkBinding[] bindings = [new BpmnWorkBinding.NestedProcess("P", "P", "node-p", BpmnBindingSlot.Primary, subProcessBody)];
+
+        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+            BpmnInterchangeDocumentService.EnsureElementIdsUnique([root], bindings));
+
+        Assert.Equal(["P"], exception.DuplicateElementIds);
+    }
+
+    [Fact(DisplayName = "Two top-level processes sharing the same id are refused, naming that id")]
+    public void EnsureElementIdsUnique_RefusesTwoTopLevelProcessesSharingAnId()
+    {
+        var first = new BpmnProcessDefinition("shared", Elements: [new BpmnElement("task-1", BpmnElementTypes.ServiceTask, bindingRef: "node-task-1")]);
+        var second = new BpmnProcessDefinition("shared", Elements: [new BpmnElement("task-2", BpmnElementTypes.ServiceTask, bindingRef: "node-task-2")]);
+
+        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+            BpmnInterchangeDocumentService.EnsureElementIdsUnique([first, second], []));
+
+        Assert.Equal(["shared"], exception.DuplicateElementIds);
+    }
+
     /// <summary>
     /// The exact document shape elsa-core#8074 reports: process <c>main</c> declares a subprocess <c>Outer</c>,
     /// whose body declares another subprocess that reuses the id <c>Outer</c> rather than declaring one of its own.
