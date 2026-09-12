@@ -54,12 +54,13 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// in the first place; <see cref="Export(WorkflowDefinition)"/> says so honestly rather than asserting the document
 /// was "never imported", which would be true in one case and false in the other. Separately, a save that DOES carry
 /// the key forward can still leave the definition materially changed — the graph, name, or anything else about it —
-/// while the stored BPMN text still describes the pre-edit document. <see cref="SourceVersionCustomPropertyKey"/>
-/// records the definition's own version at the moment of import for exactly this: if the current version no longer
-/// matches, the stored source is stale, and exporting it would silently hand back a document that is not what the
-/// caller has, which is worse than refusing. A version bump alone misses one case, though: an unpublished draft is
-/// saved in place — same row, same version — so a designer save of the draft moves the graph without moving the
-/// version. <see cref="SourceGraphHashCustomPropertyKey"/> closes that gap with a content hash of the graph itself.
+/// while the stored BPMN text still describes the pre-edit document. What decides that is the graph itself, not the
+/// version: <see cref="SourceGraphHashCustomPropertyKey"/> records a content hash of the graph at the moment of
+/// import, and once it is present it alone says whether the stored source is stale, because it is the only one of
+/// the two markers a metadata-only save (a rename, a variable edit) and a graph-changing save always disagree on — a
+/// version bump does not, by itself, mean the graph moved, and it does move without a version bump when an
+/// unpublished draft is saved in place. <see cref="SourceVersionCustomPropertyKey"/> is what a definition imported
+/// before the graph hash existed falls back to.
 /// </para>
 /// <para>
 /// <b>A whole-definition import and a document edit disagree about what else gets replaced.</b> <see cref="ImportAsync"/>
@@ -101,11 +102,11 @@ public sealed class BpmnInterchangeDocumentService(
     /// </summary>
     /// <remarks>
     /// <see cref="Export(WorkflowDefinition)"/> compares this against the definition's current version to tell a
-    /// still-current source from a stale one. The version number is what <see cref="WorkflowDefinition"/> itself
-    /// already exposes for "has this definition changed", so this reuses it rather than inventing a second notion of
-    /// change for the case a version bump alone catches: a publish, or any other save that assigns a new version.
-    /// It does not, on its own, catch an unpublished draft saved in place — same row, same version — which is what
-    /// <see cref="SourceGraphHashCustomPropertyKey"/> is for.
+    /// still-current source from a stale one, but only for a definition that carries no <see cref="SourceGraphHashCustomPropertyKey"/> —
+    /// imported before that marker existed. Once the graph hash is present, it alone decides staleness and this
+    /// comparison is skipped: a version bump does not, by itself, mean the graph changed, and a metadata-only save
+    /// (a rename, a variable edit) that carries a definition from a published version N to draft N+1 must not be
+    /// judged stale on version alone when the graph the stored source describes has not moved.
     /// </remarks>
     public const string SourceVersionCustomPropertyKey = "Bpmn:SourceVersion";
 
@@ -131,9 +132,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// An unpublished draft is saved in place — same row, same version — so a designer save of the draft that edits
     /// a bound activity's inputs changes <see cref="WorkflowDefinition.StringData"/> without changing
     /// <see cref="WorkflowDefinition"/>'s own <c>Version</c>, which <see cref="SourceVersionCustomPropertyKey"/> alone
-    /// cannot tell apart from no change at all. This marker closes that gap: <see cref="Export(WorkflowDefinition)"/> and
-    /// <see cref="ReadDocument"/> also treat the stored source as stale when the current graph's hash differs from
-    /// the one recorded here, in addition to the existing version check. Computed with the same hashing
+    /// cannot tell apart from no change at all. Once this marker is present, <see cref="Export(WorkflowDefinition)"/>
+    /// and <see cref="ReadDocument"/> decide staleness from it alone: the stored source is current exactly when the
+    /// current graph hashes to the value recorded here, whether or not the version has also changed. That matters
+    /// the other way around too — a metadata-only save (a rename, a variable edit) bumps a published definition to a
+    /// new draft version without touching the graph, and must not be judged stale on version alone once the graph
+    /// hash says the document still describes it exactly. Computed with the same hashing
     /// <see cref="Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document.BpmnDocumentETag"/> uses for the graph field, via
     /// <see cref="BpmnContentHash"/>, so the two never disagree about what "the graph changed" means.
     /// <para>
@@ -544,29 +548,29 @@ public sealed class BpmnInterchangeDocumentService(
                 BpmnExportUnavailableReason.SourceVersionUnknown);
         }
 
-        if (sourceVersion != definition.Version)
+        // The graph hash, once recorded, is the sole word on staleness: it is unaffected by a metadata-only save
+        // (a rename, a variable change) that bumps the definition to a new draft version without touching the graph
+        // the stored source describes, which the version check below would otherwise flag as stale even though the
+        // document still matches exactly. A definition imported before this marker existed carries no value for it,
+        // so it falls back to the version check instead of refusing every definition imported under the older
+        // behaviour.
+        if (definition.CustomProperties.TryGetValue<string>(SourceGraphHashCustomPropertyKey, out var sourceGraphHash) && !string.IsNullOrEmpty(sourceGraphHash))
+        {
+            if (sourceGraphHash != BpmnContentHash.OfGraph(definition.StringData))
+            {
+                throw new BpmnExportUnavailableException(
+                    $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN: its activity graph no longer matches "
+                    + "the graph the stored source was imported against. The BPMN source stored on it no longer corresponds to this definition, so "
+                    + "exporting it would silently return a document that is not what this definition currently is.",
+                    BpmnExportUnavailableReason.SourceStale);
+            }
+        }
+        else if (sourceVersion != definition.Version)
         {
             throw new BpmnExportUnavailableException(
                 $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN (imported at version {sourceVersion}, "
                 + $"currently at version {definition.Version}). The BPMN source stored on it no longer corresponds to this definition, so exporting it "
                 + "would silently return a document that is not what this definition currently is.",
-                BpmnExportUnavailableReason.SourceStale);
-        }
-
-        // The version check above catches a publish or any other save that assigns a new version, but an unpublished
-        // draft is saved in place — same row, same version — so a designer save of the draft (e.g. an edit to a bound
-        // activity's inputs) moves the graph without moving the version. SourceGraphHashCustomPropertyKey catches that:
-        // a definition imported before this marker existed carries no value for it, so it falls back to the
-        // version-only check above rather than refusing every definition imported under the older behaviour.
-        if (definition.CustomProperties.TryGetValue<string>(SourceGraphHashCustomPropertyKey, out var sourceGraphHash)
-            && !string.IsNullOrEmpty(sourceGraphHash)
-            && sourceGraphHash != BpmnContentHash.OfGraph(definition.StringData))
-        {
-            throw new BpmnExportUnavailableException(
-                $"Workflow definition '{definition.DefinitionId}' has changed since it was imported from BPMN: its activity graph no longer matches "
-                + "the graph the stored source was imported against, even though its version has not changed (an unpublished draft is saved in place). "
-                + "The BPMN source stored on it no longer corresponds to this definition, so exporting it would silently return a document that is "
-                + "not what this definition currently is.",
                 BpmnExportUnavailableReason.SourceStale);
         }
 

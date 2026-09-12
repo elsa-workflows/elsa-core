@@ -570,6 +570,30 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task DocumentPut_AfterAMetadataOnlySaveCreatesANewDraftFromAPublishedVersion_SucceedsAndRecordsAFreshMarker()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        await MarkLatestPublishedAsync(definitionId);
+        await RenameLatestDraftThroughTheDesignerAsync(definitionId, "Renamed through the designer");
+
+        // A metadata-only save through the designer path bumps a published definition to a new draft (N+1) without
+        // touching the graph, which is exactly the shape this issue is about: the document GET must not refuse that
+        // draft as stale, so the PUT that follows (W11's flow) has an ETag to send at all.
+        Assert.Equal(2, await LatestVersionOfAsync(definitionId));
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+
+        var putResponse = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), etag);
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        var stored = await FindLatestDefinitionAsync(definitionId);
+        Assert.True(stored.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var sourceVersion));
+        Assert.Equal(stored.Version, sourceVersion);
+        Assert.True(stored.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey, out var sourceGraphHash));
+        Assert.False(string.IsNullOrEmpty(sourceGraphHash));
+    }
+
+    [Fact]
     public async Task DocumentPut_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -918,6 +942,41 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.NotNull(definition);
         definition!.CustomProperties.Remove(BpmnInterchangeDocumentService.SourceProcessIdCustomPropertyKey);
         await store.SaveAsync(definition);
+    }
+
+    /// <summary>
+    /// Marks the latest version of <paramref name="definitionId"/> published, directly on the stored row, rather
+    /// than through <see cref="IWorkflowDefinitionPublisher.PublishAsync(string, CancellationToken)"/>, which runs
+    /// the runtime's own trigger-payload validation gate — orthogonal to what a test using this exercises, and not
+    /// satisfied by the camunda-order-process.bpmn fixture these tests otherwise read unmodified. Only "this row is
+    /// the published version <see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/> branches on" matters here.
+    /// </summary>
+    private async Task MarkLatestPublishedAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var definition = await store.FindAsync(filter);
+        Assert.NotNull(definition);
+        definition!.IsPublished = true;
+        await store.SaveAsync(definition);
+    }
+
+    /// <summary>
+    /// Renames the latest draft of <paramref name="definitionId"/> the way the workflow-definition save endpoint
+    /// Studio's designer calls does — <see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/> then
+    /// <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/> — without touching the activity graph: a
+    /// metadata-only save, which carries a published definition to a new draft version without moving the graph the
+    /// stored BPMN source describes.
+    /// </summary>
+    private async Task RenameLatestDraftThroughTheDesignerAsync(string definitionId, string name)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest);
+        Assert.NotNull(draft);
+        draft!.Name = name;
+        await publisher.SaveDraftAsync(draft);
     }
 
     private async Task<int> LatestVersionOfAsync(string definitionId) => (await LatestStoredAsync(definitionId)).Version;
