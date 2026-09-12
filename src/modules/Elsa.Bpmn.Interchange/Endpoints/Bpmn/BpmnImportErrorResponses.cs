@@ -36,7 +36,7 @@ internal static class BpmnImportErrorResponses
         }
         catch (BpmnDefinitionNotFoundException exception)
         {
-            await BpmnErrorResponseSender.SendAsync(httpResponse, NotFoundResponseFor(exception), cancellationToken);
+            await BpmnErrorResponse.SendAsync(httpResponse, NotFoundResponseFor(exception), cancellationToken);
             return null;
         }
         catch (BpmnInterchangeException exception)
@@ -47,12 +47,12 @@ internal static class BpmnImportErrorResponses
         }
         catch (BpmnBindingException exception)
         {
-            await BpmnErrorResponseSender.SendAsync(httpResponse, BindingInvalidResponseFor(exception), cancellationToken);
+            await BpmnErrorResponse.SendAsync(httpResponse, BindingInvalidResponseFor(exception), cancellationToken);
             return null;
         }
         catch (BpmnCapabilityException exception)
         {
-            await BpmnErrorResponseSender.SendAsync(httpResponse, CapabilityResponseFor(exception), cancellationToken);
+            await BpmnErrorResponse.SendAsync(httpResponse, CapabilityResponseFor(exception), cancellationToken);
             return null;
         }
 
@@ -77,11 +77,11 @@ internal static class BpmnImportErrorResponses
     /// reliably force without a race.
     /// </summary>
     internal static BpmnErrorResponse NotFoundResponseFor(BpmnDefinitionNotFoundException exception) =>
-        BpmnErrorResponseFactory.Create(exception.Message, BpmnErrorCodes.DocumentNotFound, StatusCodes.Status404NotFound);
+        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.DocumentNotFound, StatusCodes.Status404NotFound);
 
     /// <summary>The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>.</summary>
     internal static BpmnErrorResponse BindingInvalidResponseFor(BpmnBindingException exception) =>
-        BpmnErrorResponseFactory.Create(exception.Message, BpmnErrorCodes.ImportBindingInvalid, StatusCodes.Status422UnprocessableEntity);
+        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportBindingInvalid, StatusCodes.Status422UnprocessableEntity);
 
     /// <summary>
     /// The <see cref="BpmnErrorCodes.ImportCapabilityUnsupported"/> response for <paramref name="exception"/>, as its
@@ -90,7 +90,7 @@ internal static class BpmnImportErrorResponses
     /// make a real import throw <see cref="BpmnCapabilityException"/> to exercise this through the endpoint itself.
     /// </summary>
     internal static BpmnErrorResponse CapabilityResponseFor(BpmnCapabilityException exception) =>
-        BpmnErrorResponseFactory.Create(
+        BpmnErrorResponse.Create(
             BpmnCapabilityErrorFormatter.Format(exception),
             BpmnErrorCodes.ImportCapabilityUnsupported,
             StatusCodes.Status422UnprocessableEntity,

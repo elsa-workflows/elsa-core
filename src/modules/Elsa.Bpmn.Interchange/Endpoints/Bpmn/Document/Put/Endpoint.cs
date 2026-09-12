@@ -59,9 +59,9 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
 
         if (ifMatch is "" or "*")
         {
-            await BpmnErrorResponseSender.SendAsync(
+            await BpmnErrorResponse.SendAsync(
                 HttpContext.Response,
-                BpmnErrorResponseFactory.Create(
+                BpmnErrorResponse.Create(
                     "An If-Match header carrying the ETag from a prior GET of this document is required to PUT it back, so an intervening edit is not silently overwritten. The wildcard \"*\" is not accepted.",
                     BpmnErrorCodes.DocumentPreconditionRequired,
                     StatusCodes.Status428PreconditionRequired),
@@ -71,9 +71,9 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
 
         if (!string.Equals(ifMatch, BpmnDocumentETag.From(definition), StringComparison.Ordinal))
         {
-            await BpmnErrorResponseSender.SendAsync(
+            await BpmnErrorResponse.SendAsync(
                 HttpContext.Response,
-                BpmnErrorResponseFactory.Create(
+                BpmnErrorResponse.Create(
                     "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.",
                     BpmnErrorCodes.DocumentPreconditionFailed,
                     StatusCodes.Status412PreconditionFailed),

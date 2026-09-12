@@ -31,7 +31,7 @@ internal static class BpmnExportErrorResponses
         }
         catch (BpmnExportUnavailableException exception)
         {
-            await BpmnErrorResponseSender.SendAsync(httpResponse, ResponseFor(exception), cancellationToken);
+            await BpmnErrorResponse.SendAsync(httpResponse, ResponseFor(exception), cancellationToken);
         }
         catch (BpmnInterchangeException exception)
         {
@@ -58,6 +58,6 @@ internal static class BpmnExportErrorResponses
             _ => throw new ArgumentOutOfRangeException(nameof(exception), exception.Reason, "Unknown BpmnExportUnavailableReason.")
         };
 
-        return BpmnErrorResponseFactory.Create(exception.Message, code, StatusCodes.Status422UnprocessableEntity);
+        return BpmnErrorResponse.Create(exception.Message, code, StatusCodes.Status422UnprocessableEntity);
     }
 }
