@@ -1,8 +1,6 @@
 using System.Text.Json;
 using Elsa.Common.Serialization;
-using Elsa.Workflows.Options;
 using Elsa.Workflows.Serialization.Converters;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Testing.Shared;
 
@@ -15,7 +13,7 @@ public static class SerializationTypeTestHelpers
     /// Creates a registry from already-configured options.
     /// </summary>
     public static SerializationTypeRegistry CreateRegistry(SerializationTypeOptions options) =>
-        new(Options.Create(options));
+        new(Microsoft.Extensions.Options.Options.Create(options));
 
     /// <summary>
     /// Creates a registry and applies the provided options configuration.
