@@ -124,26 +124,30 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        _store.Save(instance, x => x.Id);
+        lock (_sync)
+            _store.Save(instance, x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     public ValueTask AddAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        _store.Add(instance, GetId);
+        lock (_sync)
+            _store.Add(instance, GetId);
         return ValueTask.CompletedTask;
     }
 
     public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
-        _store.Update(instance, GetId);
+        lock (_sync)
+            _store.Update(instance, GetId);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<WorkflowInstance> instances, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(instances, GetId);
+        lock (_sync)
+            _store.SaveMany(instances, GetId);
         return ValueTask.CompletedTask;
     }
 
@@ -172,6 +176,8 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
     {
+        // Same lock as Save/Update so a runner's terminal persist cannot land between the
+        // non-terminal check and the Interrupted mutations.
         lock (_sync)
         {
             var instance = _store.Find(x => x.Id == workflowInstanceId);
@@ -181,8 +187,8 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             instance.SubStatus = WorkflowSubStatus.Interrupted;
             instance.IsExecuting = false;
 
-            // A runner can complete in-place on the same object. If Status became Finished,
-            // do not keep Interrupted or report success — drain would otherwise log a false interrupt.
+            // In-place completion on the same object does not take this lock. If Status became
+            // Finished, do not keep Interrupted or report success.
             if (instance.Status == WorkflowStatus.Finished)
             {
                 instance.SubStatus = WorkflowSubStatus.Finished;

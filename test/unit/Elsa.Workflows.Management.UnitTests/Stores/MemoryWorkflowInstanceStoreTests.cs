@@ -97,36 +97,42 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.NotSame(staleRunning, instance);
     }
 
-    [Fact(DisplayName = "TryMarkInterruptedAsync does not leave Finished+Interrupted when completion races the mark")]
-    public async Task TryMarkInterrupted_DoesNotLeaveFinishedInterruptedOnInPlaceCompletion()
+    [Fact(DisplayName = "TryMarkInterruptedAsync does not leave Finished+Interrupted when SaveAsync completes concurrently")]
+    public async Task TryMarkInterrupted_DoesNotLeaveFinishedInterruptedWhenSaveCompletes()
     {
         for (var i = 0; i < 200; i++)
         {
-            var instance = new WorkflowInstance
+            var store = new MemoryWorkflowInstanceStore(new MemoryStore<WorkflowInstance>());
+            await store.SaveAsync(new WorkflowInstance
             {
-                Id = "inplace-1",
+                Id = "save-race-1",
                 DefinitionId = "def-1",
                 DefinitionVersionId = "ver-1",
                 Version = 1,
                 Status = WorkflowStatus.Running,
                 SubStatus = WorkflowSubStatus.Executing,
                 IsExecuting = true,
-            };
-            var store = CreateStore(instance);
-
-            var mark = Task.Run(() => store.TryMarkInterruptedAsync(instance.Id).AsTask());
-            var complete = Task.Run(() =>
-            {
-                instance.Status = WorkflowStatus.Finished;
-                instance.SubStatus = WorkflowSubStatus.Finished;
-                instance.IsExecuting = false;
             });
+
+            var mark = Task.Run(() => store.TryMarkInterruptedAsync("save-race-1").AsTask());
+            var complete = Task.Run(() => store.SaveAsync(new WorkflowInstance
+            {
+                Id = "save-race-1",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Finished,
+                SubStatus = WorkflowSubStatus.Finished,
+                IsExecuting = false,
+            }).AsTask());
 
             await Task.WhenAll(mark, complete);
 
+            var stored = await store.FindAsync(new WorkflowInstanceFilter { Id = "save-race-1" });
+            Assert.NotNull(stored);
             Assert.False(
-                instance.Status == WorkflowStatus.Finished && instance.SubStatus == WorkflowSubStatus.Interrupted,
-                $"Finished+Interrupted after in-place completion race (iteration {i}).");
+                stored.Status == WorkflowStatus.Finished && stored.SubStatus == WorkflowSubStatus.Interrupted,
+                $"Finished+Interrupted after SaveAsync completion race (iteration {i}).");
         }
     }
 
