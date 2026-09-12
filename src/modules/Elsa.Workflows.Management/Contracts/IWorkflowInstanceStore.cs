@@ -184,6 +184,8 @@ public interface IWorkflowInstanceStore
     /// <see cref="WorkflowInstance.IsExecuting"/> to <c>false</c> only if the stored instance is still
     /// <see cref="WorkflowStatus.Running"/>.
     /// </summary>
+    /// <param name="workflowInstanceId">The workflow instance to mark.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <param name="allowFinishedCancelled">
     /// Drain-only. When <c>true</c>, also accepts <see cref="WorkflowStatus.Finished"/> /
     /// <see cref="WorkflowSubStatus.Cancelled"/> and promotes it to
