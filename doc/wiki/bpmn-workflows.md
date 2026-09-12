@@ -192,6 +192,15 @@ and its layout: the document's BPMN DI carries the shapes of nested elements too
 definition without stored BPMN source has no bodies to restore; the `If-Match` precondition only matches a stored state
 a successful `GET` or `PUT` described, and both need the source.
 
+**A top-level call activity's call options survive an unrelated `PUT`.** A call activity's options — currently just
+`vw:waitForCompletion="false"`, the fire-and-forget flag — live only on its `CallProcess` work binding, the same way a
+nested scope's contents do; `bpmnDefinitions` cannot carry them either. `PUT` reuses the stored options for a
+top-level call activity element the posted document still declares under the same element id and the same
+`calledElement`, so editing an unrelated task's binding does not silently turn a fire-and-forget call into a waiting
+one on the next save. A call activity whose `calledElement` has changed does not inherit the old options: it is a call
+to a different process, so it binds fresh (waiting, BPMN's default) instead. A call activity nested inside a kept
+subprocess already keeps its options as part of that subprocess's whole stored body, described above.
+
 A document that declares more than one `<process>` is re-imported against the same `processId` it was originally
 imported with — recorded on the workflow definition the first time it is imported, whether from `Import` or from a
 `document` `PUT`, so an edit to a multi-process document does not have to name the process again on every save.

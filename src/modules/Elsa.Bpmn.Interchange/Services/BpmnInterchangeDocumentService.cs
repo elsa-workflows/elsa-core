@@ -352,6 +352,14 @@ public sealed class BpmnInterchangeDocumentService(
     /// with the body stored for it, exactly as stored, and a subprocess element it no longer declares takes its stored
     /// body with it. A subprocess element with no stored body — one added by this edit — is written as declared, empty.
     /// </para>
+    /// <para>
+    /// A top-level call activity's call options — currently just <see cref="BpmnWorkBinding.CallProcess.WaitForCompletion"/> —
+    /// live only on its work binding too, and <paramref name="document"/> cannot carry them either, so they come from the
+    /// stored source the same way: see <see cref="StoredCallOptionsStillApplicableTo"/>. They are reused only for a call
+    /// activity whose element id and <c>calledElement</c> are unchanged; a changed <c>calledElement</c> is a call to a
+    /// different process, so it starts from the reader's default (waiting) rather than inheriting options authored for
+    /// the process it used to call.
+    /// </para>
     /// </remarks>
     /// <param name="document">The edited document, deserialized through the library's own JSON converters.</param>
     /// <param name="definitionId">The workflow definition to update.</param>
@@ -384,7 +392,11 @@ public sealed class BpmnInterchangeDocumentService(
                 $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
         }
 
-        var xml = writer.Write(document, StoredNestedScopesStillDeclaredBy(document, existingDefinition));
+        var bindingsToCarryAcross = StoredNestedScopesStillDeclaredBy(document, existingDefinition)
+            .Concat(StoredCallOptionsStillApplicableTo(document, existingDefinition))
+            .ToList();
+
+        var xml = writer.Write(document, bindingsToCarryAcross);
         return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: existingDefinition, cancellationToken);
     }
 
@@ -511,6 +523,71 @@ public sealed class BpmnInterchangeDocumentService(
         var foreignChildren = extensions.ForeignChildren.Where(child => child.Element.Name != marker).ToList();
         return nested with { Definition = nested.Definition with { Extensions = extensions with { ForeignChildren = foreignChildren } } };
     }
+
+    /// <summary>
+    /// The stored <see cref="BpmnWorkBinding.CallProcess"/> options for every top-level call activity
+    /// <paramref name="document"/> still declares under the same element id and the same <c>calledElement</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A call activity's options — currently just <c>vw:waitForCompletion="false"</c> — live only on its
+    /// <see cref="BpmnWorkBinding.CallProcess"/> work binding, never on the <see cref="BpmnDefinitions"/> document
+    /// <see cref="ReadDocument"/> returns. <see cref="ImportDocumentAsync"/> otherwise rebuilds the whole document from
+    /// scratch, so a call activity it does not carry across here binds fresh and defaults to waiting, silently
+    /// resurrecting a wait a fire-and-forget author never asked for.
+    /// </para>
+    /// <para>
+    /// Reused only when it is safe to: the element must still exist, under the same id, and still name the same
+    /// <c>calledElement</c> as the stored binding. A changed <c>calledElement</c> is a call to a different process,
+    /// whose options this element never had, so it is left to bind fresh rather than inheriting them.
+    /// </para>
+    /// <para>
+    /// Only <see cref="BpmnDefinitions.Processes"/> is scanned — exactly the call activities the document can declare.
+    /// One nested inside a kept subprocess is never listed there (see <see cref="ReadDocument"/>'s remarks); its
+    /// options are carried across as part of the whole kept scope by <see cref="StoredNestedScopesStillDeclaredBy"/>
+    /// instead, along with everything else bound inside it.
+    /// </para>
+    /// <para>
+    /// Matched to the stored binding by element id, then handed over under the bindingRef the posted element carries,
+    /// for the same reason <see cref="StoredNestedScopesStillDeclaredBy"/> hands a kept subprocess body over the same
+    /// way: the writer looks work up by bindingRef, not element id. An element with no bindingRef to hand it over
+    /// under is skipped rather than refused — unlike an emptied subprocess, the worst outcome is the same fresh,
+    /// waiting default this method exists to avoid, not data loss.
+    /// </para>
+    /// </remarks>
+    private IReadOnlyList<BpmnWorkBinding> StoredCallOptionsStillApplicableTo(BpmnDefinitions document, WorkflowDefinition definition)
+    {
+        if (!definition.CustomProperties.TryGetValue<string>(SourceXmlCustomPropertyKey, out var storedXml) || string.IsNullOrEmpty(storedXml))
+            return [];
+
+        var stored = reader.Read(storedXml, new BpmnImportOptions());
+        var storedCalls = stored.Bindings.OfType<BpmnWorkBinding.CallProcess>().ToList();
+
+        var kept = new List<BpmnWorkBinding>();
+
+        foreach (var process in document.Processes)
+        {
+            foreach (var element in process.Elements.Where(element => element.ElementType == BpmnElementTypes.CallActivity))
+            {
+                if (element.BindingRef is null)
+                    continue;
+
+                // Last match wins, as it does inside the writer itself, should a malformed document repeat an id.
+                var call = storedCalls.LastOrDefault(candidate => candidate.ElementId == element.ElementId);
+
+                if (call is null || !string.Equals(call.CalledElement, CalledElementOf(element), StringComparison.Ordinal))
+                    continue;
+
+                kept.Add(call with { BindingRef = element.BindingRef });
+            }
+        }
+
+        return kept;
+    }
+
+    /// <summary>The BPMN <c>calledElement</c> a call activity element carries, kept by the reader for round-trip.</summary>
+    private static string? CalledElementOf(BpmnElement element) =>
+        element.Properties.TryGetValue(BpmnXmlReader.CalledElementPropertyKey, out var calledElement) ? calledElement : null;
 
     /// <summary>
     /// The BPMN source a workflow definition was imported from, refusing rather than guessing when it is missing or

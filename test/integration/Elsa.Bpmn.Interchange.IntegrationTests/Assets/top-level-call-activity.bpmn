@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  id="Definitions_top-level-call-activity"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="top-level-call-activity" name="Top-Level Call Activity" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="NotifyDownstream" name="Notify Downstream" calledElement="notification-workflow" vw:waitForCompletion="false">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:serviceTask id="LogCompletion" name="Log Completion">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Completed"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="NotifyDownstream" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="NotifyDownstream" targetRef="LogCompletion" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="LogCompletion" targetRef="End_1" />
+  </bpmn:process>
+</bpmn:definitions>
