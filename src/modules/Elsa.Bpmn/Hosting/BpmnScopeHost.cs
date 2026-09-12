@@ -8,6 +8,7 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Signals;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Bpmn.Hosting;
 
@@ -238,19 +239,23 @@ internal sealed class BpmnScopeHost
 
         foreach (var diagnostic in state.Diagnostics)
         {
-            var sequence = DiagnosticSequence(diagnostic.DiagnosticId);
+            if (!TryGetDiagnosticSequence(diagnostic.DiagnosticId, out var sequence))
+            {
+                _context.GetRequiredService<ILogger<BpmnScopeHost>>()
+                    .LogWarning("BPMN diagnostic id '{DiagnosticId}' is not in the expected 'diag:N' format and was skipped for projection.", diagnostic.DiagnosticId);
+                continue;
+            }
 
             if (sequence <= lastProjectedSequence)
                 continue;
 
             highWaterMark = Math.Max(highWaterMark, sequence);
 
-            // The scope's own start (the initial token, which carries no flow) and its own completion (the
-            // terminal summary, which names no element) are already journaled as the activity's own lifecycle.
-            if (diagnostic.Kind == BpmnDiagnosticKind.TokenEmitted && string.IsNullOrEmpty(diagnostic.FlowId))
-                continue;
-
-            if (diagnostic.Kind == BpmnDiagnosticKind.Completed)
+            // Only a diagnostic that names neither an element nor a flow is scope-level and already journaled as the
+            // activity's own lifecycle: the terminal "Completed" summary. Everything else -- including a start
+            // event's own token emission, and a boundary event's token emission when it has no inbound flow (an
+            // error or cancel boundary fires without one) -- names an element or a flow and is projected.
+            if (string.IsNullOrEmpty(diagnostic.ElementId) && string.IsNullOrEmpty(diagnostic.FlowId))
                 continue;
 
             var payload = new BpmnDiagnosticLogPayload(
@@ -268,8 +273,13 @@ internal sealed class BpmnScopeHost
             BpmnScopeMemory.Write(_context, BpmnScopeMemory.DiagnosticsCursorPropertyKey, new BpmnDiagnosticsCursor(highWaterMark));
     }
 
-    /// <summary>The numeric ordinal in a diagnostic id (<c>diag:N</c>) — a pure function of the interpreter's own mutation-order sequence, so it sorts the same as arrival order.</summary>
-    private static int DiagnosticSequence(string diagnosticId) => int.Parse(diagnosticId.AsSpan(diagnosticId.IndexOf(':') + 1));
+    /// <summary>
+    /// The numeric ordinal in a diagnostic id (<c>diag:N</c>) — a pure function of the interpreter's own
+    /// mutation-order sequence, so it sorts the same as arrival order. Never throws: an id that does not match the
+    /// expected format fails to parse rather than faulting the evaluation, since this runs on every evaluation.
+    /// </summary>
+    private static bool TryGetDiagnosticSequence(string diagnosticId, out int sequence) =>
+        int.TryParse(diagnosticId.AsSpan(diagnosticId.IndexOf(':') + 1), out sequence);
 
     /// <summary>
     /// Finds the unit of work this scope started that the failing activity belongs to, walking outward from the

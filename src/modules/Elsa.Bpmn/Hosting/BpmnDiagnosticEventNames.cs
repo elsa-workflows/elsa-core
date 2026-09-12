@@ -12,9 +12,9 @@ public static class BpmnDiagnosticEventNames
     public const string Source = "BPMN";
 
     /// <summary>
-    /// A token arrived at an element via a sequence flow. The scope's own start — the initial token, which carries
-    /// no flow — is also this kind but, like <see cref="Completed"/>, is never projected by
-    /// <see cref="BpmnScopeHost"/>, because the scope's own activity lifecycle already journals it.
+    /// A token arrived at an element via a sequence flow, or an element (a start event, or an error/cancel boundary
+    /// firing without an inbound flow) emitted a token of its own. Projected by <see cref="BpmnScopeHost"/> whenever
+    /// it names an element or a flow, which every one of these does.
     /// </summary>
     public const string TokenEmitted = "TokenEmitted";
 
@@ -41,7 +41,7 @@ public static class BpmnDiagnosticEventNames
 
     /// <summary>
     /// The scope itself finished. Never projected by <see cref="BpmnScopeHost"/>: unlike every other kind, it names
-    /// no element, and the scope's own activity lifecycle already journals its completion.
+    /// neither an element nor a flow, and the scope's own activity lifecycle already journals its completion.
     /// </summary>
     public const string Completed = "Completed";
 

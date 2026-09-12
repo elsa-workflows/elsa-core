@@ -1,4 +1,5 @@
 using Elsa.Bpmn.Hosting;
+using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Models;
 using Xunit.Abstractions;
 
@@ -45,22 +46,37 @@ public class BpmnDiagnosticsProjectionTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(diagnosticIds.Distinct().Count(), diagnosticIds.Count);
     }
 
-    [Fact(DisplayName = "The scope's own start and completion are never projected as diagnostics")]
-    public async Task Scope_DoesNotProjectItsOwnStartOrCompletion()
+    [Fact(DisplayName = "Only the scope's own completion, which names neither an element nor a flow, is never projected as a diagnostic")]
+    public async Task Scope_DoesNotProjectItsOwnCompletion()
     {
         var result = await _host.RunAsync(BpmnTestProcesses.LinearTask(_host.Log));
 
         var diagnostics = result.Journal.WorkflowExecutionLogEntries.Where(x => x.Source == BpmnDiagnosticEventNames.Source).ToList();
 
-        // The scope's own completion carries the "Completed" kind and names no element...
+        // The scope's own completion carries the "Completed" kind and names neither an element nor a flow...
         Assert.DoesNotContain(diagnostics, x => x.EventName == BpmnDiagnosticEventNames.Completed);
 
-        // ...and its own start is the initial token emitted at the "start" element -- present in the underlying
-        // interpreter state, but not projected, unlike every other element a token actually flows through.
-        Assert.DoesNotContain(diagnostics, x => ((BpmnDiagnosticLogPayload)x.Payload!).ElementId == "start");
+        // ...but its own start -- the initial token emitted at the "start" element -- names that element, and unlike
+        // the scope's completion is projected: it is what Studio's overlay lights up for the start event.
+        Assert.Contains(diagnostics, x => ((BpmnDiagnosticLogPayload)x.Payload!).ElementId == "start" && x.EventName == BpmnDiagnosticEventNames.TokenEmitted);
 
         // Sanity: the linear task itself did leave a trace, so the assertions above are not vacuous.
         Assert.Contains(diagnostics, x => ((BpmnDiagnosticLogPayload)x.Payload!).ElementId == "only");
+    }
+
+    [Fact(DisplayName = "An error boundary's token emission is projected even though it carries no inbound flow")]
+    public async Task ErrorBoundaryCaught_ProjectsTheBoundarysTokenEmission()
+    {
+        var result = await _host.RunAsync(BpmnTestProcesses.ErrorBoundaryCaught(_host.Log), typeof(FaultStrategy));
+
+        var diagnostics = result.Journal.WorkflowExecutionLogEntries.Where(x => x.Source == BpmnDiagnosticEventNames.Source).ToList();
+
+        // The boundary fires a token of its own -- no sequence flow feeds it -- so FlowId is null, but it names the
+        // boundary element, and the previous (over-broad) rule dropped it on that account alone.
+        Assert.Contains(diagnostics, x =>
+            x.EventName == BpmnDiagnosticEventNames.TokenEmitted &&
+            ((BpmnDiagnosticLogPayload)x.Payload!).ElementId == "oops" &&
+            string.IsNullOrEmpty(((BpmnDiagnosticLogPayload)x.Payload!).FlowId));
     }
 
     [Fact(DisplayName = "Diagnostics are written on the scope's own activity execution context, never a child's")]
