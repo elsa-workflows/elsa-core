@@ -9,6 +9,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -140,7 +141,8 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
             services.GetRequiredService<BpmnXmlWriter>(),
             services.GetRequiredService<BpmnWorkBinder>(),
             importer,
-            store);
+            store,
+            services.GetRequiredService<VariableDefinitionMapper>());
 
         var xml = BpmnAssetReader.Read("camunda-order-process.bpmn");
 

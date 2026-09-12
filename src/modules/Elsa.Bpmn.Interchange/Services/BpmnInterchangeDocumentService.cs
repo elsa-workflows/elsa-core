@@ -6,10 +6,13 @@ using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Models;
 
 namespace Elsa.Bpmn.Interchange.Services;
 
@@ -57,6 +60,17 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// caller has, which is worse than refusing.
 /// </para>
 /// <para>
+/// <b>A whole-definition import and a document edit disagree about what else gets replaced.</b> <see cref="ImportAsync"/>
+/// builds the <c>WorkflowDefinitionModel</c> from the document alone, so <c>Import</c> — which persists a whole
+/// definition from a document, name and all — intentionally replaces the definition's name, description, variables,
+/// inputs, outputs, outcomes, options, tool version, read-only flag and custom properties with what that model carries.
+/// <see cref="ImportDocumentAsync"/> is different: it edits the BPMN document of an <em>existing</em> definition, so
+/// it passes that definition to the shared import logic's <c>preserveMetadataFrom</c> parameter, which carries all
+/// of the above onto the result unchanged. Either way, only the bound activity graph and the three custom properties
+/// this service owns (<see cref="SourceXmlCustomPropertyKey"/>, <see cref="SourceVersionCustomPropertyKey"/>,
+/// <see cref="SourceProcessIdCustomPropertyKey"/>) come from the import itself.
+/// </para>
+/// <para>
 /// <b>Capability refusal happens here, at import, not at <c>BpmnGraph.Build</c>.</b> <see cref="BpmnCapabilityRequirements.Analyze"/>
 /// is the static half of the same check <c>BpmnGraph.Build</c> performs at first execution: it needs only the
 /// definition, not bound work or a host snapshot. Running it at import means an unrunnable diagram is rejected before
@@ -72,7 +86,8 @@ public sealed class BpmnInterchangeDocumentService(
     BpmnXmlWriter writer,
     BpmnWorkBinder binder,
     IWorkflowDefinitionImporter importer,
-    IWorkflowDefinitionStore store)
+    IWorkflowDefinitionStore store,
+    VariableDefinitionMapper variableDefinitionMapper)
 {
     /// <summary>The workflow definition custom property the original BPMN XML is carried under, for <see cref="Export(WorkflowDefinition)"/>.</summary>
     public const string SourceXmlCustomPropertyKey = "Bpmn:SourceXml";
@@ -144,7 +159,40 @@ public sealed class BpmnInterchangeDocumentService(
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
-    public async Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken)
+    public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
+        ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, cancellationToken);
+
+    /// <summary>
+    /// The shared import logic behind both the public <see cref="ImportAsync"/> and <see cref="ImportDocumentAsync"/>:
+    /// reads a document, refuses it if the host cannot run what it declares, and binds it into the
+    /// <see cref="BpmnProcess"/> scope a workflow definition's root becomes.
+    /// </summary>
+    /// <param name="xml">The BPMN 2.0 XML to import.</param>
+    /// <param name="definitionId">The workflow definition to update, or <c>null</c>/empty to create a new one.</param>
+    /// <param name="name">The workflow definition's display name, defaulting to the process's own BPMN name or id.</param>
+    /// <param name="processId">
+    /// The process to bind when the document declares more than one; not needed when it declares exactly one.
+    /// </param>
+    /// <param name="preserveMetadataFrom">
+    /// When set, the definition this import must otherwise leave untouched: its name, description, variables,
+    /// inputs, outputs, outcomes, options, tool version, read-only flag and custom properties are carried onto the
+    /// imported definition as-is, and only the bound activity graph and the <see cref="SourceXmlCustomPropertyKey"/>,
+    /// <see cref="SourceVersionCustomPropertyKey"/> and <see cref="SourceProcessIdCustomPropertyKey"/> custom
+    /// properties this method owns change. This is what <see cref="ImportDocumentAsync"/> passes so the document PUT
+    /// edits the BPMN document without silently resetting the rest of the definition; left <c>null</c> for a
+    /// whole-definition import, where the model built from the document alone is the intended contract.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
+    /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
+    private async Task<BpmnDocumentImportResult> ImportCoreAsync(
+        string xml,
+        string? definitionId,
+        string? name,
+        string? processId,
+        WorkflowDefinition? preserveMetadataFrom,
+        CancellationToken cancellationToken)
     {
         var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
@@ -160,9 +208,24 @@ public sealed class BpmnInterchangeDocumentService(
         var model = new WorkflowDefinitionModel
         {
             DefinitionId = definitionId ?? string.Empty,
-            Name = string.IsNullOrWhiteSpace(name) ? rootDefinition.Name ?? rootDefinition.ProcessId : name,
+            Name = preserveMetadataFrom is not null
+                ? preserveMetadataFrom.Name
+                : string.IsNullOrWhiteSpace(name) ? rootDefinition.Name ?? rootDefinition.ProcessId : name,
             Root = process
         };
+
+        if (preserveMetadataFrom is not null)
+        {
+            model.Description = preserveMetadataFrom.Description;
+            model.Variables = variableDefinitionMapper.Map(preserveMetadataFrom.Variables).ToList();
+            model.Inputs = preserveMetadataFrom.Inputs;
+            model.Outputs = preserveMetadataFrom.Outputs;
+            model.Outcomes = preserveMetadataFrom.Outcomes;
+            model.Options = preserveMetadataFrom.Options;
+            model.ToolVersion = preserveMetadataFrom.ToolVersion;
+            model.IsReadonly = preserveMetadataFrom.IsReadonly;
+            model.CustomProperties = new Dictionary<string, object>(preserveMetadataFrom.CustomProperties);
+        }
 
         var importResult = await importer.ImportAsync(new SaveWorkflowDefinitionRequest { Model = model, Publish = false }, cancellationToken);
 
@@ -237,6 +300,15 @@ public sealed class BpmnInterchangeDocumentService(
     /// <see cref="ImportAsync"/>, the same path <c>Import</c> runs. Analyze-then-commit sharing this one code path
     /// with the read side is what keeps a preview unable to disagree with what this actually persists.
     /// </summary>
+    /// <remarks>
+    /// Unlike a whole-definition import, this edits the BPMN <em>document</em> of an existing definition: the caller
+    /// is changing a binding, not replacing the definition. So <paramref name="definitionId"/>'s current metadata —
+    /// name, description, variables, inputs, outputs, outcomes, options, tool version, read-only flag and custom
+    /// properties other than the ones this service owns — is carried onto the result unchanged; see the shared
+    /// import logic's <c>preserveMetadataFrom</c> parameter, which this passes the existing definition to. Only the activity graph
+    /// and the <see cref="SourceXmlCustomPropertyKey"/>/<see cref="SourceVersionCustomPropertyKey"/>/
+    /// <see cref="SourceProcessIdCustomPropertyKey"/> custom properties move.
+    /// </remarks>
     /// <param name="document">The edited document, deserialized through the library's own JSON converters.</param>
     /// <param name="definitionId">The workflow definition to update.</param>
     /// <param name="processId">
@@ -245,13 +317,28 @@ public sealed class BpmnInterchangeDocumentService(
     /// finds the value that was used the first time.
     /// </param>
     /// <param name="cancellationToken">The cancellation token.</param>
+    /// <exception cref="Exceptions.BpmnDefinitionNotFoundException">
+    /// The workflow definition to edit no longer exists — e.g. it was deleted between the PUT endpoint's own
+    /// existence/ETag check and this lookup. A missing preservation source must never fall through to the
+    /// whole-definition import path, which would silently create a definition under <paramref name="definitionId"/>
+    /// with reset metadata instead of reporting that this PUT's target disappeared.
+    /// </exception>
     /// <exception cref="BpmnInterchangeException">The document declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
-    public Task<BpmnDocumentImportResult> ImportDocumentAsync(BpmnDefinitions document, string definitionId, string? processId, CancellationToken cancellationToken)
+    public async Task<BpmnDocumentImportResult> ImportDocumentAsync(BpmnDefinitions document, string definitionId, string? processId, CancellationToken cancellationToken)
     {
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var existingDefinition = await store.FindAsync(filter, cancellationToken);
+
+        if (existingDefinition is null)
+        {
+            throw new BpmnDefinitionNotFoundException(
+                $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
+        }
+
         var xml = writer.Write(document);
-        return ImportAsync(xml, definitionId, name: null, processId, cancellationToken);
+        return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: existingDefinition, cancellationToken);
     }
 
     /// <summary>

@@ -2,6 +2,7 @@ using System.Text;
 using System.Xml.Linq;
 using Bpmn.Model;
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
@@ -106,6 +107,26 @@ public class BpmnDocumentRoundTripTests : BpmnBindingTestBase
         var addedBinding = addedTask.Descendants(Elsa + "activityBinding").Single();
         Assert.Equal("Elsa.WriteLine", addedBinding.Attribute("activityType")?.Value);
         Assert.Contains("Archiving the order", addedBinding.Descendants(Elsa + "input").Single().Value);
+    }
+
+    [Fact(DisplayName = "Importing a document against a definition id that does not exist refuses rather than creating one")]
+    public async Task ImportDocumentAsync_WhenTheDefinitionDoesNotExist_ThrowsAndCreatesNothing()
+    {
+        var xml = ReadAsset("camunda-order-process.bpmn");
+        var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
+        Assert.True(imported.ImportResult.Succeeded, string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
+
+        var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
+        var document = DocumentService.ReadDocument(stored);
+
+        var missingDefinitionId = $"{Guid.NewGuid()}-does-not-exist";
+
+        await Assert.ThrowsAsync<BpmnDefinitionNotFoundException>(() =>
+            DocumentService.ImportDocumentAsync(document, missingDefinitionId, processId: null, CancellationToken.None));
+
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(missingDefinitionId, VersionOptions.Latest).ToFilter();
+        var afterAttempt = await DefinitionStore.FindAsync(filter);
+        Assert.Null(afterAttempt);
     }
 
     /// <summary>Everything <c>camunda-order-process.bpmn</c> carries that an edit must not disturb: foreign attributes, foreign extension elements, the elsa: binding on the untouched task, and BPMN DI waypoints.</summary>

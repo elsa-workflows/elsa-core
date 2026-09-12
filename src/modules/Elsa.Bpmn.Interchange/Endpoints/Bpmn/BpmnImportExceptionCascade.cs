@@ -31,6 +31,12 @@ internal static class BpmnImportExceptionCascade
         {
             result = await import();
         }
+        catch (BpmnDefinitionNotFoundException exception)
+        {
+            addError(exception.Message);
+            await sendErrorsAsync(StatusCodes.Status404NotFound, cancellationToken);
+            return null;
+        }
         catch (BpmnInterchangeException exception)
         {
             addError(exception.Message);

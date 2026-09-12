@@ -16,6 +16,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using FastEndpoints;
 using Microsoft.AspNetCore.Authentication;
@@ -473,6 +474,59 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task DocumentPut_WithABindingChange_PreservesTheDefinitionsNonBpmnMetadata()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        await SetNonBpmnMetadataOnDraftAsync(definitionId);
+        var metadataBeforePut = await CaptureMetadataAsync(definitionId);
+
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+        var putResponse = await PutDocumentAsync(definitionId, WithNotifyWarehouseTextChanged(documentJson), etag);
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        // Every field SetNonBpmnMetadataOnDraftAsync set survived the PUT unchanged.
+        var metadataAfterPut = await CaptureMetadataAsync(definitionId);
+        Assert.Equal(metadataBeforePut, metadataAfterPut);
+
+        // ...while the graph reflects the binding change the PUT carried.
+        var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        var exportedXml = await exportResponse.Content.ReadAsStringAsync();
+        Assert.Contains("Notifying the warehouse, rebound via document PUT", exportedXml);
+    }
+
+    [Fact]
+    public async Task Import_WithTheSameDefinitionId_StillReplacesTheDefinitionsMetadata()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        await SetNonBpmnMetadataOnDraftAsync(definitionId);
+        var metadataBeforeImport = await CaptureMetadataAsync(definitionId);
+
+        // POST bpmn/import with a DefinitionId is a whole-definition import, unlike the document PUT above: it must
+        // keep replacing everything SetNonBpmnMetadataOnDraftAsync set, exactly as it did before that PUT preserved
+        // it.
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+        var importResponse = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+
+        var metadataAfterImport = await CaptureMetadataAsync(definitionId);
+        Assert.NotEqual(metadataBeforeImport, metadataAfterImport);
+        Assert.Equal("Order Process", metadataAfterImport.Name);
+        Assert.Null(metadataAfterImport.Description);
+        Assert.Equal(string.Empty, metadataAfterImport.VariableSummary);
+        Assert.Null(metadataAfterImport.UsableAsActivity);
+        Assert.Equal(string.Empty, metadataAfterImport.InputSummary);
+        Assert.Equal(string.Empty, metadataAfterImport.OutputSummary);
+        Assert.Equal(string.Empty, metadataAfterImport.OutcomeSummary);
+        Assert.Null(metadataAfterImport.ToolVersion);
+        Assert.False(metadataAfterImport.IsReadonly);
+        Assert.Null(metadataAfterImport.CustomPropertyValue);
+    }
+
+    [Fact]
     public async Task DocumentPut_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -653,6 +707,87 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var bounds = document["diagrams"]![0]!["plane"]!["shapes"]![0]!["bounds"]!;
         bounds["x"] = bounds["x"]!.GetValue<double>() + 10;
         return document.ToJsonString();
+    }
+
+    /// <summary>
+    /// Changes the literal text the <c>NotifyWarehouse</c> task's <c>elsa:activityBinding</c> configures its bound
+    /// <see cref="WriteLine"/> with — a real binding change, the kind Elsa Studio's binding UX makes, as opposed to
+    /// <see cref="WithFirstShapeMoved"/>'s layout-only edit.
+    /// </summary>
+    private static string WithNotifyWarehouseTextChanged(string documentJson) =>
+        documentJson.Replace("Notifying the warehouse", "Notifying the warehouse, rebound via document PUT");
+
+    /// <summary>
+    /// Renames the latest draft of <paramref name="definitionId"/> and sets a description, a variable, an
+    /// activity-usable option, an input, an output, an outcome, a tool version, the read-only flag and a custom
+    /// property on it — the non-BPMN metadata a document PUT must leave untouched, set the way Studio's own
+    /// definitions API would (<see cref="IWorkflowDefinitionPublisher.GetDraftAsync"/> then
+    /// <see cref="IWorkflowDefinitionPublisher.SaveDraftAsync"/>).
+    /// </summary>
+    private async Task SetNonBpmnMetadataOnDraftAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
+        var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest);
+        Assert.NotNull(draft);
+
+        draft!.Name = "Renamed by the author, not by BPMN";
+        draft.Description = "Handles a customer order end to end.";
+        draft.Variables = [new Variable<string>("OrderReference", "unset")];
+        draft.Options.UsableAsActivity = true;
+        draft.Inputs = [new InputDefinition { Name = "CustomerId", Type = typeof(string) }];
+        draft.Outputs = [new OutputDefinition { Name = "OrderId", Type = typeof(string) }];
+        draft.Outcomes = ["Fulfilled"];
+        draft.ToolVersion = new Version(1, 2, 3);
+        draft.IsReadonly = true;
+        draft.CustomProperties["Custom:Owner"] = "fulfillment-team-lead";
+
+        await publisher.SaveDraftAsync(draft);
+    }
+
+    /// <summary>A snapshot of everything <see cref="SetNonBpmnMetadataOnDraftAsync"/> sets, for before/after comparison.</summary>
+    private sealed record CapturedMetadata(
+        string? Name,
+        string? Description,
+        string VariableSummary,
+        bool? UsableAsActivity,
+        string InputSummary,
+        string OutputSummary,
+        string OutcomeSummary,
+        Version? ToolVersion,
+        bool IsReadonly,
+        string? CustomPropertyValue);
+
+    private async Task<CapturedMetadata> CaptureMetadataAsync(string definitionId)
+    {
+        var definition = await FindLatestDefinitionAsync(definitionId);
+        var variableSummary = string.Join(";", definition.Variables.Select(variable => $"{variable.Name}={variable.Value}"));
+        var inputSummary = string.Join(";", definition.Inputs.Select(input => $"{input.Name}:{input.Type}"));
+        var outputSummary = string.Join(";", definition.Outputs.Select(output => $"{output.Name}:{output.Type}"));
+        var outcomeSummary = string.Join(";", definition.Outcomes);
+        definition.CustomProperties.TryGetValue<string>("Custom:Owner", out var customPropertyValue);
+
+        return new(
+            definition.Name,
+            definition.Description,
+            variableSummary,
+            definition.Options.UsableAsActivity,
+            inputSummary,
+            outputSummary,
+            outcomeSummary,
+            definition.ToolVersion,
+            definition.IsReadonly,
+            customPropertyValue);
+    }
+
+    private async Task<WorkflowDefinition> FindLatestDefinitionAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var definition = await store.FindAsync(filter);
+        Assert.NotNull(definition);
+        return definition!;
     }
 
     /// <summary>
