@@ -251,16 +251,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(_ => Interlocked.Increment(ref finds) == 1
                 ? new ValueTask<WorkflowInstance?>(RunningInstance("instance-suspended-after-snapshot"))
-                : new ValueTask<WorkflowInstance?>(new WorkflowInstance
-                {
-                    Id = "instance-suspended-after-snapshot",
-                    DefinitionId = "def-1",
-                    DefinitionVersionId = "ver-1",
-                    Version = 1,
-                    Status = WorkflowStatus.Running,
-                    SubStatus = WorkflowSubStatus.Suspended,
-                    IsExecuting = false,
-                }));
+                : new ValueTask<WorkflowInstance?>(SuspendedInstance("instance-suspended-after-snapshot")));
 
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
@@ -279,16 +270,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         ExecutionCycleRegistry.ActiveCount.Returns(1);
         ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
         InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
-            .Returns(_ => new ValueTask<WorkflowInstance?>(new WorkflowInstance
-            {
-                Id = "instance-suspended",
-                DefinitionId = "def-1",
-                DefinitionVersionId = "ver-1",
-                Version = 1,
-                Status = WorkflowStatus.Running,
-                SubStatus = WorkflowSubStatus.Suspended,
-                IsExecuting = false,
-            }));
+            .Returns(_ => new ValueTask<WorkflowInstance?>(SuspendedInstance("instance-suspended")));
 
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
@@ -434,6 +416,17 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         Status = WorkflowStatus.Running,
         SubStatus = WorkflowSubStatus.Executing,
         IsExecuting = true,
+    };
+
+    private static WorkflowInstance SuspendedInstance(string id) => new()
+    {
+        Id = id,
+        DefinitionId = "def-1",
+        DefinitionVersionId = "ver-1",
+        Version = 1,
+        Status = WorkflowStatus.Running,
+        SubStatus = WorkflowSubStatus.Suspended,
+        IsExecuting = false,
     };
 
     private static WorkflowInstance CancelledInstance(string id) => new()
