@@ -1,12 +1,14 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Exceptions;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class NotFoundActivityTests
 {
-    [Fact(DisplayName = "NotFoundActivity throws ActivityNotFoundException")]
+    [Test]
+    [DisplayName("NotFoundActivity throws ActivityNotFoundException")]
     public async Task Should_Throw_ActivityNotFoundException()
     {
         // Arrange
@@ -14,10 +16,11 @@ public class NotFoundActivityTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertExceptionAsync(typeName);
-        Assert.Equal(typeName, exception.MissingTypeName);
+        await Assert.That(exception.MissingTypeName).IsEqualTo(typeName);
     }
 
-    [Fact(DisplayName = "NotFoundActivity includes type name in exception")]
+    [Test]
+    [DisplayName("NotFoundActivity includes type name in exception")]
     public async Task Should_Include_TypeName_In_Exception()
     {
         // Arrange
@@ -25,10 +28,11 @@ public class NotFoundActivityTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertExceptionAsync(typeName);
-        Assert.Contains(typeName, exception.Message);
+        await Assert.That(exception.Message).Contains(typeName);
     }
 
-    [Fact(DisplayName = "NotFoundActivity includes version in exception")]
+    [Test]
+    [DisplayName("NotFoundActivity includes version in exception")]
     public async Task Should_Include_Version_In_Exception()
     {
         // Arrange
@@ -37,20 +41,21 @@ public class NotFoundActivityTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertExceptionAsync(typeName, version);
-        Assert.Equal(version, exception.MissingTypeVersion);
-        Assert.Contains(version.ToString(), exception.Message);
+        await Assert.That(exception.MissingTypeVersion).IsEqualTo(version);
+        await Assert.That(exception.Message).Contains(version.ToString());
     }
 
-    [Theory(DisplayName = "NotFoundActivity preserves various type names")]
-    [InlineData("SimpleActivity")]
-    [InlineData("Namespace.Activity")]
-    [InlineData("My.Custom.Namespace.ComplexActivity")]
-    [InlineData("Activity123")]
+    [Test]
+    [DisplayName("NotFoundActivity preserves various type names")]
+    [Arguments("SimpleActivity")]
+    [Arguments("Namespace.Activity")]
+    [Arguments("My.Custom.Namespace.ComplexActivity")]
+    [Arguments("Activity123")]
     public async Task Should_Preserve_Various_TypeNames(string typeName)
     {
         // Act & Assert
         var exception = await ExecuteAndAssertExceptionAsync(typeName);
-        Assert.Equal(typeName, exception.MissingTypeName);
+        await Assert.That(exception.MissingTypeName).IsEqualTo(typeName);
     }
 
     private static async Task<ActivityNotFoundException> ExecuteAndAssertExceptionAsync(string typeName, int version = 0)
@@ -59,7 +64,7 @@ public class NotFoundActivityTests
         {
             MissingTypeVersion = version
         };
-        return await Assert.ThrowsAsync<ActivityNotFoundException>(() => ExecuteAsync(notFoundActivity));
+        return (await Assert.ThrowsExactlyAsync<ActivityNotFoundException>(() => ExecuteAsync(notFoundActivity)))!;
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)

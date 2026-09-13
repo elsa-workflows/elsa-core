@@ -9,6 +9,7 @@ using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Composition;
 
@@ -18,11 +19,11 @@ public class ExecuteWorkflowTests
     private const string DefaultGeneratedId = "generated-child-id";
     private const string DefaultCorrelationId = "test-correlation";
 
-    [Theory]
-    [InlineData(true, WorkflowStatus.Finished)]
-    [InlineData(true, WorkflowStatus.Running)]
-    [InlineData(false, WorkflowStatus.Finished)]
-    [InlineData(false, WorkflowStatus.Running)]
+    [Test]
+    [Arguments(true, WorkflowStatus.Finished)]
+    [Arguments(true, WorkflowStatus.Running)]
+    [Arguments(false, WorkflowStatus.Finished)]
+    [Arguments(false, WorkflowStatus.Running)]
     public async Task Should_Invoke_Workflow_With_Correct_Options(bool waitForCompletion, WorkflowStatus childWorkflowStatus)
     {
         // Arrange
@@ -60,16 +61,16 @@ public class ExecuteWorkflowTests
         if (!waitForCompletion || childWorkflowStatus == WorkflowStatus.Finished)
         {
             var result = (ExecuteWorkflowResult)context.GetActivityOutput(() => executeWorkflow.Result)!;
-            Assert.NotNull(result);
-            Assert.Equal(DefaultGeneratedId, result.WorkflowInstanceId);
-            Assert.Equal(childWorkflowStatus, result.Status);
-            Assert.Equal(childOutput, result.Output);
+            await Assert.That(result).IsNotNull();
+            await Assert.That(result.WorkflowInstanceId).IsEqualTo(DefaultGeneratedId);
+            await Assert.That(result.Status).IsEqualTo(childWorkflowStatus);
+            await Assert.That(result.Output).IsEqualTo(childOutput);
         }
     }
 
-    [Theory]
-    [InlineData(false, WorkflowStatus.Running)]
-    [InlineData(true, WorkflowStatus.Finished)]
+    [Test]
+    [Arguments(false, WorkflowStatus.Running)]
+    [Arguments(true, WorkflowStatus.Finished)]
     public async Task Should_Complete_Activity_When_Expected(bool waitForCompletion, WorkflowStatus childWorkflowStatus)
     {
         // Arrange
@@ -83,10 +84,10 @@ public class ExecuteWorkflowTests
         var (context, _) = await ExecuteAsync(executeWorkflow, childWorkflowStatus);
 
         // Assert - Activity should complete when not waiting or when child workflow finishes
-        Assert.True(context.IsCompleted);
+        await Assert.That(context.IsCompleted).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Create_Bookmark_When_WaitForCompletion_Is_True_And_Child_Is_Running()
     {
         // Arrange
@@ -100,11 +101,11 @@ public class ExecuteWorkflowTests
         var (context, _) = await ExecuteAsync(executeWorkflow, WorkflowStatus.Running);
 
         // Assert - Activity should not complete when child workflow is still running and waiting
-        Assert.False(context.IsCompleted);
-        Assert.NotEmpty(context.Bookmarks);
+        await Assert.That(context.IsCompleted).IsFalse();
+        await Assert.That(context.Bookmarks).IsNotEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Throw_When_Workflow_Definition_Not_Found()
     {
         // Arrange
@@ -121,10 +122,10 @@ public class ExecuteWorkflowTests
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() => ExecuteAsync(executeWorkflow, customWorkflowDefinitionService: workflowDefinitionService));
+        await Assert.ThrowsExactlyAsync<Exception>(() => ExecuteAsync(executeWorkflow, customWorkflowDefinitionService: workflowDefinitionService));
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_Empty_Input_When_Input_Not_Provided()
     {
         // Arrange
@@ -148,7 +149,7 @@ public class ExecuteWorkflowTests
         );
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_Null_CorrelationId_When_Not_Provided()
     {
         // Arrange
@@ -168,10 +169,10 @@ public class ExecuteWorkflowTests
         );
     }
 
-    [Theory]
-    [InlineData(WorkflowSubStatus.Cancelled)]
-    [InlineData(WorkflowSubStatus.Faulted)]
-    [InlineData(WorkflowSubStatus.Suspended)]
+    [Test]
+    [Arguments(WorkflowSubStatus.Cancelled)]
+    [Arguments(WorkflowSubStatus.Faulted)]
+    [Arguments(WorkflowSubStatus.Suspended)]
     public async Task Should_Handle_Different_Workflow_SubStatuses(WorkflowSubStatus subStatus)
     {
         // Arrange
@@ -186,8 +187,8 @@ public class ExecuteWorkflowTests
 
         // Assert
         var result = (ExecuteWorkflowResult)context.GetActivityOutput(() => executeWorkflow.Result)!;
-        Assert.NotNull(result);
-        Assert.Equal(subStatus, result.SubStatus);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.SubStatus).IsEqualTo(subStatus);
     }
 
     private static WorkflowGraph CreateMockWorkflowGraph()

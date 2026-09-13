@@ -10,16 +10,17 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
 public class WriteHttpResponseTests
 {
-    [Theory]
-    [InlineData(HttpStatusCode.OK, 200)]
-    [InlineData(HttpStatusCode.Created, 201)]
-    [InlineData(HttpStatusCode.NotFound, 404)]
-    [InlineData(HttpStatusCode.InternalServerError, 500)]
+    [Test]
+    [Arguments(HttpStatusCode.OK, 200)]
+    [Arguments(HttpStatusCode.Created, 201)]
+    [Arguments(HttpStatusCode.NotFound, 404)]
+    [Arguments(HttpStatusCode.InternalServerError, 500)]
     public async Task Should_Set_Correct_Status_Code(HttpStatusCode statusCode, int expectedStatusCode)
     {
         // Arrange
@@ -30,14 +31,14 @@ public class WriteHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.Equal(expectedStatusCode, httpContext.Response.StatusCode);
-        Assert.True(context.IsCompleted);
+        await Assert.That(httpContext.Response.StatusCode).IsEqualTo(expectedStatusCode);
+        await Assert.That(context.IsCompleted).IsTrue();
     }
 
-    [Theory]
-    [InlineData("Hello World", "text/plain", "Hello World")]
-    [InlineData("{\"name\": \"John\"}", "application/json", "{\"name\": \"John\"}")]
-    [InlineData("<root><name>John</name></root>", "application/xml", "<root><name>John</name></root>")]
+    [Test]
+    [Arguments("Hello World", "text/plain", "Hello World")]
+    [Arguments("{\"name\": \"John\"}", "application/json", "{\"name\": \"John\"}")]
+    [Arguments("<root><name>John</name></root>", "application/xml", "<root><name>John</name></root>")]
     public async Task Should_Write_String_Content_With_Correct_Content_Type(string content, string contentType, string expectedContent)
     {
         // Arrange
@@ -49,12 +50,12 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.Equal(contentType, httpContext.Response.ContentType);
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo(contentType);
         var responseContent = GetResponseContent(httpContext);
-        Assert.Equal(expectedContent, responseContent);
+        await Assert.That(responseContent).IsEqualTo(expectedContent);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Serialize_Object_To_Json_When_No_Content_Type_Specified()
     {
         // Arrange
@@ -66,16 +67,16 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.Equal("application/json", httpContext.Response.ContentType);
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo("application/json");
         var responseContent = GetResponseContent(httpContext);
-        Assert.Contains("John", responseContent);
-        Assert.Contains("30", responseContent);
+        await Assert.That(responseContent).Contains("John");
+        await Assert.That(responseContent).Contains("30");
     }
 
-    [Theory]
-    [InlineData("Custom-Header", "CustomValue")]
-    [InlineData("X-Rate-Limit", "100")]
-    [InlineData("Cache-Control", "no-cache")]
+    [Test]
+    [Arguments("Custom-Header", "CustomValue")]
+    [Arguments("X-Rate-Limit", "100")]
+    [Arguments("Cache-Control", "no-cache")]
     public async Task Should_Add_Response_Headers(string headerName, string headerValue)
     {
         // Arrange
@@ -87,11 +88,11 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(httpContext.Response.Headers.ContainsKey(headerName));
-        Assert.Equal(headerValue, httpContext.Response.Headers[headerName]);
+        await Assert.That(httpContext.Response.Headers.ContainsKey(headerName)).IsTrue();
+        await Assert.That(httpContext.Response.Headers[headerName].ToString()).IsEqualTo(headerValue);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Add_Multiple_Response_Headers()
     {
         // Arrange
@@ -108,15 +109,15 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(httpContext.Response.Headers.ContainsKey("Custom-Header-1"));
-        Assert.True(httpContext.Response.Headers.ContainsKey("Custom-Header-2"));
-        Assert.True(httpContext.Response.Headers.ContainsKey("X-Rate-Limit"));
-        Assert.Equal("Value1", httpContext.Response.Headers["Custom-Header-1"]);
-        Assert.Equal("Value2", httpContext.Response.Headers["Custom-Header-2"]);
-        Assert.Equal("100", httpContext.Response.Headers["X-Rate-Limit"]);
+        await Assert.That(httpContext.Response.Headers.ContainsKey("Custom-Header-1")).IsTrue();
+        await Assert.That(httpContext.Response.Headers.ContainsKey("Custom-Header-2")).IsTrue();
+        await Assert.That(httpContext.Response.Headers.ContainsKey("X-Rate-Limit")).IsTrue();
+        await Assert.That(httpContext.Response.Headers["Custom-Header-1"].ToString()).IsEqualTo("Value1");
+        await Assert.That(httpContext.Response.Headers["Custom-Header-2"].ToString()).IsEqualTo("Value2");
+        await Assert.That(httpContext.Response.Headers["X-Rate-Limit"].ToString()).IsEqualTo("100");
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Not_Write_Content_When_Status_Code_Is_NoContent()
     {
         // Arrange
@@ -128,12 +129,12 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.Equal(204, httpContext.Response.StatusCode);
+        await Assert.That(httpContext.Response.StatusCode).IsEqualTo(204);
         var responseContent = GetResponseContent(httpContext);
-        Assert.Empty(responseContent);
+        await Assert.That(responseContent).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Handle_Null_Content()
     {
         // Arrange
@@ -144,12 +145,12 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.Equal(200, httpContext.Response.StatusCode);
+        await Assert.That(httpContext.Response.StatusCode).IsEqualTo(200);
         var responseContent = GetResponseContent(httpContext);
-        Assert.Empty(responseContent);
+        await Assert.That(responseContent).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Call_CompleteAsync_When_WriteHttpResponseSynchronously_Is_True()
     {
         // Arrange
@@ -171,7 +172,7 @@ public class WriteHttpResponseTests
         await mockResponse.Received(1).CompleteAsync();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Not_Call_CompleteAsync_When_WriteHttpResponseSynchronously_Is_False()
     {
         // Arrange
@@ -193,7 +194,7 @@ public class WriteHttpResponseTests
         await mockResponse.DidNotReceive().CompleteAsync();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Fault_When_No_HttpContext_Available()
     {
         // Arrange
@@ -210,10 +211,10 @@ public class WriteHttpResponseTests
         });
 
         // Act + Assert
-        await Assert.ThrowsAsync<FaultException>(() => fixture.ExecuteAsync());
+        await Assert.ThrowsExactlyAsync<FaultException>(() => fixture.ExecuteAsync());
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_Default_Status_Code_When_Not_Specified()
     {
         // Arrange
@@ -224,7 +225,7 @@ public class WriteHttpResponseTests
         await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.Equal(200, httpContext.Response.StatusCode);
+        await Assert.That(httpContext.Response.StatusCode).IsEqualTo(200);
     }
     
     private static (WriteHttpResponse activity, HttpContext httpContext) CreateWriteHttpResponseActivity()

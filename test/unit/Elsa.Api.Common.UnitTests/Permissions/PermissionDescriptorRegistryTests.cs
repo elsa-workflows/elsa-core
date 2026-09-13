@@ -1,4 +1,5 @@
 using Elsa.Permissions;
+using System.Threading.Tasks;
 
 namespace Elsa.Api.Common.UnitTests.Permissions;
 
@@ -14,37 +15,37 @@ public class PermissionDescriptorRegistryTests
 
     private static DefaultPermissionDescriptorRegistry Registry(params IPermissionDescriptorProvider[] providers) => new(providers);
 
-    [Fact]
-    public void ComposesProvidersAndOrdersByResource()
+    [Test]
+    public async Task ComposesProvidersAndOrdersByResource()
     {
         var registry = Registry(
             new Provider(Descriptor("workflows/instances"), Descriptor("dashboard")),
             new Provider(Descriptor("identity/users")));
 
-        Assert.Equal(["dashboard", "identity/users", "workflows/instances"], registry.List().Select(x => x.Resource));
+        await Assert.That(registry.List().Select(x => x.Resource)).IsEquivalentTo(["dashboard", "identity/users", "workflows/instances"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void FirstRegistrationWinsForADuplicateResource()
+    [Test]
+    public async Task FirstRegistrationWinsForADuplicateResource()
     {
         var registry = Registry(new Provider(Descriptor("secrets", "view")), new Provider(Descriptor("secrets", "delete")));
 
-        Assert.Single(registry.List());
-        Assert.Equal(["view"], registry.Find("secrets")!.SupportedVerbs);
+        await Assert.That(registry.List()).HasSingleItem();
+        await Assert.That(registry.Find("secrets")!.SupportedVerbs).IsEquivalentTo(["view"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void MarksVerbsOutsideTheRecommendedCoreSet()
+    [Test]
+    public async Task MarksVerbsOutsideTheRecommendedCoreSet()
     {
         var descriptor = Descriptor("workflows/definitions", "view", "write", "publish", "retract");
 
-        Assert.Equal(["publish", "retract"], descriptor.NonCoreVerbs);
-        Assert.True(descriptor.Supports("write"));
-        Assert.False(descriptor.Supports("quarantine"));
+        await Assert.That(descriptor.NonCoreVerbs).IsEquivalentTo(["publish", "retract"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(descriptor.Supports("write")).IsTrue();
+        await Assert.That(descriptor.Supports("quarantine")).IsFalse();
     }
 
-    [Fact]
-    public void ReachReportsWhatAWildcardCoversToday()
+    [Test]
+    public async Task ReachReportsWhatAWildcardCoversToday()
     {
         var registry = Registry(new Provider(
             Descriptor("workflows/definitions"),
@@ -52,27 +53,25 @@ public class PermissionDescriptorRegistryTests
             Descriptor("workflows/instances"),
             Descriptor("identity/users")));
 
-        Assert.Equal(
-            ["workflows/definitions", "workflows/definitions/versions", "workflows/instances"],
-            registry.Reach("workflows/*"));
-        Assert.Equal(["workflows/definitions", "workflows/definitions/versions"], registry.Reach("workflows/definitions/*"));
-        Assert.Equal(4, registry.Reach("*").Count);
+        await Assert.That(registry.Reach("workflows/*")).IsEquivalentTo(["workflows/definitions", "workflows/definitions/versions", "workflows/instances"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(registry.Reach("workflows/definitions/*")).IsEquivalentTo(["workflows/definitions", "workflows/definitions/versions"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(registry.Reach("*").Count).IsEqualTo(4);
     }
 
-    [Fact]
-    public void ReachIsEmptyForAPatternMatchingNothing()
+    [Test]
+    public async Task ReachIsEmptyForAPatternMatchingNothing()
     {
         // A grant naming a module that is not installed is valid and simply covers nothing today.
         var registry = Registry(new Provider(Descriptor("dashboard")));
 
-        Assert.Empty(registry.Reach("not-installed/*"));
+        await Assert.That(registry.Reach("not-installed/*")).IsEmpty();
     }
 
-    [Fact]
-    public void DescriptorsWithoutAResourceAreDropped()
+    [Test]
+    public async Task DescriptorsWithoutAResourceAreDropped()
     {
         var registry = Registry(new Provider(Descriptor("dashboard"), new("  ", ["view"], "", "", "Test")));
 
-        Assert.Single(registry.List());
+        await Assert.That(registry.List()).HasSingleItem();
     }
 }

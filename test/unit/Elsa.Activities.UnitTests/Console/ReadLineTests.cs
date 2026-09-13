@@ -3,6 +3,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Console;
 
@@ -21,12 +22,13 @@ public class ReadLineTests
         _mockProvider.GetTextReader().Returns(_mockTextReader);
     }
 
-    [Theory(DisplayName = "ReadLine reads text from input and completes successfully")]
-    [InlineData("Hello, World!")]
-    [InlineData("Test input")]
-    [InlineData("")]
-    [InlineData(" ")]
-    [InlineData("\t")]
+    [Test]
+    [DisplayName("ReadLine reads text from input and completes successfully")]
+    [Arguments("Hello, World!")]
+    [Arguments("Test input")]
+    [Arguments("")]
+    [Arguments(" ")]
+    [Arguments("\t")]
     public async Task Should_Read_Text_From_Input_And_Complete(string inputText)
     {
         // Arrange
@@ -36,12 +38,13 @@ public class ReadLineTests
         var context = await ExecuteAsync(readLine, inputText);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
         var result = (string)context.GetActivityOutput(() => readLine.Result)!;
-        Assert.Equal(inputText, result);
+        await Assert.That(result).IsEqualTo(inputText);
     }
 
-    [Fact(DisplayName = "ReadLine uses provided stream provider")]
+    [Test]
+    [DisplayName("ReadLine uses provided stream provider")]
     public async Task Should_Use_Provided_Stream_Provider()
     {
         // Act
@@ -52,7 +55,8 @@ public class ReadLineTests
         _mockTextReader.Received(1).ReadLine();
     }
 
-    [Fact(DisplayName = "ReadLine handles null return value from stream")]
+    [Test]
+    [DisplayName("ReadLine handles null return value from stream")]
     public async Task Should_Handle_Null_Return_Value()
     {
         // Arrange
@@ -64,10 +68,11 @@ public class ReadLineTests
         // Assert - The null-forgiving operator in ReadLine implementation means it expects non-null,
         // but null can occur at end of stream. Verify the behavior stores null.
         var result = context.GetActivityOutput(() => readLine.Result);
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact(DisplayName = "ReadLine uses default provider when none is registered")]
+    [Test]
+    [DisplayName("ReadLine uses default provider when none is registered")]
     public async Task Should_Use_Default_Provider_When_None_Registered()
     {
         // Arrange
@@ -85,7 +90,7 @@ public class ReadLineTests
 
             // Assert
             var result = (string)context.GetActivityOutput(() => readLine.Result)!;
-            Assert.Equal(expectedInput, result);
+            await Assert.That(result).IsEqualTo(expectedInput);
         }
         finally
         {

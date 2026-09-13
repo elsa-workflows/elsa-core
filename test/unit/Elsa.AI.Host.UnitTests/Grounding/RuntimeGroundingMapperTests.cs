@@ -4,13 +4,15 @@ using Elsa.AI.Host.Services;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.State;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
 public class RuntimeGroundingMapperTests
 {
-    [Fact(DisplayName = "Runtime mapper redacts sensitive workflow state")]
-    public void RuntimeMapperRedactsSensitiveWorkflowState()
+    [Test]
+    [DisplayName("Runtime mapper redacts sensitive workflow state")]
+    public async Task RuntimeMapperRedactsSensitiveWorkflowState()
     {
         var formatter = new AIGroundingResultFormatter(MicrosoftOptions.Create(new AIHostOptions()));
         var mapper = new RuntimeGroundingMapper(formatter);
@@ -28,7 +30,7 @@ public class RuntimeGroundingMapperTests
 
         var state = mapper.MapState(instance);
 
-        Assert.Equal("***", state["input"]!.AsObject()["password"]!.GetValue<string>());
-        Assert.Equal("ok", state["output"]!.AsObject()["result"]!.GetValue<string>());
+        await Assert.That(state["input"]!.AsObject()["password"]!.GetValue<string>()).IsEqualTo("***");
+        await Assert.That(state["output"]!.AsObject()["result"]!.GetValue<string>()).IsEqualTo("ok");
     }
 }

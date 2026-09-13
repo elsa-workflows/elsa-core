@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.AI.Copilot]*</Include>
         <Threshold>0</Threshold>
     </PropertyGroup>

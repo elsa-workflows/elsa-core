@@ -1,6 +1,7 @@
 using System.Reflection;
 using Bpmn.Model.State;
 using Elsa.Bpmn.Hosting;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
@@ -17,23 +18,24 @@ public class BpmnDiagnosticEventNamesTests
         .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string) && f.Name != nameof(BpmnDiagnosticEventNames.Source))
         .ToDictionary(f => f.Name, f => (string)f.GetRawConstantValue()!);
 
-    [Fact]
-    public void EveryDiagnosticKindMember_HasAnIdenticallyNamedConstant()
+    [Test]
+    public async Task EveryDiagnosticKindMember_HasAnIdenticallyNamedConstant()
     {
         var memberNames = Enum.GetNames<BpmnDiagnosticKind>();
 
-        Assert.All(memberNames, name =>
+        foreach (var name in memberNames)
         {
-            Assert.True(EventNameConstants.TryGetValue(name, out var value), $"'{name}' has no matching constant in {nameof(BpmnDiagnosticEventNames)}.");
-            Assert.Equal(name, value);
-        });
+            await Assert.That(EventNameConstants.TryGetValue(name, out var value)).IsTrue().Because($"'{name}' has no matching constant in {nameof(BpmnDiagnosticEventNames)}.");
+            await Assert.That(value).IsEqualTo(name);
+        }
     }
 
-    [Fact]
-    public void NoConstant_IsNotADiagnosticKindMember()
+    [Test]
+    public async Task NoConstant_IsNotADiagnosticKindMember()
     {
         var memberNames = Enum.GetNames<BpmnDiagnosticKind>().ToHashSet();
 
-        Assert.All(EventNameConstants.Keys, name => Assert.Contains(name, memberNames));
+        foreach (var name in EventNameConstants.Keys)
+            await Assert.That(memberNames).Contains(name);
     }
 }

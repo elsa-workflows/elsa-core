@@ -7,6 +7,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
@@ -22,7 +23,7 @@ public class BpmnCommandApplierTests
     private const string OrdinaryActivityId = "ordinary-activity";
     private const string NestedProcessActivityId = "nested-activity";
 
-    [Fact]
+    [Test]
     public async Task ApplyAsync_RefusesTheWholeBatch_WhenALaterCommandBindsARootScopeProcess()
     {
         var (scopeContext, process) = await BuildScopeAsync();
@@ -35,15 +36,15 @@ public class BpmnCommandApplierTests
             new BpmnHostCommand.StartWork("nested-binding", "nested-element", "token-2", "cause", new Dictionary<string, string>(), null, null)
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => applier.ApplyAsync(commands).AsTask());
+        var exception = (await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => applier.ApplyAsync(commands).AsTask()))!;
 
-        Assert.Contains(NestedProcessActivityId, exception.Message);
+        await Assert.That(exception.Message).Contains(NestedProcessActivityId);
 
         // The earlier command in the same batch — the ordinary StartWork — must not have been applied: no work
         // record persisted, and no child context created for it.
         var reloaded = BpmnScopeMemory.Load(scopeContext);
-        Assert.Empty(reloaded.Work.Records);
-        Assert.DoesNotContain(scopeContext.WorkflowExecutionContext.ActivityExecutionContexts, context => context.Activity.Id == OrdinaryActivityId);
+        await Assert.That(reloaded.Work.Records).IsEmpty();
+        await Assert.That(scopeContext.WorkflowExecutionContext.ActivityExecutionContexts).DoesNotContain(context => context.Activity.Id == OrdinaryActivityId);
     }
 
     private static async Task<(ActivityExecutionContext ScopeContext, BpmnProcess Process)> BuildScopeAsync()

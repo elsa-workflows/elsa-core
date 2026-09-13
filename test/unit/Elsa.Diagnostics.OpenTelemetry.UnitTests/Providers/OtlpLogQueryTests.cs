@@ -1,10 +1,11 @@
 using Elsa.Diagnostics.OpenTelemetry.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Providers;
 
 public class OtlpLogQueryTests
 {
-    [Fact]
+    [Test]
     public async Task QueryLogsAsync_WhenFilteringByTraceAndSeverity_ReturnsMatchingLogs()
     {
         var context = new OpenTelemetryStoreTestContext();
@@ -23,6 +24,7 @@ public class OtlpLogQueryTests
 
         var result = await context.Store.QueryLogsAsync(new OpenTelemetryLogFilter { TraceId = "trace-1", Severity = "Error" });
 
-        Assert.Equal("log-2", Assert.Single(result.Items).Id);
+        var log = await Assert.That(result.Items).HasSingleItem();
+        await Assert.That(log.Id).IsEqualTo("log-2");
     }
 }

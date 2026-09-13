@@ -1,14 +1,15 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Looping;
 
 public class ParallelForEachTests
 {
-    [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
+    [Test]
+    [Arguments(1)]
+    [Arguments(2)]
+    [Arguments(3)]
     public async Task Should_Schedule_Body_For_Each_Item(int itemCount)
     {
         var items = Enumerable.Range(0, itemCount).Select(i => $"item{i}").ToArray();
@@ -17,11 +18,11 @@ public class ParallelForEachTests
 
         var context = await ExecuteAsync(parallelForEach);
 
-        AssertScheduledCount(context, itemCount);
-        Assert.True(context.HasScheduledActivity(body));
+        await AssertScheduledCount(context, itemCount);
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Complete_When_Items_Empty()
     {
         var body = new MockBodyActivity();
@@ -29,11 +30,11 @@ public class ParallelForEachTests
 
         var context = await ExecuteAsync(parallelForEach);
 
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.False(context.HasScheduledActivity(body));
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.HasScheduledActivity(body)).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Not_Schedule_When_Body_Null()
     {
         var items = new[] { "a", "b" };
@@ -41,10 +42,10 @@ public class ParallelForEachTests
 
         var context = await ExecuteAsync(parallelForEach);
 
-        AssertScheduledCount(context, 0);
+        await AssertScheduledCount(context, 0);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Handle_Integer_Items()
     {
         var items = new[] { 1, 2, 3 };
@@ -53,10 +54,10 @@ public class ParallelForEachTests
 
         var context = await ExecuteAsync(parallelForEach);
 
-        AssertScheduledCount(context, items.Length);
+        await AssertScheduledCount(context, items.Length);
     }
 
-    [Fact]
+    [Test]
     public void Verify_Activity_Attributes()
     {
         var parallelForEach = new ParallelForEach();
@@ -70,21 +71,21 @@ public class ParallelForEachTests
         );
     }
 
-    [Fact]
-    public void Default_Property_Values()
+    [Test]
+    public async Task Default_Property_Values()
     {
         var parallelForEach = new ParallelForEach<string>();
 
-        Assert.NotNull(parallelForEach.Items);
+        await Assert.That(parallelForEach.Items).IsNotNull();
     }
 
     private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity) =>
         new ActivityTestFixture(activity).ExecuteAsync();
 
-    private static void AssertScheduledCount(ActivityExecutionContext context, int expectedCount)
+    private static async Task AssertScheduledCount(ActivityExecutionContext context, int expectedCount)
     {
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Equal(expectedCount, scheduledActivities.Count);
+        await Assert.That(scheduledActivities.Count).IsEqualTo(expectedCount);
     }
 
     private class MockBodyActivity : Activity

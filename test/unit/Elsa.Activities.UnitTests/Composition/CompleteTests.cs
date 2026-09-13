@@ -1,5 +1,6 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Composition;
 
@@ -8,17 +9,19 @@ namespace Elsa.Activities.UnitTests.Composition;
 /// </summary>
 public class CompleteTests
 {
-    [Fact(DisplayName = "Complete implements ITerminalNode interface")]
-    public void Complete_ImplementsITerminalNode()
+    [Test]
+    [DisplayName("Complete implements ITerminalNode interface")]
+    public async Task Complete_ImplementsITerminalNode()
     {
         // Arrange
         var completeActivity = new Complete();
 
         // Assert
-        Assert.IsAssignableFrom<ITerminalNode>(completeActivity);
+        await Assert.That(completeActivity).IsAssignableTo<ITerminalNode>();
     }
 
-    [Fact(DisplayName = "Complete completes execution")]
+    [Test]
+    [DisplayName("Complete completes execution")]
     public async Task Complete_CompletesExecution()
     {
         // Arrange
@@ -29,6 +32,6 @@ public class CompleteTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 }

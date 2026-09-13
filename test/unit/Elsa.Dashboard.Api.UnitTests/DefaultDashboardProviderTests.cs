@@ -1,3 +1,4 @@
+using System.IO;
 using Elsa.Common;
 using Elsa.Dashboard.Abstractions.Contracts;
 using Elsa.Dashboard.Abstractions.Models;
@@ -11,6 +12,7 @@ using Elsa.Workflows.Runtime.Dashboard.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using System.Threading.Tasks;
 
 namespace Elsa.Dashboard.Api.UnitTests;
 
@@ -18,24 +20,24 @@ public class DefaultDashboardProviderTests
 {
     private readonly DateTimeOffset _now = new(2026, 06, 01, 12, 00, 00, TimeSpan.Zero);
 
-    [Fact]
+    [Test]
     public async Task GetOverviewAsync_WithNoContributors_ReturnsStableEmptySnapshot()
     {
         var provider = CreateProvider();
 
         var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours));
 
-        Assert.Equal("Elsa.TestHost", overview.BackendName);
-        Assert.Equal("Integration", overview.EnvironmentName);
-        Assert.Equal(DashboardRuntimeStatusKeys.Unavailable, overview.Runtime.Status);
-        Assert.Equal(0, overview.WorkflowInstances.Running);
-        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(DashboardCapabilityStatus.NotInstalled.Status, overview.Diagnostics.ConsoleLogs.Capability.Status);
-        Assert.Empty(overview.Metrics);
-        Assert.Empty(overview.Panels);
+        await Assert.That(overview.BackendName).IsEqualTo("Elsa.TestHost");
+        await Assert.That(overview.EnvironmentName).IsEqualTo("Integration");
+        await Assert.That(overview.Runtime.Status).IsEqualTo(DashboardRuntimeStatusKeys.Unavailable);
+        await Assert.That(overview.WorkflowInstances.Running).IsEqualTo(0);
+        await Assert.That(overview.Diagnostics.StructuredLogs.Capability.Status).IsEqualTo(DashboardCapabilityStatus.NotInstalled.Status);
+        await Assert.That(overview.Diagnostics.ConsoleLogs.Capability.Status).IsEqualTo(DashboardCapabilityStatus.NotInstalled.Status);
+        await Assert.That(overview.Metrics).IsEmpty();
+        await Assert.That(overview.Panels).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task GetOverviewAsync_ComposesWorkflowAndDiagnosticsContributors()
     {
         var provider = CreateProvider(
@@ -73,15 +75,15 @@ public class DefaultDashboardProviderTests
 
         var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours));
 
-        Assert.Equal(DashboardRuntimeStatusKeys.AcceptingWork, overview.Runtime.Status);
-        Assert.Equal(3, overview.WorkflowInstances.Running);
-        Assert.Equal(5, overview.WorkflowInstances.Completed);
-        Assert.Equal(1, overview.WorkflowInstances.Faulted);
-        Assert.Equal(DashboardCapabilityStatus.Available.Status, overview.Diagnostics.StructuredLogs.Capability.Status);
-        Assert.Equal(2, overview.Diagnostics.StructuredLogs.SourceCount);
+        await Assert.That(overview.Runtime.Status).IsEqualTo(DashboardRuntimeStatusKeys.AcceptingWork);
+        await Assert.That(overview.WorkflowInstances.Running).IsEqualTo(3);
+        await Assert.That(overview.WorkflowInstances.Completed).IsEqualTo(5);
+        await Assert.That(overview.WorkflowInstances.Faulted).IsEqualTo(1);
+        await Assert.That(overview.Diagnostics.StructuredLogs.Capability.Status).IsEqualTo(DashboardCapabilityStatus.Available.Status);
+        await Assert.That(overview.Diagnostics.StructuredLogs.SourceCount).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task GetNeedsAttentionAsync_ReturnsContributorFindingsInDeterministicOrder()
     {
         var provider = CreateProvider(
@@ -102,14 +104,14 @@ public class DefaultDashboardProviderTests
             });
 
         var response = await provider.GetNeedsAttentionAsync(new(DashboardRangeKeys.TwentyFourHours), 10);
-
-        Assert.Collection(response.Findings,
-            finding => Assert.Equal("first", finding.Id),
-            finding => Assert.Equal("second-a", finding.Id),
-            finding => Assert.Equal("second-b", finding.Id));
+        var findings = response.Findings.ToArray();
+        await Assert.That(findings).Count().IsEqualTo(3);
+        await Assert.That(findings[0].Id).IsEqualTo("first");
+        await Assert.That(findings[1].Id).IsEqualTo("second-a");
+        await Assert.That(findings[2].Id).IsEqualTo("second-b");
     }
 
-    [Fact]
+    [Test]
     public async Task ContributorFailure_DoesNotBreakDashboard()
     {
         var provider = CreateProvider(
@@ -132,21 +134,21 @@ public class DefaultDashboardProviderTests
         var overview = await provider.GetOverviewAsync(new(DashboardRangeKeys.TwentyFourHours));
         var needsAttention = await provider.GetNeedsAttentionAsync(new(DashboardRangeKeys.TwentyFourHours), 10);
 
-        Assert.Equal(7, overview.WorkflowInstances.Running);
-        Assert.Single(needsAttention.Findings);
+        await Assert.That(overview.WorkflowInstances.Running).IsEqualTo(7);
+        await Assert.That(needsAttention.Findings).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task RequestCancellation_IsNotSwallowed()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
         await cancellationTokenSource.CancelAsync();
         var provider = CreateProvider(new CanceledContributor());
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => provider.GetOverviewAsync(new(), cancellationTokenSource.Token));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => provider.GetOverviewAsync(new(), cancellationTokenSource.Token));
     }
 
-    [Fact]
+    [Test]
     public async Task GetWorkflowTrendsAsync_AggregatesContributorBuckets()
     {
         var from = _now.AddHours(-1);
@@ -167,14 +169,14 @@ public class DefaultDashboardProviderTests
             });
 
         var response = await provider.GetWorkflowTrendsAsync(new() { Range = DashboardRangeKeys.OneHour, Granularity = DashboardTrendGranularity.Hour });
-        var bucket = Assert.Single(response.Buckets);
+        var bucket = await Assert.That(response.Buckets).HasSingleItem();
 
-        Assert.Equal(4, bucket.CreatedOrStarted);
-        Assert.Equal(4, bucket.Finished);
-        Assert.Equal(2, bucket.Faulted);
+        await Assert.That(bucket.CreatedOrStarted).IsEqualTo(4);
+        await Assert.That(bucket.Finished).IsEqualTo(4);
+        await Assert.That(bucket.Faulted).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task GetRecentActivityAsync_MergesAndLimitsContributorItems()
     {
         var provider = CreateProvider(
@@ -194,25 +196,25 @@ public class DefaultDashboardProviderTests
             });
 
         var response = await provider.GetRecentActivityAsync(new(DashboardRangeKeys.OneHour), 2);
-
-        Assert.Collection(response.Items,
-            item => Assert.Equal("new", item.InstanceId),
-            item => Assert.Equal("middle", item.InstanceId));
+        var items = response.Items.ToArray();
+        await Assert.That(items).Count().IsEqualTo(2);
+        await Assert.That(items[0].InstanceId).IsEqualTo("new");
+        await Assert.That(items[1].InstanceId).IsEqualTo("middle");
     }
 
-    [Fact]
-    public void DashboardApiProject_DoesNotReferenceWorkflowOrDiagnosticsModules()
+    [Test]
+    public async Task DashboardApiProject_DoesNotReferenceWorkflowOrDiagnosticsModules()
     {
         var projectFile = FindRepositoryRoot().Combine("src/modules/Elsa.Dashboard.Api/Elsa.Dashboard.Api.csproj");
         var project = File.ReadAllText(projectFile);
 
-        Assert.DoesNotContain("Elsa.Workflows", project);
-        Assert.DoesNotContain("Elsa.Diagnostics", project);
-        Assert.Contains("Elsa.Dashboard.Abstractions", project);
+        await Assert.That(project).DoesNotContain("Elsa.Workflows");
+        await Assert.That(project).DoesNotContain("Elsa.Diagnostics");
+        await Assert.That(project).Contains("Elsa.Dashboard.Abstractions");
     }
 
-    [Fact]
-    public void OwnerProjects_DoNotReferenceDashboardAbstractions()
+    [Test]
+    public async Task OwnerProjects_DoNotReferenceDashboardAbstractions()
     {
         var root = FindRepositoryRoot();
         var ownerProjects = new[]
@@ -225,12 +227,12 @@ public class DefaultDashboardProviderTests
         foreach (var ownerProject in ownerProjects)
         {
             var project = File.ReadAllText(root.Combine(ownerProject));
-            Assert.DoesNotContain("Elsa.Dashboard.Abstractions", project);
+            await Assert.That(project).DoesNotContain("Elsa.Dashboard.Abstractions");
         }
     }
 
-    [Fact]
-    public void DashboardCompanionProjects_RegisterExpectedContributors()
+    [Test]
+    public async Task DashboardCompanionProjects_RegisterExpectedContributors()
     {
         var services = new ServiceCollection();
 
@@ -239,18 +241,18 @@ public class DefaultDashboardProviderTests
             .AddStructuredLogsDashboard()
             .AddConsoleLogsDashboard();
 
-        AssertRegisteredContributor<WorkflowDashboardContributor>(services);
-        AssertRegisteredContributor<StructuredLogsDashboardContributor>(services);
-        AssertRegisteredContributor<ConsoleLogsDashboardContributor>(services);
-        Assert.Equal(3, services.Count(x => x.ServiceType == typeof(IDashboardContributor)));
+        await AssertRegisteredContributor<WorkflowDashboardContributor>(services);
+        await AssertRegisteredContributor<StructuredLogsDashboardContributor>(services);
+        await AssertRegisteredContributor<ConsoleLogsDashboardContributor>(services);
+        await Assert.That(services.Count(x => x.ServiceType == typeof(IDashboardContributor))).IsEqualTo(3);
     }
 
     private DefaultDashboardProvider CreateProvider(params IDashboardContributor[] contributors) =>
         new(contributors, new(new TestClock(_now)), new TestHostEnvironment());
 
-    private static void AssertRegisteredContributor<TContributor>(IServiceCollection services)
+    private static async Task AssertRegisteredContributor<TContributor>(IServiceCollection services)
     {
-        Assert.Contains(services, descriptor =>
+        await Assert.That(services).Contains(descriptor =>
             descriptor.ServiceType == typeof(IDashboardContributor) &&
             descriptor.ImplementationType == typeof(TContributor) &&
             descriptor.Lifetime == ServiceLifetime.Scoped);

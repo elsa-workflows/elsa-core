@@ -5,6 +5,7 @@ using Elsa.Bpmn.Hosting;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Memory;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
@@ -16,46 +17,51 @@ namespace Elsa.Bpmn.UnitTests;
 /// </summary>
 public class BpmnScopeVariablesTests
 {
-    [Fact(DisplayName = "A variable nothing in scope declares reads as absent")]
+    [Test]
+    [DisplayName("A variable nothing in scope declares reads as absent")]
     public async Task TryRead_ReturnsFalse_ForAnUndeclaredVariable()
     {
         var variables = await ReaderForAsync(new Variable<string>("declared", "value"));
 
-        Assert.False(variables.TryRead("undeclared", out var value));
-        Assert.Equal(BpmnValuePresence.Absent, value.Presence);
+        await Assert.That(variables.TryRead("undeclared", out var value)).IsFalse();
+        await Assert.That(value.Presence).IsEqualTo(BpmnValuePresence.Absent);
     }
 
-    [Fact(DisplayName = "A declared variable holding null reads as present-and-null, not as absent")]
+    [Test]
+    [DisplayName("A declared variable holding null reads as present-and-null, not as absent")]
     public async Task TryRead_ReturnsNull_ForADeclaredVariableHoldingNull()
     {
         var variables = await ReaderForAsync(new Variable<string?>("empty", null));
 
-        Assert.True(variables.TryRead("empty", out var value));
-        Assert.Equal(BpmnValuePresence.Null, value.Presence);
+        await Assert.That(variables.TryRead("empty", out var value)).IsTrue();
+        await Assert.That(value.Presence).IsEqualTo(BpmnValuePresence.Null);
     }
 
-    [Fact(DisplayName = "A declared variable holding a value reads as present, inline")]
+    [Test]
+    [DisplayName("A declared variable holding a value reads as present, inline")]
     public async Task TryRead_ReturnsThePayload_ForADeclaredVariableHoldingAValue()
     {
         var variables = await ReaderForAsync(new Variable<string[]>("items", ["alpha", "beta"]));
 
-        Assert.True(variables.TryRead("items", out var value));
-        Assert.Equal(BpmnValuePresence.Present, value.Presence);
-        Assert.True(value.HasValue);
-        Assert.Equal(JsonValueKind.Array, value.Json!.Value.ValueKind);
-        Assert.Equal(["alpha", "beta"], value.Json.Value.EnumerateArray().Select(item => item.GetString()));
+        await Assert.That(variables.TryRead("items", out var value)).IsTrue();
+        await Assert.That(value.Presence).IsEqualTo(BpmnValuePresence.Present);
+        await Assert.That(value.HasValue).IsTrue();
+        await Assert.That(value.Json!.Value.ValueKind).IsEqualTo(JsonValueKind.Array);
+        await Assert.That(value.Json.Value.EnumerateArray().Select(item => item.GetString())).IsEquivalentTo(new string?[] { "alpha", "beta" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "An integer carries the type hint the interpreter understands")]
+    [Test]
+    [DisplayName("An integer carries the type hint the interpreter understands")]
     public async Task TryRead_HintsInteger_ForAWholeNumber()
     {
         var variables = await ReaderForAsync(new Variable<int>("count", 3));
 
-        Assert.True(variables.TryRead("count", out var value));
-        Assert.Equal(BpmnValueTypes.Integer, value.TypeHint);
+        await Assert.That(variables.TryRead("count", out var value)).IsTrue();
+        await Assert.That(value.TypeHint).IsEqualTo(BpmnValueTypes.Integer);
     }
 
-    [Fact(DisplayName = "A value that cannot cross the port inline reads as stored externally, not as null")]
+    [Test]
+    [DisplayName("A value that cannot cross the port inline reads as stored externally, not as null")]
     public async Task TryRead_ReturnsStoredExternally_ForAValueJsonCannotCarry()
     {
         // A cyclic object graph is the everyday version of this: a node holding its parent. The variable is neither
@@ -66,12 +72,13 @@ public class BpmnScopeVariablesTests
 
         var variables = await ReaderForAsync(new Variable<SelfReferencing>("cyclic", cyclic));
 
-        Assert.True(variables.TryRead("cyclic", out var value));
-        Assert.Equal(BpmnValuePresence.StoredExternally, value.Presence);
-        Assert.False(value.HasValue);
+        await Assert.That(variables.TryRead("cyclic", out var value)).IsTrue();
+        await Assert.That(value.Presence).IsEqualTo(BpmnValuePresence.StoredExternally);
+        await Assert.That(value.HasValue).IsFalse();
     }
 
-    [Fact(DisplayName = "A value bare JsonSerializerDefaults cannot serialize, but Elsa's configured serializer can, reads as present")]
+    [Test]
+    [DisplayName("A value bare JsonSerializerDefaults cannot serialize, but Elsa's configured serializer can, reads as present")]
     public async Task TryRead_ReturnsThePayload_ForAValueOnlyElsasSerializerCanCarry()
     {
         // System.Text.Json refuses to serialize a System.Type instance under bare defaults — it throws
@@ -79,12 +86,13 @@ public class BpmnScopeVariablesTests
         // defaults collapses this to StoredExternally even though Elsa can hand the value over intact.
         var variables = await ReaderForAsync(new Variable<Type>("clrType", typeof(string)));
 
-        Assert.True(variables.TryRead("clrType", out var value));
-        Assert.Equal(BpmnValuePresence.Present, value.Presence);
-        Assert.True(value.HasValue);
+        await Assert.That(variables.TryRead("clrType", out var value)).IsTrue();
+        await Assert.That(value.Presence).IsEqualTo(BpmnValuePresence.Present);
+        await Assert.That(value.HasValue).IsTrue();
     }
 
-    [Fact(DisplayName = "A variable declared by an enclosing scope is visible to the scope inside it")]
+    [Test]
+    [DisplayName("A variable declared by an enclosing scope is visible to the scope inside it")]
     public async Task TryRead_WalksOutward_ForAVariableOfAnEnclosingScope()
     {
         // BPMN data scoping and Elsa's agree: an inner scope sees the enclosing scope's variables.
@@ -99,8 +107,8 @@ public class BpmnScopeVariablesTests
         await workflowExecutionContext.ActivityRegistry.RegisterAsync(typeof(BpmnProcess));
         var innerContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(inner, new() { Owner = outerContext });
 
-        Assert.True(new BpmnScopeVariables(innerContext).TryRead("outer", out var value));
-        Assert.Equal(BpmnValuePresence.Present, value.Presence);
+        await Assert.That(new BpmnScopeVariables(innerContext).TryRead("outer", out var value)).IsTrue();
+        await Assert.That(value.Presence).IsEqualTo(BpmnValuePresence.Present);
     }
 
     /// <summary>

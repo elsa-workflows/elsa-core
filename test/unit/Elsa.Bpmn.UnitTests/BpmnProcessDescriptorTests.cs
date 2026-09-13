@@ -4,13 +4,14 @@ using Elsa.Bpmn.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using NSubstitute;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
 public class BpmnProcessDescriptorTests
 {
-    [Fact(DisplayName = "BpmnProcess's descriptor declares Done and Cancelled as its only flow ports")]
+    [Test]
+    [DisplayName("BpmnProcess's descriptor declares Done and Cancelled as its only flow ports")]
     public async Task DescribeActivityAsync_DeclaresDoneAndCancelledAsOnlyFlowPorts()
     {
         var defaultValueResolver = Substitute.For<IPropertyDefaultValueResolver>();
@@ -27,8 +28,8 @@ public class BpmnProcessDescriptorTests
 
         var flowPorts = descriptor.Ports.Where(port => port.Type == PortType.Flow).ToList();
 
-        Assert.Equal(2, flowPorts.Count);
-        Assert.Contains(flowPorts, port => port.Name == BpmnInterpreter.DoneOutcomeName);
-        Assert.Contains(flowPorts, port => port.Name == BpmnInterpreter.CancelledOutcomeName);
+        await Assert.That(flowPorts.Count).IsEqualTo(2);
+        await Assert.That(flowPorts).Contains(port => port.Name == BpmnInterpreter.DoneOutcomeName);
+        await Assert.That(flowPorts).Contains(port => port.Name == BpmnInterpreter.CancelledOutcomeName);
     }
 }

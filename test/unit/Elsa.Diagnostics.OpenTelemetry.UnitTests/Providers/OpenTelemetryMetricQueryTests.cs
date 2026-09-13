@@ -1,10 +1,11 @@
 using Elsa.Diagnostics.OpenTelemetry.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Providers;
 
 public class OpenTelemetryMetricQueryTests
 {
-    [Fact]
+    [Test]
     public async Task QueryMetricsAsync_WhenFilteringByInstrumentName_ReturnsMatchingInstrumentPoints()
     {
         var context = new OpenTelemetryStoreTestContext();
@@ -15,11 +16,13 @@ public class OpenTelemetryMetricQueryTests
 
         var result = await context.Store.QueryMetricsAsync(new OpenTelemetryMetricFilter { InstrumentName = "duration" });
 
-        Assert.Equal(duration.Id, Assert.Single(result.Instruments).Id);
-        Assert.Equal("point-1", Assert.Single(result.Points).Id);
+        var instrument = await Assert.That(result.Instruments).HasSingleItem();
+        var point = await Assert.That(result.Points).HasSingleItem();
+        await Assert.That(instrument.Id).IsEqualTo(duration.Id);
+        await Assert.That(point.Id).IsEqualTo("point-1");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryMetricsAsync_WhenFilteringByInstrumentName_AppliesInstrumentFilterBeforeTake()
     {
         var context = new OpenTelemetryStoreTestContext();
@@ -39,7 +42,9 @@ public class OpenTelemetryMetricQueryTests
 
         var result = await context.Store.QueryMetricsAsync(new OpenTelemetryMetricFilter { InstrumentName = "duration", Take = 1 });
 
-        Assert.Equal(duration.Id, Assert.Single(result.Instruments).Id);
-        Assert.Equal("point-1", Assert.Single(result.Points).Id);
+        var instrument = await Assert.That(result.Instruments).HasSingleItem();
+        var point = await Assert.That(result.Points).HasSingleItem();
+        await Assert.That(instrument.Id).IsEqualTo(duration.Id);
+        await Assert.That(point.Id).IsEqualTo("point-1");
     }
 }

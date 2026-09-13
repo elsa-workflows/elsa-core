@@ -5,6 +5,7 @@ using Bpmn.Model;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Features;
 using Elsa.Bpmn.Interchange.Features;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.Interchange.UnitTests;
 
@@ -44,37 +45,35 @@ public class BpmnLibraryDuplicationGuardTests
     private static readonly Assembly ElsaBpmnAssembly = typeof(BpmnFeature).Assembly;
     private static readonly Assembly ElsaBpmnInterchangeAssembly = typeof(BpmnInterchangeFeature).Assembly;
 
-    [Fact]
-    public void ElsaBpmnAssembly_DoesNotDuplicateBpmnModelOrBpmnSemanticsTypeNames()
+    [Test]
+    public async Task ElsaBpmnAssembly_DoesNotDuplicateBpmnModelOrBpmnSemanticsTypeNames()
     {
-        AssertNoTypeNameCollisions(ElsaBpmnAssembly, BpmnModelAssembly, BpmnSemanticsAssembly);
+        await AssertNoTypeNameCollisions(ElsaBpmnAssembly, BpmnModelAssembly, BpmnSemanticsAssembly);
     }
 
-    [Fact]
-    public void ElsaBpmnInterchangeAssembly_DoesNotDuplicateBpmnLibraryTypeNames()
+    [Test]
+    public async Task ElsaBpmnInterchangeAssembly_DoesNotDuplicateBpmnLibraryTypeNames()
     {
         // Bpmn.Interchange owns BpmnXmlReader/BpmnXmlWriter and the import analyzer per the
         // library/module split, so its type names are forbidden here too, alongside Bpmn.Model
         // and Bpmn.Semantics (which Elsa.Bpmn.Interchange can reach transitively).
-        AssertNoTypeNameCollisions(ElsaBpmnInterchangeAssembly, BpmnModelAssembly, BpmnSemanticsAssembly, BpmnInterchangeAssembly);
+        await AssertNoTypeNameCollisions(ElsaBpmnInterchangeAssembly, BpmnModelAssembly, BpmnSemanticsAssembly, BpmnInterchangeAssembly);
     }
 
-    [Fact]
-    public void TypeNameCollisionDetection_ActuallyDetectsACollision()
+    [Test]
+    public async Task TypeNameCollisionDetection_ActuallyDetectsACollision()
     {
         var collisions = FindTypeNameCollisions(typeof(BpmnLibraryDuplicationGuardTests).Assembly, BpmnSemanticsAssembly);
 
-        Assert.NotEmpty(collisions);
-        Assert.Contains(collisions, message => message.Contains(nameof(BpmnGraph)));
+        await Assert.That(collisions).IsNotEmpty();
+        await Assert.That(collisions).Contains(message => message.Contains(nameof(BpmnGraph)));
     }
 
-    private static void AssertNoTypeNameCollisions(Assembly elsaAssembly, params Assembly[] libraryAssemblies)
+    private static async Task AssertNoTypeNameCollisions(Assembly elsaAssembly, params Assembly[] libraryAssemblies)
     {
         var collisions = FindTypeNameCollisions(elsaAssembly, libraryAssemblies);
 
-        Assert.True(
-            collisions.Count == 0,
-            $"{elsaAssembly.GetName().Name} must not reimplement BPMN semantics the library already provides:{Environment.NewLine}{string.Join(Environment.NewLine, collisions)}");
+        await Assert.That(collisions.Count == 0).IsTrue().Because($"{elsaAssembly.GetName().Name} must not reimplement BPMN semantics the library already provides:{Environment.NewLine}{string.Join(Environment.NewLine, collisions)}");
     }
 
     private static IReadOnlyList<string> FindTypeNameCollisions(Assembly elsaAssembly, params Assembly[] libraryAssemblies)

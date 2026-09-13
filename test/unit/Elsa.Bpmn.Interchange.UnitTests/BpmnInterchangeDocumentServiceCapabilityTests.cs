@@ -2,6 +2,7 @@ using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Interchange.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.Interchange.UnitTests;
 
@@ -13,19 +14,21 @@ namespace Elsa.Bpmn.Interchange.UnitTests;
 /// </summary>
 public class BpmnInterchangeDocumentServiceCapabilityTests
 {
-    [Fact(DisplayName = "A definition needing a capability the host does not declare is refused, naming the capability and the driving element")]
-    public void EnsureCapabilitiesSatisfied_RefusesADefinitionNeedingAnUndeclaredCapability()
+    [Test]
+    [DisplayName("A definition needing a capability the host does not declare is refused, naming the capability and the driving element")]
+    public async Task EnsureCapabilitiesSatisfied_RefusesADefinitionNeedingAnUndeclaredCapability()
     {
         var definition = MultiInstanceDefinition("main", "each");
 
-        var exception = Assert.Throws<BpmnCapabilityException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnCapabilityException>(() =>
             BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied(definition, [], BpmnHostCapabilities.None));
 
-        Assert.Equal(BpmnHostCapabilities.IterationScopes, exception.Missing);
-        Assert.Contains("each", exception.DrivingElementIds);
+        await Assert.That(exception.Missing).IsEqualTo(BpmnHostCapabilities.IterationScopes);
+        await Assert.That(exception.DrivingElementIds).Contains("each");
     }
 
-    [Fact(DisplayName = "The same definition is accepted once the host declares the capability it needs")]
+    [Test]
+    [DisplayName("The same definition is accepted once the host declares the capability it needs")]
     public void EnsureCapabilitiesSatisfied_AcceptsADefinitionOnceTheCapabilityIsDeclared()
     {
         var definition = MultiInstanceDefinition("main", "each");
@@ -34,19 +37,20 @@ public class BpmnInterchangeDocumentServiceCapabilityTests
         BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied(definition, [], BpmnHostCapabilities.IterationScopes);
     }
 
-    [Fact(DisplayName = "A nested process needing an undeclared capability is refused even though the root process needs nothing")]
-    public void EnsureCapabilitiesSatisfied_WalksIntoNestedProcesses()
+    [Test]
+    [DisplayName("A nested process needing an undeclared capability is refused even though the root process needs nothing")]
+    public async Task EnsureCapabilitiesSatisfied_WalksIntoNestedProcesses()
     {
         var nestedDefinition = MultiInstanceDefinition("sub", "each");
         var rootDefinition = new BpmnProcessDefinition("main");
 
         BpmnWorkBinding[] bindings = [new BpmnWorkBinding.NestedProcess("main", "sub", "node-sub", BpmnBindingSlot.Primary, nestedDefinition)];
 
-        var exception = Assert.Throws<BpmnCapabilityException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnCapabilityException>(() =>
             BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied(rootDefinition, bindings, BpmnHostCapabilities.None));
 
-        Assert.Equal(BpmnHostCapabilities.IterationScopes, exception.Missing);
-        Assert.Contains("each", exception.DrivingElementIds);
+        await Assert.That(exception.Missing).IsEqualTo(BpmnHostCapabilities.IterationScopes);
+        await Assert.That(exception.DrivingElementIds).Contains("each");
     }
 
     private static BpmnProcessDefinition MultiInstanceDefinition(string processId, string elementId)

@@ -3,12 +3,13 @@ using ConsoleLogStreaming.Core.Models;
 using Elsa.Diagnostics.ConsoleLogs.RealTime;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 
 public class ElsaConsoleLogSubscriptionManagerTests
 {
-    [Fact]
+    [Test]
     public async Task SubscribeAsync_DoesNotSendSourceChangedForRepeatedSource()
     {
         var source = new ConsoleLogSource
@@ -28,10 +29,10 @@ public class ElsaConsoleLogSubscriptionManagerTests
 
         await manager.SubscribeAsync("connection-1", new(), CancellationToken.None);
 
-        await AssertEventuallyAsync(() =>
+        await AssertEventuallyAsync(async () =>
         {
-            Assert.Equal(2, client.Lines.Count);
-            Assert.Single(client.Sources);
+            await Assert.That(client.Lines.Count).IsEqualTo(2);
+            await Assert.That(client.Sources).HasSingleItem();
         });
     }
 
@@ -41,18 +42,18 @@ public class ElsaConsoleLogSubscriptionManagerTests
         Source = source
     };
 
-    private static async Task AssertEventuallyAsync(Action assertion)
+    private static async Task AssertEventuallyAsync(Func<Task> assertion)
     {
-        Xunit.Sdk.XunitException? lastException = null;
+        TUnit.Assertions.Exceptions.AssertionException? lastException = null;
 
         for (var i = 0; i < 40; i++)
         {
             try
             {
-                assertion();
+                await assertion();
                 return;
             }
-            catch (Xunit.Sdk.XunitException e)
+            catch (TUnit.Assertions.Exceptions.AssertionException e)
             {
                 lastException = e;
                 await Task.Delay(25);

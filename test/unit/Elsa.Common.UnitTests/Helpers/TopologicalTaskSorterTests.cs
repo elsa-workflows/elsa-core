@@ -1,4 +1,5 @@
 using Elsa.Common.Helpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Helpers;
 
@@ -57,8 +58,8 @@ public class TopologicalTaskSorterTests
         public Task ExecuteAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
-    [Fact]
-    public void Sort_WithNoTasks_ReturnsEmptyList()
+    [Test]
+    public async Task Sort_WithNoTasks_ReturnsEmptyList()
     {
         // Arrange
         var tasks = Array.Empty<ITask>();
@@ -67,11 +68,11 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Empty(result);
+        await Assert.That(result).IsEmpty();
     }
 
-    [Fact]
-    public void Sort_WithSingleTask_ReturnsSingleTask()
+    [Test]
+    public async Task Sort_WithSingleTask_ReturnsSingleTask()
     {
         // Arrange
         var tasks = new ITask[] { new TaskA() };
@@ -80,12 +81,12 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Single(result);
-        Assert.IsType<TaskA>(result[0]);
+        await Assert.That(result).HasSingleItem();
+        await Assert.That(result[0]).IsOfType(typeof(TaskA));
     }
 
-    [Fact]
-    public void Sort_WithNoDependencies_ReturnsAllTasks()
+    [Test]
+    public async Task Sort_WithNoDependencies_ReturnsAllTasks()
     {
         // Arrange
         var taskA = new TaskA();
@@ -97,14 +98,14 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(3, result.Count);
-        Assert.Contains(taskA, result);
-        Assert.Contains(taskB, result);
-        Assert.Contains(taskC, result);
+        await Assert.That(result.Count).IsEqualTo(3);
+        await Assert.That(result).Contains(taskA);
+        await Assert.That(result).Contains(taskB);
+        await Assert.That(result).Contains(taskC);
     }
 
-    [Fact]
-    public void Sort_WithSingleDependency_OrdersCorrectly()
+    [Test]
+    public async Task Sort_WithSingleDependency_OrdersCorrectly()
     {
         // Arrange
         var taskA = new TaskA();
@@ -115,13 +116,13 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(2, result.Count);
-        Assert.IsType<TaskA>(result[0]);
-        Assert.IsType<TaskWithDependency>(result[1]);
+        await Assert.That(result.Count).IsEqualTo(2);
+        await Assert.That(result[0]).IsOfType(typeof(TaskA));
+        await Assert.That(result[1]).IsOfType(typeof(TaskWithDependency));
     }
 
-    [Fact]
-    public void Sort_WithMultipleDependencies_OrdersCorrectly()
+    [Test]
+    public async Task Sort_WithMultipleDependencies_OrdersCorrectly()
     {
         // Arrange
         var taskA = new TaskA();
@@ -133,19 +134,19 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(3, result.Count);
+        await Assert.That(result.Count).IsEqualTo(3);
         var resultList = result.ToList();
         var dependentIndex = resultList.IndexOf(taskWithMultipleDeps);
         var taskAIndex = resultList.IndexOf(taskA);
         var taskBIndex = resultList.IndexOf(taskB);
 
         // Both dependencies should come before the dependent task
-        Assert.True(taskAIndex < dependentIndex);
-        Assert.True(taskBIndex < dependentIndex);
+        await Assert.That(taskAIndex < dependentIndex).IsTrue();
+        await Assert.That(taskBIndex < dependentIndex).IsTrue();
     }
 
-    [Fact]
-    public void Sort_WithChainedDependencies_OrdersCorrectly()
+    [Test]
+    public async Task Sort_WithChainedDependencies_OrdersCorrectly()
     {
         // Arrange
         var taskChainA = new TaskChainA();
@@ -157,14 +158,14 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(3, result.Count);
-        Assert.IsType<TaskChainA>(result[0]);
-        Assert.IsType<TaskChainB>(result[1]);
-        Assert.IsType<TaskChainC>(result[2]);
+        await Assert.That(result.Count).IsEqualTo(3);
+        await Assert.That(result[0]).IsOfType(typeof(TaskChainA));
+        await Assert.That(result[1]).IsOfType(typeof(TaskChainB));
+        await Assert.That(result[2]).IsOfType(typeof(TaskChainC));
     }
 
-    [Fact]
-    public void Sort_WithCircularDependency_ThrowsInvalidOperationException()
+    [Test]
+    public async Task Sort_WithCircularDependency_ThrowsInvalidOperationException()
     {
         // Arrange
         var task1 = new TaskCircular1();
@@ -172,24 +173,24 @@ public class TopologicalTaskSorterTests
         var tasks = new ITask[] { task1, task2 };
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() => TopologicalTaskSorter.Sort(tasks));
-        Assert.Contains("Circular dependency detected", exception.Message);
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => TopologicalTaskSorter.Sort(tasks));
+        await Assert.That(exception.Message).Contains("Circular dependency detected");
     }
 
-    [Fact]
-    public void Sort_WithSelfCircularDependency_ThrowsInvalidOperationException()
+    [Test]
+    public async Task Sort_WithSelfCircularDependency_ThrowsInvalidOperationException()
     {
         // Arrange
         var task = new TaskSelfCircular();
         var tasks = new ITask[] { task };
 
         // Act & Assert
-        var exception = Assert.Throws<InvalidOperationException>(() => TopologicalTaskSorter.Sort(tasks));
-        Assert.Contains("Circular dependency detected", exception.Message);
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => TopologicalTaskSorter.Sort(tasks));
+        await Assert.That(exception.Message).Contains("Circular dependency detected");
     }
 
-    [Fact]
-    public void Sort_WithMultipleInstancesOfSameType_PreservesAllInstances()
+    [Test]
+    public async Task Sort_WithMultipleInstancesOfSameType_PreservesAllInstances()
     {
         // Arrange
         var taskA1 = new TaskA();
@@ -201,14 +202,14 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(3, result.Count);
-        Assert.Contains(taskA1, result);
-        Assert.Contains(taskA2, result);
-        Assert.Contains(taskA3, result);
+        await Assert.That(result.Count).IsEqualTo(3);
+        await Assert.That(result).Contains(taskA1);
+        await Assert.That(result).Contains(taskA2);
+        await Assert.That(result).Contains(taskA3);
     }
 
-    [Fact]
-    public void Sort_WithMultipleInstancesOfSameTypeWithDependencies_OrdersCorrectly()
+    [Test]
+    public async Task Sort_WithMultipleInstancesOfSameTypeWithDependencies_OrdersCorrectly()
     {
         // Arrange
         var taskA1 = new TaskA();
@@ -221,7 +222,7 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(4, result.Count);
+        await Assert.That(result.Count).IsEqualTo(4);
 
         // All TaskA instances should come before TaskWithDependency instances
         var resultList = result.ToList();
@@ -230,14 +231,14 @@ public class TopologicalTaskSorterTests
         var firstTaskWithDepIndex = resultList.IndexOf(taskWithDep1);
         var secondTaskWithDepIndex = resultList.IndexOf(taskWithDep2);
 
-        Assert.True(firstTaskAIndex < firstTaskWithDepIndex);
-        Assert.True(firstTaskAIndex < secondTaskWithDepIndex);
-        Assert.True(secondTaskAIndex < firstTaskWithDepIndex);
-        Assert.True(secondTaskAIndex < secondTaskWithDepIndex);
+        await Assert.That(firstTaskAIndex < firstTaskWithDepIndex).IsTrue();
+        await Assert.That(firstTaskAIndex < secondTaskWithDepIndex).IsTrue();
+        await Assert.That(secondTaskAIndex < firstTaskWithDepIndex).IsTrue();
+        await Assert.That(secondTaskAIndex < secondTaskWithDepIndex).IsTrue();
     }
 
-    [Fact]
-    public void Sort_WithMixedDependenciesAndIndependentTasks_OrdersCorrectly()
+    [Test]
+    public async Task Sort_WithMixedDependenciesAndIndependentTasks_OrdersCorrectly()
     {
         // Arrange
         var taskA = new TaskA();
@@ -250,17 +251,17 @@ public class TopologicalTaskSorterTests
         var result = TopologicalTaskSorter.Sort(tasks);
 
         // Assert
-        Assert.Equal(4, result.Count);
+        await Assert.That(result.Count).IsEqualTo(4);
 
         // TaskA must come before TaskWithDependency
         var resultList = result.ToList();
         var taskAIndex = resultList.IndexOf(taskA);
         var taskWithDepIndex = resultList.IndexOf(taskWithDep);
-        Assert.True(taskAIndex < taskWithDepIndex);
+        await Assert.That(taskAIndex < taskWithDepIndex).IsTrue();
 
         // TaskB and TaskC can be anywhere (no dependencies)
-        Assert.Contains(taskB, result);
-        Assert.Contains(taskC, result);
+        await Assert.That(result).Contains(taskB);
+        await Assert.That(result).Contains(taskC);
     }
     
     // Test task classes without dependencies

@@ -1,12 +1,14 @@
 using Elsa.AI.Host.Services;
 using Elsa.Workflows.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
 public class ActivityGroundingMapperTests
 {
-    [Fact(DisplayName = "Activity mapper emits model-safe descriptor metadata")]
-    public void ActivityMapperEmitsModelSafeDescriptorMetadata()
+    [Test]
+    [DisplayName("Activity mapper emits model-safe descriptor metadata")]
+    public async Task ActivityMapperEmitsModelSafeDescriptorMetadata()
     {
         var mapper = new ActivityGroundingMapper();
         var descriptor = new ActivityDescriptor
@@ -41,11 +43,11 @@ public class ActivityGroundingMapperTests
 
         var summary = mapper.Map(descriptor);
 
-        Assert.Equal("Elsa.Http.HttpEndpoint", summary.Type);
-        Assert.True(summary.IsTrigger);
-        var input = Assert.Single(summary.Inputs);
-        Assert.True(input.IsSensitive);
-        Assert.Equal("String", input.Type);
-        Assert.Contains("Done", summary.Ports);
+        await Assert.That(summary.Type).IsEqualTo("Elsa.Http.HttpEndpoint");
+        await Assert.That(summary.IsTrigger).IsTrue();
+        var input = await Assert.That(summary.Inputs).HasSingleItem();
+        await Assert.That(input.IsSensitive).IsTrue();
+        await Assert.That(input.Type).IsEqualTo("String");
+        await Assert.That(summary.Ports).Contains("Done");
     }
 }

@@ -8,31 +8,31 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 
-[Collection(ConsoleHostStateCollection.Name)]
 public class ConsoleLogContextAccessorTests
 {
     private readonly ConsoleLogContextAccessor _accessor = ConsoleLogContextAccessor.Instance;
 
-    [Fact]
-    public void PushMetadata_RestoresNestedCaseInsensitiveMetadata()
+    [Test]
+    public async Task PushMetadata_RestoresNestedCaseInsensitiveMetadata()
     {
         using (_accessor.PushMetadata("Tenant", "tenant-a"))
         {
-            Assert.Equal("tenant-a", _accessor.GetMetadata()["tenant"]);
+            await Assert.That(_accessor.GetMetadata()["tenant"]).IsEqualTo("tenant-a");
 
             using (_accessor.PushMetadata("tenant", "tenant-b"))
-                Assert.Equal("tenant-b", _accessor.GetMetadata()["TENANT"]);
+                await Assert.That(_accessor.GetMetadata()["TENANT"]).IsEqualTo("tenant-b");
 
-            Assert.Equal("tenant-a", _accessor.GetMetadata()["tenant"]);
+            await Assert.That(_accessor.GetMetadata()["tenant"]).IsEqualTo("tenant-a");
         }
 
-        Assert.Empty(_accessor.GetMetadata());
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task PushWorkflowInstanceId_IsIsolatedAcrossConcurrentAsyncFlows()
     {
         var tasks = Enumerable.Range(0, 20).Select(index => Task.Run(async () =>
@@ -49,11 +49,11 @@ public class ConsoleLogContextAccessorTests
 
         var workflowInstanceIds = await Task.WhenAll(tasks);
 
-        Assert.Equal(Enumerable.Range(0, 20).Select(index => $"workflow-{index}"), workflowInstanceIds);
-        Assert.Empty(_accessor.GetMetadata());
+        await Assert.That(workflowInstanceIds).IsEquivalentTo(Enumerable.Range(0, 20).Select(index => $"workflow-{index}"), TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task RecentQuery_FiltersDuplicateConsoleLinesByWorkflowMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
@@ -72,12 +72,12 @@ public class ConsoleLogContextAccessorTests
             }
         });
 
-        var line = Assert.Single(result.Items);
-        Assert.Equal("duplicate", line.Text);
-        Assert.Equal("workflow-b", line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
+        var line = await Assert.That(result.Items).HasSingleItem();
+        await Assert.That(line.Text).IsEqualTo("duplicate");
+        await Assert.That(line.Metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]).IsEqualTo("workflow-b");
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowExecutionMiddleware_PushesWorkflowInstanceMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
@@ -96,11 +96,11 @@ public class ConsoleLogContextAccessorTests
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.Id, workflowInstanceId);
-        Assert.Empty(_accessor.GetMetadata());
+        await Assert.That(workflowInstanceId).IsEqualTo(context.Id);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowExecutionContributor_PushesWorkflowInstanceMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
@@ -121,11 +121,11 @@ public class ConsoleLogContextAccessorTests
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.Id, workflowInstanceId);
-        Assert.Empty(_accessor.GetMetadata());
+        await Assert.That(workflowInstanceId).IsEqualTo(context.Id);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowFeature_AppliesWorkflowExecutionContributors()
     {
         var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
@@ -148,11 +148,11 @@ public class ConsoleLogContextAccessorTests
 
         await pipeline.ExecuteAsync(context);
 
-        Assert.Equal(context.Id, workflowInstanceId);
-        Assert.Empty(_accessor.GetMetadata());
+        await Assert.That(workflowInstanceId).IsEqualTo(context.Id);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityExecutionMiddleware_PushesWorkflowInstanceMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
@@ -170,11 +170,11 @@ public class ConsoleLogContextAccessorTests
 
         await pipeline.ExecuteAsync(context);
 
-        AssertActivityMetadata(context, metadata);
-        Assert.Empty(_accessor.GetMetadata());
+        await AssertActivityMetadata(context, metadata);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityExecutionContributor_PushesWorkflowInstanceMetadata()
     {
         await using var serviceProvider = new ServiceCollection()
@@ -194,11 +194,11 @@ public class ConsoleLogContextAccessorTests
 
         await pipeline.ExecuteAsync(context);
 
-        AssertActivityMetadata(context, metadata);
-        Assert.Empty(_accessor.GetMetadata());
+        await AssertActivityMetadata(context, metadata);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowFeature_AppliesActivityExecutionContributors()
     {
         var context = await CreateActivityContextAsync();
@@ -220,17 +220,17 @@ public class ConsoleLogContextAccessorTests
 
         await pipeline.ExecuteAsync(context);
 
-        AssertActivityMetadata(context, metadata);
-        Assert.Empty(_accessor.GetMetadata());
+        await AssertActivityMetadata(context, metadata);
+        await Assert.That(_accessor.GetMetadata()).IsEmpty();
     }
 
-    private static void AssertActivityMetadata(ActivityExecutionContext context, IReadOnlyDictionary<string, string>? metadata)
+    private static async Task AssertActivityMetadata(ActivityExecutionContext context, IReadOnlyDictionary<string, string>? metadata)
     {
-        Assert.NotNull(metadata);
-        Assert.Equal(context.WorkflowExecutionContext.Id, metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
-        Assert.Equal(context.Id, metadata[ConsoleLogMetadataKeys.ActivityInstanceId]);
-        Assert.Equal(context.Activity.Id, metadata[ConsoleLogMetadataKeys.ActivityId]);
-        Assert.Equal(context.NodeId, metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
+        await Assert.That(metadata).IsNotNull();
+        await Assert.That(metadata![ConsoleLogMetadataKeys.WorkflowInstanceId]).IsEqualTo(context.WorkflowExecutionContext.Id);
+        await Assert.That(metadata[ConsoleLogMetadataKeys.ActivityInstanceId]).IsEqualTo(context.Id);
+        await Assert.That(metadata[ConsoleLogMetadataKeys.ActivityId]).IsEqualTo(context.Activity.Id);
+        await Assert.That(metadata[ConsoleLogMetadataKeys.ActivityNodeId]).IsEqualTo(context.NodeId);
     }
 
     private static async Task<ActivityExecutionContext> CreateActivityContextAsync()

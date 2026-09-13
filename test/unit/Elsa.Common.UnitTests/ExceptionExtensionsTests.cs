@@ -1,59 +1,66 @@
 using Elsa.Common;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests;
 
 public class ExceptionExtensionsTests
 {
-    [Fact(DisplayName = "Null is not fatal")]
-    public void NullNotFatal() => Assert.False(((Exception?)null).IsFatal());
+    [Test]
+    [DisplayName("Null is not fatal")]
+    public async Task NullNotFatal() => await Assert.That(((Exception?)null).IsFatal()).IsFalse();
 
-    [Theory(DisplayName = "Process-fatal exceptions are classified fatal")]
-    [InlineData(typeof(StackOverflowException))]
-    [InlineData(typeof(AccessViolationException))]
-    [InlineData(typeof(SEHException))]
-    [InlineData(typeof(ThreadAbortException))]
-    public void FatalExceptions(Type exceptionType)
+    [Test]
+    [DisplayName("Process-fatal exceptions are classified fatal")]
+    [Arguments(typeof(StackOverflowException))]
+    [Arguments(typeof(AccessViolationException))]
+    [Arguments(typeof(SEHException))]
+    [Arguments(typeof(ThreadAbortException))]
+    public async Task FatalExceptions(Type exceptionType)
     {
 #pragma warning disable SYSLIB0050 // FormatterServices is needed to instantiate fatal exception types without throwing them.
         var ex = (Exception)System.Runtime.Serialization.FormatterServices.GetUninitializedObject(exceptionType);
 #pragma warning restore SYSLIB0050
-        Assert.True(ex.IsFatal());
+        await Assert.That(ex.IsFatal()).IsTrue();
     }
 
-    [Fact(DisplayName = "OutOfMemoryException is fatal")]
-    public void OomFatal() => Assert.True(new OutOfMemoryException().IsFatal());
+    [Test]
+    [DisplayName("OutOfMemoryException is fatal")]
+    public async Task OomFatal() => await Assert.That(new OutOfMemoryException().IsFatal()).IsTrue();
 
-    [Fact(DisplayName = "InsufficientMemoryException (recoverable subclass of OOM) is NOT fatal")]
-    public void InsufficientMemoryNotFatal() => Assert.False(new InsufficientMemoryException().IsFatal());
+    [Test]
+    [DisplayName("InsufficientMemoryException (recoverable subclass of OOM) is NOT fatal")]
+    public async Task InsufficientMemoryNotFatal() => await Assert.That(new InsufficientMemoryException().IsFatal()).IsFalse();
 
-    [Theory(DisplayName = "Common recoverable exceptions are NOT fatal")]
-    [InlineData(typeof(InvalidOperationException))]
-    [InlineData(typeof(ArgumentException))]
-    [InlineData(typeof(TimeoutException))]
-    [InlineData(typeof(NullReferenceException))]
-    [InlineData(typeof(IOException))]
-    public void RecoverableExceptions(Type exceptionType)
+    [Test]
+    [DisplayName("Common recoverable exceptions are NOT fatal")]
+    [Arguments(typeof(InvalidOperationException))]
+    [Arguments(typeof(ArgumentException))]
+    [Arguments(typeof(TimeoutException))]
+    [Arguments(typeof(NullReferenceException))]
+    [Arguments(typeof(IOException))]
+    public async Task RecoverableExceptions(Type exceptionType)
     {
         var ex = (Exception)Activator.CreateInstance(exceptionType)!;
-        Assert.False(ex.IsFatal());
+        await Assert.That(ex.IsFatal()).IsFalse();
     }
 
-    [Fact(DisplayName = "TypeInitializationException wrapping a fatal cause is itself fatal")]
-    public void WrappedFatalIsFatal()
+    [Test]
+    [DisplayName("TypeInitializationException wrapping a fatal cause is itself fatal")]
+    public async Task WrappedFatalIsFatal()
     {
         var inner = new StackOverflowException();
         var outer = new TypeInitializationException("X", inner);
-        Assert.True(outer.IsFatal());
+        await Assert.That(outer.IsFatal()).IsTrue();
     }
 
-    [Fact(DisplayName = "TargetInvocationException wrapping a recoverable cause is NOT fatal")]
-    public void WrappedRecoverableIsNotFatal()
+    [Test]
+    [DisplayName("TargetInvocationException wrapping a recoverable cause is NOT fatal")]
+    public async Task WrappedRecoverableIsNotFatal()
     {
         var inner = new InvalidOperationException("boom");
         var outer = new TargetInvocationException(inner);
-        Assert.False(outer.IsFatal());
+        await Assert.That(outer.IsFatal()).IsFalse();
     }
 }

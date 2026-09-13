@@ -4,6 +4,7 @@ using Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.Services;
 using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.Interchange.UnitTests;
 
@@ -22,96 +23,107 @@ namespace Elsa.Bpmn.Interchange.UnitTests;
 /// </summary>
 public class BpmnErrorResponseMappingTests
 {
-    [Fact(DisplayName = "A capability refusal is coded bpmn.import.capability-unsupported, carrying the missing capability names and driving element ids as data")]
-    public void CapabilityResponseFor_CarriesTheCodeAndTheStructuredData()
+    [Test]
+    [DisplayName("A capability refusal is coded bpmn.import.capability-unsupported, carrying the missing capability names and driving element ids as data")]
+    public async Task CapabilityResponseFor_CarriesTheCodeAndTheStructuredData()
     {
         var definition = MultiInstanceDefinition("main", "each");
-        var exception = Assert.Throws<BpmnCapabilityException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnCapabilityException>(() =>
             BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied(definition, [], BpmnHostCapabilities.None));
 
         var response = BpmnImportErrorResponses.CapabilityResponseFor(exception);
 
-        Assert.Equal(BpmnErrorCodes.ImportCapabilityUnsupported, response.Code);
-        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.Code).IsEqualTo(BpmnErrorCodes.ImportCapabilityUnsupported);
+        await Assert.That(response.StatusCode).IsEqualTo(StatusCodes.Status422UnprocessableEntity);
 
-        var message = Assert.Single(response.Errors["generalErrors"]);
-        Assert.Contains("IterationScopes", message);
-        Assert.Contains("each", message);
+        var message = await Assert.That(response.Errors["generalErrors"]).HasSingleItem();
+        await Assert.That(message).Contains("IterationScopes");
+        await Assert.That(message).Contains("each");
 
         dynamic data = response.Data!;
-        Assert.Equal(new[] { "IterationScopes" }, (IReadOnlyList<string>)data.Capabilities);
-        Assert.Equal(new[] { "each" }, (IReadOnlyList<string>)data.ElementIds);
+        await Assert.That((IReadOnlyList<string>)data.Capabilities).IsEquivalentTo(new[] { "IterationScopes" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That((IReadOnlyList<string>)data.ElementIds).IsEquivalentTo(new[] { "each" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "A binding refusal is coded bpmn.import.binding-invalid, with no structured data, keeping the exception's own message")]
-    public void BindingInvalidResponseFor_CarriesTheCodeAndTheOriginalMessage()
+    [Test]
+    [DisplayName("A binding refusal is coded bpmn.import.binding-invalid, with no structured data, keeping the exception's own message")]
+    public async Task BindingInvalidResponseFor_CarriesTheCodeAndTheOriginalMessage()
     {
         var exception = new BpmnBindingException("BPMN element 'task-1' declares no binding.");
 
         var response = BpmnImportErrorResponses.BindingInvalidResponseFor(exception);
 
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, response.Code);
-        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
-        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
-        Assert.Null(response.Data);
+        await Assert.That(response.Code).IsEqualTo(BpmnErrorCodes.ImportBindingInvalid);
+        await Assert.That(response.StatusCode).IsEqualTo(StatusCodes.Status422UnprocessableEntity);
+        var generalError = await Assert.That(response.Errors["generalErrors"]).HasSingleItem();
+        await Assert.That(generalError).IsEqualTo(exception.Message);
+        await Assert.That(response.Data).IsNull();
     }
 
-    [Fact(DisplayName = "A duplicate-element-id refusal is coded bpmn.import.duplicate-element-id, carrying the duplicated ids as data")]
-    public void DuplicateElementIdResponseFor_CarriesTheCodeAndTheStructuredData()
+    [Test]
+    [DisplayName("A duplicate-element-id refusal is coded bpmn.import.duplicate-element-id, carrying the duplicated ids as data")]
+    public async Task DuplicateElementIdResponseFor_CarriesTheCodeAndTheStructuredData()
     {
         var exception = new BpmnDuplicateElementIdException("The document declares the same element id more than once: Outer.", ["Outer"]);
 
         var response = BpmnImportErrorResponses.DuplicateElementIdResponseFor(exception);
 
-        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, response.Code);
-        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
-        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
+        await Assert.That(response.Code).IsEqualTo(BpmnErrorCodes.ImportDuplicateElementId);
+        await Assert.That(response.StatusCode).IsEqualTo(StatusCodes.Status422UnprocessableEntity);
+        var generalError = await Assert.That(response.Errors["generalErrors"]).HasSingleItem();
+        await Assert.That(generalError).IsEqualTo(exception.Message);
 
         dynamic data = response.Data!;
-        Assert.Equal(new[] { "Outer" }, (IReadOnlyList<string>)data.ElementIds);
+        await Assert.That((IReadOnlyList<string>)data.ElementIds).IsEquivalentTo(new[] { "Outer" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "A definition-not-found refusal is coded bpmn.document.not-found")]
-    public void NotFoundResponseFor_CarriesTheCode()
+    [Test]
+    [DisplayName("A definition-not-found refusal is coded bpmn.document.not-found")]
+    public async Task NotFoundResponseFor_CarriesTheCode()
     {
         var exception = new BpmnDefinitionNotFoundException("Workflow definition 'def-1' does not exist, so its BPMN document cannot be edited.");
 
         var response = BpmnImportErrorResponses.NotFoundResponseFor(exception);
 
-        Assert.Equal(BpmnErrorCodes.DocumentNotFound, response.Code);
-        Assert.Equal(StatusCodes.Status404NotFound, response.StatusCode);
-        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
-        Assert.Null(response.Data);
+        await Assert.That(response.Code).IsEqualTo(BpmnErrorCodes.DocumentNotFound);
+        await Assert.That(response.StatusCode).IsEqualTo(StatusCodes.Status404NotFound);
+        var generalError = await Assert.That(response.Errors["generalErrors"]).HasSingleItem();
+        await Assert.That(generalError).IsEqualTo(exception.Message);
+        await Assert.That(response.Data).IsNull();
     }
 
-    [Fact(DisplayName = "A lost compare-and-swap is coded bpmn.document.precondition-failed, the same 412 If-Match already uses")]
-    public void PreconditionFailedResponseFor_CarriesTheCode()
+    [Test]
+    [DisplayName("A lost compare-and-swap is coded bpmn.document.precondition-failed, the same 412 If-Match already uses")]
+    public async Task PreconditionFailedResponseFor_CarriesTheCode()
     {
         var exception = new BpmnDocumentPreconditionFailedException(
             "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
 
         var response = BpmnImportErrorResponses.PreconditionFailedResponseFor(exception);
 
-        Assert.Equal(BpmnErrorCodes.DocumentPreconditionFailed, response.Code);
-        Assert.Equal(StatusCodes.Status412PreconditionFailed, response.StatusCode);
-        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
-        Assert.Null(response.Data);
+        await Assert.That(response.Code).IsEqualTo(BpmnErrorCodes.DocumentPreconditionFailed);
+        await Assert.That(response.StatusCode).IsEqualTo(StatusCodes.Status412PreconditionFailed);
+        var generalError = await Assert.That(response.Errors["generalErrors"]).HasSingleItem();
+        await Assert.That(generalError).IsEqualTo(exception.Message);
+        await Assert.That(response.Data).IsNull();
     }
 
-    [Theory(DisplayName = "Each BpmnExportUnavailableReason maps to its own code")]
-    [InlineData(BpmnExportUnavailableReason.NotImported, BpmnErrorCodes.ExportNotImported)]
-    [InlineData(BpmnExportUnavailableReason.SourceVersionUnknown, BpmnErrorCodes.ExportSourceVersionUnknown)]
-    [InlineData(BpmnExportUnavailableReason.SourceStale, BpmnErrorCodes.ExportSourceStale)]
-    public void ResponseFor_MapsEachReasonToItsOwnCode(BpmnExportUnavailableReason reason, string expectedCode)
+    [Test]
+    [DisplayName("Each BpmnExportUnavailableReason maps to its own code")]
+    [Arguments(BpmnExportUnavailableReason.NotImported, BpmnErrorCodes.ExportNotImported)]
+    [Arguments(BpmnExportUnavailableReason.SourceVersionUnknown, BpmnErrorCodes.ExportSourceVersionUnknown)]
+    [Arguments(BpmnExportUnavailableReason.SourceStale, BpmnErrorCodes.ExportSourceStale)]
+    public async Task ResponseFor_MapsEachReasonToItsOwnCode(BpmnExportUnavailableReason reason, string expectedCode)
     {
         var exception = new BpmnExportUnavailableException("Workflow definition 'def-1' cannot be exported.", reason);
 
         var response = BpmnExportErrorResponses.ResponseFor(exception);
 
-        Assert.Equal(expectedCode, response.Code);
-        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
-        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
-        Assert.Null(response.Data);
+        await Assert.That(response.Code).IsEqualTo(expectedCode);
+        await Assert.That(response.StatusCode).IsEqualTo(StatusCodes.Status422UnprocessableEntity);
+        var generalError = await Assert.That(response.Errors["generalErrors"]).HasSingleItem();
+        await Assert.That(generalError).IsEqualTo(exception.Message);
+        await Assert.That(response.Data).IsNull();
     }
 
     private static BpmnProcessDefinition MultiInstanceDefinition(string processId, string elementId)

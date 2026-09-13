@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Exceptions;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
@@ -9,7 +10,8 @@ namespace Elsa.Activities.UnitTests.Primitives;
 /// </summary>
 public class FaultTests
 {
-    [Fact(DisplayName = "Fault throws FaultException with all properties set")]
+    [Test]
+    [DisplayName("Fault throws FaultException with all properties set")]
     public async Task Should_Throw_FaultException_With_All_Properties()
     {
         // Arrange
@@ -23,13 +25,14 @@ public class FaultTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertFaultAsync(fault);
-        Assert.Equal("ERR_001", exception.Code);
-        Assert.Equal("HTTP", exception.Category);
-        Assert.Equal("Business", exception.Type);
-        Assert.Equal("Invalid request", exception.Message);
+        await Assert.That(exception.Code).IsEqualTo("ERR_001");
+        await Assert.That(exception.Category).IsEqualTo("HTTP");
+        await Assert.That(exception.Type).IsEqualTo("Business");
+        await Assert.That(exception.Message).IsEqualTo("Invalid request");
     }
 
-    [Fact(DisplayName = "Fault uses default values when inputs are null")]
+    [Test]
+    [DisplayName("Fault uses default values when inputs are null")]
     public async Task Should_Use_Default_Values_When_Inputs_Are_Null()
     {
         // Arrange
@@ -43,13 +46,14 @@ public class FaultTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertFaultAsync(fault);
-        Assert.Equal("0", exception.Code);
-        Assert.Equal("General", exception.Category);
-        Assert.Equal("System", exception.Type);
-        Assert.NotNull(exception.Message);
+        await Assert.That(exception.Code).IsEqualTo("0");
+        await Assert.That(exception.Category).IsEqualTo("General");
+        await Assert.That(exception.Type).IsEqualTo("System");
+        await Assert.That(exception.Message).IsNotNull();
     }
 
-    [Fact(DisplayName = "Fault throws FaultException with null message")]
+    [Test]
+    [DisplayName("Fault throws FaultException with null message")]
     public async Task Should_Throw_FaultException_With_Null_Message()
     {
         // Arrange
@@ -63,16 +67,17 @@ public class FaultTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertFaultAsync(fault);
-        Assert.Equal("ERR_002", exception.Code);
-        Assert.Equal("Database", exception.Category);
-        Assert.Equal("Integration", exception.Type);
-        Assert.NotNull(exception.Message);
+        await Assert.That(exception.Code).IsEqualTo("ERR_002");
+        await Assert.That(exception.Category).IsEqualTo("Database");
+        await Assert.That(exception.Type).IsEqualTo("Integration");
+        await Assert.That(exception.Message).IsNotNull();
     }
 
-    [Theory(DisplayName = "Fault throws FaultException with various code values")]
-    [InlineData("404", "404")]
-    [InlineData("VALIDATION_ERROR", "VALIDATION_ERROR")]
-    [InlineData("", "")]
+    [Test]
+    [DisplayName("Fault throws FaultException with various code values")]
+    [Arguments("404", "404")]
+    [Arguments("VALIDATION_ERROR", "VALIDATION_ERROR")]
+    [Arguments("", "")]
     public async Task Should_Throw_FaultException_With_Various_Codes(string code, string expectedCode)
     {
         // Arrange
@@ -85,10 +90,11 @@ public class FaultTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertFaultAsync(fault);
-        Assert.Equal(expectedCode, exception.Code);
+        await Assert.That(exception.Code).IsEqualTo(expectedCode);
     }
 
-    [Fact(DisplayName = "Fault.Create factory method creates correctly configured instance")]
+    [Test]
+    [DisplayName("Fault.Create factory method creates correctly configured instance")]
     public async Task Create_Factory_Method_Creates_Correctly_Configured_Instance()
     {
         // Arrange
@@ -96,13 +102,14 @@ public class FaultTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertFaultAsync(fault);
-        Assert.Equal("CREATE_001", exception.Code);
-        Assert.Equal("Factory", exception.Category);
-        Assert.Equal("Test", exception.Type);
-        Assert.Equal("Created via factory", exception.Message);
+        await Assert.That(exception.Code).IsEqualTo("CREATE_001");
+        await Assert.That(exception.Category).IsEqualTo("Factory");
+        await Assert.That(exception.Type).IsEqualTo("Test");
+        await Assert.That(exception.Message).IsEqualTo("Created via factory");
     }
 
-    [Fact(DisplayName = "Fault.Create factory method with null message")]
+    [Test]
+    [DisplayName("Fault.Create factory method with null message")]
     public async Task Create_Factory_Method_With_Null_Message()
     {
         // Arrange
@@ -110,15 +117,15 @@ public class FaultTests
 
         // Act & Assert
         var exception = await ExecuteAndAssertFaultAsync(fault);
-        Assert.Equal("CODE", exception.Code);
-        Assert.Equal("Category", exception.Category);
-        Assert.Equal("Type", exception.Type);
-        Assert.NotNull(exception.Message);
+        await Assert.That(exception.Code).IsEqualTo("CODE");
+        await Assert.That(exception.Category).IsEqualTo("Category");
+        await Assert.That(exception.Type).IsEqualTo("Type");
+        await Assert.That(exception.Message).IsNotNull();
     }
 
     private static async Task<FaultException> ExecuteAndAssertFaultAsync(IActivity activity)
     {
-        return await Assert.ThrowsAsync<FaultException>(() => ExecuteAsync(activity));
+        return (await Assert.ThrowsExactlyAsync<FaultException>(() => ExecuteAsync(activity)))!;
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)

@@ -1,11 +1,12 @@
 using Elsa.Diagnostics.OpenTelemetry.Providers.InMemory;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.InMemory;
 
 public class RingBufferTests
 {
-    [Fact]
-    public void Add_WhenCapacityIsExceeded_DropsOldestItems()
+    [Test]
+    public async Task Add_WhenCapacityIsExceeded_DropsOldestItems()
     {
         var buffer = new RingBuffer<int>(3);
 
@@ -14,7 +15,7 @@ public class RingBufferTests
         buffer.Add(3);
         buffer.Add(4);
 
-        Assert.Equal([2, 3, 4], buffer.Snapshot());
-        Assert.Equal(1, buffer.DroppedCount);
+        await Assert.That(buffer.Snapshot()).IsEquivalentTo([2, 3, 4], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(buffer.DroppedCount).IsEqualTo(1);
     }
 }

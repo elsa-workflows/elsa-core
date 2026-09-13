@@ -5,15 +5,16 @@ using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
 public class SendHttpRequestTests
 {
-    [Theory]
-    [InlineData("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
-    [InlineData("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
-    [InlineData("PUT", "https://api.example.com/update", "{\"updated\": true}", 200)]
+    [Test]
+    [Arguments("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
+    [Arguments("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
+    [Arguments("PUT", "https://api.example.com/update", "{\"updated\": true}", 200)]
     public async Task Should_Send_Request_And_Handle_Success_Response(string method, string url, string jsonResponse, int expectedStatusCode)
     {
         // Arrange
@@ -28,18 +29,18 @@ public class SendHttpRequestTests
         var context = await ExecuteActivityAsync(sendHttpRequest, responseHandler);
 
         // Assert
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.Equal(expectedMethod, requestCapture.CapturedRequest.Method);
-        Assert.Equal(expectedUrl, requestCapture.CapturedRequest.RequestUri);
-        
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Method).IsEqualTo(expectedMethod);
+        await Assert.That(requestCapture.CapturedRequest.RequestUri).IsEqualTo(expectedUrl);
+
         var statusCodeOutput = context.GetActivityOutput(() => sendHttpRequest.StatusCode);
-        Assert.Equal(expectedStatusCode, statusCodeOutput);
+        await Assert.That(statusCodeOutput).IsEqualTo(expectedStatusCode);
     }
 
-    [Theory]
-    [InlineData("Bearer token123")]
-    [InlineData("Basic YWRtaW46cGFzcw==")]
-    [InlineData("ApiKey abc123")]
+    [Test]
+    [Arguments("Bearer token123")]
+    [Arguments("Basic YWRtaW46cGFzcw==")]
+    [Arguments("ApiKey abc123")]
     public async Task Should_Add_Authorization_Header(string authorizationHeader)
     {
         // Arrange
@@ -53,12 +54,12 @@ public class SendHttpRequestTests
         await ExecuteActivityAsync(sendHttpRequest, responseHandler);
 
         // Assert
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.NotNull(requestCapture.CapturedRequest.Headers.Authorization);
-        Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.Authorization).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.Authorization.ToString()).IsEqualTo(authorizationHeader);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Propagate_Current_Trace_Context()
     {
         await SendHttpRequestTestHelpers.AssertPropagatesCurrentTraceContextAsync(async (url, responseHandler) =>
@@ -68,9 +69,9 @@ public class SendHttpRequestTests
         });
     }
 
-    [Theory]
-    [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.NotFound, "mockActivity404")]
-    [InlineData(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.InternalServerError, "mockUnmatchedActivity")]
+    [Test]
+    [Arguments(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.NotFound, "mockActivity404")]
+    [Arguments(new[]{200, 404}, new[]{"mockActivity200", "mockActivity404"}, "mockUnmatchedActivity", HttpStatusCode.InternalServerError, "mockUnmatchedActivity")]
     public async Task Should_Schedule_Activity_According_To_Handlers(int[] statusCodes, string[] activityNames, string handler, HttpStatusCode expectedStatusCode, string expectedScheduledActivityName)
     {
         // Arrange
@@ -87,10 +88,10 @@ public class SendHttpRequestTests
         // Assert that the correct activity was scheduled.
         var expectedActivity = childActivities[expectedScheduledActivityName];
         var hasScheduledActivity = context.HasScheduledActivity(expectedActivity);
-        Assert.True(hasScheduledActivity);
+        await Assert.That(hasScheduledActivity).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Schedule_FailedToConnect_Activity_On_HttpRequestException()
     {
         // Arrange
@@ -106,10 +107,10 @@ public class SendHttpRequestTests
         // Assert
         var expectedScheduledActivity = childActivities["mockFailedToConnect"];
         var hasScheduledExpectedActivity = context.HasScheduledActivity(expectedScheduledActivity);
-        Assert.True(hasScheduledExpectedActivity);
+        await Assert.That(hasScheduledExpectedActivity).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Schedule_Timeout_Activity_On_TaskCanceledException()
     {
         // Arrange
@@ -125,10 +126,10 @@ public class SendHttpRequestTests
         // Assert
         var expectedScheduledActivity = childActivities["mockTimeout"];
         var hasScheduledExpectedActivity = context.HasScheduledActivity(expectedScheduledActivity);
-        Assert.True(hasScheduledExpectedActivity);
+        await Assert.That(hasScheduledExpectedActivity).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Schedule_No_Activity_When_No_Status_Code_Cases_Match_And_No_Unmatched_Handler()
     {
         // Arrange
@@ -140,10 +141,10 @@ public class SendHttpRequestTests
 
         // Assert
         var allScheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(allScheduledActivities);
+        await Assert.That(allScheduledActivities).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Response_Headers_Output()
     {
         // Arrange
@@ -162,12 +163,12 @@ public class SendHttpRequestTests
         // Assert
         var responseHeadersObj = context.GetActivityOutput(() => sendHttpRequest.ResponseHeaders);
         var responseHeaders = responseHeadersObj as HttpHeaders;
-        Assert.NotNull(responseHeaders);
-        Assert.True(responseHeaders.ContainsKey("Custom-Header"));
-        Assert.True(responseHeaders.ContainsKey("X-Rate-Limit"));
+        await Assert.That(responseHeaders).IsNotNull();
+        await Assert.That(responseHeaders.ContainsKey("Custom-Header")).IsTrue();
+        await Assert.That(responseHeaders.ContainsKey("X-Rate-Limit")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public void Should_Have_Correct_Activity_Attributes()
     {
         var fixture = new ActivityTestFixture(new SendHttpRequest());

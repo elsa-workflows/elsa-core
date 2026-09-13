@@ -1,10 +1,11 @@
 using Elsa.Diagnostics.OpenTelemetry.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Providers;
 
 public class OpenTelemetryTraceQueryTests
 {
-    [Fact]
+    [Test]
     public async Task QueryTracesAsync_WhenFilteringByServiceName_ReturnsMatchingResourceTraces()
     {
         var context = new OpenTelemetryStoreTestContext();
@@ -14,10 +15,11 @@ public class OpenTelemetryTraceQueryTests
 
         var result = await context.Store.QueryTracesAsync(new OpenTelemetryTraceFilter { ServiceName = "api" });
 
-        Assert.Equal("trace-api", Assert.Single(result.Items).TraceId);
+        var trace = await Assert.That(result.Items).HasSingleItem();
+        await Assert.That(trace.TraceId).IsEqualTo("trace-api");
     }
 
-    [Fact]
+    [Test]
     public async Task GetTraceAsync_ReturnsOrderedSpansResourcesAndTraceLogs()
     {
         var context = new OpenTelemetryStoreTestContext();
@@ -30,9 +32,11 @@ public class OpenTelemetryTraceQueryTests
 
         var detail = await context.Store.GetTraceAsync(trace.TraceId);
 
-        Assert.NotNull(detail);
-        Assert.Equal(["span-1", "span-2"], detail.Spans.Select(x => x.SpanId));
-        Assert.Equal(resource.Id, Assert.Single(detail.Resources).Id);
-        Assert.Equal(log.Id, Assert.Single(detail.Logs).Id);
+        await Assert.That(detail).IsNotNull();
+        await Assert.That(detail.Spans.Select(x => x.SpanId)).IsEquivalentTo(["span-1", "span-2"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var detailResource = await Assert.That(detail.Resources).HasSingleItem();
+        var detailLog = await Assert.That(detail.Logs).HasSingleItem();
+        await Assert.That(detailResource.Id).IsEqualTo(resource.Id);
+        await Assert.That(detailLog.Id).IsEqualTo(log.Id);
     }
 }

@@ -1,4 +1,5 @@
 using Elsa.Common.Codecs;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Codecs;
 
@@ -6,7 +7,7 @@ public class ZstdTests
 {
     private readonly Zstd _codec = new();
 
-    [Fact]
+    [Test]
     public async Task CompressAsync_WithSimpleString_ReturnsCompressedString()
     {
         // Arrange
@@ -16,16 +17,16 @@ public class ZstdTests
         var result = await _codec.CompressAsync(input);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotEmpty(result);
-        Assert.NotEqual(input, result);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result).IsNotEmpty();
+        await Assert.That(result).IsNotEqualTo(input);
     }
 
-    [Theory]
-    [InlineData("Hello, World!")]
-    [InlineData("")]
-    [InlineData("Hello! 你好! مرحبا! Здравствуйте! 🎉🎊")]
-    [InlineData("{\"name\":\"John Doe\",\"age\":30,\"city\":\"New York\",\"items\":[1,2,3,4,5]}")]
+    [Test]
+    [Arguments("Hello, World!")]
+    [Arguments("")]
+    [Arguments("Hello! 你好! مرحبا! Здравствуйте! 🎉🎊")]
+    [Arguments("{\"name\":\"John Doe\",\"age\":30,\"city\":\"New York\",\"items\":[1,2,3,4,5]}")]
     public async Task CompressDecompress_RoundTrip_PreservesOriginalData(string original)
     {
         // Act
@@ -33,10 +34,10 @@ public class ZstdTests
         var decompressed = await _codec.DecompressAsync(compressed);
 
         // Assert
-        Assert.Equal(original, decompressed);
+        await Assert.That(decompressed).IsEquivalentTo(original, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task CompressDecompress_WithLargeString_WorksCorrectly()
     {
         // Arrange
@@ -47,11 +48,11 @@ public class ZstdTests
         var decompressed = await _codec.DecompressAsync(compressed);
 
         // Assert
-        Assert.Equal(original, decompressed);
-        Assert.True(compressed.Length < original.Length, "Compressed string should be smaller than original");
+        await Assert.That(decompressed).IsEquivalentTo(original, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(compressed.Length < original.Length).IsTrue().Because("Compressed string should be smaller than original");
     }
 
-    [Fact]
+    [Test]
     public async Task CompressAsync_MultipleCallsWithSameInput_ProducesConsistentResults()
     {
         // Arrange
@@ -62,6 +63,6 @@ public class ZstdTests
         var result2 = await _codec.CompressAsync(input);
 
         // Assert
-        Assert.Equal(result1, result2);
+        await Assert.That(result2).IsEquivalentTo(result1, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 }

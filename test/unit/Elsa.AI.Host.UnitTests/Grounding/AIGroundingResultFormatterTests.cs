@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Elsa.AI.Host.Options;
 using Elsa.AI.Host.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
@@ -16,8 +17,9 @@ public class AIGroundingResultFormatterTests
         }
     }));
 
-    [Fact(DisplayName = "Formatter redacts sensitive keys before returning tool data")]
-    public void FormatterRedactsSensitiveKeys()
+    [Test]
+    [DisplayName("Formatter redacts sensitive keys before returning tool data")]
+    public async Task FormatterRedactsSensitiveKeys()
     {
         var result = _formatter.CreateResult(
             "done",
@@ -33,18 +35,19 @@ public class AIGroundingResultFormatterTests
 
         var item = result.Data["items"]!.AsArray()[0]!.AsObject();
 
-        Assert.Equal("HTTP", item["name"]!.GetValue<string>());
-        Assert.Equal("***", item["apiKey"]!.GetValue<string>());
-        Assert.Equal("***", item["nested"]!.AsObject()["password"]!.GetValue<string>());
+        await Assert.That(item["name"]!.GetValue<string>()).IsEqualTo("HTTP");
+        await Assert.That(item["apiKey"]!.GetValue<string>()).IsEqualTo("***");
+        await Assert.That(item["nested"]!.AsObject()["password"]!.GetValue<string>()).IsEqualTo("***");
     }
 
-    [Fact(DisplayName = "Formatter clamps result item count")]
-    public void FormatterClampsResultItems()
+    [Test]
+    [DisplayName("Formatter clamps result item count")]
+    public async Task FormatterClampsResultItems()
     {
         var result = _formatter.CreateResult("done", [new JsonObject { ["id"] = "1" }, new JsonObject { ["id"] = "2" }], 2);
 
-        Assert.True(result.Data["truncated"]!.GetValue<bool>());
-        Assert.Equal(1, result.Data["returned"]!.GetValue<int>());
-        Assert.Single(result.Data["items"]!.AsArray());
+        await Assert.That(result.Data["truncated"]!.GetValue<bool>()).IsTrue();
+        await Assert.That(result.Data["returned"]!.GetValue<int>()).IsEqualTo(1);
+        await Assert.That(result.Data["items"]!.AsArray()).HasSingleItem();
     }
 }

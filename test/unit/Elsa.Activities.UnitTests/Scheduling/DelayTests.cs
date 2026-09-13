@@ -6,16 +6,17 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Scheduling;
 
 public class DelayTests
 {
-    [Theory]
-    [InlineData(1, 0, 0)]    // 1 hour
-    [InlineData(0, 30, 0)]   // 30 minutes
-    [InlineData(0, 0, 45)]   // 45 seconds
-    [InlineData(24, 0, 0)]   // 1 day
+    [Test]
+    [Arguments(1, 0, 0)]    // 1 hour
+    [Arguments(0, 30, 0)]   // 30 minutes
+    [Arguments(0, 0, 45)]   // 45 seconds
+    [Arguments(24, 0, 0)]   // 1 day
     public async Task CreatesBookmark_WithCorrectResumeTime(int hours, int minutes, int seconds)
     {
         // Arrange
@@ -30,13 +31,13 @@ public class DelayTests
         var context = await ExecuteAsync(activity, clock);
 
         // Assert
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        var payload = GetDelayPayload(context);
-        Assert.Equal(expectedResumeAt, payload.ResumeAt);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        var payload = await GetDelayPayload(context);
+        await Assert.That(payload.ResumeAt).IsEqualTo(expectedResumeAt);
     }
 
-    [Theory]
-    [MemberData(nameof(FactoryMethodTestCases))]
+    [Test]
+    [MethodDataSource(nameof(FactoryMethodTestCases))]
     public async Task FactoryMethods_CreateCorrectTimeSpans(Delay activity, TimeSpan expected)
     {
         // Arrange
@@ -47,17 +48,17 @@ public class DelayTests
         var context = await ExecuteAsync(activity, clock);
 
         // Assert
-        var payload = GetDelayPayload(context);
-        Assert.Equal(now.Add(expected), payload.ResumeAt);
+        var payload = await GetDelayPayload(context);
+        await Assert.That(payload.ResumeAt).IsEqualTo(now.Add(expected));
     }
 
-    public static TheoryData<Delay, TimeSpan> FactoryMethodTestCases() => new()
-    {
-        { Delay.FromSeconds(30), TimeSpan.FromSeconds(30) },
-        { Delay.FromMinutes(5), TimeSpan.FromMinutes(5) },
-        { Delay.FromHours(2), TimeSpan.FromHours(2) },
-        { Delay.FromDays(1), TimeSpan.FromDays(1) }
-    };
+    public static IEnumerable<Func<(Delay, TimeSpan)>> FactoryMethodTestCases() =>
+    [
+        () => (Delay.FromSeconds(30), TimeSpan.FromSeconds(30)),
+        () => (Delay.FromMinutes(5), TimeSpan.FromMinutes(5)),
+        () => (Delay.FromHours(2), TimeSpan.FromHours(2)),
+        () => (Delay.FromDays(1), TimeSpan.FromDays(1))
+    ];
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(Delay activity, ISystemClock clock)
     {
@@ -73,10 +74,11 @@ public class DelayTests
         return clock;
     }
 
-    private static DelayPayload GetDelayPayload(ActivityExecutionContext context)
+    private static async Task<DelayPayload> GetDelayPayload(ActivityExecutionContext context)
     {
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        Assert.Equal(SchedulingStimulusNames.Delay, bookmark.Name);
-        return Assert.IsType<DelayPayload>(bookmark.Payload);
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(bookmark.Name).IsEqualTo(SchedulingStimulusNames.Delay);
+        await Assert.That(bookmark.Payload).IsOfType(typeof(DelayPayload));
+        return (DelayPayload)bookmark.Payload!;
     }
 }

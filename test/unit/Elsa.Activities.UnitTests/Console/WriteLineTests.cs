@@ -2,6 +2,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 // ReSharper disable MethodHasAsyncOverload
 
 namespace Elsa.Activities.UnitTests.Console;
@@ -18,9 +19,9 @@ public class WriteLineTests
         _mockProvider.GetTextWriter().Returns(_mockTextWriter);
     }
     
-    [Theory]
-    [InlineData("Hello, World!")]
-    [InlineData("")]
+    [Test]
+    [Arguments("Hello, World!")]
+    [Arguments("")]
     public async Task Should_Write_Text_To_Output(string expectedText)
     {
         // Arrange
@@ -33,7 +34,7 @@ public class WriteLineTests
         _mockTextWriter.Received(1).WriteLine(expectedText);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Write_Null_Value_To_Output()
     {
         // Arrange
@@ -46,7 +47,7 @@ public class WriteLineTests
         _mockTextWriter.Received(1).WriteLine(Arg.Is<string?>(s => s == null));
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_Default_Provider_When_None_Configured()
     {
         // Arrange
@@ -54,9 +55,7 @@ public class WriteLineTests
         var writeLine = new WriteLine(textToWrite);
 
         // Act & Assert - Should not throw exception when no provider is configured
-        var exception = await Record.ExceptionAsync(() => ExecuteAsync(writeLine));
-
-        Assert.Null(exception);
+        await Assert.That(() => ExecuteAsync(writeLine)).ThrowsNothing();
     }
 
     private async Task ExecuteAsync(IActivity activity)

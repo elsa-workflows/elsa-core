@@ -4,33 +4,37 @@ using Elsa.AI.Host.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
 public class WorkflowDraftValidationTests
 {
-    [Fact(DisplayName = "Draft validation reports stale baseline")]
-    public void DraftValidationReportsStaleBaseline()
+    [Test]
+    [DisplayName("Draft validation reports stale baseline")]
+    public async Task DraftValidationReportsStaleBaseline()
     {
         var validator = new WorkflowDraftValidationService(new ServiceCollection().BuildServiceProvider());
 
         var diagnostics = validator.Validate(new JsonObject { ["name"] = "Draft" }, "old-version", "new-version");
 
-        Assert.Contains(diagnostics, x => x.Code == "baseline.stale");
+        await Assert.That(diagnostics).Contains(x => x.Code == "baseline.stale");
     }
 
-    [Fact(DisplayName = "Draft validation reports missing draft")]
-    public void DraftValidationReportsMissingDraft()
+    [Test]
+    [DisplayName("Draft validation reports missing draft")]
+    public async Task DraftValidationReportsMissingDraft()
     {
         var validator = new WorkflowDraftValidationService(new ServiceCollection().BuildServiceProvider());
 
         var diagnostics = validator.Validate([]);
 
-        Assert.Contains(diagnostics, x => x.Code == "draft.empty");
+        await Assert.That(diagnostics).Contains(x => x.Code == "draft.empty");
     }
 
-    [Fact(DisplayName = "Draft validation reports unavailable activity descriptors")]
-    public void DraftValidationReportsUnavailableActivityDescriptors()
+    [Test]
+    [DisplayName("Draft validation reports unavailable activity descriptors")]
+    public async Task DraftValidationReportsUnavailableActivityDescriptors()
     {
         var services = new ServiceCollection();
         services.AddSingleton<IActivityRegistry>(new TestActivityRegistry(new ActivityDescriptor { TypeName = "Elsa.WriteLine", Name = "WriteLine", Version = 1 }));
@@ -47,8 +51,8 @@ public class WorkflowDraftValidationTests
 
         var diagnostics = validator.Validate(draft);
 
-        Assert.Contains(diagnostics, x => x.Code == "activity.unavailable" && x.Message.Contains("Elsa.Missing"));
-        Assert.DoesNotContain(diagnostics, x => x.Message.Contains("Elsa.WriteLine"));
+        await Assert.That(diagnostics).Contains(x => x.Code == "activity.unavailable" && x.Message.Contains("Elsa.Missing"));
+        await Assert.That(diagnostics).DoesNotContain(x => x.Message.Contains("Elsa.WriteLine"));
     }
 
     private class TestActivityRegistry(params ActivityDescriptor[] descriptors) : IActivityRegistry

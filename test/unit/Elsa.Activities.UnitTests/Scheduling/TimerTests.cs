@@ -6,15 +6,16 @@ using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Timer = Elsa.Scheduling.Activities.Timer;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Scheduling;
 
 public class TimerTests
 {
-    [Theory]
-    [InlineData(1, 0, 0)]    // 1 hour
-    [InlineData(0, 30, 0)]   // 30 minutes
-    [InlineData(0, 0, 45)]   // 45 seconds
+    [Test]
+    [Arguments(1, 0, 0)]    // 1 hour
+    [Arguments(0, 30, 0)]   // 30 minutes
+    [Arguments(0, 0, 45)]   // 45 seconds
     public async Task WhenNotTrigger_CreatesBookmarkWithCorrectResumeTime(int hours, int minutes, int seconds)
     {
         // Arrange
@@ -29,12 +30,12 @@ public class TimerTests
         var context = await ExecuteAsync(activity, clock);
 
         // Assert
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        var payload = GetTimerPayload(context);
-        Assert.Equal(expectedResumeAt, payload.ResumeAt);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        var payload = await GetTimerPayload(context);
+        await Assert.That(payload.ResumeAt).IsEqualTo(expectedResumeAt);
     }
 
-    [Fact]
+    [Test]
     public async Task WhenIsTrigger_CompletesImmediately()
     {
         // Arrange
@@ -45,12 +46,12 @@ public class TimerTests
         var context = await ExecuteAsTriggerAsync(activity);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.Empty(context.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).IsEmpty();
     }
 
-    [Theory]
-    [MemberData(nameof(FactoryMethodTestCases))]
+    [Test]
+    [MethodDataSource(nameof(FactoryMethodTestCases))]
     public async Task FactoryMethods_CreateCorrectIntervals(Timer activity, TimeSpan expected)
     {
         // Arrange
@@ -61,15 +62,15 @@ public class TimerTests
         var context = await ExecuteAsync(activity, clock);
 
         // Assert
-        var payload = GetTimerPayload(context);
-        Assert.Equal(now.Add(expected), payload.ResumeAt);
+        var payload = await GetTimerPayload(context);
+        await Assert.That(payload.ResumeAt).IsEqualTo(now.Add(expected));
     }
 
-    public static TheoryData<Timer, TimeSpan> FactoryMethodTestCases() => new()
-    {
-        { Timer.FromSeconds(30), TimeSpan.FromSeconds(30) },
-        { Timer.FromTimeSpan(TimeSpan.FromMinutes(15)), TimeSpan.FromMinutes(15) }
-    };
+    public static IEnumerable<Func<(Timer, TimeSpan)>> FactoryMethodTestCases() =>
+    [
+        () => (Timer.FromSeconds(30), TimeSpan.FromSeconds(30)),
+        () => (Timer.FromTimeSpan(TimeSpan.FromMinutes(15)), TimeSpan.FromMinutes(15))
+    ];
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(Timer activity, ISystemClock clock)
     {
@@ -92,10 +93,11 @@ public class TimerTests
         return clock;
     }
 
-    private static TimerBookmarkPayload GetTimerPayload(ActivityExecutionContext context)
+    private static async Task<TimerBookmarkPayload> GetTimerPayload(ActivityExecutionContext context)
     {
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        Assert.Equal(SchedulingStimulusNames.Timer, bookmark.Name);
-        return Assert.IsType<TimerBookmarkPayload>(bookmark.Payload);
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(bookmark.Name).IsEqualTo(SchedulingStimulusNames.Timer);
+        await Assert.That(bookmark.Payload).IsOfType(typeof(TimerBookmarkPayload));
+        return (TimerBookmarkPayload)bookmark.Payload!;
     }
 }

@@ -4,12 +4,13 @@ using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
 using Elsa.Mediator.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.ShellHandlers;
 
 public class MediatorBackgroundTaskTests
 {
-    [Fact]
+    [Test]
     public async Task StartAsync_StartsMediatorCommandProcessor()
     {
         // Arrange
@@ -27,8 +28,8 @@ public class MediatorBackgroundTaskTests
 
             // Assert
             var completedTask = await Task.WhenAny(sink.Handled.Task, Task.Delay(TimeSpan.FromSeconds(5)));
-            Assert.Same(sink.Handled.Task, completedTask);
-            Assert.Equal("hello", await sink.Handled.Task);
+            await Assert.That(completedTask).IsSameReferenceAs(sink.Handled.Task);
+            await Assert.That(await sink.Handled.Task).IsEqualTo("hello");
         }
         finally
         {
@@ -36,7 +37,7 @@ public class MediatorBackgroundTaskTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task StopAsync_KeepsProcessorRunning_UntilAllBackgroundTaskReferencesStop()
     {
         // Arrange
@@ -59,8 +60,8 @@ public class MediatorBackgroundTaskTests
 
             // Assert
             var completedTask = await Task.WhenAny(sink.Handled.Task, Task.Delay(TimeSpan.FromSeconds(5)));
-            Assert.Same(sink.Handled.Task, completedTask);
-            Assert.Equal("hello", await sink.Handled.Task);
+            await Assert.That(completedTask).IsSameReferenceAs(sink.Handled.Task);
+            await Assert.That(await sink.Handled.Task).IsEqualTo("hello");
         }
         finally
         {

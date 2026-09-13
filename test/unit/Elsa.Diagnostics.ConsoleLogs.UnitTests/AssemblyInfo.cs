@@ -1,3 +1,1 @@
-using Xunit;
-
-[assembly: CollectionBehavior(DisableTestParallelization = true)]
+[assembly: TUnit.Core.NotInParallel(Elsa.Diagnostics.ConsoleLogs.UnitTests.ConsoleHostStateCollection.Name)]

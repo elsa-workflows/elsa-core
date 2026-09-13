@@ -1,11 +1,12 @@
 using Elsa.Diagnostics.OpenTelemetry.Models;
 using Elsa.Diagnostics.OpenTelemetry.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Providers;
 
 public class InMemoryOpenTelemetryStoreTests
 {
-    [Fact]
+    [Test]
     public async Task WriteAsync_WhenTraceCapacityIsExceeded_DropsOldestTraceAndReportsCount()
     {
         var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions
@@ -24,13 +25,13 @@ public class InMemoryOpenTelemetryStoreTests
         var result = await context.Store.QueryTracesAsync(new OpenTelemetryTraceFilter { Take = 10 });
         var diagnostics = await context.Store.GetDiagnosticsAsync();
 
-        Assert.Equal(["trace-2", "trace-3"], result.Items.Select(x => x.TraceId));
-        Assert.Equal(1, result.DroppedCount);
-        Assert.Equal(1, diagnostics.DroppedTraceCount);
-        Assert.Equal(2, diagnostics.TraceCount);
+        await Assert.That(result.Items.Select(x => x.TraceId)).IsEquivalentTo(["trace-2", "trace-3"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.DroppedCount).IsEqualTo(1);
+        await Assert.That(diagnostics.DroppedTraceCount).IsEqualTo(1);
+        await Assert.That(diagnostics.TraceCount).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task QueryResourcesAsync_WhenTakeExceedsMaxQuerySize_ClampsResult()
     {
         var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions { MaxQuerySize = 1 });
@@ -39,10 +40,10 @@ public class InMemoryOpenTelemetryStoreTests
 
         var result = await context.Store.QueryResourcesAsync(new OpenTelemetryResourceFilter { Take = 10 });
 
-        Assert.Single(result.Items);
+        await Assert.That(result.Items).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task QueryTracesAsync_WhenTraceIdAppearsInMultipleBatches_ReturnsLatestTrace()
     {
         var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions { TraceCapacity = 10 });
@@ -53,11 +54,11 @@ public class InMemoryOpenTelemetryStoreTests
 
         var result = await context.Store.QueryTracesAsync(new OpenTelemetryTraceFilter { Take = 10 });
 
-        var trace = Assert.Single(result.Items);
-        Assert.Equal(context.Now.AddSeconds(2), trace.StartTime);
+        var trace = await Assert.That(result.Items).HasSingleItem();
+        await Assert.That(trace.StartTime).IsEqualTo(context.Now.AddSeconds(2));
     }
 
-    [Fact]
+    [Test]
     public async Task WriteAsync_WhenResourceCapacityIsExceeded_DropsOldestResource()
     {
         var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions { ResourceCapacity = 2 });
@@ -72,11 +73,11 @@ public class InMemoryOpenTelemetryStoreTests
 
         var result = await context.Store.QueryResourcesAsync(new OpenTelemetryResourceFilter { Take = 10 });
 
-        Assert.Equal(["resource-c", "resource-b"], result.Items.Select(x => x.Id));
-        Assert.Equal(1, result.DroppedCount);
+        await Assert.That(result.Items.Select(x => x.Id)).IsEquivalentTo(["resource-c", "resource-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.DroppedCount).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task Constructor_WhenCapacitiesAreMisconfigured_ClampsToMinimumCapacity()
     {
         var context = new OpenTelemetryStoreTestContext(new OpenTelemetryDiagnosticsOptions
@@ -98,13 +99,13 @@ public class InMemoryOpenTelemetryStoreTests
 
         var diagnostics = await context.Store.GetDiagnosticsAsync();
 
-        Assert.Equal(1, diagnostics.TraceCount);
-        Assert.Equal(1, diagnostics.SpanCount);
-        Assert.Equal(1, diagnostics.MetricPointCount);
-        Assert.Equal(1, diagnostics.LogRecordCount);
-        Assert.Equal(1, diagnostics.TraceCapacity);
-        Assert.Equal(1, diagnostics.SpanCapacity);
-        Assert.Equal(1, diagnostics.MetricPointCapacity);
-        Assert.Equal(1, diagnostics.LogRecordCapacity);
+        await Assert.That(diagnostics.TraceCount).IsEqualTo(1);
+        await Assert.That(diagnostics.SpanCount).IsEqualTo(1);
+        await Assert.That(diagnostics.MetricPointCount).IsEqualTo(1);
+        await Assert.That(diagnostics.LogRecordCount).IsEqualTo(1);
+        await Assert.That(diagnostics.TraceCapacity).IsEqualTo(1);
+        await Assert.That(diagnostics.SpanCapacity).IsEqualTo(1);
+        await Assert.That(diagnostics.MetricPointCapacity).IsEqualTo(1);
+        await Assert.That(diagnostics.LogRecordCapacity).IsEqualTo(1);
     }
 }

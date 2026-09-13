@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using NSubstitute;
 using StateMachineActivity = Elsa.Workflows.Activities.StateMachine.Activities.StateMachine;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.StateMachine;
 
@@ -63,85 +64,90 @@ public class StateMachineTests
         };
     }
 
-    [Fact(DisplayName = "StateMachine schedules initial state entry before outbound triggers")]
+    [Test]
+    [DisplayName("StateMachine schedules initial state entry before outbound triggers")]
     public async Task SchedulesInitialStateEntryBeforeOutboundTriggers()
     {
         var context = await ExecuteAsync();
 
-        Assert.Equal("New", _stateMachine.CurrentState);
-        Assert.True(context.HasScheduledActivity(_newEntry));
-        Assert.False(context.HasScheduledActivity(_payTrigger));
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("New");
+        await Assert.That(context.HasScheduledActivity(_newEntry)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_payTrigger)).IsFalse();
     }
 
-    [Fact(DisplayName = "StateMachine schedules outbound triggers after entry completes")]
+    [Test]
+    [DisplayName("StateMachine schedules outbound triggers after entry completes")]
     public async Task SchedulesOutboundTriggersAfterEntryCompletes()
     {
         var context = await ExecuteAsync();
 
         await CompleteScheduledActivityAsync(context, _newEntry);
 
-        Assert.True(context.HasScheduledActivity(_payTrigger));
-        Assert.True(context.HasScheduledActivity(_cancelTrigger));
-        Assert.Equal(ActivityStatus.Running, context.Status);
+        await Assert.That(context.HasScheduledActivity(_payTrigger)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_cancelTrigger)).IsTrue();
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
     }
 
-    [Fact(DisplayName = "StateMachine executes source exit, accepted transition action, target entry and target triggers")]
+    [Test]
+    [DisplayName("StateMachine executes source exit, accepted transition action, target entry and target triggers")]
     public async Task ExecutesAcceptedTransitionPath()
     {
         var context = await ExecuteAndEnterNewStateAsync();
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
-        Assert.True(context.HasScheduledActivity(_newExit));
-        Assert.False(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_newExit)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsFalse();
 
         await CompleteScheduledActivityAsync(context, _newExit);
-        Assert.True(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsTrue();
 
         await CompleteScheduledActivityAsync(context, _payAction);
-        Assert.Equal("Paid", _stateMachine.CurrentState);
-        Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
-        Assert.True(context.HasScheduledActivity(_paidEntry));
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("Paid");
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Paid");
+        await Assert.That(context.HasScheduledActivity(_paidEntry)).IsTrue();
 
         await CompleteScheduledActivityAsync(context, _paidEntry);
-        Assert.True(context.HasScheduledActivity(_paidTrigger));
-        Assert.Equal(ActivityStatus.Running, context.Status);
+        await Assert.That(context.HasScheduledActivity(_paidTrigger)).IsTrue();
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
     }
 
-    [Fact(DisplayName = "StateMachine exposes source entry, trigger, exit, action and target entry order")]
+    [Test]
+    [DisplayName("StateMachine exposes source entry, trigger, exit, action and target entry order")]
     public async Task AcceptedTransitionExecutesObservableLifecycleOrder()
     {
         var lifecycle = new List<string>();
         var context = await ExecuteAsync();
 
-        Assert.True(context.HasScheduledActivity(_newEntry));
-        Assert.False(context.HasScheduledActivity(_payTrigger));
+        await Assert.That(context.HasScheduledActivity(_newEntry)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_payTrigger)).IsFalse();
 
         await CompleteScheduledActivityAsync(context, _newEntry);
         lifecycle.Add("source entry");
-        Assert.True(context.HasScheduledActivity(_payTrigger));
+        await Assert.That(context.HasScheduledActivity(_payTrigger)).IsTrue();
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
         lifecycle.Add("trigger");
-        Assert.True(context.HasScheduledActivity(_newExit));
-        Assert.False(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_newExit)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsFalse();
 
         await CompleteScheduledActivityAsync(context, _newExit);
         lifecycle.Add("source exit");
-        Assert.True(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsTrue();
 
         await CompleteScheduledActivityAsync(context, _payAction);
         lifecycle.Add("action");
-        Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
-        Assert.True(context.HasScheduledActivity(_paidEntry));
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Paid");
+        await Assert.That(context.HasScheduledActivity(_paidEntry)).IsTrue();
 
         await CompleteScheduledActivityAsync(context, _paidEntry);
         lifecycle.Add("target entry");
-        Assert.True(context.HasScheduledActivity(_paidTrigger));
+        await Assert.That(context.HasScheduledActivity(_paidTrigger)).IsTrue();
 
-        Assert.Equal(new[] { "source entry", "trigger", "source exit", "action", "target entry" }, lifecycle);
+        await Assert.That(lifecycle).IsEquivalentTo(new[] { "source entry", "trigger", "source exit", "action", "target entry" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "StateMachine treats missing transition condition as true")]
+    [Test]
+    [DisplayName("StateMachine treats missing transition condition as true")]
     public async Task MissingConditionAllowsTransition()
     {
         var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
@@ -153,11 +159,12 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
 
-        Assert.Equal("Paid", _stateMachine.CurrentState);
-        Assert.True(context.HasScheduledActivity(_paidTrigger));
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("Paid");
+        await Assert.That(context.HasScheduledActivity(_paidTrigger)).IsTrue();
     }
 
-    [Fact(DisplayName = "StateMachine evaluates a triggerless transition immediately after state entry")]
+    [Test]
+    [DisplayName("StateMachine evaluates a triggerless transition immediately after state entry")]
     public async Task TriggerlessTransitionIsEvaluatedImmediately()
     {
         var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
@@ -167,17 +174,18 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _newEntry);
 
-        Assert.True(context.HasScheduledActivity(_newExit));
-        Assert.False(context.HasScheduledActivity(_cancelTrigger));
+        await Assert.That(context.HasScheduledActivity(_newExit)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_cancelTrigger)).IsFalse();
 
         await CompleteScheduledActivityAsync(context, _newExit);
         await CompleteScheduledActivityAsync(context, _payAction);
 
-        Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
-        Assert.True(context.HasScheduledActivity(_paidEntry));
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Paid");
+        await Assert.That(context.HasScheduledActivity(_paidEntry)).IsTrue();
     }
 
-    [Fact(DisplayName = "StateMachine schedules event triggers when triggerless transition conditions are false")]
+    [Test]
+    [DisplayName("StateMachine schedules event triggers when triggerless transition conditions are false")]
     public async Task FalseTriggerlessConditionAllowsTriggeredTransitions()
     {
         var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
@@ -187,13 +195,14 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _newEntry);
 
-        Assert.Equal("New", _stateMachine.CurrentState);
-        Assert.False(context.HasScheduledActivity(_newExit));
-        Assert.True(context.HasScheduledActivity(_cancelTrigger));
-        Assert.Equal(ActivityStatus.Running, context.Status);
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("New");
+        await Assert.That(context.HasScheduledActivity(_newExit)).IsFalse();
+        await Assert.That(context.HasScheduledActivity(_cancelTrigger)).IsTrue();
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
     }
 
-    [Fact(DisplayName = "StateMachine leaves an all-false triggerless state active without rescheduling")]
+    [Test]
+    [DisplayName("StateMachine leaves an all-false triggerless state active without rescheduling")]
     public async Task AllFalseTriggerlessTransitionsDoNotCompleteOrSpin()
     {
         _stateMachine.Transitions.Remove(_stateMachine.Transitions.Single(x => x.Name == "Cancel"));
@@ -204,15 +213,16 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _newEntry);
 
-        Assert.Equal("New", _stateMachine.CurrentState);
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        Assert.False(context.HasScheduledActivity(_newExit));
-        Assert.False(context.HasScheduledActivity(_payAction));
-        Assert.False(context.HasScheduledActivity(_paidEntry));
-        Assert.DoesNotContain(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context);
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("New");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        await Assert.That(context.HasScheduledActivity(_newExit)).IsFalse();
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsFalse();
+        await Assert.That(context.HasScheduledActivity(_paidEntry)).IsFalse();
+        await Assert.That(context.WorkflowExecutionContext.CompletionCallbacks).DoesNotContain(x => x.Owner == context);
     }
 
-    [Fact(DisplayName = "StateMachine completes after entering a terminal state")]
+    [Test]
+    [DisplayName("StateMachine completes after entering a terminal state")]
     public async Task TerminalStateCompletesStateMachine()
     {
         var stateMachine = new StateMachineActivity
@@ -223,12 +233,13 @@ public class StateMachineTests
 
         var context = await ExecuteAsync(stateMachine);
 
-        Assert.Equal("Done", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.Empty(context.WorkflowExecutionContext.Scheduler.List());
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Done");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.WorkflowExecutionContext.Scheduler.List()).IsEmpty();
     }
 
-    [Fact(DisplayName = "StateMachine accepts the first eligible triggerless transition in declaration order")]
+    [Test]
+    [DisplayName("StateMachine accepts the first eligible triggerless transition in declaration order")]
     public async Task TriggerlessTransitionsUseDeclarationOrder()
     {
         var stateMachine = new StateMachineActivity
@@ -249,11 +260,12 @@ public class StateMachineTests
 
         var context = await ExecuteAsync(stateMachine);
 
-        Assert.Equal("First", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("First");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 
-    [Fact(DisplayName = "StateMachine yields an empty triggerless self-cycle to the workflow scheduler")]
+    [Test]
+    [DisplayName("StateMachine yields an empty triggerless self-cycle to the workflow scheduler")]
     public async Task EmptyTriggerlessSelfCycleYieldsToScheduler()
     {
         var stateMachine = new StateMachineActivity
@@ -268,18 +280,19 @@ public class StateMachineTests
 
         var context = await ExecuteAsync(stateMachine);
 
-        Assert.Equal("A", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Running, context.Status);
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("A");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
 
         var continuation = context.WorkflowExecutionContext.Scheduler.Take();
         await CompleteScheduledActivityAsync(context, continuation.Activity);
 
-        Assert.Equal("A", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        Assert.Single(context.WorkflowExecutionContext.Scheduler.List());
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("A");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        await Assert.That(context.WorkflowExecutionContext.Scheduler.List()).HasSingleItem();
     }
 
-    [Fact(DisplayName = "StateMachine yields an empty triggerless two-state cycle to the workflow scheduler")]
+    [Test]
+    [DisplayName("StateMachine yields an empty triggerless two-state cycle to the workflow scheduler")]
     public async Task EmptyTriggerlessTwoStateCycleYieldsToScheduler()
     {
         var stateMachine = new StateMachineActivity
@@ -299,18 +312,19 @@ public class StateMachineTests
 
         var context = await ExecuteAsync(stateMachine);
 
-        Assert.Equal("B", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Running, context.Status);
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("B");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
 
         var continuation = context.WorkflowExecutionContext.Scheduler.Take();
         await CompleteScheduledActivityAsync(context, continuation.Activity);
 
-        Assert.Equal("A", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        Assert.Single(context.WorkflowExecutionContext.Scheduler.List());
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("A");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        await Assert.That(context.WorkflowExecutionContext.Scheduler.List()).HasSingleItem();
     }
 
-    [Fact(DisplayName = "StateMachine resumes an automatic cycle continuation after state persistence")]
+    [Test]
+    [DisplayName("StateMachine resumes an automatic cycle continuation after state persistence")]
     public async Task AutomaticCycleContinuationSurvivesStateRoundTrip()
     {
         var stateMachine = new StateMachineActivity
@@ -327,9 +341,9 @@ public class StateMachineTests
         await fixture.ExecuteAsync(context);
 
         var sourceWorkflowContext = context.WorkflowExecutionContext;
-        var sourceContinuation = Assert.Single(sourceWorkflowContext.Scheduler.List());
-        Assert.Equal(context.Id, sourceContinuation.SchedulingActivityExecutionId);
-        Assert.Single(sourceWorkflowContext.CompletionCallbacks);
+        var sourceContinuation = await Assert.That(sourceWorkflowContext.Scheduler.List()).HasSingleItem();
+        await Assert.That(sourceContinuation.SchedulingActivityExecutionId).IsEqualTo(context.Id);
+        await Assert.That(sourceWorkflowContext.CompletionCallbacks).HasSingleItem();
 
         var extractor = sourceWorkflowContext.GetRequiredService<IWorkflowStateExtractor>();
         var state = extractor.Extract(sourceWorkflowContext);
@@ -341,12 +355,12 @@ public class StateMachineTests
 
         await extractor.ApplyAsync(resumedWorkflowContext, state);
 
-        var resumedStateMachineContext = Assert.Single(resumedWorkflowContext.ActivityExecutionContexts, x => x.Activity == stateMachine);
+        var resumedStateMachineContext = await Assert.That(resumedWorkflowContext.ActivityExecutionContexts).HasSingleItem(x => x.Activity == stateMachine);
         var resumedContinuation = resumedWorkflowContext.Scheduler.Take();
-        Assert.Single(state.CompletionCallbacks);
-        Assert.Equal(resumedStateMachineContext.Id, resumedContinuation.Owner?.Id);
-        Assert.Equal(resumedStateMachineContext.Id, resumedContinuation.SchedulingActivityExecutionId);
-        Assert.Contains(resumedWorkflowContext.CompletionCallbacks, x => x.Owner == resumedStateMachineContext && x.Child.Activity == resumedContinuation.Activity);
+        await Assert.That(state.CompletionCallbacks).HasSingleItem();
+        await Assert.That(resumedContinuation.Owner?.Id).IsEqualTo(resumedStateMachineContext.Id);
+        await Assert.That(resumedContinuation.SchedulingActivityExecutionId).IsEqualTo(resumedStateMachineContext.Id);
+        await Assert.That(resumedWorkflowContext.CompletionCallbacks).Contains(x => x.Owner == resumedStateMachineContext && x.Child.Activity == resumedContinuation.Activity);
 
         var resumedChildContext = await resumedWorkflowContext.CreateActivityExecutionContextAsync(resumedContinuation.Activity, new ActivityInvocationOptions
         {
@@ -358,12 +372,13 @@ public class StateMachineTests
         resumedWorkflowContext.AddActivityExecutionContext(resumedChildContext);
         await resumedContinuation.Activity.ExecuteAsync(resumedChildContext);
 
-        Assert.Equal("A", resumedStateMachineContext.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Running, resumedStateMachineContext.Status);
-        Assert.Single(resumedWorkflowContext.Scheduler.List());
+        await Assert.That(resumedStateMachineContext.GetProperty<string>(CurrentStateProperty)).IsEqualTo("A");
+        await Assert.That(resumedStateMachineContext.Status).IsEqualTo(ActivityStatus.Running);
+        await Assert.That(resumedWorkflowContext.Scheduler.List()).HasSingleItem();
     }
 
-    [Fact(DisplayName = "StateMachine completes a triggerless transition with a composite action")]
+    [Test]
+    [DisplayName("StateMachine completes a triggerless transition with a composite action")]
     public async Task TriggerlessTransitionWithCompositeActionCompletes()
     {
         var stateMachine = new StateMachineActivity
@@ -406,11 +421,12 @@ public class StateMachineTests
         while (context.WorkflowExecutionContext.Scheduler.HasAny)
             await ExecuteNextScheduledActivityAsync(context.WorkflowExecutionContext);
 
-        Assert.Equal("Target", context.GetProperty<string>(CurrentStateProperty));
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Target");
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 
-    [Fact(DisplayName = "StateMachine self-transition executes exit, action and entry in order")]
+    [Test]
+    [DisplayName("StateMachine self-transition executes exit, action and entry in order")]
     public async Task SelfTransitionExecutesExitActionAndEntryInOrder()
     {
         var transition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
@@ -418,18 +434,19 @@ public class StateMachineTests
         var context = await ExecuteAndEnterNewStateAsync();
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
-        Assert.True(context.HasScheduledActivity(_newExit));
-        Assert.False(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_newExit)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsFalse();
 
         await CompleteScheduledActivityAsync(context, _newExit);
-        Assert.True(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsTrue();
 
         await CompleteScheduledActivityAsync(context, _payAction);
-        Assert.Equal("New", _stateMachine.CurrentState);
-        Assert.True(context.HasScheduledActivity(_newEntry));
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("New");
+        await Assert.That(context.HasScheduledActivity(_newEntry)).IsTrue();
     }
 
-    [Fact(DisplayName = "StateMachine false transition condition leaves competing triggers active")]
+    [Test]
+    [DisplayName("StateMachine false transition condition leaves competing triggers active")]
     public async Task FalseConditionLeavesCompetingTriggersActive()
     {
         var context = await ExecuteAndEnterNewStateAsync();
@@ -440,14 +457,15 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
 
-        Assert.Equal("New", _stateMachine.CurrentState);
-        Assert.False(context.HasScheduledActivity(_payAction));
-        Assert.Equal(scheduledPayTriggerCount + 1, CountScheduledActivities(context, _payTrigger));
-        Assert.NotEqual(ActivityStatus.Canceled, cancelTriggerContext.Status);
-        Assert.Contains(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(_stateMachine.CurrentState).IsEqualTo("New");
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsFalse();
+        await Assert.That(CountScheduledActivities(context, _payTrigger)).IsEqualTo(scheduledPayTriggerCount + 1);
+        await Assert.That(cancelTriggerContext.Status).IsNotEqualTo(ActivityStatus.Canceled);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).Contains(cancelBookmark);
     }
 
-    [Fact(DisplayName = "StateMachine cancels competing outbound triggers when a transition wins")]
+    [Test]
+    [DisplayName("StateMachine cancels competing outbound triggers when a transition wins")]
     public async Task AcceptedTransitionCancelsCompetingOutboundTriggers()
     {
         var context = await ExecuteAndEnterNewStateAsync();
@@ -456,11 +474,12 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
 
-        Assert.Equal(ActivityStatus.Canceled, cancelTriggerContext.Status);
-        Assert.DoesNotContain(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(cancelTriggerContext.Status).IsEqualTo(ActivityStatus.Canceled);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).DoesNotContain(cancelBookmark);
     }
 
-    [Fact(DisplayName = "StateMachine cancels every distinct competing outbound trigger")]
+    [Test]
+    [DisplayName("StateMachine cancels every distinct competing outbound trigger")]
     public async Task AcceptedTransitionCancelsDistinctCompetingOutboundTriggers()
     {
         var thirdTrigger = new WriteLine("third trigger") { Id = "third-trigger" };
@@ -479,49 +498,53 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
 
-        Assert.Equal(ActivityStatus.Canceled, cancelTriggerContext.Status);
-        Assert.Equal(ActivityStatus.Canceled, thirdTriggerContext.Status);
-        Assert.DoesNotContain(cancelBookmark, context.WorkflowExecutionContext.Bookmarks);
-        Assert.DoesNotContain(thirdBookmark, context.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(cancelTriggerContext.Status).IsEqualTo(ActivityStatus.Canceled);
+        await Assert.That(thirdTriggerContext.Status).IsEqualTo(ActivityStatus.Canceled);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).DoesNotContain(cancelBookmark);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).DoesNotContain(thirdBookmark);
     }
 
-    [Fact(DisplayName = "StateMachine rejects transitions that share a trigger instance")]
+    [Test]
+    [DisplayName("StateMachine rejects transitions that share a trigger instance")]
     public async Task SharedTriggerInstanceIsRejected()
     {
         _stateMachine.Transitions.Single(x => x.Name == "Cancel").Trigger = _payTrigger;
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ExecuteAsync());
+        var exception = (await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => ExecuteAsync()))!;
 
-        Assert.Contains("cannot share a Trigger activity", exception.Message);
+        await Assert.That(exception.Message).Contains("cannot share a Trigger activity");
     }
 
-    [Fact(DisplayName = "StateMachine rejects transition triggers with duplicate activity IDs")]
+    [Test]
+    [DisplayName("StateMachine rejects transition triggers with duplicate activity IDs")]
     public async Task DuplicateTriggerIdIsRejected()
     {
         _cancelTrigger.Id = _payTrigger.Id;
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => ExecuteAsync());
+        var exception = (await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => ExecuteAsync()))!;
 
-        Assert.Contains("unique ID", exception.Message);
+        await Assert.That(exception.Message).Contains("unique ID");
     }
 
-    [Fact(DisplayName = "StateMachine removes re-armed competing triggers when a different transition wins")]
+    [Test]
+    [DisplayName("StateMachine removes re-armed competing triggers when a different transition wins")]
     public async Task AcceptedTransitionRemovesRearmedCompetingTriggers()
     {
         var context = await ExecuteAndEnterNewStateAsync();
         _stateMachine.Transitions.Single(x => x.Name == "Pay").Condition = new(false);
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
-        Assert.True(context.WorkflowExecutionContext.Scheduler.Any(x => x.Activity == _payTrigger));
-        Assert.Contains(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context && x.Child.Activity == _payTrigger);
+        await Assert.That(context.WorkflowExecutionContext.Scheduler.Any(x => x.Activity == _payTrigger)).IsTrue();
+        await Assert.That(context.WorkflowExecutionContext.CompletionCallbacks).Contains(x => x.Owner == context && x.Child.Activity == _payTrigger);
 
         await CompleteScheduledActivityAsync(context, _cancelTrigger);
 
-        Assert.False(context.WorkflowExecutionContext.Scheduler.Any(x => x.Activity == _payTrigger));
-        Assert.DoesNotContain(context.WorkflowExecutionContext.CompletionCallbacks, x => x.Owner == context && x.Child.Activity == _payTrigger);
+        await Assert.That(context.WorkflowExecutionContext.Scheduler.Any(x => x.Activity == _payTrigger)).IsFalse();
+        await Assert.That(context.WorkflowExecutionContext.CompletionCallbacks).DoesNotContain(x => x.Owner == context && x.Child.Activity == _payTrigger);
     }
 
-    [Fact(DisplayName = "StateMachine stores current state in the activity execution context")]
+    [Test]
+    [DisplayName("StateMachine stores current state in the activity execution context")]
     public async Task StoresCurrentStateInActivityExecutionContext()
     {
         var payTransition = _stateMachine.Transitions.Single(x => x.Name == "Pay");
@@ -532,10 +555,11 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, _payTrigger);
 
-        Assert.Equal("Paid", context.GetProperty<string>(CurrentStateProperty));
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Paid");
     }
 
-    [Fact(DisplayName = "StateMachine resolves duplicate unnamed transition endpoints by scheduled transition")]
+    [Test]
+    [DisplayName("StateMachine resolves duplicate unnamed transition endpoints by scheduled transition")]
     public async Task ResolvesDuplicateUnnamedTransitionEndpointsByScheduledTransition()
     {
         var firstTrigger = new WriteLine("first trigger") { Id = "first-trigger" };
@@ -560,11 +584,12 @@ public class StateMachineTests
 
         await CompleteScheduledActivityAsync(context, secondTrigger);
 
-        Assert.False(context.HasScheduledActivity(firstAction));
-        Assert.True(context.HasScheduledActivity(secondAction));
+        await Assert.That(context.HasScheduledActivity(firstAction)).IsFalse();
+        await Assert.That(context.HasScheduledActivity(secondAction)).IsTrue();
     }
 
-    [Fact(DisplayName = "StateMachine resolves duplicate named transitions by current state")]
+    [Test]
+    [DisplayName("StateMachine resolves duplicate named transitions by current state")]
     public async Task ResolvesDuplicateNamedTransitionsByCurrentState()
     {
         var payTrigger = new WriteLine("pay trigger") { Id = "pay-duplicate-trigger" };
@@ -591,10 +616,11 @@ public class StateMachineTests
         await CompleteScheduledActivityAsync(context, payTrigger);
         await CompleteScheduledActivityAsync(context, paidCancelTrigger);
 
-        Assert.Equal("Closed", context.GetProperty<string>(CurrentStateProperty));
+        await Assert.That(context.GetProperty<string>(CurrentStateProperty)).IsEqualTo("Closed");
     }
 
-    [Fact(DisplayName = "StateMachine ignores stale transition action completions")]
+    [Test]
+    [DisplayName("StateMachine ignores stale transition action completions")]
     public async Task IgnoresStaleTransitionActionCompletions()
     {
         var context = await ExecuteAndEnterNewStateAsync();
@@ -604,10 +630,11 @@ public class StateMachineTests
         context.SetProperty(CurrentStateProperty, "Paid");
         await CompleteScheduledActivityAsync(context, _payAction);
 
-        Assert.False(context.HasScheduledActivity(_paidEntry));
+        await Assert.That(context.HasScheduledActivity(_paidEntry)).IsFalse();
     }
 
-    [Fact(DisplayName = "StateMachine ignores stale state exit completions")]
+    [Test]
+    [DisplayName("StateMachine ignores stale state exit completions")]
     public async Task IgnoresStaleStateExitCompletions()
     {
         var context = await ExecuteAndEnterNewStateAsync();
@@ -616,7 +643,7 @@ public class StateMachineTests
         context.SetProperty(CurrentStateProperty, "Paid");
         await CompleteScheduledActivityAsync(context, _newExit);
 
-        Assert.False(context.HasScheduledActivity(_payAction));
+        await Assert.That(context.HasScheduledActivity(_payAction)).IsFalse();
     }
 
     private async Task<ActivityExecutionContext> ExecuteAndEnterNewStateAsync()
@@ -649,7 +676,7 @@ public class StateMachineTests
         var childContext = await CreateScheduledActivityContextAsync(ownerContext, activity);
         var callback = PopCallback(ownerContext, activity);
 
-        Assert.NotNull(callback?.CompletionCallback);
+        await Assert.That(callback?.CompletionCallback is not null).IsTrue();
         ownerContext.Tag = callback!.Tag;
         await callback.CompletionCallback!(new ActivityCompletedContext(ownerContext, childContext));
     }

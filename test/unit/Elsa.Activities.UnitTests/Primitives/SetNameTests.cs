@@ -1,11 +1,13 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class SetNameTests
 {
-    [Fact(DisplayName = "SetName sets workflow name and completes successfully")]
+    [Test]
+    [DisplayName("SetName sets workflow name and completes successfully")]
     public async Task Should_Set_Workflow_Name_And_Complete()
     {
         // Arrange
@@ -15,34 +17,36 @@ public class SetNameTests
         var context = await ExecuteAsync(name);
 
         // Assert
-        Assert.Equal(name, context.WorkflowExecutionContext.Name);
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.WorkflowExecutionContext.Name).IsEqualTo(name);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 
-    [Theory(DisplayName = "SetName handles various name values")]
-    [InlineData("Simple Name")]
-    [InlineData("Name-With-Dashes")]
-    [InlineData("Name_With_Underscores")]
-    [InlineData("Name.With.Dots")]
-    [InlineData("123 Numeric Name")]
-    [InlineData("")]
+    [Test]
+    [DisplayName("SetName handles various name values")]
+    [Arguments("Simple Name")]
+    [Arguments("Name-With-Dashes")]
+    [Arguments("Name_With_Underscores")]
+    [Arguments("Name.With.Dots")]
+    [Arguments("123 Numeric Name")]
+    [Arguments("")]
     public async Task Should_Handle_Various_Name_Values(string name)
     {
         // Act
         var context = await ExecuteAsync(name);
 
         // Assert
-        Assert.Equal(name, context.WorkflowExecutionContext.Name);
+        await Assert.That(context.WorkflowExecutionContext.Name).IsEqualTo(name);
     }
 
-    [Fact(DisplayName = "SetName handles null value")]
+    [Test]
+    [DisplayName("SetName handles null value")]
     public async Task Should_Handle_Null_Value()
     {
         // Act
         var context = await ExecuteAsync(null!);
 
         // Assert
-        Assert.Null(context.WorkflowExecutionContext.Name);
+        await Assert.That(context.WorkflowExecutionContext.Name).IsNull();
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(string name)

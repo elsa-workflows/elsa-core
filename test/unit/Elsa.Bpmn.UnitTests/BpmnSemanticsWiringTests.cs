@@ -1,14 +1,15 @@
 using Bpmn.Semantics;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
 public class BpmnSemanticsWiringTests
 {
-    [Fact]
-    public void CreateDefault_ReturnsInterpreter()
+    [Test]
+    public async Task CreateDefault_ReturnsInterpreter()
     {
         var interpreter = BpmnInterpreter.CreateDefault();
 
-        Assert.NotNull(interpreter);
+        await Assert.That(interpreter).IsNotNull();
     }
 }

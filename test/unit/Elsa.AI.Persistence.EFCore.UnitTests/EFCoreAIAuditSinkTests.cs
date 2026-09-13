@@ -3,16 +3,19 @@ using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Threading.Tasks;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.AI.Persistence.EFCore.UnitTests;
 
-public class EFCoreAIAuditSinkTests : IAsyncLifetime
+public class EFCoreAIAuditSinkTests : IAsyncInitializer, IAsyncDisposable
 {
     private static readonly NullLogger<EFCoreAIAuditSink> AuditLogger = NullLogger<EFCoreAIAuditSink>.Instance;
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private AIDbContext _dbContext = default!;
 
-    [Fact(DisplayName = "Audit sink persists audit records")]
+    [Test]
+    [DisplayName("Audit sink persists audit records")]
     public async Task AuditSinkPersistsAuditRecords()
     {
         var sink = new EFCoreAIAuditSink(_dbContext, AuditLogger);
@@ -28,11 +31,12 @@ public class EFCoreAIAuditSinkTests : IAsyncLifetime
         });
 
         var record = await _dbContext.AuditRecords.SingleAsync();
-        Assert.Equal("prompt.submitted", record.Type);
-        Assert.Equal("Prompt submitted", record.Summary);
+        await Assert.That(record.Type).IsEqualTo("prompt.submitted");
+        await Assert.That(record.Summary).IsEqualTo("Prompt submitted");
     }
 
-    [Fact(DisplayName = "Audit sink persists events with generated IDs")]
+    [Test]
+    [DisplayName("Audit sink persists events with generated IDs")]
     public async Task AuditSinkPersistsEventsWithGeneratedIds()
     {
         var sink = new EFCoreAIAuditSink(_dbContext, AuditLogger);
@@ -45,10 +49,11 @@ public class EFCoreAIAuditSinkTests : IAsyncLifetime
         });
 
         var record = await _dbContext.AuditRecords.SingleAsync();
-        Assert.False(string.IsNullOrWhiteSpace(record.Id));
+        await Assert.That(string.IsNullOrWhiteSpace(record.Id)).IsFalse();
     }
 
-    [Fact(DisplayName = "Audit sink batches audit records")]
+    [Test]
+    [DisplayName("Audit sink batches audit records")]
     public async Task AuditSinkBatchesAuditRecords()
     {
         var sink = new EFCoreAIAuditSink(_dbContext, AuditLogger);
@@ -71,10 +76,11 @@ public class EFCoreAIAuditSinkTests : IAsyncLifetime
         ]);
 
         var types = await _dbContext.AuditRecords.OrderBy(x => x.Id).Select(x => x.Type).ToListAsync();
-        Assert.Equal(["tool.invoked", "tool.completed"], types);
+        await Assert.That(types).IsEquivalentTo(["tool.invoked", "tool.completed"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Audit sink rolls back batch records when a batch record fails")]
+    [Test]
+    [DisplayName("Audit sink rolls back batch records when a batch record fails")]
     public async Task AuditSinkRollsBackBatchRecordsWhenBatchRecordFails()
     {
         var sink = new EFCoreAIAuditSink(_dbContext, AuditLogger);
@@ -96,7 +102,7 @@ public class EFCoreAIAuditSinkTests : IAsyncLifetime
             }
         ]);
 
-        Assert.False(await _dbContext.AuditRecords.AnyAsync());
+        await Assert.That(await _dbContext.AuditRecords.AnyAsync()).IsFalse();
     }
 
     public async Task InitializeAsync()
@@ -106,7 +112,7 @@ public class EFCoreAIAuditSinkTests : IAsyncLifetime
         await _dbContext.Database.MigrateAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _dbContext.DisposeAsync();
         await _connection.DisposeAsync();

@@ -3,14 +3,15 @@ using Elsa.Workflows;
 using Elsa.Workflows.Behaviors;
 using Elsa.Workflows.Exceptions;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Looping;
 
 public class WhileTests
 {
-    [Theory]
-    [InlineData(false, 0)]
-    [InlineData(true, 1)]
+    [Test]
+    [Arguments(false, 0)]
+    [Arguments(true, 1)]
     public async Task Should_Schedule_Body_Based_On_Condition(bool conditionValue, int expectedScheduledCount)
     {
         // Arrange
@@ -22,15 +23,15 @@ public class WhileTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Equal(expectedScheduledCount, scheduledActivities.Count);
+        await Assert.That(scheduledActivities.Count).IsEqualTo(expectedScheduledCount);
 
         if (expectedScheduledCount > 0)
         {
-            Assert.Equal(bodyActivity, scheduledActivities.First().Activity);
+            await Assert.That(scheduledActivities.First().Activity).IsEqualTo(bodyActivity);
         }
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_True_Factory_Method()
     {
         // Arrange
@@ -42,13 +43,13 @@ public class WhileTests
 
         // Assert
         var hasBodyScheduledActivity = context.HasScheduledActivity(bodyActivity);
-        Assert.True(hasBodyScheduledActivity);
+        await Assert.That(hasBodyScheduledActivity).IsTrue();
     }
 
-    [Theory]
-    [InlineData(1)]
-    [InlineData(5)]
-    [InlineData(10)]
+    [Test]
+    [Arguments(1)]
+    [Arguments(5)]
+    [Arguments(10)]
     public async Task Should_Evaluate_Condition_Before_Each_Iteration(int maxIterations)
     {
         // Arrange - Create separate condition functions for each test case to verify 
@@ -74,19 +75,19 @@ public class WhileTests
             var context = await ExecuteAsync(whileActivity);
             
             // Assert this iteration
-            Assert.Equal(iteration, conditionEvaluationCount); // Condition evaluated exactly once per execution
-            Assert.True(context.HasScheduledActivity(bodyActivity)); // Body should be scheduled because condition is true
+            await Assert.That(conditionEvaluationCount).IsEqualTo(iteration); // Condition evaluated exactly once per execution
+            await Assert.That(context.HasScheduledActivity(bodyActivity)).IsTrue(); // Body should be scheduled because condition is true
         }
         
         // Execute one final time - this should make the condition false and not schedule the body
         var finalContext = await ExecuteAsync(whileActivity);
         
         // Assert final execution
-        Assert.Equal(maxIterations + 1, conditionEvaluationCount); // One final evaluation that returns false
-        Assert.False(finalContext.HasScheduledActivity(bodyActivity)); // Body NOT scheduled because condition is false
+        await Assert.That(conditionEvaluationCount).IsEqualTo(maxIterations + 1); // One final evaluation that returns false
+        await Assert.That(finalContext.HasScheduledActivity(bodyActivity)).IsFalse(); // Body NOT scheduled because condition is false
     }
     
-    [Fact]
+    [Test]
     public async Task Should_Throw_When_Condition_Is_Not_Set()
     {
         // Arrange
@@ -101,10 +102,10 @@ public class WhileTests
         var context = await ExecuteAsync(whileActivity);
     
         // Assert - with condition false, body should not be scheduled
-        Assert.False(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsFalse();
     }
     
-    [Fact]
+    [Test]
     public async Task Should_Throw_InputEvaluationException_WhenExceptionFromCondition_And_Not_Schedule_Body()
     {
         // Arrange
@@ -116,13 +117,13 @@ public class WhileTests
     
         // Act
         // Any exception from condition evaluation throws InputEvaluationException
-        var ex = await Assert.ThrowsAsync<InputEvaluationException>(() => ExecuteAsync(whileActivity));
+        var ex = (await Assert.ThrowsExactlyAsync<InputEvaluationException>(() => ExecuteAsync(whileActivity)))!;
     
         // Assert
-        Assert.Contains("Failed to evaluate activity input", ex.Message);
+        await Assert.That(ex.Message).Contains("Failed to evaluate activity input");
     }
     
-    [Fact]
+    [Test]
     public async Task BodyIsNull_DoesNotSchedule()
     {
         // Arrange
@@ -135,10 +136,10 @@ public class WhileTests
 
         // Assert
         var scheduled = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(scheduled);
+        await Assert.That(scheduled).IsEmpty();
     }
     
-    [Fact]
+    [Test]
     public async Task BodyThrows_ActivitySchedules_WithoutBreaking()
     {
         // Arrange
@@ -150,11 +151,11 @@ public class WhileTests
     
         // Act + Assert
         var context = await ExecuteAsync(whileActivity);
-        Assert.NotNull(context);
-        Assert.True(context.HasScheduledActivity(body));
+        await Assert.That(context).IsNotNull();
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
     }
     
-    [Fact]
+    [Test]
     public async Task Should_Use_Latest_Captured_State_When_Evaluating_Condition()
     {
         // Arrange
@@ -174,10 +175,10 @@ public class WhileTests
         var context = await ExecuteAsync(whileActivity);
 
         // Assert
-        Assert.True(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
     }
     
-    [Fact]
+    [Test]
     public async Task ConditionFalseInitially_EvaluatesOnce_AndDoesNotSchedule()
     {
         // Arrange
@@ -192,11 +193,11 @@ public class WhileTests
         var context = await ExecuteAsync(whileActivity);
 
         // Assert
-        Assert.Equal(1, evals);
-        Assert.False(context.HasScheduledActivity(body));
+        await Assert.That(evals).IsEqualTo(1);
+        await Assert.That(context.HasScheduledActivity(body)).IsFalse();
     }
     
-    [Fact]
+    [Test]
     public async Task DoesNotScheduleBodyTwice_InSingleExecution()
     {
         // Arrange
@@ -208,12 +209,12 @@ public class WhileTests
         var all = context.WorkflowExecutionContext.Scheduler.List()
             .Where(x => x.Activity == body)
             .ToList();
-        Assert.Single(all);
+        await Assert.That(all).HasSingleItem();
     }
 
     // Break behavior registered (parity with For).
-    [Fact]
-    public void VerifyBreakBehaviorIsRegistered()
+    [Test]
+    public async Task VerifyBreakBehaviorIsRegistered()
     {
         // Arrange
         var whileActivity = new While(body: null);
@@ -222,7 +223,7 @@ public class WhileTests
         var breakBehavior = whileActivity.Behaviors.OfType<BreakBehavior>().FirstOrDefault();
     
         // Assert
-        Assert.NotNull(breakBehavior);
+        await Assert.That(breakBehavior).IsNotNull();
     }
 
     private class MockBodyActivity : Activity        {

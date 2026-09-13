@@ -3,15 +3,16 @@ using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Behaviors;
 using Elsa.Workflows.Exceptions;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Looping;
 
 public class ForTests
 {
-    [Theory]
-    [InlineData(1, 3, 1)] // Ascending loop
-    [InlineData(5, 1, -1)] // Descending loop  
-    [InlineData(-1, -5, -1)] // Descending negative loop
+    [Test]
+    [Arguments(1, 3, 1)] // Ascending loop
+    [Arguments(5, 1, -1)] // Descending loop
+    [Arguments(-1, -5, -1)] // Descending negative loop
     public async Task ExecutesValidLoopConfigurations_SchedulesChildActivity(int start, int end, int step)
     {
         // Arrange
@@ -24,17 +25,17 @@ public class ForTests
 
         // Assert
         var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-        Assert.Equal(start, currentValue);
-        
+        await Assert.That(currentValue).IsEqualTo(start);
+
         // Verify that child activity is scheduled for valid configurations
-        Assert.True(context.HasScheduledActivity(mockBody), "Expected child activity to be scheduled");
+        await Assert.That(context.HasScheduledActivity(mockBody)).IsTrue().Because("Expected child activity to be scheduled");
     }
 
-    [Theory]
-    [InlineData(1, 3, true)] // Inclusive bounds
-    [InlineData(1, 3, false)] // Exclusive bounds
-    [InlineData(5, 5, true)] // Empty range inclusive
-    [InlineData(5, 5, false)] // Empty range exclusive
+    [Test]
+    [Arguments(1, 3, true)] // Inclusive bounds
+    [Arguments(1, 3, false)] // Exclusive bounds
+    [Arguments(5, 5, true)] // Empty range inclusive
+    [Arguments(5, 5, false)] // Empty range exclusive
     public async Task ExecutesBoundaryConditions(int start, int end, bool inclusive)
     {
         // Arrange
@@ -54,18 +55,18 @@ public class ForTests
 
         // Assert
         bool shouldSchedule = ShouldExecuteLoopWithBounds(start, end, 1, inclusive);
-        Assert.Equal(shouldSchedule, context.HasScheduledActivity(mockBody));
-        
+        await Assert.That(context.HasScheduledActivity(mockBody)).IsEqualTo(shouldSchedule);
+
         if (shouldSchedule)
         {
             var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-            Assert.Equal(start, currentValue);
+            await Assert.That(currentValue).IsEqualTo(start);
         }
     }
 
-    [Theory]
-    [InlineData(5, 1, 1)] // Positive step with descending range - won't execute
-    [InlineData(1, 5, -1)] // Negative step with ascending range - won't execute  
+    [Test]
+    [Arguments(5, 1, 1)] // Positive step with descending range - won't execute
+    [Arguments(1, 5, -1)] // Negative step with ascending range - won't execute
     public async Task SkipsLoopWhenInvalidConfiguration(int start, int end, int step)
     {
         // Arrange
@@ -77,10 +78,10 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.False(context.HasScheduledActivity(mockBody));
+        await Assert.That(context.HasScheduledActivity(mockBody)).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task BodyIsNull_DoesNotScheduleActivity()
     {
         // Arrange
@@ -92,10 +93,10 @@ public class ForTests
 
         // Assert
         var allScheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(allScheduledActivities);
+        await Assert.That(allScheduledActivities).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task CurrentValueOutputTypeCheck_PreservesIntegerType()
     {
         // Arrange
@@ -108,13 +109,13 @@ public class ForTests
 
         // Assert
         var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-        Assert.IsType<int>(currentValue);
-        Assert.Equal(1, currentValue);
+        await Assert.That(currentValue).IsOfType(typeof(int));
+        await Assert.That(currentValue).IsEqualTo(1);
     }
 
-    [Theory]
-    [InlineData(0, 5, true)]  // Start with default value (0), should execute
-    [InlineData(1, 0, false)] // End with explicit zero value, should not execute (wrong direction)
+    [Test]
+    [Arguments(0, 5, true)]  // Start with default value (0), should execute
+    [Arguments(1, 0, false)] // End with explicit zero value, should not execute (wrong direction)
     public async Task HandlesDefaultValues(int start, int end, bool shouldExecute)
     {
         // Arrange
@@ -132,16 +133,16 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(shouldExecute, context.HasScheduledActivity(mockBody));
-        
+        await Assert.That(context.HasScheduledActivity(mockBody)).IsEqualTo(shouldExecute);
+
         if (shouldExecute)
         {
             var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-            Assert.Equal(start, currentValue);
+            await Assert.That(currentValue).IsEqualTo(start);
         }
     }
 
-    [Fact]
+    [Test]
     public void VerifyActivityAttributes()
     {
         // Arrange
@@ -158,37 +159,37 @@ public class ForTests
         );
     }
 
-    [Fact]
-    public void VerifyBreakBehaviorIsRegistered()
+    [Test]
+    public async Task VerifyBreakBehaviorIsRegistered()
     {
         // Arrange
         var forActivity = new For();
 
         // Act & Assert
         var breakBehavior = forActivity.Behaviors.OfType<BreakBehavior>().FirstOrDefault();
-        Assert.NotNull(breakBehavior);
+        await Assert.That(breakBehavior).IsNotNull();
     }
 
-    [Fact]
-    public void DefaultPropertyValues()
+    [Test]
+    public async Task DefaultPropertyValues()
     {
         // Arrange
         var forActivity = new For();
 
         // Act & Assert
-        Assert.NotNull(forActivity.Start);
-        Assert.NotNull(forActivity.End);
-        Assert.NotNull(forActivity.Step);
-        Assert.NotNull(forActivity.OuterBoundInclusive);
+        await Assert.That(forActivity.Start).IsNotNull();
+        await Assert.That(forActivity.End).IsNotNull();
+        await Assert.That(forActivity.Step).IsNotNull();
+        await Assert.That(forActivity.OuterBoundInclusive).IsNotNull();
     }
 
-    [Theory]
-    [InlineData(1, 3, 1, true)]
-    [InlineData(3, 1, -1, true)]
-    [InlineData(5, 5, 1, true)]
-    [InlineData(1, 5, 0, true)] // Zero step - actually schedules activity (infinite loop potential)
-    [InlineData(5, 1, 1, false)] // Wrong direction
-    [InlineData(1, 5, -1, false)] // Wrong direction
+    [Test]
+    [Arguments(1, 3, 1, true)]
+    [Arguments(3, 1, -1, true)]
+    [Arguments(5, 5, 1, true)]
+    [Arguments(1, 5, 0, true)] // Zero step - actually schedules activity (infinite loop potential)
+    [Arguments(5, 1, 1, false)] // Wrong direction
+    [Arguments(1, 5, -1, false)] // Wrong direction
     public async Task LoopDecisionLogic_ValidatesCorrectly(int start, int end, int step, bool shouldExecute)
     {
         // Arrange
@@ -200,17 +201,17 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(shouldExecute, context.HasScheduledActivity(mockBody));
+        await Assert.That(context.HasScheduledActivity(mockBody)).IsEqualTo(shouldExecute);
     }
     
     // Zero step with different bounds & inclusivity (current contract: schedules at least first body)
-    [Theory]
-    [InlineData(1, 5, true,  true)]  // within ascending range, inclusive -> schedules
-    [InlineData(1, 5, false, true)]  // within ascending range, exclusive -> schedules (start < end)
-    [InlineData(5, 1, true,  false)] // start > end with ascending step (step=0 treated as positive) -> no schedule
-    [InlineData(5, 1, false, false)] // start > end with ascending step (step=0 treated as positive) -> no schedule
-    [InlineData(6, 5, true,  false)] // start already outside ascending range -> no schedule
-    [InlineData(0, -1, false, false)]// start already outside descending (exclusive) -> no schedule
+    [Test]
+    [Arguments(1, 5, true,  true)]  // within ascending range, inclusive -> schedules
+    [Arguments(1, 5, false, true)]  // within ascending range, exclusive -> schedules (start < end)
+    [Arguments(5, 1, true,  false)] // start > end with ascending step (step=0 treated as positive) -> no schedule
+    [Arguments(5, 1, false, false)] // start > end with ascending step (step=0 treated as positive) -> no schedule
+    [Arguments(6, 5, true,  false)] // start already outside ascending range -> no schedule
+    [Arguments(0, -1, false, false)]// start already outside descending (exclusive) -> no schedule
     public async Task ZeroStep_RespectsInitialBoundCheck(int start, int end, bool inclusive, bool shouldSchedule)
     {
         // Arrange
@@ -229,18 +230,18 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(shouldSchedule, context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsEqualTo(shouldSchedule);
         if (shouldSchedule)
         {
             var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-            Assert.IsType<int>(currentValue);
-            Assert.Equal(start, currentValue);
+            await Assert.That(currentValue).IsOfType(typeof(int));
+            await Assert.That(currentValue).IsEqualTo(start);
         }
     }
     
-    [Theory]
-    [InlineData(1, 5, 10)]   // ascending, step too large
-    [InlineData(5, 1, -10)]  // descending, step too large
+    [Test]
+    [Arguments(1, 5, 10)]   // ascending, step too large
+    [Arguments(5, 1, -10)]  // descending, step too large
     public async Task StepLargerThanRange_StillSchedulesOnce(int start, int end, int step)
     {
         // Arrange
@@ -252,14 +253,14 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.True(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
         var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-        Assert.Equal(start, currentValue);
+        await Assert.That(currentValue).IsEqualTo(start);
     }
     
-    [Theory]
-    [InlineData(5, 5,  1)]
-    [InlineData(5, 5, -1)]
+    [Test]
+    [Arguments(5, 5,  1)]
+    [Arguments(5, 5, -1)]
     public async Task EqualBounds_Exclusive_DoesNotExecute(int start, int end, int step)
     {
         // Arrange
@@ -278,13 +279,13 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.False(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsFalse();
     }
     
-    [Theory]
-    [InlineData(3, 1, -1, true,  true)]  // inclusive: start (3) >= end (1) -> schedules
-    [InlineData(3, 3, -1, false, false)] // exclusive: start == end -> no schedule
-    [InlineData(2, 3, -1, true,  false)] // start already below end for descending -> no schedule
+    [Test]
+    [Arguments(3, 1, -1, true,  true)]  // inclusive: start (3) >= end (1) -> schedules
+    [Arguments(3, 3, -1, false, false)] // exclusive: start == end -> no schedule
+    [Arguments(2, 3, -1, true,  false)] // start already below end for descending -> no schedule
     public async Task Descending_InclusiveExclusive_OffByOne(int start, int end, int step, bool inclusive, bool shouldSchedule)
     {
         // Arrange
@@ -303,14 +304,14 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(shouldSchedule, context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsEqualTo(shouldSchedule);
     }
     
-    [Theory]
-    [InlineData(int.MaxValue, int.MaxValue,  1, true,  true)]  // inclusive equal -> schedules
-    [InlineData(int.MaxValue, int.MaxValue,  1, false, false)] // exclusive equal -> no schedule
-    [InlineData(int.MinValue, int.MinValue, -1, true,  true)]
-    [InlineData(int.MinValue, int.MinValue, -1, false, false)]
+    [Test]
+    [Arguments(int.MaxValue, int.MaxValue,  1, true,  true)]  // inclusive equal -> schedules
+    [Arguments(int.MaxValue, int.MaxValue,  1, false, false)] // exclusive equal -> no schedule
+    [Arguments(int.MinValue, int.MinValue, -1, true,  true)]
+    [Arguments(int.MinValue, int.MinValue, -1, false, false)]
     public async Task ExtremeBounds_NoOverflow_OnInitialDecision(int start, int end, int step, bool inclusive, bool shouldSchedule)
     {
         // Arrange
@@ -329,18 +330,18 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(shouldSchedule, context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsEqualTo(shouldSchedule);
         if (shouldSchedule)
         {
             var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-            Assert.Equal(start, currentValue);
+            await Assert.That(currentValue).IsEqualTo(start);
         }
     }
     
-    [Theory]
-    [InlineData("start")]
-    [InlineData("end")]
-    [InlineData("step")]
+    [Test]
+    [Arguments("start")]
+    [Arguments("end")]
+    [Arguments("step")]
     public async Task InputExpressions_Throw_DoNotSchedule(string which)
     {
         // Arrange
@@ -355,11 +356,11 @@ public class ForTests
         var fixture = new ActivityTestFixture(forActivity);
 
         // Act + Assert
-        var ex = await Assert.ThrowsAsync<InputEvaluationException>(() => fixture.ExecuteAsync());
-        Assert.Contains(which, ex.Message, StringComparison.InvariantCultureIgnoreCase);
+        var ex = (await Assert.ThrowsExactlyAsync<InputEvaluationException>(() => fixture.ExecuteAsync()))!;
+        await Assert.That(ex.Message).Contains(which).WithComparison(StringComparison.InvariantCultureIgnoreCase);
     }
     
-    [Fact]
+    [Test]
     public async Task BodyThrows_ActivitySchedules_WithoutBreaking()
     {
         // Arrange
@@ -371,13 +372,13 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
         
         // Assert
-        Assert.NotNull(context);
-        Assert.True(context.HasScheduledActivity(body));
+        await Assert.That(context).IsNotNull();
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
     }
     
-    [Theory]
-    [InlineData(true,  1, 5)]  // positive step computed -> ascending executes
-    [InlineData(false, 5, 1)]  // negative step computed -> descending executes
+    [Test]
+    [Arguments(true,  1, 5)]  // positive step computed -> ascending executes
+    [Arguments(false, 5, 1)]  // negative step computed -> descending executes
     public async Task DynamicStep_EvaluatedAtExecutionTime(bool usePositive, int start, int end)
     {
         // Arrange
@@ -397,12 +398,12 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.True(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
         var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-        Assert.Equal(start, currentValue);
+        await Assert.That(currentValue).IsEqualTo(start);
     }
     
-    [Fact]
+    [Test]
     public async Task NegativeStart_NegativeStep_CurrentValueIsIntAndMatchesStart()
     {
         // Arrange
@@ -414,17 +415,17 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.True(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsTrue();
         var currentValue = context.GetActivityOutput(() => forActivity.CurrentValue);
-        Assert.IsType<int>(currentValue);
-        Assert.Equal(-2, currentValue);
+        await Assert.That(currentValue).IsOfType(typeof(int));
+        await Assert.That(currentValue).IsEqualTo(-2);
     }
     
-    [Theory]
-    [InlineData(10, 5,  1, true)]  // ascending + inclusive, start > end -> no schedule
-    [InlineData(10, 5,  1, false)] // ascending + exclusive, start > end -> no schedule
-    [InlineData(0,  5, -1, true)]  // descending + inclusive, start < end -> no schedule
-    [InlineData(0,  5, -1, false)] // descending + exclusive, start < end -> no schedule
+    [Test]
+    [Arguments(10, 5,  1, true)]  // ascending + inclusive, start > end -> no schedule
+    [Arguments(10, 5,  1, false)] // ascending + exclusive, start > end -> no schedule
+    [Arguments(0,  5, -1, true)]  // descending + inclusive, start < end -> no schedule
+    [Arguments(0,  5, -1, false)] // descending + exclusive, start < end -> no schedule
     public async Task StartOutsideRange_DoesNotSchedule(int start, int end, int step, bool inclusive)
     {
         // Arrange
@@ -443,7 +444,7 @@ public class ForTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.False(context.HasScheduledActivity(body));
+        await Assert.That(context.HasScheduledActivity(body)).IsFalse();
     }
     
     private static bool ShouldExecuteLoopWithBounds(int start, int end, int step, bool inclusive)

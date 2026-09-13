@@ -3,13 +3,14 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Branching;
 
 public class FlowSwitchTests
 {
-    [Theory]
-    [MemberData(nameof(DefaultOutcomeTestCases))]
+    [Test]
+    [MethodDataSource(nameof(DefaultOutcomeTestCases))]
     public async Task Should_Return_Default_When_No_Cases_Match(List<FlowSwitchCase> cases)
     {
         // Arrange
@@ -19,11 +20,11 @@ public class FlowSwitchTests
         var context = await ExecuteAsync(flowSwitch);
 
         // Assert - Activity should return Default outcome when no cases match.
-        Assert.True(context.HasOutcome("Default"));
+        await Assert.That(context.HasOutcome("Default")).IsTrue();
     }
 
-    [Theory]
-    [MemberData(nameof(SwitchModeTestCases))]
+    [Test]
+    [MethodDataSource(nameof(SwitchModeTestCases))]
     public async Task Should_Return_Outcomes_Based_On_Switch_Mode(
         List<FlowSwitchCase> cases,
         SwitchMode mode,
@@ -41,12 +42,12 @@ public class FlowSwitchTests
 
         // Assert - Activity should return outcomes based on switch mode.
         var outcomes = context.GetOutcomes().ToList();
-        Assert.Equal(expectedOutcomes.Length, outcomes.Count);
+        await Assert.That(outcomes.Count).IsEqualTo(expectedOutcomes.Length);
         foreach (var expectedOutcome in expectedOutcomes)
-            Assert.Contains(expectedOutcome, outcomes);
+            await Assert.That(outcomes).Contains(expectedOutcome);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Evaluate_Cases_With_Literal_Expression()
     {
         // Arrange
@@ -63,7 +64,7 @@ public class FlowSwitchTests
         var context = await ExecuteAsync(flowSwitch);
 
         // Assert - Activity should match the case with true literal.
-        Assert.True(context.HasOutcome("TrueCase"));
+        await Assert.That(context.HasOutcome("TrueCase")).IsTrue();
     }
     
     public static IEnumerable<object[]> DefaultOutcomeTestCases()

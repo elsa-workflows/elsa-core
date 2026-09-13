@@ -4,15 +4,16 @@ using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
 public class FlowSendHttpRequestTests
 {
-    [Theory]
-    [InlineData("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
-    [InlineData("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
-    [InlineData("PUT", "https://api.example.com/update", "{\"updated\": true}", 200)]
+    [Test]
+    [Arguments("GET", "https://api.example.com/data", "{\"result\": \"success\"}", 200)]
+    [Arguments("POST", "https://api.example.com/create", "{\"id\": 123}", 201)]
+    [Arguments("PUT", "https://api.example.com/update", "{\"updated\": true}", 200)]
     public async Task Should_Send_Request_And_Set_Status_Code_Output(string method, string url, string jsonResponse, int expectedStatusCode)
     {
         // Arrange
@@ -27,18 +28,18 @@ public class FlowSendHttpRequestTests
         var context = await ExecuteActivityAsync(flowSendHttpRequest, responseHandler);
 
         // Assert
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.Equal(expectedMethod, requestCapture.CapturedRequest.Method);
-        Assert.Equal(expectedUrl, requestCapture.CapturedRequest.RequestUri);
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Method).IsEqualTo(expectedMethod);
+        await Assert.That(requestCapture.CapturedRequest.RequestUri).IsEqualTo(expectedUrl);
 
         var statusCodeOutput = context.GetActivityOutput(() => flowSendHttpRequest.StatusCode);
-        Assert.Equal(expectedStatusCode, statusCodeOutput);
+        await Assert.That(statusCodeOutput).IsEqualTo(expectedStatusCode);
     }
 
-    [Theory]
-    [InlineData("Bearer token123")]
-    [InlineData("Basic YWRtaW46cGFzcw==")]
-    [InlineData("ApiKey abc123")]
+    [Test]
+    [Arguments("Bearer token123")]
+    [Arguments("Basic YWRtaW46cGFzcw==")]
+    [Arguments("ApiKey abc123")]
     public async Task Should_Add_Authorization_Header(string authorizationHeader)
     {
         // Arrange
@@ -52,12 +53,12 @@ public class FlowSendHttpRequestTests
         await ExecuteActivityAsync(flowSendHttpRequest, responseHandler);
 
         // Assert
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.NotNull(requestCapture.CapturedRequest.Headers.Authorization);
-        Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.Authorization).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.Authorization.ToString()).IsEqualTo(authorizationHeader);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Propagate_Current_Trace_Context()
     {
         await SendHttpRequestTestHelpers.AssertPropagatesCurrentTraceContextAsync(async (url, responseHandler) =>
@@ -67,8 +68,8 @@ public class FlowSendHttpRequestTests
         });
     }
 
-    [Theory]
-    [MemberData(nameof(StatusCodeOutcomeTestCases))]
+    [Test]
+    [MethodDataSource(nameof(StatusCodeOutcomeTestCases))]
     public async Task Should_Return_Outcome_Based_On_Status_Code(
         int[] expectedStatusCodes,
         HttpStatusCode actualStatusCode,
@@ -86,9 +87,9 @@ public class FlowSendHttpRequestTests
 
         // Assert - Activity should return outcomes based on status code match.
         var outcomes = context.GetOutcomes().ToList();
-        Assert.Equal(expectedOutcomes.Length, outcomes.Count);
+        await Assert.That(outcomes.Count).IsEqualTo(expectedOutcomes.Length);
         foreach (var expectedOutcome in expectedOutcomes)
-            Assert.Contains(expectedOutcome, outcomes);
+            await Assert.That(outcomes).Contains(expectedOutcome);
     }
 
     public static IEnumerable<object[]> StatusCodeOutcomeTestCases()
@@ -105,7 +106,7 @@ public class FlowSendHttpRequestTests
         yield return [Array.Empty<int>(), HttpStatusCode.OK, new[] { "Done" }];
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Return_FailedToConnect_Outcome_On_HttpRequestException()
     {
         // Arrange
@@ -116,10 +117,10 @@ public class FlowSendHttpRequestTests
         var context = await ExecuteActivityAsync(flowSendHttpRequest, responseHandler);
 
         // Assert
-        Assert.True(context.HasOutcome("Failed to connect"));
+        await Assert.That(context.HasOutcome("Failed to connect")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Return_Timeout_Outcome_On_TaskCanceledException()
     {
         // Arrange
@@ -130,10 +131,10 @@ public class FlowSendHttpRequestTests
         var context = await ExecuteActivityAsync(flowSendHttpRequest, responseHandler);
 
         // Assert
-        Assert.True(context.HasOutcome("Timeout"));
+        await Assert.That(context.HasOutcome("Timeout")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Response_Headers_Output()
     {
         // Arrange
@@ -152,12 +153,12 @@ public class FlowSendHttpRequestTests
         // Assert
         var responseHeadersObj = context.GetActivityOutput(() => flowSendHttpRequest.ResponseHeaders);
         var responseHeaders = responseHeadersObj as HttpHeaders;
-        Assert.NotNull(responseHeaders);
-        Assert.True(responseHeaders.ContainsKey("Custom-Header"));
-        Assert.True(responseHeaders.ContainsKey("X-Rate-Limit"));
+        await Assert.That(responseHeaders).IsNotNull();
+        await Assert.That(responseHeaders.ContainsKey("Custom-Header")).IsTrue();
+        await Assert.That(responseHeaders.ContainsKey("X-Rate-Limit")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public void Should_Have_Correct_Activity_Attributes()
     {
         var fixture = new ActivityTestFixture(new FlowSendHttpRequest());
@@ -170,8 +171,8 @@ public class FlowSendHttpRequestTests
         );
     }
 
-    [Fact]
-    public void Should_Have_Default_Expected_Status_Codes()
+    [Test]
+    public async Task Should_Have_Default_Expected_Status_Codes()
     {
         // Arrange
         var flowSendHttpRequest = new FlowSendHttpRequest();
@@ -182,9 +183,9 @@ public class FlowSendHttpRequestTests
 
         // Assert
         var defaultStatusCodes = defaultValue as List<int>;
-        Assert.NotNull(defaultStatusCodes);
-        Assert.Single(defaultStatusCodes);
-        Assert.Equal(200, defaultStatusCodes.First());
+        await Assert.That(defaultStatusCodes).IsNotNull();
+        await Assert.That(defaultStatusCodes).HasSingleItem();
+        await Assert.That(defaultStatusCodes.First()).IsEqualTo(200);
     }
 
     // Private helper methods

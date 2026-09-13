@@ -2,6 +2,7 @@ using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.Interchange.UnitTests;
 
@@ -14,7 +15,8 @@ namespace Elsa.Bpmn.Interchange.UnitTests;
 /// </summary>
 public class BpmnInterchangeDocumentServiceDuplicateElementIdTests
 {
-    [Fact(DisplayName = "A document whose element ids are all unique is accepted")]
+    [Test]
+    [DisplayName("A document whose element ids are all unique is accepted")]
     public void EnsureElementIdsUnique_AcceptsADocumentWithNoRepeatedIds()
     {
         var task = new BpmnElement("task-1", BpmnElementTypes.ServiceTask, bindingRef: "node-task-1");
@@ -24,33 +26,36 @@ public class BpmnInterchangeDocumentServiceDuplicateElementIdTests
         BpmnInterchangeDocumentService.EnsureElementIdsUnique([root], []);
     }
 
-    [Fact(DisplayName = "A document declaring the same element id twice at the top level is refused, naming the id")]
-    public void EnsureElementIdsUnique_RefusesARepeatedTopLevelElementId()
+    [Test]
+    [DisplayName("A document declaring the same element id twice at the top level is refused, naming the id")]
+    public async Task EnsureElementIdsUnique_RefusesARepeatedTopLevelElementId()
     {
         var first = new BpmnElement("dup", BpmnElementTypes.ServiceTask, bindingRef: "node-dup-1");
         var second = new BpmnElement("dup", BpmnElementTypes.ServiceTask, bindingRef: "node-dup-2");
         var root = new BpmnProcessDefinition("main", Elements: [first, second]);
 
-        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnDuplicateElementIdException>(() =>
             BpmnInterchangeDocumentService.EnsureElementIdsUnique([root], []));
 
-        Assert.Equal(["dup"], exception.DuplicateElementIds);
-        Assert.Contains("dup", exception.Message);
+        await Assert.That(exception.DuplicateElementIds).IsEquivalentTo(["dup"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(exception.Message).Contains("dup");
     }
 
-    [Fact(DisplayName = "A subprocess nested inside another subprocess that reuses its parent's id is refused, naming that id")]
-    public void EnsureElementIdsUnique_RefusesASubprocessNestedInsideASubprocessThatReusesItsParentsId()
+    [Test]
+    [DisplayName("A subprocess nested inside another subprocess that reuses its parent's id is refused, naming that id")]
+    public async Task EnsureElementIdsUnique_RefusesASubprocessNestedInsideASubprocessThatReusesItsParentsId()
     {
         var (root, bindings) = NestedSubprocessReusingItsOwnId();
 
-        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnDuplicateElementIdException>(() =>
             BpmnInterchangeDocumentService.EnsureElementIdsUnique([root], bindings));
 
-        Assert.Equal(["Outer"], exception.DuplicateElementIds);
+        await Assert.That(exception.DuplicateElementIds).IsEquivalentTo(["Outer"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "A subprocess reusing its parent top-level process's own id is refused, naming that id")]
-    public void EnsureElementIdsUnique_RefusesASubprocessReusingItsParentTopLevelProcessesOwnId()
+    [Test]
+    [DisplayName("A subprocess reusing its parent top-level process's own id is refused, naming that id")]
+    public async Task EnsureElementIdsUnique_RefusesASubprocessReusingItsParentTopLevelProcessesOwnId()
     {
         // <process id="P"><subProcess id="P">...</subProcess></process>: the subprocess element id equals the
         // top-level process's own ProcessId. Before the fix, a top-level process's own id was never added to the
@@ -62,22 +67,23 @@ public class BpmnInterchangeDocumentServiceDuplicateElementIdTests
 
         BpmnWorkBinding[] bindings = [new BpmnWorkBinding.NestedProcess("P", "P", "node-p", BpmnBindingSlot.Primary, subProcessBody)];
 
-        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnDuplicateElementIdException>(() =>
             BpmnInterchangeDocumentService.EnsureElementIdsUnique([root], bindings));
 
-        Assert.Equal(["P"], exception.DuplicateElementIds);
+        await Assert.That(exception.DuplicateElementIds).IsEquivalentTo(["P"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Two top-level processes sharing the same id are refused, naming that id")]
-    public void EnsureElementIdsUnique_RefusesTwoTopLevelProcessesSharingAnId()
+    [Test]
+    [DisplayName("Two top-level processes sharing the same id are refused, naming that id")]
+    public async Task EnsureElementIdsUnique_RefusesTwoTopLevelProcessesSharingAnId()
     {
         var first = new BpmnProcessDefinition("shared", Elements: [new BpmnElement("task-1", BpmnElementTypes.ServiceTask, bindingRef: "node-task-1")]);
         var second = new BpmnProcessDefinition("shared", Elements: [new BpmnElement("task-2", BpmnElementTypes.ServiceTask, bindingRef: "node-task-2")]);
 
-        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+        var exception = Assert.ThrowsExactly<BpmnDuplicateElementIdException>(() =>
             BpmnInterchangeDocumentService.EnsureElementIdsUnique([first, second], []));
 
-        Assert.Equal(["shared"], exception.DuplicateElementIds);
+        await Assert.That(exception.DuplicateElementIds).IsEquivalentTo(["shared"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     /// <summary>

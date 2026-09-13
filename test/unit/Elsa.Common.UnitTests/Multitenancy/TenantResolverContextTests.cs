@@ -1,15 +1,16 @@
 using Elsa.Common.Multitenancy;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
 
 public class TenantResolverContextTests
 {
-    [Theory]
-    [InlineData(null, "Default")]
-    [InlineData("", "Default")]
-    [InlineData("tenant1", "Tenant 1")]
-    [InlineData("tenant2", "Tenant 2")]
-    public void FindTenant_ById_FindsCorrectTenant(string? tenantId, string expectedName)
+    [Test]
+    [Arguments(null, "Default")]
+    [Arguments("", "Default")]
+    [Arguments("tenant1", "Tenant 1")]
+    [Arguments("tenant2", "Tenant 2")]
+    public async Task FindTenant_ById_FindsCorrectTenant(string? tenantId, string expectedName)
     {
         // Arrange
         var context = CreateContext();
@@ -18,12 +19,12 @@ public class TenantResolverContextTests
         var result = context.FindTenant(tenantId!);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(expectedName, result.Name);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Name).IsEqualTo(expectedName);
     }
 
-    [Fact]
-    public void FindTenant_WithNonExistentId_ReturnsNull()
+    [Test]
+    public async Task FindTenant_WithNonExistentId_ReturnsNull()
     {
         // Arrange
         var context = CreateContext();
@@ -32,13 +33,13 @@ public class TenantResolverContextTests
         var result = context.FindTenant("non-existent");
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Theory]
-    [InlineData("Alpha", "tenant1", "Tenant Alpha")]
-    [InlineData("Beta", "tenant2", "Tenant Beta")]
-    public void FindTenant_WithPredicate_FindsMatchingTenant(string searchTerm, string expectedId, string expectedName)
+    [Test]
+    [Arguments("Alpha", "tenant1", "Tenant Alpha")]
+    [Arguments("Beta", "tenant2", "Tenant Beta")]
+    public async Task FindTenant_WithPredicate_FindsMatchingTenant(string searchTerm, string expectedId, string expectedName)
     {
         // Arrange
         var context = CreateContextWithNamedTenants();
@@ -47,13 +48,13 @@ public class TenantResolverContextTests
         var result = context.FindTenant(t => t.Name.Contains(searchTerm));
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(expectedId, result.Id);
-        Assert.Equal(expectedName, result.Name);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Id).IsEqualTo(expectedId);
+        await Assert.That(result.Name).IsEqualTo(expectedName);
     }
 
-    [Fact]
-    public void FindTenant_WithPredicate_NoMatch_ReturnsNull()
+    [Test]
+    public async Task FindTenant_WithPredicate_NoMatch_ReturnsNull()
     {
         // Arrange
         var context = CreateContext();
@@ -62,11 +63,11 @@ public class TenantResolverContextTests
         var result = context.FindTenant(t => t.Name == "NonExistent");
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
-    public void Constructor_StoresCancellationToken()
+    [Test]
+    public async Task Constructor_StoresCancellationToken()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
@@ -75,11 +76,11 @@ public class TenantResolverContextTests
         var context = new TenantResolverContext(new Dictionary<string, Tenant>(), cts.Token);
 
         // Assert
-        Assert.Equal(cts.Token, context.CancellationToken);
+        await Assert.That(context.CancellationToken).IsEqualTo(cts.Token);
     }
 
-    [Fact]
-    public void FindTenant_NormalizesNullAndEmptyStringToSameValue()
+    [Test]
+    public async Task FindTenant_NormalizesNullAndEmptyStringToSameValue()
     {
         // Arrange
         var context = CreateContext();
@@ -89,9 +90,9 @@ public class TenantResolverContextTests
         var resultFromEmptyString = context.FindTenant(string.Empty);
 
         // Assert
-        Assert.NotNull(resultFromNull);
-        Assert.NotNull(resultFromEmptyString);
-        Assert.Same(resultFromNull, resultFromEmptyString);
+        await Assert.That(resultFromNull).IsNotNull();
+        await Assert.That(resultFromEmptyString).IsNotNull();
+        await Assert.That(resultFromEmptyString).IsSameReferenceAs(resultFromNull);
     }
 
     // Helper methods

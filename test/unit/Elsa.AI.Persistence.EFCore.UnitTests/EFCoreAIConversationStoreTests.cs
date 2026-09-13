@@ -5,15 +5,18 @@ using Elsa.AI.Persistence.EFCore.Services;
 using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.AI.Persistence.EFCore.UnitTests;
 
-public class EFCoreAIConversationStoreTests : IAsyncLifetime
+public class EFCoreAIConversationStoreTests : IAsyncInitializer, IAsyncDisposable
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private AIDbContext _dbContext = default!;
 
-    [Fact(DisplayName = "Conversation store persists and reloads conversations")]
+    [Test]
+    [DisplayName("Conversation store persists and reloads conversations")]
     public async Task ConversationStorePersistsAndReloadsConversations()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -48,15 +51,16 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync(conversation.Id);
 
-        Assert.NotNull(reloaded);
-        Assert.Equal("tenant-1", reloaded.TenantId);
-        Assert.Equal("provider-session-1", reloaded.ProviderSessionId);
-        var message = Assert.Single(reloaded.Messages);
-        Assert.Equal("Build a workflow", message.Content);
-        Assert.Equal("chat", message.Metadata["source"]!.GetValue<string>());
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.TenantId).IsEqualTo("tenant-1");
+        await Assert.That(reloaded.ProviderSessionId).IsEqualTo("provider-session-1");
+        var message = await Assert.That(reloaded.Messages).HasSingleItem();
+        await Assert.That(message.Content).IsEqualTo("Build a workflow");
+        await Assert.That(message.Metadata["source"]!.GetValue<string>()).IsEqualTo("chat");
     }
 
-    [Fact(DisplayName = "Conversation store updates existing conversations")]
+    [Test]
+    [DisplayName("Conversation store updates existing conversations")]
     public async Task ConversationStoreUpdatesExistingConversations()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -87,12 +91,14 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-2");
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(AIConversationStatus.Completed, reloaded.Status);
-        Assert.Equal("second", Assert.Single(reloaded.Messages).Content);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Status).IsEqualTo(AIConversationStatus.Completed);
+        var reloadedMessage = await Assert.That(reloaded.Messages).HasSingleItem();
+        await Assert.That(reloadedMessage.Content).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Conversation store preserves creation timestamp and updates retention timestamp")]
+    [Test]
+    [DisplayName("Conversation store preserves creation timestamp and updates retention timestamp")]
     public async Task ConversationStorePreservesCreationTimestampAndUpdatesRetentionTimestamp()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -123,13 +129,14 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-timestamps");
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(createdAt, reloaded.CreatedAt);
-        Assert.Equal(createdAt.AddMinutes(5), reloaded.UpdatedAt);
-        Assert.Equal(retentionExpiresAt.AddMinutes(5), reloaded.RetentionExpiresAt);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.CreatedAt).IsEqualTo(createdAt);
+        await Assert.That(reloaded.UpdatedAt).IsEqualTo(createdAt.AddMinutes(5));
+        await Assert.That(reloaded.RetentionExpiresAt).IsEqualTo(retentionExpiresAt.AddMinutes(5));
     }
 
-    [Fact(DisplayName = "Conversation store rejects cross-tenant overwrites")]
+    [Test]
+    [DisplayName("Conversation store rejects cross-tenant overwrites")]
     public async Task ConversationStoreRejectsCrossTenantOverwrites()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -146,7 +153,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         });
         _dbContext.ChangeTracker.Clear();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
         {
             Id = "conversation-cross-tenant",
             TenantId = "tenant-2",
@@ -159,13 +166,15 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var original = await store.FindAsync("conversation-cross-tenant");
 
-        Assert.Equal("Cannot overwrite an AI conversation that belongs to another tenant.", exception.Message);
-        Assert.NotNull(original);
-        Assert.Equal("tenant-1", original.TenantId);
-        Assert.Equal("first", Assert.Single(original.Messages).Content);
+        await Assert.That(exception!.Message).IsEqualTo("Cannot overwrite an AI conversation that belongs to another tenant.");
+        await Assert.That(original).IsNotNull();
+        await Assert.That(original.TenantId).IsEqualTo("tenant-1");
+        var originalMessage = await Assert.That(original.Messages).HasSingleItem();
+        await Assert.That(originalMessage.Content).IsEqualTo("first");
     }
 
-    [Fact(DisplayName = "Conversation store treats null and empty tenant IDs as default tenant")]
+    [Test]
+    [DisplayName("Conversation store treats null and empty tenant IDs as default tenant")]
     public async Task ConversationStoreTreatsNullAndEmptyTenantIdsAsDefaultTenant()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -195,12 +204,14 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-default-tenant");
 
-        Assert.NotNull(reloaded);
-        Assert.Equal("", reloaded.TenantId);
-        Assert.Equal("second", Assert.Single(reloaded.Messages).Content);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.TenantId).IsEqualTo("");
+        var reloadedMessage = await Assert.That(reloaded.Messages).HasSingleItem();
+        await Assert.That(reloadedMessage.Content).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Conversation store rejects cross-user overwrites")]
+    [Test]
+    [DisplayName("Conversation store rejects cross-user overwrites")]
     public async Task ConversationStoreRejectsCrossUserOverwrites()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -217,7 +228,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         });
         _dbContext.ChangeTracker.Clear();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
         {
             Id = "conversation-cross-user",
             TenantId = "tenant-1",
@@ -230,13 +241,15 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var original = await store.FindAsync("conversation-cross-user");
 
-        Assert.Equal("Cannot overwrite an AI conversation that belongs to another user.", exception.Message);
-        Assert.NotNull(original);
-        Assert.Equal("user-1", original.UserId);
-        Assert.Equal("first", Assert.Single(original.Messages).Content);
+        await Assert.That(exception!.Message).IsEqualTo("Cannot overwrite an AI conversation that belongs to another user.");
+        await Assert.That(original).IsNotNull();
+        await Assert.That(original.UserId).IsEqualTo("user-1");
+        var originalMessage = await Assert.That(original.Messages).HasSingleItem();
+        await Assert.That(originalMessage.Content).IsEqualTo("first");
     }
 
-    [Fact(DisplayName = "Conversation store caps persisted message history")]
+    [Test]
+    [DisplayName("Conversation store caps persisted message history")]
     public async Task ConversationStoreCapsPersistedMessageHistory()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -266,12 +279,13 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-capped");
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(256, reloaded.Messages.Count);
-        Assert.Equal("message-44", reloaded.Messages.First().Id);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Messages.Count).IsEqualTo(256);
+        await Assert.That(reloaded.Messages.First().Id).IsEqualTo("message-44");
     }
 
-    [Fact(DisplayName = "Conversation store caps message history by message chronology")]
+    [Test]
+    [DisplayName("Conversation store caps message history by message chronology")]
     public async Task ConversationStoreCapsMessageHistoryByMessageChronology()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -302,13 +316,14 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-chronology");
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(256, reloaded.Messages.Count);
-        Assert.Equal("message-44", reloaded.Messages.First().Id);
-        Assert.Equal("message-299", reloaded.Messages.Last().Id);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Messages.Count).IsEqualTo(256);
+        await Assert.That(reloaded.Messages.First().Id).IsEqualTo("message-44");
+        await Assert.That(reloaded.Messages.Last().Id).IsEqualTo("message-299");
     }
 
-    [Fact(DisplayName = "Conversation store truncates oversized message content without splitting surrogate pairs")]
+    [Test]
+    [DisplayName("Conversation store truncates oversized message content without splitting surrogate pairs")]
     public async Task ConversationStoreTruncatesOversizedMessageContentWithoutSplittingSurrogatePairs()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -336,15 +351,16 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-large-emoji");
         var record = await _dbContext.Conversations.AsNoTracking().SingleAsync(x => x.Id == "conversation-large-emoji");
-        var message = Assert.Single(reloaded!.Messages);
+        var message = await Assert.That(reloaded!.Messages).HasSingleItem();
 
-        Assert.True(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024);
-        Assert.Equal("chat", message.Metadata["source"]!.GetValue<string>());
-        Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
-        Assert.False(char.IsHighSurrogate(message.Content[^1]));
+        await Assert.That(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024).IsTrue();
+        await Assert.That(message.Metadata["source"]!.GetValue<string>()).IsEqualTo("chat");
+        await Assert.That(message.Metadata["truncated"]!.GetValue<bool>()).IsTrue();
+        await Assert.That(char.IsHighSurrogate(message.Content[^1])).IsFalse();
     }
 
-    [Fact(DisplayName = "Conversation store drops oversized metadata when truncation still exceeds the byte limit")]
+    [Test]
+    [DisplayName("Conversation store drops oversized metadata when truncation still exceeds the byte limit")]
     public async Task ConversationStoreDropsOversizedMetadataWhenTruncationStillExceedsTheByteLimit()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -372,14 +388,15 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-large-metadata");
         var record = await _dbContext.Conversations.AsNoTracking().SingleAsync(x => x.Id == "conversation-large-metadata");
-        var message = Assert.Single(reloaded!.Messages);
+        var message = await Assert.That(reloaded!.Messages).HasSingleItem();
 
-        Assert.True(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024);
-        Assert.Null(message.Metadata["source"]);
-        Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
+        await Assert.That(Encoding.UTF8.GetByteCount(record.Messages) <= 1024 * 1024).IsTrue();
+        await Assert.That(message.Metadata["source"]).IsNull();
+        await Assert.That(message.Metadata["truncated"]!.GetValue<bool>()).IsTrue();
     }
 
-    [Fact(DisplayName = "Conversation store hides completed ephemeral conversations on read")]
+    [Test]
+    [DisplayName("Conversation store hides completed ephemeral conversations on read")]
     public async Task ConversationStoreHidesCompletedEphemeralConversationsOnRead()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -396,11 +413,12 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-ephemeral");
 
-        Assert.Null(reloaded);
-        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-ephemeral"));
+        await Assert.That(reloaded).IsNull();
+        await Assert.That(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-ephemeral")).IsTrue();
     }
 
-    [Fact(DisplayName = "Conversation store hides expired configured conversations on read")]
+    [Test]
+    [DisplayName("Conversation store hides expired configured conversations on read")]
     public async Task ConversationStoreHidesExpiredConfiguredConversationsOnRead()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -417,12 +435,13 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-expired");
 
-        Assert.Null(reloaded);
-        Assert.Empty(_dbContext.ChangeTracker.Entries());
-        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired"));
+        await Assert.That(reloaded).IsNull();
+        await Assert.That(_dbContext.ChangeTracker.Entries()).IsEmpty();
+        await Assert.That(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired")).IsTrue();
     }
 
-    [Fact(DisplayName = "Conversation store treats configured conversations without expiry as retained")]
+    [Test]
+    [DisplayName("Conversation store treats configured conversations without expiry as retained")]
     public async Task ConversationStoreTreatsConfiguredConversationsWithoutExpiryAsRetained()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -438,10 +457,11 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("conversation-no-expiry");
 
-        Assert.NotNull(reloaded);
+        await Assert.That(reloaded).IsNotNull();
     }
 
-    [Fact(DisplayName = "Conversation cleanup deletes expired persisted conversations")]
+    [Test]
+    [DisplayName("Conversation cleanup deletes expired persisted conversations")]
     public async Task ConversationCleanupDeletesExpiredPersistedConversations()
     {
         var now = DateTimeOffset.UtcNow;
@@ -476,13 +496,14 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var deletedCount = await EFCoreAIConversationCleanup.DeleteExpiredAsync(_dbContext, now);
 
-        Assert.Equal(2, deletedCount);
-        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-completed-ephemeral"));
-        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired-configured"));
-        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-active"));
+        await Assert.That(deletedCount).IsEqualTo(2);
+        await Assert.That(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-completed-ephemeral")).IsFalse();
+        await Assert.That(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired-configured")).IsFalse();
+        await Assert.That(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-active")).IsTrue();
     }
 
-    [Fact(DisplayName = "Conversation store validates required conversation fields")]
+    [Test]
+    [DisplayName("Conversation store validates required conversation fields")]
     public async Task ConversationStoreValidatesRequiredConversationFields()
     {
         var store = new EFCoreAIConversationStore(_dbContext);
@@ -491,9 +512,9 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
             Id = "conversation-invalid"
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(conversation));
+        var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(async () => await store.SaveAsync(conversation));
 
-        Assert.Equal("conversation", exception.ParamName);
+        await Assert.That(exception!.ParamName).IsEqualTo("conversation");
     }
 
     public async Task InitializeAsync()
@@ -503,7 +524,7 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         await _dbContext.Database.MigrateAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _dbContext.DisposeAsync();
         await _connection.DisposeAsync();

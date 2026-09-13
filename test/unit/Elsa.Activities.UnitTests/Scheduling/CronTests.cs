@@ -5,15 +5,16 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Scheduling;
 
 public class CronTests
 {
-    [Theory]
-    [InlineData("0 0 0 * * *")]      // Daily at midnight
-    [InlineData("0 0 */6 * * *")]    // Every 6 hours
-    [InlineData("0 0 9 * * MON-FRI")] // Weekdays at 9 AM
+    [Test]
+    [Arguments("0 0 0 * * *")]      // Daily at midnight
+    [Arguments("0 0 */6 * * *")]    // Every 6 hours
+    [Arguments("0 0 9 * * MON-FRI")] // Weekdays at 9 AM
     public async Task WhenNotTrigger_CreatesBookmarkWithParsedTime(string cronExpression)
     {
         // Arrange
@@ -26,13 +27,13 @@ public class CronTests
         var context = await ExecuteAsync(activity, cronParser);
 
         // Assert
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        var payload = GetCronPayload(context);
-        Assert.Equal(expectedTime, payload.ExecuteAt);
-        Assert.Equal(cronExpression, payload.CronExpression);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        var payload = await GetCronPayload(context);
+        await Assert.That(payload.ExecuteAt).IsEqualTo(expectedTime);
+        await Assert.That(payload.CronExpression).IsEqualTo(cronExpression);
     }
 
-    [Fact]
+    [Test]
     public async Task WhenIsTrigger_CompletesImmediately()
     {
         // Arrange
@@ -42,11 +43,11 @@ public class CronTests
         var context = await ExecuteAsTriggerAsync(activity);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.Empty(context.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task RecordsExecuteAtInJournal()
     {
         // Arrange
@@ -58,11 +59,11 @@ public class CronTests
         var context = await ExecuteAsync(activity, cronParser);
 
         // Assert
-        Assert.True(context.JournalData.TryGetValue("ExecuteAt", out var executeAt));
-        Assert.Equal(expectedTime, executeAt);
+        await Assert.That(context.JournalData.TryGetValue("ExecuteAt", out var executeAt)).IsTrue();
+        await Assert.That(executeAt).IsEqualTo(expectedTime);
     }
 
-    [Fact]
+    [Test]
     public async Task FactoryMethod_CreatesWithExpression()
     {
         // Arrange
@@ -76,8 +77,8 @@ public class CronTests
         var context = await ExecuteAsync(activity, cronParser);
 
         // Assert
-        var payload = GetCronPayload(context);
-        Assert.Equal(cronExpression, payload.CronExpression);
+        var payload = await GetCronPayload(context);
+        await Assert.That(payload.CronExpression).IsEqualTo(cronExpression);
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(Cron activity, ICronParser cronParser)
@@ -101,9 +102,10 @@ public class CronTests
         return parser;
     }
 
-    private static CronBookmarkPayload GetCronPayload(ActivityExecutionContext context)
+    private static async Task<CronBookmarkPayload> GetCronPayload(ActivityExecutionContext context)
     {
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        return Assert.IsType<CronBookmarkPayload>(bookmark.Payload);
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(bookmark.Payload).IsOfType(typeof(CronBookmarkPayload));
+        return (CronBookmarkPayload)bookmark.Payload!;
     }
 }

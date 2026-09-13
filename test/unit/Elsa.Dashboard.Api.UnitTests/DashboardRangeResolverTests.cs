@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Dashboard.Abstractions.Models;
 using Elsa.Dashboard.Api.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Dashboard.Api.UnitTests;
 
@@ -14,38 +15,38 @@ public class DashboardRangeResolverTests
         _resolver = new(new TestClock(_now));
     }
 
-    [Theory]
-    [InlineData("1h", DashboardRangeKeys.OneHour, 1)]
-    [InlineData("24h", DashboardRangeKeys.TwentyFourHours, 24)]
-    [InlineData("7d", DashboardRangeKeys.SevenDays, 168)]
-    [InlineData(null, DashboardRangeKeys.TwentyFourHours, 24)]
-    [InlineData("unknown", DashboardRangeKeys.TwentyFourHours, 24)]
-    public void Resolve_ReturnsExpectedRange(string? input, string expectedKey, int expectedHours)
+    [Test]
+    [Arguments("1h", DashboardRangeKeys.OneHour, 1)]
+    [Arguments("24h", DashboardRangeKeys.TwentyFourHours, 24)]
+    [Arguments("7d", DashboardRangeKeys.SevenDays, 168)]
+    [Arguments(null, DashboardRangeKeys.TwentyFourHours, 24)]
+    [Arguments("unknown", DashboardRangeKeys.TwentyFourHours, 24)]
+    public async Task Resolve_ReturnsExpectedRange(string? input, string expectedKey, int expectedHours)
     {
         var range = _resolver.Resolve(input);
 
-        Assert.Equal(expectedKey, range.Key);
-        Assert.Equal(_now, range.To);
-        Assert.Equal(_now.AddHours(-expectedHours), range.From);
+        await Assert.That(range.Key).IsEqualTo(expectedKey);
+        await Assert.That(range.To).IsEqualTo(_now);
+        await Assert.That(range.From).IsEqualTo(_now.AddHours(-expectedHours));
     }
 
-    [Theory]
-    [InlineData(DashboardRangeKeys.OneHour, DashboardTrendGranularity.Minute)]
-    [InlineData(DashboardRangeKeys.TwentyFourHours, DashboardTrendGranularity.Hour)]
-    [InlineData(DashboardRangeKeys.SevenDays, DashboardTrendGranularity.Day)]
-    public void ResolveGranularity_ChoosesDefaultForRange(string range, string expectedGranularity)
+    [Test]
+    [Arguments(DashboardRangeKeys.OneHour, DashboardTrendGranularity.Minute)]
+    [Arguments(DashboardRangeKeys.TwentyFourHours, DashboardTrendGranularity.Hour)]
+    [Arguments(DashboardRangeKeys.SevenDays, DashboardTrendGranularity.Day)]
+    public async Task ResolveGranularity_ChoosesDefaultForRange(string range, string expectedGranularity)
     {
         var granularity = _resolver.ResolveGranularity(null, range);
 
-        Assert.Equal(expectedGranularity, granularity);
+        await Assert.That(granularity).IsEqualTo(expectedGranularity);
     }
 
-    [Fact]
-    public void ResolveGranularity_PreservesExplicitGranularity()
+    [Test]
+    public async Task ResolveGranularity_PreservesExplicitGranularity()
     {
         var granularity = _resolver.ResolveGranularity("custom", DashboardRangeKeys.OneHour);
 
-        Assert.Equal("custom", granularity);
+        await Assert.That(granularity).IsEqualTo("custom");
     }
 
     private class TestClock(DateTimeOffset utcNow) : ISystemClock

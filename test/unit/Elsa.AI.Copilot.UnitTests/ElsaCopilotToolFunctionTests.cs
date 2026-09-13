@@ -4,28 +4,31 @@ using Elsa.AI.Copilot.Adapters;
 using GitHub.Copilot;
 using Microsoft.Extensions.AI;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Copilot.UnitTests;
 
 public class ElsaCopilotToolFunctionTests
 {
-    [Fact(DisplayName = "Tool function preserves Elsa metadata and schema")]
-    public void ToolFunctionPreservesElsaMetadataAndSchema()
+    [Test]
+    [DisplayName("Tool function preserves Elsa metadata and schema")]
+    public async Task ToolFunctionPreservesElsaMetadataAndSchema()
     {
         var definition = CreateDefinition();
         var function = new ElsaCopilotToolFunction(definition, new CapturingToolInvoker());
 
-        Assert.Equal("workflow.inspect", function.Name);
-        Assert.Equal("Inspect workflow", function.Description);
-        Assert.Equal("workflowId", function.JsonSchema.GetProperty("required")[0].GetString());
+        await Assert.That(function.Name).IsEqualTo("workflow.inspect");
+        await Assert.That(function.Description).IsEqualTo("Inspect workflow");
+        await Assert.That(function.JsonSchema.GetProperty("required")[0].GetString()).IsEqualTo("workflowId");
         var additionalProperties = function.AdditionalProperties!;
 
-        Assert.Equal("Proposal", additionalProperties["elsa_mutability"]);
-        Assert.Equal("Medium", additionalProperties["elsa_danger_level"]);
-        Assert.False((bool)additionalProperties["skip_permission"]!);
+        await Assert.That(additionalProperties["elsa_mutability"]).IsEqualTo("Proposal");
+        await Assert.That(additionalProperties["elsa_danger_level"]).IsEqualTo("Medium");
+        await Assert.That((bool)additionalProperties["skip_permission"]!).IsFalse();
     }
 
-    [Fact(DisplayName = "Tool function invokes Elsa provider tool invoker")]
+    [Test]
+    [DisplayName("Tool function invokes Elsa provider tool invoker")]
     public async Task ToolFunctionInvokesElsaProviderToolInvoker()
     {
         var invoker = new CapturingToolInvoker();
@@ -45,13 +48,14 @@ public class ElsaCopilotToolFunctionTests
         };
 
         var result = await function.InvokeAsync(arguments);
-        var toolResult = Assert.IsType<ToolResultAIContent>(result);
+        await Assert.That(result).IsOfType(typeof(ToolResultAIContent));
+        var toolResult = (ToolResultAIContent)result!;
 
-        Assert.Equal("Workflow inspected", toolResult.Result.TextResultForLlm);
-        var invocation = Assert.Single(invoker.Invocations);
-        Assert.Equal("sdk-tool-call-1", invocation.Id);
-        Assert.Equal("workflow.inspect", invocation.ToolName);
-        Assert.Equal("workflow-1", invocation.Arguments["workflowId"]!.GetValue<string>());
+        await Assert.That(toolResult.Result.TextResultForLlm).IsEqualTo("Workflow inspected");
+        var invocation = await Assert.That(invoker.Invocations).HasSingleItem();
+        await Assert.That(invocation.Id).IsEqualTo("sdk-tool-call-1");
+        await Assert.That(invocation.ToolName).IsEqualTo("workflow.inspect");
+        await Assert.That(invocation.Arguments["workflowId"]!.GetValue<string>()).IsEqualTo("workflow-1");
     }
 
     private static AIToolDefinition CreateDefinition() =>

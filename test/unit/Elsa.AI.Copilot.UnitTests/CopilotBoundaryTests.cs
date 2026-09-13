@@ -1,12 +1,14 @@
 using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Copilot.UnitTests;
 
 public class CopilotBoundaryTests
 {
-    [Fact(DisplayName = "Abstractions expose provider-neutral contracts")]
-    public void AbstractionsExposeProviderNeutralContracts()
+    [Test]
+    [DisplayName("Abstractions expose provider-neutral contracts")]
+    public async Task AbstractionsExposeProviderNeutralContracts()
     {
         var contractTypes = new[]
         {
@@ -19,6 +21,7 @@ public class CopilotBoundaryTests
             typeof(AIStreamEvent)
         };
 
-        Assert.All(contractTypes, type => Assert.DoesNotContain("Copilot", type.FullName, StringComparison.OrdinalIgnoreCase));
+        foreach (var type in contractTypes)
+            await Assert.That(type.FullName?.Contains("Copilot", StringComparison.OrdinalIgnoreCase) ?? false).IsFalse();
     }
 }

@@ -1,77 +1,78 @@
 using Elsa.Authorization;
+using System.Threading.Tasks;
 
 namespace Elsa.Api.Common.UnitTests.Authorization;
 
 public class PermissionMatcherTests
 {
-    [Theory]
+    [Test]
     // Exact match on both axes.
-    [InlineData("workflows/definitions:view", "workflows/definitions:view", true)]
-    [InlineData("workflows/definitions:view", "workflows/definitions:delete", false)]
-    [InlineData("workflows/definitions:view", "workflows/instances:view", false)]
+    [Arguments("workflows/definitions:view", "workflows/definitions:view", true)]
+    [Arguments("workflows/definitions:view", "workflows/definitions:delete", false)]
+    [Arguments("workflows/definitions:view", "workflows/instances:view", false)]
     // A subtree wildcard covers the named node itself as well as its descendants.
-    [InlineData("workflows/*:view", "workflows/definitions:view", true)]
-    [InlineData("workflows/*:view", "workflows/definitions/versions:view", true)]
-    [InlineData("workflows/definitions/*:view", "workflows/definitions:view", true)]
-    [InlineData("workflows/definitions/*:view", "workflows/definitions/labels:view", true)]
+    [Arguments("workflows/*:view", "workflows/definitions:view", true)]
+    [Arguments("workflows/*:view", "workflows/definitions/versions:view", true)]
+    [Arguments("workflows/definitions/*:view", "workflows/definitions:view", true)]
+    [Arguments("workflows/definitions/*:view", "workflows/definitions/labels:view", true)]
     // ... but not a sibling that merely shares a prefix string.
-    [InlineData("workflows/definition/*:view", "workflows/definitions:view", false)]
-    [InlineData("workflows/*:view", "identity/users:view", false)]
+    [Arguments("workflows/definition/*:view", "workflows/definitions:view", false)]
+    [Arguments("workflows/*:view", "identity/users:view", false)]
     // A subtree wildcard does not widen the verb axis.
-    [InlineData("workflows/*:view", "workflows/definitions:delete", false)]
+    [Arguments("workflows/*:view", "workflows/definitions:delete", false)]
     // A verb wildcard covers any verb on the matched resource.
-    [InlineData("workflows/definitions:*", "workflows/definitions:delete", true)]
-    [InlineData("workflows/definitions:*", "workflows/instances:delete", false)]
+    [Arguments("workflows/definitions:*", "workflows/definitions:delete", true)]
+    [Arguments("workflows/definitions:*", "workflows/instances:delete", false)]
     // The whole vocabulary.
-    [InlineData("*:*", "workflows/definitions:publish", true)]
-    [InlineData("*:view", "anything/at/all:view", true)]
-    [InlineData("*:view", "anything/at/all:delete", false)]
+    [Arguments("*:*", "workflows/definitions:publish", true)]
+    [Arguments("*:view", "anything/at/all:view", true)]
+    [Arguments("*:view", "anything/at/all:delete", false)]
     // A concrete grant never widens.
-    [InlineData("workflows/definitions:view", "workflows/*:view", false)]
-    public void MatchesAsDeclared(string granted, string required, bool expected)
+    [Arguments("workflows/definitions:view", "workflows/*:view", false)]
+    public async Task MatchesAsDeclared(string granted, string required, bool expected)
     {
-        Assert.Equal(expected, PermissionMatcher.Satisfies(Permission.Parse(granted), Permission.Parse(required)));
+        await Assert.That(PermissionMatcher.Satisfies(Permission.Parse(granted), Permission.Parse(required))).IsEqualTo(expected);
     }
 
-    [Fact]
-    public void AWildcardCoversAResourceRegisteredLater()
+    [Test]
+    public async Task AWildcardCoversAResourceRegisteredLater()
     {
         // Forward reach is the whole point of a wildcard: a module added next release is covered without
         // touching the role.
         var granted = Permission.Parse("workflows/*:view");
 
-        Assert.True(PermissionMatcher.Satisfies(granted, Permission.Parse("workflows/not-invented-yet:view")));
+        await Assert.That(PermissionMatcher.Satisfies(granted, Permission.Parse("workflows/not-invented-yet:view"))).IsTrue();
     }
 
-    [Fact]
-    public void AVerbWildcardCoversAVerbAddedLater()
+    [Test]
+    public async Task AVerbWildcardCoversAVerbAddedLater()
     {
         var granted = Permission.Parse("secrets:*");
 
-        Assert.True(PermissionMatcher.Satisfies(granted, Permission.Parse("secrets:quarantine")));
+        await Assert.That(PermissionMatcher.Satisfies(granted, Permission.Parse("secrets:quarantine"))).IsTrue();
     }
 
-    [Fact]
-    public void ConcreteGrantsDoNotCoverVerbsAddedLater()
+    [Test]
+    public async Task ConcreteGrantsDoNotCoverVerbsAddedLater()
     {
         // The counterpart to the above: explicit grants stay frozen, which is what makes them safe.
         var granted = new[] { "secrets:view", "secrets:write", "secrets:delete" }.Select(Permission.Parse);
 
-        Assert.False(PermissionMatcher.Satisfies(granted, Permission.Parse("secrets:quarantine")));
+        await Assert.That(PermissionMatcher.Satisfies(granted, Permission.Parse("secrets:quarantine"))).IsFalse();
     }
 
-    [Fact]
-    public void AnEmptyGrantSetDeniesEverything()
+    [Test]
+    public async Task AnEmptyGrantSetDeniesEverything()
     {
-        Assert.False(PermissionMatcher.Satisfies([], Permission.Parse("dashboard:view")));
+        await Assert.That(PermissionMatcher.Satisfies([], Permission.Parse("dashboard:view"))).IsFalse();
     }
 
-    [Fact]
-    public void AnyMatchingGrantSatisfiesTheRequirement()
+    [Test]
+    public async Task AnyMatchingGrantSatisfiesTheRequirement()
     {
         var granted = new[] { "dashboard:view", "workflows/*:view" }.Select(Permission.Parse).ToArray();
 
-        Assert.True(PermissionMatcher.Satisfies(granted, Permission.Parse("workflows/instances:view")));
-        Assert.False(PermissionMatcher.Satisfies(granted, Permission.Parse("secrets:view")));
+        await Assert.That(PermissionMatcher.Satisfies(granted, Permission.Parse("workflows/instances:view"))).IsTrue();
+        await Assert.That(PermissionMatcher.Satisfies(granted, Permission.Parse("secrets:view"))).IsFalse();
     }
 }

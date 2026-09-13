@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Flow;
 
@@ -9,17 +10,19 @@ namespace Elsa.Activities.UnitTests.Flow;
 /// </summary>
 public class EndTests
 {
-    [Fact(DisplayName = "End implements ITerminalNode interface")]
-    public void End_ImplementsITerminalNode()
+    [Test]
+    [DisplayName("End implements ITerminalNode interface")]
+    public async Task End_ImplementsITerminalNode()
     {
         // Arrange
         var endActivity = new End();
 
         // Assert
-        Assert.IsAssignableFrom<ITerminalNode>(endActivity);
+        await Assert.That(endActivity).IsAssignableTo<ITerminalNode>();
     }
 
-    [Fact(DisplayName = "End completes execution")]
+    [Test]
+    [DisplayName("End completes execution")]
     public async Task End_CompletesExecution()
     {
         // Arrange
@@ -30,6 +33,6 @@ public class EndTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 }

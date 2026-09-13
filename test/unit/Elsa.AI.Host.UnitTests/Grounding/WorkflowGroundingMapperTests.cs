@@ -1,12 +1,14 @@
 using Elsa.AI.Host.Services;
 using Elsa.Workflows.Management.Entities;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
 public class WorkflowGroundingMapperTests
 {
-    [Fact(DisplayName = "Workflow mapper extracts activity types from serialized graph")]
-    public void WorkflowMapperExtractsActivityTypesFromSerializedGraph()
+    [Test]
+    [DisplayName("Workflow mapper extracts activity types from serialized graph")]
+    public async Task WorkflowMapperExtractsActivityTypesFromSerializedGraph()
     {
         var mapper = new WorkflowGroundingMapper();
         var definition = new WorkflowDefinition
@@ -31,8 +33,8 @@ public class WorkflowGroundingMapperTests
 
         var graph = mapper.GetGraph(definition);
 
-        Assert.Equal(2, graph.ActivityCount);
-        Assert.Contains("Elsa.Http.HttpEndpoint", graph.ActivityTypes);
-        Assert.Contains("Elsa.Email.SendEmail", graph.ActivityTypes);
+        await Assert.That(graph.ActivityCount).IsEqualTo(2);
+        await Assert.That(graph.ActivityTypes).Contains("Elsa.Http.HttpEndpoint");
+        await Assert.That(graph.ActivityTypes).Contains("Elsa.Email.SendEmail");
     }
 }

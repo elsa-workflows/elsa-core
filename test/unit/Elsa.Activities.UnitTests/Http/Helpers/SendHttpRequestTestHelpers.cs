@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Net;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http.Helpers;
 
@@ -50,20 +50,20 @@ public static class SendHttpRequestTestHelpers
 
         using var source = new ActivitySource(TestActivitySourceName);
         using var parentActivity = source.StartActivity("parent");
-        Assert.NotNull(parentActivity);
+        await Assert.That(parentActivity).IsNotNull();
 
         var requestCapture = new RequestCapture();
         var responseHandler = CreateResponseHandler(HttpStatusCode.OK, "{}", requestCapture);
 
         await executeActivityAsync(new Uri("https://api.example.com/traced"), responseHandler);
 
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.True(requestCapture.CapturedRequest.Headers.TryGetValues("traceparent", out var traceParents));
-        var traceParent = Assert.Single(traceParents);
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.TryGetValues("traceparent", out var traceParents)).IsTrue();
+        var traceParent = await Assert.That(traceParents).HasSingleItem();
         var traceParentParts = traceParent.Split('-');
-        Assert.Equal(4, traceParentParts.Length);
-        Assert.Equal(2, traceParentParts[0].Length);
-        Assert.Equal(parentActivity.TraceId.ToString(), traceParentParts[1]);
+        await Assert.That(traceParentParts.Length).IsEqualTo(4);
+        await Assert.That(traceParentParts[0].Length).IsEqualTo(2);
+        await Assert.That(traceParentParts[1]).IsEqualTo(parentActivity.TraceId.ToString());
     }
 
     /// <summary>

@@ -1,83 +1,84 @@
 using Elsa.Authorization;
+using System.Threading.Tasks;
 
 namespace Elsa.Api.Common.UnitTests.Authorization;
 
 public class PermissionTests
 {
-    [Theory]
-    [InlineData("workflows/definitions:view", "workflows/definitions", "view")]
-    [InlineData("secrets:write", "secrets", "write")]
-    [InlineData("workflows/*:view", "workflows/*", "view")]
-    [InlineData("workflows/definitions:*", "workflows/definitions", "*")]
-    [InlineData("*:*", "*", "*")]
-    [InlineData("  secrets:view  ", "secrets", "view")]
-    public void ParsesWellFormedPermissions(string value, string resource, string verb)
+    [Test]
+    [Arguments("workflows/definitions:view", "workflows/definitions", "view")]
+    [Arguments("secrets:write", "secrets", "write")]
+    [Arguments("workflows/*:view", "workflows/*", "view")]
+    [Arguments("workflows/definitions:*", "workflows/definitions", "*")]
+    [Arguments("*:*", "*", "*")]
+    [Arguments("  secrets:view  ", "secrets", "view")]
+    public async Task ParsesWellFormedPermissions(string value, string resource, string verb)
     {
-        Assert.True(Permission.TryParse(value, out var permission));
-        Assert.Equal(new Permission(resource, verb), permission);
-        Assert.Equal($"{resource}:{verb}", permission.ToString());
+        await Assert.That(Permission.TryParse(value, out var permission)).IsTrue();
+        await Assert.That(permission).IsEqualTo(new Permission(resource, verb));
+        await Assert.That(permission.ToString()).IsEqualTo($"{resource}:{verb}");
     }
 
-    [Fact]
-    public void ABareWildcardNormalizesToTheWholeVocabulary()
+    [Test]
+    public async Task ABareWildcardNormalizesToTheWholeVocabulary()
     {
         // A parsing rule, not an evaluation special case: it is what lets a stored or seeded "*" keep
         // authorizing across the vocabulary migration without a lock-out window.
-        Assert.True(Permission.TryParse("*", out var permission));
-        Assert.Equal(Permission.All, permission);
-        Assert.Equal("*:*", permission.ToString());
+        await Assert.That(Permission.TryParse("*", out var permission)).IsTrue();
+        await Assert.That(permission).IsEqualTo(Permission.All);
+        await Assert.That(permission.ToString()).IsEqualTo("*:*");
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData("workflows/definitions")]      // no verb
-    [InlineData(":view")]                       // no resource
-    [InlineData("workflows/definitions:")]      // empty verb
-    [InlineData("workflows:definitions:view")]  // verb may not contain the separator
-    [InlineData("workflows:defs/view")]         // verb may not contain a path separator
-    [InlineData("workflows/definitions:view,create")] // a comma can never appear: persistence joins on it
-    public void RejectsMalformedPermissions(string? value)
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments("workflows/definitions")]      // no verb
+    [Arguments(":view")]                       // no resource
+    [Arguments("workflows/definitions:")]      // empty verb
+    [Arguments("workflows:definitions:view")]  // verb may not contain the separator
+    [Arguments("workflows:defs/view")]         // verb may not contain a path separator
+    [Arguments("workflows/definitions:view,create")] // a comma can never appear: persistence joins on it
+    public async Task RejectsMalformedPermissions(string? value)
     {
-        Assert.False(Permission.TryParse(value, out _));
+        await Assert.That(Permission.TryParse(value, out _)).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public void ParseThrowsOnMalformedInput()
     {
-        Assert.Throws<FormatException>(() => Permission.Parse("workflows/definitions"));
+        Assert.ThrowsExactly<FormatException>(() => Permission.Parse("workflows/definitions"));
     }
 
-    [Theory]
-    [InlineData("*:*", true, true, false)]
-    [InlineData("workflows/*:view", false, false, true)]
-    [InlineData("workflows/definitions:*", false, true, false)]
-    [InlineData("workflows/definitions:view", false, false, false)]
-    public void ClassifiesWildcards(string value, bool resourceWildcard, bool verbWildcard, bool subtree)
+    [Test]
+    [Arguments("*:*", true, true, false)]
+    [Arguments("workflows/*:view", false, false, true)]
+    [Arguments("workflows/definitions:*", false, true, false)]
+    [Arguments("workflows/definitions:view", false, false, false)]
+    public async Task ClassifiesWildcards(string value, bool resourceWildcard, bool verbWildcard, bool subtree)
     {
         var permission = Permission.Parse(value);
 
-        Assert.Equal(resourceWildcard, permission.IsResourceWildcard);
-        Assert.Equal(verbWildcard, permission.IsVerbWildcard);
-        Assert.Equal(subtree, permission.IsSubtree);
-        Assert.Equal(resourceWildcard || verbWildcard || subtree, permission.HasWildcard);
+        await Assert.That(permission.IsResourceWildcard).IsEqualTo(resourceWildcard);
+        await Assert.That(permission.IsVerbWildcard).IsEqualTo(verbWildcard);
+        await Assert.That(permission.IsSubtree).IsEqualTo(subtree);
+        await Assert.That(permission.HasWildcard).IsEqualTo(resourceWildcard || verbWildcard || subtree);
     }
 
-    [Theory]
-    [InlineData("workflows/definitions:view", true)]
-    [InlineData("workflows/*:view", true)]
-    [InlineData("workflows/definitions:*", true)]
-    [InlineData("*:*", true)]
-    [InlineData("workflows*:delete", false)]        // missing slash: not a subtree pattern
-    [InlineData("work*/foo:view", false)]           // embedded wildcard mid-resource
-    [InlineData("work*/definitions/*:view", false)] // trailing '/*' does not redeem an embedded '*'
-    [InlineData("workflows/*/versions:view", false)] // '*' as a middle segment
-    [InlineData("workflows:del*", false)]           // embedded wildcard in the verb
-    public void RecognizesWildcardsTheMatcherNeverSatisfies(string value, bool valid)
+    [Test]
+    [Arguments("workflows/definitions:view", true)]
+    [Arguments("workflows/*:view", true)]
+    [Arguments("workflows/definitions:*", true)]
+    [Arguments("*:*", true)]
+    [Arguments("workflows*:delete", false)]        // missing slash: not a subtree pattern
+    [Arguments("work*/foo:view", false)]           // embedded wildcard mid-resource
+    [Arguments("work*/definitions/*:view", false)] // trailing '/*' does not redeem an embedded '*'
+    [Arguments("workflows/*/versions:view", false)] // '*' as a middle segment
+    [Arguments("workflows:del*", false)]           // embedded wildcard in the verb
+    public async Task RecognizesWildcardsTheMatcherNeverSatisfies(string value, bool valid)
     {
         // Such strings parse — TryParse stays lenient for stored roles — but validation paths reject them,
         // because a pattern that matches nothing in a deny list silently stops denying.
-        Assert.Equal(valid, Permission.Parse(value).IsValidPattern);
+        await Assert.That(Permission.Parse(value).IsValidPattern).IsEqualTo(valid);
     }
 }

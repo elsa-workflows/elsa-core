@@ -2,6 +2,7 @@ using Elsa.Testing.Shared;
 using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Composition;
 
@@ -10,10 +11,11 @@ namespace Elsa.Activities.UnitTests.Composition;
 /// </summary>
 public class ContainerTests
 {
-    [Theory(DisplayName = "Container schedules child activities")]
-    [InlineData(1)]
-    [InlineData(3)]
-    [InlineData(5)]
+    [Test]
+    [DisplayName("Container schedules child activities")]
+    [Arguments(1)]
+    [Arguments(3)]
+    [Arguments(5)]
     public async Task Container_SchedulesChildActivities(int activityCount)
     {
         // Arrange
@@ -24,10 +26,11 @@ public class ContainerTests
         var context = await ExecuteContainerAsync(container);
 
         // Assert - First activity should be scheduled (sequential scheduling)
-        Assert.True(context.HasScheduledActivity(activities[0]));
+        await Assert.That(context.HasScheduledActivity(activities[0])).IsTrue();
     }
 
-    [Fact(DisplayName = "Container with no activities completes without scheduling")]
+    [Test]
+    [DisplayName("Container with no activities completes without scheduling")]
     public async Task Container_WithNoActivities_CompletesWithoutScheduling()
     {
         // Arrange
@@ -38,10 +41,11 @@ public class ContainerTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(scheduledActivities);
+        await Assert.That(scheduledActivities).IsEmpty();
     }
 
-    [Fact(DisplayName = "Container declares variables in memory")]
+    [Test]
+    [DisplayName("Container declares variables in memory")]
     public async Task Container_DeclaresVariablesInMemory()
     {
         // Arrange
@@ -54,11 +58,12 @@ public class ContainerTests
 
         // Assert
         var memory = context.ExpressionExecutionContext.Memory;
-        Assert.True(memory.HasBlock(variable1.Id));
-        Assert.True(memory.HasBlock(variable2.Id));
+        await Assert.That(memory.HasBlock(variable1.Id)).IsTrue();
+        await Assert.That(memory.HasBlock(variable2.Id)).IsTrue();
     }
 
-    [Fact(DisplayName = "Container auto-names unnamed variables")]
+    [Test]
+    [DisplayName("Container auto-names unnamed variables")]
     public async Task Container_AutoNamesUnnamedVariables()
     {
         // Arrange
@@ -71,12 +76,13 @@ public class ContainerTests
         await ExecuteContainerAsync(container);
 
         // Assert
-        Assert.Equal("Variable1", var1.Name);
-        Assert.Equal("Variable2", var2.Name);
-        Assert.Equal("Variable3", var3.Name);
+        await Assert.That(var1.Name).IsEqualTo("Variable1");
+        await Assert.That(var2.Name).IsEqualTo("Variable2");
+        await Assert.That(var3.Name).IsEqualTo("Variable3");
     }
 
-    [Fact(DisplayName = "Container preserves named variables")]
+    [Test]
+    [DisplayName("Container preserves named variables")]
     public async Task Container_PreservesNamedVariables()
     {
         // Arrange
@@ -88,14 +94,15 @@ public class ContainerTests
         await ExecuteContainerAsync(container);
 
         // Assert
-        Assert.Equal("MyVariable", namedVar.Name);
-        Assert.Equal("Variable1", unnamedVar.Name);
+        await Assert.That(namedVar.Name).IsEqualTo("MyVariable");
+        await Assert.That(unnamedVar.Name).IsEqualTo("Variable1");
     }
 
-    [Theory(DisplayName = "Container handles multiple unnamed variables correctly")]
-    [InlineData(1)]
-    [InlineData(5)]
-    [InlineData(10)]
+    [Test]
+    [DisplayName("Container handles multiple unnamed variables correctly")]
+    [Arguments(1)]
+    [Arguments(5)]
+    [Arguments(10)]
     public async Task Container_HandlesMultipleUnnamedVariables(int variableCount)
     {
         // Arrange
@@ -108,11 +115,12 @@ public class ContainerTests
         // Assert
         for (var i = 0; i < variableCount; i++)
         {
-            Assert.Equal($"Variable{i + 1}", variables[i].Name);
+            await Assert.That(variables[i].Name).IsEqualTo($"Variable{i + 1}");
         }
     }
 
-    [Fact(DisplayName = "Container with mixed named and unnamed variables")]
+    [Test]
+    [DisplayName("Container with mixed named and unnamed variables")]
     public async Task Container_WithMixedNamedAndUnnamedVariables()
     {
         // Arrange
@@ -126,13 +134,14 @@ public class ContainerTests
         await ExecuteContainerAsync(container);
 
         // Assert
-        Assert.Equal("FirstVar", namedVar1.Name);
-        Assert.Equal("Variable1", unnamedVar1.Name);
-        Assert.Equal("SecondVar", namedVar2.Name);
-        Assert.Equal("Variable2", unnamedVar2.Name);
+        await Assert.That(namedVar1.Name).IsEqualTo("FirstVar");
+        await Assert.That(unnamedVar1.Name).IsEqualTo("Variable1");
+        await Assert.That(namedVar2.Name).IsEqualTo("SecondVar");
+        await Assert.That(unnamedVar2.Name).IsEqualTo("Variable2");
     }
 
-    [Fact(DisplayName = "Container schedules mixed activity types")]
+    [Test]
+    [DisplayName("Container schedules mixed activity types")]
     public async Task Container_SchedulesMixedActivityTypes()
     {
         // Arrange
@@ -146,10 +155,11 @@ public class ContainerTests
         var context = await ExecuteContainerAsync(container);
 
         // Assert
-        Assert.True(context.HasScheduledActivity(writeLine));
+        await Assert.That(context.HasScheduledActivity(writeLine)).IsTrue();
     }
 
-    [Fact(DisplayName = "Container with single activity schedules it")]
+    [Test]
+    [DisplayName("Container with single activity schedules it")]
     public async Task Container_WithSingleActivity_SchedulesIt()
     {
         // Arrange
@@ -160,10 +170,11 @@ public class ContainerTests
         var context = await ExecuteContainerAsync(container);
 
         // Assert
-        Assert.True(context.HasScheduledActivity(activity));
+        await Assert.That(context.HasScheduledActivity(activity)).IsTrue();
     }
 
-    [Fact(DisplayName = "Container with variables and activities works correctly")]
+    [Test]
+    [DisplayName("Container with variables and activities works correctly")]
     public async Task Container_WithVariablesAndActivities_WorksCorrectly()
     {
         // Arrange
@@ -177,8 +188,8 @@ public class ContainerTests
         var context = await ExecuteContainerAsync(container);
 
         // Assert
-        Assert.True(context.ExpressionExecutionContext.Memory.HasBlock(variable.Id));
-        Assert.True(context.HasScheduledActivity(activity));
+        await Assert.That(context.ExpressionExecutionContext.Memory.HasBlock(variable.Id)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(activity)).IsTrue();
     }
 
     private static Task<ActivityExecutionContext> ExecuteContainerAsync(TestContainer container) =>

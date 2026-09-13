@@ -5,13 +5,15 @@ using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Persistence.EFCore.UnitTests;
 
 public class AIPersistenceRegistrationTests
 {
-    [Fact(DisplayName = "AI persistence store registration configures DbContext")]
-    public void AIPersistenceStoreRegistrationConfiguresDbContext()
+    [Test]
+    [DisplayName("AI persistence store registration configures DbContext")]
+    public async Task AIPersistenceStoreRegistrationConfiguresDbContext()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         var services = new ServiceCollection();
@@ -21,13 +23,14 @@ public class AIPersistenceRegistrationTests
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
 
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<AIDbContext>());
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<IAIProposalStore>());
-        Assert.IsType<EFCoreAIConversationStore>(scope.ServiceProvider.GetRequiredService<IAIConversationStore>());
+        await Assert.That(scope.ServiceProvider.GetRequiredService<AIDbContext>()).IsNotNull();
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIProposalStore>()).IsNotNull();
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIConversationStore>()).IsOfType(typeof(EFCoreAIConversationStore));
     }
 
-    [Fact(DisplayName = "AI persistence store registration replaces existing conversation store")]
-    public void AIPersistenceStoreRegistrationReplacesExistingConversationStore()
+    [Test]
+    [DisplayName("AI persistence store registration replaces existing conversation store")]
+    public async Task AIPersistenceStoreRegistrationReplacesExistingConversationStore()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         var services = new ServiceCollection();
@@ -39,20 +42,22 @@ public class AIPersistenceRegistrationTests
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
 
-        Assert.IsType<EFCoreAIConversationStore>(scope.ServiceProvider.GetRequiredService<IAIConversationStore>());
-        Assert.IsType<EFCoreAIProposalStore>(scope.ServiceProvider.GetRequiredService<IAIProposalStore>());
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIConversationStore>()).IsOfType(typeof(EFCoreAIConversationStore));
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIProposalStore>()).IsOfType(typeof(EFCoreAIProposalStore));
     }
 
-    [Fact(DisplayName = "AI persistence store registration requires a DbContext provider")]
+    [Test]
+    [DisplayName("AI persistence store registration requires a DbContext provider")]
     public void AIPersistenceStoreRegistrationRequiresDbContextProvider()
     {
         var services = new ServiceCollection();
 
-        Assert.Throws<InvalidOperationException>(() => services.AddAIPersistenceStores());
+        Assert.ThrowsExactly<InvalidOperationException>(() => services.AddAIPersistenceStores());
     }
 
-    [Fact(DisplayName = "AI persistence store registration uses preconfigured DbContext options")]
-    public void AIPersistenceStoreRegistrationUsesPreconfiguredDbContextOptions()
+    [Test]
+    [DisplayName("AI persistence store registration uses preconfigured DbContext options")]
+    public async Task AIPersistenceStoreRegistrationUsesPreconfiguredDbContextOptions()
     {
         using var connection = new SqliteConnection("DataSource=:memory:");
         var services = new ServiceCollection();
@@ -63,8 +68,8 @@ public class AIPersistenceRegistrationTests
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
 
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<AIDbContext>());
-        Assert.IsType<EFCoreAIConversationStore>(scope.ServiceProvider.GetRequiredService<IAIConversationStore>());
+        await Assert.That(scope.ServiceProvider.GetRequiredService<AIDbContext>()).IsNotNull();
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIConversationStore>()).IsOfType(typeof(EFCoreAIConversationStore));
     }
 
     private class StubConversationStore : IAIConversationStore

@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Flow;
 
@@ -9,10 +10,11 @@ namespace Elsa.Activities.UnitTests.Flow;
 /// </summary>
 public class SequenceTests
 {
-    [Theory(DisplayName = "Sequence schedules first child activity")]
-    [InlineData(1)]
-    [InlineData(3)]
-    [InlineData(5)]
+    [Test]
+    [DisplayName("Sequence schedules first child activity")]
+    [Arguments(1)]
+    [Arguments(3)]
+    [Arguments(5)]
     public async Task Sequence_SchedulesFirstChildActivity(int activityCount)
     {
         // Arrange
@@ -23,10 +25,11 @@ public class SequenceTests
         var context = await ExecuteSequenceAsync(sequence);
 
         // Assert - Only first activity should be scheduled (sequential scheduling)
-        Assert.True(context.HasScheduledActivity(activities[0]));
+        await Assert.That(context.HasScheduledActivity(activities[0])).IsTrue();
     }
 
-    [Fact(DisplayName = "Sequence with no activities completes without scheduling")]
+    [Test]
+    [DisplayName("Sequence with no activities completes without scheduling")]
     public async Task Sequence_WithNoActivities_CompletesWithoutScheduling()
     {
         // Arrange
@@ -37,10 +40,11 @@ public class SequenceTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Empty(scheduledActivities);
+        await Assert.That(scheduledActivities).IsEmpty();
     }
 
-    [Fact(DisplayName = "Sequence with single activity schedules it")]
+    [Test]
+    [DisplayName("Sequence with single activity schedules it")]
     public async Task Sequence_WithSingleActivity_SchedulesIt()
     {
         // Arrange
@@ -51,10 +55,11 @@ public class SequenceTests
         var context = await ExecuteSequenceAsync(sequence);
 
         // Assert
-        Assert.True(context.HasScheduledActivity(activity));
+        await Assert.That(context.HasScheduledActivity(activity)).IsTrue();
     }
 
-    [Fact(DisplayName = "Sequence tracks current index property")]
+    [Test]
+    [DisplayName("Sequence tracks current index property")]
     public async Task Sequence_TracksCurrentIndexProperty()
     {
         // Arrange
@@ -66,13 +71,14 @@ public class SequenceTests
 
         // Assert - CurrentIndex should be incremented after scheduling first activity
         var currentIndex = context.GetProperty<int>("CurrentIndex");
-        Assert.Equal(1, currentIndex);
+        await Assert.That(currentIndex).IsEqualTo(1);
     }
 
-    [Theory(DisplayName = "Sequence schedules activities with different counts")]
-    [InlineData(2)]
-    [InlineData(5)]
-    [InlineData(10)]
+    [Test]
+    [DisplayName("Sequence schedules activities with different counts")]
+    [Arguments(2)]
+    [Arguments(5)]
+    [Arguments(10)]
     public async Task Sequence_SchedulesActivitiesWithDifferentCounts(int activityCount)
     {
         // Arrange
@@ -83,14 +89,15 @@ public class SequenceTests
         var context = await ExecuteSequenceAsync(sequence);
 
         // Assert - Only first activity should be scheduled initially
-        Assert.True(context.HasScheduledActivity(activities[0]));
+        await Assert.That(context.HasScheduledActivity(activities[0])).IsTrue();
         if (activityCount > 1)
         {
-            Assert.False(context.HasScheduledActivity(activities[1]));
+            await Assert.That(context.HasScheduledActivity(activities[1])).IsFalse();
         }
     }
 
-    [Fact(DisplayName = "Sequence schedules mixed activity types")]
+    [Test]
+    [DisplayName("Sequence schedules mixed activity types")]
     public async Task Sequence_SchedulesMixedActivityTypes()
     {
         // Arrange
@@ -104,12 +111,13 @@ public class SequenceTests
         var context = await ExecuteSequenceAsync(sequence);
 
         // Assert - First activity should be scheduled
-        Assert.True(context.HasScheduledActivity(writeLine));
-        Assert.False(context.HasScheduledActivity(setVariable));
-        Assert.False(context.HasScheduledActivity(mockActivity));
+        await Assert.That(context.HasScheduledActivity(writeLine)).IsTrue();
+        await Assert.That(context.HasScheduledActivity(setVariable)).IsFalse();
+        await Assert.That(context.HasScheduledActivity(mockActivity)).IsFalse();
     }
 
-    [Fact(DisplayName = "Sequence with variables declares them in memory")]
+    [Test]
+    [DisplayName("Sequence with variables declares them in memory")]
     public async Task Sequence_WithVariables_DeclaresThemInMemory()
     {
         // Arrange
@@ -126,8 +134,8 @@ public class SequenceTests
 
         // Assert
         var memory = context.ExpressionExecutionContext.Memory;
-        Assert.True(memory.HasBlock(variable1.Id));
-        Assert.True(memory.HasBlock(variable2.Id));
+        await Assert.That(memory.HasBlock(variable1.Id)).IsTrue();
+        await Assert.That(memory.HasBlock(variable2.Id)).IsTrue();
     }
 
     private static Task<ActivityExecutionContext> ExecuteSequenceAsync(Sequence sequence) =>

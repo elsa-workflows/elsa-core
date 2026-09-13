@@ -1,11 +1,12 @@
 using Elsa.Common.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Models;
 
 public class PageArgsTests
 {
-    [Fact]
-    public void Next_FromPage_AdvancesByPageSize()
+    [Test]
+    public async Task Next_FromPage_AdvancesByPageSize()
     {
         // Arrange
         var pageArgs = PageArgs.FromPage(0, 10);
@@ -15,15 +16,15 @@ public class PageArgsTests
         var thirdPage = nextPage.Next();
 
         // Assert
-        Assert.Equal(10, nextPage.Offset);
-        Assert.Equal(10, nextPage.Limit);
-        Assert.Equal(1, nextPage.Page);
-        Assert.Equal(20, thirdPage.Offset);
-        Assert.Equal(2, thirdPage.Page);
+        await Assert.That(nextPage.Offset).IsEqualTo(10);
+        await Assert.That(nextPage.Limit).IsEqualTo(10);
+        await Assert.That(nextPage.Page).IsEqualTo(1);
+        await Assert.That(thirdPage.Offset).IsEqualTo(20);
+        await Assert.That(thirdPage.Page).IsEqualTo(2);
     }
 
-    [Fact]
-    public void Next_AllPages_RemainsUnbounded()
+    [Test]
+    public async Task Next_AllPages_RemainsUnbounded()
     {
         // Arrange
         var pageArgs = PageArgs.All;
@@ -32,8 +33,8 @@ public class PageArgsTests
         var nextPage = pageArgs.Next();
 
         // Assert
-        Assert.Null(nextPage.Offset);
-        Assert.Null(nextPage.Limit);
-        Assert.Null(nextPage.Page);
+        await Assert.That(nextPage.Offset).IsNull();
+        await Assert.That(nextPage.Limit).IsNull();
+        await Assert.That(nextPage.Page).IsNull();
     }
 }

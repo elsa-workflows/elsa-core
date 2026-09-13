@@ -5,12 +5,13 @@ using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Stimuli;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class EventBaseTests
 {
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_CreatesBookmark_WithCorrectEventName()
     {
         // Arrange
@@ -21,12 +22,12 @@ public class EventBaseTests
         var context = await ExecuteAsync(activity);
 
         // Assert
-        Assert.Equal(ActivityStatus.Running, context.Status);
-        var stimulus = GetEventStimulusFromContext(context);
-        Assert.Equal(eventName, stimulus.EventName);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+        var stimulus = await GetEventStimulusFromContext(context);
+        await Assert.That(stimulus.EventName).IsEqualTo(eventName);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_CreatesBookmark_WithoutActivityInstanceId()
     {
         // Arrange
@@ -36,26 +37,25 @@ public class EventBaseTests
         var context = await ExecuteAsync(activity);
 
         // Assert
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        Assert.True(string.IsNullOrEmpty(bookmark.ActivityInstanceId),
-            "ActivityInstanceId should be null or empty because IncludeActivityInstanceId is set to false");
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(string.IsNullOrEmpty(bookmark.ActivityInstanceId)).IsTrue().Because("ActivityInstanceId should be null or empty because IncludeActivityInstanceId is set to false");
     }
 
-    [Theory]
-    [InlineData("Event.Order.Created")]
-    [InlineData("Event.User.Registered")]
-    [InlineData("CustomEvent")]
+    [Test]
+    [Arguments("Event.Order.Created")]
+    [Arguments("Event.User.Registered")]
+    [Arguments("CustomEvent")]
     public async Task ExecuteAsync_CreatesBookmark_WithCorrectEventStimulus(string eventName)
     {
         // Arrange & Act
         var context = await ExecuteAsync(new TestEvent(eventName));
 
         // Assert
-        var stimulus = GetEventStimulusFromContext(context);
-        Assert.Equal(eventName, stimulus.EventName);
+        var stimulus = await GetEventStimulusFromContext(context);
+        await Assert.That(stimulus.EventName).IsEqualTo(eventName);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_SetsResultOutput_WhenCallbackIsInvoked()
     {
         // Arrange
@@ -69,10 +69,10 @@ public class EventBaseTests
 
         // Assert
         var result = context.GetActivityOutput(() => activity.Result);
-        Assert.Equal(expectedInput, result);
+        await Assert.That(result).IsEqualTo(expectedInput);
     }
 
-    [Fact]
+    [Test]
     public async Task GetTriggerPayload_ReturnsEventStimulus_WithCorrectEventName()
     {
         // Arrange
@@ -84,11 +84,12 @@ public class EventBaseTests
         var payload = activity.GetTriggerPayloadPublic(triggerIndexingContext);
 
         // Assert
-        var stimulus = Assert.IsType<EventStimulus>(payload);
-        Assert.Equal(eventName, stimulus.EventName);
+        await Assert.That(payload).IsOfType(typeof(EventStimulus));
+        var stimulus = (EventStimulus)payload!;
+        await Assert.That(stimulus.EventName).IsEqualTo(eventName);
     }
 
-    [Fact]
+    [Test]
     public async Task OnEventReceivedAsync_IsCalledDuringCallback()
     {
         // Arrange
@@ -101,18 +102,19 @@ public class EventBaseTests
         await activity.InvokeCallbackAsync(context);
 
         // Assert
-        Assert.True(activity.OnEventReceivedAsyncWasCalled);
-        Assert.Equal(testPayload, activity.ReceivedInput);
+        await Assert.That(activity.OnEventReceivedAsyncWasCalled).IsTrue();
+        await Assert.That(activity.ReceivedInput).IsEqualTo(testPayload);
     }
 
     private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity) =>
         new ActivityTestFixture(activity).ExecuteAsync();
 
-    private static EventStimulus GetEventStimulusFromContext(ActivityExecutionContext context)
+    private static async Task<EventStimulus> GetEventStimulusFromContext(ActivityExecutionContext context)
     {
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        Assert.Equal(RuntimeStimulusNames.Event, bookmark.Name);
-        return Assert.IsType<EventStimulus>(bookmark.Payload);
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(bookmark.Name).IsEqualTo(RuntimeStimulusNames.Event);
+        await Assert.That(bookmark.Payload).IsOfType(typeof(EventStimulus));
+        return (EventStimulus)bookmark.Payload!;
     }
 
     private static async Task<TriggerIndexingContext> CreateTriggerIndexingContextAsync(IActivity activity)

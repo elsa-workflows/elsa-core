@@ -5,12 +5,13 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Scheduling;
 
 public class StartAtTests
 {
-    [Fact]
+    [Test]
     public async Task WhenIsTrigger_CompletesImmediately()
     {
         // Arrange
@@ -21,14 +22,14 @@ public class StartAtTests
         var context = await ExecuteAsTriggerAsync(activity);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.Empty(context.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks).IsEmpty();
     }
 
-    [Theory]
-    [InlineData(-1, false)]  // Past - completes immediately
-    [InlineData(0, false)]   // Now - completes immediately
-    [InlineData(1, true)]    // Future - creates bookmark
+    [Test]
+    [Arguments(-1, false)]  // Past - completes immediately
+    [Arguments(0, false)]   // Now - completes immediately
+    [Arguments(1, true)]    // Future - creates bookmark
     public async Task ExecuteBehavior_DependsOnTimeRelativeToNow(int hoursOffset, bool shouldCreateBookmark)
     {
         // Arrange
@@ -42,18 +43,18 @@ public class StartAtTests
         // Assert
         if (shouldCreateBookmark)
         {
-            Assert.Equal(ActivityStatus.Running, context.Status);
-            var payload = GetStartAtPayload(context);
-            Assert.Equal(executeAt, payload.ExecuteAt);
+            await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
+            var payload = await GetStartAtPayload(context);
+            await Assert.That(payload.ExecuteAt).IsEqualTo(executeAt);
         }
         else
         {
-            Assert.Equal(ActivityStatus.Completed, context.Status);
-            Assert.Empty(context.WorkflowExecutionContext.Bookmarks);
+            await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+            await Assert.That(context.WorkflowExecutionContext.Bookmarks).IsEmpty();
         }
     }
 
-    [Fact]
+    [Test]
     public async Task RecordsExecutedTimeInJournal()
     {
         // Arrange
@@ -65,8 +66,8 @@ public class StartAtTests
         var context = await ExecuteAsync(activity, now);
 
         // Assert
-        Assert.True(context.JournalData.ContainsKey("Executed At"));
-        Assert.Equal(now, context.JournalData["Executed At"]);
+        await Assert.That(context.JournalData.ContainsKey("Executed At")).IsTrue();
+        await Assert.That(context.JournalData["Executed At"]).IsEqualTo(now);
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(StartAt activity, DateTimeOffset? clockTime = null)
@@ -86,9 +87,10 @@ public class StartAtTests
             .ExecuteAsync();
     }
 
-    private static StartAtPayload GetStartAtPayload(ActivityExecutionContext context)
+    private static async Task<StartAtPayload> GetStartAtPayload(ActivityExecutionContext context)
     {
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        return Assert.IsType<StartAtPayload>(bookmark.Payload);
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(bookmark.Payload).IsOfType(typeof(StartAtPayload));
+        return (StartAtPayload)bookmark.Payload!;
     }
 }

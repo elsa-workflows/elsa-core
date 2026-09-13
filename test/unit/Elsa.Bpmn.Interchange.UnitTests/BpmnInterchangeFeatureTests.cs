@@ -1,13 +1,14 @@
 using Elsa.Bpmn.Interchange.Features;
 using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.Interchange.UnitTests;
 
 public class BpmnInterchangeFeatureTests
 {
-    [Fact]
-    public void UseBpmnInterchange_ConfiguresBpmnInterchangeFeature()
+    [Test]
+    public async Task UseBpmnInterchange_ConfiguresBpmnInterchangeFeature()
     {
         var services = new ServiceCollection();
         var module = services.CreateModule();
@@ -15,6 +16,6 @@ public class BpmnInterchangeFeatureTests
         module.UseBpmnInterchange();
         module.Apply();
 
-        Assert.True(module.HasFeature<BpmnInterchangeFeature>());
+        await Assert.That(module.HasFeature<BpmnInterchangeFeature>()).IsTrue();
     }
 }

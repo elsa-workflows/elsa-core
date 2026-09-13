@@ -1,3 +1,4 @@
+using System.IO;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Reflection;
@@ -10,6 +11,7 @@ using FluentStorage.Blobs;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
@@ -30,7 +32,7 @@ public class ZipManagerTests : IDisposable
         _zipManager = CreateZipManager();
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAsync_ValidToken_LoadsCachedZip()
     {
         var downloadId = "download_ABC-123";
@@ -38,17 +40,17 @@ public class ZipManagerTests : IDisposable
 
         var result = await LoadAsync(downloadId);
 
-        Assert.True(result.HasValue);
-        var value = result.Value;
+        await Assert.That(result.HasValue).IsTrue();
+        var value = result!.Value;
         using var zipStream = new MemoryStream(value.Content);
         using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
-        var entry = Assert.Single(zipArchive.Entries);
+        var entry = await Assert.That(zipArchive.Entries).HasSingleItem();
         await using var entryStream = entry.Open();
         using var reader = new StreamReader(entryStream);
-        Assert.Equal("cached zip", await reader.ReadToEndAsync());
+        await Assert.That(await reader.ReadToEndAsync()).IsEqualTo("cached zip");
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAsync_ValidTokenWithDots_LoadsCachedZip()
     {
         var downloadId = "Elsa.Alterations.ExecuteAlterationPlan";
@@ -56,10 +58,10 @@ public class ZipManagerTests : IDisposable
 
         var result = await LoadAsync(downloadId);
 
-        Assert.True(result.HasValue);
+        await Assert.That(result.HasValue).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAsync_ValidToken_OpensReturnedBlobFullPathWithinCacheDirectory()
     {
         var provider = Substitute.For<IFileCacheStorageProvider>();
@@ -70,12 +72,12 @@ public class ZipManagerTests : IDisposable
 
         var result = await LoadAsync("download", zipManager);
 
-        Assert.True(result.HasValue);
-        Assert.Equal([1, 2, 3], result.Value.Content);
-        Assert.Equal(blobPath, blobStorage.OpenedPath);
+        await Assert.That(result.HasValue).IsTrue();
+        await Assert.That(result!.Value.Content).IsEquivalentTo(new byte[] { 1, 2, 3 }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(blobStorage.OpenedPath).IsEqualTo(blobPath);
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAsync_RootedPathOutsideCacheDirectory_ReturnsNull()
     {
         var provider = Substitute.For<IFileCacheStorageProvider>();
@@ -85,51 +87,51 @@ public class ZipManagerTests : IDisposable
 
         var result = await LoadAsync("download", zipManager);
 
-        Assert.Null(result);
-        Assert.Null(blobStorage.OpenedPath);
+        await Assert.That(result).IsNull();
+        await Assert.That(blobStorage.OpenedPath).IsNull();
     }
 
-    [Theory]
-    [InlineData("../download")]
-    [InlineData("..\\download")]
-    [InlineData("nested/download")]
-    [InlineData("nested\\download")]
-    [InlineData("download token")]
+    [Test]
+    [Arguments("../download")]
+    [Arguments("..\\download")]
+    [Arguments("nested/download")]
+    [Arguments("nested\\download")]
+    [Arguments("download token")]
     public async Task LoadAsync_TraversalLikeToken_ReturnsNull(string downloadId)
     {
         var result = await LoadAsync(downloadId);
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task LoadAsync_TooLongToken_ReturnsNull()
     {
         var downloadId = new string('a', 129);
 
         var result = await LoadAsync(downloadId);
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Theory]
-    [InlineData("../download")]
-    [InlineData("..\\download")]
+    [Test]
+    [Arguments("../download")]
+    [Arguments("..\\download")]
     public async Task CreateAsync_TraversalLikeToken_DoesNotCacheFile(string downloadId)
     {
         await CreateCachedZipAsync(downloadId, "cached zip");
 
-        Assert.Empty(Directory.EnumerateFileSystemEntries(_cacheDirectory));
+        await Assert.That(Directory.EnumerateFileSystemEntries(_cacheDirectory)).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAsync_TooLongToken_DoesNotCacheFile()
     {
         var downloadId = new string('a', 129);
 
         await CreateCachedZipAsync(downloadId, "cached zip");
 
-        Assert.Empty(Directory.EnumerateFileSystemEntries(_cacheDirectory));
+        await Assert.That(Directory.EnumerateFileSystemEntries(_cacheDirectory)).IsEmpty();
     }
 
     public void Dispose()

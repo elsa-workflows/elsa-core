@@ -1,12 +1,13 @@
 using Elsa.Diagnostics.OpenTelemetry.Options;
 using Elsa.Diagnostics.OpenTelemetry.Services;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Services;
 
 public class CollectorConfigurationTests
 {
-    [Fact]
+    [Test]
     public async Task GetAsync_WhenGrpcIsDisabled_ReturnsDisabledGrpcMetadataWithoutSecretValue()
     {
         var provider = new CollectorConfigurationProvider(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions
@@ -17,13 +18,13 @@ public class CollectorConfigurationTests
 
         var configuration = await provider.GetAsync();
 
-        Assert.True(configuration.Http.Enabled);
-        Assert.False(configuration.Grpc.Enabled);
-        Assert.Null(configuration.Grpc.Endpoint);
-        Assert.Equal("<configured>", configuration.RequiredHeaders["x-otlp-api-key"]);
+        await Assert.That(configuration.Http.Enabled).IsTrue();
+        await Assert.That(configuration.Grpc.Enabled).IsFalse();
+        await Assert.That(configuration.Grpc.Endpoint).IsNull();
+        await Assert.That(configuration.RequiredHeaders["x-otlp-api-key"]).IsEqualTo("<configured>");
     }
 
-    [Fact]
+    [Test]
     public async Task GetAsync_WhenGrpcIsEnabled_ReturnsConfiguredGrpcEndpoint()
     {
         var provider = new CollectorConfigurationProvider(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions
@@ -34,8 +35,8 @@ public class CollectorConfigurationTests
 
         var configuration = await provider.GetAsync();
 
-        Assert.True(configuration.Grpc.Enabled);
-        Assert.Equal("https://localhost:4317", configuration.Grpc.Endpoint);
-        Assert.Null(configuration.Grpc.DisabledReason);
+        await Assert.That(configuration.Grpc.Enabled).IsTrue();
+        await Assert.That(configuration.Grpc.Endpoint).IsEqualTo("https://localhost:4317");
+        await Assert.That(configuration.Grpc.DisabledReason).IsNull();
     }
 }

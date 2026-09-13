@@ -1,13 +1,14 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Branching;
 
 public class FlowForkTests
 {
-    [Theory]
-    [MemberData(nameof(BranchTestCases))]
+    [Test]
+    [MethodDataSource(nameof(BranchTestCases))]
     public async Task Should_Complete_With_Specified_Branches(string[] branches, string[] expectedOutcomes)
     {
         // Arrange
@@ -21,9 +22,9 @@ public class FlowForkTests
         // Assert - Activity should complete with all outcomes.
         var outcomes = context.GetOutcomes().ToList();
 
-        Assert.Equal(expectedOutcomes.Length, outcomes.Count);
+        await Assert.That(outcomes.Count).IsEqualTo(expectedOutcomes.Length);
         foreach (var expectedOutcome in expectedOutcomes)
-            Assert.Contains(expectedOutcome, outcomes);
+            await Assert.That(outcomes).Contains(expectedOutcome);
     }
 
     public static IEnumerable<object[]> BranchTestCases()

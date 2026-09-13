@@ -1,10 +1,11 @@
 ﻿using Elsa.Testing.Shared;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class SetVariableOfTTests
 {
-    [Fact]
+    [Test]
     public async Task Should_Set_Variable_Integer()
     {
         // Arrange
@@ -18,22 +19,20 @@ public class SetVariableOfTTests
 
         // Assert
         var result = variable.Get(context);
-        Assert.Equal(expected, result);
+        await Assert.That(result).IsEqualTo(expected);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Throw_When_Variable_Is_Null()
     {
         // Arrange
         var setVariable = new SetVariable<string>(null!, new Input<string>("test value"));
 
         // Act & Assert
-        var exception = await Record.ExceptionAsync(() => new ActivityTestFixture(setVariable).ExecuteAsync());
-
-        Assert.NotNull(exception);
+        await Assert.That(async () => await new ActivityTestFixture(setVariable).ExecuteAsync()).Throws<Exception>();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Variable_To_Null_Value()
     {
         // Arrange
@@ -46,6 +45,6 @@ public class SetVariableOfTTests
 
         // Assert
         var result = variable.Get(context);
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 }

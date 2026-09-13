@@ -4,15 +4,18 @@ using Elsa.AI.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Threading.Tasks;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.AI.Persistence.EFCore.UnitTests;
 
-public class EFCoreAIProposalStoreTests : IAsyncLifetime
+public class EFCoreAIProposalStoreTests : IAsyncInitializer, IAsyncDisposable
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private AIDbContext _dbContext = default!;
 
-    [Fact(DisplayName = "Proposal store persists and reloads proposals")]
+    [Test]
+    [DisplayName("Proposal store persists and reloads proposals")]
     public async Task ProposalStorePersistsAndReloadsProposals()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -32,12 +35,13 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync(proposal.Id, null);
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(AIProposalStatus.Validated, reloaded.Status);
-        Assert.Equal("Create a workflow", reloaded.Rationale);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Status).IsEqualTo(AIProposalStatus.Validated);
+        await Assert.That(reloaded.Rationale).IsEqualTo("Create a workflow");
     }
 
-    [Fact(DisplayName = "Proposal store persists proposals with generated IDs")]
+    [Test]
+    [DisplayName("Proposal store persists proposals with generated IDs")]
     public async Task ProposalStorePersistsProposalsWithGeneratedIds()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -53,12 +57,13 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync(proposal.Id, null);
 
-        Assert.NotNull(reloaded);
-        Assert.False(string.IsNullOrWhiteSpace(reloaded.Id));
-        Assert.NotEqual(default, reloaded.CreatedAt);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(string.IsNullOrWhiteSpace(reloaded.Id)).IsFalse();
+        await Assert.That(reloaded.CreatedAt).IsNotEqualTo(default);
     }
 
-    [Fact(DisplayName = "Proposal store scopes reads by tenant")]
+    [Test]
+    [DisplayName("Proposal store scopes reads by tenant")]
     public async Task ProposalStoreScopesReadsByTenant()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -78,12 +83,13 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         var denied = await store.FindAsync(proposal.Id, "tenant-2");
         var host = await store.FindAsync(proposal.Id, null);
 
-        Assert.NotNull(allowed);
-        Assert.Null(denied);
-        Assert.Null(host);
+        await Assert.That(allowed).IsNotNull();
+        await Assert.That(denied).IsNull();
+        await Assert.That(host).IsNull();
     }
 
-    [Fact(DisplayName = "Proposal store treats null and empty tenant IDs as default tenant")]
+    [Test]
+    [DisplayName("Proposal store treats null and empty tenant IDs as default tenant")]
     public async Task ProposalStoreTreatsNullAndEmptyTenantIdsAsDefaultTenant()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -102,11 +108,12 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         var reloadedWithNull = await store.FindAsync(proposal.Id, null);
         var reloadedWithEmpty = await store.FindAsync(proposal.Id, "");
 
-        Assert.NotNull(reloadedWithNull);
-        Assert.NotNull(reloadedWithEmpty);
+        await Assert.That(reloadedWithNull).IsNotNull();
+        await Assert.That(reloadedWithEmpty).IsNotNull();
     }
 
-    [Fact(DisplayName = "Proposal store rejects cross-tenant overwrites")]
+    [Test]
+    [DisplayName("Proposal store rejects cross-tenant overwrites")]
     public async Task ProposalStoreRejectsCrossTenantOverwrites()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -120,7 +127,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         });
         _dbContext.ChangeTracker.Clear();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIProposal
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIProposal
         {
             Id = "proposal-cross-tenant",
             TenantId = "tenant-2",
@@ -132,13 +139,14 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var original = await store.FindAsync("proposal-cross-tenant", "tenant-1");
 
-        Assert.Equal("Cannot overwrite an AI proposal that belongs to another tenant.", exception.Message);
-        Assert.NotNull(original);
-        Assert.Equal("conversation-1", original.ConversationId);
-        Assert.Equal("user-1", original.CreatedBy);
+        await Assert.That(exception!.Message).IsEqualTo("Cannot overwrite an AI proposal that belongs to another tenant.");
+        await Assert.That(original).IsNotNull();
+        await Assert.That(original.ConversationId).IsEqualTo("conversation-1");
+        await Assert.That(original.CreatedBy).IsEqualTo("user-1");
     }
 
-    [Fact(DisplayName = "Proposal store rejects cross-user overwrites")]
+    [Test]
+    [DisplayName("Proposal store rejects cross-user overwrites")]
     public async Task ProposalStoreRejectsCrossUserOverwrites()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -152,7 +160,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         });
         _dbContext.ChangeTracker.Clear();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIProposal
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIProposal
         {
             Id = "proposal-cross-user",
             TenantId = "tenant-1",
@@ -164,13 +172,14 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var original = await store.FindAsync("proposal-cross-user", "tenant-1");
 
-        Assert.Equal("Cannot overwrite an AI proposal that belongs to another user.", exception.Message);
-        Assert.NotNull(original);
-        Assert.Equal("conversation-1", original.ConversationId);
-        Assert.Equal("user-1", original.CreatedBy);
+        await Assert.That(exception!.Message).IsEqualTo("Cannot overwrite an AI proposal that belongs to another user.");
+        await Assert.That(original).IsNotNull();
+        await Assert.That(original.ConversationId).IsEqualTo("conversation-1");
+        await Assert.That(original.CreatedBy).IsEqualTo("user-1");
     }
 
-    [Fact(DisplayName = "Proposal store preserves creation timestamp on update")]
+    [Test]
+    [DisplayName("Proposal store preserves creation timestamp on update")]
     public async Task ProposalStorePreservesCreationTimestampOnUpdate()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -200,12 +209,13 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync("proposal-timestamp", null);
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(createdAt, reloaded.CreatedAt);
-        Assert.Equal("second", reloaded.Rationale);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.CreatedAt).IsEqualTo(createdAt);
+        await Assert.That(reloaded.Rationale).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Proposal store retries concurrent inserts as updates")]
+    [Test]
+    [DisplayName("Proposal store retries concurrent inserts as updates")]
     public async Task ProposalStoreRetriesConcurrentInsertsAsUpdates()
     {
         var options = new DbContextOptionsBuilder<AIDbContext>()
@@ -229,11 +239,12 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var reloaded = await new EFCoreAIProposalStore(_dbContext).FindAsync("proposal-concurrent", "tenant-1");
 
-        Assert.NotNull(reloaded);
-        Assert.Equal("second", reloaded.Rationale);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Rationale).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Proposal store validates required proposal fields before saving")]
+    [Test]
+    [DisplayName("Proposal store validates required proposal fields before saving")]
     public async Task ProposalStoreValidatesRequiredProposalFieldsBeforeSaving()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -243,12 +254,13 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
+        var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
 
-        Assert.Equal("proposal", exception.ParamName);
+        await Assert.That(exception!.ParamName).IsEqualTo("proposal");
     }
 
-    [Fact(DisplayName = "Proposal store validates proposal ID before saving")]
+    [Test]
+    [DisplayName("Proposal store validates proposal ID before saving")]
     public async Task ProposalStoreValidatesProposalIdBeforeSaving()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -261,13 +273,14 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
+        var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
 
-        Assert.Equal("proposal", exception.ParamName);
-        Assert.Equal("A proposal ID is required. (Parameter 'proposal')", exception.Message);
+        await Assert.That(exception!.ParamName).IsEqualTo("proposal");
+        await Assert.That(exception!.Message).IsEqualTo("A proposal ID is required. (Parameter 'proposal')");
     }
 
-    [Fact(DisplayName = "Proposal store validates proposal creator before saving")]
+    [Test]
+    [DisplayName("Proposal store validates proposal creator before saving")]
     public async Task ProposalStoreValidatesProposalCreatorBeforeSaving()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -278,14 +291,15 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
+        var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(async () => await store.SaveAsync(proposal));
 
-        Assert.Equal("proposal", exception.ParamName);
-        Assert.Equal("A proposal creator is required. (Parameter 'proposal')", exception.Message);
+        await Assert.That(exception!.ParamName).IsEqualTo("proposal");
+        await Assert.That(exception!.Message).IsEqualTo("A proposal creator is required. (Parameter 'proposal')");
     }
 
 
-    [Fact(DisplayName = "Proposal store reads enum values case-insensitively")]
+    [Test]
+    [DisplayName("Proposal store reads enum values case-insensitively")]
     public async Task ProposalStoreReadsEnumValuesCaseInsensitively()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -308,12 +322,13 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync(proposal.Id, null);
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(AIProposalKind.WorkflowCreate, reloaded.Kind);
-        Assert.Equal(AIProposalStatus.Validated, reloaded.Status);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Kind).IsEqualTo(AIProposalKind.WorkflowCreate);
+        await Assert.That(reloaded.Status).IsEqualTo(AIProposalStatus.Validated);
     }
 
-    [Fact(DisplayName = "Proposal store falls back when persisted enum values are invalid")]
+    [Test]
+    [DisplayName("Proposal store falls back when persisted enum values are invalid")]
     public async Task ProposalStoreFallsBackWhenPersistedEnumValuesAreInvalid()
     {
         var store = new EFCoreAIProposalStore(_dbContext);
@@ -336,9 +351,9 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
 
         var reloaded = await store.FindAsync(proposal.Id, null);
 
-        Assert.NotNull(reloaded);
-        Assert.Equal(AIProposalKind.WorkflowCreate, reloaded.Kind);
-        Assert.Equal(AIProposalStatus.Draft, reloaded.Status);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.Kind).IsEqualTo(AIProposalKind.WorkflowCreate);
+        await Assert.That(reloaded.Status).IsEqualTo(AIProposalStatus.Draft);
     }
 
     public async Task InitializeAsync()
@@ -348,7 +363,7 @@ public class EFCoreAIProposalStoreTests : IAsyncLifetime
         await _dbContext.Database.MigrateAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _dbContext.DisposeAsync();
         await _connection.DisposeAsync();

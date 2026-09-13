@@ -7,61 +7,68 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests;
 
 public class AIRegistrationTests
 {
-    [Fact(DisplayName = "AddAIHostServices registers default host services and options")]
-    public void AddAIHostServicesRegistersDefaults()
+    [Test]
+    [DisplayName("AddAIHostServices registers default host services and options")]
+    public async Task AddAIHostServicesRegistersDefaults()
     {
         var services = new ServiceCollection();
 
         services.AddAIHostServices(options => options.ReconnectGrace = TimeSpan.FromSeconds(30));
 
         using var provider = services.BuildServiceProvider();
-        Assert.NotNull(provider.GetRequiredService<IAIConversationStore>());
-        Assert.NotNull(provider.GetRequiredService<AIToolEnablementService>());
-        Assert.NotNull(provider.GetRequiredService<IAIAuditSink>());
-        Assert.Equal(TimeSpan.FromSeconds(30), provider.GetRequiredService<IOptions<AIHostOptions>>().Value.ReconnectGrace);
+        await Assert.That(provider.GetRequiredService<IAIConversationStore>()).IsNotNull();
+        await Assert.That(provider.GetRequiredService<AIToolEnablementService>()).IsNotNull();
+        await Assert.That(provider.GetRequiredService<IAIAuditSink>()).IsNotNull();
+        await Assert.That(provider.GetRequiredService<IOptions<AIHostOptions>>().Value.ReconnectGrace).IsEqualTo(TimeSpan.FromSeconds(30));
     }
 
-    [Fact(DisplayName = "AI audit sink resolves scoped handlers per record call")]
+    [Test]
+    [DisplayName("AI audit sink resolves scoped handlers per record call")]
     public async Task AIAuditSinkResolvesScopedHandlersPerRecordCall()
     {
         var services = new ServiceCollection();
         services.AddAIHostServices();
+        var counter = new AuditCounter();
+        services.AddSingleton(counter);
         services.AddScoped<ScopedAuditHandler>();
         services.AddScoped<IAIAuditEventHandler>(sp => sp.GetRequiredService<ScopedAuditHandler>());
-        ScopedAuditHandler.RecordedCount = 0;
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var sink = provider.GetRequiredService<IAIAuditSink>();
 
         await sink.RecordAsync(new AIAuditEvent { Type = "chat.started", ActorId = "user-1" });
 
-        Assert.Equal(1, ScopedAuditHandler.RecordedCount);
+        await Assert.That(counter.RecordedCount).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "AI audit sink isolates handler failures")]
+    [Test]
+    [DisplayName("AI audit sink isolates handler failures")]
     public async Task AIAuditSinkIsolatesHandlerFailures()
     {
         var services = new ServiceCollection();
         services.AddAIHostServices();
+        var counter = new AuditCounter();
+        services.AddSingleton(counter);
         services.AddScoped<IAIAuditEventHandler, ThrowingAuditHandler>();
         services.AddScoped<ScopedAuditHandler>();
         services.AddScoped<IAIAuditEventHandler>(sp => sp.GetRequiredService<ScopedAuditHandler>());
-        ScopedAuditHandler.RecordedCount = 0;
 
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var sink = provider.GetRequiredService<IAIAuditSink>();
 
         await sink.RecordAsync(new AIAuditEvent { Type = "chat.started", ActorId = "user-1" });
 
-        Assert.Equal(1, ScopedAuditHandler.RecordedCount);
+        await Assert.That(counter.RecordedCount).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "AI audit sink propagates cancellation")]
+    [Test]
+    [DisplayName("AI audit sink propagates cancellation")]
     public async Task AIAuditSinkPropagatesCancellation()
     {
         var services = new ServiceCollection();
@@ -71,12 +78,13 @@ public class AIRegistrationTests
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         var sink = provider.GetRequiredService<IAIAuditSink>();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => await sink.RecordAsync(new AIAuditEvent { Type = "chat.started", ActorId = "user-1" }));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(async () => await sink.RecordAsync(new AIAuditEvent { Type = "chat.started", ActorId = "user-1" }));
     }
 
 
-    [Fact(DisplayName = "Tool enablement supports concurrent access")]
-    public void ToolEnablementSupportsConcurrentAccess()
+    [Test]
+    [DisplayName("Tool enablement supports concurrent access")]
+    public async Task ToolEnablementSupportsConcurrentAccess()
     {
         var service = new AIToolEnablementService();
         var definition = new AIToolDefinition
@@ -96,11 +104,12 @@ public class AIRegistrationTests
         });
 
         service.Enable(definition.Name);
-        Assert.True(service.IsEnabled(definition));
+        await Assert.That(service.IsEnabled(definition)).IsTrue();
     }
 
-    [Fact(DisplayName = "Tool enablement requires explicit proposal tool enablement")]
-    public void ToolEnablementRequiresExplicitProposalToolEnablement()
+    [Test]
+    [DisplayName("Tool enablement requires explicit proposal tool enablement")]
+    public async Task ToolEnablementRequiresExplicitProposalToolEnablement()
     {
         var service = new AIToolEnablementService();
         var definition = new AIToolDefinition
@@ -110,15 +119,16 @@ public class AIRegistrationTests
             EnabledByDefault = true
         };
 
-        Assert.False(service.IsEnabled(definition));
+        await Assert.That(service.IsEnabled(definition)).IsFalse();
 
         service.Enable(definition.Name);
 
-        Assert.True(service.IsEnabled(definition));
+        await Assert.That(service.IsEnabled(definition)).IsTrue();
     }
 
-    [Fact(DisplayName = "Tool enablement enables read-only tools by default")]
-    public void ToolEnablementEnablesReadOnlyToolsByDefault()
+    [Test]
+    [DisplayName("Tool enablement enables read-only tools by default")]
+    public async Task ToolEnablementEnablesReadOnlyToolsByDefault()
     {
         var service = new AIToolEnablementService();
         var definition = new AIToolDefinition
@@ -127,10 +137,11 @@ public class AIRegistrationTests
             Mutability = AIToolMutability.ReadOnly
         };
 
-        Assert.True(service.IsEnabled(definition));
+        await Assert.That(service.IsEnabled(definition)).IsTrue();
     }
 
-    [Fact(DisplayName = "AI host allows context provider overrides on startup")]
+    [Test]
+    [DisplayName("AI host allows context provider overrides on startup")]
     public async Task AIHostAllowsContextProviderOverridesOnStartup()
     {
         var services = new ServiceCollection();
@@ -143,7 +154,8 @@ public class AIRegistrationTests
         await validator.StartAsync(CancellationToken.None);
     }
 
-    [Fact(DisplayName = "AI host validates scoped context providers from a startup scope")]
+    [Test]
+    [DisplayName("AI host validates scoped context providers from a startup scope")]
     public async Task AIHostValidatesScopedContextProvidersFromStartupScope()
     {
         var services = new ServiceCollection();
@@ -157,7 +169,8 @@ public class AIRegistrationTests
         await validator.StartAsync(CancellationToken.None);
     }
 
-    [Fact(DisplayName = "In-memory conversation store evicts expired conversations")]
+    [Test]
+    [DisplayName("In-memory conversation store evicts expired conversations")]
     public async Task InMemoryConversationStoreEvictsExpiredConversations()
     {
         var store = new InMemoryAIConversationStore();
@@ -173,10 +186,11 @@ public class AIRegistrationTests
 
         var result = await store.FindAsync("conversation-1");
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact(DisplayName = "In-memory conversation store retains ephemeral conversations in process")]
+    [Test]
+    [DisplayName("In-memory conversation store retains ephemeral conversations in process")]
     public async Task InMemoryConversationStoreRetainsEphemeralConversationsInProcess()
     {
         var store = new InMemoryAIConversationStore();
@@ -192,10 +206,11 @@ public class AIRegistrationTests
 
         var result = await store.FindAsync("conversation-1");
 
-        Assert.NotNull(result);
+        await Assert.That(result).IsNotNull();
     }
 
-    [Fact(DisplayName = "In-memory conversation store prunes completed ephemeral conversations")]
+    [Test]
+    [DisplayName("In-memory conversation store prunes completed ephemeral conversations")]
     public async Task InMemoryConversationStorePrunesCompletedEphemeralConversations()
     {
         var store = new InMemoryAIConversationStore();
@@ -212,10 +227,11 @@ public class AIRegistrationTests
 
         var result = await store.FindAsync("conversation-1");
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact(DisplayName = "In-memory conversation store rejects cross-tenant overwrites")]
+    [Test]
+    [DisplayName("In-memory conversation store rejects cross-tenant overwrites")]
     public async Task InMemoryConversationStoreRejectsCrossTenantOverwrites()
     {
         var store = new InMemoryAIConversationStore();
@@ -228,7 +244,7 @@ public class AIRegistrationTests
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
         {
             Id = "conversation-1",
             TenantId = "tenant-2",
@@ -237,10 +253,11 @@ public class AIRegistrationTests
             UpdatedAt = DateTimeOffset.UtcNow
         }));
 
-        Assert.Equal("Cannot overwrite an AI conversation that belongs to another tenant.", exception.Message);
+        await Assert.That(exception!.Message).IsEqualTo("Cannot overwrite an AI conversation that belongs to another tenant.");
     }
 
-    [Fact(DisplayName = "In-memory conversation store treats null and empty tenant IDs as default tenant")]
+    [Test]
+    [DisplayName("In-memory conversation store treats null and empty tenant IDs as default tenant")]
     public async Task InMemoryConversationStoreTreatsNullAndEmptyTenantIdsAsDefaultTenant()
     {
         var store = new InMemoryAIConversationStore();
@@ -264,11 +281,12 @@ public class AIRegistrationTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.NotNull(conversation);
-        Assert.Equal("", conversation.TenantId);
+        await Assert.That(conversation).IsNotNull();
+        await Assert.That(conversation.TenantId).IsEqualTo("");
     }
 
-    [Fact(DisplayName = "In-memory conversation store treats conversation IDs case-insensitively")]
+    [Test]
+    [DisplayName("In-memory conversation store treats conversation IDs case-insensitively")]
     public async Task InMemoryConversationStoreTreatsConversationIdsCaseInsensitively()
     {
         var store = new InMemoryAIConversationStore();
@@ -282,11 +300,12 @@ public class AIRegistrationTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.NotNull(conversation);
-        Assert.Equal("Conversation-1", conversation.Id);
+        await Assert.That(conversation).IsNotNull();
+        await Assert.That(conversation.Id).IsEqualTo("Conversation-1");
     }
 
-    [Fact(DisplayName = "In-memory conversation store rejects cross-user overwrites")]
+    [Test]
+    [DisplayName("In-memory conversation store rejects cross-user overwrites")]
     public async Task InMemoryConversationStoreRejectsCrossUserOverwrites()
     {
         var store = new InMemoryAIConversationStore();
@@ -299,7 +318,7 @@ public class AIRegistrationTests
             UpdatedAt = DateTimeOffset.UtcNow
         });
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await store.SaveAsync(new AIConversation
         {
             Id = "conversation-1",
             TenantId = "tenant-1",
@@ -308,10 +327,11 @@ public class AIRegistrationTests
             UpdatedAt = DateTimeOffset.UtcNow
         }));
 
-        Assert.Equal("Cannot overwrite an AI conversation that belongs to another user.", exception.Message);
+        await Assert.That(exception!.Message).IsEqualTo("Cannot overwrite an AI conversation that belongs to another user.");
     }
 
-    [Fact(DisplayName = "In-memory conversation store validates required conversation fields")]
+    [Test]
+    [DisplayName("In-memory conversation store validates required conversation fields")]
     public async Task InMemoryConversationStoreValidatesRequiredConversationFields()
     {
         var store = new InMemoryAIConversationStore();
@@ -320,19 +340,23 @@ public class AIRegistrationTests
             Id = "conversation-invalid"
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(async () => await store.SaveAsync(conversation));
+        var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(async () => await store.SaveAsync(conversation));
 
-        Assert.Equal("conversation", exception.ParamName);
-        Assert.Equal("A conversation user ID is required. (Parameter 'conversation')", exception.Message);
+        await Assert.That(exception!.ParamName).IsEqualTo("conversation");
+        await Assert.That(exception.Message).IsEqualTo("A conversation user ID is required. (Parameter 'conversation')");
     }
 
-    private class ScopedAuditHandler : IAIAuditEventHandler
+    private sealed class AuditCounter
     {
-        public static int RecordedCount { get; set; }
+        public int RecordedCount { get; set; }
+    }
+
+    private class ScopedAuditHandler(AuditCounter counter) : IAIAuditEventHandler
+    {
 
         public ValueTask RecordAsync(AIAuditEvent auditEvent, CancellationToken cancellationToken = default)
         {
-            RecordedCount++;
+            counter.RecordedCount++;
             return ValueTask.CompletedTask;
         }
     }

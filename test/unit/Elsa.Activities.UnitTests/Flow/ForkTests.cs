@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Extensions;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Flow;
 
@@ -9,7 +10,8 @@ namespace Elsa.Activities.UnitTests.Flow;
 /// </summary>
 public class ForkTests
 {
-    [Fact(DisplayName = "Fork schedules all branches")]
+    [Test]
+    [DisplayName("Fork schedules all branches")]
     public async Task Fork_SchedulesAllBranches()
     {
         // Arrange
@@ -26,11 +28,12 @@ public class ForkTests
         // Assert
         foreach (var branch in branches)
         {
-            Assert.True(context.HasScheduledActivity(branch), $"{branch.Id} should be scheduled");
+            await Assert.That(context.HasScheduledActivity(branch)).IsTrue().Because($"{branch.Id} should be scheduled");
         }
     }
 
-    [Fact(DisplayName = "Fork with no branches completes immediately")]
+    [Test]
+    [DisplayName("Fork with no branches completes immediately")]
     public async Task Fork_WithNoBranchesCompletesImmediately()
     {
         // Arrange
@@ -40,12 +43,13 @@ public class ForkTests
         var context = await ExecuteForkAsync(fork);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 
-    [Theory(DisplayName = "Fork respects join mode")]
-    [InlineData(ForkJoinMode.WaitAll)]
-    [InlineData(ForkJoinMode.WaitAny)]
+    [Test]
+    [DisplayName("Fork respects join mode")]
+    [Arguments(ForkJoinMode.WaitAll)]
+    [Arguments(ForkJoinMode.WaitAny)]
     public async Task Fork_RespectsJoinMode(ForkJoinMode joinMode)
     {
         // Arrange
@@ -60,11 +64,12 @@ public class ForkTests
         var context = await ExecuteForkAsync(fork);
 
         // Assert
-        Assert.Equal(joinMode, fork.JoinMode);
-        Assert.True(context.HasScheduledActivity(branch));
+        await Assert.That(fork.JoinMode).IsEqualTo(joinMode);
+        await Assert.That(context.HasScheduledActivity(branch)).IsTrue();
     }
 
-    [Fact(DisplayName = "Fork resumes when completed activity IDs are restored as a list")]
+    [Test]
+    [DisplayName("Fork resumes when completed activity IDs are restored as a list")]
     public async Task Fork_Resumes_WhenCompletedActivityIdsAreRestoredAsList()
     {
         // Arrange
@@ -84,10 +89,10 @@ public class ForkTests
         await CompleteChildAsync(fork, targetContext, childContext);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, targetContext.Status);
+        await Assert.That(targetContext.Status).IsEqualTo(ActivityStatus.Completed);
         var completedActivityIds = targetContext.GetProperty<HashSet<string>>("Completed");
-        Assert.NotNull(completedActivityIds);
-        Assert.True(completedActivityIds.SetEquals([branches[0].Id, branches[1].Id]));
+        await Assert.That(completedActivityIds).IsNotNull();
+        await Assert.That(completedActivityIds.SetEquals([branches[0].Id, branches[1].Id])).IsTrue();
     }
 
     private static Task<ActivityExecutionContext> ExecuteForkAsync(Fork fork) =>
@@ -96,12 +101,12 @@ public class ForkTests
     private static async Task CompleteChildAsync(Fork fork, ActivityExecutionContext targetContext, ActivityExecutionContext childContext)
     {
         var childNode = targetContext.WorkflowExecutionContext.FindNodeByActivity(childContext.Activity);
-        Assert.NotNull(childNode);
+        await Assert.That(childNode).IsNotNull();
 
         targetContext.WorkflowExecutionContext.AddCompletionCallback(targetContext, childNode!, fork.GetActivityCompletionCallback("CompleteChildAsync"));
         var callback = targetContext.WorkflowExecutionContext.PopCompletionCallback(targetContext, childNode!);
 
-        Assert.NotNull(callback?.CompletionCallback);
+        await Assert.That(callback?.CompletionCallback is not null).IsTrue();
         await callback!.CompletionCallback!(new ActivityCompletedContext(targetContext, childContext));
     }
 

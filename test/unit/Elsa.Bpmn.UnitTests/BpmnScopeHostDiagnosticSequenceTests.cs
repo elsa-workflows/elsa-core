@@ -1,4 +1,5 @@
 using Elsa.Bpmn.Hosting;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
@@ -12,30 +13,30 @@ namespace Elsa.Bpmn.UnitTests;
 /// </summary>
 public class BpmnScopeHostDiagnosticSequenceTests
 {
-    [Theory]
-    [InlineData("diag:5", 5)]
-    [InlineData("diag:0", 0)]
-    [InlineData("diag:12345", 12345)]
-    public void TryGetDiagnosticSequence_WithAWellFormedId_ReturnsItsOrdinal(string diagnosticId, int expectedSequence)
+    [Test]
+    [Arguments("diag:5", 5)]
+    [Arguments("diag:0", 0)]
+    [Arguments("diag:12345", 12345)]
+    public async Task TryGetDiagnosticSequence_WithAWellFormedId_ReturnsItsOrdinal(string diagnosticId, int expectedSequence)
     {
         var parsed = BpmnScopeHost.TryGetDiagnosticSequence(diagnosticId, out var sequence);
 
-        Assert.True(parsed);
-        Assert.Equal(expectedSequence, sequence);
+        await Assert.That(parsed).IsTrue();
+        await Assert.That(sequence).IsEqualTo(expectedSequence);
     }
 
-    [Theory]
-    [InlineData("999")]
-    [InlineData("foreign:999")]
-    [InlineData("diag:-1")]
-    [InlineData("diag:")]
-    [InlineData("diag:abc")]
-    [InlineData("diag: 5")]
-    public void TryGetDiagnosticSequence_WithAMalformedId_IsRejected(string diagnosticId)
+    [Test]
+    [Arguments("999")]
+    [Arguments("foreign:999")]
+    [Arguments("diag:-1")]
+    [Arguments("diag:")]
+    [Arguments("diag:abc")]
+    [Arguments("diag: 5")]
+    public async Task TryGetDiagnosticSequence_WithAMalformedId_IsRejected(string diagnosticId)
     {
         var parsed = BpmnScopeHost.TryGetDiagnosticSequence(diagnosticId, out var sequence);
 
-        Assert.False(parsed);
-        Assert.Equal(0, sequence);
+        await Assert.That(parsed).IsFalse();
+        await Assert.That(sequence).IsEqualTo(0);
     }
 }

@@ -2,12 +2,14 @@ using Elsa.AI.Abstractions.Contracts;
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests;
 
 public class AIToolRegistryTests
 {
-    [Fact(DisplayName = "Tool registry excludes host and cross-tenant denied tools from tenant queries")]
+    [Test]
+    [DisplayName("Tool registry excludes host and cross-tenant denied tools from tenant queries")]
     public async Task ToolRegistryExcludesHostAndCrossTenantDeniedToolsFromTenantQueries()
     {
         var registry = CreateRegistry(
@@ -23,11 +25,12 @@ public class AIToolRegistryTests
             ActorId = "user-1"
         });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("tenant", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("tenant");
     }
 
-    [Fact(DisplayName = "Tool registry treats empty tenant ID as tenant context")]
+    [Test]
+    [DisplayName("Tool registry treats empty tenant ID as tenant context")]
     public async Task ToolRegistryTreatsEmptyTenantIdAsTenantContext()
     {
         var registry = CreateRegistry(
@@ -48,14 +51,14 @@ public class AIToolRegistryTests
             TenantId = "",
             ActorId = "user-1"
         });
-
-        Assert.Collection(
-            tools.OrderBy(x => x.Name),
-            tool => Assert.Equal("default-tenant-cross", tool.Name),
-            tool => Assert.Equal("tenant", tool.Name));
+        var orderedTools = tools.OrderBy(x => x.Name).ToArray();
+        await Assert.That(orderedTools).Count().IsEqualTo(2);
+        await Assert.That(orderedTools[0].Name).IsEqualTo("default-tenant-cross");
+        await Assert.That(orderedTools[1].Name).IsEqualTo("tenant");
     }
 
-    [Fact(DisplayName = "Tool registry allows cross-tenant denied tools for explicit tenant allowlists")]
+    [Test]
+    [DisplayName("Tool registry allows cross-tenant denied tools for explicit tenant allowlists")]
     public async Task ToolRegistryAllowsCrossTenantDeniedToolsForExplicitTenantAllowlists()
     {
         var registry = CreateRegistry(
@@ -75,11 +78,12 @@ public class AIToolRegistryTests
             ActorId = "user-1"
         });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("tenant-cross", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("tenant-cross");
     }
 
-    [Fact(DisplayName = "Tool registry excludes cross-tenant denied tools from host queries")]
+    [Test]
+    [DisplayName("Tool registry excludes cross-tenant denied tools from host queries")]
     public async Task ToolRegistryExcludesCrossTenantDeniedToolsFromHostQueries()
     {
         var registry = CreateRegistry(
@@ -93,11 +97,12 @@ public class AIToolRegistryTests
             ActorId = "user-1"
         });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("host", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("host");
     }
 
-    [Fact(DisplayName = "Tool registry exposes default tools without tenant context")]
+    [Test]
+    [DisplayName("Tool registry exposes default tools without tenant context")]
     public async Task ToolRegistryExposesDefaultToolsWithoutTenantContext()
     {
         var registry = CreateRegistry(
@@ -107,11 +112,12 @@ public class AIToolRegistryTests
 
         var tools = await registry.ListAsync(new AIToolQuery { ActorId = "user-1" });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("default", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("default");
     }
 
-    [Fact(DisplayName = "Tool registry exposes default tools to tenant queries")]
+    [Test]
+    [DisplayName("Tool registry exposes default tools to tenant queries")]
     public async Task ToolRegistryExposesDefaultToolsToTenantQueries()
     {
         var registry = CreateRegistry(
@@ -121,11 +127,12 @@ public class AIToolRegistryTests
 
         var tools = await registry.ListAsync(new AIToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("default", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("default");
     }
 
-    [Fact(DisplayName = "Tool registry excludes incomplete tool definition names")]
+    [Test]
+    [DisplayName("Tool registry excludes incomplete tool definition names")]
     public async Task ToolRegistryExcludesIncompleteToolDefinitionNames()
     {
         var registry = CreateRegistry(
@@ -136,11 +143,12 @@ public class AIToolRegistryTests
 
         var tools = await registry.ListAsync(new AIToolQuery { ActorId = "user-1" });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("valid", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("valid");
     }
 
-    [Fact(DisplayName = "Tool registry uses cached concrete type lookup after listing tools")]
+    [Test]
+    [DisplayName("Tool registry uses cached concrete type lookup after listing tools")]
     public async Task ToolRegistryUsesCachedConcreteTypeLookupAfterListingTools()
     {
         CountingTool.ConstructionCount = 0;
@@ -156,12 +164,13 @@ public class AIToolRegistryTests
 
         using var tool = await registry.FindAsync("counting", new AIToolQuery { ActorId = "user-1" });
 
-        Assert.NotNull(tool);
-        Assert.Equal(1, CountingTool.ConstructionCount);
-        Assert.Equal(0, OtherCountingTool.ConstructionCount);
+        await Assert.That(tool).IsNotNull();
+        await Assert.That(CountingTool.ConstructionCount).IsEqualTo(1);
+        await Assert.That(OtherCountingTool.ConstructionCount).IsEqualTo(0);
     }
 
-    [Fact(DisplayName = "Tool registry disposes cached concrete tool instances")]
+    [Test]
+    [DisplayName("Tool registry disposes cached concrete tool instances")]
     public async Task ToolRegistryDisposesCachedConcreteToolInstances()
     {
         DisposableCachedTool.ConstructionCount = 0;
@@ -177,12 +186,13 @@ public class AIToolRegistryTests
         var tool = await registry.FindAsync("disposable-cached", new AIToolQuery { ActorId = "user-1" });
         tool?.Dispose();
 
-        Assert.NotNull(tool);
-        Assert.Equal(1, DisposableCachedTool.ConstructionCount);
-        Assert.Equal(1, DisposableCachedTool.DisposeCount);
+        await Assert.That(tool).IsNotNull();
+        await Assert.That(DisposableCachedTool.ConstructionCount).IsEqualTo(1);
+        await Assert.That(DisposableCachedTool.DisposeCount).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "Tool registry find applies tenant and actor filters")]
+    [Test]
+    [DisplayName("Tool registry find applies tenant and actor filters")]
     public async Task ToolRegistryFindAppliesTenantAndActorFilters()
     {
         var registry = CreateRegistry(
@@ -201,11 +211,12 @@ public class AIToolRegistryTests
         using var allowed = await registry.FindAsync("restricted", new AIToolQuery { TenantId = "tenant-1", ActorId = "user-1" });
         var denied = await registry.FindAsync("restricted", new AIToolQuery { TenantId = "tenant-2", ActorId = "user-1" });
 
-        Assert.NotNull(allowed);
-        Assert.Null(denied);
+        await Assert.That(allowed).IsNotNull();
+        await Assert.That(denied).IsNull();
     }
 
-    [Fact(DisplayName = "Tool registry enforces tool permission requirements")]
+    [Test]
+    [DisplayName("Tool registry enforces tool permission requirements")]
     public async Task ToolRegistryEnforcesToolPermissionRequirements()
     {
         var registry = CreateRegistry(
@@ -228,12 +239,13 @@ public class AIToolRegistryTests
             UserPermissions = ["Workflows:Write"]
         });
 
-        Assert.Null(denied);
-        Assert.NotNull(allowed);
+        await Assert.That(denied).IsNull();
+        await Assert.That(allowed).IsNotNull();
     }
 
-    [Fact(DisplayName = "Tool enablement requires explicit administrative enablement")]
-    public void ToolEnablementRequiresExplicitAdministrativeEnablement()
+    [Test]
+    [DisplayName("Tool enablement requires explicit administrative enablement")]
+    public async Task ToolEnablementRequiresExplicitAdministrativeEnablement()
     {
         var enablement = new AIToolEnablementService();
         var definition = new AIToolDefinition
@@ -244,16 +256,17 @@ public class AIToolRegistryTests
             EnabledByDefault = true
         };
 
-        Assert.False(enablement.IsEnabled(definition));
+        await Assert.That(enablement.IsEnabled(definition)).IsFalse();
 
         enablement.Enable("admin");
-        Assert.False(enablement.IsEnabled(definition));
+        await Assert.That(enablement.IsEnabled(definition)).IsFalse();
 
         enablement.EnableAdministrative("admin");
-        Assert.True(enablement.IsEnabled(definition));
+        await Assert.That(enablement.IsEnabled(definition)).IsTrue();
     }
 
-    [Fact(DisplayName = "Tool registry filters agent-scoped tools by agent")]
+    [Test]
+    [DisplayName("Tool registry filters agent-scoped tools by agent")]
     public async Task ToolRegistryFiltersAgentScopedToolsByAgent()
     {
         var registry = CreateRegistry(
@@ -298,16 +311,17 @@ public class AIToolRegistryTests
             UserPermissions = ["workflows:write"]
         });
 
-        var tool = Assert.Single(deniedWithoutPermission);
-        Assert.Equal("agent-only", tool.Name);
-        Assert.Empty(deniedByAgent);
-        Assert.Collection(
-            allowedWithPermission.OrderBy(x => x.Name),
-            agentOnly => Assert.Equal("agent-only", agentOnly.Name),
-            agentPermission => Assert.Equal("agent-permission", agentPermission.Name));
+        var tool = await Assert.That(deniedWithoutPermission).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("agent-only");
+        await Assert.That(deniedByAgent).IsEmpty();
+        var orderedAllowedTools = allowedWithPermission.OrderBy(x => x.Name).ToArray();
+        await Assert.That(orderedAllowedTools).Count().IsEqualTo(2);
+        await Assert.That(orderedAllowedTools[0].Name).IsEqualTo("agent-only");
+        await Assert.That(orderedAllowedTools[1].Name).IsEqualTo("agent-permission");
     }
 
-    [Fact(DisplayName = "Tool registry honors tenant and actor allowlists")]
+    [Test]
+    [DisplayName("Tool registry honors tenant and actor allowlists")]
     public async Task ToolRegistryHonorsTenantAndActorAllowlists()
     {
         var registry = CreateRegistry(
@@ -341,11 +355,12 @@ public class AIToolRegistryTests
             ActorId = "user-1"
         });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("matching", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("matching");
     }
 
-    [Fact(DisplayName = "Tool registry combines tenant actor agent and permission filters")]
+    [Test]
+    [DisplayName("Tool registry combines tenant actor agent and permission filters")]
     public async Task ToolRegistryCombinesTenantActorAgentAndPermissionFilters()
     {
         var registry = CreateRegistry(
@@ -390,11 +405,12 @@ public class AIToolRegistryTests
             UserPermissions = ["workflows:write"]
         });
 
-        var tool = Assert.Single(tools);
-        Assert.Equal("matching", tool.Name);
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("matching");
     }
 
-    [Fact(DisplayName = "Tool registry skips tools with throwing definitions")]
+    [Test]
+    [DisplayName("Tool registry skips tools with throwing definitions")]
     public async Task ToolRegistrySkipsToolsWithThrowingDefinitions()
     {
         var tracker = new ScopeDisposalTracker();
@@ -409,10 +425,10 @@ public class AIToolRegistryTests
         var missing = await registry.FindAsync("throwing", new AIToolQuery());
         var tools = await registry.ListAsync(new AIToolQuery());
 
-        Assert.Null(missing);
-        var tool = Assert.Single(tools);
-        Assert.Equal("healthy", tool.Name);
-        Assert.Equal(2, tracker.DisposeCount);
+        await Assert.That(missing).IsNull();
+        var tool = await Assert.That(tools).HasSingleItem();
+        await Assert.That(tool.Name).IsEqualTo("healthy");
+        await Assert.That(tracker.DisposeCount).IsEqualTo(2);
     }
 
     private static AIToolRegistry CreateRegistry(IReadOnlyCollection<IAITool> tools)

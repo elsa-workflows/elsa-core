@@ -1,14 +1,16 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Activities;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Branching;
 
 public class FlowDecisionTests
 {
-    [Theory(DisplayName = "FlowDecision produces correct outcome and completes successfully")]
-    [InlineData(true, "True")]
-    [InlineData(false, "False")]
+    [Test]
+    [DisplayName("FlowDecision produces correct outcome and completes successfully")]
+    [Arguments(true, "True")]
+    [Arguments(false, "False")]
     public async Task Should_Produce_Correct_Outcome_And_Complete(bool condition, string expectedOutcome)
     {
         // Arrange
@@ -18,11 +20,12 @@ public class FlowDecisionTests
         var context = await ExecuteAsync(flowDecision);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.True(context.HasOutcome(expectedOutcome));
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.HasOutcome(expectedOutcome)).IsTrue();
     }
 
-    [Fact(DisplayName = "FlowDecision defaults to False when no condition is set")]
+    [Test]
+    [DisplayName("FlowDecision defaults to False when no condition is set")]
     public async Task Should_Default_To_False_When_No_Condition_Is_Set()
     {
         // Arrange
@@ -32,10 +35,11 @@ public class FlowDecisionTests
         var context = await ExecuteAsync(flowDecision);
 
         // Assert
-        Assert.True(context.HasOutcome("False"));
+        await Assert.That(context.HasOutcome("False")).IsTrue();
     }
 
-    [Fact(DisplayName = "FlowDecision evaluates condition exactly once")]
+    [Test]
+    [DisplayName("FlowDecision evaluates condition exactly once")]
     public async Task Should_Evaluate_Condition_Exactly_Once()
     {
         // Arrange
@@ -46,10 +50,11 @@ public class FlowDecisionTests
         await ExecuteAsync(flowDecision);
 
         // Assert
-        Assert.Equal(1, count);
+        await Assert.That(count).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "FlowDecision uses latest captured state when evaluating condition")]
+    [Test]
+    [DisplayName("FlowDecision uses latest captured state when evaluating condition")]
     public async Task Should_Use_Latest_Captured_State_When_Evaluating_Condition()
     {
         // Arrange
@@ -64,7 +69,7 @@ public class FlowDecisionTests
         var context = await ExecuteAsync(flowDecision);
 
         // Assert
-        Assert.True(context.HasOutcome("True"));
+        await Assert.That(context.HasOutcome("True")).IsTrue();
     }
 
     private static Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)

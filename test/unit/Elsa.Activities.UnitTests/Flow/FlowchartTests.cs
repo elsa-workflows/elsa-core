@@ -2,6 +2,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using static Elsa.Activities.UnitTests.Flow.FlowchartTestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Flow;
 
@@ -10,7 +11,8 @@ namespace Elsa.Activities.UnitTests.Flow;
 /// </summary>
 public class FlowchartTests
 {
-    [Fact(DisplayName = "Schedules start activity when specified")]
+    [Test]
+    [DisplayName("Schedules start activity when specified")]
     public async Task SchedulesStartActivity()
     {
         // Arrange
@@ -24,10 +26,11 @@ public class FlowchartTests
         var context = await ExecuteFlowchartAsync(flowchart);
 
         // Assert
-        Assert.True(context.HasScheduledActivity(startActivity));
+        await Assert.That(context.HasScheduledActivity(startActivity)).IsTrue();
     }
 
-    [Fact(DisplayName = "Executes without error when no start activity specified")]
+    [Test]
+    [DisplayName("Executes without error when no start activity specified")]
     public async Task ExecutesWithoutErrorWhenNoStartActivity()
     {
         // Arrange
@@ -40,13 +43,14 @@ public class FlowchartTests
         var context = await ExecuteFlowchartAsync(flowchart);
 
         // Assert
-        Assert.NotNull(context);
-        Assert.False(context.HasScheduledActivity(new WriteLine("NonExistent")));
+        await Assert.That(context).IsNotNull();
+        await Assert.That(context.HasScheduledActivity(new WriteLine("NonExistent"))).IsFalse();
     }
-    
-    [Theory(DisplayName = "Respects execution mode")]
-    [InlineData(FlowchartExecutionMode.TokenBased)]
-    [InlineData(FlowchartExecutionMode.CounterBased)]
+
+    [Test]
+    [DisplayName("Respects execution mode")]
+    [Arguments(FlowchartExecutionMode.TokenBased)]
+    [Arguments(FlowchartExecutionMode.CounterBased)]
     public async Task RespectsExecutionMode(FlowchartExecutionMode executionMode)
     {
         // Arrange
@@ -61,10 +65,11 @@ public class FlowchartTests
         var context = await ExecuteFlowchartAsync(flowchart, executionMode);
 
         // Assert - just verify it executes without error
-        Assert.NotNull(context);
+        await Assert.That(context).IsNotNull();
     }
 
-    [Fact(DisplayName = "Accepts empty connections collection")]
+    [Test]
+    [DisplayName("Accepts empty connections collection")]
     public async Task AcceptsEmptyConnections()
     {
         // Arrange
@@ -79,6 +84,6 @@ public class FlowchartTests
         var context = await ExecuteFlowchartAsync(flowchart);
 
         // Assert
-        Assert.True(context.HasScheduledActivity(activity));
+        await Assert.That(context.HasScheduledActivity(activity)).IsTrue();
     }
 }

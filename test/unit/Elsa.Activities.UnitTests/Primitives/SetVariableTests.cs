@@ -2,12 +2,13 @@ using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class SetVariableTests
 {
-    [Fact]
+    [Test]
     public async Task Should_Set_Variable()
     {
         // Arrange
@@ -24,10 +25,10 @@ public class SetVariableTests
 
         // Assert
         var result = variable.Get(context);
-        Assert.Equal(expected, result);
+        await Assert.That(result).IsEqualTo(expected);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Throw_When_Variable_Is_Null()
     {
         // Arrange
@@ -38,13 +39,10 @@ public class SetVariableTests
         };
 
         // Act & Assert
-        var exception = await Record.ExceptionAsync(() => ExecuteAsync(setVariable));
-
-        Assert.NotNull(exception);
-        Assert.IsType<InvalidOperationException>(exception);
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => ExecuteAsync(setVariable));
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Variable_To_Null_Value()
     {
         // Arrange
@@ -60,7 +58,7 @@ public class SetVariableTests
 
         // Assert
         var result = variable.Get(context);
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(IActivity activity)

@@ -1,14 +1,15 @@
 using Bpmn.Interchange;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.Interchange.UnitTests;
 
 public class BpmnInterchangeWiringTests
 {
-    [Fact]
-    public void BpmnXmlReader_IsReachable()
+    [Test]
+    public async Task BpmnXmlReader_IsReachable()
     {
         var reader = new BpmnXmlReader();
 
-        Assert.NotNull(reader);
+        await Assert.That(reader).IsNotNull();
     }
 }

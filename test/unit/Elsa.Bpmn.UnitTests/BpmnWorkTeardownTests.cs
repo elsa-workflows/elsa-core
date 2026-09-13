@@ -7,6 +7,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
@@ -21,7 +22,7 @@ public class BpmnWorkTeardownTests
     private const string SubtreeActivityId = "subtree-activity";
     private const string QueuedActivityId = "queued-activity";
 
-    [Fact]
+    [Test]
     public async Task CancelSubtreeAsync_WithdrawsTheQueuedWork_WhenSubtreeHasWorkStillQueued()
     {
         var (_, subtreeContext, _) = await BuildSubtreeWithQueuedWorkAsync();
@@ -31,14 +32,14 @@ public class BpmnWorkTeardownTests
         await BpmnWorkTeardown.CancelSubtreeAsync(subtreeContext, "boundary interrupted");
 
         // Nothing is left for the engine to take, so the descendant never gets invoked...
-        Assert.False(workflowExecutionContext.Scheduler.HasAny);
+        await Assert.That(workflowExecutionContext.Scheduler.HasAny).IsFalse();
 
         // ...and it is terminal rather than left Pending, so nothing can schedule it again either.
-        Assert.Equal(ActivityStatus.Canceled, queuedContext.Status);
-        Assert.Equal(ActivityStatus.Canceled, subtreeContext.Status);
+        await Assert.That(queuedContext.Status).IsEqualTo(ActivityStatus.Canceled);
+        await Assert.That(subtreeContext.Status).IsEqualTo(ActivityStatus.Canceled);
     }
 
-    [Fact]
+    [Test]
     public async Task CancelSubtreeAsync_LeavesUnrelatedWorkScheduled_WhenSubtreeHasWorkStillQueued()
     {
         var (scopeContext, subtreeContext, _) = await BuildSubtreeWithQueuedWorkAsync();
@@ -48,10 +49,10 @@ public class BpmnWorkTeardownTests
 
         await BpmnWorkTeardown.CancelSubtreeAsync(subtreeContext, "boundary interrupted");
 
-        Assert.Equal([siblingWorkItem], workflowExecutionContext.Scheduler.List());
+        await Assert.That(workflowExecutionContext.Scheduler.List()).IsEquivalentTo([siblingWorkItem], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ApplyAsync_RemovesLedgerRecord_WhenTearingDownWorkWithSomethingStillQueued()
     {
         var (scopeContext, subtreeContext, process) = await BuildSubtreeWithQueuedWorkAsync();
@@ -63,10 +64,10 @@ public class BpmnWorkTeardownTests
         // The ledger property is reloaded from scratch, from what was actually persisted onto the context, rather
         // than read off the in-memory `memory` instance the applier already mutated.
         var reloaded = BpmnScopeMemory.Load(scopeContext);
-        Assert.Null(reloaded.Work.FindByChildContextId(subtreeContext.Id));
+        await Assert.That(reloaded.Work.FindByChildContextId(subtreeContext.Id)).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task OnWorkCompletedAsync_DiscardsTheCallback_ForContextThatWasTornDown()
     {
         var (scopeContext, subtreeContext, process) = await BuildSubtreeWithQueuedWorkAsync();

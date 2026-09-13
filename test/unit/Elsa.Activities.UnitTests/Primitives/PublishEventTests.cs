@@ -4,16 +4,17 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class PublishEventTests
 {
-    [Theory]
-    [InlineData("OrderCreated", null, null, false)]
-    [InlineData("OrderCreated", "correlation-123", "correlation-123", false)]
-    [InlineData("OrderEvent", "", null, true)]
-    [InlineData("OrderEvent", "   ", null, true)]
+    [Test]
+    [Arguments("OrderCreated", null, null, false)]
+    [Arguments("OrderCreated", "correlation-123", "correlation-123", false)]
+    [Arguments("OrderEvent", "", null, true)]
+    [Arguments("OrderEvent", "   ", null, true)]
     public async Task ExecuteAsync_PublishesEvent_WithParameters(string eventName, string? correlationId, string? expectedCorrelationId, bool expectNullCorrelation)
     {
         // Arrange
@@ -30,9 +31,9 @@ public class PublishEventTests
             expectNullCorrelationId: expectNullCorrelation);
     }
 
-    [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
+    [Test]
+    [Arguments(true, false)]
+    [Arguments(false, true)]
     public async Task ExecuteAsync_LocalEvent_PassesCorrectWorkflowInstanceId(bool isLocalEvent, bool expectNull)
     {
         // Arrange
@@ -50,7 +51,7 @@ public class PublishEventTests
             expectNullWorkflowInstanceId: expectNull);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_PublishesEvent_WithPayload()
     {
         // Arrange
@@ -65,7 +66,7 @@ public class PublishEventTests
         await AssertPublishedAsync(publisher, eventName, payload: payload);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_CompletesActivity()
     {
         // Arrange
@@ -75,10 +76,10 @@ public class PublishEventTests
         var context = await ExecuteAsync(CreateActivity("TestEvent"), publisher);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_WithAllParameters_PassesAllValuesToPublisher()
     {
         // Arrange

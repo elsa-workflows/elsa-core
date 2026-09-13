@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Text;
 using Elsa.Diagnostics.OpenTelemetry.Ingestion.HttpProtobuf;
 using Elsa.Diagnostics.OpenTelemetry.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.OpenTelemetry.UnitTests.Ingestion;
 
@@ -11,8 +12,9 @@ public class OtlpHttpProtobufParserTests
     private static readonly byte[] SpanId = Convert.FromHexString("0011223344556677");
     private static readonly DateTimeOffset Timestamp = new(2026, 5, 26, 10, 0, 0, TimeSpan.Zero);
 
-    [Fact(DisplayName = "OTLP trace payload is normalized to trace, span, resource, and workflow metadata")]
-    public void ParseTraces()
+    [Test]
+    [DisplayName("OTLP trace payload is normalized to trace, span, resource, and workflow metadata")]
+    public async Task ParseTraces()
     {
         var payload = Message(1,
             Join(Message(1, Resource()),
@@ -27,18 +29,20 @@ public class OtlpHttpProtobufParserTests
                 Message(15, Varint(3, 2)))))));
 
         var batch = OtlpHttpProtobufParser.ParseTraces(payload);
-        var span = Assert.Single(batch.Spans);
-        var trace = Assert.Single(batch.Traces);
+        var span = await Assert.That(batch.Spans).HasSingleItem();
+        var trace = await Assert.That(batch.Traces).HasSingleItem();
 
-        Assert.Equal("elsa-server:node-1", span.ResourceId);
-        Assert.Equal("00112233445566778899aabbccddeeff", trace.TraceId);
-        Assert.Equal("0011223344556677", trace.RootSpanId);
-        Assert.Equal("wf-1", Assert.Single(trace.WorkflowInstanceIds));
-        Assert.Equal(SpanStatus.Error, trace.Status);
+        await Assert.That(span.ResourceId).IsEqualTo("elsa-server:node-1");
+        await Assert.That(trace.TraceId).IsEqualTo("00112233445566778899aabbccddeeff");
+        await Assert.That(trace.RootSpanId).IsEqualTo("0011223344556677");
+        var workflowInstanceId = await Assert.That(trace.WorkflowInstanceIds).HasSingleItem();
+        await Assert.That(workflowInstanceId).IsEqualTo("wf-1");
+        await Assert.That(trace.Status).IsEqualTo(SpanStatus.Error);
     }
 
-    [Fact(DisplayName = "OTLP metric payload is normalized to metric instruments and points")]
-    public void ParseMetrics()
+    [Test]
+    [DisplayName("OTLP metric payload is normalized to metric instruments and points")]
+    public async Task ParseMetrics()
     {
         var point =
             Join(Varint(3, UnixNanos(Timestamp)),
@@ -52,18 +56,19 @@ public class OtlpHttpProtobufParserTests
         var payload = Message(1, Join(Message(1, Resource()), Message(2, Message(2, metric))));
 
         var batch = OtlpHttpProtobufParser.ParseMetrics(payload);
-        var instrument = Assert.Single(batch.Instruments);
-        var metricPoint = Assert.Single(batch.MetricPoints);
+        var instrument = await Assert.That(batch.Instruments).HasSingleItem();
+        var metricPoint = await Assert.That(batch.MetricPoints).HasSingleItem();
 
-        Assert.Equal("workflow.duration", instrument.Name);
-        Assert.Equal("workflow.duration", metricPoint.InstrumentName);
-        Assert.Equal(MetricKind.Gauge, instrument.Kind);
-        Assert.Equal(42.5, metricPoint.Value);
-        Assert.Equal("orders", metricPoint.Attributes["workflow.definition.id"]);
+        await Assert.That(instrument.Name).IsEqualTo("workflow.duration");
+        await Assert.That(metricPoint.InstrumentName).IsEqualTo("workflow.duration");
+        await Assert.That(instrument.Kind).IsEqualTo(MetricKind.Gauge);
+        await Assert.That(metricPoint.Value).IsEqualTo(42.5);
+        await Assert.That(metricPoint.Attributes["workflow.definition.id"]).IsEqualTo("orders");
     }
 
-    [Fact(DisplayName = "OTLP log payload is normalized to correlated OTLP log records")]
-    public void ParseLogs()
+    [Test]
+    [DisplayName("OTLP log payload is normalized to correlated OTLP log records")]
+    public async Task ParseLogs()
     {
         var log =
             Join(Varint(1, UnixNanos(Timestamp)),
@@ -76,13 +81,13 @@ public class OtlpHttpProtobufParserTests
         var payload = Message(1, Join(Message(1, Resource()), Message(2, Message(2, log))));
 
         var batch = OtlpHttpProtobufParser.ParseLogs(payload);
-        var record = Assert.Single(batch.Logs);
+        var record = await Assert.That(batch.Logs).HasSingleItem();
 
-        Assert.Equal("elsa-server:node-1", record.ResourceId);
-        Assert.Equal("Error", record.SeverityText);
-        Assert.Equal("boom", record.Body);
-        Assert.Equal("00112233445566778899aabbccddeeff", record.TraceId);
-        Assert.Equal("0011223344556677", record.SpanId);
+        await Assert.That(record.ResourceId).IsEqualTo("elsa-server:node-1");
+        await Assert.That(record.SeverityText).IsEqualTo("Error");
+        await Assert.That(record.Body).IsEqualTo("boom");
+        await Assert.That(record.TraceId).IsEqualTo("00112233445566778899aabbccddeeff");
+        await Assert.That(record.SpanId).IsEqualTo("0011223344556677");
     }
 
     private static byte[] Resource()

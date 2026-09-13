@@ -1,4 +1,5 @@
 using Elsa.Bpmn.Hosting;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
@@ -10,7 +11,8 @@ public class BpmnScopeDispatcherTests
     private readonly BpmnScopeDispatcher _dispatcher = new();
     private readonly List<string> _log = [];
 
-    [Fact(DisplayName = "An evaluation posted while one is in flight runs after it, not inside it")]
+    [Test]
+    [DisplayName("An evaluation posted while one is in flight runs after it, not inside it")]
     public async Task PostFromInsideARunningEvaluation_IsQueued()
     {
         await _dispatcher.PostAsync(async () =>
@@ -24,10 +26,11 @@ public class BpmnScopeDispatcherTests
             _log.Add("outer:end");
         });
 
-        Assert.Equal(["outer:begin", "outer:end", "inner"], _log);
+        await Assert.That(_log).IsEquivalentTo(["outer:begin", "outer:end", "inner"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Evaluations run in the order they were posted")]
+    [Test]
+    [DisplayName("Evaluations run in the order they were posted")]
     public async Task QueuedEvaluations_RunInPostOrder()
     {
         await _dispatcher.PostAsync(async () =>
@@ -37,26 +40,27 @@ public class BpmnScopeDispatcherTests
             await Add("root");
         });
 
-        Assert.Equal(["root", "first", "second"], _log);
+        await Assert.That(_log).IsEquivalentTo(["root", "first", "second"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "An evaluation that throws drops what was queued behind it")]
+    [Test]
+    [DisplayName("An evaluation that throws drops what was queued behind it")]
     public async Task FailedEvaluation_DropsTheRest()
     {
         // Everything queued behind a failed evaluation was planned against a state that no longer describes the
         // instance, and the failure is on its way to the incident strategy.
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await _dispatcher.PostAsync(async () =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () => await _dispatcher.PostAsync(async () =>
         {
             await _dispatcher.PostAsync(() => Add("queued"));
             throw new InvalidOperationException("boom");
         }));
 
-        Assert.Empty(_log);
-        Assert.False(_dispatcher.IsDraining);
+        await Assert.That(_log).IsEmpty();
+        await Assert.That(_dispatcher.IsDraining).IsFalse();
 
         // The queue is usable again, and does not resurrect what was dropped.
         await _dispatcher.PostAsync(() => Add("after"));
-        Assert.Equal(["after"], _log);
+        await Assert.That(_log).IsEquivalentTo(["after"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private ValueTask Add(string entry)

@@ -6,12 +6,14 @@ using Elsa.AI.Host.Services;
 using Microsoft.Extensions.DependencyInjection;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Context;
 
 public class AIContextResolverTests
 {
-    [Fact(DisplayName = "Context resolver resolves workflow definition references server-side")]
+    [Test]
+    [DisplayName("Context resolver resolves workflow definition references server-side")]
     public async Task ContextResolverResolvesWorkflowDefinitionReferences()
     {
         using var provider = CreateProvider(services => services.AddSingleton<IAIContextProvider, WorkflowDefinitionContextProvider>());
@@ -30,13 +32,14 @@ public class AIContextResolverTests
             ]
         });
 
-        var context = Assert.Single(result);
-        Assert.Equal("WorkflowDefinition", context.Kind);
-        Assert.Equal("workflow-1", context.ReferenceId);
-        Assert.Empty(context.Data);
+        var context = await Assert.That(result).HasSingleItem();
+        await Assert.That(context.Kind).IsEqualTo("WorkflowDefinition");
+        await Assert.That(context.ReferenceId).IsEqualTo("workflow-1");
+        await Assert.That(context.Data).IsEmpty();
     }
 
-    [Fact(DisplayName = "Context resolver redacts sensitive data and metadata keys")]
+    [Test]
+    [DisplayName("Context resolver redacts sensitive data and metadata keys")]
     public async Task ContextResolverRedactsSensitiveDataAndMetadataKeys()
     {
         using var provider = CreateProvider(services => services.AddSingleton<IAIContextProvider, SensitiveContextProvider>());
@@ -54,15 +57,16 @@ public class AIContextResolverTests
             ]
         });
 
-        var context = Assert.Single(result);
-        Assert.Equal("Handles OAuth token refresh", context.Summary);
-        Assert.Equal("[redacted]", context.Data["accessToken"]!.GetValue<string>());
-        Assert.Equal("[redacted]", context.Data["description"]!.GetValue<string>());
-        Assert.Equal("[redacted]", context.Metadata["apiKey"]!.GetValue<string>());
-        Assert.Equal("visible", context.Data["displayName"]!.GetValue<string>());
+        var context = await Assert.That(result).HasSingleItem();
+        await Assert.That(context.Summary).IsEqualTo("Handles OAuth token refresh");
+        await Assert.That(context.Data["accessToken"]!.GetValue<string>()).IsEqualTo("[redacted]");
+        await Assert.That(context.Data["description"]!.GetValue<string>()).IsEqualTo("[redacted]");
+        await Assert.That(context.Metadata["apiKey"]!.GetValue<string>()).IsEqualTo("[redacted]");
+        await Assert.That(context.Data["displayName"]!.GetValue<string>()).IsEqualTo("visible");
     }
 
-    [Fact(DisplayName = "Context resolver uses the last provider for duplicate provider kinds")]
+    [Test]
+    [DisplayName("Context resolver uses the last provider for duplicate provider kinds")]
     public async Task ContextResolverUsesTheLastProviderForDuplicateProviderKinds()
     {
         using var provider = CreateProvider(services =>
@@ -78,11 +82,12 @@ public class AIContextResolverTests
             Attachments = [new AIContextAttachment { Kind = "Duplicate" }]
         });
 
-        var context = Assert.Single(result);
-        Assert.Equal("second", context.Summary);
+        var context = await Assert.That(result).HasSingleItem();
+        await Assert.That(context.Summary).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Context resolver prefers real providers over placeholders")]
+    [Test]
+    [DisplayName("Context resolver prefers real providers over placeholders")]
     public async Task ContextResolverPrefersRealProvidersOverPlaceholders()
     {
         using var provider = CreateProvider(services =>
@@ -98,11 +103,12 @@ public class AIContextResolverTests
             Attachments = [new AIContextAttachment { Kind = "WorkflowDefinition", ReferenceId = "workflow-1" }]
         });
 
-        var context = Assert.Single(result);
-        Assert.Equal("real", context.Summary);
+        var context = await Assert.That(result).HasSingleItem();
+        await Assert.That(context.Summary).IsEqualTo("real");
     }
 
-    [Fact(DisplayName = "Context resolver resolves scoped providers from request scopes")]
+    [Test]
+    [DisplayName("Context resolver resolves scoped providers from request scopes")]
     public async Task ContextResolverResolvesScopedProvidersFromRequestScopes()
     {
         using var provider = CreateProvider(services => services.AddScoped<IAIContextProvider, ScopedContextProvider>());
@@ -114,8 +120,8 @@ public class AIContextResolverTests
             Attachments = [new AIContextAttachment { Kind = "Scoped" }]
         });
 
-        var context = Assert.Single(result);
-        Assert.Equal("scoped", context.Summary);
+        var context = await Assert.That(result).HasSingleItem();
+        await Assert.That(context.Summary).IsEqualTo("scoped");
     }
 
     private static ServiceProvider CreateProvider(Action<IServiceCollection> configure)

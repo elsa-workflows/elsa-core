@@ -3,6 +3,7 @@ using Elsa.Common.Multitenancy.EventHandlers;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
 
@@ -12,7 +13,7 @@ namespace Elsa.Common.UnitTests.Multitenancy;
 /// </summary>
 public class DefaultTenantServiceTests
 {
-    [Fact]
+    [Test]
     public async Task ActivateTenantsAsync_WhenProviderReturnsEmpty_ActivatesDefaultTenant()
     {
         // Arrange - provider returns no tenants
@@ -25,9 +26,9 @@ public class DefaultTenantServiceTests
 
             // Assert
             var tenants = (await tenantService.ListAsync()).ToList();
-            Assert.Single(tenants);
-            Assert.Same(Tenant.Default, tenants[0]);
-            Assert.Equal(Tenant.DefaultTenantId, tenants[0].Id);
+            await Assert.That(tenants).HasSingleItem();
+            await Assert.That(tenants[0]).IsSameReferenceAs(Tenant.Default);
+            await Assert.That(tenants[0].Id).IsEqualTo(Tenant.DefaultTenantId);
         }
         finally
         {
@@ -37,7 +38,7 @@ public class DefaultTenantServiceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task ListAsync_WhenProviderReturnsEmpty_ReturnsDefaultTenant()
     {
         // Arrange - ListAsync triggers initialization when provider returns empty
@@ -49,8 +50,8 @@ public class DefaultTenantServiceTests
             var tenants = (await tenantService.ListAsync()).ToList();
 
             // Assert
-            Assert.Single(tenants);
-            Assert.Same(Tenant.Default, tenants[0]);
+            await Assert.That(tenants).HasSingleItem();
+            await Assert.That(tenants[0]).IsSameReferenceAs(Tenant.Default);
         }
         finally
         {
@@ -60,7 +61,7 @@ public class DefaultTenantServiceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task ActivateTenantsAsync_WhenProviderReturnsTenants_ReturnsThoseTenants()
     {
         // Arrange - provider returns specific tenants
@@ -75,9 +76,9 @@ public class DefaultTenantServiceTests
 
             // Assert - should not use Tenant.Default fallback
             var tenants = (await tenantService.ListAsync()).ToList();
-            Assert.Equal(2, tenants.Count);
-            Assert.Contains(tenants, t => t.Id == "tenant-1");
-            Assert.Contains(tenants, t => t.Id == "tenant-2");
+            await Assert.That(tenants.Count).IsEqualTo(2);
+            await Assert.That(tenants).Contains(t => t.Id == "tenant-1");
+            await Assert.That(tenants).Contains(t => t.Id == "tenant-2");
         }
         finally
         {
@@ -87,7 +88,7 @@ public class DefaultTenantServiceTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshAsync_WhenProviderChangesFromTenantsToEmpty_KeepsDefaultTenant()
     {
         // Arrange - start with tenants, then provider returns empty (simulating config change)
@@ -98,7 +99,7 @@ public class DefaultTenantServiceTests
         try
         {
             await tenantService.ActivateTenantsAsync();
-            Assert.Single(await tenantService.ListAsync());
+            await Assert.That(await tenantService.ListAsync()).HasSingleItem();
 
             // Simulate provider now returning empty (e.g., config removed all tenants)
             providerReturns.Clear();
@@ -108,8 +109,8 @@ public class DefaultTenantServiceTests
 
             // Assert - should fall back to Tenant.Default instead of having zero tenants
             var tenants = (await tenantService.ListAsync()).ToList();
-            Assert.Single(tenants);
-            Assert.Same(Tenant.Default, tenants[0]);
+            await Assert.That(tenants).HasSingleItem();
+            await Assert.That(tenants[0]).IsSameReferenceAs(Tenant.Default);
         }
         finally
         {

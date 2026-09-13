@@ -1,49 +1,50 @@
 using Elsa.Common.Multitenancy;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
 
 public class TenantIdNormalizationTests
 {
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    public void NormalizeTenantId_WithNullOrEmpty_ReturnsDefaultTenantId(string? tenantId)
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    public async Task NormalizeTenantId_WithNullOrEmpty_ReturnsDefaultTenantId(string? tenantId)
     {
         // Act
         var result = tenantId.NormalizeTenantId();
 
         // Assert
-        Assert.Equal(Tenant.DefaultTenantId, result);
-        Assert.Equal(string.Empty, result);
+        await Assert.That(result).IsEqualTo(Tenant.DefaultTenantId);
+        await Assert.That(result).IsEqualTo(string.Empty);
     }
 
-    [Theory]
-    [InlineData("tenant1")]
-    [InlineData("tenant-abc-123")]
-    [InlineData("DEFAULT")]
-    [InlineData("my-custom-tenant")]
-    [InlineData(" ")] // Whitespace is not normalized
-    public void NormalizeTenantId_WithNonNullString_ReturnsOriginalValue(string tenantId)
+    [Test]
+    [Arguments("tenant1")]
+    [Arguments("tenant-abc-123")]
+    [Arguments("DEFAULT")]
+    [Arguments("my-custom-tenant")]
+    [Arguments(" ")] // Whitespace is not normalized
+    public async Task NormalizeTenantId_WithNonNullString_ReturnsOriginalValue(string tenantId)
     {
         // Act
         var result = tenantId.NormalizeTenantId();
 
         // Assert
-        Assert.Equal(tenantId, result);
+        await Assert.That(result).IsEqualTo(tenantId);
     }
 
-    [Fact]
-    public void DefaultTenantId_IsEmptyString()
+    [Test]
+    public async Task DefaultTenantId_IsEmptyString()
     {
         // Assert
-        Assert.Equal(Tenant.DefaultTenantId, string.Empty);
+        await Assert.That(string.Empty).IsEqualTo(Tenant.DefaultTenantId);
     }
 
-    [Fact]
-    public void DefaultTenant_UsesDefaultTenantId()
+    [Test]
+    public async Task DefaultTenant_UsesDefaultTenantId()
     {
         // Assert
-        Assert.Equal(Tenant.DefaultTenantId, Tenant.Default.Id);
-        Assert.Equal(string.Empty, Tenant.Default.Id);
+        await Assert.That(Tenant.Default.Id).IsEqualTo(Tenant.DefaultTenantId);
+        await Assert.That(Tenant.Default.Id).IsEqualTo(string.Empty);
     }
 }

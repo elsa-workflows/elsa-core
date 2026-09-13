@@ -1,12 +1,14 @@
 using Elsa.AI.Abstractions.Models;
 using Elsa.AI.Host.Streaming;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Streaming;
 
 public class AIStreamEventMapperTests
 {
-    [Fact(DisplayName = "Provider events map to Elsa stream events")]
-    public void ProviderEventsMapToElsaStreamEvents()
+    [Test]
+    [DisplayName("Provider events map to Elsa stream events")]
+    public async Task ProviderEventsMapToElsaStreamEvents()
     {
         var mapper = new AIStreamEventMapper();
 
@@ -17,8 +19,8 @@ public class AIStreamEventMapperTests
             Timestamp = DateTimeOffset.UtcNow
         });
 
-        Assert.Equal("assistant.delta", mapped.Type);
-        Assert.Equal("conversation-1", mapped.ConversationId);
-        Assert.Equal(7, mapped.Sequence);
+        await Assert.That(mapped.Type).IsEqualTo("assistant.delta");
+        await Assert.That(mapped.ConversationId).IsEqualTo("conversation-1");
+        await Assert.That(mapped.Sequence).IsEqualTo(7);
     }
 }

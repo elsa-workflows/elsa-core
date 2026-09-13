@@ -2,16 +2,17 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Branching;
 
 public class SwitchTests
 {
-    [Theory]
-    [InlineData(SwitchMode.MatchFirst, true)]
-    [InlineData(SwitchMode.MatchAny, true)]
-    [InlineData(SwitchMode.MatchFirst, false)]
-    [InlineData(SwitchMode.MatchAny, false)]
+    [Test]
+    [Arguments(SwitchMode.MatchFirst, true)]
+    [Arguments(SwitchMode.MatchAny, true)]
+    [Arguments(SwitchMode.MatchFirst, false)]
+    [Arguments(SwitchMode.MatchAny, false)]
     public async Task Should_Handle_No_Matching_Cases_Correctly(SwitchMode mode, bool hasDefault)
     {
         // Arrange
@@ -33,18 +34,18 @@ public class SwitchTests
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         if (hasDefault)
         {
-            Assert.Single(scheduledActivities);
-            Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
+            await Assert.That(scheduledActivities).HasSingleItem();
+            await Assert.That(scheduledActivities.First().Activity).IsEqualTo(defaultActivity);
         }
         else
         {
-            Assert.Empty(scheduledActivities);
+            await Assert.That(scheduledActivities).IsEmpty();
         }
     }
 
-    [Theory]
-    [InlineData(SwitchMode.MatchFirst, 1)]
-    [InlineData(SwitchMode.MatchAny, 2)]
+    [Test]
+    [Arguments(SwitchMode.MatchFirst, 1)]
+    [Arguments(SwitchMode.MatchAny, 2)]
     public async Task Should_Handle_Multiple_Matching_Cases_According_To_Mode(SwitchMode mode, int expectedScheduledCount)
     {
         // Arrange
@@ -66,20 +67,20 @@ public class SwitchTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Equal(expectedScheduledCount, scheduledActivities.Count);
-        
+        await Assert.That(scheduledActivities.Count).IsEqualTo(expectedScheduledCount);
+
         if (mode == SwitchMode.MatchFirst)
         {
-            Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
+            await Assert.That(scheduledActivities.First().Activity).IsEqualTo(firstTrueActivity);
         }
         else // MatchAny
         {
-            Assert.Contains(scheduledActivities, s => s.Activity == firstTrueActivity);
-            Assert.Contains(scheduledActivities, s => s.Activity == secondTrueActivity);
+            await Assert.That(scheduledActivities).Contains(s => s.Activity == firstTrueActivity);
+            await Assert.That(scheduledActivities).Contains(s => s.Activity == secondTrueActivity);
         }
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_MatchFirst_As_Default_Mode()
     {
         // Arrange
@@ -100,13 +101,13 @@ public class SwitchTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(firstTrueActivity, scheduledActivities.First().Activity);
+        await Assert.That(scheduledActivities).HasSingleItem();
+        await Assert.That(scheduledActivities.First().Activity).IsEqualTo(firstTrueActivity);
     }
 
-    [Theory]
-    [InlineData(SwitchMode.MatchFirst)]
-    [InlineData(SwitchMode.MatchAny)]
+    [Test]
+    [Arguments(SwitchMode.MatchFirst)]
+    [Arguments(SwitchMode.MatchAny)]
     public async Task Should_Schedule_Default_When_Null_Case_Condition_Evaluates_False(SwitchMode mode)
     {
         // Arrange
@@ -126,15 +127,15 @@ public class SwitchTests
 
         // Assert
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
-        Assert.Single(scheduledActivities);
-        Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
+        await Assert.That(scheduledActivities).HasSingleItem();
+        await Assert.That(scheduledActivities.First().Activity).IsEqualTo(defaultActivity);
     }
 
-    [Theory]
-    [InlineData(SwitchMode.MatchFirst, true)]
-    [InlineData(SwitchMode.MatchAny, true)]
-    [InlineData(SwitchMode.MatchFirst, false)]
-    [InlineData(SwitchMode.MatchAny, false)]
+    [Test]
+    [Arguments(SwitchMode.MatchFirst, true)]
+    [Arguments(SwitchMode.MatchAny, true)]
+    [Arguments(SwitchMode.MatchFirst, false)]
+    [Arguments(SwitchMode.MatchAny, false)]
     public async Task Should_Handle_Empty_Cases_Correctly(SwitchMode mode, bool hasDefault)
     {
         // Arrange
@@ -153,37 +154,37 @@ public class SwitchTests
         var scheduledActivities = context.WorkflowExecutionContext.Scheduler.List().ToList();
         if (hasDefault)
         {
-            Assert.Single(scheduledActivities);
-            Assert.Equal(defaultActivity, scheduledActivities.First().Activity);
+            await Assert.That(scheduledActivities).HasSingleItem();
+            await Assert.That(scheduledActivities.First().Activity).IsEqualTo(defaultActivity);
         }
         else
         {
-            Assert.Empty(scheduledActivities);
+            await Assert.That(scheduledActivities).IsEmpty();
         }
     }
 
-    [Fact]
-    public void Should_Initialize_Cases_Collection_By_Default()
+    [Test]
+    public async Task Should_Initialize_Cases_Collection_By_Default()
     {
         // Arrange & Act
         var switchActivity = new Switch();
         
         // Assert
-        Assert.NotNull(switchActivity.Cases);
-        Assert.Empty(switchActivity.Cases);
-        
+        await Assert.That(switchActivity.Cases).IsNotNull();
+        await Assert.That(switchActivity.Cases).IsEmpty();
+
         switchActivity.Cases.Add(new("Test", Expression.LiteralExpression(true), Substitute.For<IActivity>()));
-        Assert.Single(switchActivity.Cases);
+        await Assert.That(switchActivity.Cases).HasSingleItem();
     }
 
-    [Fact]
-    public void Should_Initialize_Mode_To_MatchFirst_By_Default()
+    [Test]
+    public async Task Should_Initialize_Mode_To_MatchFirst_By_Default()
     {
         // Arrange
         var switchActivity = new Switch();
         
         // Assert
-        Assert.NotNull(switchActivity.Mode);
+        await Assert.That(switchActivity.Mode).IsNotNull();
         // The actual default value verification is handled by the mode-specific behavior tests
     }
     

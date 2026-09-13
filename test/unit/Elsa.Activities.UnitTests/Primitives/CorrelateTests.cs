@@ -1,10 +1,11 @@
 using Elsa.Testing.Shared;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Primitives;
 
 public class CorrelateTests
 {
-    [Fact]
+    [Test]
     public async Task Should_Set_CorrelationId_From_String_Literal()
     {
         const string expected = "test-correlation-id";
@@ -13,7 +14,7 @@ public class CorrelateTests
         await AssertCorrelationIdAsync(correlate, expected);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_CorrelationId_From_Input()
     {
         const string expected = "dynamic-correlation-id";
@@ -22,7 +23,7 @@ public class CorrelateTests
         await AssertCorrelationIdAsync(correlate, expected);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_CorrelationId_From_Func()
     {
         const string expected = "func-correlation-id";
@@ -31,7 +32,7 @@ public class CorrelateTests
         await AssertCorrelationIdAsync(correlate, expected);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Overwrite_Existing_CorrelationId()
     {
         const string initial = "initial-correlation-id";
@@ -43,12 +44,12 @@ public class CorrelateTests
         context.WorkflowExecutionContext.CorrelationId = initial;
         await fixture.ExecuteAsync(context);
 
-        Assert.Equal(expected, context.WorkflowExecutionContext.CorrelationId);
+        await Assert.That(context.WorkflowExecutionContext.CorrelationId).IsEqualTo(expected);
     }
 
     private static async Task AssertCorrelationIdAsync(Correlate correlate, string expected)
     {
         var context = await new ActivityTestFixture(correlate).ExecuteAsync();
-        Assert.Equal(expected, context.WorkflowExecutionContext.CorrelationId);
+        await Assert.That(context.WorkflowExecutionContext.CorrelationId).IsEqualTo(expected);
     }
 }

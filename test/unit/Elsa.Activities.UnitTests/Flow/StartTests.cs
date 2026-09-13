@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Flow;
 
@@ -9,17 +10,19 @@ namespace Elsa.Activities.UnitTests.Flow;
 /// </summary>
 public class StartTests
 {
-    [Fact(DisplayName = "Start implements IStartNode interface")]
-    public void Start_ImplementsIStartNode()
+    [Test]
+    [DisplayName("Start implements IStartNode interface")]
+    public async Task Start_ImplementsIStartNode()
     {
         // Arrange
         var startActivity = new Start();
 
         // Assert
-        Assert.IsAssignableFrom<IStartNode>(startActivity);
+        await Assert.That(startActivity).IsAssignableTo<IStartNode>();
     }
 
-    [Fact(DisplayName = "Start completes execution")]
+    [Test]
+    [DisplayName("Start completes execution")]
     public async Task Start_CompletesExecution()
     {
         // Arrange
@@ -30,6 +33,6 @@ public class StartTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 }

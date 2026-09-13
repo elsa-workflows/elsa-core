@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Management.Activities.SetOutput;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Composition;
 
@@ -8,34 +9,34 @@ public class SetOutputTests
 {
     private const string DefaultOutputName = "Result";
 
-    [Theory]
-    [InlineData("test output")]
-    [InlineData("string value")]
-    [InlineData(42)]
-    [InlineData(true)]
-    [InlineData(3.14)]
-    [InlineData("")]
+    [Test]
+    [Arguments("test output")]
+    [Arguments("string value")]
+    [Arguments(42)]
+    [Arguments(true)]
+    [Arguments(3.14)]
+    [Arguments("")]
     public async Task Should_Set_Workflow_Output_With_Value(object expectedValue)
     {
         // Act
         var context = await ExecuteSetOutputAsync(DefaultOutputName, expectedValue);
 
         // Assert
-        AssertOutputEquals(context, DefaultOutputName, expectedValue);
+        await AssertOutputEquals(context, DefaultOutputName, expectedValue);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Workflow_Output_With_Null_Value()
     {
         // Act
         var context = await ExecuteSetOutputAsync(DefaultOutputName, null);
 
         // Assert
-        Assert.True(context.WorkflowExecutionContext.Output.ContainsKey(DefaultOutputName));
-        Assert.Null(context.WorkflowExecutionContext.Output[DefaultOutputName]);
+        await Assert.That(context.WorkflowExecutionContext.Output.ContainsKey(DefaultOutputName)).IsTrue();
+        await Assert.That(context.WorkflowExecutionContext.Output[DefaultOutputName]).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Output_With_Complex_Object()
     {
         // Arrange
@@ -45,10 +46,10 @@ public class SetOutputTests
         var context = await ExecuteSetOutputAsync(DefaultOutputName, expectedValue);
 
         // Assert
-        AssertOutputEquals(context, DefaultOutputName, expectedValue);
+        await AssertOutputEquals(context, DefaultOutputName, expectedValue);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Update_Workflow_Output_Multiple_Times()
     {
         // Arrange
@@ -62,11 +63,11 @@ public class SetOutputTests
             ctx => ctx.WorkflowExecutionContext.Output[outputName] = firstValue);
 
         // Assert
-        AssertOutputEquals(context1, outputName, firstValue);
-        AssertOutputEquals(context2, outputName, secondValue);
+        await AssertOutputEquals(context1, outputName, firstValue);
+        await AssertOutputEquals(context2, outputName, secondValue);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Set_Different_Output_Names()
     {
         // Arrange
@@ -81,9 +82,9 @@ public class SetOutputTests
             ctx => ctx.WorkflowExecutionContext.Output[output1Name] = value1);
 
         // Assert
-        AssertOutputEquals(context1, output1Name, value1);
-        AssertOutputEquals(context2, output1Name, value1);
-        AssertOutputEquals(context2, output2Name, value2);
+        await AssertOutputEquals(context1, output1Name, value1);
+        await AssertOutputEquals(context2, output1Name, value1);
+        await AssertOutputEquals(context2, output2Name, value2);
     }
 
     private static async Task<ActivityExecutionContext> ExecuteSetOutputAsync(
@@ -106,9 +107,9 @@ public class SetOutputTests
         OutputValue = new(outputValue)
     };
 
-    private static void AssertOutputEquals(ActivityExecutionContext context, string outputName, object? expectedValue)
+    private static async Task AssertOutputEquals(ActivityExecutionContext context, string outputName, object? expectedValue)
     {
         var actualValue = context.WorkflowExecutionContext.Output[outputName];
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 }

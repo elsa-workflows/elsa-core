@@ -1,6 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Looping;
 
@@ -9,17 +10,19 @@ namespace Elsa.Activities.UnitTests.Looping;
 /// </summary>
 public class BreakTests
 {
-    [Fact(DisplayName = "Break implements ITerminalNode interface")]
-    public void Break_ImplementsITerminalNode()
+    [Test]
+    [DisplayName("Break implements ITerminalNode interface")]
+    public async Task Break_ImplementsITerminalNode()
     {
         // Arrange
         var breakActivity = new Break();
 
         // Assert
-        Assert.IsAssignableFrom<ITerminalNode>(breakActivity);
+        await Assert.That(breakActivity).IsAssignableTo<ITerminalNode>();
     }
 
-    [Fact(DisplayName = "Break completes execution")]
+    [Test]
+    [DisplayName("Break completes execution")]
     public async Task Break_CompletesExecution()
     {
         // Arrange
@@ -30,6 +33,6 @@ public class BreakTests
         var context = await fixture.ExecuteAsync();
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 }

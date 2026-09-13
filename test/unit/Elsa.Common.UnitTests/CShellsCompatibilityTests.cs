@@ -1,14 +1,13 @@
 using Elsa.Common.ShellFeatures;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests;
 
 public class CShellsCompatibilityTests
 {
-    [Fact]
-    public void ElsaCommonTypesCanBeLoadedAgainstQuartzMinimumCShellsVersion()
+    [Test]
+    public async Task ElsaCommonTypesCanBeLoadedAgainstQuartzMinimumCShellsVersion()
     {
-        var exception = Record.Exception(() => typeof(MultitenancyFeature).Assembly.GetTypes());
-
-        Assert.Null(exception);
+        await Assert.That(() => typeof(MultitenancyFeature).Assembly.GetTypes()).ThrowsNothing();
     }
 }

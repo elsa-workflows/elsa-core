@@ -5,15 +5,16 @@ using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using static Elsa.Activities.UnitTests.Http.Helpers.SendHttpRequestTestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
 public class DownloadHttpFileTests
 {
-    [Theory]
-    [InlineData("GET", "https://example.com/file.pdf")]
-    [InlineData("POST", "https://api.example.com/download")]
-    [InlineData("PUT", "https://api.example.com/update-file")]
+    [Test]
+    [Arguments("GET", "https://example.com/file.pdf")]
+    [Arguments("POST", "https://api.example.com/download")]
+    [Arguments("PUT", "https://api.example.com/update-file")]
     public async Task ExecuteAsync_SendsRequest_WithCorrectMethodAndUrl(string method, string url)
     {
         // Arrange
@@ -27,14 +28,14 @@ public class DownloadHttpFileTests
         await ExecuteAsync(activity, responseHandler);
 
         // Assert
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.Equal(expectedMethod, requestCapture.CapturedRequest.Method);
-        Assert.Equal(expectedUrl, requestCapture.CapturedRequest.RequestUri);
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Method).IsEqualTo(expectedMethod);
+        await Assert.That(requestCapture.CapturedRequest.RequestUri).IsEqualTo(expectedUrl);
     }
 
-    [Theory]
-    [InlineData("Bearer token123")]
-    [InlineData("Basic YWRtaW46cGFzcw==")]
+    [Test]
+    [Arguments("Bearer token123")]
+    [Arguments("Basic YWRtaW46cGFzcw==")]
     public async Task ExecuteAsync_AddsAuthorizationHeader_WhenProvided(string authorizationHeader)
     {
         // Arrange
@@ -46,15 +47,15 @@ public class DownloadHttpFileTests
         await ExecuteAsync(activity, responseHandler);
 
         // Assert
-        Assert.NotNull(requestCapture.CapturedRequest);
-        Assert.NotNull(requestCapture.CapturedRequest.Headers.Authorization);
-        Assert.Equal(authorizationHeader, requestCapture.CapturedRequest.Headers.Authorization.ToString());
+        await Assert.That(requestCapture.CapturedRequest).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.Authorization).IsNotNull();
+        await Assert.That(requestCapture.CapturedRequest.Headers.Authorization.ToString()).IsEqualTo(authorizationHeader);
     }
 
-    [Theory]
-    [InlineData(200)]
-    [InlineData(201)]
-    [InlineData(404)]
+    [Test]
+    [Arguments(200)]
+    [Arguments(201)]
+    [Arguments(404)]
     public async Task ExecuteAsync_SetsStatusCodeOutput(int statusCode)
     {
         // Arrange
@@ -66,10 +67,10 @@ public class DownloadHttpFileTests
 
         // Assert
         var actualStatusCode = context.GetActivityOutput(() => activity.StatusCode);
-        Assert.Equal(statusCode, actualStatusCode);
+        await Assert.That(actualStatusCode).IsEqualTo(statusCode);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_SetsFileOutput_WithCorrectFilename()
     {
         // Arrange
@@ -82,11 +83,11 @@ public class DownloadHttpFileTests
 
         // Assert
         var file = context.GetActivityOutput(() => activity.Result) as HttpFile;
-        Assert.NotNull(file);
-        Assert.Equal(expectedFilename, file.Filename);
+        await Assert.That(file).IsNotNull();
+        await Assert.That(file.Filename).IsEqualTo(expectedFilename);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_SetsFileOutput_WithCorrectContentType()
     {
         // Arrange
@@ -99,11 +100,11 @@ public class DownloadHttpFileTests
 
         // Assert
         var file = context.GetActivityOutput(() => activity.Result) as HttpFile;
-        Assert.NotNull(file);
-        Assert.Equal(expectedContentType, file.ContentType);
+        await Assert.That(file).IsNotNull();
+        await Assert.That(file.ContentType).IsEqualTo(expectedContentType);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_SetsResponseContentStream_FromFile()
     {
         // Arrange
@@ -116,14 +117,14 @@ public class DownloadHttpFileTests
 
         // Assert
         var stream = context.GetActivityOutput(() => activity.ResponseContentStream) as Stream;
-        Assert.NotNull(stream);
+        await Assert.That(stream).IsNotNull();
 
         using var reader = new StreamReader(stream);
         var actualContent = await reader.ReadToEndAsync();
-        Assert.Equal("Test file content", actualContent);
+        await Assert.That(actualContent).IsEqualTo("Test file content");
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_SetsResponseHeaders()
     {
         // Arrange
@@ -140,14 +141,15 @@ public class DownloadHttpFileTests
 
         // Assert
         var responseHeaders = context.GetActivityOutput(() => activity.ResponseHeaders);
-        Assert.NotNull(responseHeaders);
-        var httpHeaders = Assert.IsType<HttpHeaders>(responseHeaders);
-        Assert.True(httpHeaders.Count > 0);
-        Assert.Contains(httpHeaders.Keys, k => k.Equals("X-Custom-Header", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(httpHeaders.Keys, k => k.Equals("X-Request-Id", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(responseHeaders).IsNotNull();
+        await Assert.That(responseHeaders).IsOfType(typeof(HttpHeaders));
+        var httpHeaders = (HttpHeaders)responseHeaders!;
+        await Assert.That(httpHeaders.Count > 0).IsTrue();
+        await Assert.That(httpHeaders.Keys).Contains(k => k.Equals("X-Custom-Header", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(httpHeaders.Keys).Contains(k => k.Equals("X-Request-Id", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_CompletesSuccessfully()
     {
         // Arrange
@@ -158,10 +160,10 @@ public class DownloadHttpFileTests
         var context = await ExecuteAsync(activity, responseHandler);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_HandlesHttpRequestException()
     {
         // Arrange
@@ -172,11 +174,11 @@ public class DownloadHttpFileTests
         var context = await ExecuteAsync(activity, responseHandler);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.True(context.JournalData.ContainsKey("Error"));
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.JournalData.ContainsKey("Error")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_HandlesTaskCanceledException()
     {
         // Arrange
@@ -187,11 +189,11 @@ public class DownloadHttpFileTests
         var context = await ExecuteAsync(activity, responseHandler);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, context.Status);
-        Assert.True(context.JournalData.ContainsKey("Cancelled"));
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(context.JournalData.ContainsKey("Cancelled")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_ReturnsNull_WhenResponseHasNoContent()
     {
         // Arrange
@@ -203,13 +205,13 @@ public class DownloadHttpFileTests
 
         // Assert
         var file = context.GetActivityOutput(() => activity.Result);
-        Assert.Null(file);
+        await Assert.That(file).IsNull();
 
         var stream = context.GetActivityOutput(() => activity.ResponseContentStream);
-        Assert.Null(stream);
+        await Assert.That(stream).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_ExtractsFilename_FromContentDisposition()
     {
         // Arrange
@@ -222,11 +224,11 @@ public class DownloadHttpFileTests
 
         // Assert
         var file = context.GetActivityOutput(() => activity.Result) as HttpFile;
-        Assert.NotNull(file);
-        Assert.Equal(expectedFilename, file.Filename);
+        await Assert.That(file).IsNotNull();
+        await Assert.That(file.Filename).IsEqualTo(expectedFilename);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_ExtractsFilename_FromUrlSegment_WhenNoContentDisposition()
     {
         // Arrange
@@ -238,14 +240,14 @@ public class DownloadHttpFileTests
 
         // Assert
         var file = context.GetActivityOutput(() => activity.Result) as HttpFile;
-        Assert.NotNull(file);
-        Assert.Equal("document.pdf", file.Filename);
+        await Assert.That(file).IsNotNull();
+        await Assert.That(file.Filename).IsEqualTo("document.pdf");
     }
 
-    [Theory]
-    [InlineData("https://example.com", "/")]
-    [InlineData("https://example.com/", "/")]
-    [InlineData("https://example.com/download", "download")]
+    [Test]
+    [Arguments("https://example.com", "/")]
+    [Arguments("https://example.com/", "/")]
+    [Arguments("https://example.com/download", "download")]
     public async Task ExecuteAsync_ExtractsFilename_FromUrlWhenNoContentDisposition(string url, string expectedFilename)
     {
         // Arrange
@@ -257,8 +259,8 @@ public class DownloadHttpFileTests
 
         // Assert
         var file = context.GetActivityOutput(() => activity.Result) as HttpFile;
-        Assert.NotNull(file);
-        Assert.Equal(expectedFilename, file.Filename);
+        await Assert.That(file).IsNotNull();
+        await Assert.That(file.Filename).IsEqualTo(expectedFilename);
     }
 
     private static DownloadHttpFile CreateActivity(

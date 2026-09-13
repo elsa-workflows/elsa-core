@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests.Multitenancy;
 
@@ -19,7 +20,7 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
 
     public ValueTask DisposeAsync() => _coordinator.DisposeAsync();
 
-    [Fact]
+    [Test]
     public async Task ActivateAsync_WithQueuedWork_ReturnsBeforeWorkItemCompletes()
     {
         QueueBlockingWorkStartupTask? startupTask = null;
@@ -30,16 +31,16 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
 
         var completedTask = await Task.WhenAny(activationTask, Task.Delay(TimeSpan.FromSeconds(1)));
 
-        Assert.Same(activationTask, completedTask);
+        await Assert.That(completedTask).IsSameReferenceAs(activationTask);
         await activationTask;
         await startupTask!.WorkStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
-        Assert.False(startupTask.WorkCompleted.Task.IsCompleted);
+        await Assert.That(startupTask.WorkCompleted.Task.IsCompleted).IsFalse();
 
         startupTask.ReleaseWork();
         await startupTask.WorkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(1));
     }
 
-    [Fact]
+    [Test]
     public async Task DeactivateAsync_WithRunningBackgroundTask_StopsTask()
     {
         var backgroundTask = new TrackingBackgroundTask();
@@ -49,8 +50,8 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         await backgroundTask.Started.Task.WaitAsync(TimeSpan.FromSeconds(1));
         await _coordinator.DeactivateTenantAsync(DeactivationArgs(serviceProvider));
 
-        Assert.True(backgroundTask.WasStopCalled);
-        Assert.True(backgroundTask.WasCancelled);
+        await Assert.That(backgroundTask.WasStopCalled).IsTrue();
+        await Assert.That(backgroundTask.WasCancelled).IsTrue();
     }
 
     /// <summary>
@@ -59,7 +60,7 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
     /// never stopped). <see cref="IAsyncDisposable.DisposeAsync"/> would then skip cleanup,
     /// leaving background tasks and recurring-task timers running until process exit.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task DeactivateAsync_WhenCancelledBeforeGateAcquired_StateRemainsForDispose()
     {
         await ActivateAsync();
@@ -68,24 +69,23 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         await cancelledCts.CancelAsync();
 
         // WaitAsync throws immediately for an already-cancelled token, before TryRemove is reached.
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => _coordinator.DeactivateTenantAsync(DeactivationArgs(cancelledCts.Token)));
+        await Assert.That(() => _coordinator.DeactivateTenantAsync(DeactivationArgs(cancelledCts.Token))).Throws<OperationCanceledException>();
 
         // DisposeAsync must still find the state and stop the recurring task.
         await _coordinator.DisposeAsync();
 
-        Assert.True(_recurringTask.WasStopCalled);
+        await Assert.That(_recurringTask.WasStopCalled).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task DeactivateAsync_AfterActivation_StopsRecurringTasks()
     {
         await ActivateAsync();
         await _coordinator.DeactivateTenantAsync(DeactivationArgs());
-        Assert.True(_recurringTask.WasStopCalled);
+        await Assert.That(_recurringTask.WasStopCalled).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ActivateAndDeactivateAsync_WithNullTenantId_TreatsTenantAsDefaultTenant()
     {
         var tenant = new Tenant { Id = null! };
@@ -93,15 +93,15 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         await ActivateAsync(tenant);
         await _coordinator.DeactivateTenantAsync(DeactivationArgs(tenant));
 
-        Assert.True(_recurringTask.WasStopCalled);
+        await Assert.That(_recurringTask.WasStopCalled).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task DisposeAsync_WithActiveTenant_StopsRecurringTasks()
     {
         await ActivateAsync();
         await _coordinator.DisposeAsync();
-        Assert.True(_recurringTask.WasStopCalled);
+        await Assert.That(_recurringTask.WasStopCalled).IsTrue();
     }
 
     // === Instance helpers ===

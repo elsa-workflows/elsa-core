@@ -15,16 +15,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Elsa.Workflows.Exceptions;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
 public class WriteFileHttpResponseTests
 {
-    [Theory]
-    [InlineData("text/plain", "test.txt")]
-    [InlineData("application/pdf", "document.pdf")]
-    [InlineData("image/jpeg", "photo.jpg")]
-    [InlineData("application/zip", "archive.zip")]
+    [Test]
+    [Arguments("text/plain", "test.txt")]
+    [Arguments("application/pdf", "document.pdf")]
+    [Arguments("image/jpeg", "photo.jpg")]
+    [Arguments("application/zip", "archive.zip")]
     public async Task Should_Set_Correct_Content_Type_And_Filename(string contentType, string filename)
     {
         // Arrange
@@ -39,14 +40,14 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Equal(contentType, httpContext.Response.ContentType);
-        Assert.Contains($"filename={filename}", httpContext.Response.Headers.ContentDisposition.ToString());
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo(contentType);
+        await Assert.That(httpContext.Response.Headers.ContentDisposition.ToString()).Contains($"filename={filename}");
     }
 
-    [Theory]
-    [InlineData("Hello World")]
-    [InlineData("")]
+    [Test]
+    [Arguments("Hello World")]
+    [Arguments("")]
     public async Task Should_Handle_String_Content(string content)
     {
         // Arrange
@@ -58,12 +59,12 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
+        await Assert.That(context.IsCompleted).IsTrue();
         var responseContent = GetResponseContent(httpContext);
-        Assert.Equal(content, responseContent);
+        await Assert.That(responseContent).IsEqualTo(content);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Handle_Byte_Array_Content()
     {
         // Arrange
@@ -77,12 +78,12 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
+        await Assert.That(context.IsCompleted).IsTrue();
         var responseBytes = GetResponseBytes(httpContext);
-        Assert.Equal(testBytes, responseBytes);
+        await Assert.That(responseBytes).IsEquivalentTo(testBytes, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Handle_Stream_Content()
     {
         // Arrange
@@ -97,12 +98,12 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
+        await Assert.That(context.IsCompleted).IsTrue();
         var responseContent = GetResponseContent(httpContext);
-        Assert.Equal(testContent, responseContent);
+        await Assert.That(responseContent).IsEqualTo(testContent);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Handle_Uri_Content()
     {
         // Arrange
@@ -116,11 +117,11 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
+        await Assert.That(context.IsCompleted).IsTrue();
         // The actual file download would be mocked through the IDownloadableManager
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Handle_Multiple_Files_As_Zip()
     {
         // Arrange
@@ -138,12 +139,12 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Equal("application/zip", httpContext.Response.ContentType);
-        Assert.Contains("filename=archive.zip", httpContext.Response.Headers.ContentDisposition.ToString());
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo("application/zip");
+        await Assert.That(httpContext.Response.Headers.ContentDisposition.ToString()).Contains("filename=archive.zip");
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Return_NoContent_When_Content_Is_Null()
     {
         // Arrange
@@ -154,11 +155,11 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Equal(StatusCodes.Status204NoContent, httpContext.Response.StatusCode);
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status204NoContent);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Return_ApplicationZip_When_Content_Is_Empty_Array()
     {
         // Arrange
@@ -169,14 +170,14 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Equal(StatusCodes.Status200OK, httpContext.Response.StatusCode);
-        Assert.Equal("application/zip", httpContext.Response.ContentType);
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status200OK);
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo("application/zip");
     }
 
-    [Theory]
-    [InlineData("\"12345\"")]
-    [InlineData("\"abcdef\"")]
+    [Test]
+    [Arguments("\"12345\"")]
+    [Arguments("\"abcdef\"")]
     public async Task Should_Set_Entity_Tag_Header(string entityTag)
     {
         // Arrange
@@ -191,13 +192,13 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        
+        await Assert.That(context.IsCompleted).IsTrue();
+
         // Strong ETags should match exactly
-        Assert.Equal(entityTag, httpContext.Response.Headers.ETag.ToString());
+        await Assert.That(httpContext.Response.Headers.ETag.ToString()).IsEqualTo(entityTag);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Enable_Range_Processing_When_Resumable_Downloads_Enabled()
     {
         // Arrange
@@ -212,13 +213,13 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        
+        await Assert.That(context.IsCompleted).IsTrue();
+
         // Range processing and ETag should be handled by FileStreamResult
-        Assert.True(httpContext.Response.Headers.ContainsKey("ETag"));
+        await Assert.That(httpContext.Response.Headers.ContainsKey("ETag")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Not_Set_ETag_When_Resumable_Downloads_Disabled()
     {
         // Arrange
@@ -233,16 +234,16 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.False(httpContext.Response.Headers.ContainsKey("ETag"));
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.Headers.ContainsKey("ETag")).IsFalse();
     }
 
-    [Theory]
-    [InlineData("file.txt", "text/plain")]
-    [InlineData("document.pdf", "application/pdf")]
-    [InlineData("image.jpg", "image/jpeg")]
-    [InlineData("archive.zip", "application/zip")]
-    [InlineData("unknown.xyz", "application/octet-stream")]
+    [Test]
+    [Arguments("file.txt", "text/plain")]
+    [Arguments("document.pdf", "application/pdf")]
+    [Arguments("image.jpg", "image/jpeg")]
+    [Arguments("archive.zip", "application/zip")]
+    [Arguments("unknown.xyz", "application/octet-stream")]
     public async Task Should_Determine_Content_Type_From_Filename_When_Not_Specified(string filename, string expectedContentType)
     {
         // Arrange
@@ -257,11 +258,11 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Equal(expectedContentType, httpContext.Response.ContentType);
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo(expectedContentType);
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Use_Default_Filename_When_Not_Specified()
     {
         // Arrange
@@ -275,11 +276,11 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Contains("filename=file.bin", httpContext.Response.Headers.ContentDisposition.ToString());
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.Headers.ContentDisposition.ToString()).Contains("filename=file.bin");
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Fault_When_No_HttpContext_Available()
     {
         // Arrange
@@ -294,10 +295,10 @@ public class WriteFileHttpResponseTests
         });
 
         // Act + Assert
-        await Assert.ThrowsAsync<FaultException>(() => fixture.ExecuteAsync());
+        await Assert.ThrowsExactlyAsync<FaultException>(() => fixture.ExecuteAsync());
     }
 
-    [Fact] 
+    [Test]
     public async Task Should_Handle_Downloadable_Object_With_Metadata()
     {
         // Arrange
@@ -316,12 +317,12 @@ public class WriteFileHttpResponseTests
         var context = await ExecuteActivityAsync(activity, httpContext);
 
         // Assert
-        Assert.True(context.IsCompleted);
-        Assert.Equal("text/plain", httpContext.Response.ContentType);
-        Assert.Contains("filename=metadata-file.txt", httpContext.Response.Headers.ContentDisposition.ToString());
+        await Assert.That(context.IsCompleted).IsTrue();
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo("text/plain");
+        await Assert.That(httpContext.Response.Headers.ContentDisposition.ToString()).Contains("filename=metadata-file.txt");
     }
 
-    [Fact]
+    [Test]
     public async Task Should_Throw_FormatException_For_Malformed_ETag()
     {
         // Arrange
@@ -333,12 +334,12 @@ public class WriteFileHttpResponseTests
         activity.EnableResumableDownloads = new(true);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<FormatException>(async () =>
+        var exception = (await Assert.ThrowsExactlyAsync<FormatException>(async () =>
         {
             await ExecuteActivityAsync(activity, httpContext);
-        });
+        }))!;
         
-        Assert.Contains("The format of value 'W/\"weak-etag\"' is invalid", exception.Message);
+        await Assert.That(exception.Message).Contains("The format of value 'W/\"weak-etag\"' is invalid");
     }
 
     // Helper Methods

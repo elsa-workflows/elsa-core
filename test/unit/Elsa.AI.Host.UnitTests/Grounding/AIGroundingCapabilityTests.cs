@@ -4,12 +4,14 @@ using Elsa.AI.Host.Endpoints.AI.Capabilities;
 using Elsa.AI.Host.Options;
 using Microsoft.Extensions.DependencyInjection;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
 public class AIGroundingCapabilityTests
 {
-    [Fact(DisplayName = "Capability descriptor reports disabled grounding family reason")]
+    [Test]
+    [DisplayName("Capability descriptor reports disabled grounding family reason")]
     public async Task CapabilityDescriptorReportsDisabledGroundingFamilyReason()
     {
         using var serviceProvider = new ServiceCollection().BuildServiceProvider();
@@ -24,9 +26,9 @@ public class AIGroundingCapabilityTests
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        var activities = Assert.Single(response.Grounding, x => x.Family == "activities");
-        Assert.False(activities.Available);
-        Assert.Contains("Grounding family is disabled by configuration.", activities.DisabledReasons);
+        var activities = await Assert.That(response.Grounding).HasSingleItem(x => x.Family == "activities");
+        await Assert.That(activities.Available).IsFalse();
+        await Assert.That(activities.DisabledReasons).Contains("Grounding family is disabled by configuration.");
     }
 
     private class TestConversationStore : IAIConversationStore

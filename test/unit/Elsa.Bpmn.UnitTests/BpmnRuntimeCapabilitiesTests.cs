@@ -1,16 +1,16 @@
 using Bpmn.Semantics;
 using Elsa.Bpmn.Hosting;
+using System.Threading.Tasks;
 
 namespace Elsa.Bpmn.UnitTests;
 
 public class BpmnRuntimeCapabilitiesTests
 {
-    [Fact(DisplayName = "Declared covers every capability the library currently defines")]
-    public void Declared_CoversEveryCapabilityTheLibraryDefines()
+    [Test]
+    [DisplayName("Declared covers every capability the library currently defines")]
+    public async Task Declared_CoversEveryCapabilityTheLibraryDefines()
     {
-        Assert.True(
-            BpmnRuntimeCapabilities.Declared == BpmnHostCapabilities.Full,
-            $"""
+        await Assert.That(GetDeclaredCapabilities()).IsEqualTo(BpmnHostCapabilities.Full).Because($"""
              Bpmn.Semantics now defines a capability flag Elsa's runtime host does not declare
              (missing: {BpmnHostCapabilities.Full & ~BpmnRuntimeCapabilities.Declared}).
 
@@ -28,4 +28,6 @@ public class BpmnRuntimeCapabilitiesTests
              undocumented, is not.
              """);
     }
+
+    private static BpmnHostCapabilities GetDeclaredCapabilities() => BpmnRuntimeCapabilities.Declared;
 }

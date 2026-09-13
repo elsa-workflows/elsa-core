@@ -7,13 +7,14 @@ using Elsa.Workflows;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Activities.UnitTests.Http;
 
 public class HttpEndpointTests
 {
     // TODO: Once `HttpEndpoint` is updated to produce a fault, update this test accordingly.
-    [Fact]
+    [Test]
     public async Task Should_Create_Bookmark_When_No_Http_Context()
     {
         // Arrange
@@ -32,8 +33,8 @@ public class HttpEndpointTests
 
         // Assert
         // The activity should be suspended (not completed) with a bookmark
-        Assert.False(context.IsCompleted);
-        Assert.True(context.WorkflowExecutionContext.Bookmarks.Any());
+        await Assert.That(context.IsCompleted).IsFalse();
+        await Assert.That(context.WorkflowExecutionContext.Bookmarks.Any()).IsTrue();
     }
 
 
@@ -63,4 +64,3 @@ public class HttpEndpointTests
         return endpoint;
     }
 }
-

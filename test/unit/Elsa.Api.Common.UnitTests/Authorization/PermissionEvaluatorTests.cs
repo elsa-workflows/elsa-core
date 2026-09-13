@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Elsa.Authorization;
+using System.Threading.Tasks;
 
 namespace Elsa.Api.Common.UnitTests.Authorization;
 
@@ -10,72 +11,72 @@ public class PermissionEvaluatorTests
     private static ClaimsPrincipal PrincipalWith(params string[] permissions) =>
         new(new ClaimsIdentity(permissions.Select(x => new Claim(PermissionNames.ClaimType, x)), "test"));
 
-    [Fact]
-    public void GrantsAreTheUnionAcrossRoles()
+    [Test]
+    public async Task GrantsAreTheUnionAcrossRoles()
     {
         // Claims arrive already flattened from every role the principal holds.
         var principal = PrincipalWith("workflows/definitions:view", "dashboard:view", "workflows/definitions:publish");
 
         var grants = _evaluator.GetGrants(principal);
 
-        Assert.Equal(3, grants.Count);
-        Assert.True(_evaluator.HasPermission(principal, "workflows/definitions", "publish"));
-        Assert.True(_evaluator.HasPermission(principal, "dashboard", "view"));
-        Assert.False(_evaluator.HasPermission(principal, "secrets", "view"));
+        await Assert.That(grants.Count).IsEqualTo(3);
+        await Assert.That(_evaluator.HasPermission(principal, "workflows/definitions", "publish")).IsTrue();
+        await Assert.That(_evaluator.HasPermission(principal, "dashboard", "view")).IsTrue();
+        await Assert.That(_evaluator.HasPermission(principal, "secrets", "view")).IsFalse();
     }
 
-    [Fact]
-    public void NoVerbImpliesAnother()
+    [Test]
+    public async Task NoVerbImpliesAnother()
     {
         // FR-009. Holding write does not confer view, in this model or the one it replaced.
         var principal = PrincipalWith("secrets:write");
 
-        Assert.True(_evaluator.HasPermission(principal, "secrets", "write"));
-        Assert.False(_evaluator.HasPermission(principal, "secrets", "view"));
-        Assert.False(_evaluator.HasPermission(principal, "secrets", "delete"));
+        await Assert.That(_evaluator.HasPermission(principal, "secrets", "write")).IsTrue();
+        await Assert.That(_evaluator.HasPermission(principal, "secrets", "view")).IsFalse();
+        await Assert.That(_evaluator.HasPermission(principal, "secrets", "delete")).IsFalse();
     }
 
-    [Fact]
-    public void ASeededWildcardStillAuthorizesEverything()
+    [Test]
+    public async Task ASeededWildcardStillAuthorizesEverything()
     {
         // The seeded admin role stores "*". It must keep working across the vocabulary migration.
         var principal = PrincipalWith("*");
 
-        Assert.True(_evaluator.HasPermission(principal, "workflows/definitions", "publish"));
-        Assert.True(_evaluator.HasPermission(principal, "identity/roles", "delete"));
+        await Assert.That(_evaluator.HasPermission(principal, "workflows/definitions", "publish")).IsTrue();
+        await Assert.That(_evaluator.HasPermission(principal, "identity/roles", "delete")).IsTrue();
     }
 
-    [Fact]
-    public void MalformedClaimsAreSkippedRatherThanThrowing()
+    [Test]
+    public async Task MalformedClaimsAreSkippedRatherThanThrowing()
     {
         // One bad stored grant must not deny an entire principal.
         var principal = PrincipalWith("not-a-permission", "workflows/definitions:view", "");
 
-        Assert.True(_evaluator.HasPermission(principal, "workflows/definitions", "view"));
-        Assert.Single(_evaluator.GetGrants(principal));
+        await Assert.That(_evaluator.HasPermission(principal, "workflows/definitions", "view")).IsTrue();
+        await Assert.That(_evaluator.GetGrants(principal)).HasSingleItem();
     }
 
-    [Fact]
-    public void ANullOrAnonymousPrincipalHoldsNothing()
+    [Test]
+    public async Task ANullOrAnonymousPrincipalHoldsNothing()
     {
-        Assert.False(_evaluator.HasPermission(null, "dashboard", "view"));
-        Assert.Empty(_evaluator.GetGrants(null));
-        Assert.False(_evaluator.HasPermission(new ClaimsPrincipal(new ClaimsIdentity()), "dashboard", "view"));
+        await Assert.That(_evaluator.HasPermission(null, "dashboard", "view")).IsFalse();
+        await Assert.That(_evaluator.GetGrants(null)).IsEmpty();
+        await Assert.That(_evaluator.HasPermission(new ClaimsPrincipal(new ClaimsIdentity()), "dashboard", "view")).IsFalse();
     }
 
-    [Fact]
-    public void HasAllPermissionsRequiresEveryOne()
+    [Test]
+    public async Task HasAllPermissionsRequiresEveryOne()
     {
         var principal = PrincipalWith("workflows/*:view", "secrets:write");
         var required = new[] { "workflows/instances:view", "secrets:write" }.Select(Permission.Parse).ToArray();
 
-        Assert.True(_evaluator.HasAllPermissions(principal, required));
-        Assert.False(_evaluator.HasAllPermissions(principal, [.. required, Permission.Parse("secrets:delete")]));
+        await Assert.That(_evaluator.HasAllPermissions(principal, required)).IsTrue();
+        await Assert.That(_evaluator.HasAllPermissions(principal, [.. required, Permission.Parse("secrets:delete")])).IsFalse();
     }
 
-    [Fact]
-    public void HasAllPermissionsIsVacuouslyTrueForNoRequirements()
+    [Test]
+    public async Task HasAllPermissionsIsVacuouslyTrueForNoRequirements()
     {
-        Assert.True(_evaluator.HasAllPermissions(PrincipalWith(), []));
+        await Assert.That(_evaluator.HasAllPermissions(PrincipalWith(), [])).IsTrue();
     }
 }

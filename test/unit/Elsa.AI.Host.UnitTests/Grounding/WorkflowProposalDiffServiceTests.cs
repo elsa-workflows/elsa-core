@@ -1,12 +1,14 @@
 using System.Text.Json.Nodes;
 using Elsa.AI.Host.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.AI.Host.UnitTests.Grounding;
 
 public class WorkflowProposalDiffServiceTests
 {
-    [Fact(DisplayName = "Workflow proposal diff compares draft against baseline graph")]
-    public void WorkflowProposalDiffComparesDraftAgainstBaselineGraph()
+    [Test]
+    [DisplayName("Workflow proposal diff compares draft against baseline graph")]
+    public async Task WorkflowProposalDiffComparesDraftAgainstBaselineGraph()
     {
         var service = new WorkflowProposalDiffService();
         var baseline = new JsonObject
@@ -28,7 +30,7 @@ public class WorkflowProposalDiffServiceTests
 
         var diff = service.CreateDiff(draft, baseline);
 
-        Assert.Equal(["added"], diff.AddedActivityIds);
-        Assert.Equal(["removed"], diff.RemovedActivityIds);
+        await Assert.That(diff.AddedActivityIds).IsEquivalentTo(["added"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(diff.RemovedActivityIds).IsEquivalentTo(["removed"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 }
