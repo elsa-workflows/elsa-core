@@ -251,6 +251,46 @@ public class MemoryAlterationJobStoreTenantIsolationTests
         Assert.Equal("tenant-a", found.TenantId);
     }
 
+    [Fact(DisplayName = "SaveManyAsync preserves the owner for repeated updates of a new Id")]
+    public async Task SaveManyAsync_WhenRepeatedNewIdUsesSameOwner_SucceedsAndPreservesTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        var first = Job("job-new", "tenant-a");
+        var second = Job("job-new", "tenant-a");
+        second.Status = AlterationJobStatus.Completed;
+
+        await store.SaveManyAsync([first, second]);
+
+        var found = await store.FindAsync(new AlterationJobFilter { Id = "job-new" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationJobStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveManyAsync rejects a repeated new Id that changes * to a named source")]
+    public async Task SaveManyAsync_WhenRepeatedNewIdChangesAgnosticToNamed_ThrowsAndPersistsNothing()
+    {
+        var store = CreateStore(Tenant.AgnosticTenantId);
+        var first = Job("job-new", Tenant.AgnosticTenantId);
+        var second = Job("job-new", "tenant-b");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveManyAsync([first, second]));
+
+        Assert.Null(await store.FindAsync(new AlterationJobFilter { Id = "job-new" }));
+    }
+
+    [Fact(DisplayName = "SaveManyAsync rejects a repeated new Id that changes its named owner")]
+    public async Task SaveManyAsync_WhenRepeatedNewIdChangesNamedOwner_ThrowsAndPersistsNothing()
+    {
+        var store = CreateStore("tenant-a");
+        var first = Job("job-new", "tenant-b");
+        var second = Job("job-new", "tenant-c");
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveManyAsync([first, second]));
+
+        Assert.Null(await store.FindAsync(new AlterationJobFilter { Id = "job-new" }));
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {
