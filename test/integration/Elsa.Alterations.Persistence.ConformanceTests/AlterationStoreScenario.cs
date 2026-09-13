@@ -45,16 +45,30 @@ public sealed class AlterationStoreScenario(
         {
             await operation();
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (IsExpectedSaveException(exception))
         {
-        }
-        catch (DbUpdateException)
-        {
-        }
-        catch (SqliteException)
-        {
+            // The Memory and EF/SQLite stores report this expected tenant collision differently.
+            return;
         }
     }
+
+    private static bool IsExpectedSaveException(Exception exception) =>
+        exception switch
+        {
+            InvalidOperationException memoryException => IsExpectedMemoryConflict(memoryException),
+            DbUpdateException { InnerException: SqliteException sqliteException } => IsSqliteUniquenessViolation(sqliteException),
+            SqliteException sqliteException => IsSqliteUniquenessViolation(sqliteException),
+            _ => false
+        };
+
+    private static bool IsExpectedMemoryConflict(InvalidOperationException exception) =>
+        (exception.Message.StartsWith("An alteration plan with ID '", StringComparison.Ordinal)
+         || exception.Message.StartsWith("An alteration job with ID '", StringComparison.Ordinal))
+        && exception.Message.EndsWith("' already exists and is not visible to the current tenant.", StringComparison.Ordinal);
+
+    private static bool IsSqliteUniquenessViolation(SqliteException exception) =>
+        exception.SqliteErrorCode == 19
+        && exception.Message.Contains("UNIQUE constraint failed", StringComparison.Ordinal);
 
     public ValueTask DisposeAsync() => disposeAsync();
 
