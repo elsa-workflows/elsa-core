@@ -219,7 +219,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// imported definition as-is, and only the bound activity graph and the <see cref="SourceXmlCustomPropertyKey"/>,
     /// <see cref="SourceVersionCustomPropertyKey"/>, <see cref="SourceProcessIdCustomPropertyKey"/> and
     /// <see cref="SourceGraphHashCustomPropertyKey"/> custom properties this method owns change. Left <c>null</c>
-    /// for a whole-definition import and for a document edit, where metadata is read inside the compare-and-swap.
+    /// for a whole-definition import and for a document edit, where metadata is copied onto the prepared draft
+    /// and the compare-and-swap refuses if that snapshot has moved.
     /// </param>
     /// <param name="expectedETag">
     /// When <paramref name="compareAndSwap"/> is true, the <c>If-Match</c> value the save must still equal, or
@@ -309,11 +310,12 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
-    /// The document-edit persist: build the draft once (published→draft identity allocated here),
-    /// announce <see cref="WorkflowDefinitionDraftSaving"/> so a rejecting handler fails the request
-    /// before anything is written, then compare-and-swap. The swap rebuilds from the just-loaded row
-    /// so metadata is not frozen from the outer Find, but reuses the announced id / version /
-    /// created-at. A lost race is <see cref="BpmnDocumentPreconditionFailedException"/>.
+    /// The document-edit persist: prepare the draft once, dispatch
+    /// <see cref="WorkflowDefinitionDraftSaving"/> so a rejecting handler fails the request before
+    /// anything is written, then compare-and-swap that same draft. The swap accepts the write only
+    /// when If-Match and the loaded snapshot (id, version, graph, name, description, IsLatest) are
+    /// still the row the draft was built from — so a metadata-only save in the window is 412, not a
+    /// silent overwrite. A lost race is <see cref="BpmnDocumentPreconditionFailedException"/>.
     /// </summary>
     private async Task<BpmnDocumentImportResult> PersistDocumentEditAsync(
         string xml,
@@ -339,18 +341,25 @@ public sealed class BpmnInterchangeDocumentService(
                 "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
         }
 
+        var expectedId = current.Id;
+        var expectedVersion = current.Version;
+        var expectedName = current.Name;
+        var expectedDescription = current.Description;
+        var expectedStringData = current.StringData;
+
         var draft = ApplyDocumentEdit(current, process, xml, rootDefinition);
         await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
 
         var result = await store.TryUpdateLatestAsync(
             filter,
-            loaded => expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal),
-            loaded =>
-            {
-                var next = ApplyDocumentEdit(loaded, process, xml, rootDefinition, draft);
-                CarryHandlerAddedCustomProperties(draft, next);
-                return next;
-            },
+            loaded => loaded.IsLatest
+                      && loaded.Id == expectedId
+                      && loaded.Version == expectedVersion
+                      && loaded.StringData == expectedStringData
+                      && loaded.Name == expectedName
+                      && loaded.Description == expectedDescription
+                      && (expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal)),
+            _ => draft,
             cancellationToken);
 
         if (result.Outcome == WorkflowDefinitionUpdateOutcome.NotFound)
@@ -370,19 +379,16 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
-    /// Builds the definition the compare-and-swap will save from the just-loaded <paramref name="current"/>:
+    /// Builds the draft the compare-and-swap will save from <paramref name="current"/>:
     /// metadata comes from that row; only the bound graph and the BPMN source properties this service owns change.
-    /// When <paramref name="reuseIdentityFrom"/> is set, a published→draft uses that draft's id, version and
-    /// created-at instead of allocating a second identity.
     /// </summary>
     private WorkflowDefinition ApplyDocumentEdit(
         WorkflowDefinition current,
         BpmnProcess process,
         string xml,
-        BpmnProcessDefinition rootDefinition,
-        WorkflowDefinition? reuseIdentityFrom = null)
+        BpmnProcessDefinition rootDefinition)
     {
-        var draft = current.IsPublished ? NewDraftFrom(current, reuseIdentityFrom) : current.ShallowClone();
+        var draft = current.IsPublished ? NewDraftFrom(current) : current.ShallowClone();
         var stringData = activitySerializer.Serialize(process);
 
         draft.StringData = stringData;
@@ -410,41 +416,17 @@ public sealed class BpmnInterchangeDocumentService(
     /// <summary>
     /// The unpublished draft <see cref="Elsa.Workflows.Management.IWorkflowDefinitionPublisher.GetDraftAsync"/> would
     /// return for a published latest row, without a store read: new id, next version, not published.
-    /// When <paramref name="reuseIdentityFrom"/> is set, that draft's id, version and created-at are reused so
-    /// <see cref="WorkflowDefinitionDraftSaving"/> and the persisted row name the same identity.
     /// </summary>
-    private WorkflowDefinition NewDraftFrom(WorkflowDefinition published, WorkflowDefinition? reuseIdentityFrom = null)
+    private WorkflowDefinition NewDraftFrom(WorkflowDefinition published)
     {
         var draft = published.ShallowClone();
-        draft.Id = reuseIdentityFrom?.Id ?? identityGenerator.GenerateId();
-        draft.Version = reuseIdentityFrom?.Version ?? published.Version + 1;
-        draft.CreatedAt = reuseIdentityFrom?.CreatedAt ?? systemClock.UtcNow;
+        draft.Id = identityGenerator.GenerateId();
+        draft.Version = published.Version + 1;
+        draft.CreatedAt = systemClock.UtcNow;
         draft.IsLatest = true;
         draft.IsPublished = false;
         return draft;
     }
-
-    /// <summary>
-    /// <see cref="WorkflowDefinitionDraftSaving"/> handlers may add custom properties that are not metadata
-    /// from the loaded row. Those keys are copied onto the CAS result after metadata is rebuilt from
-    /// <c>loaded</c>, so they are not dropped and a rename in the window is not frozen from the outer Find.
-    /// </summary>
-    private static void CarryHandlerAddedCustomProperties(WorkflowDefinition announced, WorkflowDefinition next)
-    {
-        foreach (var (key, value) in announced.CustomProperties)
-        {
-            if (IsOwnedSourceProperty(key) || next.CustomProperties.ContainsKey(key))
-                continue;
-
-            next.CustomProperties[key] = value;
-        }
-    }
-
-    private static bool IsOwnedSourceProperty(string key) =>
-        key is SourceXmlCustomPropertyKey
-            or SourceVersionCustomPropertyKey
-            or SourceProcessIdCustomPropertyKey
-            or SourceGraphHashCustomPropertyKey;
 
     /// <summary>
     /// Writes the document a workflow definition was imported from back out as BPMN 2.0 XML, through the same

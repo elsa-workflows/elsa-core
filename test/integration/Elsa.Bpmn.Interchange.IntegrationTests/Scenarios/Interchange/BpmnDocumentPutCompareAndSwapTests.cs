@@ -66,8 +66,8 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
     }
 
-    [Fact(DisplayName = "A metadata-only save in the window is carried onto the document PUT, not reverted")]
-    public async Task ImportDocumentAsync_WhenMetadataIsSavedAfterTheFirstMatched_KeepsThatMetadata()
+    [Fact(DisplayName = "A metadata-only save in the window is 412; the rename stays and the document PUT does not overwrite it")]
+    public async Task ImportDocumentAsync_WhenMetadataIsSavedAfterTheFirstMatched_RefusesRatherThanRevertingTheRename()
     {
         var services = new TestApplicationBuilder(testOutputHelper)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
@@ -98,12 +98,13 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
         gate.Release.TrySetResult();
 
-        var result = await first;
+        var lost = await Assert.ThrowsAsync<BpmnDocumentPreconditionFailedException>(() => first);
 
-        Assert.True(result.ImportResult.Succeeded);
+        Assert.Contains("written since the ETag in If-Match was issued", lost.Message);
+
         var after = await FindLatestAsync(innerStore, definitionId);
         Assert.Equal("Renamed-in-window", after.Name);
-        Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
+        Assert.Equal(stored.StringData, after.StringData);
     }
 
     [Fact(DisplayName = "A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
