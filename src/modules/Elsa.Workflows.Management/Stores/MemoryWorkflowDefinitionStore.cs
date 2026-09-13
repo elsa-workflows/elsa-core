@@ -148,7 +148,9 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
         lock (store.Sync)
         {
             var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
-            store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
+            store.DeleteWhere(x =>
+                workflowDefinitionIds.Contains(x.DefinitionId)
+                && (filter.TenantAgnostic || TenantVisibility.IsVisible(x.TenantId, CurrentTenantId)));
             return Task.FromResult(workflowDefinitionIds.LongCount());
         }
     }

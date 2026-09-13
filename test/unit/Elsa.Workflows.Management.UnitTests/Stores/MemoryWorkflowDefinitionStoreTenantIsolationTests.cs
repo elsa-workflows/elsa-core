@@ -110,6 +110,25 @@ public class MemoryWorkflowDefinitionStoreTenantIsolationTests
         Assert.Equal("def-b", remaining[0].Id);
     }
 
+    [Fact(DisplayName = "DeleteAsync with a shared DefinitionId leaves the other tenant's versions")]
+    public async Task DeleteAsync_WhenDefinitionIdIsShared_LeavesOtherTenantRows()
+    {
+        var backing = new MemoryStore<WorkflowDefinition>();
+        var tenantA = new MemoryWorkflowDefinitionStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryWorkflowDefinitionStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Definition("def-a", "Order", "tenant-a", definitionId: "order"));
+        await tenantB.SaveAsync(Definition("def-b", "Order", "tenant-b", definitionId: "order"));
+
+        var deleted = await tenantA.DeleteAsync(new WorkflowDefinitionFilter { DefinitionId = "order" });
+        var remainingForA = (await tenantA.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = "order" })).ToList();
+        var remainingForB = (await tenantB.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = "order" })).ToList();
+
+        Assert.Equal(1, deleted);
+        Assert.Empty(remainingForA);
+        Assert.Single(remainingForB);
+        Assert.Equal("def-b", remainingForB[0].Id);
+    }
+
     [Fact(DisplayName = "FindManyAsync on the default tenant includes null TenantId rows")]
     public async Task FindManyAsync_WhenAmbientIsDefault_IncludesNullTenantId()
     {
@@ -146,11 +165,11 @@ public class MemoryWorkflowDefinitionStoreTenantIsolationTests
         await store.SaveAsync(Definition("def-star", "Star", Tenant.AgnosticTenantId));
     }
 
-    private static WorkflowDefinition Definition(string id, string name, string? tenantId) =>
+    private static WorkflowDefinition Definition(string id, string name, string? tenantId, string? definitionId = null) =>
         new()
         {
             Id = id,
-            DefinitionId = id,
+            DefinitionId = definitionId ?? id,
             Name = name,
             TenantId = tenantId,
             Version = 1,
