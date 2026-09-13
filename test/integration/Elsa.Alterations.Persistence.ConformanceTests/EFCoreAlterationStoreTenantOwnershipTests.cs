@@ -52,6 +52,23 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     }
 
     [Fact]
+    public async Task SaveAsync_WhenAmbientForgesOwnerTenantIdOnPlan_ThrowsAndLeavesOwnerAndPayload()
+    {
+        await using var owner = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
+        await owner.Plans.SaveAsync(Plan("shared", "tenant-a", AlterationPlanStatus.Running, "original"));
+
+        using (owner.UseTenant("tenant-b"))
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                owner.Plans.SaveAsync(Plan("shared", "tenant-a", AlterationPlanStatus.Completed, "stolen")));
+            Assert.Contains("shared", ex.Message);
+        }
+
+        var remaining = await owner.Plans.FindAsync(new AlterationPlanFilter { Id = "shared" });
+        AssertUnchangedPlan(remaining, "tenant-a", AlterationPlanStatus.Running, "original");
+    }
+
+    [Fact]
     public async Task SaveAsync_WhenSameTenantOwnsPlanId_UpdatesPayload()
     {
         await using var scenario = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
@@ -93,6 +110,23 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     }
 
     [Fact]
+    public async Task SaveAsync_WhenAmbientForgesOwnerTenantIdOnJob_ThrowsAndLeavesOwnerAndPayload()
+    {
+        await using var owner = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
+        await owner.Jobs.SaveAsync(Job("shared", "tenant-a", AlterationJobStatus.Running, "original"));
+
+        using (owner.UseTenant("tenant-b"))
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                owner.Jobs.SaveAsync(Job("shared", "tenant-a", AlterationJobStatus.Completed, "stolen")));
+            Assert.Contains("shared", ex.Message);
+        }
+
+        var remaining = await owner.Jobs.FindAsync(new AlterationJobFilter { Id = "shared" });
+        AssertUnchangedJob(remaining, "tenant-a", AlterationJobStatus.Running, "original");
+    }
+
+    [Fact]
     public async Task SaveManyAsync_WhenOtherNamedTenantOwnsJobId_ThrowsAndLeavesOwnerAndPayload()
     {
         await using var owner = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
@@ -102,6 +136,23 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
         {
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 owner.Jobs.SaveManyAsync([Job("shared", "tenant-b", AlterationJobStatus.Completed, "stolen")]));
+        }
+
+        var remaining = await owner.Jobs.FindAsync(new AlterationJobFilter { Id = "shared" });
+        AssertUnchangedJob(remaining, "tenant-a", AlterationJobStatus.Running, "original");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenAmbientForgesOwnerTenantIdOnJob_ThrowsAndLeavesOwnerAndPayload()
+    {
+        await using var owner = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
+        await owner.Jobs.SaveAsync(Job("shared", "tenant-a", AlterationJobStatus.Running, "original"));
+
+        using (owner.UseTenant("tenant-b"))
+        {
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                owner.Jobs.SaveManyAsync([Job("shared", "tenant-a", AlterationJobStatus.Completed, "stolen")]));
+            Assert.Contains("shared", ex.Message);
         }
 
         var remaining = await owner.Jobs.FindAsync(new AlterationJobFilter { Id = "shared" });
@@ -283,7 +334,7 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
             await action();
             return null;
         }
-        catch (Exception ex)
+        catch (InvalidOperationException ex)
         {
             return ex;
         }

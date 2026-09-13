@@ -69,6 +69,22 @@ public class MemoryAlterationPlanStoreTenantIsolationTests
         Assert.Equal("tenant-a", remaining.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync refuses a forged owner TenantId from another ambient tenant")]
+    public async Task SaveAsync_WhenAmbientForgesOwnerTenantId_ThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationPlan>();
+        var tenantA = new MemoryAlterationPlanStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryAlterationPlanStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Plan("shared", "tenant-a"));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveAsync(Plan("shared", "tenant-a")));
+        var remaining = await tenantA.FindAsync(new AlterationPlanFilter { Id = "shared" });
+
+        Assert.Contains("shared", ex.Message);
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-a", remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync refuses to overwrite a tenant-agnostic row by Id")]
     public async Task SaveAsync_WhenAgnosticRowExists_NamedTenantThrowsAndLeavesExisting()
     {

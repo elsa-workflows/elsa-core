@@ -27,16 +27,16 @@ public static class TenantVisibility
         || existingTenantId is null && writerTenantId == Tenant.DefaultTenantId;
 
     /// <summary>
-    /// CAS match for an upsert: the existing row's tenant equals the stamped source tenant
-    /// (own row), or both sides are <c>*</c> and the writer is agnostic. A named writer never
-    /// matches a <c>*</c> row, even when the incoming entity is marked <c>*</c>.
+    /// CAS match for an upsert. Named rows are owned by the <paramref name="ambientTenantId"/>
+    /// (Memory <see cref="CanReplace"/>), not by a forged source <c>TenantId</c>. A <c>*</c> row
+    /// is replaceable only when both the incoming entity and the ambient writer are <c>*</c>.
     /// </summary>
     public static bool CanReplaceOwnedRow(string? existingTenantId, string? sourceTenantId, string ambientTenantId)
     {
         if (existingTenantId == Tenant.AgnosticTenantId)
             return sourceTenantId == Tenant.AgnosticTenantId && ambientTenantId == Tenant.AgnosticTenantId;
 
-        return CanReplace(existingTenantId, sourceTenantId ?? Tenant.DefaultTenantId);
+        return CanReplace(existingTenantId, ambientTenantId);
     }
 
     /// <summary>

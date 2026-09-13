@@ -71,12 +71,15 @@ public class TenantVisibilityTests
     [Theory]
     [InlineData("tenant-a", "tenant-a", "tenant-a", true)]
     [InlineData("tenant-a", "tenant-b", "tenant-b", false)]
+    [InlineData("tenant-a", "tenant-a", "tenant-b", false)]
     [InlineData(Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, true)]
     [InlineData(Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, "tenant-a", false)]
     [InlineData(Tenant.AgnosticTenantId, "tenant-a", "tenant-a", false)]
+    [InlineData(Tenant.AgnosticTenantId, "tenant-a", Tenant.AgnosticTenantId, false)]
     [InlineData(null, Tenant.DefaultTenantId, Tenant.DefaultTenantId, true)]
     [InlineData(null, "tenant-a", "tenant-a", false)]
-    public void CanReplaceOwnedRow_RequiresAgnosticWriterForStar(
+    [InlineData(null, Tenant.DefaultTenantId, "tenant-a", false)]
+    public void CanReplaceOwnedRow_GatesNamedRowsOnAmbientNotForgedSource(
         string? existingTenantId,
         string? sourceTenantId,
         string ambientTenantId,

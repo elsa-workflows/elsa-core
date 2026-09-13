@@ -26,17 +26,18 @@ internal static class AlterationTenantOwnedUpsert
         dbContext.TenantId ?? Tenant.DefaultTenantId;
 
     /// <summary>
-    /// UPDATE is allowed when the existing row's tenant matches the stamped source tenant
-    /// (own row), or when both sides are <c>*</c> and the writer is agnostic. A named
-    /// writer never matches a <c>*</c> or other-tenant row.
+    /// EF translation of <see cref="TenantVisibility.CanReplaceOwnedRow"/>. Named UPDATE
+    /// matches <c>Target.TenantId</c> to the ambient writer, not a forged source
+    /// <c>TenantId</c>. <c>*</c> updates still require ambient and source <c>*</c>.
     /// </summary>
     public static Expression<Func<TEntity, bool>> OwnedId<TEntity>(string id, string? sourceTenantId, string ambientTenantId)
         where TEntity : Entity
     {
         return entity => entity.Id == id && (
-            (entity.TenantId == sourceTenantId && entity.TenantId != Tenant.AgnosticTenantId)
-            || (entity.TenantId == Tenant.AgnosticTenantId && sourceTenantId == Tenant.AgnosticTenantId && ambientTenantId == Tenant.AgnosticTenantId)
-            || (entity.TenantId == null && ambientTenantId == Tenant.DefaultTenantId && (sourceTenantId == null || sourceTenantId == Tenant.DefaultTenantId)));
+            (entity.TenantId == Tenant.AgnosticTenantId && sourceTenantId == Tenant.AgnosticTenantId && ambientTenantId == Tenant.AgnosticTenantId)
+            || (entity.TenantId != Tenant.AgnosticTenantId && (
+                entity.TenantId == ambientTenantId
+                || (entity.TenantId == null && ambientTenantId == Tenant.DefaultTenantId))));
     }
 
     public static async Task InsertIfAbsentAsync<TEntity>(

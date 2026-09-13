@@ -95,6 +95,37 @@ public class MemoryAlterationJobStoreTenantIsolationTests
         Assert.Equal("tenant-a", remaining.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync refuses a forged owner TenantId from another ambient tenant")]
+    public async Task SaveAsync_WhenAmbientForgesOwnerTenantId_ThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationJob>();
+        var tenantA = new MemoryAlterationJobStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryAlterationJobStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Job("shared", "tenant-a"));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveAsync(Job("shared", "tenant-a")));
+        var remaining = await tenantA.FindAsync(new AlterationJobFilter { Id = "shared" });
+
+        Assert.Contains("shared", ex.Message);
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-a", remaining.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveManyAsync refuses a forged owner TenantId from another ambient tenant")]
+    public async Task SaveManyAsync_WhenAmbientForgesOwnerTenantId_ThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationJob>();
+        var tenantA = new MemoryAlterationJobStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryAlterationJobStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Job("shared", "tenant-a"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveManyAsync([Job("shared", "tenant-a")]));
+        var remaining = await tenantA.FindAsync(new AlterationJobFilter { Id = "shared" });
+
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-a", remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync refuses to overwrite a tenant-agnostic row by Id")]
     public async Task SaveAsync_WhenAgnosticRowExists_NamedTenantThrowsAndLeavesExisting()
     {
