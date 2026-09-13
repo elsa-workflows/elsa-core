@@ -14,6 +14,9 @@ public sealed class ExecutionCycleHandle : IDisposable
     private readonly Action? _cancelCallback;
     private readonly TaskCompletionSource _disposedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly object _cycleCtsGate = new();
+    private bool _cycleCtsCancellationInProgress;
+    private bool _cycleCtsDisposeRequested;
+    private bool _cycleCtsDisposed;
     private int _lifecycleState;
 
     private const int ActiveState = 0;
@@ -101,7 +104,22 @@ public sealed class ExecutionCycleHandle : IDisposable
         try
         {
             lock (_cycleCtsGate)
-                _cycleCts.Cancel();
+            {
+                _cycleCtsCancellationInProgress = true;
+                try
+                {
+                    _cycleCts.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Dispose may have won before cancellation propagation started.
+                }
+                finally
+                {
+                    _cycleCtsCancellationInProgress = false;
+                    DisposeCycleCtsIfSafe();
+                }
+            }
         }
         catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }
 
@@ -122,7 +140,19 @@ public sealed class ExecutionCycleHandle : IDisposable
 
         _onDisposed?.Invoke(this);
         lock (_cycleCtsGate)
-            _cycleCts.Dispose();
+        {
+            _cycleCtsDisposeRequested = true;
+            DisposeCycleCtsIfSafe();
+        }
+    }
+
+    private void DisposeCycleCtsIfSafe()
+    {
+        if (!_cycleCtsDisposeRequested || _cycleCtsCancellationInProgress || _cycleCtsDisposed)
+            return;
+
+        _cycleCtsDisposed = true;
+        _cycleCts.Dispose();
         _disposedTcs.TrySetResult();
     }
 }

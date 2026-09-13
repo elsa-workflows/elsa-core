@@ -176,6 +176,28 @@ public class ExecutionCycleRegistryTests
         Assert.True(handle.Disposed.IsCompletedSuccessfully);
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle defers CTS disposal from a cancellation callback")]
+    public void DisposeDefersCtsDisposalUntilCancellationPropagationExits()
+    {
+        var disposedDuringCancellation = false;
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None);
+
+        using var registration = handle.CancellationToken.Register(() =>
+        {
+            handle.Dispose();
+            disposedDuringCancellation = handle.Disposed.IsCompleted;
+        });
+
+        Assert.False(handle.TryCancel());
+        Assert.False(disposedDuringCancellation);
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle.Cancel invokes the cancel callback supplied at registration")]
     public void CancelCallbackIsInvoked()
     {
