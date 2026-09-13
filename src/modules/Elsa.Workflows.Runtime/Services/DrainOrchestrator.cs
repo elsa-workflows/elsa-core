@@ -320,8 +320,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // DI scope so concurrent reads do not share an EF DbContext (Phase C stays
         // sequential on the outer scope for the same reason). Finds run concurrently
         // under a semaphore so a large live-cycle set cannot self-contend into
-        // 250ms timeouts. Timeout/error: exclude that id (prefer preserving
-        // user-cancel / #8052 over promoting an unknown row).
+        // 250ms timeouts. Timeout, error, or a null row: exclude that id (prefer
+        // preserving user-cancel / #8052 over promoting an unknown row). Only a
+        // confirmed non-Cancelled snapshot may join drainInduced.
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         using var snapshotGate = new SemaphoreSlim(MaxConcurrentPreCancelSnapshotFinds);
         var snapshotTasks = live.Select(async handle =>
@@ -340,11 +341,17 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                         .AsTask()
                         .WaitAsync(perFindCts.Token)
                         .ConfigureAwait(false);
-                    if (snapshot is null || snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                    // Only a confirmed non-Cancelled row may join drainInduced. Null is
+                    // unknown pre-state: exclude so a later Finished/Cancelled cannot be
+                    // rewritten as Interrupted (user-cancel / #8052).
+                    if (snapshot is not null && snapshot.SubStatus != WorkflowSubStatus.Cancelled)
                         return handle.WorkflowInstanceId;
                 }
                 finally
                 {
+                    // Release after the await budget, not after the store call returns.
+                    // A cancel-ignoring Find can outlive this slot (documented secondary;
+                    // holding the slot until it completes would stall WhenAll / Phase A).
                     snapshotGate.Release();
                 }
             }
