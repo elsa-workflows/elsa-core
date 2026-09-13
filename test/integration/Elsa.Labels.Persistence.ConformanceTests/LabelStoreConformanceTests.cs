@@ -12,135 +12,6 @@ public abstract class LabelStoreConformanceTests
     protected abstract Task<LabelStoreScenario> CreateScenarioAsync();
 
     [Fact]
-    public async Task NormalizedNamesAreUniquePerTenant()
-    {
-        await using var scenario = await CreateScenarioAsync();
-
-        await scenario.Labels.SaveAsync(Label("label-1", "Urgent", "tenant-a"));
-        await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-2", "urgent", "tenant-a")));
-        Assert.Equal("label-1", Assert.Single((await scenario.Labels.ListAsync()).Items).Id);
-
-        using (scenario.UseTenant("tenant-b"))
-            await scenario.Labels.SaveAsync(Label("label-b", "Urgent", "tenant-b"));
-        Assert.Equal("urgent", (await scenario.Labels.FindByIdAsync("label-1"))!.NormalizedName);
-        using (scenario.UseTenant("tenant-b"))
-            Assert.Equal("urgent", (await scenario.Labels.FindByIdAsync("label-b"))!.NormalizedName);
-
-        await scenario.Labels.SaveAsync(Label("label-1", "Critical", "tenant-a"));
-        var updated = await scenario.Labels.FindByIdAsync("label-1");
-        Assert.Equal("Critical", updated!.Name);
-        Assert.Equal("critical", updated.NormalizedName);
-
-        await scenario.Labels.SaveAsync(Label("label-later", "Later", "tenant-a"));
-        await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-later", "Critical", "tenant-a")));
-        Assert.Equal("Later", (await scenario.Labels.FindByIdAsync("label-later"))!.Name);
-
-        await scenario.Labels.SaveAsync(Label("label-star", "Critical", Tenant.AgnosticTenantId));
-        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-star"));
-
-        using (scenario.UseTenant(Tenant.DefaultTenantId))
-        {
-            await scenario.Labels.SaveAsync(Label("label-default", "Shared", tenantId: null));
-            await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-default-dup", "Shared", tenantId: null)));
-            Assert.Equal(Tenant.DefaultTenantId, (await scenario.Labels.FindByIdAsync("label-default"))!.TenantId);
-        }
-    }
-
-    [Fact]
-    public async Task SaveManyRejectsDuplicateNormalizedNames()
-    {
-        await using var scenario = await CreateScenarioAsync();
-        await scenario.Labels.SaveAsync(Label("label-kept", "Kept", "tenant-a"));
-        await scenario.Labels.SaveAsync(Label("label-1", "Urgent", "tenant-a"));
-
-        await scenario.AssertUniquenessConflictAsync(() =>
-            scenario.Labels.SaveManyAsync([Label("label-3", "Urgent", "tenant-a")]));
-        Assert.Null(await scenario.Labels.FindByIdAsync("label-3"));
-        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-kept"));
-
-        await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveManyAsync(
-        [
-            Label("label-batch-1", "Invoice", "tenant-a"),
-            Label("label-batch-2", "invoice", "tenant-a")
-        ]));
-        Assert.Null(await scenario.Labels.FindByIdAsync("label-batch-1"));
-        Assert.Null(await scenario.Labels.FindByIdAsync("label-batch-2"));
-        Assert.Equal("Urgent", (await scenario.Labels.FindByIdAsync("label-1"))!.Name);
-    }
-
-    [Fact]
-    public async Task LabelTenantIsolationHonorsAmbientTenant()
-    {
-        await using var scenario = await CreateScenarioAsync();
-        await SeedMixedLabelsAsync(scenario);
-
-        var listed = (await scenario.Labels.ListAsync()).Items.ToList();
-        Assert.Equal(2, listed.Count);
-        Assert.Contains(listed, x => x.Id == "label-a");
-        Assert.Contains(listed, x => x.Id == "label-star");
-        Assert.DoesNotContain(listed, x => x.Id == "label-b");
-
-        Assert.Null(await scenario.Labels.FindByIdAsync("label-b"));
-        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-a"));
-        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-star"));
-
-        var foundMany = (await scenario.Labels.FindManyByIdAsync(["label-a", "label-b", "label-star"])).ToList();
-        Assert.Equal(2, foundMany.Count);
-        Assert.Contains(foundMany, x => x.Id == "label-a");
-        Assert.Contains(foundMany, x => x.Id == "label-star");
-        Assert.DoesNotContain(foundMany, x => x.Id == "label-b");
-
-        Assert.False(await scenario.Labels.DeleteAsync("label-b"));
-        using (scenario.UseTenant("tenant-b"))
-            Assert.NotNull(await scenario.Labels.FindByIdAsync("label-b"));
-
-        var deleted = await scenario.Labels.DeleteManyAsync(["label-a", "label-b", "label-star"]);
-        Assert.Equal(2, deleted);
-        Assert.Empty((await scenario.Labels.ListAsync()).Items);
-        using (scenario.UseTenant("tenant-b"))
-            Assert.Equal("label-b", (await scenario.Labels.FindByIdAsync("label-b"))!.Id);
-
-        using (scenario.UseTenant(Tenant.DefaultTenantId))
-        {
-            var stamped = Label("label-null", "Null", tenantId: null);
-            await scenario.Labels.SaveAsync(stamped);
-            Assert.Equal(Tenant.DefaultTenantId, stamped.TenantId);
-
-            var explicitTenant = Label("label-named", "Named", "tenant-a");
-            await scenario.Labels.SaveAsync(explicitTenant);
-            Assert.Equal("tenant-a", explicitTenant.TenantId);
-
-            var defaultVisible = (await scenario.Labels.ListAsync()).Items.ToList();
-            Assert.Contains(defaultVisible, x => x.Id == "label-null");
-            Assert.DoesNotContain(defaultVisible, x => x.Id == "label-named");
-        }
-
-        var agnostic = Label("label-star-2", "Star2", Tenant.AgnosticTenantId);
-        await scenario.Labels.SaveAsync(agnostic);
-        Assert.Equal(Tenant.AgnosticTenantId, agnostic.TenantId);
-    }
-
-    [Fact]
-    public async Task ListAsyncOrdersByNameAndPages()
-    {
-        await using var scenario = await CreateScenarioAsync();
-        await scenario.Labels.SaveAsync(Label("label-z", "Zebra", "tenant-a"));
-        await scenario.Labels.SaveAsync(Label("label-a", "Apple", "tenant-a"));
-        await scenario.Labels.SaveAsync(Label("label-m", "Mango", "tenant-a"));
-
-        var all = (await scenario.Labels.ListAsync()).Items.Select(x => x.Name).ToList();
-        Assert.Equal(["Apple", "Mango", "Zebra"], all);
-
-        // Page.TotalCount is not a shared contract: Memory ToPage counts after Skip/Take,
-        // EF PaginateAsync counts the unpaged query.
-        var firstPage = await scenario.Labels.ListAsync(PageArgs.FromRange(0, 2));
-        Assert.Equal(["Apple", "Mango"], firstPage.Items.Select(x => x.Name).ToList());
-
-        var secondPage = await scenario.Labels.ListAsync(PageArgs.FromRange(2, 2));
-        Assert.Equal(["Zebra"], secondPage.Items.Select(x => x.Name).ToList());
-    }
-
-    [Fact]
     public async Task DeletingALabelCascadesItsAssociations()
     {
         await using var scenario = await CreateScenarioAsync();
@@ -176,7 +47,25 @@ public abstract class LabelStoreConformanceTests
     }
 
     [Fact]
-    public async Task AssociationLookupsReplaceAndDeletesHonorFilters()
+    public async Task ReplaceAsyncRemovesAndAddsByAssociationId()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        await scenario.Associations.SaveAsync(Association("assoc-red", "red", "order", "order:1", "tenant-a"));
+        await scenario.Associations.SaveAsync(Association("assoc-blue", "blue", "order", "order:1", "tenant-a"));
+
+        await scenario.Associations.ReplaceAsync(
+            [Association("assoc-red", "red", "order", "order:1", "tenant-a")],
+            [Association("assoc-green", "green", "order", "order:1", "tenant-a")]);
+
+        var remaining = (await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1"))
+            .Select(x => x.Id)
+            .OrderBy(x => x)
+            .ToList();
+        Assert.Equal(["assoc-blue", "assoc-green"], remaining);
+    }
+
+    [Fact]
+    public async Task AssociationFindsAndDeletesHonorWorkflowDefinitionKeys()
     {
         await using var scenario = await CreateScenarioAsync();
         await scenario.Associations.SaveAsync(Association("assoc-v1-red", "red", "order", "order:1", "tenant-a"));
@@ -197,12 +86,6 @@ public abstract class LabelStoreConformanceTests
         Assert.Contains(byRed, x => x.Id == "assoc-v1-red");
         Assert.Contains(byRed, x => x.Id == "assoc-v2-red");
         Assert.Contains(byRed, x => x.Id == "assoc-invoice");
-
-        await scenario.Associations.ReplaceAsync(
-            [Association("assoc-v1-red", "red", "order", "order:1", "tenant-a")],
-            [Association("assoc-v1-green", "green", "order", "order:1", "tenant-a")]);
-        var afterReplace = (await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1")).Select(x => x.Id).OrderBy(x => x).ToList();
-        Assert.Equal(["assoc-v1-blue", "assoc-v1-green"], afterReplace);
 
         Assert.Equal(1, await scenario.Associations.DeleteByWorkflowDefinitionVersionIdAsync("order:2"));
         Assert.Empty(await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:2"));
@@ -225,10 +108,45 @@ public abstract class LabelStoreConformanceTests
     }
 
     [Fact]
-    public async Task AssociationTenantIsolationHonorsAmbientTenant()
+    public async Task ListAsyncOrdersByNameAndPages()
     {
         await using var scenario = await CreateScenarioAsync();
+        await scenario.Labels.SaveAsync(Label("label-z", "Zebra", "tenant-a"));
+        await scenario.Labels.SaveAsync(Label("label-a", "Apple", "tenant-a"));
+        await scenario.Labels.SaveAsync(Label("label-m", "Mango", "tenant-a"));
+
+        var all = (await scenario.Labels.ListAsync()).Items.Select(x => x.Name).ToList();
+        Assert.Equal(["Apple", "Mango", "Zebra"], all);
+
+        // Page.TotalCount is not a shared contract: Memory ToPage counts after Skip/Take,
+        // EF PaginateAsync counts the unpaged query.
+        var firstPage = await scenario.Labels.ListAsync(PageArgs.FromRange(0, 2));
+        Assert.Equal(["Apple", "Mango"], firstPage.Items.Select(x => x.Name).ToList());
+
+        var secondPage = await scenario.Labels.ListAsync(PageArgs.FromRange(2, 2));
+        Assert.Equal(["Zebra"], secondPage.Items.Select(x => x.Name).ToList());
+    }
+
+    [Fact]
+    public async Task TenantStampAndIsolationHonorAmbientTenant()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        await SeedMixedLabelsAsync(scenario);
         await SeedMixedAssociationsAsync(scenario);
+
+        var listed = (await scenario.Labels.ListAsync()).Items.ToList();
+        Assert.Equal(2, listed.Count);
+        Assert.Contains(listed, x => x.Id == "label-a");
+        Assert.Contains(listed, x => x.Id == "label-star");
+        Assert.DoesNotContain(listed, x => x.Id == "label-b");
+
+        Assert.Null(await scenario.Labels.FindByIdAsync("label-b"));
+        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-a"));
+        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-star"));
+
+        var foundMany = (await scenario.Labels.FindManyByIdAsync(["label-a", "label-b", "label-star"])).ToList();
+        Assert.Equal(2, foundMany.Count);
+        Assert.DoesNotContain(foundMany, x => x.Id == "label-b");
 
         var byVersion = (await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1")).ToList();
         Assert.Equal(2, byVersion.Count);
@@ -238,13 +156,15 @@ public abstract class LabelStoreConformanceTests
 
         var byLabel = (await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).ToList();
         Assert.Equal(2, byLabel.Count);
-        Assert.Contains(byLabel, x => x.Id == "assoc-a");
-        Assert.Contains(byLabel, x => x.Id == "assoc-star");
         Assert.DoesNotContain(byLabel, x => x.Id == "assoc-b");
 
+        Assert.False(await scenario.Labels.DeleteAsync("label-b"));
         Assert.False(await scenario.Associations.DeleteAsync("assoc-b"));
         using (scenario.UseTenant("tenant-b"))
+        {
+            Assert.NotNull(await scenario.Labels.FindByIdAsync("label-b"));
             Assert.Contains(await scenario.AssociationQuery.FindByLabelIdsAsync(["red"]), x => x.Id == "assoc-b");
+        }
 
         await scenario.Associations.ReplaceAsync(
             [Association("assoc-a", "red", "order", "order:1", "tenant-a"), Association("assoc-b", "red", "order", "order:1", "tenant-b")],
@@ -254,16 +174,15 @@ public abstract class LabelStoreConformanceTests
         Assert.Contains(remainingA, x => x.Id == "assoc-star");
         Assert.DoesNotContain(remainingA, x => x.Id == "assoc-a");
         using (scenario.UseTenant("tenant-b"))
-        {
-            var remainingB = (await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).ToList();
-            Assert.Contains(remainingB, x => x.Id == "assoc-b");
-            Assert.Contains(remainingB, x => x.Id == "assoc-star");
-            Assert.DoesNotContain(remainingB, x => x.Id == "assoc-a");
-        }
+            Assert.Contains(await scenario.AssociationQuery.FindByLabelIdsAsync(["red"]), x => x.Id == "assoc-b");
+
+        var deletedLabels = await scenario.Labels.DeleteManyAsync(["label-a", "label-b", "label-star"]);
+        Assert.Equal(2, deletedLabels);
+        using (scenario.UseTenant("tenant-b"))
+            Assert.Equal("label-b", (await scenario.Labels.FindByIdAsync("label-b"))!.Id);
 
         using (scenario.UseTenant("tenant-b"))
             await scenario.Associations.SaveAsync(Association("assoc-b-order", "blue", "order", "order:1", "tenant-b"));
-
         Assert.Equal(2, await scenario.Associations.DeleteByWorkflowDefinitionIdAsync("order"));
         Assert.Empty(await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1"));
         using (scenario.UseTenant("tenant-b"))
@@ -275,11 +194,75 @@ public abstract class LabelStoreConformanceTests
 
         using (scenario.UseTenant(Tenant.DefaultTenantId))
         {
-            var stamped = Association("assoc-null", "red", "order", "order:1", tenantId: null);
-            await scenario.Associations.SaveAsync(stamped);
-            Assert.Equal(Tenant.DefaultTenantId, stamped.TenantId);
+            var stampedLabel = Label("label-null", "Null", tenantId: null);
+            await scenario.Labels.SaveAsync(stampedLabel);
+            Assert.Equal(Tenant.DefaultTenantId, stampedLabel.TenantId);
+
+            var namedLabel = Label("label-named", "Named", "tenant-a");
+            await scenario.Labels.SaveAsync(namedLabel);
+            Assert.Equal("tenant-a", namedLabel.TenantId);
+
+            var defaultLabels = (await scenario.Labels.ListAsync()).Items.ToList();
+            Assert.Contains(defaultLabels, x => x.Id == "label-null");
+            Assert.DoesNotContain(defaultLabels, x => x.Id == "label-named");
+
+            var stampedAssociation = Association("assoc-null", "red", "order", "order:1", tenantId: null);
+            await scenario.Associations.SaveAsync(stampedAssociation);
+            Assert.Equal(Tenant.DefaultTenantId, stampedAssociation.TenantId);
             Assert.Equal("assoc-null", Assert.Single(await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).Id);
         }
+
+        var agnostic = Label("label-star-2", "Star2", Tenant.AgnosticTenantId);
+        await scenario.Labels.SaveAsync(agnostic);
+        Assert.Equal(Tenant.AgnosticTenantId, agnostic.TenantId);
+    }
+
+    [Fact]
+    public async Task NormalizedNamesAreUniquePerTenant()
+    {
+        await using var scenario = await CreateScenarioAsync();
+
+        await scenario.Labels.SaveAsync(Label("label-1", "Urgent", "tenant-a"));
+        await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-2", "urgent", "tenant-a")));
+        Assert.Equal("label-1", Assert.Single((await scenario.Labels.ListAsync()).Items).Id);
+
+        using (scenario.UseTenant("tenant-b"))
+            await scenario.Labels.SaveAsync(Label("label-b", "Urgent", "tenant-b"));
+        Assert.Equal("urgent", (await scenario.Labels.FindByIdAsync("label-1"))!.NormalizedName);
+        using (scenario.UseTenant("tenant-b"))
+            Assert.Equal("urgent", (await scenario.Labels.FindByIdAsync("label-b"))!.NormalizedName);
+
+        await scenario.Labels.SaveAsync(Label("label-1", "Critical", "tenant-a"));
+        var updated = await scenario.Labels.FindByIdAsync("label-1");
+        Assert.Equal("Critical", updated!.Name);
+        Assert.Equal("critical", updated.NormalizedName);
+
+        await scenario.Labels.SaveAsync(Label("label-later", "Later", "tenant-a"));
+        await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-later", "Critical", "tenant-a")));
+        Assert.Equal("Later", (await scenario.Labels.FindByIdAsync("label-later"))!.Name);
+
+        await scenario.Labels.SaveAsync(Label("label-star", "Critical", Tenant.AgnosticTenantId));
+        Assert.NotNull(await scenario.Labels.FindByIdAsync("label-star"));
+
+        using (scenario.UseTenant(Tenant.DefaultTenantId))
+        {
+            await scenario.Labels.SaveAsync(Label("label-default", "Shared", tenantId: null));
+            await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveAsync(Label("label-default-dup", "Shared", tenantId: null)));
+            Assert.Equal(Tenant.DefaultTenantId, (await scenario.Labels.FindByIdAsync("label-default"))!.TenantId);
+        }
+
+        await scenario.AssertUniquenessConflictAsync(() =>
+            scenario.Labels.SaveManyAsync([Label("label-3", "Later", "tenant-a")]));
+        Assert.Null(await scenario.Labels.FindByIdAsync("label-3"));
+
+        await scenario.AssertUniquenessConflictAsync(() => scenario.Labels.SaveManyAsync(
+        [
+            Label("label-batch-1", "Invoice", "tenant-a"),
+            Label("label-batch-2", "invoice", "tenant-a")
+        ]));
+        Assert.Null(await scenario.Labels.FindByIdAsync("label-batch-1"));
+        Assert.Null(await scenario.Labels.FindByIdAsync("label-batch-2"));
+        Assert.Equal("Later", (await scenario.Labels.FindByIdAsync("label-later"))!.Name);
     }
 
     private static async Task SeedMixedLabelsAsync(LabelStoreScenario scenario)
