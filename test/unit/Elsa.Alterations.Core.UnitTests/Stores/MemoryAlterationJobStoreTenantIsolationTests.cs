@@ -95,6 +95,53 @@ public class MemoryAlterationJobStoreTenantIsolationTests
         Assert.Equal("tenant-a", remaining.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync refuses to overwrite a tenant-agnostic row by Id")]
+    public async Task SaveAsync_WhenAgnosticRowExists_NamedTenantThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationJob>();
+        var agnostic = new MemoryAlterationJobStore(backing, new TestTenantAccessor(Tenant.AgnosticTenantId));
+        var tenantB = new MemoryAlterationJobStore(backing, new TestTenantAccessor("tenant-b"));
+        await agnostic.SaveAsync(Job("shared", Tenant.AgnosticTenantId));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveAsync(Job("shared", "tenant-b")));
+        var remaining = await agnostic.FindAsync(new AlterationJobFilter { Id = "shared" });
+
+        Assert.Contains("shared", ex.Message);
+        Assert.NotNull(remaining);
+        Assert.Equal(Tenant.AgnosticTenantId, remaining.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveManyAsync refuses to overwrite a tenant-agnostic row by Id")]
+    public async Task SaveManyAsync_WhenAgnosticRowExists_NamedTenantThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationJob>();
+        var agnostic = new MemoryAlterationJobStore(backing, new TestTenantAccessor(Tenant.AgnosticTenantId));
+        var tenantB = new MemoryAlterationJobStore(backing, new TestTenantAccessor("tenant-b"));
+        await agnostic.SaveAsync(Job("shared", Tenant.AgnosticTenantId));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveManyAsync([Job("shared", "tenant-b")]));
+        var remaining = await agnostic.FindAsync(new AlterationJobFilter { Id = "shared" });
+
+        Assert.NotNull(remaining);
+        Assert.Equal(Tenant.AgnosticTenantId, remaining.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveAsync still lets an agnostic writer update a * row")]
+    public async Task SaveAsync_WhenAmbientIsAgnostic_UpsertsAgnosticRow()
+    {
+        var store = CreateStore(Tenant.AgnosticTenantId);
+        await store.SaveAsync(Job("shared", Tenant.AgnosticTenantId));
+        var updated = Job("shared", Tenant.AgnosticTenantId);
+        updated.Status = AlterationJobStatus.Completed;
+
+        await store.SaveAsync(updated);
+
+        var found = await store.FindAsync(new AlterationJobFilter { Id = "shared" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationJobStatus.Completed, found.Status);
+        Assert.Equal(Tenant.AgnosticTenantId, found.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync still upserts a visible same-tenant row")]
     public async Task SaveAsync_WhenSameTenantOwnsId_Upserts()
     {
