@@ -197,10 +197,9 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         await using var scenario = await CreateScenarioAsync();
         var old = (await scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", Identity("subject-old"), null, "user-a"))).Link;
 
-        // The SQLite implementation holds a deferred read transaction until the guarded delete. Pausing both callers
-        // after their reads creates a lock-up rather than a useful interleaving, so this case keeps the provider's
-        // file-backed busy timeout and exercises the guarded DELETE ... WHERE Id decision point directly.
-        var results = await RunConcurrentlyAsync(
+        // SQLite coordinates both initial reads before either caller starts the replacement transaction, proving that
+        // each guarded DELETE races from the same observed old-link state.
+        var results = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.IdentityLinkReplace,
             () => scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-a"))),
             () => scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-b"))));
 
@@ -210,6 +209,20 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         var replacementB = await scenario.IdentityProvisioner.FindLinkAsync("tenant-a", "contoso", Identity("subject-b"));
         Assert.True((replacementA is null) != (replacementB is null));
         Assert.Null(await scenario.IdentityProvisioner.FindLinkAsync("tenant-a", "contoso", Identity("subject-old")));
+    }
+
+    [Fact]
+    public async Task ConcurrentRegistryVersionInitializationRecoversFromInsertRace()
+    {
+        await using var scenario = await CreateScenarioAsync();
+
+        var concurrentAdvances = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.RegistryVersionInitialization,
+            () => scenario.RegistryVersionStore.AdvanceAsync(),
+            () => scenario.RegistryVersionStore.AdvanceAsync());
+
+        Assert.Equal([2L, 3L], concurrentAdvances.OrderBy(x => x).ToArray());
+        Assert.Equal(3L, await scenario.RegistryVersionStore.GetVersionAsync());
+        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(3));
     }
 
     [Fact]
@@ -224,13 +237,12 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         Assert.False(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
         Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(seeded));
 
-        var concurrentAdvances = await RunConcurrentlyAsync(
+        var concurrentAdvances = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.RegistryVersionAdvance,
             () => scenario.RegistryVersionStore.AdvanceAsync(),
             () => scenario.RegistryVersionStore.AdvanceAsync());
-        await scenario.RegistryVersionAdvanceRaceReady.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.Equal(2, concurrentAdvances.Distinct().Count());
+        Assert.Equal([seeded + 1, seeded + 2], concurrentAdvances.OrderBy(x => x).ToArray());
         var afterConcurrent = await scenario.RegistryVersionStore.GetVersionAsync();
-        Assert.Equal(seeded + concurrentAdvances.Length, afterConcurrent);
+        Assert.Equal(seeded + 2, afterConcurrent);
         Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(afterConcurrent));
 
         var advanced = await scenario.RegistryVersionStore.AdvanceAsync();
@@ -264,7 +276,9 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         try
         {
             await race.BothParticipantsReached.WaitAsync(TimeSpan.FromSeconds(10));
-            race.Release();
+            race.ReleaseParticipants();
+            await race.BothMutationsReached.WaitAsync(TimeSpan.FromSeconds(10));
+            race.ReleaseMutations();
             return await operations;
         }
         catch
@@ -274,7 +288,7 @@ public abstract class ExternalAuthenticationStoreConformanceTests
             {
                 await operations;
             }
-            catch
+            catch (Exception)
             {
                 // Preserve the coordination failure as the test result.
             }
@@ -394,7 +408,10 @@ public enum ConformanceRacePoint
     StateTake,
     AuthorizationGrantTake,
     PreviewTake,
-    IdentityLinkCreate
+    IdentityLinkCreate,
+    IdentityLinkReplace,
+    RegistryVersionInitialization,
+    RegistryVersionAdvance
 }
 
 public sealed class ExternalAuthenticationStoreScenario(
@@ -408,7 +425,6 @@ public sealed class ExternalAuthenticationStoreScenario(
     IConnectionRegistryVersionStore registryVersionStore,
     Func<Func<Task>, Task> assertRefreshTokenConflictAsync,
     ExternalAuthenticationStoreScenario.ConformanceRaceCoordinator races,
-    Task registryVersionAdvanceRaceReady,
     Func<ValueTask> disposeAsync) : IAsyncDisposable
 {
     public ConformanceClock Clock { get; } = clock;
@@ -420,7 +436,6 @@ public sealed class ExternalAuthenticationStoreScenario(
     public IExternalIdentityProvisioner IdentityProvisioner { get; } = identityProvisioner;
     public IConnectionRegistryVersionStore RegistryVersionStore { get; } = registryVersionStore;
     internal ConformanceRaceCoordinator Races { get; } = races;
-    public Task RegistryVersionAdvanceRaceReady { get; } = registryVersionAdvanceRaceReady;
     public Task AssertRefreshTokenConflictAsync(Func<Task> operation) => assertRefreshTokenConflictAsync(operation);
 
     public ValueTask DisposeAsync() => disposeAsync();
@@ -451,7 +466,6 @@ public sealed class ExternalAuthenticationStoreScenario(
             new InMemoryConnectionRegistryVersionStore(),
             AssertInMemoryRefreshTokenConflictAsync,
             races,
-            Task.CompletedTask,
             () =>
             {
                 hasher.Dispose();
@@ -464,7 +478,6 @@ public sealed class ExternalAuthenticationStoreScenario(
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-authentication-conformance-{Guid.NewGuid():N}.db");
         var hasher = new HmacExternalAuthenticationHandleHasher();
         var races = new ConformanceRaceCoordinator(true);
-        var registryVersionAdvanceRaceInterceptor = new RegistryVersionAdvanceRaceInterceptor();
         ServiceProvider? services = null;
         var clock = new ConformanceClock();
 
@@ -474,7 +487,6 @@ public sealed class ExternalAuthenticationStoreScenario(
             optionsBuilder.UseElsaDbContextOptions(null);
             optionsBuilder.UseSqlite($"Data Source={databasePath};Default Timeout=30", sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName));
             optionsBuilder.AddInterceptors(races);
-            optionsBuilder.AddInterceptors(registryVersionAdvanceRaceInterceptor);
             var options = optionsBuilder.Options;
             services = new ServiceCollection()
                 .AddSingleton<IDbContextFactory<ExternalAuthenticationElsaDbContext>>(serviceProvider => new TestDbContextFactory(options, serviceProvider))
@@ -506,7 +518,6 @@ public sealed class ExternalAuthenticationStoreScenario(
                 new EFCoreConnectionRegistryVersionStore(leaseFactory),
                 AssertSqliteRefreshTokenConflictAsync,
                 races,
-                registryVersionAdvanceRaceInterceptor.BothUpdatesReached,
                 async () =>
                 {
                     hasher.Dispose();
@@ -574,17 +585,35 @@ public sealed class ExternalAuthenticationStoreScenario(
 
             return result;
         }
+
+        public override async ValueTask<int> NonQueryExecutedAsync(
+            DbCommand command,
+            CommandExecutedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            var race = Volatile.Read(ref _activeRace);
+            if (race is not null && race.MatchesMutation(command.CommandText))
+                await race.MutationReachedAsync(cancellationToken);
+
+            return result;
+        }
     }
 
     public sealed class ConformanceRaceHandle(ConformanceRacePoint point, bool completed = false)
     {
         private readonly TaskCompletionSource _bothParticipantsReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _bothMutationsReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _releaseParticipants = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _releaseMutations = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly bool _completed = completed;
+        private readonly bool _hasMutationBarrier = point == ConformanceRacePoint.RegistryVersionAdvance;
         private int _participantCount;
+        private int _mutationCount;
 
         public ConformanceRacePoint Point { get; } = point;
         public Task BothParticipantsReached => _completed ? Task.CompletedTask : _bothParticipantsReached.Task;
+        public Task BothMutationsReached => _completed || !_hasMutationBarrier ? Task.CompletedTask : _bothMutationsReached.Task;
 
         public static ConformanceRaceHandle Completed(ConformanceRacePoint point) => new(point, true);
 
@@ -598,13 +627,30 @@ public sealed class ExternalAuthenticationStoreScenario(
                 _bothParticipantsReached.TrySetResult();
 
             if (participantNumber <= 2)
-                await _release.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+                await _releaseParticipants.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
         }
+
+        public async ValueTask MutationReachedAsync(CancellationToken cancellationToken)
+        {
+            if (_completed || !_hasMutationBarrier)
+                return;
+
+            var mutationNumber = Interlocked.Increment(ref _mutationCount);
+            if (mutationNumber == 2)
+                _bothMutationsReached.TrySetResult();
+
+            if (mutationNumber <= 2)
+                await _releaseMutations.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+
+        public void ReleaseParticipants() => _releaseParticipants.TrySetResult();
+
+        public void ReleaseMutations() => _releaseMutations.TrySetResult();
 
         public void Release()
         {
-            if (!_completed)
-                _release.TrySetResult();
+            ReleaseParticipants();
+            ReleaseMutations();
         }
 
         public bool Matches(string commandText) => Point switch
@@ -612,42 +658,17 @@ public sealed class ExternalAuthenticationStoreScenario(
             ConformanceRacePoint.StateTake => IsSelectFrom(commandText, "ExternalAuthenticationBrokerTransactions"),
             ConformanceRacePoint.AuthorizationGrantTake => IsSelectFrom(commandText, "ExternalAuthenticationAuthorizationGrants"),
             ConformanceRacePoint.PreviewTake => IsSelectFrom(commandText, "ExternalAuthenticationPreviewResults"),
-            ConformanceRacePoint.IdentityLinkCreate => IsSelectFrom(commandText, "ExternalIdentityLinks"),
+            ConformanceRacePoint.IdentityLinkCreate or ConformanceRacePoint.IdentityLinkReplace => IsSelectFrom(commandText, "ExternalIdentityLinks"),
+            ConformanceRacePoint.RegistryVersionInitialization or ConformanceRacePoint.RegistryVersionAdvance => IsSelectFrom(commandText, "ExternalAuthenticationRegistryVersions"),
             _ => false
         };
+
+        public bool MatchesMutation(string commandText) => Point == ConformanceRacePoint.RegistryVersionAdvance &&
+            commandText.Contains("UPDATE \"ExternalAuthenticationRegistryVersions\"", StringComparison.Ordinal);
 
         private static bool IsSelectFrom(string commandText, string tableName) =>
             commandText.Contains("SELECT", StringComparison.Ordinal) &&
             commandText.Contains($"FROM \"{tableName}\"", StringComparison.Ordinal);
-    }
-
-    private sealed class RegistryVersionAdvanceRaceInterceptor : DbCommandInterceptor
-    {
-        private readonly TaskCompletionSource _bothUpdatesReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private int _updateCount;
-
-        public Task BothUpdatesReached => _bothUpdatesReached.Task;
-
-        public override async ValueTask<int> NonQueryExecutedAsync(
-            DbCommand command,
-            CommandExecutedEventData eventData,
-            int result,
-            CancellationToken cancellationToken = default)
-        {
-            if (!command.CommandText.Contains("UPDATE \"ExternalAuthenticationRegistryVersions\"", StringComparison.Ordinal))
-                return result;
-
-            var updateNumber = Interlocked.Increment(ref _updateCount);
-            if (updateNumber <= 2)
-            {
-                if (updateNumber == 2)
-                    _bothUpdatesReached.TrySetResult();
-
-                await _bothUpdatesReached.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
-            }
-
-            return result;
-        }
     }
 
     private static async Task<(MemoryUserStore Users, StoreBasedUserProvider Provider)> CreateUsersAsync()
