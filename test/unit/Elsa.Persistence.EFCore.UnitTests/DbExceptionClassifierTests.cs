@@ -32,23 +32,23 @@ public sealed class DbExceptionClassifierTests
     [InlineData(1062, false)]
     public void IsTransient_WhenMySqlProviderUsesInnoDbLockErrorCodes(int number, bool expected)
     {
-        var exception = new MySqlExceptionWithNumber(number);
+        var exception = new MySqlConnector.MySqlException(number);
 
         Assert.Equal(expected, DbExceptionClassifier.IsTransient("Pomelo.EntityFrameworkCore.MySql", exception));
     }
 
     [Fact]
-    public void IsTransient_WhenProviderIsNotMySql_DoesNotTreatMySqlLockErrorAsTransient()
+    public void IsTransient_WhenMySqlProviderExceptionOnlyHasAnUnrelatedNumberProperty_ReturnsFalse()
     {
-        var exception = new MySqlExceptionWithNumber(1213);
+        var exception = new UnrelatedNumberException(1213);
 
-        Assert.False(DbExceptionClassifier.IsTransient("Microsoft.EntityFrameworkCore.Sqlite", exception));
+        Assert.False(DbExceptionClassifier.IsTransient("Pomelo.EntityFrameworkCore.MySql", exception));
     }
 
     [Fact]
     public void IsTransient_WhenMySqlDeadlockIsWrappedByDbUpdateException_ReturnsTrue()
     {
-        var exception = new DbUpdateException("Write failed", new MySqlExceptionWithNumber(1213));
+        var exception = new DbUpdateException("Write failed", new MySqlConnector.MySqlException(1213));
 
         Assert.True(DbExceptionClassifier.IsTransient("Pomelo.EntityFrameworkCore.MySql", exception));
     }
@@ -64,7 +64,7 @@ public sealed class DbExceptionClassifierTests
         public int SqliteErrorCode { get; } = sqliteErrorCode;
     }
 
-    private sealed class MySqlExceptionWithNumber(int number) : Exception
+    private sealed class UnrelatedNumberException(int number) : Exception
     {
         public int Number { get; } = number;
     }

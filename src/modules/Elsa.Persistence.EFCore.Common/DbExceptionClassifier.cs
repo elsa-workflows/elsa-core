@@ -50,8 +50,16 @@ internal static class DbExceptionClassifier
                || exception.Message.Contains("deadlock", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool IsMySqlTransientException(Exception exception) =>
-        GetErrorNumbers(exception).Any(MySqlTransientErrorNumbers.Contains);
+    private static bool IsMySqlTransientException(Exception exception)
+    {
+        var type = exception.GetType();
+        var typeNamespace = type.Namespace ?? string.Empty;
+        var isMySqlException = type.Name.Equals("MySqlException", StringComparison.OrdinalIgnoreCase)
+                               && (typeNamespace.Equals("MySqlConnector", StringComparison.OrdinalIgnoreCase)
+                                   || typeNamespace.Equals("MySql.Data.MySqlClient", StringComparison.OrdinalIgnoreCase));
+
+        return isMySqlException && GetErrorNumbers(exception).Any(MySqlTransientErrorNumbers.Contains);
+    }
 
     private static bool IsDuplicateKeyException(Exception exception)
     {
