@@ -499,16 +499,32 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
 
         var sut = BuildSut();
         var drainTask = Task.Run(async () => await sut.DrainAsync(DrainTrigger.OperatorForce));
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var testFailed = false;
 
-        handle.Dispose();
-        releaseCallback.SetResult();
+        try
+        {
+            await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
-        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
-        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
-        await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+            handle.Dispose();
+            releaseCallback.TrySetResult();
+
+            var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+            Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+            await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+            await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+        }
+        catch
+        {
+            testFailed = true;
+            throw;
+        }
+        finally
+        {
+            releaseCallback.TrySetResult();
+            handle.Dispose();
+            await ObserveCleanupAsync(drainTask, testFailed);
+        }
     }
 
     [Fact(DisplayName = "Waiting for a snapshot slot does not burn the per-Find 250ms budget")]
@@ -579,11 +595,15 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         IsExecuting = true,
     };
 
-    private static async Task ObserveCleanupAsync(Task task)
+    private static async Task ObserveCleanupAsync(Task task, bool preserveTestFailure = false)
     {
         try
         {
             await task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception) when (preserveTestFailure)
+        {
+            // Preserve the original assertion/timeout while observing the cleanup task.
         }
         catch (TimeoutException)
         {

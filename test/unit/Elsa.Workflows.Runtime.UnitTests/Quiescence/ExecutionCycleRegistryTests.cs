@@ -135,12 +135,28 @@ public class ExecutionCycleRegistryTests
             });
 
         var cancelTask = Task.Run(handle.TryCancel);
-        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        handle.Dispose();
-        releaseCallback.SetResult();
+        var testFailed = false;
+        try
+        {
+            await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+            handle.Dispose();
+            releaseCallback.TrySetResult();
+
+            Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        catch
+        {
+            testFailed = true;
+            throw;
+        }
+        finally
+        {
+            releaseCallback.TrySetResult();
+            handle.Dispose();
+            await ObserveCleanupAsync(cancelTask, testFailed);
+        }
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle.Dispose completes while a CTS callback waits for it")]
@@ -163,18 +179,37 @@ public class ExecutionCycleRegistryTests
         });
 
         var cancelTask = Task.Run(handle.TryCancel);
-        await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Task? disposeTask = null;
 
-        var disposeTask = Task.Run(() =>
+        var testFailed = false;
+        try
         {
-            handle.Dispose();
-            disposalCompleted.TrySetResult();
-        });
+            await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        Assert.True(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5)));
-        await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
-        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+            disposeTask = Task.Run(() =>
+            {
+                handle.Dispose();
+                disposalCompleted.TrySetResult();
+            });
+
+            Assert.True(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+            await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+            Assert.True(handle.Disposed.IsCompletedSuccessfully);
+        }
+        catch
+        {
+            testFailed = true;
+            throw;
+        }
+        finally
+        {
+            disposalCompleted.TrySetResult();
+            handle.Dispose();
+            if (disposeTask is not null)
+                await ObserveCleanupAsync(disposeTask, testFailed);
+            await ObserveCleanupAsync(cancelTask, testFailed);
+        }
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle defers CTS disposal while linked-token cancellation is in progress")]
@@ -321,5 +356,17 @@ public class ExecutionCycleRegistryTests
         handle.Dispose();
         await handle.Disposed.WaitAsync(TimeSpan.FromSeconds(1));
         Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
+
+    private static async Task ObserveCleanupAsync(Task task, bool preserveTestFailure)
+    {
+        try
+        {
+            await task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception) when (preserveTestFailure)
+        {
+            // Preserve the original assertion/timeout while observing the cleanup task.
+        }
     }
 }
