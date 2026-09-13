@@ -10,12 +10,14 @@ using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 
 namespace Elsa.Bpmn.Interchange.Services;
@@ -99,7 +101,7 @@ public sealed class BpmnInterchangeDocumentService(
     IActivitySerializer activitySerializer,
     IIdentityGenerator identityGenerator,
     ISystemClock systemClock,
-    IWorkflowDefinitionCacheManager workflowDefinitionCacheManager)
+    IMediator mediator)
 {
     /// <summary>The workflow definition custom property the original BPMN XML is carried under, for <see cref="Export(WorkflowDefinition)"/>.</summary>
     public const string SourceXmlCustomPropertyKey = "Bpmn:SourceXml";
@@ -339,7 +341,8 @@ public sealed class BpmnInterchangeDocumentService(
                 "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
         }
 
-        await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaving(result.Definition!), cancellationToken);
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
         return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
     }
 

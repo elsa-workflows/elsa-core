@@ -1,3 +1,4 @@
+using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Exceptions;
@@ -37,10 +38,10 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
         var stored = await FindLatestAsync(innerStore, definitionId);
         var expectedETag = BpmnDocumentETag.From(stored);
-        var document = setup.ReadDocument(stored);
-
-        var firstEdit = WithFirstElementRenamed(document, "First writer");
-        var secondEdit = WithFirstElementRenamed(document, "Second writer");
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var firstEdit = reader.Read(sourceXml.Replace("Order Handled", "First writer"), new BpmnImportOptions()).Definitions;
+        var secondEdit = reader.Read(sourceXml.Replace("Order Handled", "Second writer"), new BpmnImportOptions()).Definitions;
 
         var gate = new CompareAndSwapPauseGate();
         var pausingStore = new PausingCompareAndSwapStore(innerStore, gate);
@@ -78,8 +79,9 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
         var stored = await FindLatestAsync(innerStore, definitionId);
         var expectedETag = BpmnDocumentETag.From(stored);
-        var document = setup.ReadDocument(stored);
-        var firstEdit = WithFirstElementRenamed(document, "First writer");
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)stored.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var firstEdit = reader.Read(sourceXml.Replace("Order Handled", "First writer"), new BpmnImportOptions()).Definitions;
 
         var gate = new CompareAndSwapPauseGate();
         var pausingStore = new PausingCompareAndSwapStore(innerStore, gate);
@@ -109,18 +111,6 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
     }
 
     private static string ReadAsset(string fileName) => Support.BpmnAssetReader.Read(fileName);
-
-    /// <summary>
-    /// Renames the first element so the stored source — and therefore the ETag — moves, without needing a second
-    /// writer to touch metadata.
-    /// </summary>
-    private static BpmnDefinitions WithFirstElementRenamed(BpmnDefinitions document, string name)
-    {
-        var process = Assert.Single(document.Processes);
-        var elements = process.Elements.ToList();
-        elements[0] = process.Elements[0] with { Name = name };
-        return document with { Processes = [process with { Elements = elements }] };
-    }
 
     /// <summary>
     /// Signals the test can run the second writer (<see cref="Checked"/>) and then lets the first writer resume
