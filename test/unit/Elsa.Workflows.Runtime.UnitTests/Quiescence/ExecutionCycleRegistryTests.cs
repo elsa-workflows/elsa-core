@@ -213,7 +213,7 @@ public class ExecutionCycleRegistryTests
         Assert.Equal(1, callbackInvocations);
 
         // Truly idempotent: a second Cancel() before Dispose() must NOT re-invoke the callback. The handle uses an
-        // Interlocked _cancelled flag so callers can't accidentally trigger non-idempotent cancellation side effects.
+        // Interlocked lifecycle state so callers can't accidentally trigger non-idempotent cancellation side effects.
         handle.Cancel();
         Assert.Equal(1, callbackInvocations);
 
