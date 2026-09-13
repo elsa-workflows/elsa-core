@@ -201,7 +201,9 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     /// <summary>
     /// The loaded snapshot <see cref="TryUpdateLatestAsync"/> will only overwrite: identity, the ETag-covered
     /// graph, the serialized <c>Data</c> blob (source XML, variables, options) and the name/description columns
-    /// a metadata-only save changes. Zero rows means another writer got there first.
+    /// a metadata-only save changes. The row must still be <c>IsLatest</c> so a published→draft loser
+    /// is Conflict rather than a unique-key failure on <c>(DefinitionId, Version)</c>. Zero rows means
+    /// another writer got there first.
     /// </summary>
     private static Expression<Func<WorkflowDefinition, bool>> MatchesLoadedSnapshot(
         string expectedId,
@@ -212,6 +214,7 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
         string? expectedData) =>
         x => x.Id == expectedId
              && x.Version == expectedVersion
+             && x.IsLatest
              && x.StringData == expectedStringData
              && x.Name == expectedName
              && x.Description == expectedDescription

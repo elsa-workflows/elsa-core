@@ -5,11 +5,13 @@ using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -104,6 +106,49 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
     }
 
+    [Fact(DisplayName = "A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
+    public async Task ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist()
+    {
+        var probe = new DraftNotificationProbe();
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .ConfigureServices(s =>
+            {
+                s.AddSingleton(probe);
+                s.AddNotificationHandler<RejectingDraftSavingHandler>();
+                s.AddNotificationHandler<CountingDraftSavedHandler>();
+            })
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var store = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+
+        var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        var before = await FindLatestAsync(store, definitionId);
+        var expectedETag = BpmnDocumentETag.From(before);
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)before.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var edit = reader.Read(sourceXml.Replace("Order Handled", "Must not persist"), new BpmnImportOptions()).Definitions;
+
+        var savingBefore = probe.SavingCount;
+        var savedBefore = probe.SavedCount;
+        probe.Reject = true;
+
+        var rejected = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag));
+
+        Assert.Equal("Draft save rejected.", rejected.Message);
+        Assert.Equal(savingBefore + 1, probe.SavingCount);
+        Assert.Equal(savedBefore, probe.SavedCount);
+
+        var after = await FindLatestAsync(store, definitionId);
+        Assert.Equal(expectedETag, BpmnDocumentETag.From(after));
+        Assert.Equal(before.StringData, after.StringData);
+        Assert.Equal(before.Name, after.Name);
+    }
+
     private static async Task<WorkflowDefinition> FindLatestAsync(IWorkflowDefinitionStore store, string definitionId)
     {
         var found = await store.FindAsync(WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter());
@@ -111,6 +156,34 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
     }
 
     private static string ReadAsset(string fileName) => Support.BpmnAssetReader.Read(fileName);
+
+    private sealed class DraftNotificationProbe
+    {
+        public bool Reject { get; set; }
+        public int SavingCount { get; set; }
+        public int SavedCount { get; set; }
+    }
+
+    private sealed class RejectingDraftSavingHandler(DraftNotificationProbe probe) : INotificationHandler<WorkflowDefinitionDraftSaving>
+    {
+        public Task HandleAsync(WorkflowDefinitionDraftSaving notification, CancellationToken cancellationToken)
+        {
+            probe.SavingCount++;
+            if (probe.Reject)
+                throw new InvalidOperationException("Draft save rejected.");
+
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class CountingDraftSavedHandler(DraftNotificationProbe probe) : INotificationHandler<WorkflowDefinitionDraftSaved>
+    {
+        public Task HandleAsync(WorkflowDefinitionDraftSaved notification, CancellationToken cancellationToken)
+        {
+            probe.SavedCount++;
+            return Task.CompletedTask;
+        }
+    }
 
     /// <summary>
     /// Signals the test can run the second writer (<see cref="Checked"/>) and then lets the first writer resume

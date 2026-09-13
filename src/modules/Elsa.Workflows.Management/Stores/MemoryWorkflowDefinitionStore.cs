@@ -12,13 +12,6 @@ namespace Elsa.Workflows.Management.Stores;
 /// </summary>
 public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store) : IWorkflowDefinitionStore
 {
-    /// <summary>
-    /// Shared by <see cref="SaveAsync"/> / <see cref="SaveManyAsync"/> / <see cref="DeleteAsync"/> and
-    /// <see cref="TryUpdateLatestAsync"/> so a compare-and-swap's load, match and write are one critical
-    /// section against any other save of the same in-memory set.
-    /// </summary>
-    private readonly object _sync = new();
-
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
@@ -103,7 +96,7 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        lock (_sync)
+        lock (store.Sync)
             store.Save(definition, GetId);
 
         return Task.CompletedTask;
@@ -112,7 +105,7 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
-        lock (_sync)
+        lock (store.Sync)
             store.SaveMany(definitions, GetId);
 
         return Task.CompletedTask;
@@ -125,14 +118,14 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
         Func<WorkflowDefinition, WorkflowDefinition> update,
         CancellationToken cancellationToken = default)
     {
-        lock (_sync)
+        lock (store.Sync)
         {
             var current = store.Query(query => Filter(query, filter)).FirstOrDefault();
 
             if (current == null)
                 return Task.FromResult(WorkflowDefinitionUpdateResult.NotFound());
 
-            if (!matchesExpected(current))
+            if (!current.IsLatest || !matchesExpected(current))
                 return Task.FromResult(WorkflowDefinitionUpdateResult.Conflict());
 
             var next = update(current);
@@ -151,7 +144,7 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        lock (_sync)
+        lock (store.Sync)
         {
             var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
             store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));

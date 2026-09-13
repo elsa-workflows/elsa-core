@@ -309,9 +309,10 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
-    /// The document-edit persist: load the latest row, accept it only if <paramref name="expectedETag"/> still
-    /// names it, copy metadata from that row, apply the bound graph and the BPMN source properties, and save —
-    /// one compare-and-swap. A lost race is <see cref="BpmnDocumentPreconditionFailedException"/>.
+    /// The document-edit persist: announce <see cref="WorkflowDefinitionDraftSaving"/> first so a rejecting
+    /// handler fails the request before anything is written, then load/match/apply/save as one
+    /// compare-and-swap. Metadata is still read from the row at save time. A lost race is
+    /// <see cref="BpmnDocumentPreconditionFailedException"/>.
     /// </summary>
     private async Task<BpmnDocumentImportResult> PersistDocumentEditAsync(
         string xml,
@@ -323,10 +324,27 @@ public sealed class BpmnInterchangeDocumentService(
         CancellationToken cancellationToken)
     {
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var current = await store.FindAsync(filter, cancellationToken);
+
+        if (current is null)
+        {
+            throw new BpmnDefinitionNotFoundException(
+                $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
+        }
+
+        if (expectedETag is not null && !string.Equals(BpmnDocumentETag.From(current), expectedETag, StringComparison.Ordinal))
+        {
+            throw new BpmnDocumentPreconditionFailedException(
+                "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
+        }
+
+        var draft = ApplyDocumentEdit(current, process, xml, rootDefinition);
+        await mediator.SendAsync(new WorkflowDefinitionDraftSaving(draft), cancellationToken);
+
         var result = await store.TryUpdateLatestAsync(
             filter,
-            current => expectedETag is null || string.Equals(BpmnDocumentETag.From(current), expectedETag, StringComparison.Ordinal),
-            current => ApplyDocumentEdit(current, process, xml, rootDefinition),
+            loaded => expectedETag is null || string.Equals(BpmnDocumentETag.From(loaded), expectedETag, StringComparison.Ordinal),
+            loaded => ApplyDocumentEdit(loaded, process, xml, rootDefinition),
             cancellationToken);
 
         if (result.Outcome == WorkflowDefinitionUpdateOutcome.NotFound)
@@ -341,7 +359,6 @@ public sealed class BpmnInterchangeDocumentService(
                 "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
         }
 
-        await mediator.SendAsync(new WorkflowDefinitionDraftSaving(result.Definition!), cancellationToken);
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
         return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
     }
