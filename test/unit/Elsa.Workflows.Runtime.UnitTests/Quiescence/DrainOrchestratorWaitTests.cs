@@ -369,6 +369,78 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         }
     }
 
+    [Fact(DisplayName = "A canceled drain still observes deferred disposal of a failed-cancel candidate")]
+    public async Task CanceledDrainObservesDeferredCandidateDisposal()
+    {
+        using var drainCts = new CancellationTokenSource();
+        var disposalEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseDisposal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-canceled-drain-disposal",
+            ingressSourceName: "http.trigger",
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None,
+            onDisposed: _ =>
+            {
+                disposalEntered.SetResult();
+                releaseDisposal.Task.GetAwaiter().GetResult();
+            });
+        var disposeTask = Task.Run(handle.Dispose);
+        var blockerCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseBlockerCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var blocker = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-canceled-drain-blocker",
+            ingressSourceName: "http.trigger",
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () =>
+            {
+                blockerCallbackEntered.SetResult();
+                releaseBlockerCallback.Task.GetAwaiter().GetResult();
+            });
+        ExecutionCycleRegistry.ActiveCount.Returns(2);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle, blocker });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(ci => new ValueTask<WorkflowInstance?>(RunningInstance(ci.Arg<WorkflowInstanceFilter>().Id!)));
+
+        Task<DrainOutcome>? drainTask = null;
+        try
+        {
+            await disposalEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            var sut = BuildSut();
+            // Force-cancel invokes synchronous callbacks in Phase A. Keep the test thread available to
+            // release the blocker and cancel the drain while that callback is intentionally suspended.
+            drainTask = Task.Run(async () => await sut.DrainAsync(DrainTrigger.OperatorForce, drainCts.Token));
+            await blockerCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await drainCts.CancelAsync();
+            releaseBlockerCallback.TrySetResult();
+
+            await Assert.ThrowsAsync<TimeoutException>(() => drainTask.WaitAsync(TimeSpan.FromSeconds(1)));
+            releaseDisposal.TrySetResult();
+
+            var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+            await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+            Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+            Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+            Assert.DoesNotContain(handle.WorkflowInstanceId, outcome.ForceCancelledInstanceIds);
+            await InstanceStore.Received(1).SaveAsync(
+                Arg.Is<WorkflowInstance>(i => i.Id == handle.WorkflowInstanceId && i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting),
+                Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            releaseBlockerCallback.TrySetResult();
+            releaseDisposal.TrySetResult();
+            await ObserveCleanupAsync(disposeTask);
+
+            if (drainTask is not null)
+                await ObserveCleanupAsync(drainTask);
+        }
+    }
+
     [Fact(DisplayName = "A disposed handle is not persisted as Interrupted when its later row is still running")]
     public async Task DisposedHandleDoesNotPersistLaterRunningInstance()
     {

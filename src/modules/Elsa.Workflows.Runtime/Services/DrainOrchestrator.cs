@@ -417,6 +417,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             }
         }
 
+        var recoveryHandleIds = activeSnapshotHandlesToRecover.Select(handle => handle.Id).ToHashSet();
+
         // A live handle we ourselves cancelled whose snapshot found no row is drain-induced:
         // there was no persisted user-cancel to preserve. Timeout/error and disposed no-ops stay excluded.
         // Do not use reportedIds here — that list is capped by MaxForceCancelledInstanceIdsReported.
@@ -439,12 +441,14 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // bound the wait so a non-cancellable activity cannot block drain, accepting the
         // runner-clobber race for that one instance (the recovery scan picks it up).
         // Total wall time for this phase is at most ForceCancelSettleTimeout regardless
-        // of N.
+        // of N. Retained active-snapshot recovery candidates use an independent token so
+        // a canceled drain still observes their deferred disposal within that same bound.
         var settleTasks = live.Select(async handle =>
         {
             try
             {
-                await handle.Disposed.WaitAsync(ForceCancelSettleTimeout, cancellationToken).ConfigureAwait(false);
+                var settleCancellationToken = recoveryHandleIds.Contains(handle.Id) ? CancellationToken.None : cancellationToken;
+                await handle.Disposed.WaitAsync(ForceCancelSettleTimeout, settleCancellationToken).ConfigureAwait(false);
             }
             catch (TimeoutException)
             {
