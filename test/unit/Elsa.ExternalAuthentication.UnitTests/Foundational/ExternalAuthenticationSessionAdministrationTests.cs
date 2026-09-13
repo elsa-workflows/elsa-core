@@ -16,6 +16,7 @@ public class ExternalAuthenticationSessionAdministrationTests
         var other = ExternalAuthenticationTestData.CreateSession(now);
         other.Id = "session-b";
         other.TenantId = "tenant-b";
+        other.CurrentRefreshTokenHash = "refresh-2";
         await store.SaveAsync(other);
         await store.RevokeAsync(active.Id, "test", now);
 
