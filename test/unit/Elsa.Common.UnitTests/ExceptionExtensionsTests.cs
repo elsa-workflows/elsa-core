@@ -49,6 +49,26 @@ public class ExceptionExtensionsTests
         Assert.True(outer.IsFatal());
     }
 
+    [Fact(DisplayName = "AggregateException containing a fatal cause is fatal")]
+    public void AggregateWrappingFatalIsFatal()
+    {
+        var outer = new AggregateException(
+            new InvalidOperationException("recoverable"),
+            new AggregateException(new OutOfMemoryException("fatal")));
+
+        Assert.True(outer.IsFatal());
+    }
+
+    [Fact(DisplayName = "AggregateException containing only recoverable causes is not fatal")]
+    public void AggregateWrappingRecoverableIsNotFatal()
+    {
+        var outer = new AggregateException(
+            new InvalidOperationException("recoverable"),
+            new TimeoutException("recoverable"));
+
+        Assert.False(outer.IsFatal());
+    }
+
     [Fact(DisplayName = "TargetInvocationException wrapping a recoverable cause is NOT fatal")]
     public void WrappedRecoverableIsNotFatal()
     {
