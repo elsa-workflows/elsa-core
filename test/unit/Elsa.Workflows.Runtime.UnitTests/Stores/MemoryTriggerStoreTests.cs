@@ -167,7 +167,19 @@ public class MemoryTriggerStoreTests
         Assert.Equal("id-1", Assert.Single(stored).Id);
     }
 
-    [Fact(DisplayName = "FindAsync returns the single record that matches the filter")]
+    [Fact(DisplayName = "FindAsync returns the first record when a filter matches several distinct triggers")]
+    public async Task FindAsync_WhenFilterMatchesMultipleTriggers_ReturnsTheFirst()
+    {
+        var store = CreateStore();
+        await store.SaveAsync(Trigger("id-1", hash: "hash-1"));
+        await store.SaveAsync(Trigger("id-2", hash: "hash-2"));
+
+        var found = await store.FindAsync(new TriggerFilter { WorkflowDefinitionId = "workflow-1" });
+
+        Assert.True(found!.Id is "id-1" or "id-2");
+    }
+
+    [Fact(DisplayName = "FindAsync returns the matching record when the filter is unique")]
     public async Task FindAsync_WhenOneLogicalKeyMatches_ReturnsThatRecord()
     {
         var store = CreateStore();
@@ -177,6 +189,22 @@ public class MemoryTriggerStoreTests
         var found = await store.FindAsync(new TriggerFilter { Hash = "hash-1" });
 
         Assert.Equal("id-1", found!.Id);
+    }
+
+    [Fact(DisplayName = "SaveAsync keeps distinct triggers whose fields contain the old delimiter character")]
+    public async Task SaveAsync_WhenFieldsContainUnitSeparator_DoesNotCollide()
+    {
+        var store = CreateStore();
+        var first = Trigger("id-1", hash: "b\u001fc");
+        var second = Trigger("id-2", workflowDefinitionId: "workflow-1\u001fb", hash: "c");
+
+        await store.SaveAsync(first);
+        await store.SaveAsync(second);
+
+        var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
+        Assert.Equal(2, stored.Count);
+        Assert.Contains(stored, x => x.Id == "id-1");
+        Assert.Contains(stored, x => x.Id == "id-2");
     }
 
     private static MemoryTriggerStore CreateStore(ITenantAccessor? tenantAccessor = null) =>

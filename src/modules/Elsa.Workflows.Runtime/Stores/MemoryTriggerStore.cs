@@ -63,7 +63,7 @@ public class MemoryTriggerStore : ITriggerStore
     /// <inheritdoc />
     public ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var entity = _store.Query(filter.Apply).SingleOrDefault();
+        var entity = _store.Query(filter.Apply).FirstOrDefault();
         return new(entity);
     }
 
@@ -146,13 +146,13 @@ public class MemoryTriggerStore : ITriggerStore
             .ToList();
     }
 
-    private HashSet<string> GetExistingLogicalKeys(ICollection<StoredTrigger> triggers)
+    private HashSet<TriggerLogicalKey> GetExistingLogicalKeys(ICollection<StoredTrigger> triggers)
     {
         var workflowDefinitionIds = triggers.Select(x => x.WorkflowDefinitionId).Distinct().ToHashSet();
         return _store
             .FindMany(trigger => workflowDefinitionIds.Contains(trigger.WorkflowDefinitionId))
             .Select(GetLogicalKey)
-            .ToHashSet(StringComparer.Ordinal);
+            .ToHashSet();
     }
 
     private void ApplyCurrentTenant(StoredTrigger trigger)
@@ -165,7 +165,7 @@ public class MemoryTriggerStore : ITriggerStore
 
     private static IEnumerable<StoredTrigger> DistinctByLogicalKey(IEnumerable<StoredTrigger> triggers)
     {
-        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var seen = new HashSet<TriggerLogicalKey>();
 
         foreach (var trigger in triggers)
         {
@@ -174,11 +174,8 @@ public class MemoryTriggerStore : ITriggerStore
         }
     }
 
-    private static string GetLogicalKey(StoredTrigger trigger) =>
-        string.Join(
-            '\u001f',
-            trigger.WorkflowDefinitionId,
-            trigger.Hash,
-            trigger.ActivityId,
-            trigger.TenantId);
+    private static TriggerLogicalKey GetLogicalKey(StoredTrigger trigger) =>
+        new(trigger.WorkflowDefinitionId, trigger.Hash, trigger.ActivityId, trigger.TenantId);
+
+    private readonly record struct TriggerLogicalKey(string WorkflowDefinitionId, string? Hash, string ActivityId, string? TenantId);
 }
