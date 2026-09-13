@@ -487,9 +487,9 @@ Use “proven” only when the raw artifact is attached. “Mapped” means the 
 
 | Requirement | xUnit v2 + VSTest | xUnit v3 + MTP | TUnit + MTP | Gate |
 | --- | --- | --- | --- | --- |
-| Unit build and pass | **Proven locally**, 274/274 | Not run | Committed rollout: 2,047 verified cases across 32 projects; full-suite verification pending | Same case/name/outcome set |
+| Unit build and pass | **Proven locally**, 274/274 | Not run | Committed rollout: 2,766 discovered cases across 38 projects; the final six-project tranche recorded 593 passed, 126 intentionally skipped, and zero failed | Same intended case/name/outcome set, with reviewed discovery deltas |
 | Integration build and pass | **Proven locally**, 305/305 | Not run | Not run | Same case/name/outcome set |
-| Ten consecutive pilot runs | Not required for baseline; 5 timing samples recorded | Not run | Latest committed tranche: 10/10 default-parallel passes per project; full pilot/CI gate pending | No failure or count drift |
+| Ten consecutive pilot runs | Not required for baseline; 5 timing samples recorded | Not run | Final six-project tranche: 10/10 successful default-parallel runs per project; full pilot/CI gate pending | No failure or count drift |
 | Initial serial policy | Five local samples used current defaults; serial control not yet captured | Not run | Planned with `--maximum-parallel-tests 1` | Exactly one active case in every A/B/C variant |
 | Same-class safety after raising cap | Current framework behavior | Project audit required | Project audit required; no custom shim | Native constraints and sentinel pass |
 | Unrelated-class concurrency after audit | Current framework behavior | Not in initial serial run | Not in initial serial run | Separate matched-cap experiment |
@@ -508,8 +508,8 @@ Use “proven” only when the raw artifact is attached. “Mapped” means the 
 | GitHub annotations | Current logger in CI | Not verified | MTP extension mapped | Deliberate failure annotation |
 | Hang mini dump | Current component VSTest path | Not verified | MTP extension mapped | Bounded hang yields uploaded dump |
 | IDE discovery/debug | Current contributor experience | Not verified | Not verified | Exact supported IDE versions recorded |
-| Shared helper compatibility | Inventory complete | Not tested | Adapter design pending | No public API regression |
-| Conformance discovery | Current custom discoverer | Not tested | Requires custom extension | Available/unavailable provider counts match |
+| Shared helper compatibility | Inventory complete | Not tested | Framework-neutral patch present only as uncommitted isolated-worktree state; commit and compatibility verification pending | No public API regression |
+| Conformance discovery | Current custom discoverer | Not tested | One native list: 249 unique cases; each of 10 default-environment runs: 249 total, 123 passed, 126 provider-gated skips, and zero failed | Available/unavailable provider counts match |
 | Component fixture lifetime | Current serialized baseline | Not tested | Compatibility analysis pending | Init/dispose/serialization/reporting proven |
 | Complete CI job speed | Baseline workflow exists | Not measured | Not measured | Candidate median improves by >=10% |
 
@@ -627,9 +627,11 @@ The complete conversion is intentionally split into independently reviewable com
 
 ### Verified rollout snapshot (2026-09-13)
 
-At `6ab15bfa95044bfc4540b731272dead4dea8941a`, 32 of the 55 active test projects recorded at the comparison base have committed TUnit opt-ins: 31 unit projects and one integration project. The latest verified rollout wave is:
+At `6a6619626c0619343648abdccdf00433b7905a28`, 38 of the fixed 55 active test projects recorded at comparison base `37b1a453169201e577ef6db0bfd0348b08070211` have committed native TUnit opt-ins: all 37 unit projects and `Elsa.Bpmn.Interchange.IntegrationTests`. That frozen comparison-base filesystem inventory comprises 37 unit, 17 integration, and one component project; it excludes `test/TlsSmoke` and the BenchmarkDotNet performance project and is not recomputed from every project elsewhere under `test`.
 
-| Project | Commit | Verified cases |
+The latest verified rollout wave is:
+
+| Project | Commit | Verified discovered cases |
 | --- | --- | ---: |
 | `Elsa.Identity.UnitTests` | `fef6786b196db5e3d0377d858b1ddb9315018576` | 140 |
 | `Elsa.Persistence.VNext.UnitTests` | `8905908414675a63e06254185d252e7852f4f541` | 50 |
@@ -643,19 +645,33 @@ At `6ab15bfa95044bfc4540b731272dead4dea8941a`, 32 of the 55 active test projects
 | `Elsa.Secrets.UnitTests` | `62cee9cc7d5e62de954e3acddc7ddb4553b61806` | 65 |
 | `Elsa.UserTasks.Persistence.EFCore.UnitTests` | `a8d0ee2743a7424a01e6386c25686649616b90b3` | 4 |
 | `Elsa.UserTasks.UnitTests` | `6ab15bfa95044bfc4540b731272dead4dea8941a` | 103 |
-| **Wave total** | **12 projects** | **763** |
+| `Elsa.Workflows.Api.UnitTests` | `071591a1db795663069432953358cacbea6305ef` | 34 |
+| `Elsa.Workflows.Management.UnitTests` | `3e5f91a7d85ee90b49c1751b88bce59c3ca5ba99` | 105 |
+| `Elsa.Workflows.Runtime.UnitTests` | `e14eeb72439b55013f1e59d526cd6ded8b92318b` | 288 |
+| `Elsa.Http.UnitTests` | `2891148701f31445edc304f370357c31def314db` | 37 |
+| `Elsa.Shells.Api.Tests` | `e84b5f757daea6f1d0718124dd3caca3c5b220e4` | 6 |
+| `Elsa.UserTasks.Persistence.ConformanceTests` | `6a6619626c0619343648abdccdf00433b7905a28` | 249 |
+| **Wave total** | **18 projects** | **1,482** |
 
-Together with the preceding 20-project snapshot's 1,284 targeted cases, the committed rollout now covers 32 projects and 2,047 targeted cases. The three-project Secrets/UserTasks tranche contributed 172 cases with exact xUnit discovery parity.
+Together with the preceding 20-project snapshot's 1,284 targeted cases, the committed rollout now covers 38 projects and 2,766 targeted discovered cases. The final six-project unit tranche contributed 719 discoveries: 593 passed, 126 intentionally skipped, and zero failed. Each of the six projects completed its focused build, exact native discovery check, semantic conversion audit, and ten consecutive successful runs under TUnit's default parallel policy; no Release configuration is claimed here.
 
-Every project in this wave passed its focused Release build, exact native discovery check, semantic conversion audit, and ten consecutive runs under TUnit's default parallel policy. Only `StructuredLogSourceRegistryTests` is constrained, because it mutates fixed process-environment keys; ordinary tests remain parallel.
+`Elsa.UserTasks.Persistence.ConformanceTests` retained exact same-environment discovery parity. Its native list contained 249 unique cases with no duplicate names, and each of ten default-environment runs reported 249 total: 123 passed and 126 were skipped with actionable provider-specific reasons. Available and covered were InMemory, EFCore.Sqlite, and VNext.Sqlite (repository only for VNext). EFCore.SqlServer, EFCore.PostgreSql, and EFCore.Oracle were not covered; each contributed 42 skips. EFCore.MySql has no executable suite and contributes no discovered cases because Pomelo's EF Core 9 dependency is incompatible with this repository's EF Core 10 line. The unavailable cursor theory deliberately emits one inert skipped row, preserving xUnit's collapsed discovery count. If `k` of the three optional providers is configured, the intended totals are `249 + 7k` discovered, `123 + 49k` passed, and `126 - 42k` skipped; that seven-case expansion per available provider already existed under xUnit and is not a TUnit discovery delta.
 
-Two discovery deltas are intentional and reviewed rather than duplicate execution. `Elsa.Identity.UnitTests` discovers 140 cases instead of the xUnit runner's 126 because TUnit enumerates all eight non-serializable `Action` rows in each of two `InvalidConfigurations` theories; xUnit had aggregated each theory at discovery. `Elsa.Resilience.Core.UnitTests` similarly discovers 96 cases instead of 94 because two deferred non-serializable data rows are enumerated. The other ten projects match their expected discovered case totals.
+Parallel constraints remain narrow. `StructuredLogSourceRegistryTests` is constrained because it mutates fixed process-environment keys. The conformance suites use provider-keyed fixture sharing and matching keyed `[NotInParallel]` constraints, so tests sharing one provider fixture serialize while different providers and ordinary tests remain eligible to run in parallel.
+
+Three discovery deltas in the 18-project wave are intentional and reviewed rather than duplicate execution. `Elsa.Identity.UnitTests` discovers 140 cases instead of the xUnit runner's 126 because TUnit enumerates all eight non-serializable `Action` rows in each of two `InvalidConfigurations` theories; xUnit aggregated each theory at discovery. `Elsa.Resilience.Core.UnitTests` similarly discovers 96 cases instead of 94 because two deferred non-serializable data rows are enumerated. `Elsa.Workflows.Runtime.UnitTests` discovers 288 cases instead of 282 because `GracefulShutdownOptionsValidationTests.RejectsInvalidConfiguration` and `RejectsInvalidConfigurationDuringStartupValidation` each use four non-serializable `Action<GracefulShutdownOptions>` rows from `InvalidConfigurations`; xUnit aggregated each theory as one discovery case, while TUnit statically enumerates all four, adding three cases per theory and six overall. The same eight behaviors execute, so this is neither duplicate execution nor new coverage. The other fifteen projects match their expected discovered totals in the same environment.
 
 The supporting package-alignment commits are `7696f3d0e5b1390569a6add6133f17897a9caa8a` and `7f3cd8475362dc51fef3acdb73e6d7ef96ddbfa2`; they add no test projects or cases.
 
-The baseline's 2,931 figure is a source count of attributed test methods before theory expansion, not a repository-wide runner-discovered case count. Therefore 763 must not be presented as a percentage of 2,931 or as repository-wide discovery parity.
+The baseline's 2,931 figure is a source count of attributed test methods before theory expansion, not a repository-wide runner-discovered case count. Neither the 1,482-case rollout wave nor the cumulative 2,766 targeted discoveries may be presented as a percentage of 2,931 or as repository-wide discovery parity.
 
 The repository remains mixed-runner during rollout. There is no root `global.json`; MTP selection remains scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables are the verified path for the converted projects; `dotnet test --project` from the nested MTP context currently reports zero tests for these test applications. These counts are not evidence of a root-level or full-suite MTP pass, and root runner integration remains an explicit final migration step.
+
+At the committed snapshot, the residual xUnit execution boundary is 17 active projects: 16 integration projects and `Elsa.Workflows.ComponentTests`. The committed dependency/configuration surface also still includes xUnit in the three shared testing libraries, conditional central package and runner wiring in `Directory.Packages.props` and `test/Directory.Build.props`, and the component project's `xunit.runner.json`. The performance props still mention removing inherited xUnit, but performance and `test/TlsSmoke` are outside the fixed 55-project denominator.
+
+The isolated worktree additionally contains the pre-existing 15-path framework-neutral shared-helper patch (eight modified, three deleted, and four untracked paths). It was protected by an unchanged hash, is not part of any of the six project-migration commits, and remains uncommitted. The focused verification therefore records the isolated working tree with that patch applied; it is not pristine-checkout reproduction evidence for the six migration SHAs.
+
+This documentation update is the deliberate stop point for the six-project unit tranche. It does not migrate or verify the remaining integration or component projects, commit the protected shared-helper patch, switch the repository root or CI to MTP, close the coverage/reporting/diagnostics/IDE gates, or claim repository-wide xUnit removal. Those plan steps and checklist items remain open.
 
 1. **`docs: research TUnit migration and isolation plan`** — freeze the base SHA, inventories, baseline counts/timings, primary-source findings, accepted scope, risks, and reproducible validation matrix.
 2. **`test: add opt-in TUnit MTP infrastructure`** — central package versions, conditional test-project wiring, and a directory-scoped MTP selector. Exit: converted and unconverted projects can coexist without changing the root runner.
@@ -684,7 +700,7 @@ The migration is complete only when every required box has evidence:
 - [ ] Process-global tests are exclusive and restore state.
 - [ ] Independent parallelism sentinels overlap while constrained sentinels never overlap.
 - [ ] `ITestOutputHelper` replacement preserves concurrent/failure output.
-- [ ] Conformance discovery preserves unavailable-provider suppression.
+- [x] Conformance discovery preserves unavailable-provider suppression.
 - [ ] Cobertura is equivalent and existing filters are retained.
 - [ ] LCOV/OpenCover disposition is explicit.
 - [ ] Every nonzero coverage threshold fails the build when violated.
