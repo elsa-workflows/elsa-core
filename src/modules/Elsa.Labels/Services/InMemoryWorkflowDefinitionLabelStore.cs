@@ -32,7 +32,8 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
     public Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default)
     {
         ApplyCurrentTenant(record);
-        _store.Save(record, x => x.Id);
+        lock (_store.Sync)
+            _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
@@ -44,19 +45,16 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
         foreach (var record in list)
             ApplyCurrentTenant(record);
 
-        _store.SaveMany(list, x => x.Id);
+        lock (_store.Sync)
+            _store.SaveMany(list, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var record = _store.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => x.Id == id)).FirstOrDefault();
-
-        if (record is null)
-            return Task.FromResult(false);
-
-        return Task.FromResult(_store.Delete(id));
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => x.Id == id && IsVisible(x)) > 0);
     }
 
     /// <inheritdoc />
@@ -83,39 +81,43 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
         foreach (var record in addedList)
             ApplyCurrentTenant(record);
 
-        _store.DeleteWhere(x => removedIds.Contains(x.Id) && IsVisible(x));
-        _store.SaveMany(addedList, x => x.Id);
+        lock (_store.Sync)
+        {
+            _store.DeleteWhere(x => removedIds.Contains(x.Id) && IsVisible(x));
+            _store.SaveMany(addedList, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
     {
-        var result = _store.DeleteWhere(x => x.WorkflowDefinitionId == workflowDefinitionId && IsVisible(x));
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => x.WorkflowDefinitionId == workflowDefinitionId && IsVisible(x)));
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
     {
-        var result = _store.DeleteWhere(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId && IsVisible(x));
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId && IsVisible(x)));
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionIds.ToList();
-        var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionId) && IsVisible(x));
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionId) && IsVisible(x)));
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionVersionIds.ToList();
-        var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionVersionId) && IsVisible(x));
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionVersionId) && IsVisible(x)));
     }
 
     private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);

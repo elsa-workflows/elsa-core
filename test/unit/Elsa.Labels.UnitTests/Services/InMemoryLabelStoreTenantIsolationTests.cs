@@ -92,6 +92,24 @@ public class InMemoryLabelStoreTenantIsolationTests
         Assert.Equal("label-b", remainingForB.Id);
     }
 
+    [Fact(DisplayName = "DeleteAsync leaves a same-ID row after another tenant replaces it")]
+    public async Task DeleteAsync_WhenSameIdWasReplacedByOtherTenant_LeavesReplacement()
+    {
+        var labels = new MemoryStore<Label>();
+        var associations = new MemoryStore<WorkflowDefinitionLabel>();
+        var tenantA = new InMemoryLabelStore(labels, associations, new TestTenantAccessor("tenant-a"));
+        var tenantB = new InMemoryLabelStore(labels, associations, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(new Label { Id = "shared", Name = "A", TenantId = "tenant-a" });
+        await tenantB.SaveAsync(new Label { Id = "shared", Name = "B", TenantId = "tenant-b" });
+
+        var deleted = await tenantA.DeleteAsync("shared");
+        var remaining = await tenantB.FindByIdAsync("shared");
+
+        Assert.False(deleted);
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-b", remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {

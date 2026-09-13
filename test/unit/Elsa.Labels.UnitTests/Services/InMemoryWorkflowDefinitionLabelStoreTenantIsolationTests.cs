@@ -57,6 +57,24 @@ public class InMemoryWorkflowDefinitionLabelStoreTenantIsolationTests
         Assert.DoesNotContain(remainingForB, x => x.Id == "assoc-a");
     }
 
+    [Fact(DisplayName = "DeleteAsync leaves a same-ID row after another tenant replaces it")]
+    public async Task DeleteAsync_WhenSameIdWasReplacedByOtherTenant_LeavesReplacement()
+    {
+        var backing = new MemoryStore<WorkflowDefinitionLabel>();
+        var tenantA = new InMemoryWorkflowDefinitionLabelStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new InMemoryWorkflowDefinitionLabelStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Association("shared", "tenant-a"));
+        await tenantB.SaveAsync(Association("shared", "tenant-b"));
+
+        var deleted = await tenantA.DeleteAsync("shared");
+        var remaining = (await tenantB.FindByLabelIdsAsync(["red"])).ToList();
+
+        Assert.False(deleted);
+        Assert.Single(remaining);
+        Assert.Equal("shared", remaining[0].Id);
+        Assert.Equal("tenant-b", remaining[0].TenantId);
+    }
+
     [Fact(DisplayName = "DeleteByWorkflowDefinitionIdAsync leaves the other tenant's associations")]
     public async Task DeleteByWorkflowDefinitionIdAsync_WhenDefinitionIdIsShared_LeavesOtherTenantRows()
     {

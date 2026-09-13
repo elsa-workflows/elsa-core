@@ -39,7 +39,8 @@ public class InMemoryLabelStore : ILabelStore
     public Task SaveAsync(Label record, CancellationToken cancellationToken = default)
     {
         ApplyCurrentTenant(record);
-        _labelStore.Save(record, x => x.Id);
+        lock (_labelStore.Sync)
+            _labelStore.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
@@ -51,33 +52,39 @@ public class InMemoryLabelStore : ILabelStore
         foreach (var record in list)
             ApplyCurrentTenant(record);
 
-        _labelStore.SaveMany(list, x => x.Id);
+        lock (_labelStore.Sync)
+            _labelStore.SaveMany(list, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var label = FindVisibleLabel(id);
+        lock (_labelStore.Sync)
+        lock (_workflowDefinitionLabelStore.Sync)
+        {
+            var deleted = _labelStore.DeleteWhere(x => x.Id == id && IsVisible(x));
 
-        if (label is null)
-            return Task.FromResult(false);
+            if (deleted == 0)
+                return Task.FromResult(false);
 
-        _workflowDefinitionLabelStore.DeleteWhere(x => x.LabelId == id && IsVisible(x));
-        return Task.FromResult(_labelStore.Delete(id));
+            _workflowDefinitionLabelStore.DeleteWhere(x => x.LabelId == id && IsVisible(x));
+            return Task.FromResult(true);
+        }
     }
 
     /// <inheritdoc />
     public Task<long> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
         var idList = ids.ToList();
-        var visibleIds = _labelStore
-            .Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => idList.Contains(x.Id)))
-            .Select(x => x.Id)
-            .ToList();
 
-        _workflowDefinitionLabelStore.DeleteWhere(x => visibleIds.Contains(x.LabelId) && IsVisible(x));
-        return Task.FromResult(_labelStore.DeleteMany(visibleIds));
+        lock (_labelStore.Sync)
+        lock (_workflowDefinitionLabelStore.Sync)
+        {
+            var deleted = _labelStore.DeleteWhere(x => idList.Contains(x.Id) && IsVisible(x));
+            _workflowDefinitionLabelStore.DeleteWhere(x => idList.Contains(x.LabelId) && IsVisible(x));
+            return Task.FromResult(deleted);
+        }
     }
 
     /// <inheritdoc />
