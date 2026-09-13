@@ -2,6 +2,7 @@ using Elsa.Identity.Options;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Providers;
 
@@ -9,41 +10,41 @@ public class AdminCredentialProviderTests
 {
     private readonly DefaultSecretHasher _secretHasher = new();
 
-    [Fact]
+    [Test]
     public async Task AdminApiKeyProviderDeniesDevelopmentApiKeyByDefault()
     {
         var provider = CreateAdminApiKeyProvider();
 
         var apiKey = await provider.ProvideAsync(AdminApiKeyProvider.DevelopmentApiKey);
 
-        Assert.Null(apiKey);
+        await Assert.That(apiKey).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AdminApiKeyProviderAcceptsDevelopmentApiKeyWhenExplicitlyConfigured()
     {
         var provider = CreateAdminApiKeyProvider(options => options.ApiKey = AdminApiKeyProvider.DevelopmentApiKey);
 
         var apiKey = await provider.ProvideAsync(AdminApiKeyProvider.DevelopmentApiKey);
 
-        Assert.NotNull(apiKey);
-        Assert.Equal("admin", apiKey.OwnerName);
-        Assert.Contains(apiKey.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
+        await Assert.That(apiKey).IsNotNull();
+        await Assert.That(apiKey.OwnerName).IsEqualTo("admin");
+        await Assert.That(apiKey.Claims).Contains(claim => claim.Type == "permissions" && claim.Value == "*");
     }
 
-    [Theory]
-    [InlineData("admin")]
-    [InlineData("anyone")]
+    [Test]
+    [Arguments("admin")]
+    [Arguments("anyone")]
     public async Task AdminUserProviderDeniesStaticPasswordByDefault(string userName)
     {
         var validator = CreateCredentialsValidator();
 
         var user = await validator.ValidateAsync(userName, "password");
 
-        Assert.Null(user);
+        await Assert.That(user).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AdminUserProviderAcceptsDevelopmentCredentialsWhenExplicitlyConfigured()
     {
         var validator = CreateCredentialsValidator(options =>
@@ -54,11 +55,11 @@ public class AdminCredentialProviderTests
 
         var user = await validator.ValidateAsync("admin", "password");
 
-        Assert.NotNull(user);
-        Assert.Equal("admin", user.Name);
+        await Assert.That(user).IsNotNull();
+        await Assert.That(user.Name).IsEqualTo("admin");
     }
 
-    [Fact]
+    [Test]
     public async Task AdminUserProviderDeniesArbitraryUsernameWhenDevelopmentCredentialsAreConfigured()
     {
         var validator = CreateCredentialsValidator(options =>
@@ -69,7 +70,7 @@ public class AdminCredentialProviderTests
 
         var user = await validator.ValidateAsync("anyone", "password");
 
-        Assert.Null(user);
+        await Assert.That(user).IsNull();
     }
 
     private static AdminApiKeyProvider CreateAdminApiKeyProvider(Action<AdminApiKeyOptions>? configure = null)

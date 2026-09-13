@@ -8,12 +8,13 @@ using Elsa.Identity.Options;
 using Elsa.Identity.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.HostedServices;
 
 public class AdminUserInitializerTests
 {
-    [Fact]
+    [Test]
     public async Task ExecuteAsyncAddsMissingConfiguredPermissionsToExistingAdminRole()
     {
         var roleStore = await CreateRoleStoreAsync(["custom"]);
@@ -22,11 +23,11 @@ public class AdminUserInitializerTests
         await initializer.ExecuteAsync(CancellationToken.None);
 
         var role = await roleStore.FindAsync(new RoleFilter { Id = "admin" });
-        Assert.NotNull(role);
-        Assert.Equal(["custom", "*"], role.Permissions);
+        await Assert.That(role).IsNotNull();
+        await Assert.That(role.Permissions).IsEquivalentTo(["custom", "*"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsyncDoesNotDuplicateExistingConfiguredPermissions()
     {
         var roleStore = await CreateRoleStoreAsync(["*", "custom"]);
@@ -36,8 +37,8 @@ public class AdminUserInitializerTests
         await initializer.ExecuteAsync(CancellationToken.None);
 
         var role = await roleStore.FindAsync(new RoleFilter { Id = "admin" });
-        Assert.NotNull(role);
-        Assert.Equal(["*", "custom"], role.Permissions);
+        await Assert.That(role).IsNotNull();
+        await Assert.That(role.Permissions).IsEquivalentTo(["*", "custom"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static async Task<MemoryRoleStore> CreateRoleStoreAsync(ICollection<string> permissions)

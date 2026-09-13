@@ -2,6 +2,7 @@ using Elsa.Features.Services;
 using Elsa.Identity.Features;
 using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Features;
 
@@ -15,34 +16,42 @@ public class DefaultAuthenticationFeatureTests
     private readonly DefaultAuthenticationFeature _feature = new(Substitute.For<IModule>());
     private readonly AuthorizationOptions _options = new();
 
-    [Fact]
-    public void DefaultAuthorizationConfigurationRegistersNoPolicy()
+    [Test]
+    public async Task DefaultAuthorizationConfigurationRegistersNoPolicy()
     {
         _feature.ConfigureAuthorizationOptions(_options);
 
-        Assert.Null(_options.GetPolicy("SecurityRoot"));
+        await Assert.That(_options.GetPolicy("SecurityRoot")).IsNull();
     }
 
-    [Fact]
-    public void CustomAuthorizationConfigurationIsHonoured()
+    [Test]
+    public async Task CustomAuthorizationConfigurationIsHonoured()
     {
         _feature.ConfigureAuthorizationOptions = options => options.AddPolicy("Custom", policy => policy.RequireAuthenticatedUser());
 
         _feature.ConfigureAuthorizationOptions(_options);
 
-        Assert.NotNull(_options.GetPolicy("Custom"));
-        Assert.Null(_options.GetPolicy("SecurityRoot"));
+        await Assert.That(_options.GetPolicy("Custom")).IsNotNull();
+        await Assert.That(_options.GetPolicy("SecurityRoot")).IsNull();
     }
 
-    [Fact]
-    public void NullConfigureAuthorizationOptionsFallsBackToANoOp()
+    [Test]
+    public async Task NullConfigureAuthorizationOptionsFallsBackToANoOp()
     {
         // A host clearing the hook must not take the process down on the next Apply().
         _feature.ConfigureAuthorizationOptions = null!;
 
-        var exception = Record.Exception(() => _feature.ConfigureAuthorizationOptions(_options));
+        Exception? exception = null;
+        try
+        {
+            _feature.ConfigureAuthorizationOptions(_options);
+        }
+        catch (Exception e)
+        {
+            exception = e;
+        }
 
-        Assert.Null(exception);
-        Assert.Null(_options.GetPolicy("SecurityRoot"));
+        await Assert.That(exception).IsNull();
+        await Assert.That(_options.GetPolicy("SecurityRoot")).IsNull();
     }
 }

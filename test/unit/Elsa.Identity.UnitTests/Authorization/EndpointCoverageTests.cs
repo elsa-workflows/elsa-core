@@ -5,7 +5,7 @@ namespace Elsa.Identity.UnitTests.Authorization;
 
 public class EndpointCoverageTests
 {
-    [Fact]
+    [Test]
     public void EveryIdentityEndpointDeclaresItsAccess() =>
         EndpointCoverage.AssertEveryEndpointDeclaresAccess(typeof(RoleAuthorizationService).Assembly);
 }

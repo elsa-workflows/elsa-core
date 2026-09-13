@@ -1,6 +1,7 @@
 using System.Text;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -8,24 +9,24 @@ public class SecretHasherDefaultOverloadTests
 {
     private readonly ISecretHasher _hasher = new BackwardCompatibleSecretHasher();
 
-    [Fact]
-    public void VerifySecret_WithStringSalt_SetsNeedsRehashFalseWhenUsingDefaultInterfaceOverload()
+    [Test]
+    public async Task VerifySecret_WithStringSalt_SetsNeedsRehashFalseWhenUsingDefaultInterfaceOverload()
     {
         var isVerified = _hasher.VerifySecret("secret", "secret", "salt", out var needsRehash);
 
-        Assert.True(isVerified);
-        Assert.False(needsRehash);
+        await Assert.That(isVerified).IsTrue();
+        await Assert.That(needsRehash).IsFalse();
     }
 
-    [Fact]
-    public void VerifySecret_WithHashedSecret_SetsNeedsRehashFalseWhenUsingDefaultInterfaceOverload()
+    [Test]
+    public async Task VerifySecret_WithHashedSecret_SetsNeedsRehashFalseWhenUsingDefaultInterfaceOverload()
     {
         var hashedSecret = HashedSecret.FromBytes(Encoding.UTF8.GetBytes("secret"), Encoding.UTF8.GetBytes("salt"));
 
         var isVerified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.True(isVerified);
-        Assert.False(needsRehash);
+        await Assert.That(isVerified).IsTrue();
+        await Assert.That(needsRehash).IsFalse();
     }
 
     private sealed class BackwardCompatibleSecretHasher : ISecretHasher

@@ -6,6 +6,7 @@ using Elsa.Identity.Models;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Endpoints;
 
@@ -25,38 +26,40 @@ public class CreateUserContractTests
         HashedPasswordSalt = "salt-must-not-leak"
     };
 
-    [Fact]
-    public void ResponseExposesOnlyAccountFieldsAndTheGeneratedPassword()
+    [Test]
+    public async Task ResponseExposesOnlyAccountFieldsAndTheGeneratedPassword()
     {
         var properties = typeof(Response).GetProperties(BindingFlags.Instance | BindingFlags.Public).Select(x => x.Name).OrderBy(x => x).ToArray();
 
-        Assert.Equal(["GeneratedPassword", "Id", "Name", "Roles", "TenantId"], properties);
-        Assert.DoesNotContain(properties, x => x.Contains("Hash", StringComparison.OrdinalIgnoreCase) || x.Contains("Salt", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(properties).IsEquivalentTo(
+            ["GeneratedPassword", "Id", "Name", "Roles", "TenantId"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(properties).DoesNotContain(x => x.Contains("Hash", StringComparison.OrdinalIgnoreCase) || x.Contains("Salt", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
-    public void FromResultWithSuppliedPasswordDoesNotEchoIt()
+    [Test]
+    public async Task FromResultWithSuppliedPasswordDoesNotEchoIt()
     {
         var response = Response.FromResult(new CreateUserResult(StoredUser, "supplied-secret", IsPasswordGenerated: false));
 
-        Assert.Null(response.GeneratedPassword);
-        Assert.Equal("user-1", response.Id);
-        Assert.Equal("alice", response.Name);
-        Assert.Equal(["admin"], response.Roles);
-        Assert.Equal("tenant-a", response.TenantId);
+        await Assert.That(response.GeneratedPassword).IsNull();
+        await Assert.That(response.Id).IsEqualTo("user-1");
+        await Assert.That(response.Name).IsEqualTo("alice");
+        await Assert.That(response.Roles).IsEquivalentTo(["admin"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(response.TenantId).IsEqualTo("tenant-a");
     }
 
-    [Fact]
-    public void FromResultWithGeneratedPasswordReturnsItOnce()
+    [Test]
+    public async Task FromResultWithGeneratedPasswordReturnsItOnce()
     {
         var response = Response.FromResult(new CreateUserResult(StoredUser, "generated-secret", IsPasswordGenerated: true));
 
-        Assert.Equal("generated-secret", response.GeneratedPassword);
+        await Assert.That(response.GeneratedPassword).IsEqualTo("generated-secret");
     }
 
-    [Theory]
-    [InlineData("supplied-secret", false, null)]
-    [InlineData(null, true, "generated-secret")]
+    [Test]
+    [Arguments("supplied-secret", false, null)]
+    [Arguments(null, true, "generated-secret")]
     public async Task EndpointNeverSerializesCredentialMaterial(string? suppliedPassword, bool generated, string? expectedGeneratedPassword)
     {
         var plainText = suppliedPassword ?? "generated-secret";
@@ -70,13 +73,13 @@ public class CreateUserContractTests
 
         await endpoint.HandleAsync(new Request { Name = "alice", Password = suppliedPassword, Roles = ["admin"] }, CancellationToken.None);
 
-        Assert.Equal(StatusCodes.Status200OK, endpoint.HttpContext.Response.StatusCode);
-        Assert.Equal(expectedGeneratedPassword, endpoint.Response.GeneratedPassword);
+        await Assert.That(endpoint.HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status200OK);
+        await Assert.That(endpoint.Response.GeneratedPassword).IsEqualTo(expectedGeneratedPassword);
         var json = System.Text.Encoding.UTF8.GetString(body.ToArray());
-        Assert.DoesNotContain("hash-must-not-leak", json);
-        Assert.DoesNotContain("salt-must-not-leak", json);
-        Assert.DoesNotContain("supplied-secret", json);
+        await Assert.That(json).DoesNotContain("hash-must-not-leak");
+        await Assert.That(json).DoesNotContain("salt-must-not-leak");
+        await Assert.That(json).DoesNotContain("supplied-secret");
         if (expectedGeneratedPassword is not null)
-            Assert.Contains(expectedGeneratedPassword, json);
+            await Assert.That(json).Contains(expectedGeneratedPassword);
     }
 }

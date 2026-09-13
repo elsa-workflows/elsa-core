@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Identity]*</Include>
     </PropertyGroup>
 
@@ -10,4 +11,3 @@
     </ItemGroup>
 
 </Project>
-

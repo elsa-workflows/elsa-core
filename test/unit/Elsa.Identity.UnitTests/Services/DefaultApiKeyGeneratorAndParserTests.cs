@@ -1,18 +1,19 @@
 using Elsa.Identity.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
 public class DefaultApiKeyGeneratorAndParserTests
 {
-    [Fact]
-    public void Generate_UsesHighEntropyRandomSuffix()
+    [Test]
+    public async Task Generate_UsesHighEntropyRandomSuffix()
     {
         var generator = new DefaultApiKeyGeneratorAndParser();
 
         var apiKey = generator.Generate("client-1");
         var suffix = apiKey.Split('-', 2)[1];
 
-        Assert.Equal(36, suffix.Length);
-        Assert.True(Guid.TryParseExact(suffix, "D", out _));
+        await Assert.That(suffix.Length).IsEqualTo(36);
+        await Assert.That(Guid.TryParseExact(suffix, "D", out _)).IsTrue();
     }
 }

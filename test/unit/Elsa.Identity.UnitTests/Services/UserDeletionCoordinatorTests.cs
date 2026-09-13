@@ -2,12 +2,13 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
 public class UserDeletionCoordinatorTests
 {
-    [Fact]
+    [Test]
     public async Task CancellationAfterDeletionDoesNotCancelUserRestoration()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -15,11 +16,13 @@ public class UserDeletionCoordinatorTests
         var store = new CancellationAwareUserStore(user);
         var coordinator = new UserDeletionCoordinator(store, [new CancelAfterDeletionContributor(cancellationTokenSource)]);
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            coordinator.DeleteAsync(user.Id, cancellationTokenSource.Token).AsTask());
+        await Assert.That(async () =>
+        {
+            await coordinator.DeleteAsync(user.Id, cancellationTokenSource.Token);
+        }).Throws<OperationCanceledException>();
 
-        Assert.Same(user, store.User);
-        Assert.Equal(CancellationToken.None, store.RestorationToken);
+        await Assert.That(store.User).IsSameReferenceAs(user);
+        await Assert.That(store.RestorationToken).IsEqualTo(CancellationToken.None);
     }
 
     private sealed class CancelAfterDeletionContributor(CancellationTokenSource cancellationTokenSource) : IUserDeletionDependencyContributor

@@ -6,48 +6,49 @@ using Elsa.Identity.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.HostedServices;
 
 public class IdentityBootstrapDiagnosticTests
 {
-    [Fact]
+    [Test]
     public async Task ReportsAnInstanceNobodyCanSignInTo()
     {
         var logger = await StartAsync();
 
-        var error = Assert.Single(logger.Entries, x => x.Level == LogLevel.Error);
-        Assert.Contains("UseDefaultAdmin", error.Message);
-        Assert.Contains("UseAdminApiKey", error.Message);
+        var error = await Assert.That(logger.Entries).HasSingleItem(x => x.Level == LogLevel.Error);
+        await Assert.That(error.Message).Contains("UseDefaultAdmin");
+        await Assert.That(error.Message).Contains("UseAdminApiKey");
     }
 
-    [Fact]
+    [Test]
     public async Task StaysQuietWhenAnAdministratorIsSeeded()
     {
         var logger = await StartAsync(adminUserName: "admin", adminPassword: "secret");
 
-        Assert.DoesNotContain(logger.Entries, x => x.Level == LogLevel.Error);
+        await Assert.That(logger.Entries).DoesNotContain(x => x.Level == LogLevel.Error);
     }
 
-    [Fact]
+    [Test]
     public async Task StaysQuietWhenAnAdminApiKeyIsConfigured()
     {
         var logger = await StartAsync(apiKey: "an-api-key");
 
-        Assert.DoesNotContain(logger.Entries, x => x.Level == LogLevel.Error);
+        await Assert.That(logger.Entries).DoesNotContain(x => x.Level == LogLevel.Error);
     }
 
-    [Fact]
+    [Test]
     public async Task StaysQuietWhenUsersAlreadyExist()
     {
         // The check is about an unusable instance, not about how it was bootstrapped: once anyone can sign in,
         // an operator who configured nothing declaratively is making a deliberate choice.
         var logger = await StartAsync(existingUser: new() { Id = "1", Name = "someone" });
 
-        Assert.DoesNotContain(logger.Entries, x => x.Level == LogLevel.Error);
+        await Assert.That(logger.Entries).DoesNotContain(x => x.Level == LogLevel.Error);
     }
 
-    [Fact]
+    [Test]
     public async Task SurvivesAStoreItCannotRead()
     {
         // The whole point of the broad catch: a store that cannot be read yet -- an unmigrated database, a
@@ -55,8 +56,8 @@ public class IdentityBootstrapDiagnosticTests
         // on its own the moment a real request touches the store.
         var logger = await StartAsync(storeFailure: new InvalidDataException("the database is not migrated"));
 
-        Assert.DoesNotContain(logger.Entries, x => x.Level == LogLevel.Error);
-        Assert.Single(logger.Entries, x => x.Level == LogLevel.Debug);
+        await Assert.That(logger.Entries).DoesNotContain(x => x.Level == LogLevel.Error);
+        await Assert.That(logger.Entries).HasSingleItem(x => x.Level == LogLevel.Debug);
     }
 
     private static async Task<CapturingLogger<IdentityBootstrapDiagnostic>> StartAsync(

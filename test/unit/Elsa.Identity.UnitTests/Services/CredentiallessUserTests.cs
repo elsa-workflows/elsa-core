@@ -3,12 +3,14 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
 public class CredentiallessUserTests
 {
-    [Fact(DisplayName = "Existing local-password users remain able to authenticate")]
+    [Test]
+    [DisplayName("Existing local-password users remain able to authenticate")]
     public async Task ExistingLocalPasswordUserCanAuthenticate()
     {
         var hasher = new DefaultSecretHasher();
@@ -24,10 +26,11 @@ public class CredentiallessUserTests
 
         var result = await validator.ValidateAsync(user.Name, "correct-password");
 
-        Assert.Same(user, result);
+        await Assert.That(result).IsSameReferenceAs(user);
     }
 
-    [Fact(DisplayName = "Credential-less users cannot authenticate with a local password")]
+    [Test]
+    [DisplayName("Credential-less users cannot authenticate with a local password")]
     public async Task CredentiallessUserCannotAuthenticateLocally()
     {
         var user = new User
@@ -41,7 +44,7 @@ public class CredentiallessUserTests
 
         var result = await validator.ValidateAsync(user.Name, "any-password");
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
     private sealed class StaticUserProvider(User user) : IUserProvider

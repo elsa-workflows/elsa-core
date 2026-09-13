@@ -5,6 +5,7 @@ using Elsa.Identity.Permissions;
 using Elsa.Identity.Services;
 using Elsa.Permissions;
 using FastEndpoints;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Authorization;
 
@@ -22,28 +23,28 @@ public class EndpointPermissionTests
 {
     private static readonly Assembly Module = typeof(RoleAuthorizationService).Assembly;
 
-    public static TheoryData<string, string, string> Declarations => new()
-    {
-        { "Elsa.Identity.Endpoints.Secrets.Hash.Hash", IdentityPermissions.Users, CoreVerbs.Create },
-        { "Elsa.Identity.Endpoints.Roles.Create.Create", IdentityPermissions.Roles, CoreVerbs.Create },
-        { "Elsa.Identity.Endpoints.Applications.Create.Create", IdentityPermissions.Applications, CoreVerbs.Create }
-    };
+    public static IEnumerable<(string, string, string)> Declarations =>
+    [
+        ("Elsa.Identity.Endpoints.Secrets.Hash.Hash", IdentityPermissions.Users, CoreVerbs.Create),
+        ("Elsa.Identity.Endpoints.Roles.Create.Create", IdentityPermissions.Roles, CoreVerbs.Create),
+        ("Elsa.Identity.Endpoints.Applications.Create.Create", IdentityPermissions.Applications, CoreVerbs.Create)
+    ];
 
-    [Theory]
-    [MemberData(nameof(Declarations))]
-    public void EndpointDeclaresItsExpectedPermission(string endpointTypeName, string resource, string verb) =>
-        Assert.Equal(new Permission(resource, verb), Declare(endpointTypeName));
+    [Test]
+    [MethodDataSource(nameof(Declarations))]
+    public async Task EndpointDeclaresItsExpectedPermission(string endpointTypeName, string resource, string verb) =>
+        await Assert.That(await Declare(endpointTypeName)).IsEqualTo(new Permission(resource, verb));
 
-    [Theory]
-    [MemberData(nameof(Declarations))]
-    public void EveryDeclaredPermissionIsAdvertisedByTheCatalog(string endpointTypeName, string resource, string verb)
+    [Test]
+    [MethodDataSource(nameof(Declarations))]
+    public async Task EveryDeclaredPermissionIsAdvertisedByTheCatalog(string endpointTypeName, string resource, string verb)
     {
-        var declared = Declare(endpointTypeName);
+        var declared = await Declare(endpointTypeName);
         var descriptor = new IdentityPermissionsDescriptorProvider().GetDescriptors().SingleOrDefault(x => x.Resource == declared.Resource);
 
-        Assert.True(descriptor is not null, $"{endpointTypeName} requires resource '{declared.Resource}', which the module contributes no descriptor for, so it cannot be granted through the role editor.");
-        Assert.True(descriptor!.Supports(declared.Verb), $"{endpointTypeName} requires '{declared}', but '{declared.Resource}' advertises only [{string.Join(", ", descriptor.SupportedVerbs)}].");
-        Assert.Equal(new Permission(resource, verb), declared);
+        await Assert.That(descriptor is not null).IsTrue().Because($"{endpointTypeName} requires resource '{declared.Resource}', which the module contributes no descriptor for, so it cannot be granted through the role editor.");
+        await Assert.That(descriptor!.Supports(declared.Verb)).IsTrue().Because($"{endpointTypeName} requires '{declared}', but '{declared.Resource}' advertises only [{string.Join(", ", descriptor.SupportedVerbs)}].");
+        await Assert.That(declared).IsEqualTo(new Permission(resource, verb));
     }
 
     /// <summary>
@@ -53,7 +54,7 @@ public class EndpointPermissionTests
     /// touches none of the injected services, and substituting them would make the rows depend on which
     /// dependencies happen to be interfaces.
     /// </summary>
-    private static Permission Declare(string endpointTypeName)
+    private static async Task<Permission> Declare(string endpointTypeName)
     {
         var endpointType = Module.GetType(endpointTypeName, true)!;
         var endpoint = RuntimeHelpers.GetUninitializedObject(endpointType);
@@ -65,7 +66,7 @@ public class EndpointPermissionTests
 
         var permission = EndpointPermissionRegistry.Find(endpointType);
 
-        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+        await Assert.That(permission.HasValue).IsTrue().Because($"{endpointTypeName} declares no permission.");
         return permission!.Value;
     }
 

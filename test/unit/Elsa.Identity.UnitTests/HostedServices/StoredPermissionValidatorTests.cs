@@ -5,6 +5,7 @@ using Elsa.Identity.Models;
 using Elsa.Permissions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.HostedServices;
 
@@ -12,33 +13,33 @@ public class StoredPermissionValidatorTests
 {
     private readonly CapturingLogger<StoredPermissionValidator> _logger = new();
 
-    [Theory]
-    [InlineData("*")]
-    [InlineData("workflows/definitions:view")]
-    [InlineData("workflows/definitions:*")]
-    [InlineData("workflows/*:view")]             // reaches 'workflows/definitions'
-    [InlineData("workflows/definitions/*:view")] // reaches the prefix resource itself
+    [Test]
+    [Arguments("*")]
+    [Arguments("workflows/definitions:view")]
+    [Arguments("workflows/definitions:*")]
+    [Arguments("workflows/*:view")]             // reaches 'workflows/definitions'
+    [Arguments("workflows/definitions/*:view")] // reaches the prefix resource itself
     public async Task DoesNotWarnAboutAPermissionThatResolves(string permission)
     {
         await StartAsync(permission);
 
-        Assert.DoesNotContain(_logger.Entries, x => x.Level == LogLevel.Warning);
+        await Assert.That(_logger.Entries).DoesNotContain(x => x.Level == LogLevel.Warning);
     }
 
-    [Theory]
-    [InlineData("workflow/*:view")]     // typo'd subtree: reaches nothing, silently authorizes nothing
-    [InlineData("secrets/*:view")]      // subtree over an unregistered branch
-    [InlineData("workflows*:delete")]   // embedded wildcard: parses, but the matcher never satisfies it
-    [InlineData("work*/foo/*:view")]
-    [InlineData("workflows/definitions:frobnicate")]
-    [InlineData("workflows/*:frobnicate")] // reaches 'workflows/definitions', which supports no such verb
+    [Test]
+    [Arguments("workflow/*:view")]     // typo'd subtree: reaches nothing, silently authorizes nothing
+    [Arguments("secrets/*:view")]      // subtree over an unregistered branch
+    [Arguments("workflows*:delete")]   // embedded wildcard: parses, but the matcher never satisfies it
+    [Arguments("work*/foo/*:view")]
+    [Arguments("workflows/definitions:frobnicate")]
+    [Arguments("workflows/*:frobnicate")] // reaches 'workflows/definitions', which supports no such verb
     public async Task WarnsAboutAPermissionThatDoesNotResolve(string permission)
     {
         await StartAsync(permission);
 
         var warning = _logger.Entries.First(x => x.Level == LogLevel.Warning);
-        Assert.Contains("editors", warning.Message);
-        Assert.Contains(permission, warning.Message);
+        await Assert.That(warning.Message).Contains("editors");
+        await Assert.That(warning.Message).Contains(permission);
     }
 
     private async Task StartAsync(string permission)

@@ -6,12 +6,13 @@ using Elsa.Identity.Models;
 using Elsa.Identity.Options;
 using Elsa.Identity.Services;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
 public class DefaultIdentityRefreshTokenServiceTests
 {
-    [Fact]
+    [Test]
     public async Task RefreshAsyncRejectsAccessAndTamperedTokens()
     {
         var options = Microsoft.Extensions.Options.Options.Create(new IdentityTokenOptions
@@ -33,8 +34,8 @@ public class DefaultIdentityRefreshTokenServiceTests
             new DefaultTenantAccessor(),
             options);
 
-        Assert.Null(await service.RefreshAsync(accessToken.Token));
-        Assert.Null(await service.RefreshAsync(tamperedRefreshToken));
+        await Assert.That(await service.RefreshAsync(accessToken.Token)).IsNull();
+        await Assert.That(await service.RefreshAsync(tamperedRefreshToken)).IsNull();
         await accessTokenIssuer.DidNotReceive().IssueTokensAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
     }
 

@@ -5,6 +5,7 @@ using Elsa.Common.Services;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -19,36 +20,36 @@ public class RoleAuthorizationServiceTests
         _service = new RoleAuthorizationService(new StoreBasedRoleProvider(_roleStore), new PermissionEvaluator());
     }
 
-    [Fact]
+    [Test]
     public async Task CannotAssignAdminRoleWithOnlyUserWritePermission()
     {
         await AddRoleAsync("admin", PermissionNames.All);
 
         var canAssignRoles = await _service.CanAssignRolesAsync(CreateUser("create:user"), ["admin"]);
 
-        Assert.False(canAssignRoles);
+        await Assert.That(canAssignRoles).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task CanAssignAdminRoleWithAllPermission()
     {
         await AddRoleAsync("admin", PermissionNames.All);
 
         var canAssignRoles = await _service.CanAssignRolesAsync(CreateUser(PermissionNames.All), ["admin"]);
 
-        Assert.True(canAssignRoles);
+        await Assert.That(canAssignRoles).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task CannotAssignUnknownRoleId()
     {
         var canAssignRoles = await _service.CanAssignRolesAsync(CreateUser(PermissionNames.All), ["future-admin"]);
 
-        Assert.False(canAssignRoles);
+        await Assert.That(canAssignRoles).IsFalse();
     }
 
-    [Fact]
-    public void CannotMutatePrivilegedRoleWithOnlyRoleUpdatePermission()
+    [Test]
+    public async Task CannotMutatePrivilegedRoleWithOnlyRoleUpdatePermission()
     {
         var role = new Role
         {
@@ -59,7 +60,7 @@ public class RoleAuthorizationServiceTests
 
         var canMutateRole = _service.CanMutateRole(CreateUser("update:role"), role, ["read:workflow-definitions"]);
 
-        Assert.False(canMutateRole);
+        await Assert.That(canMutateRole).IsFalse();
     }
 
     private Task AddRoleAsync(string id, params string[] permissions)

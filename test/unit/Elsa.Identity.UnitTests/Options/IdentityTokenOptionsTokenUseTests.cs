@@ -6,52 +6,53 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Options;
 
 public class IdentityTokenOptionsTokenUseTests
 {
-    [Fact]
+    [Test]
     public async Task AccessTokenSchemeRejectsRefreshToken()
     {
         var result = await ValidateTokenUseAsync(requiredTokenUse: TokenUse.Access, actualTokenUse: TokenUse.Refresh);
 
-        Assert.NotNull(result.Failure);
+        await Assert.That(result.Failure).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshTokenSchemeRejectsAccessToken()
     {
         var result = await ValidateTokenUseAsync(requiredTokenUse: TokenUse.Refresh, actualTokenUse: TokenUse.Access);
 
-        Assert.NotNull(result.Failure);
+        await Assert.That(result.Failure).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AccessTokenSchemeAcceptsAccessToken()
     {
         var result = await ValidateTokenUseAsync(requiredTokenUse: TokenUse.Access, actualTokenUse: TokenUse.Access);
 
-        Assert.Null(result.Failure);
+        await Assert.That(result.Failure).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshTokenSchemeAcceptsRefreshToken()
     {
         var result = await ValidateTokenUseAsync(requiredTokenUse: TokenUse.Refresh, actualTokenUse: TokenUse.Refresh);
 
-        Assert.Null(result.Failure);
+        await Assert.That(result.Failure).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AccessTokenSchemeRejectsTokenWithMissingTokenUseClaim()
     {
         var result = await ValidateTokenUseAsync(requiredTokenUse: TokenUse.Access, actualTokenUse: null);
 
-        Assert.NotNull(result.Failure);
+        await Assert.That(result.Failure).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task OnTokenValidatedRunsPreviousHandlerBeforeTokenUseEnforcement()
     {
         var previousHandlerCalled = false;
@@ -75,11 +76,11 @@ public class IdentityTokenOptionsTokenUseTests
 
         var result = await ValidateTokenUseAsync(jwtBearerOptions, actualTokenUse: TokenUse.Refresh);
 
-        Assert.True(previousHandlerCalled);
-        Assert.NotNull(result.Failure);
+        await Assert.That(previousHandlerCalled).IsTrue();
+        await Assert.That(result.Failure).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task OnTokenValidatedPreservesPreviousNoResult()
     {
         var identityOptions = new IdentityTokenOptions
@@ -101,7 +102,7 @@ public class IdentityTokenOptionsTokenUseTests
 
         var result = await ValidateTokenUseAsync(jwtBearerOptions, actualTokenUse: TokenUse.Access);
 
-        Assert.True(result.None);
+        await Assert.That(result.None).IsTrue();
     }
 
     private static async Task<AuthenticateResult> ValidateTokenUseAsync(string requiredTokenUse, string? actualTokenUse)

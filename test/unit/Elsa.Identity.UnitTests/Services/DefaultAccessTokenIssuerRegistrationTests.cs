@@ -5,49 +5,50 @@ using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using ModuleIdentityFeature = Elsa.Identity.Features.IdentityFeature;
 using ShellIdentityFeature = Elsa.Identity.ShellFeatures.IdentityFeature;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
 public class DefaultAccessTokenIssuerRegistrationTests
 {
-    [Fact]
-    public void ModuleFeatureResolvesThePreferredAccessTokenIssuerConstructor()
+    [Test]
+    public async Task ModuleFeatureResolvesThePreferredAccessTokenIssuerConstructor()
     {
         var services = CreateServices();
         var module = Substitute.For<IModule>();
         module.Services.Returns(services);
         new ModuleIdentityFeature(module).Apply();
 
-        AssertAccessTokenIssuerResolves(services);
+        await AssertAccessTokenIssuerResolves(services);
     }
 
-    [Fact]
-    public void ShellFeatureResolvesThePreferredAccessTokenIssuerConstructor()
+    [Test]
+    public async Task ShellFeatureResolvesThePreferredAccessTokenIssuerConstructor()
     {
         var services = CreateServices();
         new ShellIdentityFeature().ConfigureServices(services);
 
-        AssertAccessTokenIssuerResolves(services);
+        await AssertAccessTokenIssuerResolves(services);
     }
 
-    [Fact]
-    public void ModuleFeatureRegistersUserDeletionCoordinator()
+    [Test]
+    public async Task ModuleFeatureRegistersUserDeletionCoordinator()
     {
         var services = CreateServices();
         var module = Substitute.For<IModule>();
         module.Services.Returns(services);
         new ModuleIdentityFeature(module).Apply();
 
-        AssertUserDeletionCoordinatorResolves(services);
+        await AssertUserDeletionCoordinatorResolves(services);
     }
 
-    [Fact]
-    public void ShellFeatureRegistersUserDeletionCoordinator()
+    [Test]
+    public async Task ShellFeatureRegistersUserDeletionCoordinator()
     {
         var services = CreateServices();
         new ShellIdentityFeature().ConfigureServices(services);
 
-        AssertUserDeletionCoordinatorResolves(services);
+        await AssertUserDeletionCoordinatorResolves(services);
     }
 
     private static ServiceCollection CreateServices()
@@ -55,18 +56,18 @@ public class DefaultAccessTokenIssuerRegistrationTests
         return new ServiceCollection();
     }
 
-    private static void AssertAccessTokenIssuerResolves(IServiceCollection services)
+    private static async Task AssertAccessTokenIssuerResolves(IServiceCollection services)
     {
         services.AddScoped(_ => Substitute.For<IElsaTokenService>());
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
-        Assert.IsType<DefaultAccessTokenIssuer>(scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>());
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAccessTokenIssuer>()).IsOfType(typeof(DefaultAccessTokenIssuer));
     }
 
-    private static void AssertUserDeletionCoordinatorResolves(IServiceCollection services)
+    private static async Task AssertUserDeletionCoordinatorResolves(IServiceCollection services)
     {
         using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.CreateScope();
-        Assert.IsType<UserDeletionCoordinator>(scope.ServiceProvider.GetRequiredService<IUserDeletionCoordinator>());
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IUserDeletionCoordinator>()).IsOfType(typeof(UserDeletionCoordinator));
     }
 }

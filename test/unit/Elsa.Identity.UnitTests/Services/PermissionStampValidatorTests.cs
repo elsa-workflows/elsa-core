@@ -10,10 +10,11 @@ using Elsa.Testing.Shared.Multitenancy;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
-public class PermissionStampValidatorTests
+public class PermissionStampValidatorTests : IDisposable
 {
     private const string SharedUserName = "admin";
 
@@ -23,6 +24,8 @@ public class PermissionStampValidatorTests
 
     private PermissionStampValidator CreateValidator(ITenantAccessor tenantAccessor) =>
         new(_userProvider, _calculator, _cache, tenantAccessor, MsOptions.Create(new PermissionStampOptions { IsEnabled = true }));
+
+    public void Dispose() => _cache.Dispose();
 
     private static ClaimsPrincipal Principal(string stamp) =>
         new(new ClaimsIdentity(
@@ -42,7 +45,7 @@ public class PermissionStampValidatorTests
         _calculator.ComputeAsync(user, Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(stamp));
     }
 
-    [Fact]
+    [Test]
     public async Task OneTenantsCachedStampDoesNotSatisfyAnotherTenantsRevokedToken()
     {
         // User names are unique per tenant, not globally, so a cache keyed on the name alone would let
@@ -54,33 +57,33 @@ public class PermissionStampValidatorTests
         var tenantB = CreateValidator(new TestTenantAccessor("tenant-b"));
 
         // Prime the cache from tenant A.
-        Assert.True(await tenantA.IsCurrentAsync(Principal("stamp-a")));
+        await Assert.That(await tenantA.IsCurrentAsync(Principal("stamp-a"))).IsTrue();
 
         // Tenant B presents a stamp that is no longer current for its own user.
-        Assert.False(await tenantB.IsCurrentAsync(Principal("stamp-b-revoked")));
+        await Assert.That(await tenantB.IsCurrentAsync(Principal("stamp-b-revoked"))).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task ACurrentStampIsAccepted()
     {
         UseTenantUser("tenant-a", "stamp-a");
 
         var validator = CreateValidator(new TestTenantAccessor("tenant-a"));
 
-        Assert.True(await validator.IsCurrentAsync(Principal("stamp-a")));
+        await Assert.That(await validator.IsCurrentAsync(Principal("stamp-a"))).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task AStaleStampIsRejected()
     {
         UseTenantUser("tenant-a", "stamp-current");
 
         var validator = CreateValidator(new TestTenantAccessor("tenant-a"));
 
-        Assert.False(await validator.IsCurrentAsync(Principal("stamp-stale")));
+        await Assert.That(await validator.IsCurrentAsync(Principal("stamp-stale"))).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task ATokenWithoutAStampIsAccepted()
     {
         // Enabling the feature must not sign out everyone holding a token issued before it was on.
@@ -89,17 +92,17 @@ public class PermissionStampValidatorTests
         var validator = CreateValidator(new TestTenantAccessor("tenant-a"));
         var principal = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, SharedUserName)], "test"));
 
-        Assert.True(await validator.IsCurrentAsync(principal));
+        await Assert.That(await validator.IsCurrentAsync(principal)).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ValidationIsSkippedWhenDisabled()
     {
         var validator = new PermissionStampValidator(
             _userProvider, _calculator, _cache, new TestTenantAccessor("tenant-a"),
             MsOptions.Create(new PermissionStampOptions { IsEnabled = false }));
 
-        Assert.True(await validator.IsCurrentAsync(Principal("anything")));
+        await Assert.That(await validator.IsCurrentAsync(Principal("anything"))).IsTrue();
         await _userProvider.DidNotReceive().FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>());
     }
 }

@@ -8,6 +8,7 @@ using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -15,74 +16,74 @@ public class DefaultSecretHasherTests
 {
     private readonly DefaultSecretHasher _hasher = new();
 
-    [Fact]
-    public void HashSecret_GeneratesVersionedPbkdf2Hash()
+    [Test]
+    public async Task HashSecret_GeneratesVersionedPbkdf2Hash()
     {
         var hashedSecret = _hasher.HashSecret("secret");
 
-        Assert.StartsWith("pbkdf2-sha256$600000$", Encoding.UTF8.GetString(hashedSecret.Secret));
-        Assert.Equal(32, hashedSecret.Salt.Length);
-        Assert.Equal(44, hashedSecret.EncodeSalt().Length);
-        Assert.True(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash));
-        Assert.False(needsRehash);
+        await Assert.That(Encoding.UTF8.GetString(hashedSecret.Secret)).StartsWith("pbkdf2-sha256$600000$");
+        await Assert.That(hashedSecret.Salt.Length).IsEqualTo(32);
+        await Assert.That(hashedSecret.EncodeSalt().Length).IsEqualTo(44);
+        await Assert.That(_hasher.VerifySecret("secret", hashedSecret, out var needsRehash)).IsTrue();
+        await Assert.That(needsRehash).IsFalse();
     }
 
-    [Fact]
-    public void VerifySecret_ParsesPbkdf2EnvelopeUsingInvariantCulture()
+    [Test]
+    public async Task VerifySecret_ParsesPbkdf2EnvelopeUsingInvariantCulture()
     {
         var hashedSecret = CreatePbkdf2Hash("secret", 1);
         using var _ = new CultureScope("ar-SA");
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.True(verified);
-        Assert.True(needsRehash);
+        await Assert.That(verified).IsTrue();
+        await Assert.That(needsRehash).IsTrue();
     }
 
-    [Fact]
-    public void GenerateSalt_GeneratesExpectedSalt()
+    [Test]
+    public async Task GenerateSalt_GeneratesExpectedSalt()
     {
         var salt = _hasher.GenerateSalt();
 
-        Assert.Equal(32, salt.Length);
-        Assert.Equal(44, Convert.ToBase64String(salt).Length);
+        await Assert.That(salt.Length).IsEqualTo(32);
+        await Assert.That(Convert.ToBase64String(salt).Length).IsEqualTo(44);
     }
 
-    [Fact]
-    public void VerifySecret_AcceptsLegacySha256HashAndRequestsRehash()
+    [Test]
+    public async Task VerifySecret_AcceptsLegacySha256HashAndRequestsRehash()
     {
         var hashedSecret = CreateLegacyHash("secret");
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.True(verified);
-        Assert.True(needsRehash);
+        await Assert.That(verified).IsTrue();
+        await Assert.That(needsRehash).IsTrue();
     }
 
-    [Fact]
-    public void VerifySecret_WithWrongPasswordAndLowerIterationCount_DoesNotRequestRehash()
+    [Test]
+    public async Task VerifySecret_WithWrongPasswordAndLowerIterationCount_DoesNotRequestRehash()
     {
         var hashedSecret = CreatePbkdf2Hash("secret", 1);
 
         var verified = _hasher.VerifySecret("wrong-secret", hashedSecret, out var needsRehash);
 
-        Assert.False(verified);
-        Assert.False(needsRehash);
+        await Assert.That(verified).IsFalse();
+        await Assert.That(needsRehash).IsFalse();
     }
 
-    [Fact]
-    public void VerifySecret_WithCorrectPasswordAndLowerIterationCount_RequestsRehash()
+    [Test]
+    public async Task VerifySecret_WithCorrectPasswordAndLowerIterationCount_RequestsRehash()
     {
         var hashedSecret = CreatePbkdf2Hash("secret", 1);
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.True(verified);
-        Assert.True(needsRehash);
+        await Assert.That(verified).IsTrue();
+        await Assert.That(needsRehash).IsTrue();
     }
 
-    [Fact]
-    public void VerifySecret_RejectsPbkdf2HashWithExcessiveIterations()
+    [Test]
+    public async Task VerifySecret_RejectsPbkdf2HashWithExcessiveIterations()
     {
         var salt = _hasher.GenerateSalt();
         var storedHash = Encoding.UTF8.GetBytes("pbkdf2-sha256$999999999$" + Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)));
@@ -90,12 +91,12 @@ public class DefaultSecretHasherTests
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.False(verified);
-        Assert.False(needsRehash);
+        await Assert.That(verified).IsFalse();
+        await Assert.That(needsRehash).IsFalse();
     }
 
-    [Fact]
-    public void VerifySecret_RejectsPbkdf2HashWithInvalidKeyLength()
+    [Test]
+    public async Task VerifySecret_RejectsPbkdf2HashWithInvalidKeyLength()
     {
         var salt = _hasher.GenerateSalt();
         var storedHash = Encoding.UTF8.GetBytes("pbkdf2-sha256$600000$" + Convert.ToBase64String(RandomNumberGenerator.GetBytes(16)));
@@ -103,22 +104,22 @@ public class DefaultSecretHasherTests
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.False(verified);
-        Assert.False(needsRehash);
+        await Assert.That(verified).IsFalse();
+        await Assert.That(needsRehash).IsFalse();
     }
 
-    [Fact]
-    public void VerifySecret_RejectsMalformedLegacyHashWithInvalidKeyLength()
+    [Test]
+    public async Task VerifySecret_RejectsMalformedLegacyHashWithInvalidKeyLength()
     {
         var hashedSecret = HashedSecret.FromBytes(RandomNumberGenerator.GetBytes(16), _hasher.GenerateSalt());
 
         var verified = _hasher.VerifySecret("secret", hashedSecret, out var needsRehash);
 
-        Assert.False(verified);
-        Assert.False(needsRehash);
+        await Assert.That(verified).IsFalse();
+        await Assert.That(needsRehash).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task ValidateAsync_RehashesLegacyUserPassword()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>(), TestTenantAccessor.Default);
@@ -136,13 +137,13 @@ public class DefaultSecretHasherTests
         var user = await validator.ValidateAsync("alice", "secret");
         var reloadedUser = await userStore.FindAsync(new UserFilter { Name = "alice" });
 
-        Assert.NotNull(user);
-        Assert.NotNull(reloadedUser);
-        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSecret(), reloadedUser.HashedPassword);
-        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSalt(), reloadedUser.HashedPasswordSalt);
+        await Assert.That(user).IsNotNull();
+        await Assert.That(reloadedUser).IsNotNull();
+        await Assert.That(reloadedUser.HashedPassword).IsEqualTo(rehashingHasher.UpgradedSecret.EncodeSecret());
+        await Assert.That(reloadedUser.HashedPasswordSalt).IsEqualTo(rehashingHasher.UpgradedSecret.EncodeSalt());
     }
 
-    [Fact]
+    [Test]
     public async Task ValidateAsync_RehashesLegacyApplicationApiKey()
     {
         var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
@@ -166,13 +167,13 @@ public class DefaultSecretHasherTests
         var application = await validator.ValidateAsync(apiKey);
         var reloadedApplication = await applicationStore.FindAsync(new ApplicationFilter { ClientId = "client-1" });
 
-        Assert.NotNull(application);
-        Assert.NotNull(reloadedApplication);
-        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSecret(), reloadedApplication.HashedApiKey);
-        Assert.Equal(rehashingHasher.UpgradedSecret.EncodeSalt(), reloadedApplication.HashedApiKeySalt);
+        await Assert.That(application).IsNotNull();
+        await Assert.That(reloadedApplication).IsNotNull();
+        await Assert.That(reloadedApplication.HashedApiKey).IsEqualTo(rehashingHasher.UpgradedSecret.EncodeSecret());
+        await Assert.That(reloadedApplication.HashedApiKeySalt).IsEqualTo(rehashingHasher.UpgradedSecret.EncodeSalt());
     }
 
-    [Fact]
+    [Test]
     public async Task ValidateAsync_ReturnsUserWhenLegacyPasswordRehashSaveFails()
     {
         var legacyHash = CreateLegacyHash("secret");
@@ -188,12 +189,12 @@ public class DefaultSecretHasherTests
 
         var validatedUser = await validator.ValidateAsync("alice", "secret");
 
-        Assert.Same(user, validatedUser);
-        Assert.Equal(legacyHash.EncodeSecret(), user.HashedPassword);
-        Assert.Equal(legacyHash.EncodeSalt(), user.HashedPasswordSalt);
+        await Assert.That(validatedUser).IsSameReferenceAs(user);
+        await Assert.That(user.HashedPassword).IsEqualTo(legacyHash.EncodeSecret());
+        await Assert.That(user.HashedPasswordSalt).IsEqualTo(legacyHash.EncodeSalt());
     }
 
-    [Fact]
+    [Test]
     public async Task ValidateAsync_WithOldUserValidatorConstructor_ReturnsUserWithoutPersistingRehash()
     {
         var legacyHash = CreateLegacyHash("secret");
@@ -209,11 +210,11 @@ public class DefaultSecretHasherTests
 
         var validatedUser = await validator.ValidateAsync("alice", "secret");
 
-        Assert.Same(user, validatedUser);
-        Assert.Equal(encodedLegacyHash, user.HashedPassword);
+        await Assert.That(validatedUser).IsSameReferenceAs(user);
+        await Assert.That(user.HashedPassword).IsEqualTo(encodedLegacyHash);
     }
 
-    [Fact]
+    [Test]
     public async Task ValidateAsync_ReturnsApplicationWhenLegacyApiKeyRehashSaveFails()
     {
         var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
@@ -235,12 +236,12 @@ public class DefaultSecretHasherTests
 
         var validatedApplication = await validator.ValidateAsync(apiKey);
 
-        Assert.Same(application, validatedApplication);
-        Assert.Equal(legacyHash.EncodeSecret(), application.HashedApiKey);
-        Assert.Equal(legacyHash.EncodeSalt(), application.HashedApiKeySalt);
+        await Assert.That(validatedApplication).IsSameReferenceAs(application);
+        await Assert.That(application.HashedApiKey).IsEqualTo(legacyHash.EncodeSecret());
+        await Assert.That(application.HashedApiKeySalt).IsEqualTo(legacyHash.EncodeSalt());
     }
 
-    [Fact]
+    [Test]
     public async Task ValidateAsync_WithOldApplicationValidatorConstructor_ReturnsApplicationWithoutPersistingRehash()
     {
         var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
@@ -262,8 +263,8 @@ public class DefaultSecretHasherTests
 
         var validatedApplication = await validator.ValidateAsync(apiKey);
 
-        Assert.Same(application, validatedApplication);
-        Assert.Equal(encodedLegacyHash, application.HashedApiKey);
+        await Assert.That(validatedApplication).IsSameReferenceAs(application);
+        await Assert.That(application.HashedApiKey).IsEqualTo(encodedLegacyHash);
     }
 
     private static HashedSecret CreateLegacyHash(string secret)
