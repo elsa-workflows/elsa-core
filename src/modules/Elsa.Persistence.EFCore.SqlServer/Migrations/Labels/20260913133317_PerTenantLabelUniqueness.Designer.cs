@@ -3,6 +3,7 @@ using Elsa.Persistence.EFCore.Modules.Labels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Labels
 {
     [DbContext(typeof(LabelsElsaDbContext))]
-    partial class LabelsElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913133317_PerTenantLabelUniqueness")]
+    partial class PerTenantLabelUniqueness
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

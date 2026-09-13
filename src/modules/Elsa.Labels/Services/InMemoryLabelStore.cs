@@ -38,9 +38,14 @@ public class InMemoryLabelStore : ILabelStore
     /// <inheritdoc />
     public Task SaveAsync(Label record, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(record);
         lock (_labelStore.Sync)
+        {
+            ApplyCurrentTenant(record);
+            SyncNormalizedName(record);
+            EnsureNormalizedNameAvailable(record, [record]);
             _labelStore.Save(record, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -49,11 +54,20 @@ public class InMemoryLabelStore : ILabelStore
     {
         var list = records.ToList();
 
-        foreach (var record in list)
-            ApplyCurrentTenant(record);
-
         lock (_labelStore.Sync)
+        {
+            foreach (var record in list)
+            {
+                ApplyCurrentTenant(record);
+                SyncNormalizedName(record);
+            }
+
+            foreach (var record in list)
+                EnsureNormalizedNameAvailable(record, list);
+
             _labelStore.SaveMany(list, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -90,7 +104,8 @@ public class InMemoryLabelStore : ILabelStore
     /// <inheritdoc />
     public Task<Label?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(FindVisibleLabel(id));
+        var found = FindVisibleLabel(id);
+        return Task.FromResult(found is null ? null : Clone(found));
     }
 
     /// <inheritdoc />
@@ -98,19 +113,37 @@ public class InMemoryLabelStore : ILabelStore
     {
         var query = _labelStore.List().AsQueryable().WhereVisibleToTenant(CurrentTenantId).OrderBy(x => x.Name);
         var page = query.ToPage(pageArgs);
-        return Task.FromResult(page);
+        return Task.FromResult(Page.Of(page.Items.Select(Clone).ToList(), page.TotalCount));
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken)
     {
         var idList = ids.ToList();
-        var records = _labelStore.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => idList.Contains(x.Id)));
-        return Task.FromResult(records);
+        var records = _labelStore.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => idList.Contains(x.Id)))
+            .Select(Clone)
+            .ToList();
+        return Task.FromResult<IEnumerable<Label>>(records);
     }
 
     private Label? FindVisibleLabel(string id) =>
         _labelStore.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => x.Id == id)).FirstOrDefault();
+
+    /// <summary>
+    /// Clone-on-read, matching Memory identity stores. Labels.Update does Find → mutate
+    /// Name (which writes NormalizedName) → Save. Without a copy, a rejected rename
+    /// would already have mutated the stored row.
+    /// </summary>
+    private static Label Clone(Label label) =>
+        new()
+        {
+            Id = label.Id,
+            TenantId = label.TenantId,
+            Name = label.Name,
+            NormalizedName = label.NormalizedName,
+            Description = label.Description,
+            Color = label.Color
+        };
 
     private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
 
@@ -123,4 +156,36 @@ public class InMemoryLabelStore : ILabelStore
 
         entity.TenantId ??= _tenantAccessor.TenantId;
     }
+
+    private static void SyncNormalizedName(Label record) =>
+        record.NormalizedName = record.Name.ToLowerInvariant();
+
+    /// <summary>
+    /// Memory counterpart of the EF unique index on <c>(TenantId, NormalizedName)</c>.
+    /// Same-Id upserts are allowed so a row can rename itself. Incoming batch rows
+    /// replace same-Id store rows, so those store rows are ignored here.
+    /// </summary>
+    private void EnsureNormalizedNameAvailable(Label record, IReadOnlyCollection<Label> batch)
+    {
+        var batchIds = batch.Select(x => x.Id).ToHashSet();
+        var existing = _labelStore.Find(candidate =>
+            candidate.TenantId == record.TenantId
+            && candidate.Id != record.Id
+            && !batchIds.Contains(candidate.Id)
+            && candidate.NormalizedName == record.NormalizedName);
+
+        if (existing is not null)
+            throw DuplicateNormalizedName(record);
+
+        if (batch.Any(other =>
+                other.Id != record.Id
+                && other.TenantId == record.TenantId
+                && other.NormalizedName == record.NormalizedName))
+        {
+            throw DuplicateNormalizedName(record);
+        }
+    }
+
+    private static InvalidOperationException DuplicateNormalizedName(Label record) =>
+        new($"A label already exists with normalized name '{record.NormalizedName}' in tenant '{record.TenantId}'.");
 }
