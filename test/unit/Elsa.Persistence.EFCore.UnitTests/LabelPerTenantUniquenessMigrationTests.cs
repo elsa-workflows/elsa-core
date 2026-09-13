@@ -69,7 +69,7 @@ public class LabelPerTenantUniquenessMigrationTests
 
     [Theory]
     [InlineData("Elsa.Persistence.EFCore.SqlServer", "[TenantId] IS NOT NULL")]
-    [InlineData("Elsa.Persistence.EFCore.Oracle", "\"TenantId\" IS NOT NULL")]
+    [InlineData("Elsa.Persistence.EFCore.Oracle", "\\\"TenantId\\\" IS NOT NULL")]
     public void PerTenantLabelUniqueness_KeepsFilteredUniqueIndex(string providerProject, string filter)
     {
         var migration = FindMigration(providerProject);
