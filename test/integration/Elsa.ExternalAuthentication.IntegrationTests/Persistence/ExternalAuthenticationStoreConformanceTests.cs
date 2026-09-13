@@ -284,14 +284,9 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         catch
         {
             race.Release();
-            try
-            {
-                await operations;
-            }
-            catch (Exception)
-            {
-                // Preserve the coordination failure as the test result.
-            }
+            // Drain the operations without masking the original coordination failure. SuppressThrowing is supported
+            // on Task, not Task<T>, so cast only for the await configuration.
+            await ((Task)operations).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
 
             throw;
         }
