@@ -1,3 +1,5 @@
+using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Labels.Contracts;
 using Elsa.Labels.Entities;
@@ -7,43 +9,58 @@ namespace Elsa.Labels.Services;
 /// <summary>
 /// An in-memory store of workflow-label associations.
 /// </summary>
+/// <remarks>
+/// Ambient tenant is applied here rather than in callers.
+/// EF owns that via <c>SetTenantIdFilter</c> / <c>ApplyTenantId</c>; Memory must compensate.
+/// Labels contracts have no TenantAgnostic flag, so isolation always applies (EF query filter).
+/// </remarks>
 public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStore, IWorkflowDefinitionLabelQuery
 {
     private readonly MemoryStore<WorkflowDefinitionLabel> _store;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public InMemoryWorkflowDefinitionLabelStore(MemoryStore<WorkflowDefinitionLabel> store)
+    public InMemoryWorkflowDefinitionLabelStore(MemoryStore<WorkflowDefinitionLabel> store, ITenantAccessor? tenantAccessor = null)
     {
         _store = store;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
     public Task SaveAsync(WorkflowDefinitionLabel record, CancellationToken cancellationToken = default)
     {
-        _store.Save(record, x => x.Id);
+        ApplyCurrentTenant(record);
+        lock (_store.Sync)
+            _store.Save(record, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinitionLabel> records, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(records, x => x.Id);
+        var list = records.ToList();
+
+        foreach (var record in list)
+            ApplyCurrentTenant(record);
+
+        lock (_store.Sync)
+            _store.SaveMany(list, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default)
     {
-        var result = _store.Delete(id);
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => x.Id == id && IsVisible(x)) > 0);
     }
-    
+
     /// <inheritdoc />
     public Task<IEnumerable<WorkflowDefinitionLabel>> FindByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
     {
-        var result = _store.FindMany(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId);
+        var result = _store.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId));
         return Task.FromResult(result);
     }
 
@@ -51,52 +68,67 @@ public class InMemoryWorkflowDefinitionLabelStore : IWorkflowDefinitionLabelStor
     public Task<IEnumerable<WorkflowDefinitionLabel>> FindByLabelIdsAsync(IEnumerable<string> labelIds, CancellationToken cancellationToken = default)
     {
         var ids = labelIds.ToHashSet();
-        var result = _store.FindMany(x => ids.Contains(x.LabelId));
+        var result = _store.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => ids.Contains(x.LabelId)));
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task ReplaceAsync(IEnumerable<WorkflowDefinitionLabel> removed, IEnumerable<WorkflowDefinitionLabel> added, CancellationToken cancellationToken = default)
     {
-        _store.DeleteMany(removed, x => x.Id);
-        _store.SaveMany(added, x => x.Id);
+        var removedIds = removed.Select(x => x.Id).ToHashSet();
+        var addedList = added.ToList();
+
+        foreach (var record in addedList)
+            ApplyCurrentTenant(record);
+
+        lock (_store.Sync)
+        {
+            _store.DeleteWhere(x => removedIds.Contains(x.Id) && IsVisible(x));
+            _store.SaveMany(addedList, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionIdAsync(string workflowDefinitionId, CancellationToken cancellationToken = default)
     {
-        var result = _store.DeleteWhere(x => x.WorkflowDefinitionId == workflowDefinitionId);
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => x.WorkflowDefinitionId == workflowDefinitionId && IsVisible(x)));
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionVersionIdAsync(string workflowDefinitionVersionId, CancellationToken cancellationToken = default)
     {
-        var result = _store.DeleteWhere(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId);
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => x.WorkflowDefinitionVersionId == workflowDefinitionVersionId && IsVisible(x)));
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionIdsAsync(IEnumerable<string> workflowDefinitionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionIds.ToList();
-        var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionId));
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionId) && IsVisible(x)));
     }
 
     /// <inheritdoc />
     public Task<long> DeleteByWorkflowDefinitionVersionIdsAsync(IEnumerable<string> workflowDefinitionVersionIds, CancellationToken cancellationToken = default)
     {
         var ids = workflowDefinitionVersionIds.ToList();
-        var result = _store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionVersionId));
-        return Task.FromResult(result);
-    }
-    
-    private Task<long> DeleteManyAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
-    {
-        var result = _store.DeleteMany(ids);
-        return Task.FromResult(result);
+        lock (_store.Sync)
+            return Task.FromResult(_store.DeleteWhere(x => ids.Contains(x.WorkflowDefinitionVersionId) && IsVisible(x)));
     }
 
+    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
+
+    private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private void ApplyCurrentTenant(Entity entity)
+    {
+        if (entity.TenantId == Tenant.AgnosticTenantId || _tenantAccessor is null)
+            return;
+
+        entity.TenantId ??= _tenantAccessor.TenantId;
+    }
 }
