@@ -140,14 +140,15 @@ public class HttpWorkflowsMiddlewareTests
     public async Task InvokeAsync_WithNonTenantPrefixedBasePathSegment_CallsNext()
     {
         var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
         var middleware = new HttpWorkflowsMiddleware(_ =>
         {
             nextCalled = true;
             return Task.CompletedTask;
         });
         var serviceProvider = new ServiceCollection()
-            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
-            .AddSingleton<IRouteTable>(new ListRouteTable([]))
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/{tenantPrefix}/workflows/colliding")]))
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
         {
@@ -162,6 +163,7 @@ public class HttpWorkflowsMiddlewareTests
             new EmptyHttpWorkflowLookupService());
 
         Assert.True(nextCalled);
+        routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
     }
 
     [Fact]
@@ -194,7 +196,7 @@ public class HttpWorkflowsMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WithTenantPrefixedWorkflowPath_StillResolvesRoute()
+    public async Task InvokeAsync_WithResolvedTenantPath_StillResolvesRoute()
     {
         var nextCalled = false;
         var routeMatcher = Substitute.For<IRouteMatcher>();
@@ -204,19 +206,20 @@ public class HttpWorkflowsMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         });
-        routeMatcher.Match("/{tenantPrefix}/workflows/colliding", "/acme/workflows/colliding").Returns(new RouteValueDictionary(new Dictionary<string, object?> { ["tenantPrefix"] = "acme" }));
+        routeMatcher.Match("/workflows/colliding", "/workflows/colliding").Returns(new RouteValueDictionary());
         var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
         var serviceProvider = new ServiceCollection()
             .AddSingleton<IBookmarkStore>(bookmarkStore)
             .AddSingleton(routeMatcher)
-            .AddSingleton<IRouteTable>(new ListRouteTable([new("/{tenantPrefix}/workflows/colliding")]))
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/colliding")]))
             .AddSingleton<IStimulusHasher>(stimulusHasher)
             .BuildServiceProvider();
         var httpContext = new DefaultHttpContext
         {
             RequestServices = serviceProvider
         };
-        httpContext.Request.Path = "/acme/workflows/colliding";
+        httpContext.Request.PathBase = "/acme";
+        httpContext.Request.Path = "/workflows/colliding";
         httpContext.Request.Method = HttpMethod.Get.Method;
 
         await middleware.InvokeAsync(
@@ -226,7 +229,7 @@ public class HttpWorkflowsMiddlewareTests
             new EmptyHttpWorkflowLookupService());
 
         Assert.False(nextCalled);
-        routeMatcher.Received(1).Match("/{tenantPrefix}/workflows/colliding", "/acme/workflows/colliding");
+        routeMatcher.Received(1).Match("/workflows/colliding", "/workflows/colliding");
         Assert.Equal("/colliding", stimulusHasher.LastPayload?.Path);
         Assert.NotNull(bookmarkStore.LastFilter);
     }
