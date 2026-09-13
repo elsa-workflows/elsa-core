@@ -16,73 +16,75 @@ using Elsa.Workflows.Management.Stores;
 using FastEndpoints;
 using Microsoft.AspNetCore.Http;
 using NSubstitute;
-
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.WorkflowDefinitions;
 
 public class WorkflowDefinitionLabelFilterTests
 {
-    [Fact]
+    [Test]
     public async Task List_WithLabelId_ReturnsMatchingVersionsAndTotalCount()
     {
         var response = await ExecuteAsync(["red"], page: 0, pageSize: 1);
 
-        Assert.Equal(2, response.TotalCount);
-        var item = Assert.Single(response.Items);
-        Assert.Contains(item.Id, new[] { "red-version", "red-second-version" });
+        await Assert.That(response.TotalCount).IsEqualTo(2);
+        var item = await Assert.That(response.Items).HasSingleItem();
+        await Assert.That(new[] { "red-version", "red-second-version" }).Contains(item.Id);
 
         var secondPage = await ExecuteAsync(["red"], page: 1, pageSize: 1);
-        Assert.Equal(2, secondPage.TotalCount);
-        Assert.Single(secondPage.Items);
-        Assert.NotEqual(item.Id, secondPage.Items.Single().Id);
-        Assert.Contains(secondPage.Items.Single().Id, new[] { "red-version", "red-second-version" });
+        await Assert.That(secondPage.TotalCount).IsEqualTo(2);
+        await Assert.That(secondPage.Items).HasSingleItem();
+        await Assert.That(secondPage.Items.Single().Id).IsNotEqualTo(item.Id);
+        await Assert.That(new[] { "red-version", "red-second-version" }).Contains(secondPage.Items.Single().Id);
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithUnknownLabelId_ReturnsNoResults()
     {
         var response = await ExecuteAsync(["unknown"]);
 
-        Assert.Empty(response.Items);
-        Assert.Equal(0, response.TotalCount);
+        await Assert.That(response.Items).IsEmpty();
+        await Assert.That(response.TotalCount).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithoutLabelIds_ReturnsAllVersions()
     {
         var response = await ExecuteAsync(null, permissions: ["workflows/definitions:view"]);
 
-        Assert.Equal(5, response.TotalCount);
-        Assert.Equal(5, response.Items.Count);
+        await Assert.That(response.TotalCount).IsEqualTo(5);
+        await Assert.That(response.Items.Count).IsEqualTo(5);
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithWorkflowPermissionWildcard_ReturnsMatchingVersions()
     {
         var response = await ExecuteAsync(["red"], permissions: ["workflows/definitions/*:view"]);
 
-        Assert.Equal(2, response.TotalCount);
-        Assert.Equal(2, response.Items.Count);
+        await Assert.That(response.TotalCount).IsEqualTo(2);
+        await Assert.That(response.Items.Count).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithMultipleLabelIds_UsesAnyMatchingLabel()
     {
         var response = await ExecuteAsync(["red", "blue"]);
 
-        Assert.Equal(3, response.TotalCount);
-        Assert.Equal(["blue-version", "red-second-version", "red-version"], response.Items.Select(x => x.Id).Order());
+        await Assert.That(response.TotalCount).IsEqualTo(3);
+        await Assert.That(response.Items.Select(x => x.Id).Order()).IsEquivalentTo(
+            ["blue-version", "red-second-version", "red-version"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithLabelIdsAndVersionIds_IntersectsBothFilters()
     {
         var response = await ExecuteAsync(["red"], ids: ["red-unlabeled-version", "red-version"]);
 
-        Assert.Equal(1, response.TotalCount);
-        Assert.Equal("red-version", Assert.Single(response.Items).Id);
+        await Assert.That(response.TotalCount).IsEqualTo(1);
+        var item = await Assert.That(response.Items).HasSingleItem();
+        await Assert.That(item.Id).IsEqualTo("red-version");
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithLabelFilter_RequiresLabelPermissionBeforeQuerying()
     {
         var workflowDefinitionStore = Substitute.For<IWorkflowDefinitionStore>();
@@ -97,12 +99,12 @@ public class WorkflowDefinitionLabelFilterTests
 
         await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
 
-        Assert.Equal(StatusCodes.Status403Forbidden, endpoint.HttpContext.Response.StatusCode);
-        Assert.Empty(labelStore.ReceivedCalls());
-        Assert.Empty(workflowDefinitionStore.ReceivedCalls());
+        await Assert.That(endpoint.HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status403Forbidden);
+        await Assert.That(labelStore.ReceivedCalls()).IsEmpty();
+        await Assert.That(workflowDefinitionStore.ReceivedCalls()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithUnrelatedApplicableProvider_LeavesLabelFilterUnsupported()
     {
         var workflowDefinitionStore = Substitute.For<IWorkflowDefinitionStore>();
@@ -115,20 +117,20 @@ public class WorkflowDefinitionLabelFilterTests
 
         await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
 
-        Assert.Equal(StatusCodes.Status501NotImplemented, endpoint.HttpContext.Response.StatusCode);
-        Assert.Empty(workflowDefinitionStore.ReceivedCalls());
+        await Assert.That(endpoint.HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status501NotImplemented);
+        await Assert.That(workflowDefinitionStore.ReceivedCalls()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task LabelFilterProvider_WithUnsupportedStoreThrowsExplicitly()
     {
         var provider = new WorkflowDefinitionLabelFilterProvider(Substitute.For<IWorkflowDefinitionLabelStore>());
         var filter = new WorkflowDefinitionFilter { LabelIds = ["red"] };
 
-        await Assert.ThrowsAsync<WorkflowDefinitionFilterNotSupportedException>(() => provider.ApplyAsync(filter));
+        await Assert.ThrowsExactlyAsync<WorkflowDefinitionFilterNotSupportedException>(() => provider.ApplyAsync(filter));
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithoutLabelProvider_ReturnsNotImplemented()
     {
         var store = Substitute.For<IWorkflowDefinitionStore>();
@@ -136,11 +138,11 @@ public class WorkflowDefinitionLabelFilterTests
 
         await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
 
-        Assert.Equal(StatusCodes.Status501NotImplemented, endpoint.HttpContext.Response.StatusCode);
-        Assert.Empty(store.ReceivedCalls());
+        await Assert.That(endpoint.HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status501NotImplemented);
+        await Assert.That(store.ReceivedCalls()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task List_WithUnsupportedLabelStore_ReturnsNotImplemented()
     {
         var store = Substitute.For<IWorkflowDefinitionStore>();
@@ -154,8 +156,8 @@ public class WorkflowDefinitionLabelFilterTests
 
         await endpoint.ExecuteAsync(new Request { Labels = ["red"] }, CancellationToken.None);
 
-        Assert.Equal(StatusCodes.Status501NotImplemented, endpoint.HttpContext.Response.StatusCode);
-        Assert.Empty(store.ReceivedCalls());
+        await Assert.That(endpoint.HttpContext.Response.StatusCode).IsEqualTo(StatusCodes.Status501NotImplemented);
+        await Assert.That(store.ReceivedCalls()).IsEmpty();
     }
 
     private static async Task<PagedListResponse<LinkedWorkflowDefinitionSummary>> ExecuteAsync(string[]? labels, string[]? ids = null, int? page = 0, int? pageSize = null, string[]? permissions = null)

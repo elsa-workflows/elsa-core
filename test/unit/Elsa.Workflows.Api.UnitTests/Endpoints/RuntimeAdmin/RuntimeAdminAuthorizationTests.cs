@@ -5,35 +5,34 @@ using Elsa.Workflows.Runtime;
 using FastEndpoints;
 using NSubstitute;
 using WorkflowsApiFeature = Elsa.Workflows.Api.Features.WorkflowsApiFeature;
-
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.RuntimeAdmin;
 
 public class RuntimeAdminAuthorizationTests
 {
-    [Fact]
-    public void StatusEndpoint_RequiresOnlyViewOnTheRuntime()
+    [Test]
+    public async Task StatusEndpoint_RequiresOnlyViewOnTheRuntime()
     {
         // Reading runtime status must not require the verb that pauses or drains it.
-        var permission = GetDeclaredPermission("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status.StatusEndpoint");
+        var permission = await GetDeclaredPermission("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Status.StatusEndpoint");
 
-        Assert.Equal(WorkflowPermissions.Runtime, permission.Resource);
-        Assert.Equal(CoreVerbs.View, permission.Verb);
+        await Assert.That(permission.Resource).IsEqualTo(WorkflowPermissions.Runtime);
+        await Assert.That(permission.Verb).IsEqualTo(CoreVerbs.View);
     }
 
-    [Theory]
-    [InlineData("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Pause.PauseEndpoint")]
-    [InlineData("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Resume.ResumeEndpoint")]
-    [InlineData("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain.ForceDrainEndpoint")]
-    public void MutatingEndpoints_RequireControlOnTheRuntime(string endpointTypeName)
+    [Test]
+    [Arguments("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Pause.PauseEndpoint")]
+    [Arguments("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.Resume.ResumeEndpoint")]
+    [Arguments("Elsa.Workflows.Api.Endpoints.RuntimeAdmin.ForceDrain.ForceDrainEndpoint")]
+    public async Task MutatingEndpoints_RequireControlOnTheRuntime(string endpointTypeName)
     {
-        var permission = GetDeclaredPermission(endpointTypeName);
+        var permission = await GetDeclaredPermission(endpointTypeName);
 
-        Assert.Equal(WorkflowPermissions.Runtime, permission.Resource);
-        Assert.Equal("control", permission.Verb);
-        Assert.NotEqual(CoreVerbs.View, permission.Verb);
+        await Assert.That(permission.Resource).IsEqualTo(WorkflowPermissions.Runtime);
+        await Assert.That(permission.Verb).IsEqualTo("control");
+        await Assert.That(permission.Verb).IsNotEqualTo(CoreVerbs.View);
     }
 
-    private static Permission GetDeclaredPermission(string endpointTypeName)
+    private static async Task<Permission> GetDeclaredPermission(string endpointTypeName)
     {
         var endpointType = typeof(WorkflowsApiFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
         var endpoint = Activator.CreateInstance(
@@ -53,7 +52,7 @@ public class RuntimeAdminAuthorizationTests
 
         var permission = EndpointPermissionRegistry.Find(endpointType);
 
-        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+        await Assert.That(permission.HasValue).IsTrue().Because($"{endpointTypeName} declares no permission.");
 
         return permission!.Value;
     }

@@ -2,13 +2,12 @@ using System.Reflection;
 using Elsa.Workflows.Runtime.Entities;
 using FastEndpoints;
 using WorkflowsApiFeature = Elsa.Workflows.Api.Features.WorkflowsApiFeature;
-
 namespace Elsa.Workflows.Api.UnitTests.ActivityExecutions;
 
 public class ActivityExecutionsEndpointTests
 {
-    [Fact]
-    public void GetEndpoint_ExposesPathAndQueryRoutes()
+    [Test]
+    public async Task GetEndpoint_ExposesPathAndQueryRoutes()
     {
         var endpointType = typeof(WorkflowsApiFeature).Assembly.GetType("Elsa.Workflows.Api.Endpoints.ActivityExecutions.Get.Endpoint", throwOnError: true)!;
         var endpoint = Activator.CreateInstance(endpointType, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [null], null)!;
@@ -20,8 +19,8 @@ public class ActivityExecutionsEndpointTests
 
         endpointType.GetMethod("Configure")!.Invoke(endpoint, null);
 
-        Assert.Contains("/activity-executions/{id}", definition.Routes);
-        Assert.Contains("/activity-executions/{*id}", definition.Routes);
-        Assert.Contains("/activity-executions/by-id", definition.Routes);
+        await Assert.That(definition.Routes).Contains("/activity-executions/{id}");
+        await Assert.That(definition.Routes).Contains("/activity-executions/{*id}");
+        await Assert.That(definition.Routes).Contains("/activity-executions/by-id");
     }
 }

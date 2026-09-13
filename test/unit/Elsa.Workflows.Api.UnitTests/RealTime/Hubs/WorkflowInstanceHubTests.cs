@@ -4,14 +4,12 @@ using Elsa.Workflows.Api.RealTime.Hubs;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
-using FastEndpoints;
 using Microsoft.AspNetCore.SignalR;
 using NSubstitute;
 
 namespace Elsa.Workflows.Api.UnitTests.RealTime.Hubs;
 
-[Collection(nameof(WorkflowInstanceHubTestsCollection))]
-public class WorkflowInstanceHubTests : IDisposable
+public class WorkflowInstanceHubTests
 {
     private const string ConnectionId = "connection-1";
     private const string WorkflowInstanceId = "workflow-instance-1";
@@ -24,14 +22,11 @@ public class WorkflowInstanceHubTests : IDisposable
     private readonly IGroupManager _groups;
     private readonly HubCallerContext _context;
     private readonly WorkflowInstanceHub _hub;
-    private readonly string _originalPermissionsClaimType;
     private readonly CancellationTokenSource _connectionAbortedTokenSource = new();
     private WorkflowInstance? _workflowInstance;
 
     public WorkflowInstanceHubTests()
     {
-        _originalPermissionsClaimType = GetPermissionsClaimType();
-        UsePermissionsClaimType("permissions");
         _workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
         _tenantAccessor = Substitute.For<ITenantAccessor>();
         _groups = Substitute.For<IGroupManager>();
@@ -50,13 +45,7 @@ public class WorkflowInstanceHubTests : IDisposable
         StubWorkflowInstance();
     }
 
-    public void Dispose()
-    {
-        UsePermissionsClaimType(_originalPermissionsClaimType);
-        _connectionAbortedTokenSource.Dispose();
-    }
-
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WithReadPermissionAndMatchingTenant_JoinsInstanceGroup()
     {
         await _hub.ObserveInstanceAsync(WorkflowInstanceId);
@@ -64,9 +53,9 @@ public class WorkflowInstanceHubTests : IDisposable
         await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
-    [Theory]
-    [InlineData("*")]
-    [InlineData("*:view")]
+    [Test]
+    [Arguments("*")]
+    [Arguments("*:view")]
     public async Task ObserveInstanceAsync_WithWildcardReadPermission_JoinsInstanceGroup(string permission)
     {
         UseUser(permission);
@@ -76,51 +65,49 @@ public class WorkflowInstanceHubTests : IDisposable
         await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_UsesElsaPermissionClaimType()
     {
-        // Elsa is the only authority that expands roles into permission claims (ADR 0009), and the
-        // authorization model no longer uses the FastEndpoints permission mechanism, so its separately
-        // configurable claim type is deliberately not consulted.
-        UsePermissionsClaimType(CustomPermissionsClaimType);
-        UseUser(ReadWorkflowInstancesPermission);
+        // Elsa is the only authority that expands roles into permission claims (ADR 0009), so a
+        // similarly named FastEndpoints claim must not grant an Elsa workflow permission.
+        UseUserClaim(CustomPermissionsClaimType, ReadWorkflowInstancesPermission);
 
-        await _hub.ObserveInstanceAsync(WorkflowInstanceId);
+        await Assert.ThrowsExactlyAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
 
-        await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
+        await _groups.DidNotReceive().AddToGroupAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WithoutReadPermission_DoesNotJoinInstanceGroup()
     {
         UseUser("write:workflow-instances");
 
-        await Assert.ThrowsAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
+        await Assert.ThrowsExactlyAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
 
         await _groups.DidNotReceive().AddToGroupAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WithDifferentTenant_DoesNotJoinInstanceGroup()
     {
         UseWorkflowInstanceTenant(OtherTenantId);
 
-        await Assert.ThrowsAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
+        await Assert.ThrowsExactlyAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
 
         await _groups.DidNotReceive().AddToGroupAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WhenInstanceIsNotVisible_DoesNotJoinInstanceGroup()
     {
         UseWorkflowInstance(null);
 
-        await Assert.ThrowsAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
+        await Assert.ThrowsExactlyAsync<HubException>(() => _hub.ObserveInstanceAsync(WorkflowInstanceId));
 
         await _groups.DidNotReceive().AddToGroupAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WithTenantAgnosticInstance_JoinsInstanceGroup()
     {
         UseWorkflowInstanceTenant(Tenant.AgnosticTenantId);
@@ -130,7 +117,7 @@ public class WorkflowInstanceHubTests : IDisposable
         await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WithoutTenantAccessor_JoinsVisibleInstanceGroup()
     {
         var hub = new WorkflowInstanceHub(_workflowInstanceStore)
@@ -144,7 +131,7 @@ public class WorkflowInstanceHubTests : IDisposable
         await _groups.Received(1).AddToGroupAsync(ConnectionId, WorkflowInstanceId, _connectionAbortedTokenSource.Token);
     }
 
-    [Fact]
+    [Test]
     public async Task ObserveInstanceAsync_WithNonCanonicalCurrentTenant_NormalizesBeforeComparing()
     {
         _tenantAccessor.TenantId.Returns(string.Empty);
@@ -198,18 +185,4 @@ public class WorkflowInstanceHubTests : IDisposable
         };
     }
 
-    private static void UsePermissionsClaimType(string claimType)
-    {
-        var property = typeof(SecurityOptions).GetProperty(nameof(SecurityOptions.PermissionsClaimType))!;
-        property.SetValue(new Config().Security, claimType);
-    }
-
-    private static string GetPermissionsClaimType()
-    {
-        var property = typeof(SecurityOptions).GetProperty(nameof(SecurityOptions.PermissionsClaimType))!;
-        return (string)property.GetValue(new Config().Security)!;
-    }
 }
-
-[CollectionDefinition(nameof(WorkflowInstanceHubTestsCollection), DisableParallelization = true)]
-public class WorkflowInstanceHubTestsCollection;

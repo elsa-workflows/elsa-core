@@ -5,13 +5,12 @@ using Elsa.Workflows.Api.Endpoints.OutputConverters.List;
 using Elsa.Workflows.Models;
 using FastEndpoints;
 using NSubstitute;
-
 namespace Elsa.Workflows.Api.UnitTests.OutputConverters;
 
 public class OutputConverterEndpointTests
 {
-    [Fact]
-    public void Configure_ExposesTheAuthorizedDescriptorRoute()
+    [Test]
+    public async Task Configure_ExposesTheAuthorizedDescriptorRoute()
     {
         var endpoint = new List(Substitute.For<IOutputConverterRegistry>(), SerializationTypeRegistry.CreateDefault());
         var definition = new EndpointDefinition(typeof(List), typeof(EmptyRequest), typeof(ListResponse<OutputConverterDescriptorModel>));
@@ -19,17 +18,17 @@ public class OutputConverterEndpointTests
         typeof(List).GetProperty("Definition", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic)!.SetValue(endpoint, definition);
         endpoint.Configure();
 
-        Assert.Contains("/descriptors/output-converters", definition.Routes);
+        await Assert.That(definition.Routes).Contains("/descriptors/output-converters");
 
         var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(typeof(List));
 
-        Assert.True(permission.HasValue);
-        Assert.Equal(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsOutputConverters, permission!.Value.Resource);
-        Assert.Equal(Elsa.Authorization.CoreVerbs.View, permission.Value.Verb);
+        await Assert.That(permission.HasValue).IsTrue();
+        await Assert.That(permission!.Value.Resource).IsEqualTo(Elsa.Workflows.Api.Permissions.WorkflowPermissions.DescriptorsOutputConverters);
+        await Assert.That(permission.Value.Verb).IsEqualTo(Elsa.Authorization.CoreVerbs.View);
     }
 
-    [Fact]
-    public void ListCompatible_FiltersThroughTheRegistryAndExposesOnlySafeDescriptorMetadata()
+    [Test]
+    public async Task ListCompatible_FiltersThroughTheRegistryAndExposesOnlySafeDescriptorMetadata()
     {
         using var document = JsonDocument.Parse("""{"type":"object","properties":{"format":{"type":"string"}}}""");
         var descriptor = new OutputConverterDescriptor(
@@ -44,35 +43,36 @@ public class OutputConverterEndpointTests
         var endpoint = new List(registry, SerializationTypeRegistry.CreateDefault());
 
         var listed = endpoint.TryListCompatible("String", "Int32", out var response, out var errors);
-        var model = Assert.Single(response.Items);
+        var model = await Assert.That(response.Items).HasSingleItem();
 
-        Assert.True(listed);
-        Assert.Empty(errors);
+        await Assert.That(listed).IsTrue();
+        await Assert.That(errors).IsEmpty();
         registry.Received(1).FindCompatible(typeof(string), typeof(int));
-        Assert.Equal("sample.to-text", model.Id);
-        Assert.Equal("String", model.SourceTypeName);
-        Assert.Equal("String", model.ResultTypeName);
-        Assert.Equal("Convert to text", model.DisplayName);
-        Assert.Equal("Formats the source as text.", model.Description);
-        Assert.Equal("object", model.SettingsSchema!.Value.GetProperty("type").GetString());
-        Assert.DoesNotContain(typeof(OutputConverterDescriptorModel).GetProperties(), property => property.Name is "SourceType" or "ResultType" or "ServiceKey" or "ServiceLifetime");
+        await Assert.That(model.Id).IsEqualTo("sample.to-text");
+        await Assert.That(model.SourceTypeName).IsEqualTo("String");
+        await Assert.That(model.ResultTypeName).IsEqualTo("String");
+        await Assert.That(model.DisplayName).IsEqualTo("Convert to text");
+        await Assert.That(model.Description).IsEqualTo("Formats the source as text.");
+        await Assert.That(model.SettingsSchema!.Value.GetProperty("type").GetString()).IsEqualTo("object");
+        await Assert.That(typeof(OutputConverterDescriptorModel).GetProperties())
+            .DoesNotContain(property => property.Name is "SourceType" or "ResultType" or "ServiceKey" or "ServiceLifetime");
     }
 
-    [Theory]
-    [InlineData(null, "String", "The sourceType query parameter is required.")]
-    [InlineData("String", null, "The destinationType query parameter is required.")]
-    [InlineData("Unsafe.Type", "String", "The sourceType query parameter must be a registered type alias or resolvable safe type name.")]
-    [InlineData("String", "Unsafe.Type", "The destinationType query parameter must be a registered type alias or resolvable safe type name.")]
-    public void TryListCompatible_RejectsMissingOrUnsafeQueryTypes(string? sourceTypeName, string? destinationTypeName, string expectedError)
+    [Test]
+    [Arguments(null, "String", "The sourceType query parameter is required.")]
+    [Arguments("String", null, "The destinationType query parameter is required.")]
+    [Arguments("Unsafe.Type", "String", "The sourceType query parameter must be a registered type alias or resolvable safe type name.")]
+    [Arguments("String", "Unsafe.Type", "The destinationType query parameter must be a registered type alias or resolvable safe type name.")]
+    public async Task TryListCompatible_RejectsMissingOrUnsafeQueryTypes(string? sourceTypeName, string? destinationTypeName, string expectedError)
     {
         var registry = Substitute.For<IOutputConverterRegistry>();
         var endpoint = new List(registry, SerializationTypeRegistry.CreateDefault());
 
         var listed = endpoint.TryListCompatible(sourceTypeName, destinationTypeName, out var response, out var errors);
 
-        Assert.False(listed);
-        Assert.Empty(response.Items);
-        Assert.Contains(expectedError, errors);
+        await Assert.That(listed).IsFalse();
+        await Assert.That(response.Items).IsEmpty();
+        await Assert.That(errors).Contains(expectedError);
         registry.DidNotReceive().FindCompatible(Arg.Any<Type>(), Arg.Any<Type>());
     }
 }

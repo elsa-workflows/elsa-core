@@ -4,12 +4,11 @@ using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
 using Elsa.Common.Serialization;
-
 namespace Elsa.Workflows.Api.UnitTests.Endpoints.IncidentStrategies;
 
 public class ListTests
 {
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_ReturnsWorkflowJsonTypeIdentifier_ForIncidentStrategyTypeName()
     {
         var options = new SerializationTypeOptions();
@@ -20,9 +19,9 @@ public class ListTests
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        var descriptor = Assert.Single(response.Items);
-        Assert.Equal(nameof(ContinueWithIncidentsStrategy), descriptor.TypeName);
-        Assert.True(registry.TryGetType(typeof(ContinueWithIncidentsStrategy).GetSimpleAssemblyQualifiedName(), out var legacyType));
-        Assert.Equal(typeof(ContinueWithIncidentsStrategy), legacyType);
+        var descriptor = await Assert.That(response.Items).HasSingleItem();
+        await Assert.That(descriptor.TypeName).IsEqualTo(nameof(ContinueWithIncidentsStrategy));
+        await Assert.That(registry.TryGetType(typeof(ContinueWithIncidentsStrategy).GetSimpleAssemblyQualifiedName(), out var legacyType)).IsTrue();
+        await Assert.That(legacyType).IsEqualTo(typeof(ContinueWithIncidentsStrategy));
     }
 }

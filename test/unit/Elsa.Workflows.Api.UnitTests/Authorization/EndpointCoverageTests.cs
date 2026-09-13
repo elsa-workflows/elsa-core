@@ -5,7 +5,7 @@ namespace Elsa.Workflows.Api.UnitTests.Authorization;
 
 public class EndpointCoverageTests
 {
-    [Fact]
+    [Test]
     public void EveryWorkflowsApiEndpointDeclaresItsAccess() =>
         EndpointCoverage.AssertEveryEndpointDeclaresAccess(typeof(List).Assembly);
 }
