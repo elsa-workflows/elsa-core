@@ -13,8 +13,12 @@ public sealed class ExecutionCycleHandle : IDisposable
     private readonly Action<ExecutionCycleHandle>? _onDisposed;
     private readonly Action? _cancelCallback;
     private readonly TaskCompletionSource _disposedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private int _cancelled;
-    private int _disposed;
+    private int _lifecycleState;
+
+    private const int ActiveState = 0;
+    private const int CancellingState = 1;
+    private const int CancelledState = 2;
+    private const int DisposedState = 3;
 
     /// <summary>
     /// Creates a new handle. The owning <see cref="IExecutionCycleRegistry"/> supplies <paramref name="onDisposed"/>
@@ -78,22 +82,13 @@ public sealed class ExecutionCycleHandle : IDisposable
 
     /// <summary>
     /// Attempts to cancel the cycle. Returns <c>true</c> only when this call transitioned the handle from
-    /// not-cancelled to cancelled. Returns <c>false</c> when the handle was already disposed or already cancelled,
-    /// so drain can avoid treating a finished cycle as a force-cancel.
+    /// active to cancelled. Returns <c>false</c> when the handle was already disposed or already cancelling/cancelled,
+    /// so drain can avoid treating a finished cycle as a force-cancel. Disposal wins if it races with the cancellation
+    /// callback, so a cycle that completes while cancellation is in flight is not reported as drain-cancelled.
     /// </summary>
     public bool TryCancel()
     {
-        if (Volatile.Read(ref _disposed) != 0)
-            return false;
-
-        // Idempotent guard: ensures the cancel callback and CTS cancellation run AT MOST once even if Cancel() is
-        // called repeatedly before disposal. Without this the drain orchestrator (or any other future caller) could
-        // accidentally trigger a non-idempotent cancellation side effect multiple times.
-        if (Interlocked.Exchange(ref _cancelled, 1) != 0)
-            return false;
-
-        // Disposed after we claimed cancel: the cycle already finished; do not treat as our force-cancel.
-        if (Volatile.Read(ref _disposed) != 0)
+        if (Interlocked.CompareExchange(ref _lifecycleState, CancellingState, ActiveState) != ActiveState)
             return false;
 
         // Propagate to the workflow execution first (this typically marks the workflow as Cancelled and clears its
@@ -105,13 +100,21 @@ public sealed class ExecutionCycleHandle : IDisposable
         try { _cycleCts.Cancel(); }
         catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }
 
-        return true;
+        // Publish cancellation only after its effects complete. Dispose can transition CancellingState directly to
+        // DisposedState, making this CAS fail when the cycle completed during the callback or CTS cancellation.
+        return Interlocked.CompareExchange(ref _lifecycleState, CancelledState, CancellingState) == CancellingState;
     }
 
     /// <summary>Releases the linked CTS, notifies the registry, and signals <see cref="Disposed"/>.</summary>
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        while (true)
+        {
+            var state = Volatile.Read(ref _lifecycleState);
+            if (state == DisposedState) return;
+            if (Interlocked.CompareExchange(ref _lifecycleState, DisposedState, state) == state) break;
+        }
+
         _onDisposed?.Invoke(this);
         _cycleCts.Dispose();
         _disposedTcs.TrySetResult();

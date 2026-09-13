@@ -384,6 +384,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // cheap and we want every runner to observe cancellation simultaneously rather
         // than serialized behind preceding settle waits.
         var cancelledInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        var cancelledHandles = new List<ExecutionCycleHandle>(live.Count);
         foreach (var handle in live)
         {
             try
@@ -395,6 +396,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                     continue;
 
                 totalCancelled++;
+                cancelledHandles.Add(handle);
                 cancelledInstanceIds.Add(handle.WorkflowInstanceId);
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
             }
@@ -445,7 +447,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // cancelled token and throw. Result: every execution cycle would be left in an unrecovered
         // executing state on host shutdown. The bounded non-drain token preserves the
         // forensic write while preventing a stuck DB from hanging shutdown indefinitely.
-        foreach (var handle in live)
+        foreach (var handle in cancelledHandles)
         {
             try
             {

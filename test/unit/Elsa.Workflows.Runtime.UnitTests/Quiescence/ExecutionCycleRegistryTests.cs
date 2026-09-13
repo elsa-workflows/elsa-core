@@ -118,6 +118,31 @@ public class ExecutionCycleRegistryTests
         Assert.False(disposed.TryCancel());
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle.TryCancel reports false when disposed during the cancellation callback")]
+    public async Task TryCancelReportsFalseWhenDisposedDuringCancellationCallback()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        var callbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handle = sut.BeginCycle(
+            "instance-1",
+            ingressSourceName: null,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () =>
+            {
+                callbackEntered.SetResult();
+                releaseCallback.Task.GetAwaiter().GetResult();
+            });
+
+        var cancelTask = Task.Run(handle.TryCancel);
+        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        handle.Dispose();
+        releaseCallback.SetResult();
+
+        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle.Cancel invokes the cancel callback supplied at registration")]
     public void CancelCallbackIsInvoked()
     {
