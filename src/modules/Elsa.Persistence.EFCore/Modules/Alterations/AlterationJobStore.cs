@@ -6,7 +6,6 @@ using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
@@ -107,23 +106,27 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
         var query = dbContext.Set<AlterationJob>()
             .IgnoreQueryFilters()
             .Where(AlterationTenantOwnedUpsert.OwnedId<AlterationJob>(record.Id, record.TenantId, ambientTenantId));
-        Action<UpdateSettersBuilder<AlterationJob>> setters = setters => setters
-            .SetProperty(job => job.PlanId, planId)
-            .SetProperty(job => job.WorkflowInstanceId, workflowInstanceId)
-            .SetProperty(job => job.Status, status)
-            .SetProperty(job => job.CreatedAt, createdAt)
-            .SetProperty(job => job.StartedAt, startedAt)
-            .SetProperty(job => job.CompletedAt, completedAt)
-            .SetProperty(job => EF.Property<string>(job, "SerializedLog"), serializedLog);
 
-        var updated = await query.ExecuteUpdateAsync(setters, cancellationToken);
+        // Inline lambda so net8/net9 bind SetPropertyCalls and net10 binds UpdateSettersBuilder.
+        Task<int> UpdateOwnedAsync() => query.ExecuteUpdateAsync(
+            setters => setters
+                .SetProperty(job => job.PlanId, planId)
+                .SetProperty(job => job.WorkflowInstanceId, workflowInstanceId)
+                .SetProperty(job => job.Status, status)
+                .SetProperty(job => job.CreatedAt, createdAt)
+                .SetProperty(job => job.StartedAt, startedAt)
+                .SetProperty(job => job.CompletedAt, completedAt)
+                .SetProperty(job => EF.Property<string>(job, "SerializedLog"), serializedLog),
+            cancellationToken);
+
+        var updated = await UpdateOwnedAsync();
 
         if (updated == 0)
         {
             var inserted = await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken);
             if (!inserted)
             {
-                var retried = await query.ExecuteUpdateAsync(setters, cancellationToken);
+                var retried = await UpdateOwnedAsync();
 
                 if (retried == 0)
                     throw AlterationStoreConflict.HiddenJobId(record.Id);
