@@ -5,13 +5,14 @@ using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using OpenIdConnectExternalAuthenticationShellFeature = Elsa.ExternalAuthentication.OpenIdConnect.ShellFeatures.OpenIdConnectExternalAuthenticationFeature;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Features;
 
 public class OpenIdConnectExternalAuthenticationFeatureTests
 {
-    [Fact]
-    public void ClassicFeatureRegistersTheOpenIdConnectAdapter()
+    [Test]
+    public async Task ClassicFeatureRegistersTheOpenIdConnectAdapter()
     {
         var services = new ServiceCollection();
         var module = Substitute.For<IModule>();
@@ -20,26 +21,26 @@ public class OpenIdConnectExternalAuthenticationFeatureTests
 
         feature.Apply();
 
-        AssertOpenIdConnectAdapterRegistered(services);
+        await AssertOpenIdConnectAdapterRegistered(services);
     }
 
-    [Fact]
-    public void ShellFeatureRegistersTheOpenIdConnectAdapter()
+    [Test]
+    public async Task ShellFeatureRegistersTheOpenIdConnectAdapter()
     {
         var services = new ServiceCollection();
         var feature = new OpenIdConnectExternalAuthenticationShellFeature();
 
         feature.ConfigureServices(services);
 
-        AssertOpenIdConnectAdapterRegistered(services);
+        await AssertOpenIdConnectAdapterRegistered(services);
     }
 
-    private static void AssertOpenIdConnectAdapterRegistered(IServiceCollection services)
+    private static async Task AssertOpenIdConnectAdapterRegistered(IServiceCollection services)
     {
-        Assert.Contains(services, descriptor =>
+        await Assert.That(services).Contains(descriptor =>
             descriptor.ServiceType == typeof(IExternalAuthenticationAdapter) &&
             descriptor.ImplementationType == typeof(OpenIdConnectExternalAuthenticationAdapter));
-        Assert.Contains(services, descriptor =>
+        await Assert.That(services).Contains(descriptor =>
             descriptor.ServiceType == typeof(IAdapterSettingsMigration) &&
             descriptor.ImplementationType == typeof(OpenIdConnectSettingsV1Migration));
     }

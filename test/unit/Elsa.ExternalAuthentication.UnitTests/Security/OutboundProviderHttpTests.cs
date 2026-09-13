@@ -5,14 +5,15 @@ using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Validation;
 using Microsoft.Extensions.Options;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Security;
 
 public class OutboundProviderHttpTests
 {
-    [Theory]
-    [InlineData("http://provider.example")]
-    [InlineData("https://unapproved.example")]
+    [Test]
+    [Arguments("http://provider.example")]
+    [Arguments("https://unapproved.example")]
     public async Task RejectsNonHttpsAndUnapprovedDestinations(string value)
     {
         var validator = CreateValidator(new ExternalAuthenticationOptions
@@ -20,34 +21,34 @@ public class OutboundProviderHttpTests
             ProviderEgress = new ProviderEgressOptions { AllowedHosts = ["provider.example"] }
         });
 
-        await Assert.ThrowsAsync<OutboundDestinationException>(() => validator.ValidateAsync(new Uri(value)).AsTask());
+        await Assert.ThrowsExactlyAsync<OutboundDestinationException>(() => validator.ValidateAsync(new Uri(value)).AsTask());
     }
 
-    [Theory]
-    [InlineData("127.0.0.1")]
-    [InlineData("10.0.0.1")]
-    [InlineData("169.254.169.254")]
-    [InlineData("192.0.2.1")]
-    [InlineData("::1")]
-    [InlineData("fe80::1")]
-    [InlineData("fc00::1")]
-    [InlineData("2001:db8::1")]
+    [Test]
+    [Arguments("127.0.0.1")]
+    [Arguments("10.0.0.1")]
+    [Arguments("169.254.169.254")]
+    [Arguments("192.0.2.1")]
+    [Arguments("::1")]
+    [Arguments("fe80::1")]
+    [Arguments("fc00::1")]
+    [Arguments("2001:db8::1")]
     public async Task RejectsLoopbackPrivateLinkLocalAndReservedAddresses(string address)
     {
         var validator = CreateValidator(address);
 
-        await Assert.ThrowsAsync<OutboundDestinationException>(() => validator.ValidateAsync(new Uri("https://provider.example")).AsTask());
+        await Assert.ThrowsExactlyAsync<OutboundDestinationException>(() => validator.ValidateAsync(new Uri("https://provider.example")).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsHostWhenAnyResolvedAddressIsUnsafe()
     {
         var validator = CreateValidator("8.8.8.8", "127.0.0.1");
 
-        await Assert.ThrowsAsync<OutboundDestinationException>(() => validator.ValidateAsync(new Uri("https://provider.example")).AsTask());
+        await Assert.ThrowsExactlyAsync<OutboundDestinationException>(() => validator.ValidateAsync(new Uri("https://provider.example")).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task ConnectsToTheValidatedAddress()
     {
         var validator = CreateValidator("8.8.8.8");
@@ -56,10 +57,11 @@ public class OutboundProviderHttpTests
 
         await using var stream = await connectionFactory.ConnectAsync(new DnsEndPoint("provider.example", 443));
 
-        Assert.Equal([IPAddress.Parse("8.8.8.8")], connector.Addresses);
+        var address = await Assert.That(connector.Addresses).HasSingleItem();
+        await Assert.That(address).IsEqualTo(IPAddress.Parse("8.8.8.8"));
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsDnsRebindingBeforeConnect()
     {
         var resolver = new SequencedDnsResolver([IPAddress.Parse("8.8.8.8")], [IPAddress.Loopback]);
@@ -68,49 +70,52 @@ public class OutboundProviderHttpTests
         var connectionFactory = new ValidatedOutboundConnectionFactory(validator, connector);
 
         await validator.ValidateAsync(new Uri("https://provider.example"));
-        await Assert.ThrowsAsync<OutboundDestinationException>(() => connectionFactory.ConnectAsync(new DnsEndPoint("provider.example", 443), CancellationToken.None).AsTask());
+        await Assert.ThrowsExactlyAsync<OutboundDestinationException>(() => connectionFactory.ConnectAsync(new DnsEndPoint("provider.example", 443), CancellationToken.None).AsTask());
 
-        Assert.Empty(connector.Addresses);
+        await Assert.That(connector.Addresses).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task FollowsOnlyValidatedGetRedirectsAndRejectsUnsafeRedirectTargets()
     {
         var handler = new SequenceHandler(
             new HttpResponseMessage(HttpStatusCode.Found) { Headers = { Location = new Uri("http://127.0.0.1/metadata") } });
         var client = CreateClient(handler);
 
-        var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/metadata"), ProviderResponseKind.Discovery).AsTask());
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/metadata"), ProviderResponseKind.Discovery).AsTask())).IsNotNull();
 
-        Assert.Equal(ProviderHttpFailure.DestinationRejected, exception.Failure);
-        Assert.Equal(1, handler.RequestCount);
+        await Assert.That(exception.Failure).IsEqualTo(ProviderHttpFailure.DestinationRejected);
+        await Assert.That(handler.RequestCount).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsUnexpectedRedirectsForCredentialBearingRequests()
     {
         var handler = new SequenceHandler(new HttpResponseMessage(HttpStatusCode.Found) { Headers = { Location = new Uri("https://provider.example/token-two") } });
         var client = CreateClient(handler);
 
-        var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.PostFormAsync(new Uri("https://provider.example/token"), new Dictionary<string, string>(), null, ProviderResponseKind.Token).AsTask());
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<ProviderHttpException>(() => client.PostFormAsync(new Uri("https://provider.example/token"), new Dictionary<string, string>(), null, ProviderResponseKind.Token).AsTask())).IsNotNull();
 
-        Assert.Equal(ProviderHttpFailure.RedirectRejected, exception.Failure);
-        Assert.Equal(1, handler.RequestCount);
+        await Assert.That(exception.Failure).IsEqualTo(ProviderHttpFailure.RedirectRejected);
+        await Assert.That(handler.RequestCount).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task AppliesRequestTimeoutWithoutLeakingTransportDetails()
     {
         var options = new ExternalAuthenticationOptions { ProviderEgress = new ProviderEgressOptions { RequestTimeout = TimeSpan.FromMilliseconds(20), ConnectTimeout = TimeSpan.FromSeconds(1) } };
         var client = CreateClient(new DelayingHandler(), options);
 
-        var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/metadata"), ProviderResponseKind.Discovery).AsTask());
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/metadata"), ProviderResponseKind.Discovery).AsTask())).IsNotNull();
 
-        Assert.Equal(ProviderHttpFailure.Timeout, exception.Failure);
-        Assert.DoesNotContain("internal", exception.Message, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(exception.Failure).IsEqualTo(ProviderHttpFailure.Timeout);
+        await Assert.That(exception.Message).DoesNotContain("internal").WithComparison(StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public async Task CapsDiscoveryTokenAndUserInfoResponseBodies()
     {
         var options = new ExternalAuthenticationOptions
@@ -129,30 +134,32 @@ public class OutboundProviderHttpTests
 
         foreach (var kind in new[] { ProviderResponseKind.Discovery, ProviderResponseKind.Token, ProviderResponseKind.UserInfo })
         {
-            var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/content"), kind).AsTask());
-            Assert.Equal(ProviderHttpFailure.ResponseTooLarge, exception.Failure);
+            var exception = await Assert.That(
+                await Assert.ThrowsExactlyAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/content"), kind).AsTask())).IsNotNull();
+            await Assert.That(exception.Failure).IsEqualTo(ProviderHttpFailure.ResponseTooLarge);
         }
     }
 
-    [Fact]
-    public void TreatsConfiguredProxyAsAnExplicitApprovedEgressGateway()
+    [Test]
+    public async Task TreatsConfiguredProxyAsAnExplicitApprovedEgressGateway()
     {
         var options = new ExternalAuthenticationOptions { ProviderEgress = new ProviderEgressOptions { ProxyUri = new Uri("http://proxy.internal:8080") } };
         var factory = new ProviderHttpClientFactory(OptionsFactory.Create(options), CreateValidator(options), new ValidatedOutboundConnectionFactory(CreateValidator(options), new RecordingConnector()));
 
-        Assert.True(factory.UsesApprovedProxy);
+        await Assert.That(factory.UsesApprovedProxy).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task CollapsesTransportFailuresToSafeExceptionCategories()
     {
         var client = CreateClient(new ThrowingHandler());
 
-        var exception = await Assert.ThrowsAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/metadata"), ProviderResponseKind.Discovery).AsTask());
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<ProviderHttpException>(() => client.GetAsync(new Uri("https://provider.example/metadata"), ProviderResponseKind.Discovery).AsTask())).IsNotNull();
 
-        Assert.Equal(ProviderHttpFailure.TransportFailure, exception.Failure);
-        Assert.DoesNotContain("super-secret-response", exception.Message, StringComparison.Ordinal);
-        Assert.Null(exception.InnerException);
+        await Assert.That(exception.Failure).IsEqualTo(ProviderHttpFailure.TransportFailure);
+        await Assert.That(exception.Message).DoesNotContain("super-secret-response").WithComparison(StringComparison.Ordinal);
+        await Assert.That(exception.InnerException).IsNull();
     }
 
     private static ProviderHttpClient CreateClient(HttpMessageHandler handler, ExternalAuthenticationOptions? options = null)

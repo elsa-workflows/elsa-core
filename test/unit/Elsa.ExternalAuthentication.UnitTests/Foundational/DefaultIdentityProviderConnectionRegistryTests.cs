@@ -1,12 +1,13 @@
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class DefaultIdentityProviderConnectionRegistryTests
 {
-    [Fact]
+    [Test]
     public async Task ConfigurationConnectionsShadowDatabaseConnectionsWithTheSameKey()
     {
         var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc", isPreferred: true);
@@ -17,15 +18,18 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var result = await registry.GetAsync("tenant-a");
 
-        var effective = Assert.Single(result.Connections, x => !x.IsShadowed);
-        Assert.Equal("configuration-oidc", effective.Connection.Id);
-        Assert.Equal("database-oidc", Assert.Single(effective.Shadows).Id);
-        var shadowed = Assert.Single(result.Connections, x => x.IsShadowed);
-        Assert.Equal("configuration-oidc", Assert.IsType<IdentityProviderConnectionReference>(shadowed.ShadowedBy).Id);
-        Assert.Equal(["configuration-oidc"], result.LoginMethods.Select(x => x.Id));
+        var effective = await Assert.That(result.Connections).HasSingleItem(x => !x.IsShadowed);
+        await Assert.That(effective.Connection.Id).IsEqualTo("configuration-oidc");
+        var effectiveShadow = await Assert.That(effective.Shadows).HasSingleItem();
+        await Assert.That(effectiveShadow.Id).IsEqualTo("database-oidc");
+        var shadowed = await Assert.That(result.Connections).HasSingleItem(x => x.IsShadowed);
+        var shadowedBy = await Assert.That(shadowed.ShadowedBy).IsNotNull();
+        await Assert.That(shadowedBy).IsOfType(typeof(IdentityProviderConnectionReference));
+        await Assert.That(shadowedBy.Id).IsEqualTo("configuration-oidc");
+        await Assert.That(result.LoginMethods.Select(x => x.Id)).IsEquivalentTo(["configuration-oidc"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ExplicitDatabaseOverrideIdentifiesItsShadowedConfigurationConnection()
     {
         var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc");
@@ -37,16 +41,18 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var result = await registry.GetAsync("tenant-a");
 
-        var effective = Assert.Single(result.Connections, x => !x.IsShadowed);
-        Assert.Equal("database-oidc", effective.Connection.Id);
-        Assert.Equal("configuration-oidc", Assert.Single(effective.Shadows).Id);
-        var shadowed = Assert.Single(result.Connections, x => x.IsShadowed);
-        var shadowedBy = Assert.IsType<IdentityProviderConnectionReference>(shadowed.ShadowedBy);
-        Assert.Equal("database-oidc", shadowedBy.Id);
-        Assert.Equal(ConnectionSourceOwnership.Database, shadowedBy.Ownership);
+        var effective = await Assert.That(result.Connections).HasSingleItem(x => !x.IsShadowed);
+        await Assert.That(effective.Connection.Id).IsEqualTo("database-oidc");
+        var effectiveShadow = await Assert.That(effective.Shadows).HasSingleItem();
+        await Assert.That(effectiveShadow.Id).IsEqualTo("configuration-oidc");
+        var shadowed = await Assert.That(result.Connections).HasSingleItem(x => x.IsShadowed);
+        var shadowedBy = await Assert.That(shadowed.ShadowedBy).IsNotNull();
+        await Assert.That(shadowedBy).IsOfType(typeof(IdentityProviderConnectionReference));
+        await Assert.That(shadowedBy.Id).IsEqualTo("database-oidc");
+        await Assert.That(shadowedBy.Ownership).IsEqualTo(ConnectionSourceOwnership.Database);
     }
 
-    [Fact]
+    [Test]
     public async Task ArchivedDatabaseOverrideDoesNotParticipateInActiveShadowRelationships()
     {
         var configuration = ExternalAuthenticationTestData.CreateConnection("configuration-oidc", ConnectionScope.HostTenantId, "oidc", displayOrder: 10);
@@ -60,18 +66,20 @@ public class DefaultIdentityProviderConnectionRegistryTests
         var result = await registry.GetAsync("tenant-a");
         var resolved = await registry.FindByKeyAsync("tenant-a", "oidc");
 
-        var effective = Assert.Single(result.Connections, x => !x.Connection.ArchivedAt.HasValue && !x.IsShadowed);
-        Assert.Equal("configuration-oidc", effective.Connection.Id);
-        Assert.Equal("configuration-oidc", Assert.IsType<EffectiveIdentityProviderConnection>(resolved).Connection.Id);
-        Assert.Empty(effective.Shadows);
-        var archived = Assert.Single(result.Connections, x => x.Connection.Id == "database-oidc");
-        Assert.True(archived.Connection.ArchivedAt.HasValue);
-        Assert.False(archived.IsShadowed);
-        Assert.Null(archived.ShadowedBy);
-        Assert.Empty(archived.Shadows);
+        var effective = await Assert.That(result.Connections).HasSingleItem(x => !x.Connection.ArchivedAt.HasValue && !x.IsShadowed);
+        await Assert.That(effective.Connection.Id).IsEqualTo("configuration-oidc");
+        var resolvedConnection = await Assert.That(resolved).IsNotNull();
+        await Assert.That(resolvedConnection).IsOfType(typeof(EffectiveIdentityProviderConnection));
+        await Assert.That(resolvedConnection.Connection.Id).IsEqualTo("configuration-oidc");
+        await Assert.That(effective.Shadows).IsEmpty();
+        var archived = await Assert.That(result.Connections).HasSingleItem(x => x.Connection.Id == "database-oidc");
+        await Assert.That(archived.Connection.ArchivedAt.HasValue).IsTrue();
+        await Assert.That(archived.IsShadowed).IsFalse();
+        await Assert.That(archived.ShadowedBy).IsNull();
+        await Assert.That(archived.Shadows).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ConfigurationPreferredConnectionWinsOverDatabasePreferredConnection()
     {
         var configuration = ExternalAuthenticationTestData.CreateConnection("configuration", ConnectionScope.HostTenantId, "configuration", displayOrder: 20, isPreferred: true);
@@ -82,10 +90,11 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var result = await registry.GetAsync("tenant-a");
 
-        Assert.Equal("configuration", Assert.Single(result.LoginMethods, x => x.IsPreferred).Id);
+        var preferredLoginMethod = await Assert.That(result.LoginMethods).HasSingleItem(x => x.IsPreferred);
+        await Assert.That(preferredLoginMethod.Id).IsEqualTo("configuration");
     }
 
-    [Fact]
+    [Test]
     public async Task RegistryUsesOnlyHostConnections()
     {
         var host = ExternalAuthenticationTestData.CreateConnection("host", ConnectionScope.HostTenantId, "host");
@@ -100,12 +109,12 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var result = await registry.GetAsync("tenant-a");
 
-        Assert.Equal(["host"], result.Connections.Select(x => x.Connection.Id));
-        Assert.DoesNotContain(result.Connections, x => x.Connection.Id == "tenant-a");
-        Assert.DoesNotContain(result.Connections, x => x.Connection.Id == "tenant-b");
+        await Assert.That(result.Connections.Select(x => x.Connection.Id)).IsEquivalentTo(["host"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.Connections).DoesNotContain(x => x.Connection.Id == "tenant-a");
+        await Assert.That(result.Connections).DoesNotContain(x => x.Connection.Id == "tenant-b");
     }
 
-    [Fact]
+    [Test]
     public async Task IgnoresLegacyTenantConnectionThatSharesAHostKey()
     {
         var host = ExternalAuthenticationTestData.CreateConnection("host", ConnectionScope.HostTenantId, "contoso");
@@ -119,14 +128,17 @@ public class DefaultIdentityProviderConnectionRegistryTests
         var result = await registry.GetAsync("tenant-a");
         var byKey = await registry.FindByKeyAsync("tenant-a", "contoso");
 
-        var effective = Assert.Single(result.Connections);
-        Assert.Equal("host", effective.Connection.Id);
-        Assert.Equal(ConnectionValidity.Unknown, effective.Validity);
-        Assert.Equal("host", Assert.Single(result.LoginMethods).Id);
-        Assert.Equal("host", Assert.IsType<EffectiveIdentityProviderConnection>(byKey).Connection.Id);
+        var effective = await Assert.That(result.Connections).HasSingleItem();
+        await Assert.That(effective.Connection.Id).IsEqualTo("host");
+        await Assert.That(effective.Validity).IsEqualTo(ConnectionValidity.Unknown);
+        var loginMethod = await Assert.That(result.LoginMethods).HasSingleItem();
+        var resolvedConnection = await Assert.That(byKey).IsNotNull();
+        await Assert.That(resolvedConnection).IsOfType(typeof(EffectiveIdentityProviderConnection));
+        await Assert.That(loginMethod.Id).IsEqualTo("host");
+        await Assert.That(resolvedConnection.Connection.Id).IsEqualTo("host");
     }
 
-    [Fact]
+    [Test]
     public async Task RegistryOrdersHostLoginMethodsDeterministicallyAndUsesPreferredConnection()
     {
         var host = ExternalAuthenticationTestData.CreateConnection("host", ConnectionScope.HostTenantId, "host", displayOrder: 20);
@@ -140,10 +152,11 @@ public class DefaultIdentityProviderConnectionRegistryTests
 
         var result = await registry.GetAsync("tenant-a");
 
-        Assert.Equal(["early", "preferred", "host"], result.LoginMethods.Select(x => x.Id));
-        Assert.Equal("preferred", Assert.Single(result.LoginMethods, x => x.IsPreferred).Id);
-        Assert.DoesNotContain(result.LoginMethods, x => x.Id == "disabled");
-        Assert.Equal("/external-authentication/authorize/early", result.LoginMethods.First().InitiationUri.OriginalString);
+        await Assert.That(result.LoginMethods.Select(x => x.Id)).IsEquivalentTo(["early", "preferred", "host"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var preferredLoginMethod = await Assert.That(result.LoginMethods).HasSingleItem(x => x.IsPreferred);
+        await Assert.That(preferredLoginMethod.Id).IsEqualTo("preferred");
+        await Assert.That(result.LoginMethods).DoesNotContain(x => x.Id == "disabled");
+        await Assert.That(result.LoginMethods.First().InitiationUri.OriginalString).IsEqualTo("/external-authentication/authorize/early");
     }
 
     private static DefaultIdentityProviderConnectionRegistry CreateRegistry(params IIdentityProviderConnectionSource[] sources) => new(sources, new ConnectionRevisionCalculator());

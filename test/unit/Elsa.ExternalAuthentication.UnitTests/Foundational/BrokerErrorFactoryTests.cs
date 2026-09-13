@@ -1,37 +1,39 @@
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class BrokerErrorFactoryTests
 {
-    [Theory]
-    [InlineData(BrokerErrorCategory.InvalidRequest, "invalid_request")]
-    [InlineData(BrokerErrorCategory.MethodUnavailable, "method_unavailable")]
-    [InlineData(BrokerErrorCategory.AuthenticationFailed, "authentication_failed")]
-    [InlineData(BrokerErrorCategory.IdentityUnlinked, "identity_unlinked")]
-    [InlineData(BrokerErrorCategory.FlowExpired, "flow_expired")]
-    [InlineData(BrokerErrorCategory.FlowChanged, "flow_changed")]
-    [InlineData(BrokerErrorCategory.AccessDenied, "access_denied")]
-    [InlineData(BrokerErrorCategory.RateLimited, "rate_limited")]
-    [InlineData(BrokerErrorCategory.TemporarilyUnavailable, "temporarily_unavailable")]
-    [InlineData(BrokerErrorCategory.ServerError, "server_error")]
-    public void CreatesDocumentedSafeErrorCategories(BrokerErrorCategory category, string error)
+    [Test]
+    [Arguments(BrokerErrorCategory.InvalidRequest, "invalid_request")]
+    [Arguments(BrokerErrorCategory.MethodUnavailable, "method_unavailable")]
+    [Arguments(BrokerErrorCategory.AuthenticationFailed, "authentication_failed")]
+    [Arguments(BrokerErrorCategory.IdentityUnlinked, "identity_unlinked")]
+    [Arguments(BrokerErrorCategory.FlowExpired, "flow_expired")]
+    [Arguments(BrokerErrorCategory.FlowChanged, "flow_changed")]
+    [Arguments(BrokerErrorCategory.AccessDenied, "access_denied")]
+    [Arguments(BrokerErrorCategory.RateLimited, "rate_limited")]
+    [Arguments(BrokerErrorCategory.TemporarilyUnavailable, "temporarily_unavailable")]
+    [Arguments(BrokerErrorCategory.ServerError, "server_error")]
+    public async Task CreatesDocumentedSafeErrorCategories(BrokerErrorCategory category, string error)
     {
         var result = BrokerErrorFactory.Create(category, "01JZSAFE-CORRELATION");
 
-        Assert.Equal(error, result.Error);
-        Assert.Equal("01JZSAFE-CORRELATION", result.CorrelationId);
-        Assert.NotEmpty(result.Message);
+        await Assert.That(result.Error).IsEqualTo(error);
+        await Assert.That(result.CorrelationId).IsEqualTo("01JZSAFE-CORRELATION");
+        await Assert.That(result.Message).IsNotEmpty();
     }
 
-    [Fact]
-    public void ReplacesUnsafeCorrelationIdsWithGeneratedTraceIds()
+    [Test]
+    public async Task ReplacesUnsafeCorrelationIdsWithGeneratedTraceIds()
     {
         var result = BrokerErrorFactory.Create(BrokerErrorCategory.ServerError, "request\r\nleak");
 
-        Assert.NotEqual("request\r\nleak", result.CorrelationId);
-        Assert.Equal(32, result.CorrelationId.Length);
-        Assert.All(result.CorrelationId, character => Assert.True(char.IsAsciiHexDigit(character)));
+        await Assert.That(result.CorrelationId).IsNotEqualTo("request\r\nleak");
+        await Assert.That(result.CorrelationId.Length).IsEqualTo(32);
+        foreach (var character in result.CorrelationId)
+            await Assert.That(char.IsAsciiHexDigit(character)).IsTrue();
     }
 }

@@ -3,12 +3,13 @@ using Elsa.ExternalAuthentication.Providers;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Contracts;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ConfigurationIdentityProviderConnectionSourceTests
 {
-    [Fact]
+    [Test]
     public async Task MaterializesOnlyRequestedScopeWithStableGeneratedIdAndSnapshotVersion()
     {
         var options = new ExternalAuthenticationOptions
@@ -26,14 +27,14 @@ public class ConfigurationIdentityProviderConnectionSourceTests
         var first = await source.GetSnapshotAsync(ConnectionScope.Host);
         var second = await source.GetSnapshotAsync(ConnectionScope.Host);
 
-        var connection = Assert.Single(first.Connections);
-        Assert.Equal("contoso", connection.Key);
-        Assert.Equal(ConnectionRevisionCalculator.CalculateConfigurationConnectionId(ConnectionScope.Host, "contoso"), connection.Id);
-        Assert.Equal(first.Version, second.Version);
-        Assert.StartsWith("m-", connection.MaterialRevision);
+        var connection = await Assert.That(first.Connections).HasSingleItem();
+        await Assert.That(connection.Key).IsEqualTo("contoso");
+        await Assert.That(connection.Id).IsEqualTo(ConnectionRevisionCalculator.CalculateConfigurationConnectionId(ConnectionScope.Host, "contoso"));
+        await Assert.That(second.Version).IsEqualTo(first.Version);
+        await Assert.That(connection.MaterialRevision).StartsWith("m-");
     }
 
-    [Fact]
+    [Test]
     public async Task DoesNotReturnMutableConfigurationObjects()
     {
         var configuredConnection = RegistryTestData.Connection("connection");
@@ -43,13 +44,13 @@ public class ConfigurationIdentityProviderConnectionSourceTests
             EmptyAdapterRegistry.Instance);
 
         var snapshot = await source.GetSnapshotAsync(ConnectionScope.Host);
-        var materializedConnection = Assert.Single(snapshot.Connections);
+        var materializedConnection = await Assert.That(snapshot.Connections).HasSingleItem();
         materializedConnection.DisplayName = "Changed";
 
-        Assert.Equal("Contoso", configuredConnection.DisplayName);
+        await Assert.That(configuredConnection.DisplayName).IsEqualTo("Contoso");
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsDescriptorDeclaredSecretValuesInConfigurationSettings()
     {
         var configuredConnection = RegistryTestData.Connection("connection");
@@ -60,9 +61,10 @@ public class ConfigurationIdentityProviderConnectionSourceTests
             new ConnectionRevisionCalculator(),
             new SecretDeclaringAdapterRegistry());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => source.GetSnapshotAsync(ConnectionScope.Host).AsTask());
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => source.GetSnapshotAsync(ConnectionScope.Host).AsTask())).IsNotNull();
 
-        Assert.Contains("SecretBindings", exception.Message, StringComparison.Ordinal);
+        await Assert.That(exception.Message).Contains("SecretBindings").WithComparison(StringComparison.Ordinal);
     }
 
     private sealed class EmptyAdapterRegistry : IExternalAuthenticationAdapterRegistry

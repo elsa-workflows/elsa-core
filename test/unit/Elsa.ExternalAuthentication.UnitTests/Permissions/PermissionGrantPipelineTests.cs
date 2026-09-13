@@ -11,12 +11,13 @@ using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Permissions;
 
 public class PermissionGrantPipelineTests
 {
-    [Fact]
+    [Test]
     public async Task ComposesRoleAndMappedClaimGrantsInOrderWithDeterministicDeduplication()
     {
         var userProvider = new StaticUserProvider(new User { Id = "user-a", TenantId = "tenant-a", Roles = ["role-a"] });
@@ -31,13 +32,13 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(context);
 
-        Assert.Equal(["workflows:manage", "workflows:read", "reports:view"], result.Grants.Select(x => x.Permission));
-        Assert.Equal("elsa-roles", result.Grants.First(x => x.Permission == "workflows:read").SourceType);
-        Assert.Equal("role-a", result.Grants.First(x => x.Permission == "workflows:manage").SourceReference);
-        Assert.Equal("department:engineering", result.Grants.Last().SourceReference);
+        await Assert.That(result.Grants.Select(x => x.Permission)).IsEquivalentTo(["workflows:manage", "workflows:read", "reports:view"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.Grants.First(x => x.Permission == "workflows:read").SourceType).IsEqualTo("elsa-roles");
+        await Assert.That(result.Grants.First(x => x.Permission == "workflows:manage").SourceReference).IsEqualTo("role-a");
+        await Assert.That(result.Grants.Last().SourceReference).IsEqualTo("department:engineering");
     }
 
-    [Fact]
+    [Test]
     public async Task LeavesUnmappedClaimsUnauthorizedAndWarnsForUnknownDescriptorsWithoutRejectingThem()
     {
         var options = new ExternalAuthenticationOptions();
@@ -49,17 +50,17 @@ public class PermissionGrantPipelineTests
             new Dictionary<string, IReadOnlyCollection<string>> { ["department"] = ["sales"] });
 
         var unmapped = await resolver.ResolveAsync(context);
-        Assert.Empty(unmapped.Grants);
+        await Assert.That(unmapped.Grants).IsEmpty();
 
         var mappedContext = context with { ProjectedClaims = new Dictionary<string, IReadOnlyCollection<string>> { ["department"] = ["engineering"] } };
         var mapped = await resolver.ResolveAsync(mappedContext);
 
-        Assert.Equal(["reports:view"], mapped.Grants.Select(x => x.Permission));
-        Assert.Contains(mapped.Warnings, warning => warning.Code == "permission_denied_by_deployment");
-        Assert.Contains(mapped.Warnings, warning => warning.Code == "unknown_permission_descriptor" && warning.Message.Contains("reports:view", StringComparison.Ordinal));
+        await Assert.That(mapped.Grants.Select(x => x.Permission)).IsEquivalentTo(["reports:view"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(mapped.Warnings).Contains(warning => warning.Code == "permission_denied_by_deployment");
+        await Assert.That(mapped.Warnings).Contains(warning => warning.Code == "unknown_permission_descriptor" && warning.Message.Contains("reports:view", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Test]
     public async Task SupportsTheQuickstartMappingObjectShapeAndEmitsEachWarningOnce()
     {
         var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), new ExternalAuthenticationOptions());
@@ -73,11 +74,11 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(context);
 
-        Assert.Equal(["reports:view", "workflows:read"], result.Grants.Select(x => x.Permission));
-        Assert.Single(result.Warnings, warning => warning.Code == "unknown_permission_descriptor" && warning.Message.Contains("reports:view", StringComparison.Ordinal));
+        await Assert.That(result.Grants.Select(x => x.Permission)).IsEquivalentTo(["reports:view", "workflows:read"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.Warnings).HasSingleItem(warning => warning.Code == "unknown_permission_descriptor" && warning.Message.Contains("reports:view", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Test]
     public async Task RepeatedDeniedGrantsEmitOneDeploymentBoundaryWarning()
     {
         var options = new ExternalAuthenticationOptions();
@@ -93,11 +94,11 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(context);
 
-        Assert.Empty(result.Grants);
-        Assert.Single(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+        await Assert.That(result.Grants).IsEmpty();
+        await Assert.That(result.Warnings).HasSingleItem(warning => warning.Code == "permission_denied_by_deployment");
     }
 
-    [Fact]
+    [Test]
     public async Task PassThroughClaimsGrantNothingWithoutAnExplicitNonEmptyBoundary()
     {
         var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), new ExternalAuthenticationOptions());
@@ -106,7 +107,7 @@ public class PermissionGrantPipelineTests
             new Dictionary<string, IReadOnlyCollection<string>> { ["permissions"] = ["reports:view", "workflows:manage"] });
 
         var emptyResult = await resolver.ResolveAsync(empty);
-        Assert.Empty(emptyResult.Grants);
+        await Assert.That(emptyResult.Grants).IsEmpty();
 
         var bounded = empty with
         {
@@ -118,10 +119,10 @@ public class PermissionGrantPipelineTests
         };
         var boundedResult = await resolver.ResolveAsync(bounded);
 
-        Assert.Equal(["reports:view"], boundedResult.Grants.Select(x => x.Permission));
+        await Assert.That(boundedResult.Grants.Select(x => x.Permission)).IsEquivalentTo(["reports:view"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task DelegationRequiresTheActorToPossessMappedPermissionsUnlessUnrestrictedAndStillHonorsDeploymentDeny()
     {
         var selection = new GrantSourceSelection("group-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "groups", mappings = new Dictionary<string, string[]> { ["operators"] = ["workflows:manage"] } }), 0);
@@ -131,17 +132,17 @@ public class PermissionGrantPipelineTests
 
         var ordinary = await authorizer.AuthorizeAsync(ordinaryActor, [selection]);
 
-        Assert.False(ordinary.IsAuthorized);
-        Assert.Equal(["workflows:manage"], ordinary.UnauthorizedPermissions);
+        await Assert.That(ordinary.IsAuthorized).IsFalse();
+        await Assert.That(ordinary.UnauthorizedPermissions).IsEquivalentTo(["workflows:manage"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         options.PermissionGrants.DeniedPermissions = ["workflows:manage"];
         var unrestricted = await authorizer.AuthorizeAsync(CreateActor(DelegateUnrestrictedPermission), [selection]);
 
-        Assert.False(unrestricted.IsAuthorized);
-        Assert.Equal(["workflows:manage"], unrestricted.UnauthorizedPermissions);
+        await Assert.That(unrestricted.IsAuthorized).IsFalse();
+        await Assert.That(unrestricted.UnauthorizedPermissions).IsEquivalentTo(["workflows:manage"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task DelegationRequiresTheActorToPossessEachExplicitPassThroughPermission()
     {
         var selection = new GrantSourceSelection("claim-pass-through", 1, JsonSerializer.SerializeToElement(new { claimType = "permissions", allowedPermissions = new[] { "reports:view" } }), 0);
@@ -150,19 +151,19 @@ public class PermissionGrantPipelineTests
         var denied = await authorizer.AuthorizeAsync(CreateActor(DelegatePermission), [selection]);
         var allowed = await authorizer.AuthorizeAsync(CreateActor(DelegatePermission, "reports:view"), [selection]);
 
-        Assert.False(denied.IsAuthorized);
-        Assert.Equal(["reports:view"], denied.UnauthorizedPermissions);
-        Assert.True(allowed.IsAuthorized);
+        await Assert.That(denied.IsAuthorized).IsFalse();
+        await Assert.That(denied.UnauthorizedPermissions).IsEquivalentTo(["reports:view"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(allowed.IsAuthorized).IsTrue();
     }
 
-    [Theory]
+    [Test]
     // A deny of a subtree reaches every permission beneath it, the case the ordinal boundary missed.
-    [InlineData("workflows/*:delete", "workflows/definitions:delete")]
+    [Arguments("workflows/*:delete", "workflows/definitions:delete")]
     // And a wildcard grant cannot outflank a deny spelled out by name.
-    [InlineData("workflows/definitions:delete", "workflows/*:delete")]
+    [Arguments("workflows/definitions:delete", "workflows/*:delete")]
     // A verb wildcard reaches in both directions too.
-    [InlineData("workflows/definitions:*", "workflows/definitions:delete")]
-    [InlineData("workflows/definitions:delete", "workflows/definitions:*")]
+    [Arguments("workflows/definitions:*", "workflows/definitions:delete")]
+    [Arguments("workflows/definitions:delete", "workflows/definitions:*")]
     public async Task DeploymentDenyAndGrantAreMatchedAsPatternsInBothDirections(string denied, string granted)
     {
         var options = new ExternalAuthenticationOptions();
@@ -171,17 +172,17 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(MappedContext(granted));
 
-        Assert.Empty(result.Grants);
-        Assert.Contains(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+        await Assert.That(result.Grants).IsEmpty();
+        await Assert.That(result.Warnings).Contains(warning => warning.Code == "permission_denied_by_deployment");
     }
 
-    [Theory]
+    [Test]
     // An allow entry must cover the whole grant, so a subtree admits the permissions beneath it...
-    [InlineData("workflows/*:delete", "workflows/definitions:delete", true)]
-    [InlineData("workflows/definitions:*", "workflows/definitions:delete", true)]
+    [Arguments("workflows/*:delete", "workflows/definitions:delete", true)]
+    [Arguments("workflows/definitions:*", "workflows/definitions:delete", true)]
     // ...but a grant broader than anything allowed is refused rather than admitted for the overlap.
-    [InlineData("workflows/definitions:delete", "workflows/*:delete", false)]
-    [InlineData("workflows/definitions:delete", "workflows/definitions:*", false)]
+    [Arguments("workflows/definitions:delete", "workflows/*:delete", false)]
+    [Arguments("workflows/definitions:delete", "workflows/definitions:*", false)]
     public async Task DeploymentAllowListCoversGrantsBeneathItButNotGrantsBeyondIt(string allowed, string granted, bool isAdmitted)
     {
         var options = new ExternalAuthenticationOptions();
@@ -190,16 +191,16 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(MappedContext(granted));
 
-        Assert.Equal(isAdmitted ? [granted] : Array.Empty<string>(), result.Grants.Select(x => x.Permission));
+        await Assert.That(result.Grants.Select(x => x.Permission)).IsEquivalentTo(isAdmitted ? [granted] : Array.Empty<string>(), TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory]
+    [Test]
     // An allow list that parses to nothing must not read as "no allow list", which means unrestricted.
-    [InlineData(new[] { "not a permission" }, new string[0])]
+    [Arguments(new[] { "not a permission" }, new string[0])]
     // One bad entry among good ones is still a boundary the deployment cannot have meant.
-    [InlineData(new[] { "workflows/*:delete", "external-authentication:connections:read" }, new string[0])]
+    [Arguments(new[] { "workflows/*:delete", "external-authentication:connections:read" }, new string[0])]
     // A deny entry that does not parse would otherwise stop denying what it names, silently.
-    [InlineData(new string[0], new[] { "external-authentication:connections:read" })]
+    [Arguments(new string[0], new[] { "external-authentication:connections:read" })]
     public async Task AGrantBoundaryThatDoesNotParseAdmitsNothing(string[] allowed, string[] denied)
     {
         var options = new ExternalAuthenticationOptions();
@@ -209,11 +210,11 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(MappedContext("workflows/definitions:delete"));
 
-        Assert.Empty(result.Grants);
-        Assert.Contains(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+        await Assert.That(result.Grants).IsEmpty();
+        await Assert.That(result.Warnings).Contains(warning => warning.Code == "permission_denied_by_deployment");
     }
 
-    [Fact]
+    [Test]
     public async Task RolePermissionsAreMatchedAgainstTheDenyBoundaryAsPatterns()
     {
         var options = new ExternalAuthenticationOptions();
@@ -227,27 +228,27 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(context);
 
-        Assert.Equal(["workflows/definitions:view"], result.Grants.Select(x => x.Permission));
-        Assert.Contains(result.Warnings, warning => warning.Code == "permission_denied_by_deployment");
+        await Assert.That(result.Grants.Select(x => x.Permission)).IsEquivalentTo(["workflows/definitions:view"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.Warnings).Contains(warning => warning.Code == "permission_denied_by_deployment");
     }
 
-    [Fact]
+    [Test]
     public async Task GrantsThatAreNotWellFormedPermissionsAreDroppedRatherThanCarriedIntoAToken()
     {
         var resolver = CreateResolver(new StaticUserProvider(null), new StaticRoleProvider(), new ExternalAuthenticationOptions());
 
         var result = await resolver.ResolveAsync(MappedContext("external-authentication:connections:read"));
 
-        Assert.Empty(result.Grants);
-        Assert.Contains(result.Warnings, warning => warning.Code == "malformed_permission");
+        await Assert.That(result.Grants).IsEmpty();
+        await Assert.That(result.Warnings).Contains(warning => warning.Code == "malformed_permission");
     }
 
-    [Theory]
+    [Test]
     // The actor must cover what they delegate, so a subtree grant delegates the permissions beneath it...
-    [InlineData("workflows/*:delete", "workflows/definitions:delete", true)]
+    [Arguments("workflows/*:delete", "workflows/definitions:delete", true)]
     // ...and holding one leaf does not let an actor delegate the whole subtree.
-    [InlineData("workflows/definitions:delete", "workflows/*:delete", false)]
-    [InlineData(PermissionNames.All, "workflows/*:delete", true)]
+    [Arguments("workflows/definitions:delete", "workflows/*:delete", false)]
+    [Arguments(PermissionNames.All, "workflows/*:delete", true)]
     public async Task DelegationMatchesTheActorsOwnGrantsAsPatterns(string held, string delegated, bool isAuthorized)
     {
         var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
@@ -255,10 +256,10 @@ public class PermissionGrantPipelineTests
 
         var result = await authorizer.AuthorizeAsync(CreateActor(DelegatePermission, held), [selection]);
 
-        Assert.Equal(isAuthorized, result.IsAuthorized);
+        await Assert.That(result.IsAuthorized).IsEqualTo(isAuthorized);
     }
 
-    [Fact]
+    [Test]
     public async Task DelegationPermissionItselfIsHonouredThroughAWildcardGrant()
     {
         var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
@@ -267,8 +268,8 @@ public class PermissionGrantPipelineTests
         var subtree = await authorizer.AuthorizeAsync(CreateActor($"{ExternalAuthenticationResourcePermissions.PermissionGrants}:*", "reports:view"), [selection]);
         var without = await authorizer.AuthorizeAsync(CreateActor("reports:view"), [selection]);
 
-        Assert.True(subtree.IsAuthorized);
-        Assert.False(without.IsAuthorized);
+        await Assert.That(subtree.IsAuthorized).IsTrue();
+        await Assert.That(without.IsAuthorized).IsFalse();
     }
 
     private const string DelegatePermission = $"{ExternalAuthenticationResourcePermissions.PermissionGrants}:{ExternalAuthenticationVerbs.Delegate}";
@@ -278,16 +279,16 @@ public class PermissionGrantPipelineTests
         [new GrantSourceSelection("claim-mapping", 1, JsonSerializer.SerializeToElement(new { claimType = "department", mappings = new Dictionary<string, string[]> { ["engineering"] = [permission] } }), 0)],
         new Dictionary<string, IReadOnlyCollection<string>> { ["department"] = ["engineering"] });
 
-    [Theory]
+    [Test]
     // A grant the catalog advertises, resource and verb both matching, is not warned about.
-    [InlineData("reports:view", false)]
+    [Arguments("reports:view", false)]
     // A verb the resource does not declare is a gap worth surfacing.
-    [InlineData("reports:delete", true)]
+    [Arguments("reports:delete", true)]
     // So is a resource nothing advertises.
-    [InlineData("nothing/here:view", true)]
+    [Arguments("nothing/here:view", true)]
     // A wildcard names a pattern rather than one resource, so there is no descriptor to look it up in.
-    [InlineData("reports:*", false)]
-    [InlineData("*", false)]
+    [Arguments("reports:*", false)]
+    [Arguments("*", false)]
     public async Task UnknownDescriptorWarningTracksTheCoreCatalog(string permission, bool expectsWarning)
     {
         var resolver = new DefaultPermissionGrantResolver(
@@ -297,7 +298,7 @@ public class PermissionGrantPipelineTests
 
         var result = await resolver.ResolveAsync(MappedContext(permission));
 
-        Assert.Equal(expectsWarning, result.Warnings.Any(x => x.Code == "unknown_permission_descriptor"));
+        await Assert.That(result.Warnings.Any(x => x.Code == "unknown_permission_descriptor")).IsEqualTo(expectsWarning);
     }
 
     private static DefaultPermissionGrantResolver CreateResolver(IUserProvider userProvider, IRoleProvider roleProvider, ExternalAuthenticationOptions options) => new(

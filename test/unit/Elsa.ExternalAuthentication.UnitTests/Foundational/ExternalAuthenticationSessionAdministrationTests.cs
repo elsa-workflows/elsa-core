@@ -1,11 +1,12 @@
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Stores.InMemory;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationSessionAdministrationTests
 {
-    [Fact]
+    [Test]
     public async Task ListsOnlyRequestedTenantAndSafeStatus()
     {
         var now = DateTimeOffset.UtcNow;
@@ -23,8 +24,8 @@ public class ExternalAuthenticationSessionAdministrationTests
         var revoked = await store.FindAsync(new ExternalAuthenticationSessionFilter { TenantId = "tenant-a", Status = "revoked" });
         var activeSessions = await store.FindAsync(new ExternalAuthenticationSessionFilter { TenantId = "tenant-a", Status = "active" });
 
-        Assert.Single(revoked);
-        Assert.Empty(activeSessions);
-        Assert.Equal("session-a", revoked.Single().Id);
+        await Assert.That(revoked).HasSingleItem();
+        await Assert.That(activeSessions).IsEmpty();
+        await Assert.That(revoked.Single().Id).IsEqualTo("session-a");
     }
 }

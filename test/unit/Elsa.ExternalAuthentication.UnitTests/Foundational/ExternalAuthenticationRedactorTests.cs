@@ -1,11 +1,12 @@
 using Elsa.ExternalAuthentication.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationRedactorTests
 {
-    [Fact]
-    public void RedactsSecretsTokensAndProviderResponseBodies()
+    [Test]
+    public async Task RedactsSecretsTokensAndProviderResponseBodies()
     {
         const string secret = "client-secret-value";
         const string token = "access-token-value";
@@ -18,14 +19,15 @@ public class ExternalAuthenticationRedactorTests
             ExternalAuthenticationRedactor.RedactProviderResponseBody(providerResponse)
         };
 
-        Assert.All(redactedValues, value => Assert.Equal(ExternalAuthenticationRedactor.RedactedValue, value));
-        Assert.DoesNotContain(secret, string.Concat(redactedValues));
-        Assert.DoesNotContain(token, string.Concat(redactedValues));
-        Assert.DoesNotContain(providerResponse, string.Concat(redactedValues));
+        foreach (var value in redactedValues)
+            await Assert.That(value).IsEqualTo(ExternalAuthenticationRedactor.RedactedValue);
+        await Assert.That(string.Concat(redactedValues)).DoesNotContain(secret);
+        await Assert.That(string.Concat(redactedValues)).DoesNotContain(token);
+        await Assert.That(string.Concat(redactedValues)).DoesNotContain(providerResponse);
     }
 
-    [Fact]
-    public void RemovesAllRawClaims()
+    [Test]
+    public async Task RemovesAllRawClaims()
     {
         IReadOnlyDictionary<string, IReadOnlyCollection<string>> claims = new Dictionary<string, IReadOnlyCollection<string>>
         {
@@ -35,11 +37,11 @@ public class ExternalAuthenticationRedactorTests
 
         var result = ExternalAuthenticationRedactor.RedactRawClaims(claims);
 
-        Assert.Empty(result);
+        await Assert.That(result).IsEmpty();
     }
 
-    [Fact]
-    public void RedactsConfiguredProjectedClaimsWithoutMutatingTheInput()
+    [Test]
+    public async Task RedactsConfiguredProjectedClaimsWithoutMutatingTheInput()
     {
         IReadOnlyDictionary<string, IReadOnlyCollection<string>> claims = new Dictionary<string, IReadOnlyCollection<string>>
         {
@@ -49,8 +51,14 @@ public class ExternalAuthenticationRedactorTests
 
         var result = ExternalAuthenticationRedactor.RedactProjectedClaims(claims, new HashSet<string>(StringComparer.Ordinal) { "email" });
 
-        Assert.Equal([ExternalAuthenticationRedactor.RedactedValue], result["email"]);
-        Assert.Equal(["operations"], result["department"]);
-        Assert.Equal(["operator@example.test"], claims["email"]);
+        await Assert.That(result["email"]).IsEquivalentTo(
+            [ExternalAuthenticationRedactor.RedactedValue],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result["department"]).IsEquivalentTo(
+            ["operations"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(claims["email"]).IsEquivalentTo(
+            ["operator@example.test"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 }

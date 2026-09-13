@@ -2,12 +2,13 @@ using Elsa.Common;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class IdentityProviderConnectionValidityAssessorTests
 {
-    [Fact]
+    [Test]
     public async Task MissingRequiredSecretMakesAnEnabledConnectionInvalid()
     {
         var connection = ExternalAuthenticationTestData.CreateConnection();
@@ -28,10 +29,10 @@ public class IdentityProviderConnectionValidityAssessorTests
 
         var result = await assessor.AssessAsync(effective);
 
-        Assert.Equal(ConnectionValidity.Invalid, result.Validity);
+        await Assert.That(result.Validity).IsEqualTo(ConnectionValidity.Invalid);
     }
 
-    [Fact]
+    [Test]
     public async Task SecretResolverFailureMakesOnlyThatConnectionInvalid()
     {
         var connection = ExternalAuthenticationTestData.CreateConnection();
@@ -52,7 +53,7 @@ public class IdentityProviderConnectionValidityAssessorTests
 
         var result = await assessor.AssessAsync(effective);
 
-        Assert.Equal(ConnectionValidity.Invalid, result.Validity);
+        await Assert.That(result.Validity).IsEqualTo(ConnectionValidity.Invalid);
     }
 
     private sealed class TestAdapterRegistry(IExternalAuthenticationAdapter adapter) : IExternalAuthenticationAdapterRegistry

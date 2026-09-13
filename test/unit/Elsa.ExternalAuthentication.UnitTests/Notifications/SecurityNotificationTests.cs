@@ -1,12 +1,13 @@
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Notifications;
 
 public class SecurityNotificationTests
 {
-    [Fact]
-    public void EventFamiliesAreImmutableAndCarryOnlyTheSharedSafeContext()
+    [Test]
+    public async Task EventFamiliesAreImmutableAndCarryOnlyTheSharedSafeContext()
     {
         var notificationTypes = new[]
         {
@@ -17,17 +18,17 @@ public class SecurityNotificationTests
             typeof(ExternalSignInCompleted), typeof(ExternalAuthenticationOutcomeRecorded)
         };
 
-        Assert.All(notificationTypes, type =>
+        foreach (var type in notificationTypes)
         {
-            Assert.Contains(type.GetProperties(), property => property.Name == "Context" && property.PropertyType == typeof(SecurityEventContext));
-            Assert.DoesNotContain(type.GetProperties(), property => property.Name.Contains("Token", StringComparison.OrdinalIgnoreCase) || property.Name.Contains("Secret", StringComparison.OrdinalIgnoreCase) || property.Name.Contains("Subject", StringComparison.OrdinalIgnoreCase));
-        });
+            await Assert.That(type.GetProperties()).Contains(property => property.Name == "Context" && property.PropertyType == typeof(SecurityEventContext));
+            await Assert.That(type.GetProperties()).DoesNotContain(property => property.Name.Contains("Token", StringComparison.OrdinalIgnoreCase) || property.Name.Contains("Secret", StringComparison.OrdinalIgnoreCase) || property.Name.Contains("Subject", StringComparison.OrdinalIgnoreCase));
+        }
     }
 
-    [Fact]
-    public void SensitiveStringNeverFormatsItsValueForNotificationsOrLogs()
+    [Test]
+    public async Task SensitiveStringNeverFormatsItsValueForNotificationsOrLogs()
     {
         using var value = new SensitiveString("a-secret-value");
-        Assert.Equal("[REDACTED]", value.ToString());
+        await Assert.That(value.ToString()).IsEqualTo("[REDACTED]");
     }
 }

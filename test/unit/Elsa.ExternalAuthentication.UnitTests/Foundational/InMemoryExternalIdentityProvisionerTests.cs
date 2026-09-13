@@ -10,12 +10,13 @@ using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using Elsa.Workflows;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class InMemoryExternalIdentityProvisionerTests
 {
-    [Fact]
+    [Test]
     public async Task RemovesLinkWhenUserDeletionWinsThePublicationRace()
     {
         var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -37,13 +38,13 @@ public class InMemoryExternalIdentityProvisionerTests
             null,
             "user-a");
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
 
-        Assert.Null(await users.FindAsync(new UserFilter { Id = "user-a" }));
-        Assert.Empty((await provisioner.FindAsync(new ExternalIdentityLinkFilter { TenantId = "tenant-a" })).Items);
+        await Assert.That(await users.FindAsync(new UserFilter { Id = "user-a" })).IsNull();
+        await Assert.That((await provisioner.FindAsync(new ExternalIdentityLinkFilter { TenantId = "tenant-a" })).Items).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task RemovesRestoredLinkWhenBothReplacementUsersAreDeleted()
     {
         var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -58,7 +59,7 @@ public class InMemoryExternalIdentityProvisionerTests
         var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(users), users, 2, 3);
         var racingProvisioner = CreateProvisioner(users, racingProvider, hasher, state);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 oldLink.Id,
@@ -66,9 +67,9 @@ public class InMemoryExternalIdentityProvisionerTests
                 "contoso",
                 new ExternalIdentity("https://issuer.example", "subject-b", new Dictionary<string, IReadOnlyCollection<string>>()))).AsTask());
 
-        Assert.Null(await users.FindAsync(new UserFilter { Id = "user-a" }));
-        Assert.Null(await users.FindAsync(new UserFilter { Id = "user-b" }));
-        Assert.Empty((await racingProvisioner.FindAsync(new ExternalIdentityLinkFilter { TenantId = "tenant-a" })).Items);
+        await Assert.That(await users.FindAsync(new UserFilter { Id = "user-a" })).IsNull();
+        await Assert.That(await users.FindAsync(new UserFilter { Id = "user-b" })).IsNull();
+        await Assert.That((await racingProvisioner.FindAsync(new ExternalIdentityLinkFilter { TenantId = "tenant-a" })).Items).IsEmpty();
     }
 
     private static InMemoryExternalIdentityProvisioner CreateProvisioner(

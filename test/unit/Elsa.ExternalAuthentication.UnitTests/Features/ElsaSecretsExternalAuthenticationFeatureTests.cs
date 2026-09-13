@@ -2,23 +2,24 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Secrets.Services;
 using Microsoft.Extensions.DependencyInjection;
 using ElsaSecretsExternalAuthenticationShellFeature = Elsa.ExternalAuthentication.Secrets.ShellFeatures.ElsaSecretsExternalAuthenticationFeature;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Features;
 
 public class ElsaSecretsExternalAuthenticationFeatureTests
 {
-    [Fact]
-    public void ShellFeatureRegistersTheManagedSecretBridge()
+    [Test]
+    public async Task ShellFeatureRegistersTheManagedSecretBridge()
     {
         var services = new ServiceCollection();
         var feature = new ElsaSecretsExternalAuthenticationShellFeature();
 
         feature.ConfigureServices(services);
 
-        Assert.Contains(services, descriptor =>
+        await Assert.That(services).Contains(descriptor =>
             descriptor.ServiceType == typeof(ISecretBindingResolver) &&
             descriptor.ImplementationType == typeof(ElsaSecretBindingResolver));
-        Assert.Contains(services, descriptor =>
+        await Assert.That(services).Contains(descriptor =>
             descriptor.ServiceType == typeof(IManagedSecretBindingWriter) &&
             descriptor.ImplementationType == typeof(ElsaSecretBindingResolver));
     }

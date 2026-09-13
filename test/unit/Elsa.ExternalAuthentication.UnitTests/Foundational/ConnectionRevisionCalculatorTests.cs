@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
@@ -8,8 +9,8 @@ public class ConnectionRevisionCalculatorTests
 {
     private readonly ConnectionRevisionCalculator _calculator = new();
 
-    [Fact]
-    public void MaterialRevisionIsCanonicalAndIgnoresPresentationOnlyChanges()
+    [Test]
+    public async Task MaterialRevisionIsCanonicalAndIgnoresPresentationOnlyChanges()
     {
         var first = ExternalAuthenticationTestData.CreateConnection();
         var second = ExternalAuthenticationTestData.CreateConnection();
@@ -20,29 +21,29 @@ public class ConnectionRevisionCalculatorTests
         second.DisplayOrder = 99;
         second.IsPreferred = true;
 
-        Assert.Equal(_calculator.CalculateMaterialRevision(first), _calculator.CalculateMaterialRevision(second));
+        await Assert.That(_calculator.CalculateMaterialRevision(second)).IsEqualTo(_calculator.CalculateMaterialRevision(first));
     }
 
-    [Fact]
-    public void MaterialRevisionChangesWhenAuthenticationMaterialChanges()
+    [Test]
+    public async Task MaterialRevisionChangesWhenAuthenticationMaterialChanges()
     {
         var connection = ExternalAuthenticationTestData.CreateConnection();
         var revision = _calculator.CalculateMaterialRevision(connection);
 
         connection.SecretBindings["clientSecret"] = new SecretBinding("test", "secret-b");
 
-        Assert.NotEqual(revision, _calculator.CalculateMaterialRevision(connection));
+        await Assert.That(_calculator.CalculateMaterialRevision(connection)).IsNotEqualTo(revision);
     }
 
-    [Fact]
-    public void ConfigurationIdsAreStableForNormalizedKeysAndDistinctPerScope()
+    [Test]
+    public async Task ConfigurationIdsAreStableForNormalizedKeysAndDistinctPerScope()
     {
         var fromNormalizedKey = ConnectionRevisionCalculator.CalculateConfigurationConnectionId(ConnectionScope.Host, "oidc");
         var fromPaddedKey = ConnectionRevisionCalculator.CalculateConfigurationConnectionId(ConnectionScope.Host, " OIDC ");
         var fromTenantScope = ConnectionRevisionCalculator.CalculateConfigurationConnectionId(new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), "oidc");
 
-        Assert.Equal(fromNormalizedKey, fromPaddedKey);
-        Assert.NotEqual(fromNormalizedKey, fromTenantScope);
-        Assert.StartsWith("configuration-", fromNormalizedKey, StringComparison.Ordinal);
+        await Assert.That(fromPaddedKey).IsEqualTo(fromNormalizedKey);
+        await Assert.That(fromTenantScope).IsNotEqualTo(fromNormalizedKey);
+        await Assert.That(fromNormalizedKey).StartsWith("configuration-").WithComparison(StringComparison.Ordinal);
     }
 }

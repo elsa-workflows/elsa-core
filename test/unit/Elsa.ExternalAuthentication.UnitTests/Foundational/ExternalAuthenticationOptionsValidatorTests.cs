@@ -2,6 +2,7 @@ using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Validation;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
@@ -9,12 +10,12 @@ public class ExternalAuthenticationOptionsValidatorTests
 {
     private readonly CapturingLogger<ExternalAuthenticationOptionsValidator> _logger = new();
 
-    [Theory]
+    [Test]
     // The legacy spelling carries two colons, so it parses as nothing and would silently stop bounding anything.
-    [InlineData("external-authentication:connections:read")]
-    [InlineData("not a permission")]
-    [InlineData("workflows/definitions:")]
-    public void RejectsAGrantBoundaryEntryThatIsNotAWellFormedPermission(string permission)
+    [Arguments("external-authentication:connections:read")]
+    [Arguments("not a permission")]
+    [Arguments("workflows/definitions:")]
+    public async Task RejectsAGrantBoundaryEntryThatIsNotAWellFormedPermission(string permission)
     {
         var allowed = new ExternalAuthenticationOptions();
         allowed.PermissionGrants.AllowedPermissions = [permission];
@@ -24,20 +25,20 @@ public class ExternalAuthenticationOptionsValidatorTests
         var allowedResult = CreateValidator().Validate(null, allowed);
         var deniedResult = CreateValidator().Validate(null, denied);
 
-        Assert.False(allowedResult.Succeeded);
-        Assert.Contains(allowedResult.Failures!, x => x.Contains("AllowedPermissions") && x.Contains("well-formed permission"));
-        Assert.False(deniedResult.Succeeded);
-        Assert.Contains(deniedResult.Failures!, x => x.Contains("DeniedPermissions") && x.Contains("well-formed permission"));
+        await Assert.That(allowedResult.Succeeded).IsFalse();
+        await Assert.That(allowedResult.Failures!).Contains(x => x.Contains("AllowedPermissions") && x.Contains("well-formed permission"));
+        await Assert.That(deniedResult.Succeeded).IsFalse();
+        await Assert.That(deniedResult.Failures!).Contains(x => x.Contains("DeniedPermissions") && x.Contains("well-formed permission"));
     }
 
-    [Theory]
+    [Test]
     // These parse, so they slipped past well-formedness — yet the matcher never satisfies them. In a deny
     // list that is a silent un-denying, exactly what boundary validation exists to prevent.
-    [InlineData("workflows*:delete")]
-    [InlineData("work*/foo:view")]
-    [InlineData("work*/definitions/*:view")]
-    [InlineData("workflows:del*")]
-    public void RejectsAGrantBoundaryEntryWithAWildcardTheMatcherNeverSatisfies(string permission)
+    [Arguments("workflows*:delete")]
+    [Arguments("work*/foo:view")]
+    [Arguments("work*/definitions/*:view")]
+    [Arguments("workflows:del*")]
+    public async Task RejectsAGrantBoundaryEntryWithAWildcardTheMatcherNeverSatisfies(string permission)
     {
         var allowed = new ExternalAuthenticationOptions();
         allowed.PermissionGrants.AllowedPermissions = [permission];
@@ -47,14 +48,14 @@ public class ExternalAuthenticationOptionsValidatorTests
         var allowedResult = CreateValidator().Validate(null, allowed);
         var deniedResult = CreateValidator().Validate(null, denied);
 
-        Assert.False(allowedResult.Succeeded);
-        Assert.Contains(allowedResult.Failures!, x => x.Contains("AllowedPermissions") && x.Contains("would match nothing"));
-        Assert.False(deniedResult.Succeeded);
-        Assert.Contains(deniedResult.Failures!, x => x.Contains("DeniedPermissions") && x.Contains("would match nothing"));
+        await Assert.That(allowedResult.Succeeded).IsFalse();
+        await Assert.That(allowedResult.Failures!).Contains(x => x.Contains("AllowedPermissions") && x.Contains("would match nothing"));
+        await Assert.That(deniedResult.Succeeded).IsFalse();
+        await Assert.That(deniedResult.Failures!).Contains(x => x.Contains("DeniedPermissions") && x.Contains("would match nothing"));
     }
 
-    [Fact]
-    public void AcceptsAGrantBoundaryOfWildcardPatterns()
+    [Test]
+    public async Task AcceptsAGrantBoundaryOfWildcardPatterns()
     {
         var options = new ExternalAuthenticationOptions();
         options.PermissionGrants.AllowedPermissions = ["workflows/*:delete", "*"];
@@ -62,7 +63,7 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.DoesNotContain(result.Failures ?? [], x => x.Contains("well-formed permission"));
+        await Assert.That(result.Failures ?? []).DoesNotContain(x => x.Contains("well-formed permission"));
     }
 
     /// <remarks>
@@ -71,42 +72,42 @@ public class ExternalAuthenticationOptionsValidatorTests
     /// silently loses it while local login keeps working. The warning names that at startup rather than leaving
     /// it to be diagnosed from an issued token.
     /// </remarks>
-    [Fact]
-    public void WarnsThatANonEmptyDenyListRefusesWildcardGrantsWhole()
+    [Test]
+    public async Task WarnsThatANonEmptyDenyListRefusesWildcardGrantsWhole()
     {
         var options = new ExternalAuthenticationOptions();
         options.PermissionGrants.DeniedPermissions = ["workflows/*:delete"];
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.True(result.Succeeded);
-        var warning = Assert.Single(_logger.Entries, x => x.Level == LogLevel.Warning);
-        Assert.Contains("DeniedPermissions", warning.Message);
-        Assert.Contains("refused entirely", warning.Message);
+        await Assert.That(result.Succeeded).IsTrue();
+        var warning = await Assert.That(_logger.Entries).HasSingleItem(x => x.Level == LogLevel.Warning);
+        await Assert.That(warning.Message).Contains("DeniedPermissions");
+        await Assert.That(warning.Message).Contains("refused entirely");
     }
 
-    [Fact]
-    public void DoesNotWarnWhenNoPermissionsAreDenied()
+    [Test]
+    public async Task DoesNotWarnWhenNoPermissionsAreDenied()
     {
         var options = new ExternalAuthenticationOptions();
         options.PermissionGrants.AllowedPermissions = ["workflows/*:delete"];
 
         CreateValidator().Validate(null, options);
 
-        Assert.DoesNotContain(_logger.Entries, x => x.Level == LogLevel.Warning);
+        await Assert.That(_logger.Entries).DoesNotContain(x => x.Level == LogLevel.Warning);
     }
 
-    [Fact]
-    public void RejectsDuplicateInstalledAdapterTypes()
+    [Test]
+    public async Task RejectsDuplicateInstalledAdapterTypes()
     {
         var result = CreateValidator([new StubAdapter("oidc"), new StubAdapter("oidc")]).Validate(null, new ExternalAuthenticationOptions());
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("registered more than once"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(x => x.Contains("registered more than once"));
     }
 
-    [Fact]
-    public void RejectsPublicClientWithWildcardOriginAndSecret()
+    [Test]
+    public async Task RejectsPublicClientWithWildcardOriginAndSecret()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -127,13 +128,13 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("invalid allowed origin"));
-        Assert.Contains(result.Failures!, x => x.Contains("must not define a client secret"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(x => x.Contains("invalid allowed origin"));
+        await Assert.That(result.Failures!).Contains(x => x.Contains("must not define a client secret"));
     }
 
-    [Fact]
-    public void RejectsNonHostConfigurationConnection()
+    [Test]
+    public async Task RejectsNonHostConfigurationConnection()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -145,12 +146,12 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("must use the host scope"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(x => x.Contains("must use the host scope"));
     }
 
-    [Fact]
-    public void RejectsMultipleConfiguredPreferredConnections()
+    [Test]
+    public async Task RejectsMultipleConfiguredPreferredConnections()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -163,12 +164,12 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("more than one preferred sign-in method"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(x => x.Contains("more than one preferred sign-in method"));
     }
 
-    [Fact]
-    public void RejectsNonPositiveRateLimitRules()
+    [Test]
+    public async Task RejectsNonPositiveRateLimitRules()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -180,14 +181,14 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, x => x.Contains("Discovery") && x.Contains("positive permit limit and window"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(x => x.Contains("Discovery") && x.Contains("positive permit limit and window"));
     }
 
-    [Theory]
-    [InlineData("http://elsa.example")]
-    [InlineData("https://elsa.example/?unexpected=true")]
-    public void RejectsUnsafeExternalCallbackBaseUri(string callbackBaseUri)
+    [Test]
+    [Arguments("http://elsa.example")]
+    [Arguments("https://elsa.example/?unexpected=true")]
+    public async Task RejectsUnsafeExternalCallbackBaseUri(string callbackBaseUri)
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -196,12 +197,12 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("ExternalCallbackBaseUri"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("ExternalCallbackBaseUri"));
     }
 
-    [Fact]
-    public void AllowsHttpLoopbackExternalCallbackBaseUriOnlyWhenDevelopmentModeIsEnabled()
+    [Test]
+    public async Task AllowsHttpLoopbackExternalCallbackBaseUriOnlyWhenDevelopmentModeIsEnabled()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -214,11 +215,11 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.True(result.Succeeded);
+        await Assert.That(result.Succeeded).IsTrue();
     }
 
-    [Fact]
-    public void AcceptsExactPublicClientAndInstalledConfigurationSelections()
+    [Test]
+    public async Task AcceptsExactPublicClientAndInstalledConfigurationSelections()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -241,7 +242,7 @@ public class ExternalAuthenticationOptionsValidatorTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.True(result.Succeeded);
+        await Assert.That(result.Succeeded).IsTrue();
     }
 
     private ExternalAuthenticationOptionsValidator CreateValidator(IEnumerable<StubAdapter>? adapters = null)

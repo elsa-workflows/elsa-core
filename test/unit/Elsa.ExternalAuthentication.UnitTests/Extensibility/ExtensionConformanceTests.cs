@@ -4,13 +4,14 @@ using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Policies;
 using Elsa.ExternalAuthentication.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Extensibility;
 
 public class ExtensionConformanceTests
 {
-    [Fact]
-    public void AdapterRegistryIsDeterministicDeploymentBoundedAndRejectsDuplicateIds()
+    [Test]
+    public async Task AdapterRegistryIsDeterministicDeploymentBoundedAndRejectsDuplicateIds()
     {
         var validator = new ExtensionDescriptorValidator();
         var options = OptionsFor(allowedAdapters: ["second"]);
@@ -19,19 +20,19 @@ public class ExtensionConformanceTests
 
         var registry = new DefaultExternalAuthenticationAdapterRegistry([second, first], validator, Microsoft.Extensions.Options.Options.Create(options));
 
-        Assert.Equal(["second"], registry.ListDescriptors().Select(x => x.Type));
-        Assert.False(registry.TryGet("first", out _));
-        Assert.True(registry.TryGet("second", out var selected));
-        Assert.Same(second, selected);
-        Assert.Throws<InvalidOperationException>(() =>
+        await Assert.That(registry.ListDescriptors().Select(x => x.Type)).IsEquivalentTo(["second"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(registry.TryGet("first", out _)).IsFalse();
+        await Assert.That(registry.TryGet("second", out var selected)).IsTrue();
+        await Assert.That(selected).IsSameReferenceAs(second);
+        Assert.ThrowsExactly<InvalidOperationException>(() =>
             new DefaultExternalAuthenticationAdapterRegistry(
                 [first, new ConformanceAdapter("first")],
                 validator,
                 Microsoft.Extensions.Options.Options.Create(OptionsFor())));
     }
 
-    [Fact]
-    public void PolicyAndGrantSourceRegistriesExposeOnlyDeploymentAllowedExtensions()
+    [Test]
+    public async Task PolicyAndGrantSourceRegistriesExposeOnlyDeploymentAllowedExtensions()
     {
         var validator = new ExtensionDescriptorValidator();
         var options = OptionsFor();
@@ -48,14 +49,14 @@ public class ExtensionConformanceTests
             validator,
             Microsoft.Extensions.Options.Options.Create(options));
 
-        Assert.Equal(["custom-policy"], policies.ListDescriptors().Select(x => x.Type));
-        Assert.Equal(["custom-grants"], sources.ListDescriptors().Select(x => x.Type));
-        Assert.False(policies.TryGet("hidden-policy", out _));
-        Assert.False(sources.TryGet("hidden-grants", out _));
+        await Assert.That(policies.ListDescriptors().Select(x => x.Type)).IsEquivalentTo(["custom-policy"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(sources.ListDescriptors().Select(x => x.Type)).IsEquivalentTo(["custom-grants"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(policies.TryGet("hidden-policy", out _)).IsFalse();
+        await Assert.That(sources.TryGet("hidden-grants", out _)).IsFalse();
     }
 
-    [Fact]
-    public void DescriptorValidatorRejectsMismatchedUnsafeAndIncompleteMetadata()
+    [Test]
+    public async Task DescriptorValidatorRejectsMismatchedUnsafeAndIncompleteMetadata()
     {
         var invalidField = Field("secret", valueType: "string", secret: true, redacted: false) with
         {
@@ -72,33 +73,33 @@ public class ExtensionConformanceTests
                 new ExternalAuthenticationAdapterCapabilities(true, true, true),
                 new CustomEditorContract("", 0)));
 
-        var exception = Assert.Throws<InvalidOperationException>(() => new ExtensionDescriptorValidator().Validate(adapter));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => new ExtensionDescriptorValidator().Validate(adapter));
 
-        Assert.Contains("does not match", exception.Message);
-        Assert.Contains("positive settings version", exception.Message);
-        Assert.Contains("Secret-binding field", exception.Message);
-        Assert.Contains("visibility condition", exception.Message);
-        Assert.Contains("custom-editor", exception.Message);
+        await Assert.That(exception.Message).Contains("does not match");
+        await Assert.That(exception.Message).Contains("positive settings version");
+        await Assert.That(exception.Message).Contains("Secret-binding field");
+        await Assert.That(exception.Message).Contains("visibility condition");
+        await Assert.That(exception.Message).Contains("custom-editor");
     }
 
-    [Fact]
-    public void DescriptorValidatorAcceptsLowerCamelCaseSettingFieldNames()
+    [Test]
+    public async Task DescriptorValidatorAcceptsLowerCamelCaseSettingFieldNames()
     {
         var descriptor = new ExtensionDescriptorValidator().Validate(new CreateUserUnlinkedIdentityPolicy());
 
-        Assert.Contains(descriptor.Fields, field => field.Name == "defaultRoleIds");
+        await Assert.That(descriptor.Fields).Contains(field => field.Name == "defaultRoleIds");
     }
 
-    [Fact]
-    public void DescriptorValidatorKeepsExtensionTypesLowercaseAndStable()
+    [Test]
+    public async Task DescriptorValidatorKeepsExtensionTypesLowercaseAndStable()
     {
-        var exception = Assert.Throws<InvalidOperationException>(() =>
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() =>
             new ExtensionDescriptorValidator().Validate(new ConformanceAdapter("InvalidType")));
 
-        Assert.Contains("stable identifier", exception.Message);
+        await Assert.That(exception.Message).Contains("stable identifier");
     }
 
-    [Fact]
+    [Test]
     public async Task SettingsMigrationRunsAdapterOwnedForwardStepsAndRejectsUnsupportedVersions()
     {
         var adapter = new ConformanceAdapter("conformance", settingsVersion: 3);
@@ -119,14 +120,14 @@ public class ExtensionConformanceTests
             JsonSerializer.SerializeToElement(new { value = "opaque" }));
         var current = await service.MigrateAsync("conformance", 3, migrated.Settings);
 
-        Assert.True(migrated.WasMigrated);
-        Assert.Equal(3, migrated.SettingsVersion);
-        Assert.Equal("opaque", migrated.Settings.GetProperty("value").GetString());
-        Assert.Equal(3, migrated.Settings.GetProperty("migratedTo").GetInt32());
-        Assert.False(current.WasMigrated);
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.That(migrated.WasMigrated).IsTrue();
+        await Assert.That(migrated.SettingsVersion).IsEqualTo(3);
+        await Assert.That(migrated.Settings.GetProperty("value").GetString()).IsEqualTo("opaque");
+        await Assert.That(migrated.Settings.GetProperty("migratedTo").GetInt32()).IsEqualTo(3);
+        await Assert.That(current.WasMigrated).IsFalse();
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             service.MigrateAsync("unsupported", 1, JsonSerializer.SerializeToElement(new { })).AsTask());
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             service.MigrateAsync("conformance", 4, JsonSerializer.SerializeToElement(new { })).AsTask());
     }
 

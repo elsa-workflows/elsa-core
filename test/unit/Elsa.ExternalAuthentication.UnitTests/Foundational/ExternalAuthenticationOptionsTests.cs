@@ -5,13 +5,14 @@ using Elsa.ExternalAuthentication.Validation;
 using Microsoft.Extensions.Logging.Abstractions;
 using Elsa.Extensions;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationOptionsTests
 {
-    [Fact]
-    public void BindsAuthenticationClientsFromConfiguration()
+    [Test]
+    public async Task BindsAuthenticationClientsFromConfiguration()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -32,19 +33,19 @@ public class ExternalAuthenticationOptionsTests
 
         configuration.GetSection("ExternalAuthentication").Bind(options);
 
-        var client = Assert.Single(options.Clients);
-        Assert.Equal("elsa-studio-server", client.ClientId);
-        Assert.Equal(AuthenticationClientType.Confidential, client.ClientType);
-        Assert.Contains(new Uri("https://localhost:7113/authentication/external/callback"), client.CallbackUris);
-        Assert.Contains(new Uri("https://localhost:7113/authentication/external/logout-callback"), client.LogoutCallbackUris);
-        Assert.Contains("/", client.AllowedReturnPathPrefixes);
-        Assert.Equal("configuration", client.SecretBinding?.ResolverType);
-        Assert.Equal("ExternalAuthentication:Secrets:StudioServerClientSecret", client.SecretBinding?.Reference);
-        Assert.True(client.IsEnabled);
+        var client = await Assert.That(options.Clients).HasSingleItem();
+        await Assert.That(client.ClientId).IsEqualTo("elsa-studio-server");
+        await Assert.That(client.ClientType).IsEqualTo(AuthenticationClientType.Confidential);
+        await Assert.That(client.CallbackUris).Contains(new Uri("https://localhost:7113/authentication/external/callback"));
+        await Assert.That(client.LogoutCallbackUris).Contains(new Uri("https://localhost:7113/authentication/external/logout-callback"));
+        await Assert.That(client.AllowedReturnPathPrefixes).Contains("/");
+        await Assert.That(client.SecretBinding?.ResolverType).IsEqualTo("configuration");
+        await Assert.That(client.SecretBinding?.Reference).IsEqualTo("ExternalAuthentication:Secrets:StudioServerClientSecret");
+        await Assert.That(client.IsEnabled).IsTrue();
     }
 
-    [Fact]
-    public void BindsConnectionJsonSettingsFromConfiguration()
+    [Test]
+    public async Task BindsConnectionJsonSettingsFromConfiguration()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -69,39 +70,41 @@ public class ExternalAuthenticationOptionsTests
 
         configuration.GetSection("ExternalAuthentication").BindExternalAuthenticationOptions(options);
 
-        var connection = Assert.Single(options.ConfigurationConnections);
-        Assert.Equal("discovery", connection.AdapterSettings.GetProperty("mode").GetString());
-        Assert.Equal("https://localhost:8443/realms/elsa/.well-known/openid-configuration", connection.AdapterSettings.GetProperty("discoveryUrl").GetString());
-        Assert.Equal("elsa-studio-idp", connection.AdapterSettings.GetProperty("clientId").GetString());
-        Assert.Equal(["profile", "email"], connection.AdapterSettings.GetProperty("scopes").EnumerateArray().Select(x => x.GetString()));
-        Assert.Equal("admin", connection.UnlinkedPolicy?.Settings.GetProperty("defaultRoleIds")[0].GetString());
-        Assert.Equal("groups", Assert.Single(connection.PermissionGrantSources).Settings.GetProperty("claimType").GetString());
+        var connection = await Assert.That(options.ConfigurationConnections).HasSingleItem();
+        await Assert.That(connection.AdapterSettings.GetProperty("mode").GetString()).IsEqualTo("discovery");
+        await Assert.That(connection.AdapterSettings.GetProperty("discoveryUrl").GetString()).IsEqualTo("https://localhost:8443/realms/elsa/.well-known/openid-configuration");
+        await Assert.That(connection.AdapterSettings.GetProperty("clientId").GetString()).IsEqualTo("elsa-studio-idp");
+        string?[] expectedScopes = ["profile", "email"];
+        await Assert.That(connection.AdapterSettings.GetProperty("scopes").EnumerateArray().Select(x => x.GetString())).IsEquivalentTo(expectedScopes, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(connection.UnlinkedPolicy?.Settings.GetProperty("defaultRoleIds")[0].GetString()).IsEqualTo("admin");
+        var grantSource = await Assert.That(connection.PermissionGrantSources).HasSingleItem();
+        await Assert.That(grantSource.Settings.GetProperty("claimType").GetString()).IsEqualTo("groups");
     }
 
-    [Fact]
-    public void DefaultsFavorTheMostRestrictiveOperationalSettings()
+    [Test]
+    public async Task DefaultsFavorTheMostRestrictiveOperationalSettings()
     {
         var options = new ExternalAuthenticationOptions();
 
-        Assert.True(options.EnableDatabaseConnections);
-        Assert.Equal(TimeSpan.FromMinutes(10), options.Lifetimes.BrokerTransactionLifetime);
-        Assert.Equal(TimeSpan.FromMinutes(1), options.Lifetimes.CompletionCodeLifetime);
-        Assert.Equal(64, options.Claims.MaximumClaimCount);
-        Assert.Equal(1_024, options.Claims.MaximumValueLength);
-        Assert.Equal(16 * 1_024, options.Claims.MaximumTotalBytes);
-        Assert.True(options.ProviderEgress.RequireHttps);
-        Assert.False(options.ProviderEgress.AllowPrivateNetworkDestinations);
-        Assert.Equal(3, options.ProviderEgress.MaximumRedirects);
-        Assert.True(options.Redirects.RequirePkceS256);
-        Assert.False(options.Redirects.AllowDevelopmentLoopbackCallbacks);
-        Assert.Equal(BrowserCredentialPersistence.Memory, options.WebAssemblyPersistence.Persistence);
-        Assert.True(options.WebAssemblyPersistence.RequireExplicitPersistentStorageWarning);
-        Assert.True(options.FinalLoginPathGuard.IsEnabled);
-        Assert.True(options.FinalLoginPathGuard.RequireRecoveryMethod);
+        await Assert.That(options.EnableDatabaseConnections).IsTrue();
+        await Assert.That(options.Lifetimes.BrokerTransactionLifetime).IsEqualTo(TimeSpan.FromMinutes(10));
+        await Assert.That(options.Lifetimes.CompletionCodeLifetime).IsEqualTo(TimeSpan.FromMinutes(1));
+        await Assert.That(options.Claims.MaximumClaimCount).IsEqualTo(64);
+        await Assert.That(options.Claims.MaximumValueLength).IsEqualTo(1_024);
+        await Assert.That(options.Claims.MaximumTotalBytes).IsEqualTo(16 * 1_024);
+        await Assert.That(options.ProviderEgress.RequireHttps).IsTrue();
+        await Assert.That(options.ProviderEgress.AllowPrivateNetworkDestinations).IsFalse();
+        await Assert.That(options.ProviderEgress.MaximumRedirects).IsEqualTo(3);
+        await Assert.That(options.Redirects.RequirePkceS256).IsTrue();
+        await Assert.That(options.Redirects.AllowDevelopmentLoopbackCallbacks).IsFalse();
+        await Assert.That(options.WebAssemblyPersistence.Persistence).IsEqualTo(BrowserCredentialPersistence.Memory);
+        await Assert.That(options.WebAssemblyPersistence.RequireExplicitPersistentStorageWarning).IsTrue();
+        await Assert.That(options.FinalLoginPathGuard.IsEnabled).IsTrue();
+        await Assert.That(options.FinalLoginPathGuard.RequireRecoveryMethod).IsTrue();
     }
 
-    [Fact]
-    public void ValidatorRejectsDuplicateOrUnavailableExtensionTypes()
+    [Test]
+    public async Task ValidatorRejectsDuplicateOrUnavailableExtensionTypes()
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -113,14 +116,14 @@ public class ExternalAuthenticationOptionsTests
 
         var result = validator.Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("adapter type 'oidc' is registered more than once", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("allowed adapter type 'oidc' is configured more than once", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("allowed adapter type 'saml' is not installed", StringComparison.Ordinal));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("adapter type 'oidc' is registered more than once", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("allowed adapter type 'oidc' is configured more than once", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("allowed adapter type 'saml' is not installed", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void ValidatorRejectsInsecureClientRegistrations()
+    [Test]
+    public async Task ValidatorRejectsInsecureClientRegistrations()
     {
         var options = CreateValidOptions();
         options.Clients =
@@ -139,14 +142,14 @@ public class ExternalAuthenticationOptionsTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("invalid callback URI", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("must not define a client secret binding", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("must not contain a path, query, or trailing slash", StringComparison.Ordinal));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("invalid callback URI", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("must not define a client secret binding", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("must not contain a path, query, or trailing slash", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void ValidatorRejectsUnsafeProviderEgressConfiguration()
+    [Test]
+    public async Task ValidatorRejectsUnsafeProviderEgressConfiguration()
     {
         var options = CreateValidOptions();
         options.ProviderEgress = new ProviderEgressOptions
@@ -163,16 +166,16 @@ public class ExternalAuthenticationOptionsTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("egress maximum redirects", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("egress timeouts", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("response-size limits", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("allowed host", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("proxy URI", StringComparison.Ordinal));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("egress maximum redirects", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("egress timeouts", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("response-size limits", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("allowed host", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("proxy URI", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void ValidatorRejectsConfigurationCollisionsAndUnknownAdapterTypes()
+    [Test]
+    public async Task ValidatorRejectsConfigurationCollisionsAndUnknownAdapterTypes()
     {
         var options = CreateValidOptions();
         var unknownAdapter = ExternalAuthenticationTestData.CreateConnection("unknown", "tenant-b", "partner");
@@ -186,10 +189,10 @@ public class ExternalAuthenticationOptionsTests
 
         var result = CreateValidator().Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("must use the host scope", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("configured more than once", StringComparison.Ordinal));
-        Assert.Contains(result.Failures!, failure => failure.Contains("selects adapter type 'saml', which is not installed", StringComparison.Ordinal));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("must use the host scope", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("configured more than once", StringComparison.Ordinal));
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("selects adapter type 'saml', which is not installed", StringComparison.Ordinal));
     }
 
     private static ExternalAuthenticationOptions CreateValidOptions() => new()

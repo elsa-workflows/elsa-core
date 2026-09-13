@@ -1,5 +1,6 @@
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Stores.InMemory;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
@@ -7,7 +8,7 @@ public class InMemoryOneTimeStoresTests
 {
     private readonly DateTimeOffset _now = new(2026, 7, 24, 12, 0, 0, TimeSpan.Zero);
 
-    [Fact]
+    [Test]
     public async Task StateStoreConsumesExactlyOneConcurrentAttempt()
     {
         var store = new InMemoryExternalAuthenticationStateStore(new TestSystemClock(_now));
@@ -15,11 +16,11 @@ public class InMemoryOneTimeStoresTests
 
         var results = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => store.TryTakeAsync<string>("sign-in", "state-hash").AsTask()));
 
-        Assert.Single(results.OfType<TakeResult<string>.Taken>());
-        Assert.Equal(15, results.OfType<TakeResult<string>.AlreadyConsumed>().Count());
+        await Assert.That(results.OfType<TakeResult<string>.Taken>()).HasSingleItem();
+        await Assert.That(results.OfType<TakeResult<string>.AlreadyConsumed>().Count()).IsEqualTo(15);
     }
 
-    [Fact]
+    [Test]
     public async Task StateStoreReturnsExpiredWithoutRearmingTheHandle()
     {
         var clock = new TestSystemClock(_now);
@@ -29,11 +30,11 @@ public class InMemoryOneTimeStoresTests
 
         var result = await store.TryTakeAsync<string>("sign-in", "state-hash");
 
-        Assert.IsType<TakeResult<string>.Expired>(result);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => store.PutAsync("sign-in", "state-hash", "replacement", _now.AddMinutes(1)).AsTask());
+        await Assert.That(result).IsOfType(typeof(TakeResult<string>.Expired));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => store.PutAsync("sign-in", "state-hash", "replacement", _now.AddMinutes(1)).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizationGrantStoreConsumesAClonedGrantOnlyOnce()
     {
         var store = new InMemoryAuthorizationGrantStore(new TestSystemClock(_now));
@@ -44,12 +45,13 @@ public class InMemoryOneTimeStoresTests
         var first = await store.TryTakeAsync(grant.CodeHash);
         var second = await store.TryTakeAsync(grant.CodeHash);
 
-        var taken = Assert.IsType<TakeResult<AuthorizationGrant>.Taken>(first);
-        Assert.Equal("user-a", taken.Value.UserId);
-        Assert.IsType<TakeResult<AuthorizationGrant>.AlreadyConsumed>(second);
+        await Assert.That(first).IsOfType(typeof(TakeResult<AuthorizationGrant>.Taken));
+        var taken = (TakeResult<AuthorizationGrant>.Taken)first;
+        await Assert.That(taken.Value.UserId).IsEqualTo("user-a");
+        await Assert.That(second).IsOfType(typeof(TakeResult<AuthorizationGrant>.AlreadyConsumed));
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizationGrantStoreConsumesExactlyOneConcurrentAttempt()
     {
         var store = new InMemoryAuthorizationGrantStore(new TestSystemClock(_now));
@@ -58,11 +60,11 @@ public class InMemoryOneTimeStoresTests
 
         var results = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => store.TryTakeAsync(grant.CodeHash).AsTask()));
 
-        Assert.Single(results.OfType<TakeResult<AuthorizationGrant>.Taken>());
-        Assert.Equal(15, results.OfType<TakeResult<AuthorizationGrant>.AlreadyConsumed>().Count());
+        await Assert.That(results.OfType<TakeResult<AuthorizationGrant>.Taken>()).HasSingleItem();
+        await Assert.That(results.OfType<TakeResult<AuthorizationGrant>.AlreadyConsumed>().Count()).IsEqualTo(15);
     }
 
-    [Fact]
+    [Test]
     public async Task PreviewResultStoreRestrictsResultsToTheInitiatingAdministratorAndConsumesOnce()
     {
         var store = new InMemoryPreviewResultStore(new TestSystemClock(_now));
@@ -73,12 +75,12 @@ public class InMemoryOneTimeStoresTests
         var first = await store.TryTakeAsync(preview.HandleHash, preview.AdministratorId);
         var second = await store.TryTakeAsync(preview.HandleHash, preview.AdministratorId);
 
-        Assert.IsType<TakeResult<PreviewResult>.NotFound>(unauthorized);
-        Assert.IsType<TakeResult<PreviewResult>.Taken>(first);
-        Assert.IsType<TakeResult<PreviewResult>.AlreadyConsumed>(second);
+        await Assert.That(unauthorized).IsOfType(typeof(TakeResult<PreviewResult>.NotFound));
+        await Assert.That(first).IsOfType(typeof(TakeResult<PreviewResult>.Taken));
+        await Assert.That(second).IsOfType(typeof(TakeResult<PreviewResult>.AlreadyConsumed));
     }
 
-    [Fact]
+    [Test]
     public async Task PreviewResultStoreConsumesExactlyOneConcurrentAuthorizedAttempt()
     {
         var store = new InMemoryPreviewResultStore(new TestSystemClock(_now));
@@ -87,7 +89,7 @@ public class InMemoryOneTimeStoresTests
 
         var results = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => store.TryTakeAsync(preview.HandleHash, preview.AdministratorId).AsTask()));
 
-        Assert.Single(results.OfType<TakeResult<PreviewResult>.Taken>());
-        Assert.Equal(15, results.OfType<TakeResult<PreviewResult>.AlreadyConsumed>().Count());
+        await Assert.That(results.OfType<TakeResult<PreviewResult>.Taken>()).HasSingleItem();
+        await Assert.That(results.OfType<TakeResult<PreviewResult>.AlreadyConsumed>().Count()).IsEqualTo(15);
     }
 }

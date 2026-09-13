@@ -10,12 +10,13 @@ using Elsa.Identity.Entities;
 using Elsa.Identity.Models;
 using Elsa.Identity.Services;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationUserDeletionDependencyContributorTests
 {
-    [Fact]
+    [Test]
     public async Task UserWithAnExternalIdentityLinkCannotBeDeleted()
     {
         var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -33,12 +34,13 @@ public class ExternalAuthenticationUserDeletionDependencyContributorTests
 
         var result = await coordinator.DeleteAsync("external-user");
 
-        var blocked = Assert.IsType<UserDeletionOperationResult.Blocked>(result);
-        Assert.Contains(blocked.Dependencies, x => x.Source == ExternalAuthenticationUserDeletionDependencyContributor.SourceName);
-        Assert.NotNull(await users.FindAsync(new UserFilter { Id = "external-user" }));
+        await Assert.That(result).IsOfType(typeof(UserDeletionOperationResult.Blocked));
+        var blocked = (UserDeletionOperationResult.Blocked)result;
+        await Assert.That(blocked.Dependencies).Contains(x => x.Source == ExternalAuthenticationUserDeletionDependencyContributor.SourceName);
+        await Assert.That(await users.FindAsync(new UserFilter { Id = "external-user" })).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task UserWithoutAnExternalIdentityLinkCanBeDeleted()
     {
         var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -54,11 +56,11 @@ public class ExternalAuthenticationUserDeletionDependencyContributorTests
 
         var result = await coordinator.DeleteAsync("local-user");
 
-        Assert.IsType<UserDeletionOperationResult.Deleted>(result);
-        Assert.Null(await users.FindAsync(new UserFilter { Id = "local-user" }));
+        await Assert.That(result).IsOfType(typeof(UserDeletionOperationResult.Deleted));
+        await Assert.That(await users.FindAsync(new UserFilter { Id = "local-user" })).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task UserIsRestoredWhenAnExternalIdentityLinkAppearsDuringDeletion()
     {
         var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -77,7 +79,7 @@ public class ExternalAuthenticationUserDeletionDependencyContributorTests
 
         var result = await coordinator.DeleteAsync("racing-user");
 
-        Assert.IsType<UserDeletionOperationResult.Blocked>(result);
-        Assert.NotNull(await users.FindAsync(new UserFilter { Id = "racing-user" }));
+        await Assert.That(result).IsOfType(typeof(UserDeletionOperationResult.Blocked));
+        await Assert.That(await users.FindAsync(new UserFilter { Id = "racing-user" })).IsNotNull();
     }
 }

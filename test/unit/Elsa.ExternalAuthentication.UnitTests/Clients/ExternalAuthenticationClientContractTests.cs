@@ -1,13 +1,14 @@
 using System.Text.Json;
 using Elsa.Api.Client.Resources.ExternalAuthentication.Connections.Models;
 using Elsa.Api.Client.Resources.ExternalAuthentication.Connections.Requests;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Clients;
 
 public class ExternalAuthenticationClientContractTests
 {
-    [Fact]
-    public void NewSaveRequestSerializesHostScope()
+    [Test]
+    public async Task NewSaveRequestSerializesHostScope()
     {
         var request = new SaveExternalAuthenticationConnectionRequest
         {
@@ -16,11 +17,11 @@ public class ExternalAuthenticationClientContractTests
         var json = JsonSerializer.Serialize(request, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         using var document = JsonDocument.Parse(json);
 
-        Assert.Equal("host", document.RootElement.GetProperty("scope").GetProperty("kind").GetString());
+        await Assert.That(document.RootElement.GetProperty("scope").GetProperty("kind").GetString()).IsEqualTo("host");
     }
 
-    [Fact]
-    public void ConnectionDeserializesNamedShadowRelationships()
+    [Test]
+    public async Task ConnectionDeserializesNamedShadowRelationships()
     {
         var connection = JsonSerializer.Deserialize<ExternalAuthenticationConnection>(
             """
@@ -37,10 +38,11 @@ public class ExternalAuthenticationClientContractTests
             """,
             new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
-        Assert.NotNull(connection);
-        Assert.Equal("database-keycloak", connection.ShadowedBy?.Id);
-        Assert.Equal("Keycloak", connection.ShadowedBy?.DisplayName);
-        Assert.Equal("database", connection.ShadowedBy?.Source);
-        Assert.Empty(connection.Shadows);
+        await Assert.That(connection).IsNotNull();
+        var deserializedConnection = connection!;
+        await Assert.That(deserializedConnection.ShadowedBy?.Id).IsEqualTo("database-keycloak");
+        await Assert.That(deserializedConnection.ShadowedBy?.DisplayName).IsEqualTo("Keycloak");
+        await Assert.That(deserializedConnection.ShadowedBy?.Source).IsEqualTo("database");
+        await Assert.That(deserializedConnection.Shadows).IsEmpty();
     }
 }

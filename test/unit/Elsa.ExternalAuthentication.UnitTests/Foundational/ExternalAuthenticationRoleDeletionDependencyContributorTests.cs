@@ -20,12 +20,13 @@ using Elsa.Identity.Services;
 using Elsa.Mediator.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 {
-    [Fact]
+    [Test]
     public async Task InspectIncludesConfigurationAndDatabaseReferencesAcrossLifecycleStates()
     {
         var configurationConnection = Connection(
@@ -45,18 +46,18 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         var snapshot = await contributor.InspectAsync("workflow-user");
 
-        Assert.False(snapshot.SupportsAtomicRemoval);
-        var configuration = Assert.Single(snapshot.Dependencies, x => x.Ownership == RoleDeletionDependencyOwnership.Configuration);
-        Assert.Equal("ExternalAuthentication:Connections:0:UnlinkedPolicy:Settings:defaultRoleIds:0", configuration.ConfigurationPath);
-        Assert.False(configuration.RemovesLastDefaultRole);
-        var database = Assert.Single(snapshot.Dependencies, x => x.Ownership == RoleDeletionDependencyOwnership.Database);
-        Assert.Equal("matcher-no-match-create-user", database.PolicyBranch);
-        Assert.Equal(1, database.ExpectedRevision);
-        Assert.True(database.RemovesLastDefaultRole);
-        Assert.NotNull(await store.FindByIdAsync(databaseConnection.Id));
+        await Assert.That(snapshot.SupportsAtomicRemoval).IsFalse();
+        var configuration = await Assert.That(snapshot.Dependencies).HasSingleItem(x => x.Ownership == RoleDeletionDependencyOwnership.Configuration);
+        await Assert.That(configuration.ConfigurationPath).IsEqualTo("ExternalAuthentication:Connections:0:UnlinkedPolicy:Settings:defaultRoleIds:0");
+        await Assert.That(configuration.RemovesLastDefaultRole).IsFalse();
+        var database = await Assert.That(snapshot.Dependencies).HasSingleItem(x => x.Ownership == RoleDeletionDependencyOwnership.Database);
+        await Assert.That(database.PolicyBranch).IsEqualTo("matcher-no-match-create-user");
+        await Assert.That(database.ExpectedRevision).IsEqualTo(1);
+        await Assert.That(database.RemovesLastDefaultRole).IsTrue();
+        await Assert.That(await store.FindByIdAsync(databaseConnection.Id)).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ConfigurationReferenceCannotBeRemediated()
     {
         var configurationConnection = Connection(
@@ -81,13 +82,11 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             snapshot.Version,
             databaseDependencies));
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Conflict>(result);
-        Assert.Equal(
-            ["workflow-user"],
-            configurationConnection.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+        await Assert.That(result).IsOfType(typeof(RoleReferenceRemovalValidationResult.Conflict));
+        await Assert.That(configurationConnection.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray()).IsEquivalentTo(["workflow-user"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task RemovesRoleFromEditablePolicyAndAdvancesRegistryVersion()
     {
         var databaseConnection = Connection(
@@ -104,17 +103,20 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             snapshot.Version,
             snapshot.Dependencies);
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Valid));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Success));
+        var result = (RoleReferenceRemovalResult.Success)removalResult;
 
-        Assert.Equal([databaseConnection.Id], result.ChangedOwnerIds);
-        var updated = Assert.IsType<IdentityProviderConnection>(await store.FindByIdAsync(databaseConnection.Id));
-        Assert.Empty(updated.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray());
-        Assert.Equal(2, updated.Revision);
-        Assert.True(await versions.GetVersionAsync() > 0);
+        await Assert.That(result.ChangedOwnerIds).IsEquivalentTo([databaseConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var updated = await Assert.That(await store.FindByIdAsync(databaseConnection.Id)).IsNotNull();
+        await Assert.That(updated).IsOfType(typeof(IdentityProviderConnection));
+        await Assert.That(updated.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray()).IsEmpty();
+        await Assert.That(updated.Revision).IsEqualTo(2);
+        await Assert.That(await versions.GetVersionAsync() > 0).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ReplacesFinalDefaultRoleWhenSelectedForRemediation()
     {
         var databaseConnection = Connection(
@@ -135,15 +137,18 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             ReplacementRoleId = "replacement-role"
         };
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Valid));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Success));
+        var result = (RoleReferenceRemovalResult.Success)removalResult;
 
-        Assert.Equal([databaseConnection.Id], result.ChangedOwnerIds);
-        var updated = Assert.IsType<IdentityProviderConnection>(await store.FindByIdAsync(databaseConnection.Id));
-        Assert.Equal(["replacement-role"], updated.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+        await Assert.That(result.ChangedOwnerIds).IsEquivalentTo([databaseConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var updated = await Assert.That(await store.FindByIdAsync(databaseConnection.Id)).IsNotNull();
+        await Assert.That(updated).IsOfType(typeof(IdentityProviderConnection));
+        await Assert.That(updated.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray()).IsEquivalentTo(["replacement-role"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task UsesTheActiveRoleStoreWhenPersistenceReplacesTheDefaultStore()
     {
         var databaseConnection = Connection(
@@ -153,7 +158,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
                 1,
                 JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
         var connectionStore = new InMemoryIdentityProviderConnectionStore();
-        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(databaseConnection));
+        await Assert.That(await connectionStore.CreateAsync(databaseConnection)).IsOfType(typeof(ConnectionMutationResult.Created));
         var replacedStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         var activeStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await activeStore.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
@@ -181,11 +186,11 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             ReplacementRoleId = "replacement-role"
         };
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Valid));
+        await Assert.That(await contributor.RemoveEditableReferencesAsync(request)).IsOfType(typeof(RoleReferenceRemovalResult.Success));
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsMissingReplacementForSelectedFinalDefaultRole()
     {
         var databaseConnection = Connection(
@@ -207,13 +212,15 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         var result = await contributor.ValidateRemovalAsync(request);
 
-        var forbidden = Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(result);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", forbidden.Code);
-        var current = Assert.IsType<IdentityProviderConnection>(await store.FindByIdAsync(databaseConnection.Id));
-        Assert.Equal(["workflow-user"], current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+        await Assert.That(result).IsOfType(typeof(RoleReferenceRemovalValidationResult.Forbidden));
+        var forbidden = (RoleReferenceRemovalValidationResult.Forbidden)result;
+        await Assert.That(forbidden.Code).IsEqualTo("replacement_role_unavailable_or_unauthorized");
+        var current = await Assert.That(await store.FindByIdAsync(databaseConnection.Id)).IsNotNull();
+        await Assert.That(current).IsOfType(typeof(IdentityProviderConnection));
+        await Assert.That(current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray()).IsEquivalentTo(["workflow-user"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ReplacementRemovedAfterCoordinatorValidationFailsClosedBeforePolicyUpdate()
     {
         var databaseConnection = Connection(
@@ -223,7 +230,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
                 1,
                 JsonSerializer.SerializeToElement(new { defaultRoleIds = new[] { "workflow-user" } })));
         var connectionStore = new InMemoryIdentityProviderConnectionStore();
-        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(databaseConnection));
+        await Assert.That(await connectionStore.CreateAsync(databaseConnection)).IsOfType(typeof(ConnectionMutationResult.Created));
 
         var backingRoleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await backingRoleStore.SaveAsync(new Role { Id = "workflow-user", Name = "Workflow user", Permissions = [] });
@@ -244,7 +251,9 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             TestTenantAccessor.Default);
         var securityNotifier = new RoleSecurityNotifier(Substitute.For<INotificationSender>(), TestTenantAccessor.Default, new SystemClock());
         var coordinator = new RoleDeletionCoordinator(roleStore, roleAuthorizationService, [contributor], securityNotifier);
-        var impact = Assert.IsType<RoleDeletionInspectionResult.Success>(await coordinator.InspectAsync("workflow-user", Administrator())).Impact;
+        var inspection = await coordinator.InspectAsync("workflow-user", Administrator());
+        await Assert.That(inspection).IsOfType(typeof(RoleDeletionInspectionResult.Success));
+        var impact = ((RoleDeletionInspectionResult.Success)inspection).Impact;
 
         var result = await coordinator.RemediateAndDeleteAsync(new RoleDeletionRemediationCommand(
             "workflow-user",
@@ -258,15 +267,17 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             ReplacementRoleId = "replacement-role"
         });
 
-        var incomplete = Assert.IsType<RoleDeletionOperationResult.Incomplete>(result);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", incomplete.Code);
-        Assert.True(roleStore.ReplacementRemoved);
-        Assert.NotNull(await roleStore.FindAsync(new() { Id = "workflow-user" }));
-        var current = Assert.IsType<IdentityProviderConnection>(await connectionStore.FindByIdAsync(databaseConnection.Id));
-        Assert.Equal(["workflow-user"], current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+        await Assert.That(result).IsOfType(typeof(RoleDeletionOperationResult.Incomplete));
+        var incomplete = (RoleDeletionOperationResult.Incomplete)result;
+        await Assert.That(incomplete.Code).IsEqualTo("replacement_role_unavailable_or_unauthorized");
+        await Assert.That(roleStore.ReplacementRemoved).IsTrue();
+        await Assert.That(await roleStore.FindAsync(new() { Id = "workflow-user" })).IsNotNull();
+        var current = await Assert.That(await connectionStore.FindByIdAsync(databaseConnection.Id)).IsNotNull();
+        await Assert.That(current).IsOfType(typeof(IdentityProviderConnection));
+        await Assert.That(current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray()).IsEquivalentTo(["workflow-user"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task StaleConnectionRevisionFailsPrevalidationWithoutMutation()
     {
         var databaseConnection = Connection(
@@ -279,7 +290,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var snapshot = await contributor.InspectAsync("workflow-user");
         var changed = (await store.FindByIdAsync(databaseConnection.Id))!;
         changed.DisplayName = "Changed concurrently";
-        Assert.IsType<ConnectionMutationResult.Updated>(await store.UpdateAsync(changed, changed.Revision));
+        await Assert.That(await store.UpdateAsync(changed, changed.Revision)).IsOfType(typeof(ConnectionMutationResult.Updated));
 
         var result = await contributor.ValidateRemovalAsync(new(
             "workflow-user",
@@ -287,15 +298,15 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             snapshot.Version,
             snapshot.Dependencies));
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Conflict>(result);
+        await Assert.That(result).IsOfType(typeof(RoleReferenceRemovalValidationResult.Conflict));
         var current = (await store.FindByIdAsync(databaseConnection.Id))!;
-        Assert.Contains("workflow-user", current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()));
+        await Assert.That(current.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString())).Contains("workflow-user");
     }
 
-    [Theory]
-    [InlineData(ConnectionsUpdate)]
-    [InlineData(PoliciesUpdate)]
-    [InlineData(DefaultRolesUpdate)]
+    [Test]
+    [Arguments(ConnectionsUpdate)]
+    [Arguments(PoliciesUpdate)]
+    [Arguments(DefaultRolesUpdate)]
     public async Task PrevalidationRequiresEveryPolicyRemediationPermission(string omittedPermission)
     {
         var databaseConnection = Connection(
@@ -313,10 +324,10 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
             snapshot.Version,
             snapshot.Dependencies));
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(result);
+        await Assert.That(result).IsOfType(typeof(RoleReferenceRemovalValidationResult.Forbidden));
     }
 
-    [Fact]
+    [Test]
     public async Task ImpactExcludesConnectionsOwnedByAnotherTenant()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user"), TenantA);
@@ -332,12 +343,12 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         // Neither tenant B's stored connection nor its configuration entry -- which would block deletion
         // outright -- is reported, while the tenant's own reference still is, so the filter is not simply
         // reporting nothing.
-        var dependency = Assert.Single(snapshot.Dependencies);
-        Assert.Equal(ownConnection.Id, dependency.OwnerId);
-        Assert.Equal(RoleDeletionDependencyOwnership.Database, dependency.Ownership);
+        var dependency = await Assert.That(snapshot.Dependencies).HasSingleItem();
+        await Assert.That(dependency.OwnerId).IsEqualTo(ownConnection.Id);
+        await Assert.That(dependency.Ownership).IsEqualTo(RoleDeletionDependencyOwnership.Database);
     }
 
-    [Fact]
+    [Test]
     public async Task ImpactIncludesHostScopedConnectionsForEveryTenant()
     {
         var hostConnection = Connection("host-connection", CreateUserPolicy("workflow-user"));
@@ -351,12 +362,10 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         // A host connection is served to every signing-in tenant and its default roles are resolved in that
         // tenant, so it references this tenant's role. A blank configuration tenant is materialized at host scope.
-        Assert.Equal(
-            [hostConfiguration.Id, hostConnection.Id],
-            snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray());
+        await Assert.That(snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray()).IsEquivalentTo([hostConfiguration.Id, hostConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task RemediationCannotReachAnotherTenantsConnection()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user", "other-role"), TenantA);
@@ -384,16 +393,18 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
                     false)
             ]);
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Conflict>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Conflict>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Conflict));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Conflict));
+        var result = (RoleReferenceRemovalResult.Conflict)removalResult;
 
         // Nothing may half-run: neither the foreign connection nor the tenant's own connection is touched.
-        Assert.Empty(result.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "workflow-user", "other-role");
-        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "workflow-user", "other-role");
+        await Assert.That(result.ChangedOwnerIds).IsEmpty();
+        await AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "workflow-user", "other-role");
+        await AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "workflow-user", "other-role");
     }
 
-    [Fact]
+    [Test]
     public async Task RemediationStopsWhenTheConnectionLeavesTheRoleTenantAfterValidation()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user", "other-role"), TenantA);
@@ -405,14 +416,16 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var snapshot = await contributor.InspectAsync("workflow-user");
         var request = new RoleReferenceRemovalRequest("workflow-user", Administrator(), snapshot.Version, snapshot.Dependencies);
 
-        var result = Assert.IsType<RoleReferenceRemovalResult.Conflict>(await contributor.RemoveEditableReferencesAsync(request));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Conflict));
+        var result = (RoleReferenceRemovalResult.Conflict)removalResult;
 
-        Assert.Equal("connection_revision_changed", result.Code);
-        Assert.Empty(result.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "workflow-user", "other-role");
+        await Assert.That(result.Code).IsEqualTo("connection_revision_changed");
+        await Assert.That(result.ChangedOwnerIds).IsEmpty();
+        await AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "workflow-user", "other-role");
     }
 
-    [Fact]
+    [Test]
     public async Task ImpactForAnAgnosticRoleIncludesAConnectionOwnedByAnotherTenant()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
@@ -427,12 +440,10 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         // The role is visible from every tenant, so its tenant context is every tenant: tenant B's reference is
         // reported alongside tenant A's, unlike a tenant-scoped role (see ImpactExcludesConnectionsOwnedByAnotherTenant).
-        Assert.Equal(
-            [otherTenantConnection.Id, ownConnection.Id],
-            snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray());
+        await Assert.That(snapshot.Dependencies.Select(x => x.OwnerId).Order(StringComparer.Ordinal).ToArray()).IsEquivalentTo([otherTenantConnection.Id, ownConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ImpactIsScopedByTheResolvedRolesTenantRatherThanTheAmbientTenant()
     {
         // The ambient tenant is the default tenant (no tenant pushed), which is what an EF host runs as with
@@ -444,8 +455,8 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var ownConnection = Connection("own-connection", CreateUserPolicy("tenant-a-role"), TenantA);
         var otherTenantConnection = Connection("other-tenant-connection", CreateUserPolicy("tenant-a-role"), TenantB);
         var connectionStore = new InMemoryIdentityProviderConnectionStore();
-        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(ownConnection));
-        Assert.IsType<ConnectionMutationResult.Created>(await connectionStore.CreateAsync(otherTenantConnection));
+        await Assert.That(await connectionStore.CreateAsync(ownConnection)).IsOfType(typeof(ConnectionMutationResult.Created));
+        await Assert.That(await connectionStore.CreateAsync(otherTenantConnection)).IsOfType(typeof(ConnectionMutationResult.Created));
         var roleStore = new RoleStoreWithoutAmbientTenantFilter(
             [new Role { Id = "tenant-a-role", Name = "Tenant A role", TenantId = TenantA, Permissions = [] }]);
         var roleAuthorizationService = new RoleAuthorizationService(new StoreBasedRoleProvider(roleStore), new PermissionEvaluator());
@@ -465,12 +476,12 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         // Scoped by the role's own tenant (A): tenant A's connection is reported, tenant B's is not. Scoping by
         // the ambient default tenant instead -- what this test is guarding against -- would report neither.
-        var dependency = Assert.Single(snapshot.Dependencies);
-        Assert.Equal(ownConnection.Id, dependency.OwnerId);
-        Assert.Equal(RoleDeletionDependencyOwnership.Database, dependency.Ownership);
+        var dependency = await Assert.That(snapshot.Dependencies).HasSingleItem();
+        await Assert.That(dependency.OwnerId).IsEqualTo(ownConnection.Id);
+        await Assert.That(dependency.Ownership).IsEqualTo(RoleDeletionDependencyOwnership.Database);
     }
 
-    [Fact]
+    [Test]
     public async Task RoleIdThatResolvesToMoreThanOneRoleAcrossTenantScopesFailsClosed()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("workflow-user"), TenantA);
@@ -485,7 +496,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         // in-memory role store, so the deletion target is ambiguous: the contributor cannot determine whether
         // to scope its inspection and remediation to tenant A alone or to every tenant, and must fail closed
         // rather than guess in either direction.
-        await Assert.ThrowsAsync<InvalidOperationException>(() => contributor.InspectAsync("workflow-user").AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => contributor.InspectAsync("workflow-user").AsTask());
 
         var request = new RoleReferenceRemovalRequest(
             "workflow-user",
@@ -502,11 +513,11 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
                     1,
                     false)
             ]);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => contributor.ValidateRemovalAsync(request).AsTask());
-        await Assert.ThrowsAsync<InvalidOperationException>(() => contributor.RemoveEditableReferencesAsync(request).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => contributor.ValidateRemovalAsync(request).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => contributor.RemoveEditableReferencesAsync(request).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task RemediationOfAnAgnosticRoleCanRemoveTheReferenceFromAnotherTenantsConnection()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
@@ -519,17 +530,17 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var snapshot = await contributor.InspectAsync("agnostic-role");
         var request = new RoleReferenceRemovalRequest("agnostic-role", Administrator(), snapshot.Version, snapshot.Dependencies);
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Valid));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Success));
+        var result = (RoleReferenceRemovalResult.Success)removalResult;
 
-        Assert.Equal(
-            [otherTenantConnection.Id, ownConnection.Id],
-            result.ChangedOwnerIds.Order(StringComparer.Ordinal).ToArray());
-        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id));
-        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id));
+        await Assert.That(result.ChangedOwnerIds.Order(StringComparer.Ordinal).ToArray()).IsEquivalentTo([otherTenantConnection.Id, ownConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id));
+        await AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id));
     }
 
-    [Fact]
+    [Test]
     public async Task RemediationOfAnAgnosticRoleRejectsATenantScopedReplacementRole()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
@@ -557,18 +568,20 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         // role. Admitting a tenant-A-only replacement would write a role into tenant B's policy that does not
         // exist there, so it must be rejected rather than authorized in one tenant and applied to every tenant.
         var validation = await contributor.ValidateRemovalAsync(request);
-        var forbidden = Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(validation);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", forbidden.Code);
+        await Assert.That(validation).IsOfType(typeof(RoleReferenceRemovalValidationResult.Forbidden));
+        var forbidden = (RoleReferenceRemovalValidationResult.Forbidden)validation;
+        await Assert.That(forbidden.Code).IsEqualTo("replacement_role_unavailable_or_unauthorized");
 
         var result = await contributor.RemoveEditableReferencesAsync(request);
-        var failed = Assert.IsType<RoleReferenceRemovalResult.Failed>(result);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", failed.Code);
-        Assert.Empty(failed.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-role");
-        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-role");
+        await Assert.That(result).IsOfType(typeof(RoleReferenceRemovalResult.Failed));
+        var failed = (RoleReferenceRemovalResult.Failed)result;
+        await Assert.That(failed.Code).IsEqualTo("replacement_role_unavailable_or_unauthorized");
+        await Assert.That(failed.ChangedOwnerIds).IsEmpty();
+        await AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-role");
+        await AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-role");
     }
 
-    [Fact]
+    [Test]
     public async Task RemediationOfAnAgnosticRoleAcceptsAnAgnosticReplacementRole()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
@@ -593,17 +606,17 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
 
         // An agnostic replacement exists identically in every tenant, so it is safe to write into tenant B's
         // policy even though remediation was authorized through tenant A's role services.
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Valid));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Success));
+        var result = (RoleReferenceRemovalResult.Success)removalResult;
 
-        Assert.Equal(
-            [otherTenantConnection.Id, ownConnection.Id],
-            result.ChangedOwnerIds.Order(StringComparer.Ordinal).ToArray());
-        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-replacement");
-        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-replacement");
+        await Assert.That(result.ChangedOwnerIds.Order(StringComparer.Ordinal).ToArray()).IsEquivalentTo([otherTenantConnection.Id, ownConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-replacement");
+        await AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-replacement");
     }
 
-    [Fact]
+    [Test]
     public async Task RemediationRemovesTheRoleFromAHostScopedConnectionForATenant()
     {
         var hostConnection = Connection("host-connection", CreateUserPolicy("workflow-user", "other-role"));
@@ -614,14 +627,16 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         var snapshot = await contributor.InspectAsync("workflow-user");
         var request = new RoleReferenceRemovalRequest("workflow-user", Administrator(), snapshot.Version, snapshot.Dependencies);
 
-        Assert.IsType<RoleReferenceRemovalValidationResult.Valid>(await contributor.ValidateRemovalAsync(request));
-        var result = Assert.IsType<RoleReferenceRemovalResult.Success>(await contributor.RemoveEditableReferencesAsync(request));
+        await Assert.That(await contributor.ValidateRemovalAsync(request)).IsOfType(typeof(RoleReferenceRemovalValidationResult.Valid));
+        var removalResult = await contributor.RemoveEditableReferencesAsync(request);
+        await Assert.That(removalResult).IsOfType(typeof(RoleReferenceRemovalResult.Success));
+        var result = (RoleReferenceRemovalResult.Success)removalResult;
 
-        Assert.Equal([hostConnection.Id], result.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(hostConnection.Id), "other-role");
+        await Assert.That(result.ChangedOwnerIds).IsEquivalentTo([hostConnection.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await AssertDefaultRoleIds(await store.FindByIdAsync(hostConnection.Id), "other-role");
     }
 
-    [Fact]
+    [Test]
     public async Task ReplacementRoleIdThatResolvesToBothATenantRoleAndAnAgnosticRoleIsRejectedRatherThanThrowing()
     {
         var ownConnection = Connection("own-connection", CreateUserPolicy("agnostic-role"), TenantA);
@@ -650,15 +665,17 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         // deletion target. A replacement candidate is not the coordinator's own deletion target, so this must be
         // reported as an ordinary validation failure rather than escape as an exception.
         var validation = await contributor.ValidateRemovalAsync(request);
-        var forbidden = Assert.IsType<RoleReferenceRemovalValidationResult.Forbidden>(validation);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", forbidden.Code);
+        await Assert.That(validation).IsOfType(typeof(RoleReferenceRemovalValidationResult.Forbidden));
+        var forbidden = (RoleReferenceRemovalValidationResult.Forbidden)validation;
+        await Assert.That(forbidden.Code).IsEqualTo("replacement_role_unavailable_or_unauthorized");
 
         var result = await contributor.RemoveEditableReferencesAsync(request);
-        var failed = Assert.IsType<RoleReferenceRemovalResult.Failed>(result);
-        Assert.Equal("replacement_role_unavailable_or_unauthorized", failed.Code);
-        Assert.Empty(failed.ChangedOwnerIds);
-        AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-role");
-        AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-role");
+        await Assert.That(result).IsOfType(typeof(RoleReferenceRemovalResult.Failed));
+        var failed = (RoleReferenceRemovalResult.Failed)result;
+        await Assert.That(failed.Code).IsEqualTo("replacement_role_unavailable_or_unauthorized");
+        await Assert.That(failed.ChangedOwnerIds).IsEmpty();
+        await AssertDefaultRoleIds(await store.FindByIdAsync(ownConnection.Id), "agnostic-role");
+        await AssertDefaultRoleIds(await store.FindByIdAsync(otherTenantConnection.Id), "agnostic-role");
     }
 
     private static Task<(ExternalAuthenticationRoleDeletionDependencyContributor Contributor, InMemoryIdentityProviderConnectionStore Store, InMemoryConnectionRegistryVersionStore Versions)> CreateContributorAsync(
@@ -675,7 +692,7 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
     {
         var store = new InMemoryIdentityProviderConnectionStore();
         foreach (var connection in databaseConnections)
-            Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(connection));
+            await Assert.That(await store.CreateAsync(connection)).IsOfType(typeof(ConnectionMutationResult.Created));
 
         var accessor = tenantAccessor ?? TestTenantAccessor.Default;
         var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), accessor);
@@ -718,10 +735,13 @@ public class ExternalAuthenticationRoleDeletionDependencyContributorTests
         1,
         JsonSerializer.SerializeToElement(new { defaultRoleIds }));
 
-    private static void AssertDefaultRoleIds(IdentityProviderConnection? connection, params string[] expectedRoleIds) =>
-        Assert.Equal(
-            expectedRoleIds,
-            Assert.IsType<IdentityProviderConnection>(connection).UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray());
+    private static async Task AssertDefaultRoleIds(IdentityProviderConnection? connection, params string[] expectedRoleIds)
+    {
+        var identityProviderConnection = await Assert.That(connection).IsNotNull();
+        await Assert.That(identityProviderConnection).IsOfType(typeof(IdentityProviderConnection));
+        var actualRoleIds = identityProviderConnection.UnlinkedPolicy!.Settings.GetProperty("defaultRoleIds").EnumerateArray().Select(x => x.GetString()!).ToArray();
+        await Assert.That(actualRoleIds).IsEquivalentTo(expectedRoleIds, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+    }
 
     private const string TenantA = "tenant-a";
     private const string TenantB = "tenant-b";

@@ -2,13 +2,14 @@ using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Validation;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class HmacExternalAuthenticationHandleHasherTests
 {
-    [Fact]
-    public void ConfiguredSharedKeyProducesStableHashesAcrossNodes()
+    [Test]
+    public async Task ConfiguredSharedKeyProducesStableHashesAcrossNodes()
     {
         var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions
         {
@@ -21,23 +22,23 @@ public class HmacExternalAuthenticationHandleHasherTests
         using var firstNode = new HmacExternalAuthenticationHandleHasher(options);
         using var secondNode = new HmacExternalAuthenticationHandleHasher(options);
 
-        Assert.Equal(firstNode.Hash("opaque-handle"), secondNode.Hash("opaque-handle"));
-        Assert.Equal(firstNode.Hash("issuer\u001fsubject"), secondNode.Hash("issuer\u001fsubject"));
+        await Assert.That(secondNode.Hash("opaque-handle")).IsEqualTo(firstNode.Hash("opaque-handle"));
+        await Assert.That(secondNode.Hash("issuer\u001fsubject")).IsEqualTo(firstNode.Hash("issuer\u001fsubject"));
     }
 
-    [Fact]
-    public void ProcessLocalFallbackDoesNotCreateAClusterWideKey()
+    [Test]
+    public async Task ProcessLocalFallbackDoesNotCreateAClusterWideKey()
     {
         using var firstNode = new HmacExternalAuthenticationHandleHasher();
         using var secondNode = new HmacExternalAuthenticationHandleHasher();
 
-        Assert.NotEqual(firstNode.Hash("opaque-handle"), secondNode.Hash("opaque-handle"));
+        await Assert.That(secondNode.Hash("opaque-handle")).IsNotEqualTo(firstNode.Hash("opaque-handle"));
     }
 
-    [Theory]
-    [InlineData("not-base64")]
-    [InlineData("c2hvcnQ=")]
-    public void ValidatorRejectsInvalidSharedKeys(string sharedKey)
+    [Test]
+    [Arguments("not-base64")]
+    [Arguments("c2hvcnQ=")]
+    public async Task ValidatorRejectsInvalidSharedKeys(string sharedKey)
     {
         var options = new ExternalAuthenticationOptions
         {
@@ -56,7 +57,7 @@ public class HmacExternalAuthenticationHandleHasherTests
 
         var result = validator.Validate(null, options);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.Failures!, failure => failure.Contains("SharedKeyBase64", StringComparison.Ordinal));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Failures!).Contains(failure => failure.Contains("SharedKeyBase64", StringComparison.Ordinal));
     }
 }

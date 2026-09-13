@@ -14,28 +14,29 @@ using Elsa.ExternalAuthentication.Validation;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.OpenIdConnect;
 
 public class OpenIdConnectAdapterTests
 {
-    [Fact]
-    public void AcceptsDiscoverySettingsAndRejectsIncompleteManualTrust()
+    [Test]
+    public async Task AcceptsDiscoverySettingsAndRejectsIncompleteManualTrust()
     {
         var parser = new OpenIdConnectSettingsParser();
         var discovery = Parse("""{"mode":"discovery","discoveryUrl":"https://issuer.example/.well-known/openid-configuration","clientId":"elsa"}""");
         var manual = Parse("""{"mode":"manual","clientId":"elsa","issuer":"https://issuer.example"}""");
 
-        Assert.True(parser.TryParse(discovery, out var discoverySettings, out var discoveryErrors));
-        Assert.Equal(OpenIdConnectTrustMode.Discovery, discoverySettings!.TrustMode);
-        Assert.Empty(discoveryErrors);
+        await Assert.That(parser.TryParse(discovery, out var discoverySettings, out var discoveryErrors)).IsTrue();
+        await Assert.That(discoverySettings!.TrustMode).IsEqualTo(OpenIdConnectTrustMode.Discovery);
+        await Assert.That(discoveryErrors).IsEmpty();
 
-        Assert.False(parser.TryParse(manual, out _, out var manualErrors));
-        Assert.Contains(manualErrors, error => error.Field == "tokenEndpoint");
-        Assert.Contains(manualErrors, error => error.Field == "signingKeys");
+        await Assert.That(parser.TryParse(manual, out _, out var manualErrors)).IsFalse();
+        await Assert.That(manualErrors).Contains(error => error.Field == "tokenEndpoint");
+        await Assert.That(manualErrors).Contains(error => error.Field == "signingKeys");
     }
 
-    [Fact]
+    [Test]
     public async Task CreatesAuthorizationCodeRequestWithStateNonceAndProviderPkce()
     {
         var adapter = CreateAdapter(new StaticResponseHandler());
@@ -48,26 +49,26 @@ public class OpenIdConnectAdapterTests
         var request = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), transaction, "provider-state", new TestSystemClock(DateTimeOffset.UtcNow)));
         var query = ParseQuery(request.NavigationUri);
 
-        Assert.Equal("code", query["response_type"]);
-        Assert.Equal("provider-state", query["state"]);
-        Assert.Equal("nonce", query["nonce"]);
-        Assert.Equal("S256", query["code_challenge_method"]);
-        Assert.NotEmpty(query["code_challenge"]);
-        Assert.NotEmpty(request.ProtectedAdapterState);
+        await Assert.That(query["response_type"]).IsEqualTo("code");
+        await Assert.That(query["state"]).IsEqualTo("provider-state");
+        await Assert.That(query["nonce"]).IsEqualTo("nonce");
+        await Assert.That(query["code_challenge_method"]).IsEqualTo("S256");
+        await Assert.That(query["code_challenge"]).IsNotEmpty();
+        await Assert.That(request.ProtectedAdapterState).IsNotEmpty();
     }
 
-    [Fact]
-    public void DescriptorIsVersionedAndDeclaresSecretBindingField()
+    [Test]
+    public async Task DescriptorIsVersionedAndDeclaresSecretBindingField()
     {
         var descriptor = CreateAdapter(new StaticResponseHandler()).Describe();
 
-        Assert.Equal(OpenIdConnectExternalAuthenticationAdapter.AdapterType, descriptor.Type);
-        Assert.Equal(2, descriptor.SettingsVersion);
-        Assert.Contains(descriptor.Fields, field => field.Name == "clientSecret" && field.IsSecretBinding);
-        Assert.True(descriptor.Capabilities.SupportsUpstreamLogout);
+        await Assert.That(descriptor.Type).IsEqualTo(OpenIdConnectExternalAuthenticationAdapter.AdapterType);
+        await Assert.That(descriptor.SettingsVersion).IsEqualTo(2);
+        await Assert.That(descriptor.Fields).Contains(field => field.Name == "clientSecret" && field.IsSecretBinding);
+        await Assert.That(descriptor.Capabilities.SupportsUpstreamLogout).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ClientSecretBasicEncodesReservedCredentialsAndOmitsThemFromTheFormBody()
     {
         var handler = new CapturingTokenResponseHandler(CreateToken(audience: "client:id"));
@@ -89,9 +90,9 @@ public class OpenIdConnectAdapterTests
         {
             await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, secrets, CreateTransaction(), "provider-state", new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = ["provider-state"], ["code"] = ["provider-code"] }, new TestSystemClock(DateTimeOffset.UtcNow)));
 
-            Assert.Equal("Basic Y2xpZW50JTNBaWQ6c2VjcmV0KyUyQiUyRiUyNg==", handler.Authorization);
-            Assert.DoesNotContain("client_id", handler.Body, StringComparison.Ordinal);
-            Assert.DoesNotContain("client_secret", handler.Body, StringComparison.Ordinal);
+            await Assert.That(handler.Authorization).IsEqualTo("Basic Y2xpZW50JTNBaWQ6c2VjcmV0KyUyQiUyRiUyNg==");
+            await Assert.That(handler.Body).DoesNotContain("client_id").WithComparison(StringComparison.Ordinal);
+            await Assert.That(handler.Body).DoesNotContain("client_secret").WithComparison(StringComparison.Ordinal);
         }
         finally
         {
@@ -99,7 +100,7 @@ public class OpenIdConnectAdapterTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task ValidationRejectsMissingDeploymentCallbackBaseUri()
     {
         var options = Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions());
@@ -112,11 +113,11 @@ public class OpenIdConnectAdapterTests
 
         var result = await adapter.ValidateAsync(new ConnectionValidationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), new TestSystemClock(DateTimeOffset.UtcNow)));
 
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, error => error.Field == "redirects.externalCallbackBaseUri");
+        await Assert.That(result.IsValid).IsFalse();
+        await Assert.That(result.Errors).Contains(error => error.Field == "redirects.externalCallbackBaseUri");
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsProviderCallbackErrorsBeforeAnyTokenProcessing()
     {
         var adapter = CreateAdapter(new StaticResponseHandler());
@@ -125,10 +126,10 @@ public class OpenIdConnectAdapterTests
         var transaction = new BrokerTransaction { HandleHash = "state", PkceChallenge = "client-pkce", CallbackUri = new Uri("https://studio.example/callback"), ClientId = "studio", ReturnPath = "/", TenantId = "tenant-a" };
         var parameters = new Dictionary<string, IReadOnlyCollection<string>> { ["error"] = ["access_denied"] };
 
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding>(), transaction, "state", parameters, new TestSystemClock(DateTimeOffset.UtcNow))).AsTask());
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding>(), transaction, "state", parameters, new TestSystemClock(DateTimeOffset.UtcNow))).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsCallbackWhenTheRawCorrelationStateDoesNotMatch()
     {
         var connection = CreateConnection(CreateManualSettings());
@@ -136,10 +137,10 @@ public class OpenIdConnectAdapterTests
         var parameters = new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = ["unexpected-state"] };
         var adapter = CreateAdapter(new StaticResponseHandler());
 
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding>(), CreateTransaction(), "provider-state", parameters, new TestSystemClock(DateTimeOffset.UtcNow))).AsTask());
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding>(), CreateTransaction(), "provider-state", parameters, new TestSystemClock(DateTimeOffset.UtcNow))).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task AppliesClaimProjectionBoundsWhileKeepingRedactedClaims()
     {
         var token = CreateToken(new[] { new Claim("name", "Ada"), new Claim("email", "secret"), new Claim("groups", "toolong") });
@@ -152,36 +153,36 @@ public class OpenIdConnectAdapterTests
 
         var result = await AuthenticateAsync(token, projection);
 
-        Assert.Equal("subject", result.Identity.Subject);
-        Assert.Equal(["Ada"], result.ProjectedClaims["name"]);
-        Assert.Equal(["secret"], result.ProjectedClaims["email"]);
-        Assert.DoesNotContain("groups", result.ProjectedClaims.Keys);
+        await Assert.That(result.Identity.Subject).IsEqualTo("subject");
+        await Assert.That(result.ProjectedClaims["name"]).IsEquivalentTo(["Ada"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.ProjectedClaims["email"]).IsEquivalentTo(["secret"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.ProjectedClaims.Keys).DoesNotContain("groups");
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsInvalidSignatureIssuerAudienceAzpExpiryNonceAndMissingCode()
     {
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(signingKey: new SymmetricSecurityKey(Encoding.UTF8.GetBytes("different-signing-key-must-be-long")))));
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(issuer: "https://other.example")));
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(audience: "other-client")));
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(expires: DateTimeOffset.UtcNow.AddMinutes(-5))));
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(nonce: "other-nonce")));
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(), includeCode: false));
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(audiences: ["elsa", "another"], azp: "other-client")));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(signingKey: new SymmetricSecurityKey(Encoding.UTF8.GetBytes("different-signing-key-must-be-long")))));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(issuer: "https://other.example")));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(audience: "other-client")));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(expires: DateTimeOffset.UtcNow.AddMinutes(-5))));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(nonce: "other-nonce")));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(), includeCode: false));
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => AuthenticateAsync(CreateToken(audiences: ["elsa", "another"], azp: "other-client")));
     }
 
-    [Fact]
+    [Test]
     public async Task AlwaysUsesS256UpstreamPkce()
     {
         var request = await CreateAuthorizationRequestAsync();
 
-        Assert.Contains("code_challenge_method=S256", request.NavigationUri.Query);
-        Assert.Contains("code_challenge=", request.NavigationUri.Query);
+        await Assert.That(request.NavigationUri.Query).Contains("code_challenge_method=S256");
+        await Assert.That(request.NavigationUri.Query).Contains("code_challenge=");
     }
 
-    [Theory]
-    [InlineData("https://elsa.example/gateway")]
-    [InlineData("https://elsa.example/gateway/")]
+    [Test]
+    [Arguments("https://elsa.example/gateway")]
+    [Arguments("https://elsa.example/gateway/")]
     public async Task UsesPurposeSpecificCallbacksWithoutDiscardingTheDeploymentBasePath(string callbackBaseUri)
     {
         var adapter = CreateAdapter(new StaticResponseHandler(), new Uri(callbackBaseUri));
@@ -194,12 +195,14 @@ public class OpenIdConnectAdapterTests
         var preview = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), previewTransaction, "preview-state", clock));
         var logout = await adapter.CreateLogoutRequestAsync(new ExternalLogoutContext(effective, new Dictionary<string, ResolvedSecretBinding>(), new BrokerTransaction { Purpose = BrokerTransactionPurpose.UpstreamLogout }, "logout-state", clock));
 
-        Assert.Equal("https://elsa.example/gateway/external-authentication/callback/contoso", ParseQuery(signIn.NavigationUri)["redirect_uri"]);
-        Assert.Equal("https://elsa.example/gateway/external-authentication/previews/callback/connection", ParseQuery(preview.NavigationUri)["redirect_uri"]);
-        Assert.Equal("https://elsa.example/gateway/external-authentication/logout/callback/contoso", ParseQuery(Assert.IsType<ExternalLogoutRequest>(logout).NavigationUri)["post_logout_redirect_uri"]);
+        await Assert.That(ParseQuery(signIn.NavigationUri)["redirect_uri"]).IsEqualTo("https://elsa.example/gateway/external-authentication/callback/contoso");
+        await Assert.That(ParseQuery(preview.NavigationUri)["redirect_uri"]).IsEqualTo("https://elsa.example/gateway/external-authentication/previews/callback/connection");
+        var logoutRequest = await Assert.That(logout).IsNotNull();
+        await Assert.That(logoutRequest).IsOfType(typeof(ExternalLogoutRequest));
+        await Assert.That(ParseQuery(logoutRequest.NavigationUri)["post_logout_redirect_uri"]).IsEqualTo("https://elsa.example/gateway/external-authentication/logout/callback/contoso");
     }
 
-    [Fact]
+    [Test]
     public async Task UsesThePreviewCallbackAgainForTheTokenExchange()
     {
         var handler = new CapturingTokenResponseHandler(CreateToken());
@@ -216,7 +219,7 @@ public class OpenIdConnectAdapterTests
         {
             await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(effective, new Dictionary<string, ResolvedSecretBinding> { ["clientSecret"] = new(secret, "generation") }, transaction, "provider-state", new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = ["provider-state"], ["code"] = ["provider-code"] }, new TestSystemClock(DateTimeOffset.UtcNow)));
 
-            Assert.Contains("redirect_uri=https%3A%2F%2Felsa.example%2Fexternal-authentication%2Fpreviews%2Fcallback%2Fconnection", handler.Body, StringComparison.Ordinal);
+            await Assert.That(handler.Body).Contains("redirect_uri=https%3A%2F%2Felsa.example%2Fexternal-authentication%2Fpreviews%2Fcallback%2Fconnection").WithComparison(StringComparison.Ordinal);
         }
         finally
         {
@@ -224,9 +227,9 @@ public class OpenIdConnectAdapterTests
         }
     }
 
-    [Theory]
-    [InlineData("http://issuer.example")]
-    [InlineData("https://issuer.example", "http://issuer.example/authorize")]
+    [Test]
+    [Arguments("http://issuer.example")]
+    [Arguments("https://issuer.example", "http://issuer.example/authorize")]
     public async Task RejectsNonHttpsDiscoveryMetadata(string issuer, string? authorizationEndpoint = null)
     {
         var metadata = $$"""{"issuer":"{{issuer}}","authorization_endpoint":"{{authorizationEndpoint ?? "https://issuer.example/authorize"}}","token_endpoint":"https://issuer.example/token","jwks_uri":"https://issuer.example/keys"}""";
@@ -235,7 +238,7 @@ public class OpenIdConnectAdapterTests
         var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, ConnectionScope.Host, ConnectionValidity.Valid, false, "configuration");
         var transaction = CreateTransaction();
 
-        await Assert.ThrowsAsync<OpenIdConnectAuthenticationException>(() => adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), transaction, "state", new TestSystemClock(DateTimeOffset.UtcNow))).AsTask());
+        await Assert.ThrowsExactlyAsync<OpenIdConnectAuthenticationException>(() => adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), transaction, "state", new TestSystemClock(DateTimeOffset.UtcNow))).AsTask());
     }
 
     private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement.Clone();

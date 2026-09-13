@@ -1,5 +1,6 @@
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Stores.InMemory;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
@@ -7,7 +8,7 @@ public class InMemoryOperationalStoresTests
 {
     private readonly DateTimeOffset _now = new(2026, 7, 24, 12, 0, 0, TimeSpan.Zero);
 
-    [Fact]
+    [Test]
     public async Task ObservationStoreKeepsTheMostRecentResultPerConnection()
     {
         var store = new InMemoryConnectionObservationStore();
@@ -18,19 +19,19 @@ public class InMemoryOperationalStoresTests
 
         var result = await store.FindLatestAsync("connection-a");
 
-        Assert.Same(latest, result);
+        await Assert.That(result).IsSameReferenceAs(latest);
     }
 
-    [Fact]
+    [Test]
     public async Task RegistryVersionStoreCreatesAMonotonicBarrier()
     {
         var store = new InMemoryConnectionRegistryVersionStore();
         var initial = await store.GetVersionAsync();
         var advanced = await store.AdvanceAsync();
 
-        Assert.Equal(initial + 1, advanced);
-        Assert.False(await store.IsCurrentAsync(initial));
-        Assert.True(await store.IsCurrentAsync(advanced));
+        await Assert.That(advanced).IsEqualTo(initial + 1);
+        await Assert.That(await store.IsCurrentAsync(initial)).IsFalse();
+        await Assert.That(await store.IsCurrentAsync(advanced)).IsTrue();
     }
 
     private static ConnectionObservation CreateObservation(DateTimeOffset observedAt, string summary) => new(

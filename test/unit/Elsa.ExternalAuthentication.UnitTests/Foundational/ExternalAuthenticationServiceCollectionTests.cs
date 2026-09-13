@@ -13,13 +13,14 @@ using Elsa.Identity.Contracts;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.ExternalAuthentication.UnitTests.Foundational;
 
 public class ExternalAuthenticationServiceCollectionTests
 {
-    [Fact]
-    public void AddsTheConfigurationFirstBrokerFoundation()
+    [Test]
+    public async Task AddsTheConfigurationFirstBrokerFoundation()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ISystemClock>(new TestSystemClock(new DateTimeOffset(2026, 7, 24, 12, 0, 0, TimeSpan.Zero)));
@@ -31,26 +32,26 @@ public class ExternalAuthenticationServiceCollectionTests
 
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
 
-        Assert.NotNull(serviceProvider.GetRequiredService<IOptions<ExternalAuthenticationOptions>>().Value);
+        await Assert.That(serviceProvider.GetRequiredService<IOptions<ExternalAuthenticationOptions>>().Value).IsNotNull();
         var connectionSources = serviceProvider.GetRequiredService<IEnumerable<IIdentityProviderConnectionSource>>().ToArray();
-        Assert.Contains(connectionSources, source => source is ConfigurationIdentityProviderConnectionSource);
-        Assert.Contains(connectionSources, source => source is DatabaseIdentityProviderConnectionSource);
-        Assert.IsType<DefaultIdentityProviderConnectionRegistry>(serviceProvider.GetRequiredService<IIdentityProviderConnectionRegistry>());
-        Assert.IsType<InMemoryExternalAuthenticationStateStore>(serviceProvider.GetRequiredService<IExternalAuthenticationStateStore>());
-        Assert.IsType<InMemoryAuthorizationGrantStore>(serviceProvider.GetRequiredService<IAuthorizationGrantStore>());
-        Assert.IsType<InMemoryExternalAuthenticationSessionStore>(serviceProvider.GetRequiredService<IExternalAuthenticationSessionStore>());
-        Assert.IsType<InMemoryPreviewResultStore>(serviceProvider.GetRequiredService<IPreviewResultStore>());
-        Assert.IsType<InMemoryConnectionObservationStore>(serviceProvider.GetRequiredService<IConnectionObservationStore>());
-        Assert.IsType<InMemoryConnectionRegistryVersionStore>(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>());
+        await Assert.That(connectionSources).Contains(source => source is ConfigurationIdentityProviderConnectionSource);
+        await Assert.That(connectionSources).Contains(source => source is DatabaseIdentityProviderConnectionSource);
+        await Assert.That(serviceProvider.GetRequiredService<IIdentityProviderConnectionRegistry>()).IsOfType(typeof(DefaultIdentityProviderConnectionRegistry));
+        await Assert.That(serviceProvider.GetRequiredService<IExternalAuthenticationStateStore>()).IsOfType(typeof(InMemoryExternalAuthenticationStateStore));
+        await Assert.That(serviceProvider.GetRequiredService<IAuthorizationGrantStore>()).IsOfType(typeof(InMemoryAuthorizationGrantStore));
+        await Assert.That(serviceProvider.GetRequiredService<IExternalAuthenticationSessionStore>()).IsOfType(typeof(InMemoryExternalAuthenticationSessionStore));
+        await Assert.That(serviceProvider.GetRequiredService<IPreviewResultStore>()).IsOfType(typeof(InMemoryPreviewResultStore));
+        await Assert.That(serviceProvider.GetRequiredService<IConnectionObservationStore>()).IsOfType(typeof(InMemoryConnectionObservationStore));
+        await Assert.That(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>()).IsOfType(typeof(InMemoryConnectionRegistryVersionStore));
         var descriptors = serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()).ToArray();
-        Assert.Contains(descriptors, x => x.Resource == ExternalAuthenticationResourcePermissions.Connections && x.Supports(CoreVerbs.View));
-        Assert.Contains(descriptors, x => x.Resource == ExternalAuthenticationResourcePermissions.PolicyDefaultRoles && x.Supports(CoreVerbs.Update));
-        Assert.NotNull(serviceProvider.GetRequiredService<IOptions<RateLimiterOptions>>().Value);
-        Assert.Contains(serviceProvider.GetServices<IConfigureOptions<RateLimiterOptions>>(), x => x.GetType().Name == "ConfigureExternalAuthenticationRateLimiterOptions");
+        await Assert.That(descriptors).Contains(x => x.Resource == ExternalAuthenticationResourcePermissions.Connections && x.Supports(CoreVerbs.View));
+        await Assert.That(descriptors).Contains(x => x.Resource == ExternalAuthenticationResourcePermissions.PolicyDefaultRoles && x.Supports(CoreVerbs.Update));
+        await Assert.That(serviceProvider.GetRequiredService<IOptions<RateLimiterOptions>>().Value).IsNotNull();
+        await Assert.That(serviceProvider.GetServices<IConfigureOptions<RateLimiterOptions>>()).Contains(x => x.GetType().Name == "ConfigureExternalAuthenticationRateLimiterOptions");
     }
 
-    [Fact]
-    public void OpenIdConnectRegistrationUsesTheHardenedProviderClient()
+    [Test]
+    public async Task OpenIdConnectRegistrationUsesTheHardenedProviderClient()
     {
         var services = new ServiceCollection();
         services.AddExternalAuthenticationServices(options =>
@@ -60,12 +61,12 @@ public class ExternalAuthenticationServiceCollectionTests
         });
         services.AddOpenIdConnectExternalAuthentication();
 
-        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IProviderHttpClient) && descriptor.ImplementationFactory is not null);
-        Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(OpenIdConnectExternalAuthenticationAdapter));
+        await Assert.That(services).Contains(descriptor => descriptor.ServiceType == typeof(IProviderHttpClient) && descriptor.ImplementationFactory is not null);
+        await Assert.That(services).Contains(descriptor => descriptor.ServiceType == typeof(OpenIdConnectExternalAuthenticationAdapter));
     }
 
-    [Fact]
-    public void RoleDeletionContributorResolvesWhenIdentityIsNotRegistered()
+    [Test]
+    public async Task RoleDeletionContributorResolvesWhenIdentityIsNotRegistered()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ISystemClock>(new TestSystemClock(DateTimeOffset.UnixEpoch));
@@ -78,8 +79,8 @@ public class ExternalAuthenticationServiceCollectionTests
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = serviceProvider.CreateScope();
 
-        var contributor = Assert.Single(scope.ServiceProvider.GetServices<IRoleDeletionDependencyContributor>());
-        Assert.IsType<ExternalAuthenticationRoleDeletionDependencyContributor>(contributor);
-        Assert.Empty(scope.ServiceProvider.GetServices<IRoleStore>());
+        var contributor = await Assert.That(scope.ServiceProvider.GetServices<IRoleDeletionDependencyContributor>()).HasSingleItem();
+        await Assert.That(contributor).IsOfType(typeof(ExternalAuthenticationRoleDeletionDependencyContributor));
+        await Assert.That(scope.ServiceProvider.GetServices<IRoleStore>()).IsEmpty();
     }
 }
