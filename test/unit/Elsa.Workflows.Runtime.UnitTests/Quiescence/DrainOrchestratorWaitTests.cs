@@ -239,6 +239,38 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "A disposed handle with an active snapshot is not persisted after the row suspends")]
+    public async Task DisposedHandleWithActiveSnapshotDoesNotPersistLaterSuspendedInstance()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-suspended-after-snapshot", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        handle.Dispose();
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+
+        var finds = 0;
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Interlocked.Increment(ref finds) == 1
+                ? new ValueTask<WorkflowInstance?>(RunningInstance("instance-suspended-after-snapshot"))
+                : new ValueTask<WorkflowInstance?>(new WorkflowInstance
+                {
+                    Id = "instance-suspended-after-snapshot",
+                    DefinitionId = "def-1",
+                    DefinitionVersionId = "ver-1",
+                    Version = 1,
+                    Status = WorkflowStatus.Running,
+                    SubStatus = WorkflowSubStatus.Suspended,
+                    IsExecuting = false,
+                }));
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+        await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "A disposed handle with a suspended snapshot is not persisted as Interrupted")]
     public async Task DisposedHandleWithSuspendedSnapshotIsNotPersisted()
     {

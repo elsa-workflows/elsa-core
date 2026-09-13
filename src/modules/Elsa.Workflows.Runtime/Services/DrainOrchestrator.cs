@@ -389,6 +389,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         var cancelledInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         var cancelledHandles = new List<ExecutionCycleHandle>(live.Count);
         var handlesToPersist = new List<ExecutionCycleHandle>(live.Count);
+        var disposedActiveSnapshotHandleIds = new HashSet<Guid>();
         foreach (var handle in live)
         {
             try
@@ -399,7 +400,10 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 if (!handle.TryCancel())
                 {
                     if (activeSnapshotHandleIds.ContainsKey(handle.Id) && handle.Disposed.IsCompleted)
+                    {
+                        disposedActiveSnapshotHandleIds.Add(handle.Id);
                         handlesToPersist.Add(handle);
+                    }
                     continue;
                 }
 
@@ -467,7 +471,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             try
             {
                 using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
-                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, persistCts.Token);
+                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, disposedActiveSnapshotHandleIds.Contains(handle.Id), persistCts.Token);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
@@ -485,9 +489,15 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         string generationId,
         string reason,
         HashSet<string> drainInducedInstanceIds,
+        bool requireExecuting,
         CancellationToken cancellationToken)
     {
         var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
+
+        // A disposed checkpoint is only recoverable while its row still shows execution; a later
+        // natural suspension or completion must remain untouched.
+        if (requireExecuting && (instance is null || instance.Status == WorkflowStatus.Finished || !instance.IsExecuting))
+            return;
 
         if (instance is null)
         {
