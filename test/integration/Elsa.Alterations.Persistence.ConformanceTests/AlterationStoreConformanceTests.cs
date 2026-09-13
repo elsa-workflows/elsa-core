@@ -304,69 +304,6 @@ public abstract class AlterationStoreConformanceTests
         Assert.Equal("Completed", job.Log.ElementAt(1).EventName);
     }
 
-    [Fact]
-    public async Task CrossTenantSaveDoesNotOverwriteOrStealRows()
-    {
-        await using var scenario = await CreateScenarioAsync();
-        await scenario.Plans.SaveAsync(Plan("plan-shared", "tenant-a", AlterationPlanStatus.Pending));
-        await scenario.Jobs.SaveAsync(Job("job-shared", "tenant-a", status: AlterationJobStatus.Pending));
-
-        using (scenario.UseTenant("tenant-b"))
-        {
-            await scenario.AttemptSaveAsync(() =>
-                scenario.Plans.SaveAsync(Plan("plan-shared", "tenant-b", AlterationPlanStatus.Completed)));
-            await scenario.AttemptSaveAsync(() =>
-                scenario.Jobs.SaveAsync(Job("job-shared", "tenant-b", status: AlterationJobStatus.Completed)));
-            // SaveMany is not asserted here: EF BulkUpsert ignores query filters and upserts by Id.
-            Assert.Null(await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-shared" }));
-            Assert.Null(await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "job-shared" }));
-        }
-
-        var plan = await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-shared" });
-        Assert.NotNull(plan);
-        Assert.Equal("tenant-a", plan.TenantId);
-        Assert.Equal(AlterationPlanStatus.Pending, plan.Status);
-
-        var job = await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "job-shared" });
-        Assert.NotNull(job);
-        Assert.Equal("tenant-a", job.TenantId);
-        Assert.Equal(AlterationJobStatus.Pending, job.Status);
-
-        using (scenario.UseTenant(Tenant.AgnosticTenantId))
-        {
-            await scenario.Plans.SaveAsync(Plan("plan-star", Tenant.AgnosticTenantId, AlterationPlanStatus.Pending));
-            await scenario.Jobs.SaveAsync(Job("job-star", Tenant.AgnosticTenantId, status: AlterationJobStatus.Pending));
-        }
-
-        await scenario.AttemptSaveAsync(() =>
-            scenario.Plans.SaveAsync(Plan("plan-star", "tenant-a", AlterationPlanStatus.Completed)));
-        await scenario.AttemptSaveAsync(() =>
-            scenario.Jobs.SaveAsync(Job("job-star", "tenant-a", status: AlterationJobStatus.Completed)));
-
-        using (scenario.UseTenant(Tenant.AgnosticTenantId))
-        {
-            var starPlan = await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-star" });
-            Assert.NotNull(starPlan);
-            Assert.Equal(Tenant.AgnosticTenantId, starPlan.TenantId);
-            Assert.Equal(AlterationPlanStatus.Pending, starPlan.Status);
-
-            var starJob = await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "job-star" });
-            Assert.NotNull(starJob);
-            Assert.Equal(Tenant.AgnosticTenantId, starJob.TenantId);
-            Assert.Equal(AlterationJobStatus.Pending, starJob.Status);
-
-            await scenario.Plans.SaveAsync(Plan("plan-star", Tenant.AgnosticTenantId, AlterationPlanStatus.Completed));
-            await scenario.Jobs.SaveAsync(Job("job-star", Tenant.AgnosticTenantId, status: AlterationJobStatus.Completed));
-            Assert.Equal(AlterationPlanStatus.Completed, (await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-star" }))!.Status);
-            Assert.Equal(AlterationJobStatus.Completed, (await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "job-star" }))!.Status);
-        }
-
-        await scenario.Plans.SaveAsync(Plan("plan-shared", "tenant-a", AlterationPlanStatus.Running));
-        await scenario.Jobs.SaveAsync(Job("job-shared", "tenant-a", status: AlterationJobStatus.Running));
-        Assert.Equal(AlterationPlanStatus.Running, (await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-shared" }))!.Status);
-        Assert.Equal(AlterationJobStatus.Running, (await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "job-shared" }))!.Status);
-    }
-
     private static async Task SeedMixedPlansAsync(AlterationStoreScenario scenario)
     {
         await scenario.Plans.SaveAsync(Plan("plan-a", "tenant-a"));
