@@ -21,5 +21,22 @@ public class TriggerIndexingContext(WorkflowIndexingContext workflowIndexingCont
     /// </remarks>
     public string TriggerName { get; set; } = trigger.Type;
 
+    /// <summary>
+    /// Set by the trigger being indexed to declare that, as configured, it deliberately registers no triggers at all.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A trigger that returns no payloads is otherwise stored as a single placeholder row with a <c>null</c> payload, which the runtime's workflow validation
+    /// reports as a trigger without a payload. For almost every trigger that is the right outcome: no payloads means its configuration is incomplete.
+    /// A trigger whose decision to register anything depends on its own content, and that has nothing to register as configured, sets this instead,
+    /// and the indexer then stores no row for it.
+    /// </para>
+    /// <para>
+    /// It only takes effect when the trigger returns no payloads and completes without throwing. Payloads the trigger does return are indexed as usual,
+    /// and a trigger that throws still gets the placeholder row, so a failure is never mistaken for a deliberate decision.
+    /// </para>
+    /// </remarks>
+    public bool RegistersNoTriggers { get; set; }
+
     public T? Get<T>(Input<T>? input) => ExpressionExecutionContext.Get(input);
 }

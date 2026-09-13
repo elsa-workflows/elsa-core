@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using System.Xml;
 using Bpmn.Model;
+using Bpmn.Semantics;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Signals;
 using Elsa.Extensions;
@@ -9,6 +10,7 @@ using Elsa.Scheduling;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -33,13 +35,15 @@ namespace Elsa.Bpmn.Activities;
 /// continuation, and its outcome is what a conditional sequence flow in the enclosing scope selects on.
 /// </para>
 /// <para>
-/// Composing this activity into a <c>Flowchart</c>: it completes with only the interpreter's outcome name (e.g.
-/// <c>BpmnInterpreter.DoneOutcomeName</c>, and <c>CancelledOutcomeName</c> where relevant) — not with
-/// <c>Outcomes.Default</c>, which an ordinary activity's null result also produces and which additionally matches a
-/// null-port connection. A <c>Connection</c> built with the default/null-port shorthand will therefore never fire
-/// from this activity; always target an explicit outcome port.
+/// Composing this activity into a <c>Flowchart</c>: it completes with only the interpreter's outcome name —
+/// <see cref="BpmnInterpreter.DoneOutcomeName"/> normally, or <see cref="BpmnInterpreter.CancelledOutcomeName"/>
+/// when a cancel end event cancelled a transaction — never with <c>Outcomes.Default</c>, which an ordinary
+/// activity's null result also produces and which additionally matches a null-port connection. Both outcomes are
+/// declared flow ports, so a <c>Connection</c> targets one of them explicitly; the default/null-port shorthand will
+/// never fire from this activity.
 /// </para>
 /// </remarks>
+[FlowNode(BpmnInterpreter.DoneOutcomeName, BpmnInterpreter.CancelledOutcomeName)]
 [Activity("Elsa", "BPMN", "Executes a BPMN process scope.")]
 [System.ComponentModel.Browsable(false)]
 public class BpmnProcess : Container, ITrigger
@@ -143,6 +147,17 @@ public class BpmnProcess : Container, ITrigger
     /// <c>BpmnActivityBindingFormat</c>'s sibling, the interchange reader), so there is nothing left to resolve.
     /// </para>
     /// <para>
+    /// A root scope none of whose start events carries an event definition — plain start events only, or no start
+    /// event at all — is started directly, through the workflow execution API, never by a stimulus. It has nothing to register,
+    /// deliberately, so it sets <see cref="TriggerIndexingContext.RegistersNoTriggers"/> and the indexer stores no row
+    /// for it. Without that declaration the indexer stores a <c>null</c>-payload placeholder row, which
+    /// <c>ValidateWorkflowRequestHandler</c> reports as a trigger without a payload and which therefore refuses
+    /// publication. The declaration is made in that case only. A start event that does carry an event definition but
+    /// resolves to nothing here — a blank name, or a timer refused below — is a declared start that failed, not a plain
+    /// start, so it still leaves the placeholder that validation reports instead of publishing as though it had never
+    /// been declared. A nested scope returns before this check and is left exactly as it was.
+    /// </para>
+    /// <para>
     /// Each payload is wrapped in a <see cref="NamedTriggerPayload"/> naming its own stimulus, rather than relying on
     /// <see cref="TriggerIndexingContext.TriggerName"/>: that property is a single value shared by every payload of
     /// the trigger, so a process with both a message/signal start and a recurring timer start would otherwise have
@@ -175,11 +190,19 @@ public class BpmnProcess : Container, ITrigger
         if (await HasEnclosingBpmnScopeAsync(context))
             return [];
 
+        var startEvents = process.Elements.Where(element => string.Equals(element.ElementType, BpmnElementTypes.StartEvent, StringComparison.Ordinal)).ToList();
+
+        if (startEvents.All(element => element.EventDefinitions.Count == 0))
+        {
+            context.RegistersNoTriggers = true;
+            return [];
+        }
+
         var logger = context.ExpressionExecutionContext.GetRequiredService<ILogger<BpmnProcess>>();
         var payloads = new List<object>();
         var registeredStimuli = new HashSet<(string StimulusName, string ResolvedName)>();
 
-        foreach (var element in process.Elements.Where(element => string.Equals(element.ElementType, BpmnElementTypes.StartEvent, StringComparison.Ordinal)))
+        foreach (var element in startEvents)
         {
             foreach (var eventDefinition in element.EventDefinitions)
                 AddStartTriggerPayload(context, element, eventDefinition, registeredStimuli, payloads, logger);

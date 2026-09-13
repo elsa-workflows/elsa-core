@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  id="Definitions_camunda-multi-instance-subprocess"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="camunda-multi-instance-subprocess" name="Camunda Multi-Instance Subprocess" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:subProcess id="ShipOrders" name="Ship Orders">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics camunda:collection="${orders}" camunda:elementVariable="order" />
+      <bpmn:startEvent id="Orders_Start">
+        <bpmn:outgoing>Orders_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <bpmn:subProcess id="ShipLines" name="Ship Lines">
+        <bpmn:incoming>Orders_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Orders_Flow_2</bpmn:outgoing>
+        <bpmn:multiInstanceLoopCharacteristics isSequential="true" camunda:collection="${order.lines}" camunda:elementVariable="line" />
+        <bpmn:startEvent id="Lines_Start">
+          <bpmn:outgoing>Lines_Flow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:serviceTask id="ShipLine" name="Ship Line">
+          <bpmn:extensionElements>
+            <elsa:activityBinding activityType="Elsa.WriteLine">
+              <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"ship"}}</elsa:input>
+            </elsa:activityBinding>
+          </bpmn:extensionElements>
+          <bpmn:incoming>Lines_Flow_1</bpmn:incoming>
+          <bpmn:outgoing>Lines_Flow_2</bpmn:outgoing>
+        </bpmn:serviceTask>
+        <bpmn:endEvent id="Lines_End">
+          <bpmn:incoming>Lines_Flow_2</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="Lines_Flow_1" sourceRef="Lines_Start" targetRef="ShipLine" />
+        <bpmn:sequenceFlow id="Lines_Flow_2" sourceRef="ShipLine" targetRef="Lines_End" />
+      </bpmn:subProcess>
+
+      <bpmn:endEvent id="Orders_End">
+        <bpmn:incoming>Orders_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Orders_Flow_1" sourceRef="Orders_Start" targetRef="ShipLines" />
+      <bpmn:sequenceFlow id="Orders_Flow_2" sourceRef="ShipLines" targetRef="Orders_End" />
+    </bpmn:subProcess>
+
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="ShipOrders" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="ShipOrders" targetRef="End_1" />
+  </bpmn:process>
+</bpmn:definitions>

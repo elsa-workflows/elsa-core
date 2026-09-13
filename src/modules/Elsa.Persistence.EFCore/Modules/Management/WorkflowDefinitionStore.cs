@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using System.Text.Json.Serialization;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
@@ -129,6 +130,97 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+        var queryable = Filter(dbContext.WorkflowDefinitions.AsNoTracking(), filter);
+
+        if (filter.TenantAgnostic)
+            queryable = queryable.IgnoreQueryFilters();
+
+        var current = await queryable.OrderBy(x => x.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+
+        if (current == null)
+            return WorkflowDefinitionUpdateResult.NotFound();
+
+        await OnLoadAsync(dbContext, current, cancellationToken);
+
+        if (!matchesExpected(current))
+            return WorkflowDefinitionUpdateResult.Conflict();
+
+        var expectedId = current.Id;
+        var expectedVersion = current.Version;
+        var expectedStringData = current.StringData;
+        var expectedName = current.Name;
+        var expectedDescription = current.Description;
+        var expectedData = (string?)dbContext.Entry(current).Property("Data").CurrentValue;
+
+        var next = update(current);
+        var nextData = SerializeState(next);
+        var nextUsableAsActivity = next.Options.UsableAsActivity;
+
+        if (next.Id != expectedId)
+        {
+            var unmarked = await dbContext.WorkflowDefinitions
+                .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.IsLatest, false), cancellationToken);
+
+            if (unmarked == 0)
+                return WorkflowDefinitionUpdateResult.Conflict();
+
+            dbContext.WorkflowDefinitions.Add(next);
+            dbContext.Entry(next).Property("Data").CurrentValue = nextData;
+            dbContext.Entry(next).Property("UsableAsActivity").CurrentValue = nextUsableAsActivity;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return WorkflowDefinitionUpdateResult.Updated(next);
+        }
+
+        var updated = await dbContext.WorkflowDefinitions
+            .Where(MatchesLoadedSnapshot(expectedId, expectedVersion, expectedStringData, expectedName, expectedDescription, expectedData))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.StringData, next.StringData)
+                    .SetProperty(x => EF.Property<string?>(x, "Data"), nextData)
+                    .SetProperty(x => EF.Property<bool?>(x, "UsableAsActivity"), nextUsableAsActivity),
+                cancellationToken);
+
+        if (updated == 0)
+            return WorkflowDefinitionUpdateResult.Conflict();
+
+        await transaction.CommitAsync(cancellationToken);
+        return WorkflowDefinitionUpdateResult.Updated(next);
+    }
+
+    /// <summary>
+    /// The loaded snapshot <see cref="TryUpdateLatestAsync"/> will only overwrite: identity, the ETag-covered
+    /// graph, the serialized <c>Data</c> blob (source XML, variables, options) and the name/description columns
+    /// a metadata-only save changes. The row must still be <c>IsLatest</c> so a published→draft loser
+    /// is Conflict rather than a unique-key failure on <c>(DefinitionId, Version)</c>. Zero rows means
+    /// another writer got there first.
+    /// </summary>
+    private static Expression<Func<WorkflowDefinition, bool>> MatchesLoadedSnapshot(
+        string expectedId,
+        int expectedVersion,
+        string? expectedStringData,
+        string? expectedName,
+        string? expectedDescription,
+        string? expectedData) =>
+        x => x.Id == expectedId
+             && x.Version == expectedVersion
+             && x.IsLatest
+             && x.StringData == expectedStringData
+             && x.Name == expectedName
+             && x.Description == expectedDescription
+             && EF.Property<string?>(x, "Data") == expectedData;
+
+    /// <inheritdoc />
     public async Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -163,12 +255,17 @@ public class EFCoreWorkflowDefinitionStore(EntityStore<ManagementElsaDbContext, 
 
     private ValueTask OnSaveAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition entity, CancellationToken cancellationToken)
     {
-        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
-        var json = payloadSerializer.Serialize(data);
+        var json = SerializeState(entity);
 
         managementElsaDbContext.Entry(entity).Property("Data").CurrentValue = json;
-        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = data.Options.UsableAsActivity;
+        managementElsaDbContext.Entry(entity).Property("UsableAsActivity").CurrentValue = entity.Options.UsableAsActivity;
         return ValueTask.CompletedTask;
+    }
+
+    private string SerializeState(WorkflowDefinition entity)
+    {
+        var data = new WorkflowDefinitionState(entity.Options, entity.Variables, entity.Inputs, entity.Outputs, entity.Outcomes, entity.CustomProperties);
+        return payloadSerializer.Serialize(data);
     }
 
     private ValueTask OnLoadAsync(ManagementElsaDbContext managementElsaDbContext, WorkflowDefinition? entity, CancellationToken cancellationToken)

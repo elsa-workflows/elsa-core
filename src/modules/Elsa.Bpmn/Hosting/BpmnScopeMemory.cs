@@ -22,6 +22,9 @@ internal sealed class BpmnScopeMemory
     /// <summary>The property key holding this scope's work ledger.</summary>
     public const string WorkLedgerPropertyKey = "Bpmn:WorkLedger";
 
+    /// <summary>The property key holding the high-water mark of diagnostics this scope has already projected onto its execution log.</summary>
+    public const string DiagnosticsCursorPropertyKey = "Bpmn:DiagnosticsCursor";
+
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.General);
 
     private readonly ActivityExecutionContext _context;

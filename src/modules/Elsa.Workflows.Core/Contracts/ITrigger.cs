@@ -13,6 +13,8 @@ public interface ITrigger : IActivity
     /// <remarks>
     /// Each returned object is stored under the stimulus name held by <see cref="TriggerIndexingContext.TriggerName"/>, which is shared by all payloads.
     /// To register payloads under more than one stimulus name, return <see cref="NamedTriggerPayload"/> instances: each carries the name for its own payload.
+    /// Returning no payloads stores a placeholder row with a <c>null</c> payload, unless the trigger sets <see cref="TriggerIndexingContext.RegistersNoTriggers"/>
+    /// to declare that, as configured, it deliberately registers none.
     /// </remarks>
     ValueTask<IEnumerable<object>> GetTriggerPayloadsAsync(TriggerIndexingContext context);
 }

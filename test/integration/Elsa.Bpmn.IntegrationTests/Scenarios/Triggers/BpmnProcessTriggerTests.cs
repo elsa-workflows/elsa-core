@@ -195,6 +195,67 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(TimeSpan.FromMilliseconds(1), payload.Interval);
     }
 
+    [Fact(DisplayName = "A root scope whose start events are all plain registers no trigger, not even a placeholder")]
+    public async Task PlainStartRootScope_RegistersNoTrigger()
+    {
+        // A plain start is how a process is started directly, through the workflow execution API, never by a
+        // stimulus, so there is nothing to register. Read raw, before the store diff: this is the same list
+        // ValidateWorkflowRequestHandler iterates, and a null-payload row in it is what refused publication (#8078).
+        var process = RootScope("plain-start");
+
+        Assert.Empty(await GetRawTriggersAsync(process));
+    }
+
+    [Fact(DisplayName = "A plain start beside a message start does not stop the message start from registering")]
+    public async Task PlainStartBesideMessageStart_MessageStillRegisters()
+    {
+        // Only a scope with no event-defined start at all declines; one plain start among others must not.
+        var process = new BpmnProcess
+        {
+            Id = "plain-and-message-start",
+            IsRootScope = true,
+            Process = new BpmnProcessBuilder("plain-and-message-start")
+                .StartEvent("plain-start")
+                .StartEvent("message-start", null, Message("OrderPlaced"))
+                .EndEvent("end")
+                .ConnectSequence("plain-start", "end")
+                .ConnectSequence("message-start", "end")
+                .Build()
+        };
+
+        var trigger = Assert.Single(await GetRawTriggersAsync(process));
+
+        var payload = Assert.IsType<EventStimulus>(trigger.Payload);
+        Assert.Equal("OrderPlaced", payload.EventName);
+    }
+
+    [Fact(DisplayName = "A root scope whose only event-defined start registers nothing keeps the placeholder row publish validation reports")]
+    public async Task RootScopeWhoseOnlyEventDefinedStartIsRefused_KeepsThePlaceholderRow()
+    {
+        // The direction that could be mistaken for success: a start event declaring a timer this scope refuses to
+        // register is not a plain start. Dropping the placeholder here would let the process publish looking fine
+        // with a timer that never fires.
+        var process = RootScope("refused-timer-only", TimerInterval("not-an-iso-8601-duration"));
+
+        var trigger = Assert.Single(await GetRawTriggersAsync(process));
+
+        Assert.Null(trigger.Payload);
+    }
+
+    [Fact(DisplayName = "A BPMN-nested plain-start scope keeps its placeholder row, whatever its own flag says")]
+    public async Task BpmnNestedPlainStartScope_KeepsThePlaceholderRow()
+    {
+        // #8078 changes root position only. A nested scope is opted out by the graph check before the plain-start
+        // check is ever reached, so it leaves the indexer's placeholder exactly as the other nested cases do.
+        var nested = Scope("inner");
+        nested.IsRootScope = true;
+
+        var outer = RootScope("outer", Message("OuterOnly"));
+        outer.Activities.Add(nested);
+
+        AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(await IndexAsync(outer), nested.Id);
+    }
+
     [Fact(DisplayName = "A BPMN-nested scope registers no triggers, whatever its own flag says")]
     public async Task BpmnNestedScope_RegistersNoTriggers()
     {
@@ -282,11 +343,11 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
     /// <summary>
     /// A nested scope contributes no message, signal, or timer payload of its own -- the thing this guard actually
     /// protects. It still owns exactly one row: <c>Elsa.Workflows.Runtime.TriggerIndexer</c> adds a
-    /// <c>Payload = null</c> placeholder for <i>any</i> <c>ITrigger</c> whose <c>GetTriggerPayloadsAsync</c> returns
-    /// no payload at all, whether that activity is a legitimately root BPMN process with only a plain start event or
-    /// a nested one this guard correctly emptied out. That placeholder is inert -- nothing external can ever address
-    /// a <c>null</c> payload -- and clearing it would mean changing that indexer's own fallback for every trigger
-    /// kind in the runtime, not just BPMN's, which is well outside this guard's reach.
+    /// <c>Payload = null</c> placeholder for any <c>ITrigger</c> whose <c>GetTriggerPayloadsAsync</c> returns no
+    /// payload at all, unless the trigger declares through <c>TriggerIndexingContext.RegistersNoTriggers</c> that it
+    /// deliberately registers none. <see cref="BpmnProcess"/> declares that only for a root scope with no
+    /// event-defined start (#8078); a nested scope's opt-out is decided by the graph before that point and is left as
+    /// it was. That placeholder is inert -- nothing external can ever address a <c>null</c> payload.
     /// </summary>
     private static void AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(IReadOnlyCollection<StoredTrigger> triggers, string nestedScopeActivityId)
     {

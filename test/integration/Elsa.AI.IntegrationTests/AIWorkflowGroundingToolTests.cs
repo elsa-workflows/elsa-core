@@ -105,6 +105,32 @@ public class AIWorkflowGroundingToolTests
             return Task.CompletedTask;
         }
 
+        public Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+            WorkflowDefinitionFilter filter,
+            Func<WorkflowDefinition, bool> matchesExpected,
+            Func<WorkflowDefinition, WorkflowDefinition> update,
+            CancellationToken cancellationToken = default)
+        {
+            var current = Apply(filter).FirstOrDefault();
+
+            if (current is null)
+                return Task.FromResult(WorkflowDefinitionUpdateResult.NotFound());
+
+            if (!matchesExpected(current))
+                return Task.FromResult(WorkflowDefinitionUpdateResult.Conflict());
+
+            var next = update(current);
+            _definitions.RemoveAll(x => x.Id == current.Id || x.Id == next.Id);
+            if (next.Id != current.Id)
+            {
+                current.IsLatest = false;
+                _definitions.Add(current);
+            }
+
+            _definitions.Add(next);
+            return Task.FromResult(WorkflowDefinitionUpdateResult.Updated(next));
+        }
+
         public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
         {
             foreach (var definition in definitions)

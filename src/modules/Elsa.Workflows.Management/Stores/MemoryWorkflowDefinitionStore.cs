@@ -96,23 +96,60 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        store.Save(definition, GetId);
+        lock (store.Sync)
+            store.Save(definition, GetId);
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
-        store.SaveMany(definitions, GetId);
+        lock (store.Sync)
+            store.SaveMany(definitions, GetId);
+
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default)
+    {
+        lock (store.Sync)
+        {
+            var current = store.Query(query => Filter(query, filter)).FirstOrDefault();
+
+            if (current == null)
+                return Task.FromResult(WorkflowDefinitionUpdateResult.NotFound());
+
+            if (!current.IsLatest || !matchesExpected(current))
+                return Task.FromResult(WorkflowDefinitionUpdateResult.Conflict());
+
+            var next = update(current);
+
+            if (next.Id != current.Id)
+            {
+                current.IsLatest = false;
+                store.Save(current, GetId);
+            }
+
+            store.Save(next, GetId);
+            return Task.FromResult(WorkflowDefinitionUpdateResult.Updated(next));
+        }
     }
 
     /// <inheritdoc />
     public Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
-        store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
-        return Task.FromResult(workflowDefinitionIds.LongCount());
+        lock (store.Sync)
+        {
+            var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
+            store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
+            return Task.FromResult(workflowDefinitionIds.LongCount());
+        }
     }
 
     /// <inheritdoc />

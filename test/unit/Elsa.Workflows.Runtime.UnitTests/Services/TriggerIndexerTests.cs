@@ -171,6 +171,47 @@ public class TriggerIndexerTests
         Assert.Equal(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), trigger.Name);
     }
 
+    [Fact(DisplayName = "A trigger that declares it registers no triggers, and returns no payloads, produces no row")]
+    public async Task GetTriggersAsync_RegistersNoTriggers_ProducesNoRow()
+    {
+        var triggers = await IndexAsync(context =>
+        {
+            context.RegistersNoTriggers = true;
+            return [];
+        });
+
+        Assert.Empty(triggers);
+    }
+
+    [Fact(DisplayName = "Payloads a trigger returns are indexed even when it also declares it registers no triggers")]
+    public async Task GetTriggersAsync_RegistersNoTriggersButReturnsPayloads_IndexesThePayloads()
+    {
+        var payload = new TestStimulus("a");
+        var triggers = await IndexAsync(context =>
+        {
+            context.RegistersNoTriggers = true;
+            return [payload];
+        });
+
+        // The declaration only replaces the placeholder: dropping a payload the trigger did return would lose it silently.
+        var trigger = Assert.Single(triggers);
+        AssertMatchable(trigger, ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), payload);
+    }
+
+    [Fact(DisplayName = "A trigger that declares it registers no triggers and then throws still produces the placeholder row")]
+    public async Task GetTriggersAsync_RegistersNoTriggersThenThrows_ProducesPlaceholderRow()
+    {
+        var triggers = await IndexAsync(context =>
+        {
+            context.RegistersNoTriggers = true;
+            throw new InvalidOperationException("Cannot resolve payloads.");
+        });
+
+        // A failure is never a deliberate decision: the placeholder is what surfaces it to workflow validation.
+        var trigger = Assert.Single(triggers);
+        Assert.Null(trigger.Payload);
+    }
+
     [Theory(DisplayName = "A named payload requires a stimulus name")]
     [InlineData("")]
     [InlineData(" ")]
