@@ -101,6 +101,37 @@ public abstract class ExternalAuthenticationStoreConformanceTests
     }
 
     [Fact]
+    public async Task ConcurrentOneShotTakesAllowExactlyOneConsumerPerStore()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        var expiresAt = Now.AddMinutes(1);
+
+        var transaction = CreateTransaction("concurrent-state", expiresAt);
+        await scenario.StateStore.PutAsync("ExternalSignIn", transaction.HandleHash, transaction, expiresAt);
+        var stateResults = await Task.WhenAll(
+            scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash).AsTask(),
+            scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash).AsTask());
+        Assert.Single(stateResults.OfType<TakeResult<BrokerTransaction>.Taken>());
+        Assert.Single(stateResults.OfType<TakeResult<BrokerTransaction>.AlreadyConsumed>());
+
+        var grant = CreateGrant("concurrent-grant", expiresAt);
+        await scenario.GrantStore.SaveAsync(grant);
+        var grantResults = await Task.WhenAll(
+            scenario.GrantStore.TryTakeAsync(grant.CodeHash).AsTask(),
+            scenario.GrantStore.TryTakeAsync(grant.CodeHash).AsTask());
+        Assert.Single(grantResults.OfType<TakeResult<AuthorizationGrant>.Taken>());
+        Assert.Single(grantResults.OfType<TakeResult<AuthorizationGrant>.AlreadyConsumed>());
+
+        var preview = CreatePreview("concurrent-preview", "administrator-a", expiresAt);
+        await scenario.PreviewStore.SaveAsync(preview);
+        var previewResults = await Task.WhenAll(
+            scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId).AsTask(),
+            scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId).AsTask());
+        Assert.Single(previewResults.OfType<TakeResult<PreviewResult>.Taken>());
+        Assert.Single(previewResults.OfType<TakeResult<PreviewResult>.AlreadyConsumed>());
+    }
+
+    [Fact]
     public async Task ConnectionStoreEnforcesScopedDuplicateKeysAndRevisionCas()
     {
         await using var scenario = await CreateScenarioAsync();
@@ -179,7 +210,7 @@ public abstract class ExternalAuthenticationStoreConformanceTests
     }
 
     [Fact]
-    public async Task RegistryVersionStoreAdvancesAndRejectsStaleVersions()
+    public async Task RegistryVersionStoreReportsPreviousVersionAsNotCurrentAfterAdvance()
     {
         await using var scenario = await CreateScenarioAsync();
         var initial = await scenario.RegistryVersionStore.GetVersionAsync();
