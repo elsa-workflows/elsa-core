@@ -1,11 +1,12 @@
 using Elsa.Extensions;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class FaultHandlingTests
 {
-    [Fact]
+    [Test]
     public async Task Fault_SetsExceptionAndStatus()
     {
         // Arrange
@@ -16,12 +17,12 @@ public class FaultHandlingTests
         context.Fault(exception);
 
         // Assert
-        Assert.Equal(ActivityStatus.Faulted, context.Status);
-        Assert.Equal(exception, context.Exception);
-        Assert.Equal(1, context.AggregateFaultCount);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Faulted);
+        await Assert.That(context.Exception).IsEqualTo(exception);
+        await Assert.That(context.AggregateFaultCount).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_ResetsFaultCount()
     {
         // Arrange
@@ -33,11 +34,11 @@ public class FaultHandlingTests
         context.RecoverFromFault();
 
         // Assert
-        Assert.Equal(0, context.AggregateFaultCount);
-        Assert.Equal(ActivityStatus.Running, context.Status);
+        await Assert.That(context.AggregateFaultCount).IsEqualTo(0);
+        await Assert.That(context.Status).IsEqualTo(ActivityStatus.Running);
     }
 
-    [Fact]
+    [Test]
     public async Task Fault_IncrementsFaultCountOnEveryAncestor()
     {
         // Arrange
@@ -47,10 +48,11 @@ public class FaultHandlingTests
         chain[^1].Fault(new InvalidOperationException("Test error"));
 
         // Assert
-        Assert.Equal(new[] { 1, 1, 1 }, chain.Select(x => x.AggregateFaultCount));
+        await Assert.That(chain.Select(x => x.AggregateFaultCount))
+            .IsEquivalentTo(new[] { 1, 1, 1 }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_ResetsFaultCountOnEveryAncestor()
     {
         // Arrange
@@ -62,11 +64,12 @@ public class FaultHandlingTests
         faultedContext.RecoverFromFault();
 
         // Assert
-        Assert.Equal(new[] { 0, 0, 0 }, chain.Select(x => x.AggregateFaultCount));
-        Assert.Equal(ActivityStatus.Running, faultedContext.Status);
+        await Assert.That(chain.Select(x => x.AggregateFaultCount))
+            .IsEquivalentTo(new[] { 0, 0, 0 }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(faultedContext.Status).IsEqualTo(ActivityStatus.Running);
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_CalledTwice_DrivesAncestorFaultCountsNegative()
     {
         // This is why a FaultSignal handler must not call RecoverFromFault: recovery *sets* the faulting context's
@@ -83,11 +86,12 @@ public class FaultHandlingTests
         faultedContext.RecoverFromFault();
 
         // Assert
-        Assert.Equal(0, faultedContext.AggregateFaultCount);
-        Assert.Equal(new[] { -1, -1 }, chain.Take(chain.Count - 1).Select(x => x.AggregateFaultCount));
+        await Assert.That(faultedContext.AggregateFaultCount).IsEqualTo(0);
+        await Assert.That(chain.Take(chain.Count - 1).Select(x => x.AggregateFaultCount))
+            .IsEquivalentTo(new[] { -1, -1 }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_LeavesAlreadyTerminalizedStatusAlone()
     {
         // A FaultSignal handler terminalizes the faulted activity, and the middleware recovers the fault bookkeeping
@@ -103,11 +107,12 @@ public class FaultHandlingTests
         faultedContext.RecoverFromFault();
 
         // Assert
-        Assert.Equal(ActivityStatus.Canceled, faultedContext.Status);
-        Assert.Equal(new[] { 0, 0, 0 }, chain.Select(x => x.AggregateFaultCount));
+        await Assert.That(faultedContext.Status).IsEqualTo(ActivityStatus.Canceled);
+        await Assert.That(chain.Select(x => x.AggregateFaultCount))
+            .IsEquivalentTo(new[] { 0, 0, 0 }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task Fault_RecordsAnIncident()
     {
         // Arrange
@@ -117,12 +122,12 @@ public class FaultHandlingTests
         context.Fault(new InvalidOperationException("Test error"));
 
         // Assert
-        var incident = Assert.Single(context.WorkflowExecutionContext.Incidents);
-        Assert.Equal(context.NodeId, incident.ActivityNodeId);
-        Assert.Equal("Test error", incident.Message);
+        var incident = await Assert.That(context.WorkflowExecutionContext.Incidents).HasSingleItem();
+        await Assert.That(incident.ActivityNodeId).IsEqualTo(context.NodeId);
+        await Assert.That(incident.Message).IsEqualTo("Test error");
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_RemovesTheIncidentAndTheException()
     {
         // A fault an enclosing container claimed is not an incident. Plenty of code reads
@@ -138,11 +143,11 @@ public class FaultHandlingTests
         context.RecoverFromFault();
 
         // Assert
-        Assert.Empty(context.WorkflowExecutionContext.Incidents);
-        Assert.Null(context.Exception);
+        await Assert.That(context.WorkflowExecutionContext.Incidents).IsEmpty();
+        await Assert.That(context.Exception).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_LeavesIncidentsFromAnotherExecutionOfTheSameNode()
     {
         // ActivityNodeId identifies the static workflow node, and one node can have several executions: inside a loop,
@@ -156,7 +161,7 @@ public class FaultHandlingTests
         first.Id = "execution-1";
         second.Id = "execution-2";
 
-        Assert.Equal(first.NodeId, second.NodeId);
+        await Assert.That(second.NodeId).IsEqualTo(first.NodeId);
 
         first.Fault(new InvalidOperationException("First execution"));
         second.Fault(new InvalidOperationException("Second execution"));
@@ -165,12 +170,12 @@ public class FaultHandlingTests
         first.RecoverFromFault();
 
         // Assert: the other execution keeps its own.
-        var remaining = Assert.Single(first.WorkflowExecutionContext.Incidents);
-        Assert.Equal(second.Id, remaining.ActivityInstanceId);
-        Assert.Equal("Second execution", remaining.Message);
+        var remaining = await Assert.That(first.WorkflowExecutionContext.Incidents).HasSingleItem();
+        await Assert.That(remaining.ActivityInstanceId).IsEqualTo(second.Id);
+        await Assert.That(remaining.Message).IsEqualTo("Second execution");
     }
 
-    [Fact]
+    [Test]
     public async Task Fault_StampsTheIncidentWithTheExecutionThatRaisedIt()
     {
         // Arrange
@@ -180,11 +185,11 @@ public class FaultHandlingTests
         context.Fault(new InvalidOperationException("Test error"));
 
         // Assert
-        var incident = Assert.Single(context.WorkflowExecutionContext.Incidents);
-        Assert.Equal(context.Id, incident.ActivityInstanceId);
+        var incident = await Assert.That(context.WorkflowExecutionContext.Incidents).HasSingleItem();
+        await Assert.That(incident.ActivityInstanceId).IsEqualTo(context.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_LeavesIncidentsBelongingToOtherActivities()
     {
         // Arrange
@@ -198,11 +203,11 @@ public class FaultHandlingTests
         faultedContext.RecoverFromFault();
 
         // Assert
-        var remaining = Assert.Single(faultedContext.WorkflowExecutionContext.Incidents);
-        Assert.Equal(other.NodeId, remaining.ActivityNodeId);
+        var remaining = await Assert.That(faultedContext.WorkflowExecutionContext.Incidents).HasSingleItem();
+        await Assert.That(remaining.ActivityNodeId).IsEqualTo(other.NodeId);
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_RemovesOneIncidentPerFault()
     {
         // An activity that faults, is recovered, and faults again keeps the incident that was never recovered.
@@ -215,11 +220,11 @@ public class FaultHandlingTests
         context.Fault(new InvalidOperationException("Second"));
 
         // Assert
-        var incident = Assert.Single(context.WorkflowExecutionContext.Incidents);
-        Assert.Equal("Second", incident.Message);
+        var incident = await Assert.That(context.WorkflowExecutionContext.Incidents).HasSingleItem();
+        await Assert.That(incident.Message).IsEqualTo("Second");
     }
 
-    [Fact]
+    [Test]
     public async Task RecoverFromFault_WithNoIncidentIsHarmless()
     {
         // Arrange
@@ -229,7 +234,7 @@ public class FaultHandlingTests
         context.RecoverFromFault();
 
         // Assert
-        Assert.Empty(context.WorkflowExecutionContext.Incidents);
-        Assert.Null(context.Exception);
+        await Assert.That(context.WorkflowExecutionContext.Incidents).IsEmpty();
+        await Assert.That(context.Exception).IsNull();
     }
 }

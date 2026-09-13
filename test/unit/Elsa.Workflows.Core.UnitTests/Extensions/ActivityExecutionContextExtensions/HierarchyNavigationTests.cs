@@ -1,14 +1,15 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class HierarchyNavigationTests
 {
-    [Theory]
-    [InlineData("GetAncestors")]
-    [InlineData("GetDescendants")]
+    [Test]
+    [Arguments("GetAncestors")]
+    [Arguments("GetDescendants")]
     public async Task HierarchyNavigation_ReturnsEmpty_WhenNoRelatives(string methodName)
     {
         // Arrange
@@ -23,10 +24,10 @@ public class HierarchyNavigationTests
         };
 
         // Assert
-        Assert.Empty(result);
+        await Assert.That(result).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task FindParent_ReturnsNull_WhenNoMatch()
     {
         // Arrange
@@ -36,6 +37,6 @@ public class HierarchyNavigationTests
         var parent = context.FindParent(x => x.Activity is Sequence);
 
         // Assert
-        Assert.Null(parent);
+        await Assert.That(parent).IsNull();
     }
 }

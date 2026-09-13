@@ -2,13 +2,14 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.UnitTests.OutputConverters.Fixtures;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
 public class OutputConverterRegistrationTests
 {
-    [Fact]
-    public void ScopedRegistration_ResolvesOneConverterPerScope()
+    [Test]
+    public async Task ScopedRegistration_ResolvesOneConverterPerScope()
     {
         var services = CreateServices(ServiceLifetime.Scoped);
         using var serviceProvider = services.BuildServiceProvider();
@@ -19,12 +20,12 @@ public class OutputConverterRegistrationTests
         var secondFromSameScope = firstScope.ServiceProvider.GetRequiredKeyedService<IOutputConverter>(Descriptor.Id);
         var second = secondScope.ServiceProvider.GetRequiredKeyedService<IOutputConverter>(Descriptor.Id);
 
-        Assert.Same(first, secondFromSameScope);
-        Assert.NotSame(first, second);
+        await Assert.That(secondFromSameScope).IsSameReferenceAs(first);
+        await Assert.That(second).IsNotSameReferenceAs(first);
     }
 
-    [Fact]
-    public void SingletonRegistration_ResolvesTheSameConverterAcrossScopes()
+    [Test]
+    public async Task SingletonRegistration_ResolvesTheSameConverterAcrossScopes()
     {
         var services = CreateServices(ServiceLifetime.Singleton);
         using var serviceProvider = services.BuildServiceProvider();
@@ -34,11 +35,11 @@ public class OutputConverterRegistrationTests
         var first = firstScope.ServiceProvider.GetRequiredKeyedService<IOutputConverter>(Descriptor.Id);
         var second = secondScope.ServiceProvider.GetRequiredKeyedService<IOutputConverter>(Descriptor.Id);
 
-        Assert.Same(first, second);
+        await Assert.That(second).IsSameReferenceAs(first);
     }
 
-    [Fact]
-    public void TransientRegistration_ResolvesANewConverterForEachRequest()
+    [Test]
+    public async Task TransientRegistration_ResolvesANewConverterForEachRequest()
     {
         var services = CreateServices(ServiceLifetime.Transient);
         using var serviceProvider = services.BuildServiceProvider();
@@ -47,11 +48,11 @@ public class OutputConverterRegistrationTests
         var first = scope.ServiceProvider.GetRequiredKeyedService<IOutputConverter>(Descriptor.Id);
         var second = scope.ServiceProvider.GetRequiredKeyedService<IOutputConverter>(Descriptor.Id);
 
-        Assert.NotSame(first, second);
+        await Assert.That(second).IsNotSameReferenceAs(first);
     }
 
-    [Fact]
-    public void Registration_ExposesTheDescriptorThroughTheRegistryWithoutRetainingAConverterInstance()
+    [Test]
+    public async Task Registration_ExposesTheDescriptorThroughTheRegistryWithoutRetainingAConverterInstance()
     {
         var services = CreateServices(ServiceLifetime.Scoped);
         using var serviceProvider = services.BuildServiceProvider();
@@ -59,8 +60,8 @@ public class OutputConverterRegistrationTests
         var registry = serviceProvider.GetRequiredService<IOutputConverterRegistry>();
         var descriptor = registry.Find(Descriptor.Id);
 
-        Assert.Same(Descriptor, descriptor);
-        Assert.Equal(Descriptor.Id, registry.FindRegistration(Descriptor.Id)!.ServiceKey);
+        await Assert.That(descriptor).IsSameReferenceAs(Descriptor);
+        await Assert.That(registry.FindRegistration(Descriptor.Id)!.ServiceKey).IsEqualTo(Descriptor.Id);
     }
 
     private static ServiceCollection CreateServices(ServiceLifetime lifetime)

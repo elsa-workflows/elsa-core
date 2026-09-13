@@ -1,14 +1,15 @@
 using Elsa.Extensions;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class WorkflowInputTests
 {
-    [Theory]
-    [InlineData("TestKey", "TestValue", true, "TestValue", null)] // Key exists, string value
-    [InlineData("NonExistentKey", null, false, null, null)] // Key doesn't exist
-    [InlineData("NumberKey", null, true, "42", 42)] // Type conversion from int to string
+    [Test]
+    [Arguments("TestKey", "TestValue", true, "TestValue", null)] // Key exists, string value
+    [Arguments("NonExistentKey", null, false, null, null)] // Key doesn't exist
+    [Arguments("NumberKey", null, true, "42", 42)] // Type conversion from int to string
     public async Task TryGetWorkflowInput_HandlesVariousScenarios(
         string key,
         string? stringValue,
@@ -18,7 +19,7 @@ public class WorkflowInputTests
     {
         // Arrange
         var context = await CreateContextAsync();
-        
+
         if (stringValue != null)
             context.WorkflowExecutionContext.Input[key] = stringValue;
         else if (inputValue != null)
@@ -28,11 +29,11 @@ public class WorkflowInputTests
         var result = context.TryGetWorkflowInput<string>(key, out var value);
 
         // Assert
-        Assert.Equal(expectedResult, result);
-        Assert.Equal(expectedValue, value);
+        await Assert.That(result).IsEqualTo(expectedResult);
+        await Assert.That(value).IsEqualTo(expectedValue);
     }
 
-    [Fact]
+    [Test]
     public async Task GetWorkflowInput_ReturnsValue_WhenKeyExists()
     {
         // Arrange
@@ -43,10 +44,10 @@ public class WorkflowInputTests
         var value = context.GetWorkflowInput<string>("TestKey");
 
         // Assert
-        Assert.Equal("TestValue", value);
+        await Assert.That(value).IsEqualTo("TestValue");
     }
 
-    [Fact]
+    [Test]
     public async Task GetWorkflowInput_UsesTypeName_WhenKeyNotProvided()
     {
         // Arrange
@@ -57,16 +58,16 @@ public class WorkflowInputTests
         var value = context.GetWorkflowInput<string>();
 
         // Assert
-        Assert.Equal("TestValue", value);
+        await Assert.That(value).IsEqualTo("TestValue");
     }
 
-    [Fact]
+    [Test]
     public async Task GetWorkflowInput_ThrowsException_WhenKeyDoesNotExist()
     {
         // Arrange
         var context = await CreateContextAsync();
 
         // Act & Assert
-        Assert.Throws<KeyNotFoundException>(() => context.GetWorkflowInput<string>("NonExistentKey"));
+        Assert.ThrowsExactly<KeyNotFoundException>(() => context.GetWorkflowInput<string>("NonExistentKey"));
     }
 }

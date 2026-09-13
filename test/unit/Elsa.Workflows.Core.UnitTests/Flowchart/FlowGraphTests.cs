@@ -2,6 +2,7 @@
 using Elsa.Workflows.Activities.Flowchart.Models;
 
 namespace Elsa.Workflows.Core.UnitTests.Flowchart;
+
 public class FlowGraphTests
 {
     // Start
@@ -13,8 +14,8 @@ public class FlowGraphTests
     //   D
     //   ↓
     //  End
-    [Fact]
-    public void InvalidDanglingActivitiesTest()
+    [Test]
+    public async Task InvalidDanglingActivitiesTest()
     {
         var start = new TestActivity("start");
         var a = new TestActivity("a");
@@ -44,41 +45,41 @@ public class FlowGraphTests
         var flowGraph = new FlowGraph(connections, start);
 
         // FlowGraph.GetForwardInboundConnections
-        flowGraph.ValidateForwardInboundConnections(["start->a"], a);
-        flowGraph.ValidateForwardInboundConnections(["a->b"], b);
-        flowGraph.ValidateForwardInboundConnections(["a->c"], c);
-        flowGraph.ValidateForwardInboundConnections(["b->d", "c->d"], d);
-        flowGraph.ValidateForwardInboundConnections(["d->end"], end);
-        flowGraph.ValidateForwardInboundConnections([], x);
+        await flowGraph.ValidateForwardInboundConnections(["start->a"], a);
+        await flowGraph.ValidateForwardInboundConnections(["a->b"], b);
+        await flowGraph.ValidateForwardInboundConnections(["a->c"], c);
+        await flowGraph.ValidateForwardInboundConnections(["b->d", "c->d"], d);
+        await flowGraph.ValidateForwardInboundConnections(["d->end"], end);
+        await flowGraph.ValidateForwardInboundConnections([], x);
 
         // FlowGraph.GetOutboundConnections
-        flowGraph.ValidateOutboundConnections(["start->a"], start);
-        flowGraph.ValidateOutboundConnections(["a->b", "a->c"], a);
-        flowGraph.ValidateOutboundConnections(["b->d"], b);
-        flowGraph.ValidateOutboundConnections(["c->d"], c);
-        flowGraph.ValidateOutboundConnections(["d->end"], d);
-        flowGraph.ValidateOutboundConnections([], end);
-        flowGraph.ValidateOutboundConnections(["x->c"], x);
+        await flowGraph.ValidateOutboundConnections(["start->a"], start);
+        await flowGraph.ValidateOutboundConnections(["a->b", "a->c"], a);
+        await flowGraph.ValidateOutboundConnections(["b->d"], b);
+        await flowGraph.ValidateOutboundConnections(["c->d"], c);
+        await flowGraph.ValidateOutboundConnections(["d->end"], d);
+        await flowGraph.ValidateOutboundConnections([], end);
+        await flowGraph.ValidateOutboundConnections(["x->c"], x);
 
         // FlowGraph.GetAncestorActivities
-        flowGraph.ValidateAncestorActivities([], start);
-        flowGraph.ValidateAncestorActivities([start], a);
-        flowGraph.ValidateAncestorActivities([a, start], b);
-        flowGraph.ValidateAncestorActivities([a, start], c);
-        flowGraph.ValidateAncestorActivities([b, c, a, start], d);
-        flowGraph.ValidateAncestorActivities([], x);
+        await flowGraph.ValidateAncestorActivities([], start);
+        await flowGraph.ValidateAncestorActivities([start], a);
+        await flowGraph.ValidateAncestorActivities([a, start], b);
+        await flowGraph.ValidateAncestorActivities([a, start], c);
+        await flowGraph.ValidateAncestorActivities([b, c, a, start], d);
+        await flowGraph.ValidateAncestorActivities([], x);
 
         // FlowGraph IsDanglingActivity
-        flowGraph.ValidateDanglingActivity(false, start);
-        flowGraph.ValidateDanglingActivity(false, a);
-        flowGraph.ValidateDanglingActivity(false, b);
-        flowGraph.ValidateDanglingActivity(false, c);
-        flowGraph.ValidateDanglingActivity(false, d);
-        flowGraph.ValidateDanglingActivity(false, end);
-        flowGraph.ValidateDanglingActivity(true, w);
-        flowGraph.ValidateDanglingActivity(true, x);
-        flowGraph.ValidateDanglingActivity(true, y);
-        flowGraph.ValidateDanglingActivity(true, z);
+        await flowGraph.ValidateDanglingActivity(false, start);
+        await flowGraph.ValidateDanglingActivity(false, a);
+        await flowGraph.ValidateDanglingActivity(false, b);
+        await flowGraph.ValidateDanglingActivity(false, c);
+        await flowGraph.ValidateDanglingActivity(false, d);
+        await flowGraph.ValidateDanglingActivity(false, end);
+        await flowGraph.ValidateDanglingActivity(true, w);
+        await flowGraph.ValidateDanglingActivity(true, x);
+        await flowGraph.ValidateDanglingActivity(true, y);
+        await flowGraph.ValidateDanglingActivity(true, z);
     }
 
     // Start
@@ -88,8 +89,8 @@ public class FlowGraphTests
     // B   C   ↑
     //  ↘ ↙    ↗ 
     //   D → → 
-    [Fact]
-    public void ValidBackwardConnectionTest()
+    [Test]
+    public async Task ValidBackwardConnectionTest()
     {
         var start = new TestActivity("start");
         var a = new TestActivity("a");
@@ -110,29 +111,29 @@ public class FlowGraphTests
         var flowGraph = new FlowGraph(connections, start);
 
         // FlowGraph.GetForwardInboundConnections
-        flowGraph.ValidateForwardInboundConnections([], start);
-        flowGraph.ValidateForwardInboundConnections(["start->a"], a);
-        flowGraph.ValidateForwardInboundConnections(["a->b"], b);
-        flowGraph.ValidateForwardInboundConnections(["a->c"], c);
-        flowGraph.ValidateForwardInboundConnections(["b->d", "c->d"], d);
+        await flowGraph.ValidateForwardInboundConnections([], start);
+        await flowGraph.ValidateForwardInboundConnections(["start->a"], a);
+        await flowGraph.ValidateForwardInboundConnections(["a->b"], b);
+        await flowGraph.ValidateForwardInboundConnections(["a->c"], c);
+        await flowGraph.ValidateForwardInboundConnections(["b->d", "c->d"], d);
 
         // FlowGraph.GetOutboundConnections
-        flowGraph.ValidateOutboundConnections(["start->a"], start);
-        flowGraph.ValidateOutboundConnections(["a->b", "a->c"], a);
-        flowGraph.ValidateOutboundConnections(["b->d"], b);
-        flowGraph.ValidateOutboundConnections(["c->d"], c);
-        flowGraph.ValidateOutboundConnections(["d->a"], d);
+        await flowGraph.ValidateOutboundConnections(["start->a"], start);
+        await flowGraph.ValidateOutboundConnections(["a->b", "a->c"], a);
+        await flowGraph.ValidateOutboundConnections(["b->d"], b);
+        await flowGraph.ValidateOutboundConnections(["c->d"], c);
+        await flowGraph.ValidateOutboundConnections(["d->a"], d);
 
         // FlowGraph.GetAncestorActivities
-        flowGraph.ValidateAncestorActivities([], start);
-        flowGraph.ValidateAncestorActivities([start], a);
-        flowGraph.ValidateAncestorActivities([a, start], b);
-        flowGraph.ValidateAncestorActivities([a, start], c);
-        flowGraph.ValidateAncestorActivities([b, c, a, start], d);
+        await flowGraph.ValidateAncestorActivities([], start);
+        await flowGraph.ValidateAncestorActivities([start], a);
+        await flowGraph.ValidateAncestorActivities([a, start], b);
+        await flowGraph.ValidateAncestorActivities([a, start], c);
+        await flowGraph.ValidateAncestorActivities([b, c, a, start], d);
 
         // FlowGraph.IsBackwardConnection
-        flowGraph.ValidateBackwardConnection(false, false, new(a, c));
-        flowGraph.ValidateBackwardConnection(true, true, new(d, a));
+        await flowGraph.ValidateBackwardConnection(false, false, new(a, c));
+        await flowGraph.ValidateBackwardConnection(true, true, new(d, a));
     }
 
 
@@ -143,8 +144,8 @@ public class FlowGraphTests
     //   C   D ↰ ↑
     //    ↘ ↙  ↗ ↗ 
     //     E → → 
-    [Fact]
-    public void InvalidLoopbackTest()
+    [Test]
+    public async Task InvalidLoopbackTest()
     {
         var start = new TestActivity("start");
         var a = new TestActivity("a");
@@ -169,32 +170,32 @@ public class FlowGraphTests
         var flowGraph = new FlowGraph(connections, start);
 
         // FlowGraph.GetForwardInboundConnections
-        flowGraph.ValidateForwardInboundConnections([], start);
-        flowGraph.ValidateForwardInboundConnections(["start->a"], a);
-        flowGraph.ValidateForwardInboundConnections(["start->b"], b);
-        flowGraph.ValidateForwardInboundConnections(["a->c", "b->c"], c);
-        flowGraph.ValidateForwardInboundConnections(["b->d"], d);
-        flowGraph.ValidateForwardInboundConnections(["c->e", "d->e"], e);
+        await flowGraph.ValidateForwardInboundConnections([], start);
+        await flowGraph.ValidateForwardInboundConnections(["start->a"], a);
+        await flowGraph.ValidateForwardInboundConnections(["start->b"], b);
+        await flowGraph.ValidateForwardInboundConnections(["a->c", "b->c"], c);
+        await flowGraph.ValidateForwardInboundConnections(["b->d"], d);
+        await flowGraph.ValidateForwardInboundConnections(["c->e", "d->e"], e);
 
         // FlowGraph.GetOutboundConnections
-        flowGraph.ValidateOutboundConnections(["start->a", "start->b"], start);
-        flowGraph.ValidateOutboundConnections(["a->c"], a);
-        flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
-        flowGraph.ValidateOutboundConnections(["c->e"], c);
-        flowGraph.ValidateOutboundConnections(["d->e"], d);
-        flowGraph.ValidateOutboundConnections(["e->b", "e->d"], e);
+        await flowGraph.ValidateOutboundConnections(["start->a", "start->b"], start);
+        await flowGraph.ValidateOutboundConnections(["a->c"], a);
+        await flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
+        await flowGraph.ValidateOutboundConnections(["c->e"], c);
+        await flowGraph.ValidateOutboundConnections(["d->e"], d);
+        await flowGraph.ValidateOutboundConnections(["e->b", "e->d"], e);
 
         // FlowGraph.GetAncestorActivities
-        flowGraph.ValidateAncestorActivities([], start);
-        flowGraph.ValidateAncestorActivities([start], a);
-        flowGraph.ValidateAncestorActivities([start], b);
-        flowGraph.ValidateAncestorActivities([a, b, start], c);
-        flowGraph.ValidateAncestorActivities([b, start], d);
-        flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
+        await flowGraph.ValidateAncestorActivities([], start);
+        await flowGraph.ValidateAncestorActivities([start], a);
+        await flowGraph.ValidateAncestorActivities([start], b);
+        await flowGraph.ValidateAncestorActivities([a, b, start], c);
+        await flowGraph.ValidateAncestorActivities([b, start], d);
+        await flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
 
         // FlowGraph.IsBackwardConnection
-        flowGraph.ValidateBackwardConnection(true, false, new(e, b));
-        flowGraph.ValidateBackwardConnection(true, false, new(e, d));
+        await flowGraph.ValidateBackwardConnection(true, false, new(e, b));
+        await flowGraph.ValidateBackwardConnection(true, false, new(e, d));
     }
 
     // Start
@@ -206,8 +207,8 @@ public class FlowGraphTests
     // C   D
     //  ↘ ↙
     //  End
-    [Fact]
-    public void LongLegTest()
+    [Test]
+    public async Task LongLegTest()
     {
         var start = new TestActivity("start");
         var a = new TestActivity("a");
@@ -230,28 +231,28 @@ public class FlowGraphTests
         var flowGraph = new FlowGraph(connections, start);
 
         // FlowGraph.GetForwardInboundConnections
-        flowGraph.ValidateForwardInboundConnections([], start);
-        flowGraph.ValidateForwardInboundConnections(["start->a"], a);
-        flowGraph.ValidateForwardInboundConnections(["a->b"], b);
-        flowGraph.ValidateForwardInboundConnections(["start->c", "b->c"], c);
-        flowGraph.ValidateForwardInboundConnections(["b->d"], d);
-        flowGraph.ValidateForwardInboundConnections(["c->end", "d->end"], end);
+        await flowGraph.ValidateForwardInboundConnections([], start);
+        await flowGraph.ValidateForwardInboundConnections(["start->a"], a);
+        await flowGraph.ValidateForwardInboundConnections(["a->b"], b);
+        await flowGraph.ValidateForwardInboundConnections(["start->c", "b->c"], c);
+        await flowGraph.ValidateForwardInboundConnections(["b->d"], d);
+        await flowGraph.ValidateForwardInboundConnections(["c->end", "d->end"], end);
 
         // FlowGraph.GetOutboundConnections
-        flowGraph.ValidateOutboundConnections(["start->a", "start->c"], start);
-        flowGraph.ValidateOutboundConnections(["a->b"], a);
-        flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
-        flowGraph.ValidateOutboundConnections(["c->end"], c);
-        flowGraph.ValidateOutboundConnections(["d->end"], d);
-        flowGraph.ValidateOutboundConnections([], end);
+        await flowGraph.ValidateOutboundConnections(["start->a", "start->c"], start);
+        await flowGraph.ValidateOutboundConnections(["a->b"], a);
+        await flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
+        await flowGraph.ValidateOutboundConnections(["c->end"], c);
+        await flowGraph.ValidateOutboundConnections(["d->end"], d);
+        await flowGraph.ValidateOutboundConnections([], end);
 
         // FlowGraph.GetAncestorActivities
-        flowGraph.ValidateAncestorActivities([], start);
-        flowGraph.ValidateAncestorActivities([start], a);
-        flowGraph.ValidateAncestorActivities([a, start], b);
-        flowGraph.ValidateAncestorActivities([start, b, a], c);
-        flowGraph.ValidateAncestorActivities([b, a, start], d);
-        flowGraph.ValidateAncestorActivities([c, d, start, b, a], end);
+        await flowGraph.ValidateAncestorActivities([], start);
+        await flowGraph.ValidateAncestorActivities([start], a);
+        await flowGraph.ValidateAncestorActivities([a, start], b);
+        await flowGraph.ValidateAncestorActivities([start, b, a], c);
+        await flowGraph.ValidateAncestorActivities([b, a, start], d);
+        await flowGraph.ValidateAncestorActivities([c, d, start, b, a], end);
     }
 
     //      Start
@@ -261,8 +262,8 @@ public class FlowGraphTests
     //      ↳→C   D 
     //        ↓↘ ↙ 
     //        ↳→E
-    [Fact]
-    public void SameEdgeDuplicateTest()
+    [Test]
+    public async Task SameEdgeDuplicateTest()
     {
         var start = new TestActivity("start");
         var a = new TestActivity("a");
@@ -287,28 +288,28 @@ public class FlowGraphTests
         var flowGraph = new FlowGraph(connections, start);
 
         // FlowGraph.GetForwardInboundConnections
-        flowGraph.ValidateForwardInboundConnections([], start);
-        flowGraph.ValidateForwardInboundConnections(["start->a"], a);
-        flowGraph.ValidateForwardInboundConnections(["start->b"], b);
-        flowGraph.ValidateForwardInboundConnections(["a->c", "b->c"], c);
-        flowGraph.ValidateForwardInboundConnections(["b->d"], d);
-        flowGraph.ValidateForwardInboundConnections(["c->e", "d->e"], e);
+        await flowGraph.ValidateForwardInboundConnections([], start);
+        await flowGraph.ValidateForwardInboundConnections(["start->a"], a);
+        await flowGraph.ValidateForwardInboundConnections(["start->b"], b);
+        await flowGraph.ValidateForwardInboundConnections(["a->c", "b->c"], c);
+        await flowGraph.ValidateForwardInboundConnections(["b->d"], d);
+        await flowGraph.ValidateForwardInboundConnections(["c->e", "d->e"], e);
 
         // FlowGraph.GetOutboundConnections
-        flowGraph.ValidateOutboundConnections(["start->a", "start->b"], start);
-        flowGraph.ValidateOutboundConnections(["a->c"], a);
-        flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
-        flowGraph.ValidateOutboundConnections(["c->e"], c);
-        flowGraph.ValidateOutboundConnections(["d->e"], d);
-        flowGraph.ValidateOutboundConnections([], e);
+        await flowGraph.ValidateOutboundConnections(["start->a", "start->b"], start);
+        await flowGraph.ValidateOutboundConnections(["a->c"], a);
+        await flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
+        await flowGraph.ValidateOutboundConnections(["c->e"], c);
+        await flowGraph.ValidateOutboundConnections(["d->e"], d);
+        await flowGraph.ValidateOutboundConnections([], e);
 
         // FlowGraph.GetAncestorActivities
-        flowGraph.ValidateAncestorActivities([], start);
-        flowGraph.ValidateAncestorActivities([start], a);
-        flowGraph.ValidateAncestorActivities([start], b);
-        flowGraph.ValidateAncestorActivities([a, b, start], c);
-        flowGraph.ValidateAncestorActivities([b, start], d);
-        flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
+        await flowGraph.ValidateAncestorActivities([], start);
+        await flowGraph.ValidateAncestorActivities([start], a);
+        await flowGraph.ValidateAncestorActivities([start], b);
+        await flowGraph.ValidateAncestorActivities([a, b, start], c);
+        await flowGraph.ValidateAncestorActivities([b, start], d);
+        await flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
     }
 
     //      Start
@@ -318,8 +319,8 @@ public class FlowGraphTests
     //      ↳→C   D 
     //        ↓↘ ↙ 
     //        ↳→E
-    [Fact]
-    public void SameEdgeDifferentPortDuplicateTest()
+    [Test]
+    public async Task SameEdgeDifferentPortDuplicateTest()
     {
         var start = new TestActivity("start");
         var a = new TestActivity("a");
@@ -346,28 +347,28 @@ public class FlowGraphTests
         var flowGraph = new FlowGraph(connections, start);
 
         // FlowGraph.GetForwardInboundConnections
-        flowGraph.ValidateForwardInboundConnections([], start);
-        flowGraph.ValidateForwardInboundConnections(["start->a"], a);
-        flowGraph.ValidateForwardInboundConnections(["start->b"], b);
-        flowGraph.ValidateForwardInboundConnections(["a->c", "a:Yes->c", "b->c"], c);
-        flowGraph.ValidateForwardInboundConnections(["b->d"], d);
-        flowGraph.ValidateForwardInboundConnections(["c->e", "c:Yes->e", "d->e"], e);
+        await flowGraph.ValidateForwardInboundConnections([], start);
+        await flowGraph.ValidateForwardInboundConnections(["start->a"], a);
+        await flowGraph.ValidateForwardInboundConnections(["start->b"], b);
+        await flowGraph.ValidateForwardInboundConnections(["a->c", "a:Yes->c", "b->c"], c);
+        await flowGraph.ValidateForwardInboundConnections(["b->d"], d);
+        await flowGraph.ValidateForwardInboundConnections(["c->e", "c:Yes->e", "d->e"], e);
 
         // FlowGraph.GetOutboundConnections
-        flowGraph.ValidateOutboundConnections(["start->a", "start->b"], start);
-        flowGraph.ValidateOutboundConnections(["a->c", "a:Yes->c"], a);
-        flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
-        flowGraph.ValidateOutboundConnections(["c->e", "c:Yes->e"], c);
-        flowGraph.ValidateOutboundConnections(["d->e"], d);
-        flowGraph.ValidateOutboundConnections([], e);
+        await flowGraph.ValidateOutboundConnections(["start->a", "start->b"], start);
+        await flowGraph.ValidateOutboundConnections(["a->c", "a:Yes->c"], a);
+        await flowGraph.ValidateOutboundConnections(["b->c", "b->d"], b);
+        await flowGraph.ValidateOutboundConnections(["c->e", "c:Yes->e"], c);
+        await flowGraph.ValidateOutboundConnections(["d->e"], d);
+        await flowGraph.ValidateOutboundConnections([], e);
 
         // FlowGraph.GetAncestorActivities
-        flowGraph.ValidateAncestorActivities([], start);
-        flowGraph.ValidateAncestorActivities([start], a);
-        flowGraph.ValidateAncestorActivities([start], b);
-        flowGraph.ValidateAncestorActivities([a, b, start], c);
-        flowGraph.ValidateAncestorActivities([b, start], d);
-        flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
+        await flowGraph.ValidateAncestorActivities([], start);
+        await flowGraph.ValidateAncestorActivities([start], a);
+        await flowGraph.ValidateAncestorActivities([start], b);
+        await flowGraph.ValidateAncestorActivities([a, b, start], c);
+        await flowGraph.ValidateAncestorActivities([b, start], d);
+        await flowGraph.ValidateAncestorActivities([c, d, a, b, start], e);
     }
 
     class TestActivity : Activity

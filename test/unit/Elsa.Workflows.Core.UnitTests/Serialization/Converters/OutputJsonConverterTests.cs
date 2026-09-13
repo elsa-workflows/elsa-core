@@ -4,13 +4,14 @@ using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 
 public sealed class OutputJsonConverterTests
 {
-    [Fact]
-    public void When_SerializeAndDeserializeConfiguredOutput_Then_ConverterConfigurationRoundTrips()
+    [Test]
+    public async Task When_SerializeAndDeserializeConfiguredOutput_Then_ConverterConfigurationRoundTrips()
     {
         // Arrange
         var options = CreateOptions();
@@ -24,20 +25,21 @@ public sealed class OutputJsonConverterTests
         var result = JsonSerializer.Deserialize<Output<string>>(json, options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("resultVariable", result.MemoryBlockReference().Id);
-        var configuration = Assert.IsType<OutputConverterConfiguration>(result.Converter);
-        Assert.Equal("sample.to-text", configuration.Id);
-        Assert.True(configuration.Settings.HasValue);
-        Assert.Equal("compact", configuration.Settings.Value.GetProperty("format").GetString());
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.MemoryBlockReference().Id).IsEqualTo("resultVariable");
+        var configuration = (await Assert.That(result.Converter).IsTypeOf<OutputConverterConfiguration>())!;
+        await Assert.That(configuration.Id).IsEqualTo("sample.to-text");
+        await Assert.That(configuration.Settings.HasValue).IsTrue();
+        await Assert.That(configuration.Settings!.Value.GetProperty("format").GetString()).IsEqualTo("compact");
 
         using var document = JsonDocument.Parse(json);
         var converter = document.RootElement.GetProperty("converter");
-        Assert.Equal(new[] { "id", "settings" }, converter.EnumerateObject().Select(x => x.Name));
+        await Assert.That(converter.EnumerateObject().Select(x => x.Name))
+            .IsEquivalentTo(new[] { "id", "settings" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void When_SerializeAndDeserializeUnconfiguredOutput_Then_ConverterPropertyIsOmitted()
+    [Test]
+    public async Task When_SerializeAndDeserializeUnconfiguredOutput_Then_ConverterPropertyIsOmitted()
     {
         // Arrange
         var options = CreateOptions();
@@ -48,13 +50,14 @@ public sealed class OutputJsonConverterTests
         var result = JsonSerializer.Deserialize<Output<string>>(json, options);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Null(result.Converter);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Converter).IsNull();
 
         using var document = JsonDocument.Parse(json);
-        Assert.Equal(new[] { "typeName", "memoryReference" }, document.RootElement.EnumerateObject().Select(x => x.Name));
-        Assert.Equal("String", document.RootElement.GetProperty("typeName").GetString());
-        Assert.Equal("resultVariable", document.RootElement.GetProperty("memoryReference").GetProperty("id").GetString());
+        await Assert.That(document.RootElement.EnumerateObject().Select(x => x.Name))
+            .IsEquivalentTo(new[] { "typeName", "memoryReference" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(document.RootElement.GetProperty("typeName").GetString()).IsEqualTo("String");
+        await Assert.That(document.RootElement.GetProperty("memoryReference").GetProperty("id").GetString()).IsEqualTo("resultVariable");
     }
 
     private static JsonSerializerOptions CreateOptions() => new()

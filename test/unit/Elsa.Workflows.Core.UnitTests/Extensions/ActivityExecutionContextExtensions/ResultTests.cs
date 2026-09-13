@@ -1,12 +1,13 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Models;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class ResultTests
 {
-    [Fact]
+    [Test]
     public async Task SetResult_SetsResultProperty_WhenActivityImplementsIActivityWithResult()
     {
         // Arrange
@@ -19,17 +20,17 @@ public class ResultTests
 
         // Assert
         var result = context.Get(activity.Result);
-        Assert.Equal(testValue, result);
+        await Assert.That(result).IsEqualTo(testValue);
     }
 
-    [Fact]
+    [Test]
     public async Task SetResult_ThrowsException_WhenActivityDoesNotImplementIActivityWithResult()
     {
         // Arrange
         var context = await CreateContextAsync();
 
         // Act & Assert
-        Assert.Throws<Exception>(() => context.SetResult("value"));
+        Assert.ThrowsExactly<Exception>(() => context.SetResult("value"));
     }
 
     private class ActivityWithResult : Activity, IActivityWithResult

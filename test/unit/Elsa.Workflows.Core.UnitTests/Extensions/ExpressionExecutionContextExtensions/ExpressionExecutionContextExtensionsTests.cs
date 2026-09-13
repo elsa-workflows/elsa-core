@@ -4,13 +4,14 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests;
 
 public class ExpressionExecutionContextExtensionsTests
 {
-    [Fact]
-    public void GetVariable_ReturnsVariable_WhenVariableExists()
+    [Test]
+    public async Task GetVariable_ReturnsVariable_WhenVariableExists()
     {
         // Arrange
         var variable = new Variable("test", 5);
@@ -25,11 +26,11 @@ public class ExpressionExecutionContextExtensionsTests
         var result = context.GetVariable<int>("test");
 
         // Assert
-        Assert.Equal(5, result);
+        await Assert.That(result).IsEqualTo(5);
     }
 
-    [Fact]
-    public void GetVariable_ReturnsNull_WhenVariableDoesNotExist()
+    [Test]
+    public async Task GetVariable_ReturnsNull_WhenVariableDoesNotExist()
     {
         // Arrange
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>());
@@ -39,10 +40,10 @@ public class ExpressionExecutionContextExtensionsTests
         var result = context.GetVariable<string>("nonexistent");
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public void CreateVariable_ThrowsException_WhenVariableExists()
     {
         // Arrange
@@ -55,11 +56,11 @@ public class ExpressionExecutionContextExtensionsTests
         var context = new ExpressionExecutionContext(null!, memoryRegister);
 
         // Act & Assert
-        Assert.Throws<Exception>(() => context.CreateVariable("test", 10));
+        Assert.ThrowsExactly<Exception>(() => context.CreateVariable("test", 10));
     }
 
-    [Fact]
-    public void CreateVariable_CreatesVariable_WhenVariableDoesNotExist()
+    [Test]
+    public async Task CreateVariable_CreatesVariable_WhenVariableDoesNotExist()
     {
         // Arrange
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>());
@@ -70,11 +71,11 @@ public class ExpressionExecutionContextExtensionsTests
 
         // Assert
         var variable = context.GetVariable<int>("newVariable");
-        Assert.Equal(10, variable);
+        await Assert.That(variable).IsEqualTo(10);
     }
 
-    [Fact]
-    public void SetVariable_CreatesVariable_WhenVariableDoesNotExist()
+    [Test]
+    public async Task SetVariable_CreatesVariable_WhenVariableDoesNotExist()
     {
         // Arrange
         var memoryRegister = new MemoryRegister(new Dictionary<string, MemoryBlock>());
@@ -85,11 +86,11 @@ public class ExpressionExecutionContextExtensionsTests
 
         // Assert
         var variable = context.GetVariable<int>("newVariable");
-        Assert.Equal(10, variable);
+        await Assert.That(variable).IsEqualTo(10);
     }
 
-    [Fact]
-    public void SetVariable_SetsValue_WhenVariableExists()
+    [Test]
+    public async Task SetVariable_SetsValue_WhenVariableExists()
     {
         // Arrange
         var variable = new Variable("test", 5);
@@ -105,6 +106,6 @@ public class ExpressionExecutionContextExtensionsTests
 
         // Assert
         var updatedVariable = context.GetVariable<int>("test");
-        Assert.Equal(10, updatedVariable);
+        await Assert.That(updatedVariable).IsEqualTo(10);
     }
 }

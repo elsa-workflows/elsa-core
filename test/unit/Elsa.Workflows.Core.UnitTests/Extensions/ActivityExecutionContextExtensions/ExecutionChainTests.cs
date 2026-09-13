@@ -2,12 +2,13 @@ using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class ExecutionChainTests
 {
-    [Fact]
+    [Test]
     public async Task GetExecutionChain_PreventsInfiniteLoop_WhenCircularReferenceExists()
     {
         // Arrange
@@ -16,7 +17,7 @@ public class ExecutionChainTests
         var contextRoot = await fixture.BuildAsync();
         var w = contextRoot.WorkflowExecutionContext;
         var clock = contextRoot.GetRequiredService<ISystemClock>();
-        
+
         var contextA = new ActivityExecutionContext("A", w, null, root, contextRoot.ActivityDescriptor, contextRoot.StartedAt, null, clock, default);
         var contextB = new ActivityExecutionContext("B", w, null, root, contextRoot.ActivityDescriptor, contextRoot.StartedAt, null, clock, default);
 
@@ -32,12 +33,12 @@ public class ExecutionChainTests
         var chain = contextA.GetExecutionChain().ToList();
 
         // Assert
-        Assert.Equal(2, chain.Count);
-        Assert.Equal("B", chain[0].Id);
-        Assert.Equal("A", chain[1].Id);
+        await Assert.That(chain.Count).IsEqualTo(2);
+        await Assert.That(chain[0].Id).IsEqualTo("B");
+        await Assert.That(chain[1].Id).IsEqualTo("A");
     }
-    
-    [Fact]
+
+    [Test]
     public async Task GetExecutionChain_ReturnsFullChain_WhenNoCycles()
     {
         // Arrange
@@ -46,7 +47,7 @@ public class ExecutionChainTests
         var contextRoot = await fixture.BuildAsync();
         var w = contextRoot.WorkflowExecutionContext;
         var clock = contextRoot.GetRequiredService<ISystemClock>();
-        
+
         var contextA = new ActivityExecutionContext("A", w, null, root, contextRoot.ActivityDescriptor, contextRoot.StartedAt, null, clock, default);
         var contextB = new ActivityExecutionContext("B", w, null, root, contextRoot.ActivityDescriptor, contextRoot.StartedAt, null, clock, default);
         var contextC = new ActivityExecutionContext("C", w, null, root, contextRoot.ActivityDescriptor, contextRoot.StartedAt, null, clock, default);
@@ -65,9 +66,9 @@ public class ExecutionChainTests
         var chain = contextA.GetExecutionChain().ToList();
 
         // Assert
-        Assert.Equal(3, chain.Count);
-        Assert.Equal("C", chain[0].Id);
-        Assert.Equal("B", chain[1].Id);
-        Assert.Equal("A", chain[2].Id);
+        await Assert.That(chain.Count).IsEqualTo(3);
+        await Assert.That(chain[0].Id).IsEqualTo("C");
+        await Assert.That(chain[1].Id).IsEqualTo("B");
+        await Assert.That(chain[2].Id).IsEqualTo("A");
     }
 }

@@ -3,6 +3,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
@@ -10,7 +11,7 @@ public class OutputBindingDestinationResolverTests
 {
     private readonly OutputBindingDestinationResolver _resolver = new();
 
-    [Fact]
+    [Test]
     public async Task Resolve_RuntimeVariable_ReturnsDeclaredTypeAndKind()
     {
         var context = await new ActivityTestFixture(new WriteLine("test")).BuildAsync();
@@ -20,14 +21,14 @@ public class OutputBindingDestinationResolverTests
 
         var destination = _resolver.Resolve(context, output);
 
-        Assert.NotNull(destination);
-        Assert.Equal(variable.Id, destination.Id);
-        Assert.Equal(typeof(string), destination.Type);
-        Assert.True(destination.AllowsNull);
-        Assert.Equal(OutputBindingDestinationKind.Variable, destination.Kind);
+        await Assert.That(destination).IsNotNull();
+        await Assert.That(destination.Id).IsEqualTo(variable.Id);
+        await Assert.That(destination.Type).IsEqualTo(typeof(string));
+        await Assert.That(destination.AllowsNull).IsTrue();
+        await Assert.That(destination.Kind).IsEqualTo(OutputBindingDestinationKind.Variable);
     }
 
-    [Fact]
+    [Test]
     public async Task Resolve_RuntimeWorkflowOutput_ReturnsWorkflowOutputDefinition()
     {
         var context = await new ActivityTestFixture(new WriteLine("test")).BuildAsync();
@@ -40,15 +41,15 @@ public class OutputBindingDestinationResolverTests
 
         var destination = _resolver.Resolve(context, output);
 
-        Assert.NotNull(destination);
-        Assert.Equal("workflowResult", destination.Id);
-        Assert.Equal(typeof(int), destination.Type);
-        Assert.False(destination.AllowsNull);
-        Assert.Equal(OutputBindingDestinationKind.WorkflowOutput, destination.Kind);
+        await Assert.That(destination).IsNotNull();
+        await Assert.That(destination.Id).IsEqualTo("workflowResult");
+        await Assert.That(destination.Type).IsEqualTo(typeof(int));
+        await Assert.That(destination.AllowsNull).IsFalse();
+        await Assert.That(destination.Kind).IsEqualTo(OutputBindingDestinationKind.WorkflowOutput);
     }
 
-    [Fact]
-    public void Resolve_StaticVariable_UsesNearestVariableContainer()
+    [Test]
+    public async Task Resolve_StaticVariable_UsesNearestVariableContainer()
     {
         var referenceId = "shared-destination";
         var root = new Sequence
@@ -73,15 +74,15 @@ public class OutputBindingDestinationResolverTests
 
         var destination = _resolver.Resolve(graph, activityNode, output);
 
-        Assert.NotNull(destination);
-        Assert.Equal(referenceId, destination.Id);
-        Assert.Equal(typeof(string), destination.Type);
-        Assert.True(destination.AllowsNull);
-        Assert.Equal(OutputBindingDestinationKind.Variable, destination.Kind);
+        await Assert.That(destination).IsNotNull();
+        await Assert.That(destination.Id).IsEqualTo(referenceId);
+        await Assert.That(destination.Type).IsEqualTo(typeof(string));
+        await Assert.That(destination.AllowsNull).IsTrue();
+        await Assert.That(destination.Kind).IsEqualTo(OutputBindingDestinationKind.Variable);
     }
 
-    [Fact]
-    public void Resolve_StaticVariable_IncludesCurrentVariableContainer()
+    [Test]
+    public async Task Resolve_StaticVariable_IncludesCurrentVariableContainer()
     {
         var referenceId = "local-destination";
         var activity = new Sequence
@@ -96,18 +97,18 @@ public class OutputBindingDestinationResolverTests
 
         var destination = _resolver.Resolve(graph, node, output);
 
-        Assert.NotNull(destination);
-        Assert.Equal(referenceId, destination.Id);
-        Assert.Equal(typeof(string), destination.Type);
-        Assert.True(destination.AllowsNull);
-        Assert.Equal(OutputBindingDestinationKind.Variable, destination.Kind);
+        await Assert.That(destination).IsNotNull();
+        await Assert.That(destination.Id).IsEqualTo(referenceId);
+        await Assert.That(destination.Type).IsEqualTo(typeof(string));
+        await Assert.That(destination.AllowsNull).IsTrue();
+        await Assert.That(destination.Kind).IsEqualTo(OutputBindingDestinationKind.Variable);
     }
 
-    [Theory]
-    [InlineData(typeof(string), true)]
-    [InlineData(typeof(int?), true)]
-    [InlineData(typeof(int), false)]
-    public void Resolve_StaticWorkflowOutput_ReflectsClrNullability(Type type, bool expectedAllowsNull)
+    [Test]
+    [Arguments(typeof(string), true)]
+    [Arguments(typeof(int?), true)]
+    [Arguments(typeof(int), false)]
+    public async Task Resolve_StaticWorkflowOutput_ReflectsClrNullability(Type type, bool expectedAllowsNull)
     {
         var activity = new WriteLine("test") { Id = "activity" };
         var node = new ActivityNode(activity, "Body");
@@ -128,13 +129,13 @@ public class OutputBindingDestinationResolverTests
 
         var destination = _resolver.Resolve(graph, node, output);
 
-        Assert.NotNull(destination);
-        Assert.Equal(type, destination.Type);
-        Assert.Equal(expectedAllowsNull, destination.AllowsNull);
+        await Assert.That(destination).IsNotNull();
+        await Assert.That(destination.Type).IsEqualTo(type);
+        await Assert.That(destination.AllowsNull).IsEqualTo(expectedAllowsNull);
     }
 
-    [Fact]
-    public void Resolve_WhenReferenceIsNeitherVariableNorWorkflowOutput_ReturnsNull()
+    [Test]
+    public async Task Resolve_WhenReferenceIsNeitherVariableNorWorkflowOutput_ReturnsNull()
     {
         var activity = new WriteLine("test") { Id = "activity" };
         var node = new ActivityNode(activity, "Body");
@@ -144,7 +145,7 @@ public class OutputBindingDestinationResolverTests
 
         var destination = _resolver.Resolve(graph, node, output);
 
-        Assert.Null(destination);
+        await Assert.That(destination).IsNull();
     }
 
     private static void Connect(ActivityNode parent, ActivityNode child)

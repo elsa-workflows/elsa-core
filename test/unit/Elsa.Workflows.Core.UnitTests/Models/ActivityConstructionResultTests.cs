@@ -1,15 +1,16 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Models;
 
 public class ActivityConstructionResultTests
 {
-    [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, true)]
-    [InlineData(2, true)]
-    public void Constructor_WithVaryingExceptionCounts_SetsPropertiesCorrectly(int exceptionCount, bool expectedHasExceptions)
+    [Test]
+    [Arguments(0, false)]
+    [Arguments(1, true)]
+    [Arguments(2, true)]
+    public async Task Constructor_WithVaryingExceptionCounts_SetsPropertiesCorrectly(int exceptionCount, bool expectedHasExceptions)
     {
         // Arrange
         var activity = CreateActivity();
@@ -19,13 +20,13 @@ public class ActivityConstructionResultTests
         var result = new ActivityConstructionResult(activity, exceptions);
 
         // Assert
-        Assert.Same(activity, result.Activity);
-        Assert.Equal(exceptionCount, result.Exceptions.Count());
-        Assert.Equal(expectedHasExceptions, result.HasExceptions);
+        await Assert.That(result.Activity).IsSameReferenceAs(activity);
+        await Assert.That(result.Exceptions.Count()).IsEqualTo(exceptionCount);
+        await Assert.That(result.HasExceptions).IsEqualTo(expectedHasExceptions);
     }
 
-    [Fact]
-    public void Constructor_WithNullExceptions_TreatsAsEmpty()
+    [Test]
+    public async Task Constructor_WithNullExceptions_TreatsAsEmpty()
     {
         // Arrange
         var activity = CreateActivity();
@@ -34,15 +35,15 @@ public class ActivityConstructionResultTests
         var result = new ActivityConstructionResult(activity, null);
 
         // Assert
-        Assert.Empty(result.Exceptions);
-        Assert.False(result.HasExceptions);
+        await Assert.That(result.Exceptions).IsEmpty();
+        await Assert.That(result.HasExceptions).IsFalse();
     }
 
-    [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, true)]
-    [InlineData(3, true)]
-    public void Cast_PreservesActivityAndExceptions(int exceptionCount, bool expectedHasExceptions)
+    [Test]
+    [Arguments(0, false)]
+    [Arguments(1, true)]
+    [Arguments(3, true)]
+    public async Task Cast_PreservesActivityAndExceptions(int exceptionCount, bool expectedHasExceptions)
     {
         // Arrange
         var activity = CreateActivity();
@@ -53,17 +54,17 @@ public class ActivityConstructionResultTests
         var typedResult = result.Cast<WriteLine>();
 
         // Assert
-        Assert.IsType<ActivityConstructionResult<WriteLine>>(typedResult);
-        Assert.Same(activity, typedResult.Activity);
-        Assert.Equal(exceptionCount, typedResult.Exceptions.Count());
-        Assert.Equal(expectedHasExceptions, typedResult.HasExceptions);
+        await Assert.That(typedResult).IsTypeOf<ActivityConstructionResult<WriteLine>>();
+        await Assert.That(typedResult.Activity).IsSameReferenceAs(activity);
+        await Assert.That(typedResult.Exceptions.Count()).IsEqualTo(exceptionCount);
+        await Assert.That(typedResult.HasExceptions).IsEqualTo(expectedHasExceptions);
     }
 
-    [Theory]
-    [InlineData(0, false)]
-    [InlineData(1, true)]
-    [InlineData(2, true)]
-    public void GenericConstructor_CreatesTypedResultWithInheritance(int exceptionCount, bool expectedHasExceptions)
+    [Test]
+    [Arguments(0, false)]
+    [Arguments(1, true)]
+    [Arguments(2, true)]
+    public async Task GenericConstructor_CreatesTypedResultWithInheritance(int exceptionCount, bool expectedHasExceptions)
     {
         // Arrange
         var activity = CreateActivity();
@@ -73,14 +74,14 @@ public class ActivityConstructionResultTests
         var result = new ActivityConstructionResult<WriteLine>(activity, exceptions);
 
         // Assert
-        Assert.Same(activity, result.Activity);
-        Assert.Equal(exceptionCount, result.Exceptions.Count());
-        Assert.Equal(expectedHasExceptions, result.HasExceptions);
-        Assert.IsAssignableFrom<ActivityConstructionResult>(result);
+        await Assert.That(result.Activity).IsSameReferenceAs(activity);
+        await Assert.That(result.Exceptions.Count()).IsEqualTo(exceptionCount);
+        await Assert.That(result.HasExceptions).IsEqualTo(expectedHasExceptions);
+        await Assert.That(result).IsAssignableTo<ActivityConstructionResult>();
     }
 
-    [Fact]
-    public void Exceptions_CanBeEnumerated()
+    [Test]
+    public async Task Exceptions_CanBeEnumerated()
     {
         // Arrange
         var activity = CreateActivity();
@@ -91,10 +92,10 @@ public class ActivityConstructionResultTests
         var count = 0;
         foreach (var ex in result.Exceptions)
         {
-            Assert.NotNull(ex);
+            await Assert.That(ex).IsNotNull();
             count++;
         }
-        Assert.Equal(3, count);
+        await Assert.That(count).IsEqualTo(3);
     }
 
     // Helper methods

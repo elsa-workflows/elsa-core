@@ -1,5 +1,6 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
@@ -10,48 +11,54 @@ namespace Elsa.Workflows.Core.UnitTests.Services;
 /// </summary>
 public class ActivitySchedulerTests
 {
-    public static TheoryData<Func<IActivityScheduler>> Schedulers => new()
-    {
-        () => new QueueBasedActivityScheduler(),
-        () => new StackBasedActivityScheduler()
-    };
+    public sealed record SchedulerFactory(Func<IActivityScheduler> Create);
 
-    [Theory]
-    [MemberData(nameof(Schedulers))]
-    public void RemoveWhere_RemovesOnlyMatchingItems_AndReportsHowMany(Func<IActivityScheduler> createScheduler)
+    public static IEnumerable<Func<SchedulerFactory>> Schedulers()
     {
-        var scheduler = Schedule(createScheduler(), "a", "b", "c", "d");
+        yield return () => new(() => new QueueBasedActivityScheduler());
+        yield return () => new(() => new StackBasedActivityScheduler());
+    }
+
+    [Test]
+    [MethodDataSource(nameof(Schedulers))]
+    public async Task RemoveWhere_RemovesOnlyMatchingItems_AndReportsHowMany(SchedulerFactory schedulerFactory)
+    {
+        var scheduler = Schedule(schedulerFactory.Create(), "a", "b", "c", "d");
 
         var removedCount = scheduler.RemoveWhere(x => x.Activity.Id is "b" or "d");
 
-        Assert.Equal(2, removedCount);
+        await Assert.That(removedCount).IsEqualTo(2);
 
         // The survivors come out in the same order as a scheduler that only ever held them.
-        Assert.Equal(TakeAll(Schedule(createScheduler(), "a", "c")), TakeAll(scheduler));
+        await Assert.That(TakeAll(scheduler)).IsEquivalentTo(
+            TakeAll(Schedule(schedulerFactory.Create(), "a", "c")),
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory]
-    [MemberData(nameof(Schedulers))]
-    public void RemoveWhere_LeavesTheSchedulerUntouched_WhenNothingMatches(Func<IActivityScheduler> createScheduler)
+    [Test]
+    [MethodDataSource(nameof(Schedulers))]
+    public async Task RemoveWhere_LeavesTheSchedulerUntouched_WhenNothingMatches(SchedulerFactory schedulerFactory)
     {
-        var scheduler = Schedule(createScheduler(), "a", "b", "c");
+        var scheduler = Schedule(schedulerFactory.Create(), "a", "b", "c");
 
         var removedCount = scheduler.RemoveWhere(_ => false);
 
-        Assert.Equal(0, removedCount);
-        Assert.Equal(TakeAll(Schedule(createScheduler(), "a", "b", "c")), TakeAll(scheduler));
+        await Assert.That(removedCount).IsEqualTo(0);
+        await Assert.That(TakeAll(scheduler)).IsEquivalentTo(
+            TakeAll(Schedule(schedulerFactory.Create(), "a", "b", "c")),
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory]
-    [MemberData(nameof(Schedulers))]
-    public void RemoveWhere_EmptiesTheScheduler_WhenEverythingMatches(Func<IActivityScheduler> createScheduler)
+    [Test]
+    [MethodDataSource(nameof(Schedulers))]
+    public async Task RemoveWhere_EmptiesTheScheduler_WhenEverythingMatches(SchedulerFactory schedulerFactory)
     {
-        var scheduler = Schedule(createScheduler(), "a", "b", "c");
+        var scheduler = Schedule(schedulerFactory.Create(), "a", "b", "c");
 
         var removedCount = scheduler.RemoveWhere(_ => true);
 
-        Assert.Equal(3, removedCount);
-        Assert.False(scheduler.HasAny);
+        await Assert.That(removedCount).IsEqualTo(3);
+        await Assert.That(scheduler.HasAny).IsFalse();
     }
 
     private static IActivityScheduler Schedule(IActivityScheduler scheduler, params string[] activityIds)

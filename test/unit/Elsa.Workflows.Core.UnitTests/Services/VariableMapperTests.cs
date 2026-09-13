@@ -1,10 +1,11 @@
+using System.Threading.Tasks;
+using Elsa.Common.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Services;
 using Microsoft.Extensions.Logging.Abstractions;
-using Elsa.Common.Serialization;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
@@ -21,53 +22,53 @@ public class VariableMapperTests
         _mapper = new(_registry, NullLogger<VariableMapper>.Instance);
     }
 
-    [Fact]
-    public void Map_ResolvesRegisteredVariableTypeAlias()
+    [Test]
+    public async Task Map_ResolvesRegisteredVariableTypeAlias()
     {
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", null));
 
-        Assert.IsType<Variable<string>>(variable);
+        await Assert.That(variable).IsTypeOf<Variable<string>>();
     }
 
-    [Fact]
-    public void Map_ResolvesRegisteredStorageDriverAlias()
+    [Test]
+    public async Task Map_ResolvesRegisteredStorageDriverAlias()
     {
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", nameof(WorkflowStorageDriver)));
 
-        Assert.Equal(typeof(WorkflowStorageDriver), variable.StorageDriverType);
+        await Assert.That(variable.StorageDriverType).IsEqualTo(typeof(WorkflowStorageDriver));
     }
 
-    [Fact]
-    public void Map_ResolvesRegisteredMemoryStorageDriverAssemblyQualifiedName()
+    [Test]
+    public async Task Map_ResolvesRegisteredMemoryStorageDriverAssemblyQualifiedName()
     {
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(MemoryStorageDriver).GetSimpleAssemblyQualifiedName()));
 
-        Assert.Equal(typeof(MemoryStorageDriver), variable.StorageDriverType);
+        await Assert.That(variable.StorageDriverType).IsEqualTo(typeof(MemoryStorageDriver));
     }
 
-    [Fact]
-    public void Map_WritesRegisteredStorageDriverAlias()
+    [Test]
+    public async Task Map_WritesRegisteredStorageDriverAlias()
     {
         var model = _mapper.Map(new Variable<string>("name", "") { StorageDriverType = typeof(WorkflowStorageDriver) });
 
-        Assert.Equal(nameof(WorkflowStorageDriver), model.StorageDriverTypeName);
+        await Assert.That(model.StorageDriverTypeName).IsEqualTo(nameof(WorkflowStorageDriver));
     }
 
-    [Fact]
-    public void Map_DoesNotLoadUnregisteredStorageDriverAssemblyQualifiedName()
+    [Test]
+    public async Task Map_DoesNotLoadUnregisteredStorageDriverAssemblyQualifiedName()
     {
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", typeof(VariableMapperTests).AssemblyQualifiedName));
 
-        Assert.Null(variable.StorageDriverType);
+        await Assert.That(variable.StorageDriverType).IsNull();
     }
 
-    [Fact]
-    public void Map_DoesNotUseRegisteredNonStorageDriverAliasAsStorageDriver()
+    [Test]
+    public async Task Map_DoesNotUseRegisteredNonStorageDriverAliasAsStorageDriver()
     {
         _registry.RegisterType(typeof(string), "NotAStorageDriver");
 
         var variable = _mapper.Map(new VariableModel("id", "name", "String", "value", "NotAStorageDriver"));
 
-        Assert.Null(variable.StorageDriverType);
+        await Assert.That(variable.StorageDriverType).IsNull();
     }
 }

@@ -1,13 +1,14 @@
 using Elsa.Extensions;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class PropertyEvaluationTests
 {
-    [Theory]
-    [InlineData(false)] // Initial state
-    [InlineData(true)]  // After setting flag
+    [Test]
+    [Arguments(false)] // Initial state
+    [Arguments(true)]  // After setting flag
     public async Task HasEvaluatedProperties_TracksState(bool shouldSetFlag)
     {
         // Arrange
@@ -19,6 +20,6 @@ public class PropertyEvaluationTests
         var result = context.GetHasEvaluatedProperties();
 
         // Assert
-        Assert.Equal(shouldSetFlag, result);
+        await Assert.That(result).IsEqualTo(shouldSetFlag);
     }
 }

@@ -2,7 +2,7 @@ using System.Reflection;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
 using NSubstitute;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
@@ -23,7 +23,7 @@ public class ActivityDescriberTests
         _describer = new ActivityDescriber(defaultValueResolver, propertyUIHandlerResolver);
     }
 
-    [Fact]
+    [Test]
     public async Task DescribeActivityAsync_MapsCanContainSecretsToInputDescriptorSensitivity()
     {
         var descriptor = await _describer.DescribeActivityAsync(typeof(ActivityWithSensitiveInputs));
@@ -31,8 +31,8 @@ public class ActivityDescriberTests
         var sensitiveInput = descriptor.Inputs.Single(x => x.Name == nameof(ActivityWithSensitiveInputs.SensitiveText));
         var publicInput = descriptor.Inputs.Single(x => x.Name == nameof(ActivityWithSensitiveInputs.PublicText));
 
-        Assert.True(sensitiveInput.IsSensitive);
-        Assert.False(publicInput.IsSensitive);
+        await Assert.That(sensitiveInput.IsSensitive).IsTrue();
+        await Assert.That(publicInput.IsSensitive).IsFalse();
     }
 
     private sealed class ActivityWithSensitiveInputs : CodeActivity

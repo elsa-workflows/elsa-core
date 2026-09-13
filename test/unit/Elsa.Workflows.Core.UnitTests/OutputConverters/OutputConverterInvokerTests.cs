@@ -3,6 +3,7 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
@@ -10,7 +11,7 @@ public class OutputConverterInvokerTests
 {
     private const string ConverterId = "tests.output-converter";
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenDeclaredSourceDerivesFromSupportedSource_InvokesConverter()
     {
         var converter = new RecordingConverter(_ => "converted");
@@ -25,18 +26,18 @@ public class OutputConverterInvokerTests
             new Dog(),
             Destination(typeof(string)));
 
-        Assert.Equal("converted", result);
-        Assert.Equal(1, converter.ConvertCalls);
+        await Assert.That(result).IsEqualTo("converted");
+        await Assert.That(converter.ConvertCalls).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenDeclaredSourceIsIncompatible_FailsBeforeConversion()
     {
         var converter = new RecordingConverter(_ => "converted");
         var context = await CreateContextAsync(ConverterId, converter);
         var invoker = CreateInvoker(new(ConverterId, typeof(Stream), typeof(string), "Test"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(() => invoker.Invoke(
             context,
             CreateOutput(),
             "Result",
@@ -44,11 +45,11 @@ public class OutputConverterInvokerTests
             new Dog(),
             Destination(typeof(string))));
 
-        Assert.Equal(OutputConversionFailureStage.SourceCompatibility, exception.Stage);
-        Assert.Equal(0, converter.ConvertCalls);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.SourceCompatibility);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenSettingsViolateJsonSchema_FailsBeforeConversion()
     {
         var converter = new RecordingConverter(_ => "converted");
@@ -66,7 +67,7 @@ public class OutputConverterInvokerTests
         var invoker = CreateInvoker(new(ConverterId, typeof(int), typeof(string), "Test", settingsSchema: schema));
         var output = CreateOutput(ParseJson("{}"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(() => invoker.Invoke(
             context,
             output,
             "Result",
@@ -74,11 +75,11 @@ public class OutputConverterInvokerTests
             42,
             Destination(typeof(string))));
 
-        Assert.Equal(OutputConversionFailureStage.SettingsValidation, exception.Stage);
-        Assert.Equal(0, converter.ConvertCalls);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.SettingsValidation);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenConverterRejectsSettings_FailsBeforeConversion()
     {
         var converter = new RecordingConverter(
@@ -87,7 +88,7 @@ public class OutputConverterInvokerTests
         var context = await CreateContextAsync(ConverterId, converter);
         var invoker = CreateInvoker(new(ConverterId, typeof(int), typeof(string), "Test"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(() => invoker.Invoke(
             context,
             CreateOutput(ParseJson("""{ "format": "unsupported" }""")),
             "Result",
@@ -95,18 +96,18 @@ public class OutputConverterInvokerTests
             42,
             Destination(typeof(string))));
 
-        Assert.Equal(OutputConversionFailureStage.SettingsValidation, exception.Stage);
-        Assert.Equal(0, converter.ConvertCalls);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.SettingsValidation);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenDeclaredResultCannotBeAssignedToDestination_FailsBeforeConversion()
     {
         var converter = new RecordingConverter(_ => 42);
         var context = await CreateContextAsync(ConverterId, converter);
         var invoker = CreateInvoker(new(ConverterId, typeof(int), typeof(int), "Test"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(() => invoker.Invoke(
             context,
             CreateOutput(),
             "Result",
@@ -114,18 +115,18 @@ public class OutputConverterInvokerTests
             1,
             Destination(typeof(string))));
 
-        Assert.Equal(OutputConversionFailureStage.ResultValidation, exception.Stage);
-        Assert.Equal(0, converter.ConvertCalls);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.ResultValidation);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenRuntimeResultViolatesDescriptor_FailsResultValidation()
     {
         var converter = new RecordingConverter(_ => 42);
         var context = await CreateContextAsync(ConverterId, converter);
         var invoker = CreateInvoker(new(ConverterId, typeof(int), typeof(string), "Test"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(() => invoker.Invoke(
             context,
             CreateOutput(),
             "Result",
@@ -133,18 +134,18 @@ public class OutputConverterInvokerTests
             1,
             Destination(typeof(object))));
 
-        Assert.Equal(OutputConversionFailureStage.ResultValidation, exception.Stage);
-        Assert.Equal(1, converter.ConvertCalls);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.ResultValidation);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_WhenConverterReturnsNullForNonNullableDestination_FailsResultValidation()
     {
         var converter = new RecordingConverter(_ => null);
         var context = await CreateContextAsync(ConverterId, converter);
         var invoker = CreateInvoker(new(ConverterId, typeof(int), typeof(int?), "Test"));
 
-        var exception = Assert.Throws<OutputConversionException>(() => invoker.Invoke(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(() => invoker.Invoke(
             context,
             CreateOutput(),
             "Result",
@@ -152,10 +153,10 @@ public class OutputConverterInvokerTests
             1,
             Destination(typeof(int), allowsNull: false)));
 
-        Assert.Equal(OutputConversionFailureStage.ResultValidation, exception.Stage);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.ResultValidation);
     }
 
-    [Fact]
+    [Test]
     public async Task Invoke_ResolvesScopedKeyedConverterFromEachWorkflowProvider()
     {
         var descriptor = new OutputConverterDescriptor(ConverterId, typeof(int), typeof(Guid), "Test");
@@ -169,8 +170,8 @@ public class OutputConverterInvokerTests
         var repeatedFirstResult = invoker.Invoke(firstContext, output, "Result", typeof(int), 2, destination);
         var secondResult = invoker.Invoke(secondContext, output, "Result", typeof(int), 3, destination);
 
-        Assert.Equal(firstResult, repeatedFirstResult);
-        Assert.NotEqual(firstResult, secondResult);
+        await Assert.That(repeatedFirstResult).IsEqualTo(firstResult);
+        await Assert.That(secondResult).IsNotEqualTo(firstResult);
     }
 
     private static OutputConverterInvoker CreateInvoker(OutputConverterDescriptor descriptor)

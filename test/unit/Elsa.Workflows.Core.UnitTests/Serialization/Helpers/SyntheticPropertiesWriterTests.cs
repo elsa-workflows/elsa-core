@@ -7,13 +7,14 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Helpers;
 
 public sealed class SyntheticPropertiesWriterTests
 {
-    [Fact]
-    public void When_WriteConfiguredSyntheticOutput_Then_WritesConverterConfiguration()
+    [Test]
+    public async Task When_WriteConfiguredSyntheticOutput_Then_WritesConverterConfiguration()
     {
         // Arrange
         var output = new Output<string>(new Variable("Result"))
@@ -26,17 +27,18 @@ public sealed class SyntheticPropertiesWriterTests
 
         // Assert
         var syntheticOutput = document.RootElement.GetProperty("result");
-        Assert.Equal("String", syntheticOutput.GetProperty("typeName").GetString());
-        Assert.Equal("resultVariable", syntheticOutput.GetProperty("memoryReference").GetProperty("id").GetString());
+        await Assert.That(syntheticOutput.GetProperty("typeName").GetString()).IsEqualTo("String");
+        await Assert.That(syntheticOutput.GetProperty("memoryReference").GetProperty("id").GetString()).IsEqualTo("resultVariable");
 
         var converter = syntheticOutput.GetProperty("converter");
-        Assert.Equal("sample.to-text", converter.GetProperty("id").GetString());
-        Assert.Equal("compact", converter.GetProperty("settings").GetProperty("format").GetString());
-        Assert.Equal(new[] { "id", "settings" }, converter.EnumerateObject().Select(x => x.Name));
+        await Assert.That(converter.GetProperty("id").GetString()).IsEqualTo("sample.to-text");
+        await Assert.That(converter.GetProperty("settings").GetProperty("format").GetString()).IsEqualTo("compact");
+        await Assert.That(converter.EnumerateObject().Select(x => x.Name))
+            .IsEquivalentTo(new[] { "id", "settings" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void When_WriteUnconfiguredSyntheticOutput_Then_OmitsConverterProperty()
+    [Test]
+    public async Task When_WriteUnconfiguredSyntheticOutput_Then_OmitsConverterProperty()
     {
         // Arrange
         var output = new Output<string>(new Variable("Result"));
@@ -46,13 +48,14 @@ public sealed class SyntheticPropertiesWriterTests
 
         // Assert
         var syntheticOutput = document.RootElement.GetProperty("result");
-        Assert.Equal(new[] { "typeName", "memoryReference" }, syntheticOutput.EnumerateObject().Select(x => x.Name));
-        Assert.Equal("String", syntheticOutput.GetProperty("typeName").GetString());
-        Assert.Equal("resultVariable", syntheticOutput.GetProperty("memoryReference").GetProperty("id").GetString());
+        await Assert.That(syntheticOutput.EnumerateObject().Select(x => x.Name))
+            .IsEquivalentTo(new[] { "typeName", "memoryReference" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(syntheticOutput.GetProperty("typeName").GetString()).IsEqualTo("String");
+        await Assert.That(syntheticOutput.GetProperty("memoryReference").GetProperty("id").GetString()).IsEqualTo("resultVariable");
     }
 
-    [Fact]
-    public void When_RoundTripConfiguredSyntheticOutput_Then_PreservesConverterConfiguration()
+    [Test]
+    public async Task When_RoundTripConfiguredSyntheticOutput_Then_PreservesConverterConfiguration()
     {
         // Arrange
         var output = new Output<string>(new Variable("Result"))
@@ -68,12 +71,12 @@ public sealed class SyntheticPropertiesWriterTests
             CreateOptions());
 
         // Assert
-        Assert.False(result.HasExceptions);
-        var roundTrippedOutput = Assert.IsType<Output<string>>(result.Activity.SyntheticProperties["Result"]);
-        var configuration = Assert.IsType<OutputConverterConfiguration>(roundTrippedOutput.Converter);
-        Assert.Equal("sample.to-text", configuration.Id);
-        Assert.True(configuration.Settings.HasValue);
-        Assert.Equal("compact", configuration.Settings.Value.GetProperty("format").GetString());
+        await Assert.That(result.HasExceptions).IsFalse();
+        var roundTrippedOutput = (await Assert.That(result.Activity!.SyntheticProperties["Result"]).IsTypeOf<Output<string>>())!;
+        var configuration = (await Assert.That(roundTrippedOutput.Converter).IsTypeOf<OutputConverterConfiguration>())!;
+        await Assert.That(configuration.Id).IsEqualTo("sample.to-text");
+        await Assert.That(configuration.Settings.HasValue).IsTrue();
+        await Assert.That(configuration.Settings!.Value.GetProperty("format").GetString()).IsEqualTo("compact");
     }
 
     private static JsonDocument WriteSyntheticOutput(Output<string> output)

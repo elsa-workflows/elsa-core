@@ -3,13 +3,14 @@ using Elsa.Extensions;
 using Elsa.Workflows.Core.UnitTests.OutputConverters.Fixtures;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
 public class OutputConverterRegistrationUsageTests
 {
-    [Fact]
-    public void RegisteredReferenceConverter_IsDiscoverableAndConvertsWithBindingSettings()
+    [Test]
+    public async Task RegisteredReferenceConverter_IsDiscoverableAndConvertsWithBindingSettings()
     {
         var services = new ServiceCollection();
         services.AddOutputConverter<ReferenceOutputConverter>(OutputConverterRegistrationTests.Descriptor, ServiceLifetime.Scoped);
@@ -27,7 +28,7 @@ public class OutputConverterRegistrationUsageTests
             typeof(string),
             settingsDocument.RootElement));
 
-        Assert.Equal(OutputConverterRegistrationTests.Descriptor, descriptor);
-        Assert.Equal("converted:native value", result);
+        await Assert.That(descriptor).IsEqualTo(OutputConverterRegistrationTests.Descriptor);
+        await Assert.That(result).IsEqualTo("converted:native value");
     }
 }

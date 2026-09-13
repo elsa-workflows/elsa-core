@@ -1,12 +1,13 @@
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
 public class OutputConverterRegistryTests
 {
-    [Fact]
-    public void Find_ReturnsDescriptorAndRegistrationForExactId()
+    [Test]
+    public async Task Find_ReturnsDescriptorAndRegistrationForExactId()
     {
         // Arrange
         var registration = CreateRegistration("sample.to-text", typeof(object), typeof(string));
@@ -17,12 +18,12 @@ public class OutputConverterRegistryTests
         var resolvedRegistration = sut.FindRegistration("sample.to-text");
 
         // Assert
-        Assert.Same(registration.Descriptor, descriptor);
-        Assert.Same(registration, resolvedRegistration);
+        await Assert.That(descriptor).IsSameReferenceAs(registration.Descriptor);
+        await Assert.That(resolvedRegistration).IsSameReferenceAs(registration);
     }
 
-    [Fact]
-    public void Find_UsesOrdinalCaseSensitiveIdentity()
+    [Test]
+    public async Task Find_UsesOrdinalCaseSensitiveIdentity()
     {
         // Arrange
         var registration = CreateRegistration("sample.to-text", typeof(object), typeof(string));
@@ -33,13 +34,13 @@ public class OutputConverterRegistryTests
         var resolvedRegistration = sut.FindRegistration("Sample.To-Text");
 
         // Assert
-        Assert.Null(descriptor);
-        Assert.Null(resolvedRegistration);
+        await Assert.That(descriptor).IsNull();
+        await Assert.That(resolvedRegistration).IsNull();
     }
 
-    [Theory]
-    [InlineData("sample.to-text")]
-    [InlineData("SAMPLE.TO-TEXT")]
+    [Test]
+    [Arguments("sample.to-text")]
+    [Arguments("SAMPLE.TO-TEXT")]
     public void Constructor_RejectsExactAndCaseOnlyDuplicateIds(string duplicateId)
     {
         // Arrange
@@ -50,15 +51,15 @@ public class OutputConverterRegistryTests
         };
 
         // Act
-        var act = () => new OutputConverterRegistry(registrations);
+        Action act = () => _ = new OutputConverterRegistry(registrations);
 
         // Assert
-        Assert.Throws<InvalidOperationException>(act);
+        Assert.ThrowsExactly<InvalidOperationException>(act);
     }
 
-    [Theory]
-    [InlineData("different.converter")]
-    [InlineData("SAMPLE.TO-TEXT")]
+    [Test]
+    [Arguments("different.converter")]
+    [Arguments("SAMPLE.TO-TEXT")]
     public void Constructor_RejectsServiceKeyThatDoesNotExactlyMatchDescriptorId(string serviceKey)
     {
         // Arrange
@@ -66,15 +67,15 @@ public class OutputConverterRegistryTests
         var registration = new OutputConverterRegistration(descriptor, serviceKey, ServiceLifetime.Scoped);
 
         // Act
-        var act = () => new OutputConverterRegistry([registration]);
+        Action act = () => _ = new OutputConverterRegistry([registration]);
 
         // Assert
-        Assert.Throws<InvalidOperationException>(act);
+        Assert.ThrowsExactly<InvalidOperationException>(act);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
     public void Constructor_RejectsOpenGenericSourceOrResultTypes(bool useOpenGenericSourceType)
     {
         // Arrange
@@ -83,14 +84,14 @@ public class OutputConverterRegistryTests
         var registration = CreateRegistration("sample.open-generic", sourceType, resultType);
 
         // Act
-        var act = () => new OutputConverterRegistry([registration]);
+        Action act = () => _ = new OutputConverterRegistry([registration]);
 
         // Assert
-        Assert.Throws<InvalidOperationException>(act);
+        Assert.ThrowsExactly<InvalidOperationException>(act);
     }
 
-    [Fact]
-    public void ListAll_ReturnsEveryRegisteredDescriptor()
+    [Test]
+    public async Task ListAll_ReturnsEveryRegisteredDescriptor()
     {
         // Arrange
         var registrations = new[]
@@ -104,11 +105,13 @@ public class OutputConverterRegistryTests
         var ids = sut.ListAll().Select(x => x.Id).Order().ToArray();
 
         // Assert
-        Assert.Equal(["sample.first", "sample.second"], ids);
+        await Assert.That(ids).IsEquivalentTo(
+            ["sample.first", "sample.second"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void FindCompatible_AllowsExactBaseAndInterfaceSourceTypesAndAssignableResultTypes()
+    [Test]
+    public async Task FindCompatible_AllowsExactBaseAndInterfaceSourceTypesAndAssignableResultTypes()
     {
         // Arrange
         var registrations = new[]
@@ -128,25 +131,28 @@ public class OutputConverterRegistryTests
             .ToArray();
 
         // Assert
-        Assert.Equal(["source.base", "source.exact", "source.interface"], ids);
+        await Assert.That(ids).IsEquivalentTo(
+            ["source.base", "source.exact", "source.interface"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void FindCompatible_AcceptsObjectAsADeclaredDestination()
+    [Test]
+    public async Task FindCompatible_AcceptsObjectAsADeclaredDestination()
     {
         // Arrange
         var registration = CreateRegistration("sample.to-text", typeof(SourceBase), typeof(string));
         var sut = new OutputConverterRegistry([registration]);
 
         // Act
-        var descriptors = sut.FindCompatible(typeof(DerivedSource), typeof(object));
+        var descriptors = sut.FindCompatible(typeof(DerivedSource), typeof(object)).ToArray();
 
         // Assert
-        Assert.Collection(descriptors, descriptor => Assert.Same(registration.Descriptor, descriptor));
+        await Assert.That(descriptors).Count().IsEqualTo(1);
+        await Assert.That(descriptors[0]).IsSameReferenceAs(registration.Descriptor);
     }
 
-    [Fact]
-    public void FindCompatible_DoesNotReverseSourceOrResultAssignability()
+    [Test]
+    public async Task FindCompatible_DoesNotReverseSourceOrResultAssignability()
     {
         // Arrange
         var narrowedSource = CreateRegistration("source.narrowed", typeof(DerivedSource), typeof(ConcreteResult));
@@ -159,8 +165,8 @@ public class OutputConverterRegistryTests
             .FindCompatible(typeof(DerivedSource), typeof(ConcreteResult));
 
         // Assert
-        Assert.Empty(sourceMatches);
-        Assert.Empty(resultMatches);
+        await Assert.That(sourceMatches).IsEmpty();
+        await Assert.That(resultMatches).IsEmpty();
     }
 
     private static OutputConverterRegistration CreateRegistration(string id, Type sourceType, Type resultType)

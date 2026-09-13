@@ -1,13 +1,14 @@
 using Elsa.Extensions;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class TriggerTests
 {
-    [Theory]
-    [InlineData(true, null)] // null means use context.Activity.Id
-    [InlineData(false, "different-id")]
+    [Test]
+    [Arguments(true, null)] // null means use context.Activity.Id
+    [Arguments(false, "different-id")]
     public async Task IsTriggerOfWorkflow_ReturnsExpectedResult(bool expectedResult, string? triggerActivityId)
     {
         // Arrange
@@ -18,6 +19,6 @@ public class TriggerTests
         var result = context.IsTriggerOfWorkflow();
 
         // Assert
-        Assert.Equal(expectedResult, result);
+        await Assert.That(result).IsEqualTo(expectedResult);
     }
 }

@@ -11,13 +11,14 @@ using Elsa.Workflows.Serialization.Converters;
 using Elsa.Workflows.Serialization.Helpers;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
 
 public sealed class ActivityJsonConverterTests
 {
-    [Fact]
-    public void When_DeserializeKnownActivity_And_TypeNameSpecified_Then_FindsAndInstantiatesActivity()
+    [Test]
+    public async Task When_DeserializeKnownActivity_And_TypeNameSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
         var activityRegistry = CreateActivityRegistry(WriteLineActivityTypeName, WriteLineActivity);
@@ -27,11 +28,11 @@ public sealed class ActivityJsonConverterTests
         var result = Execute(sut, WriteLineActivityJson_WithoutVersion);
 
         // Assert
-        Assert.Same(WriteLineActivity, result);
+        await Assert.That(result).IsSameReferenceAs(WriteLineActivity);
     }
 
-    [Fact]
-    public void When_DeserializeKnownActivity_And_TypeNameSpecified_And_VersionSpecified_Then_FindsAndInstantiatesActivity()
+    [Test]
+    public async Task When_DeserializeKnownActivity_And_TypeNameSpecified_And_VersionSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
         var activityRegistry = CreateActivityRegistry(WriteLineActivityTypeName, WriteLineActivity, version: 1);
@@ -41,11 +42,11 @@ public sealed class ActivityJsonConverterTests
         var result = Execute(sut, WriteLineActivityJson_WithVersion);
 
         // Assert
-        Assert.Same(WriteLineActivity, result);
+        await Assert.That(result).IsSameReferenceAs(WriteLineActivity);
     }
 
-    [Fact]
-    public void When_DeserializeUnknownActivity_Then_ReturnsNotFoundActivity()
+    [Test]
+    public async Task When_DeserializeUnknownActivity_Then_ReturnsNotFoundActivity()
     {
         // Arrange
         var activityRegistry = Substitute.For<IActivityRegistry>();
@@ -59,20 +60,20 @@ public sealed class ActivityJsonConverterTests
         var result = Execute(sut, UnknownActivityJson);
 
         // Assert
-        Assert.IsType<NotFoundActivity>(result);
-        var notFoundActivity = (NotFoundActivity)result;
-        Assert.Equal(UnknownActivityTypeName, notFoundActivity.MissingTypeName);
-        Assert.Equal(0, notFoundActivity.MissingTypeVersion);
+        await Assert.That(result).IsTypeOf<NotFoundActivity>();
+        var notFoundActivity = (NotFoundActivity)result!;
+        await Assert.That(notFoundActivity.MissingTypeName).IsEqualTo(UnknownActivityTypeName);
+        await Assert.That(notFoundActivity.MissingTypeVersion).IsEqualTo(0);
 
         var expectedJsonDoc = JsonDocument.Parse(UnknownActivityJson);
         var actualJsonDoc = JsonDocument.Parse(notFoundActivity.OriginalActivityJson);
-        Assert.Equal(expectedJsonDoc.RootElement.ToString(), actualJsonDoc.RootElement.ToString());
-        Assert.True(notFoundActivity.Metadata.ContainsKey("displayText"));
-        Assert.True(notFoundActivity.Metadata.ContainsKey("description"));
+        await Assert.That(actualJsonDoc.RootElement.ToString()).IsEqualTo(expectedJsonDoc.RootElement.ToString());
+        await Assert.That(notFoundActivity.Metadata.ContainsKey("displayText")).IsTrue();
+        await Assert.That(notFoundActivity.Metadata.ContainsKey("description")).IsTrue();
     }
 
-    [Fact]
-    public void When_DeserializeWorkflowAsActivity_And_WorkflowDefinitionIdSpecified_Then_FindsAndInstantiatesActivity()
+    [Test]
+    public async Task When_DeserializeWorkflowAsActivity_And_WorkflowDefinitionIdSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
         var activityRegistry = CreateActivityRegistry_FindByCustomProperty(
@@ -86,11 +87,11 @@ public sealed class ActivityJsonConverterTests
         var result = Execute(sut, WorkflowAsActivityJson_WithDefinitionId);
 
         // Assert
-        Assert.Same(WorkflowAsActivity, result);
+        await Assert.That(result).IsSameReferenceAs(WorkflowAsActivity);
     }
 
-    [Fact]
-    public void When_DeserializeWorkflowAsActivity_And_WorkflowDefinitionVersionIdSpecified_Then_FindsAndInstantiatesActivity()
+    [Test]
+    public async Task When_DeserializeWorkflowAsActivity_And_WorkflowDefinitionVersionIdSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
         var activityRegistry = CreateActivityRegistry_FindByCustomProperty(
@@ -103,11 +104,11 @@ public sealed class ActivityJsonConverterTests
         var result = Execute(sut, WorkflowAsActivityJson_WithVersionId);
 
         // Assert
-        Assert.Same(WorkflowAsActivity, result);
+        await Assert.That(result).IsSameReferenceAs(WorkflowAsActivity);
     }
 
-    [Fact]
-    public void When_DeserializeWorkflowAsActivity_And_TypeNameSpecified_Then_FindsAndInstantiatesActivity()
+    [Test]
+    public async Task When_DeserializeWorkflowAsActivity_And_TypeNameSpecified_Then_FindsAndInstantiatesActivity()
     {
         // Arrange
         var activityRegistry = CreateActivityRegistry(WorkflowAsActivityTypeName, WorkflowAsActivity);
@@ -117,7 +118,7 @@ public sealed class ActivityJsonConverterTests
         var result = Execute(sut, WorkflowAsActivityJson_WithTypeNameOnly);
 
         // Assert
-        Assert.Same(WorkflowAsActivity, result);
+        await Assert.That(result).IsSameReferenceAs(WorkflowAsActivity);
     }
 
     static IActivity? Execute(ActivityJsonConverter sut, string json) =>
@@ -178,7 +179,7 @@ public sealed class ActivityJsonConverterTests
     private static readonly string WriteLineActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteLine>();
     private static readonly string NotFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
-    private const string WriteLineActivityJson_WithVersion = 
+    private const string WriteLineActivityJson_WithVersion =
 """
  {
      "text": {
@@ -201,7 +202,7 @@ public sealed class ActivityJsonConverterTests
  }
  """;
 
-    private const string UnknownActivityJson = 
+    private const string UnknownActivityJson =
 """
 {
    "text": {
@@ -223,7 +224,7 @@ public sealed class ActivityJsonConverterTests
 }
 """;
 
-    private const string WriteLineActivityJson_WithoutVersion = 
+    private const string WriteLineActivityJson_WithoutVersion =
 """
 {
     "text": {
@@ -245,7 +246,7 @@ public sealed class ActivityJsonConverterTests
 }
 """;
 
-    private const string WorkflowAsActivityJson_WithVersionId = 
+    private const string WorkflowAsActivityJson_WithVersionId =
 """
 {
     "workflowDefinitionVersionId": "aaa1112fff2443",
@@ -272,7 +273,7 @@ public sealed class ActivityJsonConverterTests
 }
 """;
 
-    private const string WorkflowAsActivityJson_WithDefinitionId = 
+    private const string WorkflowAsActivityJson_WithDefinitionId =
 """
 {
    "workflowDefinitionId": "bd94124913202141",
@@ -299,7 +300,7 @@ public sealed class ActivityJsonConverterTests
 }
 """;
 
-    private const string WorkflowAsActivityJson_WithTypeNameOnly = 
+    private const string WorkflowAsActivityJson_WithTypeNameOnly =
 """
 {
    "id": "5fc551ed366fe9fd",

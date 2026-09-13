@@ -1,7 +1,7 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Models;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
@@ -15,24 +15,24 @@ public class InputEvaluationTests
         _fixture = new(_activity);
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateInputPropertiesAsync_WhenInputIsSensitive_RemovesItFromActivityState()
     {
         _fixture.ConfigureContext(context => context.ActivityState[nameof(ActivityWithSensitiveInputs.SensitiveText)] = "stale-secret");
 
         var context = await ActivateAsync();
 
-        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithSensitiveInputs.SensitiveText)));
-        Assert.Equal("secret", _activity.CapturedSensitiveText);
+        await Assert.That(context.ActivityState.ContainsKey(nameof(ActivityWithSensitiveInputs.SensitiveText))).IsFalse();
+        await Assert.That(_activity.CapturedSensitiveText).IsEqualTo("secret");
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateInputPropertiesAsync_WhenInputIsNotSensitive_StoresItInActivityState()
     {
         var context = await ActivateAsync();
 
-        Assert.Equal("public", context.ActivityState[nameof(ActivityWithSensitiveInputs.PublicText)]);
-        Assert.Equal("public", _activity.CapturedPublicText);
+        await Assert.That(context.ActivityState[nameof(ActivityWithSensitiveInputs.PublicText)]).IsEqualTo("public");
+        await Assert.That(_activity.CapturedPublicText).IsEqualTo("public");
     }
 
     private Task<ActivityExecutionContext> ActivateAsync() => _fixture.ExecuteAsync();

@@ -1,11 +1,12 @@
 using Elsa.Extensions;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class VariableTests
 {
-    [Fact]
+    [Test]
     public async Task CreateVariable_CreatesNewVariable_WithSpecifiedValue()
     {
         // Arrange
@@ -15,13 +16,13 @@ public class VariableTests
         var variable = context.CreateVariable("testVar", 42);
 
         // Assert
-        Assert.NotNull(variable);
-        Assert.Equal("testVar", variable.Name);
+        await Assert.That(variable).IsNotNull();
+        await Assert.That(variable.Name).IsEqualTo("testVar");
         var value = context.GetVariable<int>("testVar");
-        Assert.Equal(42, value);
+        await Assert.That(value).IsEqualTo(42);
     }
 
-    [Fact]
+    [Test]
     public async Task SetVariable_CreatesOrUpdatesVariable()
     {
         // Arrange
@@ -33,10 +34,10 @@ public class VariableTests
 
         // Assert
         var value = context.GetVariable<int>("testVar");
-        Assert.Equal(20, value);
+        await Assert.That(value).IsEqualTo(20);
     }
 
-    [Fact]
+    [Test]
     public async Task GetVariable_ReturnsNull_WhenVariableDoesNotExist()
     {
         // Arrange
@@ -46,10 +47,10 @@ public class VariableTests
         var value = context.GetVariable<string>("nonExistent");
 
         // Assert
-        Assert.Null(value);
+        await Assert.That(value).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task GetVariableValues_ReturnsAllVariables_AcrossScopes()
     {
         // Arrange
@@ -61,8 +62,8 @@ public class VariableTests
         var values = context.GetVariableValues();
 
         // Assert
-        Assert.NotEmpty(values);
-        Assert.True(values.ContainsKey("var1Variable") || values.ContainsKey("var1"));
-        Assert.True(values.ContainsKey("var2Variable") || values.ContainsKey("var2"));
+        await Assert.That(values).IsNotEmpty();
+        await Assert.That(values.ContainsKey("var1Variable") || values.ContainsKey("var1")).IsTrue();
+        await Assert.That(values.ContainsKey("var2Variable") || values.ContainsKey("var2")).IsTrue();
     }
 }

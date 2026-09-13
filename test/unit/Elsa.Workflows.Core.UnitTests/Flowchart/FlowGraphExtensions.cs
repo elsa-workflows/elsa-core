@@ -1,32 +1,36 @@
 ﻿using Elsa.Workflows.Activities.Flowchart.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Flowchart;
 
 public static class FlowGraphExtensions
 {
-    public static void ValidateOutboundConnections(this FlowGraph flowGraph, List<string> expected, IActivity activity)
+    public static async Task ValidateOutboundConnections(this FlowGraph flowGraph, List<string> expected, IActivity activity)
     {
-        Assert.Equal(expected, flowGraph.GetOutboundConnections(activity).Select(c => c.ToString()));
+        await Assert.That(flowGraph.GetOutboundConnections(activity).Select(c => c.ToString()))
+            .IsEquivalentTo(expected, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    public static void ValidateForwardInboundConnections(this FlowGraph flowGraph, List<string> expected, IActivity activity)
+    public static async Task ValidateForwardInboundConnections(this FlowGraph flowGraph, List<string> expected, IActivity activity)
     {
-        Assert.Equal(expected, flowGraph.GetForwardInboundConnections(activity).Select(c => c.ToString()));
+        await Assert.That(flowGraph.GetForwardInboundConnections(activity).Select(c => c.ToString()))
+            .IsEquivalentTo(expected, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
-    public static void ValidateBackwardConnection(this FlowGraph flowGraph, bool expectedBackward, bool expectedValid, Connection connection)
+    public static async Task ValidateBackwardConnection(this FlowGraph flowGraph, bool expectedBackward, bool expectedValid, Connection connection)
     {
         var actualBackward = flowGraph.IsBackwardConnection(connection, out var actualValid);
-        Assert.Equal(expectedBackward, actualBackward);
-        Assert.Equal(expectedValid, actualValid);
+        await Assert.That(actualBackward).IsEqualTo(expectedBackward);
+        await Assert.That(actualValid).IsEqualTo(expectedValid);
     }
 
-    public static void ValidateDanglingActivity(this FlowGraph flowGraph, bool expected, Activity activity)
+    public static async Task ValidateDanglingActivity(this FlowGraph flowGraph, bool expected, Activity activity)
     {
-        Assert.Equal(expected, flowGraph.IsDanglingActivity(activity));
+        await Assert.That(flowGraph.IsDanglingActivity(activity)).IsEqualTo(expected);
     }
 
-    public static void ValidateAncestorActivities(this FlowGraph flowGraph, List<Activity> expected, Activity activity)
+    public static async Task ValidateAncestorActivities(this FlowGraph flowGraph, List<Activity> expected, Activity activity)
     {
-        Assert.Equal(expected, flowGraph.GetAncestorActivities(activity));
+        await Assert.That(flowGraph.GetAncestorActivities(activity))
+            .IsEquivalentTo(expected.Cast<IActivity>(), TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 }

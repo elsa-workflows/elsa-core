@@ -8,13 +8,13 @@ using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Xunit;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
 public class WorkflowStateExtractorTests
 {
-    [Fact]
+    [Test]
     public async Task Extract_And_Apply_PreservesScheduledActivityMetadata()
     {
         var root = new WriteLine("root");
@@ -46,15 +46,15 @@ public class WorkflowStateExtractorTests
 
         await extractor.ApplyAsync(resumedWorkflowContext, state);
 
-        var restoredWorkItem = Assert.Single(resumedWorkflowContext.Scheduler.List());
-        Assert.Equal("owner-context", restoredWorkItem.Owner?.Id);
-        Assert.Equal("scheduled", restoredWorkItem.Tag);
-        Assert.Equal("predecessor", restoredWorkItem.SchedulingActivityExecutionId);
-        Assert.Equal("parent-workflow", restoredWorkItem.SchedulingWorkflowInstanceId);
-        Assert.Equal(3, restoredWorkItem.SchedulingCallStackDepth);
+        var restoredWorkItem = await Assert.That(resumedWorkflowContext.Scheduler.List()).HasSingleItem();
+        await Assert.That(restoredWorkItem.Owner?.Id).IsEqualTo("owner-context");
+        await Assert.That(restoredWorkItem.Tag).IsEqualTo("scheduled");
+        await Assert.That(restoredWorkItem.SchedulingActivityExecutionId).IsEqualTo("predecessor");
+        await Assert.That(restoredWorkItem.SchedulingWorkflowInstanceId).IsEqualTo("parent-workflow");
+        await Assert.That(restoredWorkItem.SchedulingCallStackDepth).IsEqualTo(3);
     }
 
-    [Fact]
+    [Test]
     public async Task Extract_And_Apply_PreservesCallStackDepth()
     {
         // Arrange
@@ -62,7 +62,7 @@ public class WorkflowStateExtractorTests
         var fixture = new ActivityTestFixture(root);
         var contextRoot = await fixture.BuildAsync();
         var workflowExecutionContext = contextRoot.WorkflowExecutionContext;
-        
+
         var contextA = await workflowExecutionContext.CreateActivityExecutionContextAsync(root);
         contextA.CallStackDepth = 10; // Manually set for testing persistence
         workflowExecutionContext.AddActivityExecutionContext(contextA);
@@ -71,7 +71,7 @@ public class WorkflowStateExtractorTests
 
         // Act
         var state = extractor.Extract(workflowExecutionContext);
-        
+
         // Create a new context to apply the state to
         var newWorkflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
             workflowExecutionContext.ServiceProvider,
@@ -79,16 +79,16 @@ public class WorkflowStateExtractorTests
             state.Id,
             CancellationToken.None
         );
-        
+
         await extractor.ApplyAsync(newWorkflowExecutionContext, state);
 
         // Assert
         var restoredContextA = newWorkflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == contextA.Id);
-        Assert.NotNull(restoredContextA);
-        Assert.Equal(10, restoredContextA.CallStackDepth);
+        await Assert.That(restoredContextA).IsNotNull();
+        await Assert.That(restoredContextA.CallStackDepth).IsEqualTo(10);
     }
 
-    [Fact]
+    [Test]
     public async Task CallStackDepth_IsIncrementedWhenSchedulingCallStackDepthProvided()
     {
         // Arrange
@@ -109,12 +109,12 @@ public class WorkflowStateExtractorTests
         var context = await workflowExecutionContext.CreateActivityExecutionContextAsync(root, options);
 
         // Assert - The CallStackDepth should be incremented from the scheduling depth
-        Assert.Equal(schedulingDepth + 1, context.CallStackDepth);
-        Assert.Equal("parent-activity-id", context.SchedulingActivityExecutionId);
-        Assert.Equal("parent-workflow-id", context.SchedulingWorkflowInstanceId);
+        await Assert.That(context.CallStackDepth).IsEqualTo(schedulingDepth + 1);
+        await Assert.That(context.SchedulingActivityExecutionId).IsEqualTo("parent-activity-id");
+        await Assert.That(context.SchedulingWorkflowInstanceId).IsEqualTo("parent-workflow-id");
     }
 
-    [Fact]
+    [Test]
     public async Task CallStackDepth_IsIncrementedFromParentContext()
     {
         // Arrange
@@ -137,13 +137,13 @@ public class WorkflowStateExtractorTests
         var childContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(root, options);
 
         // Assert - The CallStackDepth should be parent depth + 1
-        Assert.Equal(4, childContext.CallStackDepth);
-        Assert.Equal(parentContext.Id, childContext.SchedulingActivityExecutionId);
+        await Assert.That(childContext.CallStackDepth).IsEqualTo(4);
+        await Assert.That(childContext.SchedulingActivityExecutionId).IsEqualTo(parentContext.Id);
     }
 
-    [Theory]
-    [InlineData("1", 1, false, "Unexpected")]
-    [InlineData("persisted-version-id", 7, true, "MigrationCompatible")]
+    [Test]
+    [Arguments("1", 1, false, "Unexpected")]
+    [Arguments("persisted-version-id", 7, true, "MigrationCompatible")]
     public async Task ApplyAsync_WhenActivityContextNodeIsMissing_LogsStructuredWarningAndSkipsContext(
         string persistedDefinitionVersionId,
         int persistedDefinitionVersion,
@@ -165,16 +165,16 @@ public class WorkflowStateExtractorTests
         await testContext.Extractor.ApplyAsync(testContext.TargetContext, state);
 
         // Assert
-        Assert.Empty(testContext.TargetContext.ActivityExecutionContexts);
-        var warning = Assert.Single(testContext.Logger.Entries);
-        Assert.Equal(LogLevel.Warning, warning.Level);
-        Assert.Equal("ActivityExecutionContext", warning.Properties["WorkflowStateSkipKind"]);
-        Assert.Equal("missing-activity-context", warning.Properties["ActivityExecutionContextId"]);
-        Assert.Equal("missing-activity-node", warning.Properties["ScheduledActivityNodeId"]);
-        AssertDefinitionProperties(warning, state, testContext.TargetContext, isMigration, expectedClassification);
+        await Assert.That(testContext.TargetContext.ActivityExecutionContexts).IsEmpty();
+        var warning = await Assert.That(testContext.Logger.Entries).HasSingleItem();
+        await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(warning.Properties["WorkflowStateSkipKind"]).IsEqualTo("ActivityExecutionContext");
+        await Assert.That(warning.Properties["ActivityExecutionContextId"]).IsEqualTo("missing-activity-context");
+        await Assert.That(warning.Properties["ScheduledActivityNodeId"]).IsEqualTo("missing-activity-node");
+        await AssertDefinitionProperties(warning, state, testContext.TargetContext, isMigration, expectedClassification);
     }
 
-    [Fact]
+    [Test]
     public async Task ApplyAsync_WhenCompletionCallbackOwnerIsMissing_LogsStructuredWarning()
     {
         // Arrange
@@ -186,35 +186,36 @@ public class WorkflowStateExtractorTests
         await testContext.Extractor.ApplyAsync(testContext.TargetContext, state);
 
         // Assert
-        Assert.Empty(testContext.TargetContext.CompletionCallbacks);
-        var warning = Assert.Single(testContext.Logger.Entries);
-        Assert.Equal(LogLevel.Warning, warning.Level);
-        Assert.Equal("CompletionCallbackOwner", warning.Properties["WorkflowStateSkipKind"]);
-        Assert.Equal("missing-owner", warning.Properties["CompletionCallbackOwnerInstanceId"]);
-        Assert.Equal("child-node", warning.Properties["CompletionCallbackChildNodeId"]);
-        AssertDefinitionProperties(warning, state, testContext.TargetContext, false, "Unexpected");
+        await Assert.That(testContext.TargetContext.CompletionCallbacks).IsEmpty();
+        var warning = await Assert.That(testContext.Logger.Entries).HasSingleItem();
+        await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(warning.Properties["WorkflowStateSkipKind"]).IsEqualTo("CompletionCallbackOwner");
+        await Assert.That(warning.Properties["CompletionCallbackOwnerInstanceId"]).IsEqualTo("missing-owner");
+        await Assert.That(warning.Properties["CompletionCallbackChildNodeId"]).IsEqualTo("child-node");
+        await AssertDefinitionProperties(warning, state, testContext.TargetContext, false, "Unexpected");
     }
 
-    [Fact]
+    [Test]
     public async Task ApplyAsync_WhenCompletionCallbackChildIsMissing_LogsStructuredWarning()
     {
         // Arrange
         var testContext = await CreateTestContextAsync(includeActivityExecutionContext: true);
         var state = testContext.State;
-        var ownerInstanceId = Assert.Single(state.ActivityExecutionContexts).Id;
+        var owner = await Assert.That(state.ActivityExecutionContexts).HasSingleItem();
+        var ownerInstanceId = owner.Id;
         state.CompletionCallbacks.Add(new(ownerInstanceId, "missing-child-node", null));
 
         // Act
         await testContext.Extractor.ApplyAsync(testContext.TargetContext, state);
 
         // Assert
-        Assert.Empty(testContext.TargetContext.CompletionCallbacks);
-        var warning = Assert.Single(testContext.Logger.Entries);
-        Assert.Equal(LogLevel.Warning, warning.Level);
-        Assert.Equal("CompletionCallbackChild", warning.Properties["WorkflowStateSkipKind"]);
-        Assert.Equal(ownerInstanceId, warning.Properties["CompletionCallbackOwnerInstanceId"]);
-        Assert.Equal("missing-child-node", warning.Properties["CompletionCallbackChildNodeId"]);
-        AssertDefinitionProperties(warning, state, testContext.TargetContext, false, "Unexpected");
+        await Assert.That(testContext.TargetContext.CompletionCallbacks).IsEmpty();
+        var warning = await Assert.That(testContext.Logger.Entries).HasSingleItem();
+        await Assert.That(warning.Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(warning.Properties["WorkflowStateSkipKind"]).IsEqualTo("CompletionCallbackChild");
+        await Assert.That(warning.Properties["CompletionCallbackOwnerInstanceId"]).IsEqualTo(ownerInstanceId);
+        await Assert.That(warning.Properties["CompletionCallbackChildNodeId"]).IsEqualTo("missing-child-node");
+        await AssertDefinitionProperties(warning, state, testContext.TargetContext, false, "Unexpected");
     }
 
     private static async Task<TestContext> CreateTestContextAsync(bool includeActivityExecutionContext = false)
@@ -238,7 +239,7 @@ public class WorkflowStateExtractorTests
         return new(extractor, logger, state, targetContext);
     }
 
-    private static void AssertDefinitionProperties(
+    private static async Task AssertDefinitionProperties(
         CapturedLogEntry warning,
         WorkflowState state,
         WorkflowExecutionContext targetContext,
@@ -246,15 +247,15 @@ public class WorkflowStateExtractorTests
         string expectedClassification)
     {
         var targetIdentity = targetContext.Workflow.Identity;
-        Assert.Equal(state.Id, warning.Properties["WorkflowInstanceId"]);
-        Assert.Equal(state.DefinitionId, warning.Properties["PersistedWorkflowDefinitionId"]);
-        Assert.Equal(state.DefinitionVersionId, warning.Properties["PersistedWorkflowDefinitionVersionId"]);
-        Assert.Equal(state.DefinitionVersion, warning.Properties["PersistedWorkflowDefinitionVersion"]);
-        Assert.Equal(targetIdentity.DefinitionId, warning.Properties["TargetWorkflowDefinitionId"]);
-        Assert.Equal(targetIdentity.Id, warning.Properties["TargetWorkflowDefinitionVersionId"]);
-        Assert.Equal(targetIdentity.Version, warning.Properties["TargetWorkflowDefinitionVersion"]);
-        Assert.Equal(isMigration, warning.Properties["IsWorkflowDefinitionVersionMigration"]);
-        Assert.Equal(expectedClassification, warning.Properties["WorkflowStateSkipClassification"]);
+        await Assert.That(warning.Properties["WorkflowInstanceId"]).IsEqualTo(state.Id);
+        await Assert.That(warning.Properties["PersistedWorkflowDefinitionId"]).IsEqualTo(state.DefinitionId);
+        await Assert.That(warning.Properties["PersistedWorkflowDefinitionVersionId"]).IsEqualTo(state.DefinitionVersionId);
+        await Assert.That(warning.Properties["PersistedWorkflowDefinitionVersion"]).IsEqualTo(state.DefinitionVersion);
+        await Assert.That(warning.Properties["TargetWorkflowDefinitionId"]).IsEqualTo(targetIdentity.DefinitionId);
+        await Assert.That(warning.Properties["TargetWorkflowDefinitionVersionId"]).IsEqualTo(targetIdentity.Id);
+        await Assert.That(warning.Properties["TargetWorkflowDefinitionVersion"]).IsEqualTo(targetIdentity.Version);
+        await Assert.That(warning.Properties["IsWorkflowDefinitionVersionMigration"]).IsEqualTo(isMigration);
+        await Assert.That(warning.Properties["WorkflowStateSkipClassification"]).IsEqualTo(expectedClassification);
     }
 
     private sealed record TestContext(

@@ -1,8 +1,8 @@
-﻿
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Models;
 
@@ -10,21 +10,21 @@ public sealed class JsonActivityConstructorContextHelperTests
 {
     private static readonly JsonSerializerOptions _serializerOptions = new();
 
-    [Theory]
-    [InlineData("_Metadata")]
-    [InlineData("Metadata")]
-    [InlineData("_CustomProperties")]
-    [InlineData("CustomProperties")]
-    public void When_InputName_Is_ReservedKeyWord_Then_AddsException_WhenReadingInputs(string reservedInputName)
+    [Test]
+    [Arguments("_Metadata")]
+    [Arguments("Metadata")]
+    [Arguments("_CustomProperties")]
+    [Arguments("CustomProperties")]
+    public async Task When_InputName_Is_ReservedKeyWord_Then_AddsException_WhenReadingInputs(string reservedInputName)
     {
         // Arrange
         var activityDescriptor = new ActivityDescriptor
         {
             Inputs =
             [
-                new() 
-                { 
-                    Name = reservedInputName, 
+                new()
+                {
+                    Name = reservedInputName,
                     Type = typeof(object),
                     IsSynthetic = true
                 }
@@ -40,7 +40,7 @@ public sealed class JsonActivityConstructorContextHelperTests
         );
 
         // Assert
-        Assert.Single(result.Exceptions, e => e is InvalidActivityDescriptorInputException);
+        await Assert.That(result.Exceptions).HasSingleItem(e => e is InvalidActivityDescriptorInputException);
     }
 
     private static JsonElement GetJsonElementWithReservedInputName(string inputName)

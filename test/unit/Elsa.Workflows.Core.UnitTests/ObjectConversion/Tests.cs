@@ -4,15 +4,16 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Exceptions;
 using Elsa.Expressions.Helpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.ObjectConversion;
 
 public class Tests
 {
     private readonly ObjectConverterOptions _objectConverterOptions = new(StrictMode: true);
-    
-    [Fact]
-    public void TryConvertTo_SameType_ReturnsSuccess()
+
+    [Test]
+    public async Task TryConvertTo_SameType_ReturnsSuccess()
     {
         // Arrange
         var value = 42;
@@ -21,12 +22,12 @@ public class Tests
         var result = value.TryConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal(42, result.Value);
+        await Assert.That(result.IsSuccess).IsTrue();
+        await Assert.That(result.Value).IsEqualTo(42);
     }
 
-    [Fact]
-    public void TryConvertTo_DifferentType_ReturnsConvertedValue()
+    [Test]
+    public async Task TryConvertTo_DifferentType_ReturnsConvertedValue()
     {
         // Arrange
         var value = "42";
@@ -35,12 +36,12 @@ public class Tests
         var result = value.TryConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Equal(42, result.Value);
+        await Assert.That(result.IsSuccess).IsTrue();
+        await Assert.That(result.Value).IsEqualTo(42);
     }
 
-    [Fact]
-    public void TryConvertTo_InvalidConversion_ReturnsFailure()
+    [Test]
+    public async Task TryConvertTo_InvalidConversion_ReturnsFailure()
     {
         // Arrange
         var value = "invalid";
@@ -49,12 +50,12 @@ public class Tests
         var result = value.TryConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Exception);
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Exception).IsNotNull();
     }
 
-    [Fact]
-    public void TryConvertTo_InvalidJsonString_ReturnsFailure()
+    [Test]
+    public async Task TryConvertTo_InvalidJsonString_ReturnsFailure()
     {
         // Arrange
         var value = "{ invalid json }";
@@ -63,12 +64,12 @@ public class Tests
         var result = value.TryConvertTo<Dictionary<string, object>>(_objectConverterOptions);
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.NotNull(result.Exception);
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Exception).IsNotNull();
     }
 
-    [Fact]
-    public void ConvertTo_NullValue_ReturnsDefault()
+    [Test]
+    public async Task ConvertTo_NullValue_ReturnsDefault()
     {
         // Arrange
         object? value = null;
@@ -77,11 +78,11 @@ public class Tests
         var result = value.ConvertTo<int>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal(0, result);
+        await Assert.That(result).IsEqualTo(0);
     }
 
-    [Fact]
-    public void ConvertTo_JsonElementNumberToString_ReturnsString()
+    [Test]
+    public async Task ConvertTo_JsonElementNumberToString_ReturnsString()
     {
         // Arrange
         var jsonElement = JsonNode.Parse("42")!.AsValue();
@@ -90,11 +91,11 @@ public class Tests
         var result = jsonElement.ConvertTo<string>();
 
         // Assert
-        Assert.Equal("42", result);
+        await Assert.That(result).IsEqualTo("42");
     }
 
-    [Fact]
-    public void ConvertTo_JsonNodeToExpandoObject_ReturnsExpandoObject()
+    [Test]
+    public async Task ConvertTo_JsonNodeToExpandoObject_ReturnsExpandoObject()
     {
         // Arrange
         var jsonNode = JsonNode.Parse("{ \"key\": \"value\" }");
@@ -103,18 +104,18 @@ public class Tests
         var result = jsonNode.ConvertTo<ExpandoObject>(_objectConverterOptions);
 
         // Assert
-        dynamic expando = Assert.IsType<ExpandoObject>(result);
+        dynamic expando = (await Assert.That(result).IsTypeOf<ExpandoObject>())!;
         object value = expando.key;
 
         // This is not the result I expect, I would have expected the JsonNode to have been recursively converted
 
-        Assert.True(value is JsonElement);
-        Assert.Equal(JsonValueKind.String, ((JsonElement)value).ValueKind);
-        Assert.Equal("value", ((JsonElement)value).GetString());
+        await Assert.That(value is JsonElement).IsTrue();
+        await Assert.That(((JsonElement)value).ValueKind).IsEqualTo(JsonValueKind.String);
+        await Assert.That(((JsonElement)value).GetString()).IsEqualTo("value");
     }
 
-    [Fact]
-    public void ConvertTo_StringToDateTime_ReturnsDateTime()
+    [Test]
+    public async Task ConvertTo_StringToDateTime_ReturnsDateTime()
     {
         // Arrange
         var value = "2023-01-01T00:00:00";
@@ -123,11 +124,11 @@ public class Tests
         var result = value.ConvertTo<DateTime>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal(new(2023, 1, 1, 0, 0, 0), result);
+        await Assert.That(result).IsEqualTo(new(2023, 1, 1, 0, 0, 0));
     }
 
-    [Fact]
-    public void ConvertTo_StringToEnum_ReturnsEnum()
+    [Test]
+    public async Task ConvertTo_StringToEnum_ReturnsEnum()
     {
         // Arrange
         var value = "Monday";
@@ -136,11 +137,11 @@ public class Tests
         var result = value.ConvertTo<DayOfWeek>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal(DayOfWeek.Monday, result);
+        await Assert.That(result).IsEqualTo(DayOfWeek.Monday);
     }
 
-    [Fact]
-    public void ConvertTo_StringToByteArray_ReturnsByteArray()
+    [Test]
+    public async Task ConvertTo_StringToByteArray_ReturnsByteArray()
     {
         // Arrange
         var value = Convert.ToBase64String(new byte[]
@@ -152,24 +153,24 @@ public class Tests
         var result = value.ConvertTo<byte[]>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal(new byte[]
+        await Assert.That(result).IsEquivalentTo(new byte[]
         {
             1, 2, 3
-        }, result);
+        }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public void ConvertTo_InvalidJsonString_ThrowsException()
     {
         // Arrange
         var value = "{ invalid json }";
 
         // Act & Assert
-        Assert.Throws<TypeConversionException>(() => value.ConvertTo<Dictionary<string, object>>(_objectConverterOptions));
+        Assert.ThrowsExactly<TypeConversionException>(() => value.ConvertTo<Dictionary<string, object>>(_objectConverterOptions));
     }
 
-    [Fact]
-    public void ConvertTo_EnumerableToList_ReturnsConvertedList()
+    [Test]
+    public async Task ConvertTo_EnumerableToList_ReturnsConvertedList()
     {
         // Arrange
         var value = new[]
@@ -181,15 +182,15 @@ public class Tests
         var result = value.ConvertTo<List<int>>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal([
+        await Assert.That(result).IsEquivalentTo([
             1,
             2,
             3
-        ], result);
+        ], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void ConvertTo_EnumerableToHashSet_ReturnsConvertedHashSet()
+    [Test]
+    public async Task ConvertTo_EnumerableToHashSet_ReturnsConvertedHashSet()
     {
         // Arrange
         var value = new[]
@@ -201,12 +202,12 @@ public class Tests
         var result = value.ConvertTo<HashSet<int>>(_objectConverterOptions);
 
         // Assert
-        Assert.IsType<HashSet<int>>(result);
-        Assert.True(result.SetEquals([1, 2, 3]));
+        await Assert.That(result).IsTypeOf<HashSet<int>>();
+        await Assert.That(result!.SetEquals([1, 2, 3])).IsTrue();
     }
 
-    [Fact]
-    public void ConvertTo_DateTimeToDateOnly_ReturnsDateOnly()
+    [Test]
+    public async Task ConvertTo_DateTimeToDateOnly_ReturnsDateOnly()
     {
         // Arrange
         var value = new DateTime(2023, 1, 1);
@@ -215,11 +216,11 @@ public class Tests
         var result = value.ConvertTo<DateOnly>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal(new(2023, 1, 1), result);
+        await Assert.That(result).IsEqualTo(new(2023, 1, 1));
     }
 
-    [Fact]
-    public void ConvertTo_DateOnlyToDateTime_ReturnsDateTime()
+    [Test]
+    public async Task ConvertTo_DateOnlyToDateTime_ReturnsDateTime()
     {
         // Arrange
         var value = new DateOnly(2023, 1, 1);
@@ -228,21 +229,21 @@ public class Tests
         var result = value.ConvertTo<DateTime>(_objectConverterOptions);
 
         // Assert
-        Assert.Equal(new(2023, 1, 1, 0, 0, 0), result);
+        await Assert.That(result).IsEqualTo(new(2023, 1, 1, 0, 0, 0));
     }
 
-    [Fact]
+    [Test]
     public void ConvertTo_UnknownConversion_ThrowsInvalidCastException()
     {
         // Arrange
         var value = new object();
 
         // Act & Assert
-        Assert.Throws<TypeConversionException>(() => value.ConvertTo<int>(_objectConverterOptions));
+        Assert.ThrowsExactly<TypeConversionException>(() => value.ConvertTo<int>(_objectConverterOptions));
     }
 
-    [Fact]
-    public void ConvertTo_JsonArrayToListOfObject_ReturnsListOfJsonObject()
+    [Test]
+    public async Task ConvertTo_JsonArrayToListOfObject_ReturnsListOfJsonObject()
     {
         // Arrange
         var jsonArrayString = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
@@ -252,25 +253,25 @@ public class Tests
         var result = jsonArray.ConvertTo<List<object>>(_objectConverterOptions);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.IsType<JsonObject>(result[0]);
-        Assert.IsType<JsonObject>(result[1]);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Count).IsEqualTo(2);
+        await Assert.That(result[0]).IsTypeOf<JsonObject>();
+        await Assert.That(result[1]).IsTypeOf<JsonObject>();
 
         var firstElement = result[0] as JsonObject;
         var secondElement = result[1] as JsonObject;
 
-        Assert.NotNull(firstElement);
-        Assert.Equal("Alice", firstElement["name"]?.ToString());
-        Assert.Equal("30", firstElement["age"]?.ToString());
+        await Assert.That(firstElement).IsNotNull();
+        await Assert.That(firstElement["name"]?.ToString()).IsEqualTo("Alice");
+        await Assert.That(firstElement["age"]?.ToString()).IsEqualTo("30");
 
-        Assert.NotNull(secondElement);
-        Assert.Equal("Bob", secondElement["name"]?.ToString());
-        Assert.Equal("25", secondElement["age"]?.ToString());
+        await Assert.That(secondElement).IsNotNull();
+        await Assert.That(secondElement["name"]?.ToString()).IsEqualTo("Bob");
+        await Assert.That(secondElement["age"]?.ToString()).IsEqualTo("25");
     }
 
-    [Fact]
-    public void ConvertTo_JsonArrayToICollectionOfObject_ReturnsCollectionOfJsonObject()
+    [Test]
+    public async Task ConvertTo_JsonArrayToICollectionOfObject_ReturnsCollectionOfJsonObject()
     {
         // Arrange
         var jsonArrayString = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
@@ -280,24 +281,25 @@ public class Tests
         var result = jsonArray.ConvertTo<ICollection<object>>(_objectConverterOptions);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Count);
-        Assert.All(result, item => Assert.IsType<JsonObject>(item));
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Count).IsEqualTo(2);
+        foreach (var item in result)
+            await Assert.That(item).IsTypeOf<JsonObject>();
 
         var firstElement = result.First() as JsonObject;
         var secondElement = result.Last() as JsonObject;
 
-        Assert.NotNull(firstElement);
-        Assert.Equal("Alice", firstElement["name"]?.ToString());
-        Assert.Equal("30", firstElement["age"]?.ToString());
+        await Assert.That(firstElement).IsNotNull();
+        await Assert.That(firstElement["name"]?.ToString()).IsEqualTo("Alice");
+        await Assert.That(firstElement["age"]?.ToString()).IsEqualTo("30");
 
-        Assert.NotNull(secondElement);
-        Assert.Equal("Bob", secondElement["name"]?.ToString());
-        Assert.Equal("25", secondElement["age"]?.ToString());
+        await Assert.That(secondElement).IsNotNull();
+        await Assert.That(secondElement["name"]?.ToString()).IsEqualTo("Bob");
+        await Assert.That(secondElement["age"]?.ToString()).IsEqualTo("25");
     }
 
-    [Fact]
-    public void ConvertFrom_JsonArrayToArrayOfComplexType_ReturnsArrayOfComplexType()
+    [Test]
+    public async Task ConvertFrom_JsonArrayToArrayOfComplexType_ReturnsArrayOfComplexType()
     {
         // Arrange
         var jsonArrayString = "[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]";
@@ -306,73 +308,73 @@ public class Tests
         var result = jsonArrayString.ConvertTo<Person[]>(_objectConverterOptions);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(2, result.Length);
-        Assert.Equal("Alice", result[0].Name);
-        Assert.Equal("Bob", result[1].Name);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Length).IsEqualTo(2);
+        await Assert.That(result[0].Name).IsEqualTo("Alice");
+        await Assert.That(result[1].Name).IsEqualTo("Bob");
     }
 
-    [Fact]
-    public void ConvertFrom_ObjectArrayOfDoubleToArrayOfDouble_ReturnsArrayOfDouble()
+    [Test]
+    public async Task ConvertFrom_ObjectArrayOfDoubleToArrayOfDouble_ReturnsArrayOfDouble()
     {
         // Arrange
         object[] objectArray = [1d, 2d, 3d];
-        
+
         // Act
         var result = objectArray.ConvertTo<double[]>(_objectConverterOptions);
-        
+
         // Assert
-        Assert.NotNull(result);
+        await Assert.That(result).IsNotNull();
     }
 
-    [Theory]
-    [InlineData("foo", false, typeof(bool))]
-    [InlineData("true", true, typeof(bool))]
-    [InlineData("false", false, typeof(bool))]
-    [InlineData("bar", 0, typeof(int))]
-    [InlineData("123", 123, typeof(int))]
-    [InlineData("notadate", null!, typeof(DateTime?))]
-    [InlineData("2023-01-01T00:00:00", "2023-01-01T00:00:00", typeof(DateTime))]
-    public void ConvertTo_StrictModeDisabled_ReturnsDefaultOrConverted(string input, object? expected, Type targetType)
+    [Test]
+    [Arguments("foo", false, typeof(bool))]
+    [Arguments("true", true, typeof(bool))]
+    [Arguments("false", false, typeof(bool))]
+    [Arguments("bar", 0, typeof(int))]
+    [Arguments("123", 123, typeof(int))]
+    [Arguments("notadate", null!, typeof(DateTime?))]
+    [Arguments("2023-01-01T00:00:00", "2023-01-01T00:00:00", typeof(DateTime))]
+    public async Task ConvertTo_StrictModeDisabled_ReturnsDefaultOrConverted(string input, object? expected, Type targetType)
     {
         var options = new ObjectConverterOptions(StrictMode: false);
         var result = input.ConvertTo(targetType, options);
-        
+
         if (expected is null)
         {
-            Assert.Null(result);
+            await Assert.That(result).IsNull();
             return;
         }
-        
+
         // Special handling for DateTime
         if (targetType == typeof(DateTime) && expected is string expectedString)
         {
             var expectedDateTime = DateTime.Parse(expectedString, null, System.Globalization.DateTimeStyles.RoundtripKind);
-            Assert.Equal(expectedDateTime, result);
+            await Assert.That(result).IsEqualTo(expectedDateTime);
             return;
         }
-        
-        Assert.Equal(expected, result);
+
+        await Assert.That(result).IsEqualTo(expected);
     }
-    
-    [Theory]
-    [InlineData("foo", true, typeof(bool))]
-    [InlineData("true", false, typeof(bool))]
-    [InlineData("false", false, typeof(bool))]
-    [InlineData("bar", true, typeof(int))]
-    [InlineData("123", false, typeof(int))]
-    [InlineData("notadate", true, typeof(DateTime?))]
-    [InlineData("2023-01-01T00:00:00", false, typeof(DateTime))]
+
+    [Test]
+    [Arguments("foo", true, typeof(bool))]
+    [Arguments("true", false, typeof(bool))]
+    [Arguments("false", false, typeof(bool))]
+    [Arguments("bar", true, typeof(int))]
+    [Arguments("123", false, typeof(int))]
+    [Arguments("notadate", true, typeof(DateTime?))]
+    [Arguments("2023-01-01T00:00:00", false, typeof(DateTime))]
     public void ConvertTo_StrictModeEnabled_Throws(string input, bool shouldThrow, Type targetType)
     {
         var options = new ObjectConverterOptions(StrictMode: true);
-        
-        if(shouldThrow)
-            Assert.Throws<TypeConversionException>(() => input.ConvertTo(targetType, options));    
+
+        if (shouldThrow)
+            Assert.ThrowsExactly<TypeConversionException>(() => input.ConvertTo(targetType, options));
     }
 
-    [Fact]
-    public void ConvertTo_WithRegisteredPersonTypeConverter_ConvertsFromJsonToPerson()
+    [Test]
+    public async Task ConvertTo_WithRegisteredPersonTypeConverter_ConvertsFromJsonToPerson()
     {
         try
         {
@@ -385,10 +387,10 @@ public class Tests
             var result = json.ConvertTo<Person>(_objectConverterOptions);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.IsType<Person>(result);
-            Assert.Equal("Alice", result.Name);
-            Assert.Equal(30, result.Age);
+            await Assert.That(result).IsNotNull();
+            await Assert.That(result).IsTypeOf<Person>();
+            await Assert.That(result.Name).IsEqualTo("Alice");
+            await Assert.That(result.Age).IsEqualTo(30);
         }
         finally
         {
@@ -397,8 +399,8 @@ public class Tests
         }
     }
 
-    [Fact]
-    public void ConvertTo_WithRegisteredPersonTypeConverter_NullInput_ReturnsNull()
+    [Test]
+    public async Task ConvertTo_WithRegisteredPersonTypeConverter_NullInput_ReturnsNull()
     {
         try
         {
@@ -411,7 +413,7 @@ public class Tests
             var result = json.ConvertTo<Person>(_objectConverterOptions);
 
             // Assert
-            Assert.Null(result);
+            await Assert.That(result).IsNull();
         }
         finally
         {
@@ -419,8 +421,8 @@ public class Tests
         }
     }
 
-    [Fact]
-    public void ConvertTo_WithRegisteredPersonTypeConverter_ConvertsFromPersonToJson()
+    [Test]
+    public async Task ConvertTo_WithRegisteredPersonTypeConverter_ConvertsFromPersonToJson()
     {
         try
         {
@@ -433,10 +435,10 @@ public class Tests
             var result = person.ConvertTo<string>(_objectConverterOptions);
 
             // Assert
-            Assert.NotNull(result);
-            var json = Assert.IsType<string>(result);
-            Assert.Contains("\"Name\":\"Bob\"", json);
-            Assert.Contains("\"Age\":42", json);
+            await Assert.That(result).IsNotNull();
+            var json = await Assert.That(result).IsTypeOf<string>();
+            await Assert.That(json).Contains("\"Name\":\"Bob\"");
+            await Assert.That(json).Contains("\"Age\":42");
         }
         finally
         {
@@ -445,8 +447,8 @@ public class Tests
         }
     }
 
-    [Fact]
-    public void ConvertTo_WithRegisteredPersonTypeConverter_NullPersonToString_ReturnsNull()
+    [Test]
+    public async Task ConvertTo_WithRegisteredPersonTypeConverter_NullPersonToString_ReturnsNull()
     {
         try
         {
@@ -458,7 +460,7 @@ public class Tests
             var result = person.ConvertTo<string>(_objectConverterOptions);
 
             // Assert
-            Assert.Null(result);
+            await Assert.That(result).IsNull();
         }
         finally
         {

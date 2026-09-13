@@ -1,11 +1,12 @@
 using Elsa.Extensions;
 using static Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions.TestHelpers;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Extensions.ActivityExecutionContextExtensions;
 
 public class MetadataTests
 {
-    [Fact]
+    [Test]
     public async Task SetExtensionsMetadata_StoresValue()
     {
         // Arrange
@@ -16,11 +17,11 @@ public class MetadataTests
 
         // Assert
         var metadata = context.GetExtensionsMetadata();
-        Assert.NotNull(metadata);
-        Assert.Equal("testValue", metadata["testKey"]);
+        await Assert.That(metadata).IsNotNull();
+        await Assert.That(metadata["testKey"]).IsEqualTo("testValue");
     }
 
-    [Fact]
+    [Test]
     public async Task GetExtensionsMetadata_ReturnsNull_WhenNotSet()
     {
         // Arrange
@@ -30,10 +31,10 @@ public class MetadataTests
         var metadata = context.GetExtensionsMetadata();
 
         // Assert
-        Assert.Null(metadata);
+        await Assert.That(metadata).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task SetExtensionsMetadata_UpdatesExistingValue()
     {
         // Arrange
@@ -45,6 +46,6 @@ public class MetadataTests
 
         // Assert
         var metadata = context.GetExtensionsMetadata();
-        Assert.Equal("value2", metadata!["testKey"]);
+        await Assert.That(metadata!["testKey"]).IsEqualTo("value2");
     }
 }

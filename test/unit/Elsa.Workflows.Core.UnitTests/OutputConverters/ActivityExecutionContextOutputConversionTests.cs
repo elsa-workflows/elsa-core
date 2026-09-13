@@ -5,6 +5,7 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
@@ -12,7 +13,7 @@ public class ActivityExecutionContextOutputConversionTests
 {
     private const string ConverterId = "tests.to-text";
 
-    [Fact]
+    [Test]
     public async Task Set_WithConverter_WritesConvertedVariableAndRecordsNativeOutput()
     {
         var converter = new RecordingConverter(context => context.Value.ToString()!);
@@ -32,15 +33,13 @@ public class ActivityExecutionContextOutputConversionTests
 
         context.Set(activity.Result, 42, nameof(TestActivity.Result));
 
-        Assert.Equal("42", variable.Get(context.ExpressionExecutionContext));
-        Assert.Equal(
-            42,
-            context.WorkflowExecutionContext.GetActivityOutputRegister()
-                .FindOutputByActivityInstanceId(context.Id, nameof(TestActivity.Result)));
-        Assert.Equal(1, converter.ConvertCalls);
+        await Assert.That(variable.Get(context.ExpressionExecutionContext)).IsEqualTo("42");
+        await Assert.That(context.WorkflowExecutionContext.GetActivityOutputRegister()
+                .FindOutputByActivityInstanceId(context.Id, nameof(TestActivity.Result))).IsEqualTo(42);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task Set_WithConverter_WritesConvertedWorkflowOutputAndRecordsNativeOutput()
     {
         var converter = new RecordingConverter(context => context.Value.ToString()!);
@@ -63,14 +62,12 @@ public class ActivityExecutionContextOutputConversionTests
 
         context.Set(activity.Result, 42, nameof(TestActivity.Result));
 
-        Assert.Equal("42", context.WorkflowExecutionContext.Output["workflowResult"]);
-        Assert.Equal(
-            42,
-            context.WorkflowExecutionContext.GetActivityOutputRegister()
-                .FindOutputByActivityInstanceId(context.Id, nameof(TestActivity.Result)));
+        await Assert.That(context.WorkflowExecutionContext.Output["workflowResult"]).IsEqualTo("42");
+        await Assert.That(context.WorkflowExecutionContext.GetActivityOutputRegister()
+                .FindOutputByActivityInstanceId(context.Id, nameof(TestActivity.Result))).IsEqualTo(42);
     }
 
-    [Fact]
+    [Test]
     public async Task Set_WhenConverterThrows_LeavesDestinationUnchangedAndRecordsNativeOutput()
     {
         var converter = new RecordingConverter(_ => throw new InvalidOperationException("conversion failed"));
@@ -88,18 +85,16 @@ public class ActivityExecutionContextOutputConversionTests
             new(ConverterId, typeof(int), typeof(string), "To text"));
         context.ExpressionExecutionContext.Memory.Declare(variable);
 
-        var exception = Assert.Throws<OutputConversionException>(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(
             () => context.Set(activity.Result, 42, nameof(TestActivity.Result)));
 
-        Assert.Equal(OutputConversionFailureStage.Invocation, exception.Stage);
-        Assert.Equal("unchanged", variable.Get(context.ExpressionExecutionContext));
-        Assert.Equal(
-            42,
-            context.WorkflowExecutionContext.GetActivityOutputRegister()
-                .FindOutputByActivityInstanceId(context.Id, nameof(TestActivity.Result)));
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.Invocation);
+        await Assert.That(variable.Get(context.ExpressionExecutionContext)).IsEqualTo("unchanged");
+        await Assert.That(context.WorkflowExecutionContext.GetActivityOutputRegister()
+                .FindOutputByActivityInstanceId(context.Id, nameof(TestActivity.Result))).IsEqualTo(42);
     }
 
-    [Fact]
+    [Test]
     public async Task Set_WithConfiguredNull_BypassesConverterForNullableDestination()
     {
         var converter = new RecordingConverter(_ => "should not be called");
@@ -119,15 +114,14 @@ public class ActivityExecutionContextOutputConversionTests
 
         context.Set(activity.Result, null, nameof(NullableTestActivity.Result));
 
-        Assert.Null(variable.Get(context.ExpressionExecutionContext));
-        Assert.Equal(0, converter.ConvertCalls);
-        var record = Assert.Single(
-            context.WorkflowExecutionContext.GetActivityOutputRegister()
-                .FindMany(activity.Id, nameof(NullableTestActivity.Result)));
-        Assert.Null(record.Value);
+        await Assert.That(variable.Get(context.ExpressionExecutionContext)).IsNull();
+        await Assert.That(converter.ConvertCalls).IsEqualTo(0);
+        var record = await Assert.That(context.WorkflowExecutionContext.GetActivityOutputRegister()
+                .FindMany(activity.Id, nameof(NullableTestActivity.Result))).HasSingleItem();
+        await Assert.That(record.Value).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task Set_WithConfiguredNullForNonNullableDestination_LeavesDestinationUnchanged()
     {
         var converter = new RecordingConverter(_ => 0);
@@ -145,15 +139,15 @@ public class ActivityExecutionContextOutputConversionTests
             new(ConverterId, typeof(int?), typeof(int), "To integer"));
         context.ExpressionExecutionContext.Memory.Declare(variable);
 
-        var exception = Assert.Throws<OutputConversionException>(
+        var exception = Assert.ThrowsExactly<OutputConversionException>(
             () => context.Set(activity.Result, null, nameof(NullableTestActivity.Result)));
 
-        Assert.Equal(OutputConversionFailureStage.ResultValidation, exception.Stage);
-        Assert.Equal(7, variable.Get(context.ExpressionExecutionContext));
-        Assert.Equal(0, converter.ConvertCalls);
+        await Assert.That(exception.Stage).IsEqualTo(OutputConversionFailureStage.ResultValidation);
+        await Assert.That(variable.Get(context.ExpressionExecutionContext)).IsEqualTo(7);
+        await Assert.That(converter.ConvertCalls).IsEqualTo(0);
     }
 
-    [Fact]
+    [Test]
     public async Task Set_WithoutConverter_UsesExistingPathWithoutConverterInfrastructureCalls()
     {
         var registry = Substitute.For<IOutputConverterRegistry>();
@@ -178,11 +172,11 @@ public class ActivityExecutionContextOutputConversionTests
 
         context.Set(activity.Result, 42, nameof(TestActivity.Result));
 
-        Assert.Equal(42, variable.Get(context.ExpressionExecutionContext));
-        Assert.Empty(registry.ReceivedCalls());
-        Assert.Empty(resolver.ReceivedCalls());
-        Assert.Empty(validator.ReceivedCalls());
-        Assert.Empty(invoker.ReceivedCalls());
+        await Assert.That(variable.Get(context.ExpressionExecutionContext)).IsEqualTo(42);
+        await Assert.That(registry.ReceivedCalls()).IsEmpty();
+        await Assert.That(resolver.ReceivedCalls()).IsEmpty();
+        await Assert.That(validator.ReceivedCalls()).IsEmpty();
+        await Assert.That(invoker.ReceivedCalls()).IsEmpty();
     }
 
     private static async Task<ActivityExecutionContext> CreateContextAsync(

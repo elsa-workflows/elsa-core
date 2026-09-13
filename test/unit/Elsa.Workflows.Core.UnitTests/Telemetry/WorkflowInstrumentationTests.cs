@@ -19,15 +19,16 @@ using Elsa.Workflows.State;
 using Elsa.Workflows.Telemetry;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.Telemetry;
 
 using DiagnosticsActivity = System.Diagnostics.Activity;
 
-[Collection(nameof(WorkflowInstrumentationTestCollection))]
+[NotInParallel]
 public class WorkflowInstrumentationTests
 {
-    [Fact]
+    [Test]
     public async Task ActivityInvoker_Should_Emit_Activity_Span_And_Duration_Metric()
     {
         using var activityCapture = new ActivityCapture();
@@ -38,18 +39,18 @@ public class WorkflowInstrumentationTests
 
         await invoker.InvokeAsync(context);
 
-        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        Assert.Equal("activity.execute", span.OperationName);
-        Assert.Equal(activity.Type, GetTag(span.TagObjects, WorkflowInstrumentation.ActivityType));
-        Assert.Equal(context.WorkflowExecutionContext.Workflow.Identity.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowDefinitionVersionId));
-        Assert.Equal(ActivityStatus.Completed.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
-        var activityDuration = GetActivityDuration(meterCapture, context);
-        Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
-        Assert.False(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.ActivityName));
-        Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+        var span = await GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        await Assert.That(span.OperationName).IsEqualTo("activity.execute");
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ActivityType)).IsEqualTo(activity.Type);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsEqualTo(context.WorkflowExecutionContext.Workflow.Identity.Id);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus)).IsEqualTo(ActivityStatus.Completed.ToString());
+        var activityDuration = await GetActivityDuration(meterCapture, context);
+        await Assert.That(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsFalse();
+        await Assert.That(activityDuration.Tags.ContainsKey(WorkflowInstrumentation.ActivityName)).IsFalse();
+        await Assert.That((bool)activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]!).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityInvoker_Should_Not_Record_Faulted_Metric_When_Pipeline_Cancels()
     {
         using var activityCapture = new ActivityCapture();
@@ -57,16 +58,16 @@ public class WorkflowInstrumentationTests
         var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var invoker = new ActivityInvoker(new CancellingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        var activityDuration = GetActivityDuration(meterCapture, context);
-        Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
-        Assert.Equal(ActivityStatus.Canceled.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
+        var span = await GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Ok);
+        var activityDuration = await GetActivityDuration(meterCapture, context);
+        await Assert.That((bool)activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]!).IsFalse();
+        await Assert.That(activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]).IsEqualTo(ActivityStatus.Canceled.ToString());
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityInvoker_Should_Record_Canceled_Status_When_Pipeline_Cancels_Before_Status_Transition()
     {
         using var activityCapture = new ActivityCapture();
@@ -74,18 +75,18 @@ public class WorkflowInstrumentationTests
         var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var invoker = new ActivityInvoker(new NonMutatingCancellingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(ActivityStatus.Canceled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
-        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.ActivityFaulted));
-        var activityDuration = GetActivityDuration(meterCapture, context);
-        Assert.Equal(ActivityStatus.Canceled.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
-        Assert.Equal(false, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+        var span = await GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Ok);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus)).IsEqualTo(ActivityStatus.Canceled.ToString());
+        await Assert.That((bool)GetTag(span.TagObjects, WorkflowInstrumentation.ActivityFaulted)!).IsFalse();
+        var activityDuration = await GetActivityDuration(meterCapture, context);
+        await Assert.That(activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]).IsEqualTo(ActivityStatus.Canceled.ToString());
+        await Assert.That((bool)activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]!).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Record_Completed_Metric_When_Pipeline_Finishes()
     {
         using var activityCapture = new ActivityCapture();
@@ -100,25 +101,25 @@ public class WorkflowInstrumentationTests
 
         await runner.RunAsync(context);
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(context.Workflow.Identity.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowDefinitionVersionId));
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Ok);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsEqualTo(context.Workflow.Identity.Id);
         var workflowSubStatus = GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus);
-        Assert.Equal(WorkflowSubStatus.Finished.ToString(), workflowSubStatus);
-        Assert.Equal("parent-instance-id", GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowParentInstanceId));
-        Assert.False(HasTag(span.TagObjects, WorkflowInstrumentation.WorkflowCorrelationId));
-        Assert.False(HasTag(span.TagObjects, WorkflowInstrumentation.TenantId));
-        Assert.False(HasTag(span.TagObjects, "workflow.parent_instance.id"));
-        var started = GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
-        var completed = GetWorkflowMeasurement(meterCapture, "elsa.workflow.completed", context);
-        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
-        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.TenantId));
-        Assert.False(completed.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
-        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowSubStatus));
-        Assert.Equal(WorkflowSubStatus.Finished.ToString(), completed.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
+        await Assert.That(workflowSubStatus).IsEqualTo(WorkflowSubStatus.Finished.ToString());
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowParentInstanceId)).IsEqualTo("parent-instance-id");
+        await Assert.That(HasTag(span.TagObjects, WorkflowInstrumentation.WorkflowCorrelationId)).IsFalse();
+        await Assert.That(HasTag(span.TagObjects, WorkflowInstrumentation.TenantId)).IsFalse();
+        await Assert.That(HasTag(span.TagObjects, "workflow.parent_instance.id")).IsFalse();
+        var started = await GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
+        var completed = await GetWorkflowMeasurement(meterCapture, "elsa.workflow.completed", context);
+        await Assert.That(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsFalse();
+        await Assert.That(started.Tags.ContainsKey(WorkflowInstrumentation.TenantId)).IsFalse();
+        await Assert.That(completed.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsFalse();
+        await Assert.That(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowSubStatus)).IsFalse();
+        await Assert.That(completed.Tags[WorkflowInstrumentation.WorkflowSubStatus]).IsEqualTo(WorkflowSubStatus.Finished.ToString());
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Record_Faulted_Span_And_Metric_When_Pipeline_Throws()
     {
         using var activityCapture = new ActivityCapture();
@@ -128,33 +129,33 @@ public class WorkflowInstrumentationTests
         context.Workflow.WorkflowMetadata = new("Test workflow");
         var runner = CreateWorkflowRunner(context, new ThrowingWorkflowExecutionPipeline());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => runner.RunAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal("workflow.execute", span.OperationName);
-        Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(WorkflowSubStatus.Executing, context.SubStatus);
-        Assert.Equal(context.Id, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowInstanceId));
-        Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
-        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
-        Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
-        Assert.False(HasTag(span.TagObjects, "exception.message"));
-        Assert.False(HasTag(span.TagObjects, "exception.stacktrace"));
-        var exceptionEvent = Assert.Single(span.Events, x => x.Name == "exception");
-        Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(exceptionEvent.Tags, WorkflowInstrumentation.ExceptionType));
-        Assert.False(HasTag(exceptionEvent.Tags, "exception.message"));
-        Assert.False(HasTag(exceptionEvent.Tags, "exception.stacktrace"));
-        var started = GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
-        var faulted = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
-        Assert.False(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
-        Assert.False(faulted.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId));
-        Assert.Equal("Test workflow", started.Tags[WorkflowInstrumentation.WorkflowName]);
-        Assert.Equal("Test workflow", faulted.Tags[WorkflowInstrumentation.WorkflowName]);
-        Assert.Equal(WorkflowStatus.Finished.ToString(), faulted.Tags[WorkflowInstrumentation.WorkflowStatus]);
-        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), faulted.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.OperationName).IsEqualTo("workflow.execute");
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Error);
+        await Assert.That(context.SubStatus).IsEqualTo(WorkflowSubStatus.Executing);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowInstanceId)).IsEqualTo(context.Id);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus)).IsEqualTo(WorkflowStatus.Finished.ToString());
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus)).IsEqualTo(WorkflowSubStatus.Faulted.ToString());
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType)).IsEqualTo(typeof(InvalidOperationException).FullName);
+        await Assert.That(HasTag(span.TagObjects, "exception.message")).IsFalse();
+        await Assert.That(HasTag(span.TagObjects, "exception.stacktrace")).IsFalse();
+        var exceptionEvent = await Assert.That(span.Events).HasSingleItem(x => x.Name == "exception");
+        await Assert.That(GetTag(exceptionEvent.Tags, WorkflowInstrumentation.ExceptionType)).IsEqualTo(typeof(InvalidOperationException).FullName);
+        await Assert.That(HasTag(exceptionEvent.Tags, "exception.message")).IsFalse();
+        await Assert.That(HasTag(exceptionEvent.Tags, "exception.stacktrace")).IsFalse();
+        var started = await GetWorkflowMeasurement(meterCapture, "elsa.workflow.started", context);
+        var faulted = await GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
+        await Assert.That(started.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsFalse();
+        await Assert.That(faulted.Tags.ContainsKey(WorkflowInstrumentation.WorkflowDefinitionVersionId)).IsFalse();
+        await Assert.That(started.Tags[WorkflowInstrumentation.WorkflowName]).IsEqualTo("Test workflow");
+        await Assert.That(faulted.Tags[WorkflowInstrumentation.WorkflowName]).IsEqualTo("Test workflow");
+        await Assert.That(faulted.Tags[WorkflowInstrumentation.WorkflowStatus]).IsEqualTo(WorkflowStatus.Finished.ToString());
+        await Assert.That(faulted.Tags[WorkflowInstrumentation.WorkflowSubStatus]).IsEqualTo(WorkflowSubStatus.Faulted.ToString());
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Not_Record_Faulted_Span_Or_Metric_When_Pipeline_Cancels()
     {
         using var activityCapture = new ActivityCapture();
@@ -163,16 +164,16 @@ public class WorkflowInstrumentationTests
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new CancellingWorkflowExecutionPipeline());
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => runner.RunAsync(context));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => runner.RunAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
-        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
-        Assert.DoesNotContain(meterCapture.LongMeasurements, x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Ok);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus)).IsEqualTo(WorkflowSubStatus.Cancelled.ToString());
+        await Assert.That((bool)GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted)!).IsFalse();
+        await Assert.That(meterCapture.LongMeasurements).DoesNotContain(x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Record_Cancelled_SubStatus_When_Pipeline_Cancels_Before_Status_Transition()
     {
         using var activityCapture = new ActivityCapture();
@@ -181,17 +182,17 @@ public class WorkflowInstrumentationTests
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new NonMutatingCancellingWorkflowExecutionPipeline());
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => runner.RunAsync(context));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => runner.RunAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
-        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
-        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
-        Assert.DoesNotContain(meterCapture.LongMeasurements, x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Ok);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus)).IsEqualTo(WorkflowStatus.Finished.ToString());
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus)).IsEqualTo(WorkflowSubStatus.Cancelled.ToString());
+        await Assert.That((bool)GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted)!).IsFalse();
+        await Assert.That(meterCapture.LongMeasurements).DoesNotContain(x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Record_Cancel_When_ExceptionHandlingMiddleware_Catches_Cancellation()
     {
         using var activityCapture = new ActivityCapture();
@@ -200,16 +201,16 @@ public class WorkflowInstrumentationTests
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new ExceptionHandlingCancellingWorkflowExecutionPipeline());
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => runner.RunAsync(context));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => runner.RunAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal(ActivityStatusCode.Ok, span.Status);
-        Assert.Equal(WorkflowSubStatus.Cancelled.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
-        Assert.Equal(false, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
-        Assert.DoesNotContain(meterCapture.LongMeasurements, x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Ok);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus)).IsEqualTo(WorkflowSubStatus.Cancelled.ToString());
+        await Assert.That((bool)GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted)!).IsFalse();
+        await Assert.That(meterCapture.LongMeasurements).DoesNotContain(x => IsWorkflowMeasurement(x, "elsa.workflow.faulted", context));
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Not_Start_When_WorkflowExecuting_Handler_Changes_SubStatus()
     {
         using var activityCapture = new ActivityCapture();
@@ -230,14 +231,14 @@ public class WorkflowInstrumentationTests
 
         await runner.RunAsync(context);
 
-        Assert.Equal(WorkflowSubStatus.Cancelled, context.SubStatus);
-        Assert.DoesNotContain(meterCapture.LongMeasurements, x => IsWorkflowMeasurement(x, "elsa.workflow.started", context));
+        await Assert.That(context.SubStatus).IsEqualTo(WorkflowSubStatus.Cancelled);
+        await Assert.That(meterCapture.LongMeasurements).DoesNotContain(x => IsWorkflowMeasurement(x, "elsa.workflow.started", context));
         await notificationSender
             .DidNotReceive()
             .SendAsync(Arg.Is<INotification>(notification => notification is WorkflowStarted), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityInvoker_Should_Not_Replace_Pipeline_Exception_When_Outcome_Is_Null()
     {
         using var activityCapture = new ActivityCapture();
@@ -245,17 +246,17 @@ public class WorkflowInstrumentationTests
         var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var invoker = new ActivityInvoker(new ThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
 
-        Assert.Equal("Pipeline failed", exception.Message);
-        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        Assert.Equal(ActivityStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
-        var activityDuration = GetActivityDuration(meterCapture, context);
-        Assert.Equal(true, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
-        Assert.Equal(ActivityStatus.Faulted.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
+        await Assert.That(exception!.Message).IsEqualTo("Pipeline failed");
+        var span = await GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus)).IsEqualTo(ActivityStatus.Faulted.ToString());
+        var activityDuration = await GetActivityDuration(meterCapture, context);
+        await Assert.That((bool)activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]!).IsTrue();
+        await Assert.That(activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]).IsEqualTo(ActivityStatus.Faulted.ToString());
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityInvoker_Should_Record_Fault_When_Cancelled_Context_Throws_NonCancellation_Exception()
     {
         using var activityCapture = new ActivityCapture();
@@ -263,18 +264,18 @@ public class WorkflowInstrumentationTests
         var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
         var invoker = new ActivityInvoker(new CancelledThenThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(ActivityStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
-        Assert.Equal(true, GetTag(span.TagObjects, WorkflowInstrumentation.ActivityFaulted));
-        var activityDuration = GetActivityDuration(meterCapture, context);
-        Assert.Equal(ActivityStatus.Faulted.ToString(), activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]);
-        Assert.Equal(true, activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]);
+        var span = await GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Error);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus)).IsEqualTo(ActivityStatus.Faulted.ToString());
+        await Assert.That((bool)GetTag(span.TagObjects, WorkflowInstrumentation.ActivityFaulted)!).IsTrue();
+        var activityDuration = await GetActivityDuration(meterCapture, context);
+        await Assert.That(activityDuration.Tags[WorkflowInstrumentation.ActivityStatus]).IsEqualTo(ActivityStatus.Faulted.ToString());
+        await Assert.That((bool)activityDuration.Tags[WorkflowInstrumentation.ActivityFaulted]!).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ActivityInvoker_Should_Not_Emit_ExceptionType_When_Faulted_Without_Exception()
     {
         using var activityCapture = new ActivityCapture();
@@ -284,13 +285,13 @@ public class WorkflowInstrumentationTests
 
         await invoker.InvokeAsync(context);
 
-        var span = GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
-        Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(ActivityStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus));
-        Assert.False(HasTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
+        var span = await GetStoppedActivity(activityCapture, "activity.execute", WorkflowInstrumentation.ActivityExecutionId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Error);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ActivityStatus)).IsEqualTo(ActivityStatus.Faulted.ToString());
+        await Assert.That(HasTag(span.TagObjects, WorkflowInstrumentation.ExceptionType)).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Use_Context_Exception_When_Faulted_Without_Thrown_Exception()
     {
         using var activityCapture = new ActivityCapture();
@@ -302,13 +303,13 @@ public class WorkflowInstrumentationTests
 
         await runner.RunAsync(context);
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(typeof(InvalidOperationException).FullName, GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType));
-        _ = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Error);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.ExceptionType)).IsEqualTo(typeof(InvalidOperationException).FullName);
+        _ = await GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowRunner_Should_Record_Fault_When_Cancelled_Context_Throws_NonCancellation_Exception()
     {
         using var activityCapture = new ActivityCapture();
@@ -317,15 +318,15 @@ public class WorkflowInstrumentationTests
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new CancelledThenThrowingWorkflowExecutionPipeline());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(context));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => runner.RunAsync(context));
 
-        var span = GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
-        Assert.Equal(ActivityStatusCode.Error, span.Status);
-        Assert.Equal(WorkflowStatus.Finished.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus));
-        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus));
-        Assert.Equal(true, GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted));
-        var faulted = GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
-        Assert.Equal(WorkflowSubStatus.Faulted.ToString(), faulted.Tags[WorkflowInstrumentation.WorkflowSubStatus]);
+        var span = await GetStoppedActivity(activityCapture, "workflow.execute", WorkflowInstrumentation.WorkflowInstanceId, context.Id);
+        await Assert.That(span.Status).IsEqualTo(ActivityStatusCode.Error);
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowStatus)).IsEqualTo(WorkflowStatus.Finished.ToString());
+        await Assert.That(GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowSubStatus)).IsEqualTo(WorkflowSubStatus.Faulted.ToString());
+        await Assert.That((bool)GetTag(span.TagObjects, WorkflowInstrumentation.WorkflowFaulted)!).IsTrue();
+        var faulted = await GetWorkflowMeasurement(meterCapture, "elsa.workflow.faulted", context);
+        await Assert.That(faulted.Tags[WorkflowInstrumentation.WorkflowSubStatus]).IsEqualTo(WorkflowSubStatus.Faulted.ToString());
     }
 
     private static WorkflowRunner CreateWorkflowRunner(WorkflowExecutionContext context, IWorkflowExecutionPipeline pipeline, INotificationSender? notificationSender = null)
@@ -362,25 +363,25 @@ public class WorkflowInstrumentationTests
             NullLogger<WorkflowRunner>.Instance);
     }
 
-    private static DiagnosticsActivity GetStoppedActivity(ActivityCapture capture, string operationName, string tagKey, object? tagValue)
+    private static async Task<DiagnosticsActivity> GetStoppedActivity(ActivityCapture capture, string operationName, string tagKey, object? tagValue)
     {
-        return Assert.Single(capture.StoppedActivities, activity =>
+        return await Assert.That(capture.StoppedActivities).HasSingleItem(activity =>
             activity.OperationName == operationName &&
             activity.TagObjects.Any(tag => tag.Key == tagKey && Equals(tag.Value, tagValue)));
     }
 
-    private static CapturedMeasurement<double> GetActivityDuration(MeterCapture capture, ActivityExecutionContext context)
+    private static async Task<CapturedMeasurement<double>> GetActivityDuration(MeterCapture capture, ActivityExecutionContext context)
     {
-        return Assert.Single(capture.DoubleMeasurements, measurement =>
+        return await Assert.That(capture.DoubleMeasurements).HasSingleItem(measurement =>
             measurement.InstrumentName == "elsa.activity.duration" &&
             measurement.Value >= 0 &&
             HasTag(measurement.Tags, WorkflowInstrumentation.WorkflowDefinitionId, context.WorkflowExecutionContext.Workflow.Identity.DefinitionId) &&
             HasTag(measurement.Tags, WorkflowInstrumentation.ActivityType, context.Activity.Type));
     }
 
-    private static CapturedMeasurement<long> GetWorkflowMeasurement(MeterCapture capture, string instrumentName, WorkflowExecutionContext context)
+    private static async Task<CapturedMeasurement<long>> GetWorkflowMeasurement(MeterCapture capture, string instrumentName, WorkflowExecutionContext context)
     {
-        return Assert.Single(capture.LongMeasurements, measurement => IsWorkflowMeasurement(measurement, instrumentName, context));
+        return await Assert.That(capture.LongMeasurements).HasSingleItem(measurement => IsWorkflowMeasurement(measurement, instrumentName, context));
     }
 
     private static bool IsWorkflowMeasurement(CapturedMeasurement<long> measurement, string instrumentName, WorkflowExecutionContext context)
@@ -406,7 +407,9 @@ public class WorkflowInstrumentationTests
             found = true;
         }
 
-        Assert.True(found, $"Expected tag '{key}' to be present.");
+        if (!found)
+            throw new InvalidOperationException($"Expected tag '{key}' to be present.");
+
         return value;
     }
 
@@ -683,9 +686,4 @@ public class WorkflowInstrumentationTests
     }
 
     private readonly record struct CapturedMeasurement<T>(string InstrumentName, T Value, IReadOnlyDictionary<string, object?> Tags);
-}
-
-[CollectionDefinition(nameof(WorkflowInstrumentationTestCollection), DisableParallelization = true)]
-public sealed class WorkflowInstrumentationTestCollection
-{
 }

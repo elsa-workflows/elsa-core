@@ -1,12 +1,13 @@
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.State;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Core.UnitTests.OutputConverters;
 
 public class OutputConversionExceptionStateTests
 {
-    [Fact]
-    public void FromException_PersistsOnlyStructuredSafeMetadata()
+    [Test]
+    public async Task FromException_PersistsOnlyStructuredSafeMetadata()
     {
         var exception = new OutputConversionException(
             "sample.to-text",
@@ -22,30 +23,30 @@ public class OutputConversionExceptionStateTests
         var state = ExceptionState.FromException(exception)!;
         var persistedText = string.Join(" ", state.Metadata!.Values.Append(state.Message));
 
-        Assert.Equal("sample.to-text", state.Metadata[nameof(OutputConversionException.ConverterId)]);
-        Assert.Equal("Invocation", state.Metadata[nameof(OutputConversionException.Stage)]);
-        Assert.Equal("activity-1", state.Metadata[nameof(OutputConversionException.ActivityId)]);
-        Assert.Equal("Result", state.Metadata[nameof(OutputConversionException.OutputName)]);
-        Assert.Null(state.InnerException);
-        Assert.DoesNotContain("sensitive converter detail", persistedText);
-        Assert.DoesNotContain("settings", persistedText, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("value", persistedText, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(state.Metadata[nameof(OutputConversionException.ConverterId)]).IsEqualTo("sample.to-text");
+        await Assert.That(state.Metadata[nameof(OutputConversionException.Stage)]).IsEqualTo("Invocation");
+        await Assert.That(state.Metadata[nameof(OutputConversionException.ActivityId)]).IsEqualTo("activity-1");
+        await Assert.That(state.Metadata[nameof(OutputConversionException.OutputName)]).IsEqualTo("Result");
+        await Assert.That(state.InnerException).IsNull();
+        await Assert.That(persistedText).DoesNotContain("sensitive converter detail");
+        await Assert.That(persistedText).DoesNotContain("settings");
+        await Assert.That(persistedText).DoesNotContain("value");
     }
 
-    [Fact]
-    public void FromException_DoesNotPersistArbitraryExceptionData()
+    [Test]
+    public async Task FromException_DoesNotPersistArbitraryExceptionData()
     {
         var exception = new InvalidOperationException("failure");
         exception.Data["secret"] = "do not persist";
 
         var state = ExceptionState.FromException(exception)!;
 
-        Assert.Null(state.Metadata);
-        Assert.DoesNotContain("do not persist", state.Message);
+        await Assert.That(state.Metadata).IsNull();
+        await Assert.That(state.Message).DoesNotContain("do not persist");
     }
 
-    [Fact]
-    public void Metadata_PreservesTheOriginalFourPositionRecordContract()
+    [Test]
+    public async Task Metadata_PreservesTheOriginalFourPositionRecordContract()
     {
         var state = new ExceptionState(typeof(InvalidOperationException), "failure", "stack", null)
         {
@@ -54,10 +55,10 @@ public class OutputConversionExceptionStateTests
 
         var (type, message, stackTrace, innerException) = state;
 
-        Assert.Equal(typeof(InvalidOperationException), type);
-        Assert.Equal("failure", message);
-        Assert.Equal("stack", stackTrace);
-        Assert.Null(innerException);
-        Assert.Equal("Invocation", state.Metadata!["stage"]);
+        await Assert.That(type).IsEqualTo(typeof(InvalidOperationException));
+        await Assert.That(message).IsEqualTo("failure");
+        await Assert.That(stackTrace).IsEqualTo("stack");
+        await Assert.That(innerException).IsNull();
+        await Assert.That(state.Metadata!["stage"]).IsEqualTo("Invocation");
     }
 }
