@@ -7,7 +7,6 @@ using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Management.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.UnitTests.LogPersistence;
 
@@ -124,13 +123,14 @@ public class ActivityPropertyLogPersistenceEvaluatorTests
         });
 
         var context = await fixture.BuildAsync();
+        context.WorkflowExecutionContext.AddActivityExecutionContext(context);
         configureWorkflow?.Invoke(context.WorkflowExecutionContext.Workflow);
 
         var evaluator = new ActivityPropertyLogPersistenceEvaluator(
             context.GetRequiredService<ILogPersistenceStrategyService>(),
             context.GetRequiredService<IExpressionDescriptorRegistry>(),
             context.GetRequiredService<IExpressionEvaluator>(),
-            Options.Create(new ManagementOptions
+            Microsoft.Extensions.Options.Options.Create(new ManagementOptions
             {
                 LogPersistenceMode = LogPersistenceMode.Include
             }),
