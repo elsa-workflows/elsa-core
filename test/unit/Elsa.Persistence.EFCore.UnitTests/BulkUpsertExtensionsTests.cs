@@ -5,8 +5,8 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 
 public class BulkUpsertExtensionsTests
 {
-    [Fact]
-    public void GenerateOracleUpsert_ProducesQuotedMergeWithNvarcharCasts()
+    [Test]
+    public async Task GenerateOracleUpsert_ProducesQuotedMergeWithNvarcharCasts()
     {
         using var dbContext = CreateDbContext();
         var entities = new List<TestEntity>
@@ -17,20 +17,22 @@ public class BulkUpsertExtensionsTests
 
         var (sql, parameters) = BulkUpsertExtensions.GenerateOracleUpsert(dbContext, entities, x => x.Id);
 
-        Assert.Contains("MERGE INTO \"Elsa\".\"ActivityExecutionRecords\" Target", sql);
-        Assert.Contains("CAST({0} AS NVARCHAR2(450)) AS \"RecordId\"", sql);
-        Assert.Contains("CAST({2} AS NVARCHAR2(2000)) AS \"DisplayName\"", sql);
-        Assert.Contains("CAST({5} AS NVARCHAR2(2000)) AS \"DisplayName\"", sql);
-        Assert.Contains("FROM DUAL UNION ALL SELECT", sql);
-        Assert.Contains("Target.\"RecordId\" = Source.\"RecordId\"", sql);
-        Assert.Contains("INSERT (\"RecordId\", \"Count\", \"DisplayName\")", sql);
-        Assert.Contains("VALUES (Source.\"RecordId\", Source.\"Count\", Source.\"DisplayName\")", sql);
-        Assert.DoesNotContain("CAST({1} AS NUMBER", sql);
+        await Assert.That(sql).Contains("MERGE INTO \"Elsa\".\"ActivityExecutionRecords\" Target");
+        await Assert.That(sql).Contains("CAST({0} AS NVARCHAR2(450)) AS \"RecordId\"");
+        await Assert.That(sql).Contains("CAST({2} AS NVARCHAR2(2000)) AS \"DisplayName\"");
+        await Assert.That(sql).Contains("CAST({5} AS NVARCHAR2(2000)) AS \"DisplayName\"");
+        await Assert.That(sql).Contains("FROM DUAL UNION ALL SELECT");
+        await Assert.That(sql).Contains("Target.\"RecordId\" = Source.\"RecordId\"");
+        await Assert.That(sql).Contains("INSERT (\"RecordId\", \"Count\", \"DisplayName\")");
+        await Assert.That(sql).Contains("VALUES (Source.\"RecordId\", Source.\"Count\", Source.\"DisplayName\")");
+        await Assert.That(sql).DoesNotContain("CAST({1} AS NUMBER");
 
         var updateClause = sql[sql.IndexOf("WHEN MATCHED", StringComparison.Ordinal)..sql.IndexOf("WHEN NOT MATCHED", StringComparison.Ordinal)];
-        Assert.DoesNotContain("Target.\"RecordId\" = Source.\"RecordId\"", updateClause);
-        Assert.Contains("Target.\"DisplayName\" = Source.\"DisplayName\"", updateClause);
-        Assert.Equal(new object?[] { "first", 1, "First", "second", 2, null }, parameters);
+        await Assert.That(updateClause).DoesNotContain("Target.\"RecordId\" = Source.\"RecordId\"");
+        await Assert.That(updateClause).Contains("Target.\"DisplayName\" = Source.\"DisplayName\"");
+        await Assert.That(parameters).IsEquivalentTo(
+            new object?[] { "first", 1, "First", "second", 2, null },
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static TestDbContext CreateDbContext()

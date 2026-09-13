@@ -3,6 +3,7 @@
     <PropertyGroup>
         <Include>[Elsa.Persistence.EFCore]*</Include>
         <Threshold>0</Threshold>
+        <UseTUnit>true</UseTUnit>
     </PropertyGroup>
 
     <ItemGroup>
