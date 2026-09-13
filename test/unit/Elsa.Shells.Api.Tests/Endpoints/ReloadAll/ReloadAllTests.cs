@@ -7,18 +7,18 @@ namespace Elsa.Shells.Api.Tests.Endpoints.ReloadAll;
 
 public class ReloadAllTests : ShellsApiTestBase
 {
-    [Fact]
+    [Test]
+    [DisplayName("Reload all: successful POST returns 200 with completed status")]
     public async Task Post_WhenSuccessful_Returns200WithCompletedStatus()
     {
-        var response = await HttpClient.PostAsync("/shells/reload", null);
+        using var response = await HttpClient.PostAsync("/shells/reload", null);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ShellReloadResult>(JsonOptions);
-        Assert.NotNull(body);
-        Assert.Equal("Completed", body.Status);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        var body = await Assert.That(await response.Content.ReadFromJsonAsync<ShellReloadResult>(JsonOptions)).IsNotNull();
+        await Assert.That(body.Status).IsEqualTo("Completed");
     }
 
-    [Fact]
+    [Test]
     public async Task Post_WhenAnyShellFails_Returns503WithFailedStatus()
     {
         // CShells 0.0.15 surfaces per-shell failures via ReloadResult.Error rather than throwing.
@@ -29,12 +29,12 @@ public class ReloadAllTests : ShellsApiTestBase
                 new ReloadResult("shell-a", null, null, new InvalidOperationException("Shell reload failed"))
             }));
 
-        var response = await HttpClient.PostAsync("/shells/reload", null);
+        using var response = await HttpClient.PostAsync("/shells/reload", null);
 
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<ShellReloadResult>(JsonOptions);
-        Assert.NotNull(body);
-        Assert.Equal("Failed", body.Status);
-        Assert.Contains("Shell reload failed", body.Message);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        var body = await Assert.That(await response.Content.ReadFromJsonAsync<ShellReloadResult>(JsonOptions)).IsNotNull();
+        await Assert.That(body.Status).IsEqualTo("Failed");
+        var message = await Assert.That(body.Message).IsNotNull();
+        await Assert.That(message).Contains("Shell reload failed", StringComparison.CurrentCulture);
     }
 }

@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Threshold>0</Threshold>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="TUnit.AspNetCore" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Shells.Api\Elsa.Shells.Api.csproj" />
     </ItemGroup>
 
