@@ -388,7 +388,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         {
             try
             {
-                handle.Cancel();
+                // Only a real transition counts. Cancel() is a no-op on an already-disposed handle
+                // (cycle finished during snapshot); treating that as drain-induced would rewrite a
+                // later Finished/Cancelled row the runner already committed.
+                if (!handle.TryCancel())
+                    continue;
+
                 totalCancelled++;
                 cancelledInstanceIds.Add(handle.WorkflowInstanceId);
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
@@ -400,7 +405,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         }
 
         // A live handle we ourselves cancelled whose snapshot found no row is drain-induced:
-        // there was no persisted user-cancel to preserve. Timeout/error stays excluded.
+        // there was no persisted user-cancel to preserve. Timeout/error and disposed no-ops stay excluded.
         // Do not use reportedIds here — that list is capped by MaxForceCancelledInstanceIdsReported.
         foreach (var instanceId in missingPersistedRowIds)
         {

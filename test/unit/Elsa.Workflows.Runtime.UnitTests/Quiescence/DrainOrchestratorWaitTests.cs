@@ -192,6 +192,33 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "A null snapshot of an already-disposed handle does not promote a later Finished/Cancelled row")]
+    public async Task DisposedHandleNullSnapshotDoesNotPromoteLaterCancelledInstance()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-already-done", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        handle.Dispose();
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+
+        var finds = 0;
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                if (Interlocked.Increment(ref finds) == 1)
+                    return new ValueTask<WorkflowInstance?>((WorkflowInstance?)null);
+
+                return new ValueTask<WorkflowInstance?>(CancelledInstance("instance-already-done"));
+            });
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+        await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "Waiting for a snapshot slot does not burn the per-Find 250ms budget")]
     public async Task SnapshotQueueWaitDoesNotExcludeLaterFinds()
     {
