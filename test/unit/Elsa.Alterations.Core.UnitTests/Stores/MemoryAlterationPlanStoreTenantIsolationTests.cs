@@ -101,6 +101,21 @@ public class MemoryAlterationPlanStoreTenantIsolationTests
         Assert.Equal(Tenant.AgnosticTenantId, remaining.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync refuses a named source when an agnostic writer updates a * row")]
+    public async Task SaveAsync_WhenAgnosticAmbientReceivesNamedSource_ThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationPlan>();
+        var agnostic = new MemoryAlterationPlanStore(backing, new TestTenantAccessor(Tenant.AgnosticTenantId));
+        await agnostic.SaveAsync(Plan("shared", Tenant.AgnosticTenantId));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => agnostic.SaveAsync(Plan("shared", "tenant-b")));
+        var remaining = await agnostic.FindAsync(new AlterationPlanFilter { Id = "shared" });
+
+        Assert.Contains("shared", ex.Message);
+        Assert.NotNull(remaining);
+        Assert.Equal(Tenant.AgnosticTenantId, remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync still lets an agnostic writer update a * row")]
     public async Task SaveAsync_WhenAmbientIsAgnostic_UpsertsAgnosticRow()
     {

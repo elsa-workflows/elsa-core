@@ -105,7 +105,7 @@ public class MemoryAlterationJobStore : IAlterationJobStore
         if (existing is null)
             return;
 
-        if (!CanReplace(existing))
+        if (!CanReplace(existing.TenantId, job.TenantId))
             throw AlterationStoreConflict.HiddenJobId(job.Id);
 
         // An accepted update may change the payload, but it must not rehome the row.
@@ -116,7 +116,8 @@ public class MemoryAlterationJobStore : IAlterationJobStore
     /// <c>*</c> is visible to every tenant, but only an agnostic writer may replace it.
     /// Named tenants may upsert their own visible rows.
     /// </summary>
-    private bool CanReplace(Entity existing) => TenantVisibility.CanReplace(existing.TenantId, CurrentTenantId);
+    private bool CanReplace(string? existingTenantId, string? incomingTenantId) =>
+        TenantVisibility.CanReplaceOwnedRow(existingTenantId, incomingTenantId, CurrentTenantId);
 
     private void ApplyCurrentTenant(Entity entity)
     {
