@@ -84,6 +84,20 @@ public class BpmnErrorResponseMappingTests
         Assert.Null(response.Data);
     }
 
+    [Fact(DisplayName = "A lost compare-and-swap is coded bpmn.document.precondition-failed, the same 412 If-Match already uses")]
+    public void PreconditionFailedResponseFor_CarriesTheCode()
+    {
+        var exception = new BpmnDocumentPreconditionFailedException(
+            "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
+
+        var response = BpmnImportErrorResponses.PreconditionFailedResponseFor(exception);
+
+        Assert.Equal(BpmnErrorCodes.DocumentPreconditionFailed, response.Code);
+        Assert.Equal(StatusCodes.Status412PreconditionFailed, response.StatusCode);
+        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
+        Assert.Null(response.Data);
+    }
+
     [Theory(DisplayName = "Each BpmnExportUnavailableReason maps to its own code")]
     [InlineData(BpmnExportUnavailableReason.NotImported, BpmnErrorCodes.ExportNotImported)]
     [InlineData(BpmnExportUnavailableReason.SourceVersionUnknown, BpmnErrorCodes.ExportSourceVersionUnknown)]

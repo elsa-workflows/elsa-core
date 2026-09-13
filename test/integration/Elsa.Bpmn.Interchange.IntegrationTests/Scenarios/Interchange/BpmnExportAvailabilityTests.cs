@@ -6,7 +6,10 @@ using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Common;
+using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
@@ -277,7 +280,11 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
             services.GetRequiredService<BpmnWorkBinder>(),
             importer,
             store,
-            services.GetRequiredService<VariableDefinitionMapper>());
+            services.GetRequiredService<VariableDefinitionMapper>(),
+            services.GetRequiredService<IActivitySerializer>(),
+            services.GetRequiredService<IIdentityGenerator>(),
+            services.GetRequiredService<ISystemClock>(),
+            services.GetRequiredService<IMediator>());
 
         var xml = BpmnAssetReader.Read("camunda-order-process.bpmn");
 
@@ -372,6 +379,13 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
     private sealed class AlwaysFailingSaveWorkflowDefinitionStore : IWorkflowDefinitionStore
     {
         public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated save failure for testing atomic BPMN import.");
+
+        public Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+            WorkflowDefinitionFilter filter,
+            Func<WorkflowDefinition, bool> matchesExpected,
+            Func<WorkflowDefinition, WorkflowDefinition> update,
+            CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated save failure for testing atomic BPMN import.");
 
         public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => throw new NotSupportedException();

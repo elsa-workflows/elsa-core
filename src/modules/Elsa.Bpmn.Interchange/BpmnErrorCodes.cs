@@ -74,7 +74,8 @@ public static class BpmnErrorCodes
 
     /// <summary>
     /// The document <c>PUT</c> refuses an <c>If-Match</c> header that does not match the workflow definition's
-    /// current ETag: the definition was written since the caller last read it.
+    /// current ETag — including when the header matched on arrival but another writer saved before this PUT's
+    /// compare-and-swap completed: the definition was written since the caller last read it.
     /// </summary>
     public const string DocumentPreconditionFailed = "bpmn.document.precondition-failed";
 }

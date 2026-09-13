@@ -54,7 +54,9 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
         // ETag its GET returned as If-Match. A missing header cannot express "I know what I'm overwriting" at all, and
         // neither can "*", which matches whatever is stored — so both are refused as 428 rather than honoured. Anything
         // else must be exactly the current strong ETag (a weak W/ tag or a list never is), or it proves the client's copy
-        // is no longer current. All of this is checked before any import work runs or anything is persisted.
+        // is no longer current. The header is checked here so a stale client is refused before import work runs, and
+        // again inside ImportDocumentAsync's compare-and-swap so a write that lands in that window is 412, not a silent
+        // overwrite. Metadata carried forward is read in that same swap, not from this lookup.
         var ifMatch = HttpContext.Request.Headers.IfMatch.ToString().Trim();
 
         if (ifMatch is "" or "*")
@@ -114,7 +116,7 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             : null;
 
         var result = await BpmnImportErrorResponses.RunAsync(
-            () => documentService.ImportDocumentAsync(document, definitionId, processId, cancellationToken),
+            () => documentService.ImportDocumentAsync(document, definitionId, processId, cancellationToken, ifMatch),
             HttpContext.Response,
             message => AddError(message),
             Send.ErrorsAsync,
