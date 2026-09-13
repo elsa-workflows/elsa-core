@@ -1,6 +1,5 @@
 using System.Text;
 using Elsa.Http.ContentWriters;
-using Xunit;
 
 namespace Elsa.Http.UnitTests.ContentWriters;
 
@@ -12,8 +11,8 @@ public class ContentFactoryTests
     /// <summary>
     /// Tests that <see cref="JsonContentFactory"/> doesn't append charset to content type.
     /// </summary>
-    [Fact]
-    public void JsonContentFactory_ShouldNotAppendCharset()
+    [Test]
+    public async Task JsonContentFactory_ShouldNotAppendCharset()
     {
         // Arrange
         const string contentType = "application/json";
@@ -21,18 +20,18 @@ public class ContentFactoryTests
         var factory = new JsonContentFactory();
         
         // Act
-        var httpContent = factory.CreateHttpContent(content, contentType);
+        using var httpContent = factory.CreateHttpContent(content, contentType);
         
         // Assert
-        Assert.Equal(contentType, httpContent.Headers.ContentType?.MediaType);
-        Assert.Null(httpContent.Headers.ContentType?.CharSet);
+        await Assert.That(httpContent.Headers.ContentType?.MediaType).IsEqualTo(contentType);
+        await Assert.That(httpContent.Headers.ContentType?.CharSet).IsNull();
     }
     
     /// <summary>
     /// Tests that <see cref="XmlContentFactory"/> doesn't append charset to content type.
     /// </summary>
-    [Fact]
-    public void XmlContentFactory_ShouldNotAppendCharset()
+    [Test]
+    public async Task XmlContentFactory_ShouldNotAppendCharset()
     {
         // Arrange
         const string contentType = "text/xml";
@@ -40,18 +39,18 @@ public class ContentFactoryTests
         var factory = new XmlContentFactory();
         
         // Act
-        var httpContent = factory.CreateHttpContent(content, contentType);
+        using var httpContent = factory.CreateHttpContent(content, contentType);
         
         // Assert
-        Assert.Equal(contentType, httpContent.Headers.ContentType?.MediaType);
-        Assert.Null(httpContent.Headers.ContentType?.CharSet);
+        await Assert.That(httpContent.Headers.ContentType?.MediaType).IsEqualTo(contentType);
+        await Assert.That(httpContent.Headers.ContentType?.CharSet).IsNull();
     }
     
     /// <summary>
     /// Tests that <see cref="TextContentFactory"/> doesn't append charset to content type.
     /// </summary>
-    [Fact]
-    public void TextContentFactory_ShouldNotAppendCharset()
+    [Test]
+    public async Task TextContentFactory_ShouldNotAppendCharset()
     {
         // Arrange
         const string contentType = "text/html";
@@ -59,17 +58,17 @@ public class ContentFactoryTests
         var factory = new TextContentFactory();
         
         // Act
-        var httpContent = factory.CreateHttpContent(content, contentType);
+        using var httpContent = factory.CreateHttpContent(content, contentType);
         
         // Assert
-        Assert.Equal(contentType, httpContent.Headers.ContentType?.MediaType);
-        Assert.Null(httpContent.Headers.ContentType?.CharSet);
+        await Assert.That(httpContent.Headers.ContentType?.MediaType).IsEqualTo(contentType);
+        await Assert.That(httpContent.Headers.ContentType?.CharSet).IsNull();
     }
     
     /// <summary>
     /// Tests that <see cref="JsonContentFactory"/> produces correct content length without BOM.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task JsonContentFactory_ShouldProduceCorrectContentLength()
     {
         // Arrange
@@ -78,22 +77,22 @@ public class ContentFactoryTests
         var factory = new JsonContentFactory();
         
         // Act
-        var httpContent = factory.CreateHttpContent(content, contentType);
+        using var httpContent = factory.CreateHttpContent(content, contentType);
         var bytes = await httpContent.ReadAsByteArrayAsync();
         
         // Assert
         // Content length should match the actual bytes (no BOM)
-        Assert.Equal(Encoding.UTF8.GetByteCount(content), bytes.Length);
-        Assert.Equal(httpContent.Headers.ContentLength, bytes.Length);
-        
+        await Assert.That(bytes.Length).IsEqualTo(Encoding.UTF8.GetByteCount(content));
+        await Assert.That(httpContent.Headers.ContentLength).IsEqualTo(bytes.LongLength);
+
         // Verify no BOM is present (BOM would be EF-BB-BF at start)
-        Assert.False(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF);
+        await Assert.That(bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF).IsFalse();
     }
     
     /// <summary>
     /// Tests that <see cref="JsonContentFactory"/> handles multi-byte UTF-8 characters correctly.
     /// </summary>
-    [Fact]
+    [Test]
     public async Task JsonContentFactory_ShouldHandleMultiByteCharacters()
     {
         // Arrange
@@ -102,14 +101,14 @@ public class ContentFactoryTests
         var factory = new JsonContentFactory();
         
         // Act
-        var httpContent = factory.CreateHttpContent(content, contentType);
+        using var httpContent = factory.CreateHttpContent(content, contentType);
         var bytes = await httpContent.ReadAsByteArrayAsync();
         
         // Assert
         // Byte count should be greater than character count due to multi-byte characters
-        Assert.True(bytes.Length > content.Length);
+        await Assert.That(bytes.Length > content.Length).IsTrue();
         // Content length should match the actual UTF-8 byte count
-        Assert.Equal(Encoding.UTF8.GetByteCount(content), bytes.Length);
-        Assert.Equal(httpContent.Headers.ContentLength, bytes.Length);
+        await Assert.That(bytes.Length).IsEqualTo(Encoding.UTF8.GetByteCount(content));
+        await Assert.That(httpContent.Headers.ContentLength).IsEqualTo(bytes.LongLength);
     }
 }

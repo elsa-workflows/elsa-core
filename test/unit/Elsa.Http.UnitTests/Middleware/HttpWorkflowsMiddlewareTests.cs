@@ -14,14 +14,14 @@ using NSubstitute;
 
 namespace Elsa.Http.UnitTests.Middleware;
 
-public class HttpWorkflowsMiddlewareTests
+public class HttpWorkflowsMiddlewareTests : IAsyncDisposable
 {
     private const string CurrentTenantId = "tenant-a";
     private const string OtherTenantId = "tenant-b";
     private const string BookmarkHash = "http-endpoint:/colliding:get";
 
     private readonly CapturingBookmarkStore _bookmarkStore;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly ServiceProvider _serviceProvider;
     private readonly HttpWorkflowsMiddleware _middleware = new(_ => Task.CompletedTask);
 
     public HttpWorkflowsMiddlewareTests()
@@ -35,7 +35,7 @@ public class HttpWorkflowsMiddlewareTests
             .BuildServiceProvider();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithCollidingHttpEndpointBookmarks_UsesTenantScopedBookmarkLookup()
     {
         var httpContext = new DefaultHttpContext
@@ -51,12 +51,11 @@ public class HttpWorkflowsMiddlewareTests
             Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
             new EmptyHttpWorkflowLookupService());
 
-        Assert.NotNull(_bookmarkStore.LastFilter);
-        var filter = _bookmarkStore.LastFilter!;
-        Assert.False(filter.TenantAgnostic);
+        var filter = await Assert.That(_bookmarkStore.LastFilter).IsNotNull();
+        await Assert.That(filter.TenantAgnostic).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithConfiguredBasePathAndNonMatchingPath_SkipsRouteMatchingAndCallsNext()
     {
         var nextCalled = false;
@@ -65,7 +64,7 @@ public class HttpWorkflowsMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         });
-        var serviceProvider = new ServiceCollection().BuildServiceProvider();
+        await using var serviceProvider = new ServiceCollection().BuildServiceProvider();
         var httpContext = new DefaultHttpContext
         {
             RequestServices = serviceProvider
@@ -78,10 +77,10 @@ public class HttpWorkflowsMiddlewareTests
             Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
-        Assert.True(nextCalled);
+        await Assert.That(nextCalled).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithSiblingPrefixPath_SkipsRouteMatchingAndCallsNext()
     {
         var nextCalled = false;
@@ -90,7 +89,7 @@ public class HttpWorkflowsMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         });
-        var serviceProvider = new ServiceCollection().BuildServiceProvider();
+        await using var serviceProvider = new ServiceCollection().BuildServiceProvider();
         var httpContext = new DefaultHttpContext
         {
             RequestServices = serviceProvider
@@ -103,10 +102,10 @@ public class HttpWorkflowsMiddlewareTests
             Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
-        Assert.True(nextCalled);
+        await Assert.That(nextCalled).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithMultiplePrefixSegmentsBeforeBasePath_SkipsRouteMatchingAndCallsNext()
     {
         var nextCalled = false;
@@ -116,7 +115,7 @@ public class HttpWorkflowsMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         });
-        var serviceProvider = new ServiceCollection()
+        await using var serviceProvider = new ServiceCollection()
             .AddSingleton(routeMatcher)
             .AddSingleton<IRouteTable>(new ListRouteTable([new("/api/v1/workflows/status")]))
             .BuildServiceProvider();
@@ -132,11 +131,11 @@ public class HttpWorkflowsMiddlewareTests
             Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
-        Assert.True(nextCalled);
+        await Assert.That(nextCalled).IsTrue();
         routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithNonTenantPrefixedBasePathSegment_CallsNext()
     {
         var nextCalled = false;
@@ -146,7 +145,7 @@ public class HttpWorkflowsMiddlewareTests
             nextCalled = true;
             return Task.CompletedTask;
         });
-        var serviceProvider = new ServiceCollection()
+        await using var serviceProvider = new ServiceCollection()
             .AddSingleton(routeMatcher)
             .AddSingleton<IRouteTable>(new ListRouteTable([new("/{tenantPrefix}/workflows/colliding")]))
             .BuildServiceProvider();
@@ -162,17 +161,17 @@ public class HttpWorkflowsMiddlewareTests
             Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
-        Assert.True(nextCalled);
+        await Assert.That(nextCalled).IsTrue();
         routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithConfiguredBasePathAndMatchingPath_StillResolvesRoute()
     {
         var routeMatcher = Substitute.For<IRouteMatcher>();
         routeMatcher.Match("/workflows/colliding", "/workflows/colliding").Returns(new RouteValueDictionary());
         var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
-        var serviceProvider = new ServiceCollection()
+        await using var serviceProvider = new ServiceCollection()
             .AddSingleton<IBookmarkStore>(bookmarkStore)
             .AddSingleton(routeMatcher)
             .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/colliding")]))
@@ -192,10 +191,10 @@ public class HttpWorkflowsMiddlewareTests
             new EmptyHttpWorkflowLookupService());
 
         routeMatcher.Received(1).Match("/workflows/colliding", "/workflows/colliding");
-        Assert.NotNull(bookmarkStore.LastFilter);
+        await Assert.That(bookmarkStore.LastFilter).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WithResolvedTenantPath_StillResolvesRoute()
     {
         var nextCalled = false;
@@ -208,7 +207,7 @@ public class HttpWorkflowsMiddlewareTests
         });
         routeMatcher.Match("/workflows/colliding", "/workflows/colliding").Returns(new RouteValueDictionary());
         var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
-        var serviceProvider = new ServiceCollection()
+        await using var serviceProvider = new ServiceCollection()
             .AddSingleton<IBookmarkStore>(bookmarkStore)
             .AddSingleton(routeMatcher)
             .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/colliding")]))
@@ -228,11 +227,13 @@ public class HttpWorkflowsMiddlewareTests
             Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
             new EmptyHttpWorkflowLookupService());
 
-        Assert.False(nextCalled);
+        await Assert.That(nextCalled).IsFalse();
         routeMatcher.Received(1).Match("/workflows/colliding", "/workflows/colliding");
-        Assert.Equal("/colliding", stimulusHasher.LastPayload?.Path);
-        Assert.NotNull(bookmarkStore.LastFilter);
+        await Assert.That(stimulusHasher.LastPayload?.Path).IsEqualTo("/colliding");
+        await Assert.That(bookmarkStore.LastFilter).IsNotNull();
     }
+
+    public ValueTask DisposeAsync() => _serviceProvider.DisposeAsync();
 
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
     {
