@@ -153,6 +153,7 @@
         <PackageVersion Include="CsvHelper" Version="33.1.0"/>
         <PackageVersion Include="Dapper" Version="2.1.66"/>
         <PackageVersion Include="DistributedLock" Version="2.7.1"/>
+        <PackageVersion Include="DistributedLock.Core" Version="1.0.9"/>
         <PackageVersion Include="DistributedLock.Postgres" Version="1.3.0"/>
         <PackageVersion Include="DistributedLock.Redis" Version="1.1.1"/>
         <PackageVersion Include="DistributedLock.FileSystem" Version="1.0.3"/>

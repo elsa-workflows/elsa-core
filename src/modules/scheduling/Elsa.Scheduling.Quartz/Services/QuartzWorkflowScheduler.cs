@@ -12,7 +12,13 @@ namespace Elsa.Scheduling.Quartz.Services;
 /// <summary>
 /// An implementation of <see cref="IWorkflowScheduler"/> that uses Quartz.NET.
 /// </summary>
-public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, IJsonSerializer jsonSerializer, ITenantAccessor tenantAccessor, IJobKeyProvider jobKeyProvider, ILogger<QuartzWorkflowScheduler> logger) : IWorkflowScheduler
+public class QuartzWorkflowScheduler(
+    ISchedulerFactory schedulerFactoryFactory,
+    IJsonSerializer jsonSerializer,
+    ITenantAccessor tenantAccessor,
+    IJobKeyProvider jobKeyProvider,
+    ILogger<QuartzWorkflowScheduler> logger,
+    IQuartzScheduleCoordinator? scheduleCoordinator = null) : IWorkflowScheduler
 {
     /// <inheritdoc />
     public async ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default)
@@ -105,41 +111,51 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
     {
         var scheduler = await schedulerFactoryFactory.GetScheduler(cancellationToken);
         var triggerKey = GetTriggerKey(taskName);
-        await scheduler.UnscheduleJob(triggerKey, cancellationToken);
+        await ExecuteCoordinatedAsync(triggerKey, async token =>
+        {
+            await scheduler.UnscheduleJob(triggerKey, token);
+            await scheduler.UnscheduleJob(QuartzTriggerKeys.GetRetryTriggerKey(triggerKey), token);
+        }, cancellationToken);
     }
     
     private async Task ScheduleJobAsync<TJobType>(QuartzIScheduler scheduler, ITrigger trigger, CancellationToken cancellationToken) where TJobType : IJob
     {
-        // Ensure the durable job referenced by the trigger exists before scheduling.
-        // The job is normally registered at startup by RegisterJobsTask, but it can be absent here when:
-        // - the trigger targets a tenant-specific job group that was never registered at startup,
-        // - the startup task has not run yet (or was skipped), or
-        // - the job rows were removed from the Quartz job store at runtime.
-        // Without this, Quartz throws "The job (...RunWorkflowJob) referenced by the trigger does not exist".
-        await EnsureJobAsync<TJobType>(scheduler, trigger.JobKey, cancellationToken);
+        await ExecuteCoordinatedAsync(QuartzTriggerKeys.GetOriginalTriggerKey(trigger), async token =>
+        {
+            // Ensure the durable job referenced by the trigger exists before scheduling.
+            // The job is normally registered at startup by RegisterJobsTask, but it can be absent here when:
+            // - the trigger targets a tenant-specific job group that was never registered at startup,
+            // - the startup task has not run yet (or was skipped), or
+            // - the job rows were removed from the Quartz job store at runtime.
+            // Without this, Quartz throws "The job (...RunWorkflowJob) referenced by the trigger does not exist".
+            await EnsureJobAsync<TJobType>(scheduler, trigger.JobKey, token);
 
-        try
-        {
-            // Try to schedule the trigger. In clustered mode, multiple instances may attempt this simultaneously.
-            // The ScheduleJob method will throw ObjectAlreadyExistsException if a trigger with the same key already exists.
-            // Unlike AddJob, ScheduleJob does not have a 'replace' parameter - it always fails if the trigger exists.
-            // Note: To update an existing trigger, callers should first use UnscheduleAsync before scheduling the new trigger.
-            await scheduler.ScheduleJob(trigger, cancellationToken);
-        }
-        catch (JobPersistenceException e) when (e.InnerException is ObjectAlreadyExistsException)
-        {
-            // SQL-backed Quartz stores (AdoJobStore) wrap the duplicate-trigger error in a JobPersistenceException.
-            // In clustered mode, this is an expected race condition when multiple pods attempt to schedule the same trigger.
-            logger.LogDebug("Trigger {TriggerKey} already exists (wrapped), skipping scheduling. This is expected in clustered deployments during concurrent operations", trigger.Key);
-        }
-        catch (ObjectAlreadyExistsException)
-        {
-            // Trigger already exists. In clustered scenarios, this is an expected race condition
-            // when multiple pods attempt to schedule the same trigger during tenant activation or startup.
-            // We can safely ignore this and continue, as the trigger is already scheduled.
-            logger.LogDebug("Trigger {TriggerKey} already exists, skipping scheduling. This is expected in clustered deployments during concurrent operations", trigger.Key);
-        }
+            try
+            {
+                // Try to schedule the trigger. In clustered mode, multiple instances may attempt this simultaneously.
+                // The ScheduleJob method will throw ObjectAlreadyExistsException if a trigger with the same key already exists.
+                // Unlike AddJob, ScheduleJob does not have a 'replace' parameter - it always fails if the trigger exists.
+                // Note: To update an existing trigger, callers should first use UnscheduleAsync before scheduling the new trigger.
+                await scheduler.ScheduleJob(trigger, token);
+            }
+            catch (JobPersistenceException e) when (e.InnerException is ObjectAlreadyExistsException)
+            {
+                // SQL-backed Quartz stores (AdoJobStore) wrap the duplicate-trigger error in a JobPersistenceException.
+                // In clustered mode, this is an expected race condition when multiple pods attempt to schedule the same trigger.
+                logger.LogDebug("Trigger {TriggerKey} already exists (wrapped), skipping scheduling. This is expected in clustered deployments during concurrent operations", trigger.Key);
+            }
+            catch (ObjectAlreadyExistsException)
+            {
+                // Trigger already exists. In clustered scenarios, this is an expected race condition
+                // when multiple instances attempt to schedule the same trigger during tenant activation or startup.
+                // We can safely ignore this and continue, as the trigger is already scheduled.
+                logger.LogDebug("Trigger {TriggerKey} already exists, skipping scheduling. This is expected in clustered deployments during concurrent operations", trigger.Key);
+            }
+        }, cancellationToken);
     }
+
+    private Task ExecuteCoordinatedAsync(TriggerKey originalTriggerKey, Func<CancellationToken, Task> action, CancellationToken cancellationToken) =>
+        scheduleCoordinator?.ExecuteAsync(originalTriggerKey, action, cancellationToken) ?? action(cancellationToken);
 
     private async Task EnsureJobAsync<TJobType>(QuartzIScheduler scheduler, JobKey jobKey, CancellationToken cancellationToken) where TJobType : IJob
     {
@@ -174,6 +190,7 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
     private JobDataMap CreateJobDataMap(ScheduleNewWorkflowInstanceRequest request)
     {
         return new JobDataMap()
+                .AddIfNotEmpty(QuartzJobDataKeys.RetryScheduleGeneration, Guid.NewGuid().ToString("N"))
                 .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
                 .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId), request.CorrelationId)
                 .AddIfNotEmpty(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId), request.WorkflowDefinitionHandle.DefinitionVersionId)
@@ -189,6 +206,7 @@ public class QuartzWorkflowScheduler(ISchedulerFactory schedulerFactoryFactory, 
         var serializedActivityHandle = request.ActivityHandle != null ? jsonSerializer.Serialize(request.ActivityHandle) : null;
 
         return new JobDataMap()
+            .AddIfNotEmpty(QuartzJobDataKeys.RetryScheduleGeneration, Guid.NewGuid().ToString("N"))
             .AddIfNotEmpty("TenantId", tenantAccessor.Tenant?.Id)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId), request.WorkflowInstanceId)
             .AddIfNotEmpty(nameof(ScheduleExistingWorkflowInstanceRequest.Input), request.Input)

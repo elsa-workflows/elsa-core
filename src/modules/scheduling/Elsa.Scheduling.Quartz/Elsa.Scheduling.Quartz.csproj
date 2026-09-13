@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="DistributedLock.Core"/>
         <PackageReference Include="Quartz.Extensions.Hosting"/>
     </ItemGroup>
 

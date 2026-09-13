@@ -19,14 +19,14 @@ public class RunWorkflowJob(
     ITenantFinder tenantFinder,
     IWorkflowStarter workflowStarter,
     IQuartzJobRetryScheduler retryScheduler,
-    ILogger<RunWorkflowJob> logger) : IJob
+    ILogger<RunWorkflowJob> logger,
+    IQuartzScheduleCoordinator? scheduleCoordinator = null) : IJob
 {
     /// <inheritdoc />
     public async Task Execute(IJobExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
         StartWorkflowRequest? startRequest = null;
-
         try
         {
             var tenant = await context.GetTenantAsync(tenantFinder);
@@ -59,7 +59,7 @@ public class RunWorkflowJob(
         catch (WorkflowGraphNotFoundException e)
         {
             logger.LogWarning(e, "Could not find workflow graph for workflow definition handle {WorkflowDefinitionHandle}", startRequest?.WorkflowDefinitionHandle);
-            await context.Scheduler.UnscheduleJob(context.Trigger.Key, cancellationToken);
+            await context.UnscheduleAfterWorkflowGraphNotFoundAsync(scheduleCoordinator, cancellationToken);
         }
         catch (Exception e) when (retryScheduler.IsRetryable(e))
         {
@@ -68,7 +68,7 @@ public class RunWorkflowJob(
 
             logger.LogError(
                 e,
-                "No retry was scheduled for job {JobKey} after {RetryAttempts} retry attempt(s) (retries disabled, exhausted, or trigger no longer present). Giving up on starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}",
+                "No retry was scheduled for job {JobKey} after {RetryAttempts} retry attempt(s) (retries disabled or exhausted). Giving up on starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}",
                 context.JobDetail.Key,
                 context.GetRetryAttempt(),
                 startRequest?.WorkflowDefinitionHandle,

@@ -15,16 +15,18 @@ public interface IQuartzJobRetryScheduler
     bool IsRetryable(Exception exception);
 
     /// <summary>
-    /// Reschedules the trigger of the current job for a retry, using the configured backoff policy. The attempt number
-    /// is carried over on the rescheduled trigger, together with the job data of the original trigger.
+    /// Schedules a one-shot retry trigger for the current job, using the configured backoff policy. The attempt number
+    /// is carried on that retry trigger, together with the job data of the original trigger. The firing trigger is left
+    /// in place so a cron or repeating schedule keeps its next fire times.
     /// </summary>
     /// <param name="context">The execution context of the attempt that just failed.</param>
     /// <param name="exception">The exception the job failed with.</param>
     /// <param name="cancellationToken">An optional cancellation token.</param>
     /// <returns>
-    /// True if a retry was scheduled; false if retries are disabled, the configured maximum number of retries has
-    /// been exhausted, or the original trigger was no longer present (so no replacement could be stored), in which
-    /// case the caller is responsible for reporting the failure.
+    /// True if the failure was handled by retry scheduling, an already-pending retry, cancellation, or stale-generation
+    /// suppression; false if retries are disabled or the configured maximum number of retries has been exhausted, in
+    /// which case the caller is responsible for reporting the failure. A true result does not guarantee that a retry
+    /// trigger still exists after a concurrent cancellation or generation replacement.
     /// </returns>
     Task<bool> ScheduleRetryAsync(IJobExecutionContext context, Exception exception, CancellationToken cancellationToken = default);
 }

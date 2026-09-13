@@ -23,14 +23,15 @@ public static class QuartzJobTestHelper
     public static (IJobExecutionContext Context, Mock<QuartzScheduler> Scheduler) CreateJobExecutionContext(
         IDictionary<string, object> jobData,
         string? jobKeyName = null,
-        IDictionary<string, object>? triggerData = null)
+        IDictionary<string, object>? triggerData = null,
+        string? triggerName = null)
     {
         var jobDataMap = new JobDataMap(jobData);
         var triggerDataMap = new JobDataMap(triggerData ?? new Dictionary<string, object>());
         var mergedDataMap = new JobDataMap(jobData);
         mergedDataMap.PutAll(triggerDataMap);
         var jobKey = new JobKey(jobKeyName ?? "test-job");
-        var triggerKey = new TriggerKey("test-trigger");
+        var triggerKey = new TriggerKey(triggerName ?? "test-trigger");
 
         var jobDetail = new Mock<IJobDetail>();
         jobDetail.Setup(j => j.Key).Returns(jobKey);
@@ -42,6 +43,10 @@ public static class QuartzJobTestHelper
         trigger.Setup(t => t.JobDataMap).Returns(triggerDataMap);
 
         var scheduler = new Mock<QuartzScheduler>();
+        scheduler.Setup(s => s.ScheduleJob(It.IsAny<ITrigger>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(DateTimeOffset.Now);
+        scheduler.Setup(s => s.UnscheduleJob(It.IsAny<TriggerKey>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
         scheduler.Setup(s => s.RescheduleJob(It.IsAny<TriggerKey>(), It.IsAny<ITrigger>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(DateTimeOffset.Now);
         scheduler.Setup(s => s.DeleteJob(It.IsAny<JobKey>(), It.IsAny<CancellationToken>()))
@@ -137,6 +142,12 @@ public static class QuartzJobTestHelper
 
     extension(Mock<QuartzScheduler> scheduler)
     {
+        /// <summary>
+        /// Verifies that the scheduler scheduled a trigger exactly once.
+        /// </summary>
+        public void VerifyScheduled() =>
+            scheduler.Verify(s => s.ScheduleJob(It.IsAny<ITrigger>(), It.IsAny<CancellationToken>()), Times.Once);
+
         /// <summary>
         /// Verifies that the scheduler rescheduled a job exactly once.
         /// </summary>

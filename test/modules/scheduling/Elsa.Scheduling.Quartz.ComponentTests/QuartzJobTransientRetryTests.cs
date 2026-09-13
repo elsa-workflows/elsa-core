@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Resilience;
+using Elsa.Scheduling.Quartz;
 using Elsa.Scheduling.Quartz.ComponentTests.Abstractions;
 using Elsa.Scheduling.Quartz.ComponentTests.Fixtures;
 using Elsa.Scheduling.Quartz.ComponentTests.Helpers;
@@ -18,8 +19,9 @@ namespace Elsa.Scheduling.Quartz.ComponentTests;
 
 /// <summary>
 /// Component tests for Quartz job transient retry behavior.
-/// These tests validate that jobs properly retry on transient exceptions, count their attempts across reschedules,
-/// stop once the configured maximum is reached, and give up immediately on non-transient exceptions.
+/// These tests validate that jobs properly retry on transient exceptions, count their attempts across retry triggers,
+/// stop once the configured maximum is reached, leave recurring schedules intact, and give up immediately on
+/// non-transient exceptions.
 /// </summary>
 public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(app)
 {
@@ -39,7 +41,7 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
             failuresBeforeSuccess,
             (Exception)Activator.CreateInstance(exceptionType, exceptionMessage)!);
 
-        // Every failing execution schedules the next retry and counts it on the rescheduled trigger.
+        // Every failing execution schedules the next retry and counts it on the derived retry trigger.
         for (var attempt = 1; attempt <= failuresBeforeSuccess; attempt++)
         {
             await scenario.ExecuteAsync();
@@ -47,8 +49,8 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
             Assert.Equal(attempt, scenario.Starter.CallCount);
             Assert.Equal(attempt, await scenario.GetRetryAttemptAsync());
 
-            // The workflow inputs carried by the original trigger must survive the reschedule.
-            Assert.Equal(DefinitionVersionId, (await scenario.GetTriggerAsync())!.JobDataMap.GetString(DefinitionVersionIdKey));
+            // The workflow inputs carried by the original trigger must survive onto the retry trigger.
+            Assert.Equal(DefinitionVersionId, (await scenario.GetRetryTriggerAsync())!.JobDataMap.GetString(DefinitionVersionIdKey));
         }
 
         // The next execution succeeds, so no further retry is scheduled and the attempt count stops growing.
@@ -97,6 +99,7 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
 
         Assert.Equal(1, scenario.Starter.CallCount);
         Assert.Equal(0, await scenario.GetRetryAttemptAsync());
+        Assert.Null(await scenario.GetRetryTriggerAsync());
         Assert.True(await scenario.Scheduler.CheckExists(scenario.Context.JobDetail.Key));
     }
 
@@ -113,7 +116,73 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
         // Assert - Job should be called once, then deleted (not retried)
         Assert.Equal(1, scenario.Starter.CallCount);
         Assert.Equal(0, await scenario.GetRetryAttemptAsync());
+        Assert.Null(await scenario.GetRetryTriggerAsync());
         Assert.False(await scenario.Scheduler.CheckExists(scenario.Context.JobDetail.Key));
+    }
+
+    [Fact]
+    public async Task RunWorkflowJob_CronTrigger_TransientFailure_KeepsTheCronSchedule()
+    {
+        var scenario = await CreateScenarioAsync(
+            "test-cron-survives-retry",
+            failuresBeforeSuccess: 1,
+            new TimeoutException("Simulated transient timeout"),
+            triggerFactory: (identity, jobDetail) => TriggerBuilder.Create()
+                .WithIdentity(identity)
+                .ForJob(jobDetail)
+                .UsingJobData(DefinitionVersionIdKey, DefinitionVersionId)
+                .WithCronSchedule("0 0 12 1 1 ? 2099")
+                .Build());
+
+        await scenario.ExecuteAsync();
+
+        Assert.Equal(1, scenario.Starter.CallCount);
+        Assert.Equal(1, await scenario.GetRetryAttemptAsync());
+        Assert.NotNull(await scenario.GetRetryTriggerAsync());
+
+        var cronAfterFailure = await scenario.GetOriginalTriggerAsync();
+        Assert.NotNull(cronAfterFailure);
+        Assert.IsAssignableFrom<ICronTrigger>(cronAfterFailure);
+
+        // The retry succeeds. The original cron trigger must still be the same schedule.
+        await scenario.ExecuteAsync();
+
+        Assert.Equal(2, scenario.Starter.CallCount);
+
+        var cronAfterRetry = await scenario.GetOriginalTriggerAsync();
+        Assert.NotNull(cronAfterRetry);
+        Assert.IsAssignableFrom<ICronTrigger>(cronAfterRetry);
+        Assert.Equal(cronAfterFailure!.Key, cronAfterRetry!.Key);
+
+        // A later cron occurrence is a fresh attempt. The pending retry remains eligible; allowing it to coexist
+        // avoids the race where its execution recreates the deterministic retry trigger after cancellation.
+        scenario.Context.Trigger = cronAfterRetry;
+        await scenario.ExecuteAsync();
+
+        Assert.Equal(3, scenario.Starter.CallCount);
+        Assert.NotNull(await scenario.GetRetryTriggerAsync());
+        Assert.IsAssignableFrom<ICronTrigger>((await scenario.GetOriginalTriggerAsync())!);
+    }
+
+    [Fact]
+    public async Task RunWorkflowJob_OriginalTriggerFiresWhileRetryPending_LeavesThePendingRetryInPlace()
+    {
+        var scenario = await CreateScenarioAsync(
+            "test-cancel-pending-retry",
+            failuresBeforeSuccess: 1,
+            new TimeoutException("Simulated transient timeout"));
+
+        await scenario.ExecuteAsync();
+        Assert.NotNull(await scenario.GetRetryTriggerAsync());
+
+        // Replay the original trigger as a later scheduled occurrence. The retry remains in place intentionally: the
+        // original and retry executions may overlap, but cancellation must not race with retry-chain advancement.
+        scenario.Context.Trigger = (await scenario.GetOriginalTriggerAsync())!;
+        scenario.Starter.FailuresBeforeSuccess = 0;
+        await scenario.ExecuteAsync();
+
+        Assert.Equal(2, scenario.Starter.CallCount);
+        Assert.NotNull(await scenario.GetRetryTriggerAsync());
     }
 
     /// <summary>
@@ -125,7 +194,8 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
         string identifier,
         int failuresBeforeSuccess,
         Exception exception,
-        Action<QuartzJobOptions>? configureOptions = null)
+        Action<QuartzJobOptions>? configureOptions = null,
+        Func<TriggerKey, IJobDetail, ITrigger>? triggerFactory = null)
     {
         var scheduler = await WorkflowServer.GetSchedulerAsync();
 
@@ -141,12 +211,15 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
             .StoreDurably()
             .Build();
 
-        var trigger = TriggerBuilder.Create()
-            .WithIdentity($"{identifier}-trigger", "test-group")
-            .ForJob(jobDetail)
-            .UsingJobData(DefinitionVersionIdKey, DefinitionVersionId)
-            .StartAt(DateTimeOffset.UtcNow.AddHours(1))
-            .Build();
+        var triggerIdentity = new TriggerKey($"{identifier}-trigger", "test-group");
+        var trigger = triggerFactory != null
+            ? triggerFactory(triggerIdentity, jobDetail)
+            : TriggerBuilder.Create()
+                .WithIdentity(triggerIdentity)
+                .ForJob(jobDetail)
+                .UsingJobData(DefinitionVersionIdKey, DefinitionVersionId)
+                .StartAt(DateTimeOffset.UtcNow.AddHours(1))
+                .Build();
 
         await scheduler.ScheduleJob(jobDetail, trigger);
 
@@ -157,7 +230,7 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
             CreateRetryScheduler(configureOptions),
             Scope.ServiceProvider.GetRequiredService<ILogger<RunWorkflowJob>>());
 
-        return new(job, starter, new(scheduler, jobDetail, trigger), scheduler);
+        return new(job, starter, new(scheduler, jobDetail, trigger), scheduler, trigger);
     }
 
     /// <summary>
@@ -183,29 +256,31 @@ public class QuartzJobTransientRetryTests(SchedulingApp app) : AppComponentTest(
             Scope.ServiceProvider.GetRequiredService<ILogger<QuartzJobRetryScheduler>>());
     }
 
-    private record RetryScenario(RunWorkflowJob Job, FailingWorkflowStarter Starter, TestJobExecutionContext Context, QuartzScheduler Scheduler)
+    private record RetryScenario(RunWorkflowJob Job, FailingWorkflowStarter Starter, TestJobExecutionContext Context, QuartzScheduler Scheduler, ITrigger OriginalTrigger)
     {
         /// <summary>
-        /// Executes the job and then points the execution context at whatever trigger the scheduler now holds, the way
-        /// Quartz would when it fires the rescheduled trigger.
+        /// Executes the job and then points the execution context at the derived retry trigger when one was scheduled,
+        /// the way Quartz would when it fires that retry.
         /// </summary>
         public async Task ExecuteAsync()
         {
             await Job.Execute(Context);
-            var trigger = await GetTriggerAsync();
+            var retryTrigger = await GetRetryTriggerAsync();
 
-            if (trigger != null)
-                Context.Trigger = trigger;
+            if (retryTrigger != null)
+                Context.Trigger = retryTrigger;
         }
 
-        public async Task<ITrigger?> GetTriggerAsync() => await Scheduler.GetTrigger(Context.Trigger.Key);
+        public Task<ITrigger?> GetOriginalTriggerAsync() => Scheduler.GetTrigger(OriginalTrigger.Key);
+
+        public Task<ITrigger?> GetRetryTriggerAsync() => Scheduler.GetTrigger(QuartzTriggerKeys.GetRetryTriggerKey(OriginalTrigger.Key));
 
         /// <summary>
-        /// Gets the retry attempt persisted on the trigger currently in the scheduler, or 0 when no retry was scheduled.
+        /// Gets the retry attempt persisted on the derived retry trigger, or 0 when no retry was scheduled.
         /// </summary>
         public async Task<int> GetRetryAttemptAsync()
         {
-            var trigger = await GetTriggerAsync();
+            var trigger = await GetRetryTriggerAsync();
 
             if (trigger == null || !trigger.JobDataMap.TryGetString(QuartzJobDataKeys.RetryAttempt, out var attempt) || attempt == null)
                 return 0;

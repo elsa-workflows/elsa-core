@@ -4,6 +4,7 @@ using Elsa.Extensions;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Exceptions;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -19,14 +20,14 @@ public class ResumeWorkflowJob(
     ITenantFinder tenantFinder,
     ITenantAccessor tenantAccessor,
     IQuartzJobRetryScheduler retryScheduler,
-    ILogger<ResumeWorkflowJob> logger) : IJob
+    ILogger<ResumeWorkflowJob> logger,
+    IQuartzScheduleCoordinator? scheduleCoordinator = null) : IJob
 {
     /// <inheritdoc />
     public async Task Execute(IJobExecutionContext context)
     {
         var cancellationToken = context.CancellationToken;
         string? workflowInstanceId = null;
-
         try
         {
             var tenant = await context.GetTenantAsync(tenantFinder);
@@ -50,6 +51,11 @@ public class ResumeWorkflowJob(
                 logger.LogInformation("Resumed workflow instance {WorkflowInstanceId}", workflowInstanceId);
             }
         }
+        catch (WorkflowGraphNotFoundException e)
+        {
+            logger.LogWarning(e, "Could not find workflow graph while resuming workflow instance {WorkflowInstanceId}", workflowInstanceId);
+            await context.UnscheduleAfterWorkflowGraphNotFoundAsync(scheduleCoordinator, cancellationToken);
+        }
         catch (Exception e) when (retryScheduler.IsRetryable(e))
         {
             if (await retryScheduler.TryScheduleRetryAsync(context, e, cancellationToken))
@@ -57,7 +63,7 @@ public class ResumeWorkflowJob(
 
             logger.LogError(
                 e,
-                "No retry was scheduled for job {JobKey} after {RetryAttempts} retry attempt(s) (retries disabled, exhausted, or trigger no longer present). Giving up on resuming workflow instance {WorkflowInstanceId}",
+                "No retry was scheduled for job {JobKey} after {RetryAttempts} retry attempt(s) (retries disabled or exhausted). Giving up on resuming workflow instance {WorkflowInstanceId}",
                 context.JobDetail.Key,
                 context.GetRetryAttempt(),
                 workflowInstanceId);

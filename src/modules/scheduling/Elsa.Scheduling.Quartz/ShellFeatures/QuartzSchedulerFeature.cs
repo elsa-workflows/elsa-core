@@ -30,6 +30,7 @@ public class QuartzSchedulerFeature : IShellFeature
     {
         services
             .AddSingleton<IActivityDescriptorModifier, CronActivityDescriptorModifier>()
+            .AddSingleton<IQuartzScheduleCoordinator, QuartzScheduleCoordinator>()
             .AddScoped<IJobKeyProvider, JobKeyProvider>()
             .AddSingleton<IQuartzRetryDelayCalculator, QuartzRetryDelayCalculator>()
             .AddSingleton<IQuartzJobRetryScheduler, QuartzJobRetryScheduler>()
