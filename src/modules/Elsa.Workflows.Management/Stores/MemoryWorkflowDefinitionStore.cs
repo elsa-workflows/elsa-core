@@ -98,7 +98,10 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)
+        {
+            EnsureVersionKeyAvailable(definition);
             store.Save(definition, GetId);
+        }
 
         return Task.CompletedTask;
     }
@@ -107,7 +110,15 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)
-            store.SaveMany(definitions, GetId);
+        {
+            var definitionList = definitions.ToList();
+            EnsureBatchVersionKeysUnique(definitionList);
+
+            foreach (var definition in definitionList)
+                EnsureVersionKeyAvailable(definition);
+
+            store.SaveMany(definitionList, GetId);
+        }
 
         return Task.CompletedTask;
     }
@@ -191,5 +202,43 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
 
     private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
+    /// <remarks>
+    /// EF enforces <c>(DefinitionId, Version)</c> globally via
+    /// <c>IX_WorkflowDefinition_DefinitionId_Version</c>. Memory keeps tenant in the key so
+    /// same-tenant duplicates fail closed while cross-tenant rows remain distinct until #7539
+    /// adds <c>TenantId</c> to that index.
+    /// </remarks>
+    private void EnsureVersionKeyAvailable(WorkflowDefinition definition)
+    {
+        var versionKey = GetVersionKey(definition);
+        var existing = store.Find(x => x.Id != definition.Id && GetVersionKey(x) == versionKey);
+
+        if (existing is not null)
+            throw CreateVersionKeyConflict(definition);
+    }
+
+    private static void EnsureBatchVersionKeysUnique(IEnumerable<WorkflowDefinition> definitions)
+    {
+        var seen = new Dictionary<DefinitionVersionKey, string>();
+
+        foreach (var definition in definitions)
+        {
+            var versionKey = GetVersionKey(definition);
+
+            if (seen.TryGetValue(versionKey, out var existingId) && existingId != definition.Id)
+                throw CreateVersionKeyConflict(definition);
+
+            seen[versionKey] = definition.Id;
+        }
+    }
+
+    private static InvalidOperationException CreateVersionKeyConflict(WorkflowDefinition definition) =>
+        new($"A workflow definition already exists for definition '{definition.DefinitionId}' version {definition.Version} tenant '{definition.TenantId}'.");
+
+    private static DefinitionVersionKey GetVersionKey(WorkflowDefinition definition) =>
+        new(definition.DefinitionId, definition.Version, definition.TenantId);
+
     private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;
+
+    private readonly record struct DefinitionVersionKey(string DefinitionId, int Version, string? TenantId);
 }
