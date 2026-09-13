@@ -1,11 +1,12 @@
 using Elsa.Diagnostics.StructuredLogs.Providers.InMemory;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.InMemory;
 
 public class RingBufferTests
 {
-    [Fact]
-    public void Add_WhenCapacityIsExceeded_DropsOldestItems()
+    [Test]
+    public async Task Add_WhenCapacityIsExceeded_DropsOldestItems()
     {
         var buffer = new RingBuffer<int>(3);
 
@@ -14,13 +15,13 @@ public class RingBufferTests
         buffer.Add(3);
         buffer.Add(4);
 
-        Assert.Equal([2, 3, 4], buffer.Snapshot());
-        Assert.Equal(1, buffer.DroppedCount);
+        await Assert.That(buffer.Snapshot()).IsEquivalentTo([2, 3, 4], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(buffer.DroppedCount).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public void Constructor_WhenCapacityIsZero_Throws()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new RingBuffer<int>(0));
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => new RingBuffer<int>(0));
     }
 }

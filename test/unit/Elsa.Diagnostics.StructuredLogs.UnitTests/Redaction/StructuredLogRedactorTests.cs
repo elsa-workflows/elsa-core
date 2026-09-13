@@ -2,6 +2,7 @@ using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.Redaction;
 
@@ -9,8 +10,8 @@ public class StructuredLogRedactorTests
 {
     private readonly StructuredLogRedactor _redactor = new(MicrosoftOptions.Create(new StructuredLogsOptions()));
 
-    [Fact]
-    public void Redact_WhenPropertyNameIsSensitive_RedactsValue()
+    [Test]
+    public async Task Redact_WhenPropertyNameIsSensitive_RedactsValue()
     {
         var redacted = _redactor.Redact(CreateLog() with
         {
@@ -20,30 +21,30 @@ public class StructuredLogRedactorTests
             }
         });
 
-        Assert.Equal("[Redacted]", redacted.Properties["AccessToken"]);
+        await Assert.That(redacted.Properties["AccessToken"]).IsEqualTo("[Redacted]");
     }
 
-    [Fact]
-    public void Redact_WhenMessageContainsSensitiveText_RedactsMatch()
+    [Test]
+    public async Task Redact_WhenMessageContainsSensitiveText_RedactsMatch()
     {
         var redacted = _redactor.Redact(CreateLog() with
         {
             Message = "Authorization: Bearer abc.def.ghi"
         });
 
-        Assert.DoesNotContain("abc.def.ghi", redacted.Message);
-        Assert.Contains("[Redacted]", redacted.Message);
+        await Assert.That(redacted.Message).DoesNotContain("abc.def.ghi");
+        await Assert.That(redacted.Message).Contains("[Redacted]");
     }
 
-    [Fact]
-    public void Redact_WhenExceptionContainsSensitiveText_RedactsException()
+    [Test]
+    public async Task Redact_WhenExceptionContainsSensitiveText_RedactsException()
     {
         var redacted = _redactor.Redact(CreateLog() with
         {
             Exception = new("System.Exception", "password=letmein", null)
         });
 
-        Assert.Equal("[Redacted]", redacted.Exception!.Message);
+        await Assert.That(redacted.Exception!.Message).IsEqualTo("[Redacted]");
     }
 
     private static StructuredLogEvent CreateLog() =>

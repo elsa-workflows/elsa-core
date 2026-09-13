@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests;
 
@@ -19,19 +20,21 @@ public class DefaultStructuredLogProviderTests
         _provider = new(_store, _liveFeed);
     }
 
-    [Fact]
+    [Test]
     public async Task PublishAsync_WritesToStoreBeforePublishingToLiveFeed()
     {
         var logEvent = CreateLogEvent(1);
 
         await _provider.PublishAsync(logEvent);
 
-        Assert.Equal(["store", "live-feed"], _calls);
-        Assert.Same(logEvent, Assert.Single(_store.WrittenEvents));
-        Assert.Same(logEvent, Assert.Single(_liveFeed.PublishedEvents));
+        await Assert.That(_calls).IsEquivalentTo(["store", "live-feed"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var storedEvent = await Assert.That(_store.WrittenEvents).HasSingleItem();
+        var publishedEvent = await Assert.That(_liveFeed.PublishedEvents).HasSingleItem();
+        await Assert.That(storedEvent).IsSameReferenceAs(logEvent);
+        await Assert.That(publishedEvent).IsSameReferenceAs(logEvent);
     }
 
-    [Fact]
+    [Test]
     public async Task GetRecentAsync_DelegatesToStore()
     {
         var filter = new StructuredLogFilter { Take = 10 };
@@ -40,11 +43,11 @@ public class DefaultStructuredLogProviderTests
 
         var result = await _provider.GetRecentAsync(filter);
 
-        Assert.Same(filter, _store.LastQueryFilter);
-        Assert.Same(expected, result);
+        await Assert.That(_store.LastQueryFilter).IsSameReferenceAs(filter);
+        await Assert.That(result).IsSameReferenceAs(expected);
     }
 
-    [Fact]
+    [Test]
     public async Task SubscribeAsync_YieldsOnlyLogEventsFromLiveFeed()
     {
         var first = CreateLogEvent(1);
@@ -57,10 +60,10 @@ public class DefaultStructuredLogProviderTests
         await foreach (var logEvent in _provider.SubscribeAsync(new()))
             result.Add(logEvent);
 
-        Assert.Equal([first, second], result);
+        await Assert.That(result).IsEquivalentTo([first, second], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task SubscribeWithDroppedEventsAsync_DelegatesToLiveFeed()
     {
         var filter = new StructuredLogFilter { SourceId = "source-a" };
@@ -71,11 +74,11 @@ public class DefaultStructuredLogProviderTests
         await foreach (var item in _provider.SubscribeWithDroppedEventsAsync(filter))
             result.Add(item);
 
-        Assert.Same(filter, _liveFeed.LastSubscribeFilter);
-        Assert.Equal([expected], result);
+        await Assert.That(_liveFeed.LastSubscribeFilter).IsSameReferenceAs(filter);
+        await Assert.That(result).IsEquivalentTo([expected], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ListSourcesAsync_DelegatesToStore()
     {
         var expected = new List<StructuredLogSource>
@@ -86,7 +89,7 @@ public class DefaultStructuredLogProviderTests
 
         var result = await _provider.ListSourcesAsync();
 
-        Assert.Same(expected, result);
+        await Assert.That(result).IsSameReferenceAs(expected);
     }
 
     private static StructuredLogEvent CreateLogEvent(long sequence) =>

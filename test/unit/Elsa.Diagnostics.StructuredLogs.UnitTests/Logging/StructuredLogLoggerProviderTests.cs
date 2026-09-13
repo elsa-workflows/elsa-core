@@ -5,6 +5,7 @@ using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using Microsoft.Extensions.Logging;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.Logging;
 
@@ -21,43 +22,46 @@ public class StructuredLogLoggerProviderTests
         _loggerProvider = new(_logProvider, new StructuredLogRedactor(options), _sourceRegistry, options);
     }
 
-    [Fact]
-    public void Log_WhenStructuredWarningIsWritten_PublishesRedactedStructuredLogEvent()
+    [After(Test)]
+    public void DisposeLoggerProvider() => _loggerProvider.Dispose();
+
+    [Test]
+    public async Task Log_WhenStructuredWarningIsWritten_PublishesRedactedStructuredLogEvent()
     {
         var logger = _loggerProvider.CreateLogger("Elsa.Workflows.Runtime");
         var exception = new InvalidOperationException("password=letmein");
 
         logger.LogWarning(new EventId(42, "WorkflowFaulted"), exception, "Token {AccessToken}", "secret-token");
 
-        var logEvent = Assert.Single(_logProvider.Events);
-        Assert.Equal(StructuredLogLevel.Warning, logEvent.Level);
-        Assert.Equal("Elsa.Workflows.Runtime", logEvent.Category);
-        Assert.Equal(42, logEvent.EventId);
-        Assert.Equal("WorkflowFaulted", logEvent.EventName);
-        Assert.Equal("Token {AccessToken}", logEvent.MessageTemplate);
-        Assert.Equal("[Redacted]", logEvent.Properties["AccessToken"]);
-        Assert.Equal("[Redacted]", logEvent.Exception!.Message);
-        Assert.Equal(_sourceRegistry.Current.Id, logEvent.SourceId);
+        var logEvent = await Assert.That(_logProvider.Events).HasSingleItem();
+        await Assert.That(logEvent.Level).IsEqualTo(StructuredLogLevel.Warning);
+        await Assert.That(logEvent.Category).IsEqualTo("Elsa.Workflows.Runtime");
+        await Assert.That(logEvent.EventId).IsEqualTo(42);
+        await Assert.That(logEvent.EventName).IsEqualTo("WorkflowFaulted");
+        await Assert.That(logEvent.MessageTemplate).IsEqualTo("Token {AccessToken}");
+        await Assert.That(logEvent.Properties["AccessToken"]).IsEqualTo("[Redacted]");
+        await Assert.That(logEvent.Exception!.Message).IsEqualTo("[Redacted]");
+        await Assert.That(logEvent.SourceId).IsEqualTo(_sourceRegistry.Current.Id);
     }
 
-    [Fact]
-    public void Log_WhenTemplateHasNamedArguments_CapturesTemplateAndStructuredProperties()
+    [Test]
+    public async Task Log_WhenTemplateHasNamedArguments_CapturesTemplateAndStructuredProperties()
     {
         var logger = _loggerProvider.CreateLogger("Elsa.Workflows.Runtime");
 
         logger.LogInformation("Workflow {WorkflowInstanceId} started for {TenantId}", "workflow-instance-a", "tenant-a");
 
-        var logEvent = Assert.Single(_logProvider.Events);
-        Assert.Equal("Workflow {WorkflowInstanceId} started for {TenantId}", logEvent.MessageTemplate);
-        Assert.Equal("workflow-instance-a", logEvent.Properties["WorkflowInstanceId"]);
-        Assert.Equal("tenant-a", logEvent.Properties["TenantId"]);
-        Assert.False(logEvent.Properties.ContainsKey("{OriginalFormat}"));
-        Assert.Equal("workflow-instance-a", logEvent.WorkflowInstanceId);
-        Assert.Equal("tenant-a", logEvent.TenantId);
+        var logEvent = await Assert.That(_logProvider.Events).HasSingleItem();
+        await Assert.That(logEvent.MessageTemplate).IsEqualTo("Workflow {WorkflowInstanceId} started for {TenantId}");
+        await Assert.That(logEvent.Properties["WorkflowInstanceId"]).IsEqualTo("workflow-instance-a");
+        await Assert.That(logEvent.Properties["TenantId"]).IsEqualTo("tenant-a");
+        await Assert.That(logEvent.Properties.ContainsKey("{OriginalFormat}")).IsFalse();
+        await Assert.That(logEvent.WorkflowInstanceId).IsEqualTo("workflow-instance-a");
+        await Assert.That(logEvent.TenantId).IsEqualTo("tenant-a");
     }
 
-    [Fact]
-    public void Log_WhenScopeIsActive_CapturesAndRedactsScopeValues()
+    [Test]
+    public async Task Log_WhenScopeIsActive_CapturesAndRedactsScopeValues()
     {
         var logger = _loggerProvider.CreateLogger("Elsa.Workflows.Runtime");
 
@@ -68,32 +72,32 @@ public class StructuredLogLoggerProviderTests
         });
         logger.LogInformation("Scoped event");
 
-        var logEvent = Assert.Single(_logProvider.Events);
-        Assert.Equal("tenant-a", logEvent.Scopes["TenantId"]);
-        Assert.Equal("[Redacted]", logEvent.Scopes["Password"]);
-        Assert.Equal("tenant-a", logEvent.TenantId);
+        var logEvent = await Assert.That(_logProvider.Events).HasSingleItem();
+        await Assert.That(logEvent.Scopes["TenantId"]).IsEqualTo("tenant-a");
+        await Assert.That(logEvent.Scopes["Password"]).IsEqualTo("[Redacted]");
+        await Assert.That(logEvent.TenantId).IsEqualTo("tenant-a");
     }
 
-    [Fact]
-    public void Log_WhenStringScopeIsActive_CapturesRenderedScope()
+    [Test]
+    public async Task Log_WhenStringScopeIsActive_CapturesRenderedScope()
     {
         var logger = _loggerProvider.CreateLogger("Elsa.Workflows.Runtime");
 
         using var scope = logger.BeginScope("outer-scope");
         logger.LogInformation("Scoped event");
 
-        var logEvent = Assert.Single(_logProvider.Events);
-        Assert.Equal("outer-scope", logEvent.Scopes["Scope"]);
+        var logEvent = await Assert.That(_logProvider.Events).HasSingleItem();
+        await Assert.That(logEvent.Scopes["Scope"]).IsEqualTo("outer-scope");
     }
 
-    [Fact]
-    public void Log_WhenCategoryIsStructuredLogsInternal_DoesNotPublishByDefault()
+    [Test]
+    public async Task Log_WhenCategoryIsStructuredLogsInternal_DoesNotPublishByDefault()
     {
         var logger = _loggerProvider.CreateLogger("Elsa.Diagnostics.StructuredLogs.Services.StructuredLogSourceRegistry");
 
         logger.LogInformation("Internal structured logs chatter");
 
-        Assert.Empty(_logProvider.Events);
+        await Assert.That(_logProvider.Events).IsEmpty();
     }
 
     private sealed class CapturingStructuredLogProvider : IStructuredLogProvider

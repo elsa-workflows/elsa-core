@@ -2,9 +2,12 @@ using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.Sources;
 
+// Mutates fixed process-wide environment variables used for structured-log source discovery.
+[NotInParallel("ProcessEnvironment")]
 public class StructuredLogSourceRegistryTests : IDisposable
 {
     private readonly Dictionary<string, string?> _originalEnvironment = new();
@@ -22,8 +25,8 @@ public class StructuredLogSourceRegistryTests : IDisposable
         CaptureEnvironment("NODE_NAME");
     }
 
-    [Fact]
-    public void Current_WhenKubernetesMetadataExists_UsesEnvironmentMetadata()
+    [Test]
+    public async Task Current_WhenKubernetesMetadataExists_UsesEnvironmentMetadata()
     {
         SetEnvironment("HOSTNAME", "elsa-pod-7");
         SetEnvironment("OTEL_SERVICE_NAME", "elsa-api");
@@ -33,27 +36,27 @@ public class StructuredLogSourceRegistryTests : IDisposable
 
         var registry = CreateRegistry();
 
-        Assert.Equal("elsa-pod-7", registry.Current.DisplayName);
-        Assert.Equal("elsa-api", registry.Current.ServiceName);
-        Assert.Equal("workflows", registry.Current.Namespace);
-        Assert.Equal("server", registry.Current.ContainerName);
-        Assert.Equal("node-a", registry.Current.NodeName);
+        await Assert.That(registry.Current.DisplayName).IsEqualTo("elsa-pod-7");
+        await Assert.That(registry.Current.ServiceName).IsEqualTo("elsa-api");
+        await Assert.That(registry.Current.Namespace).IsEqualTo("workflows");
+        await Assert.That(registry.Current.ContainerName).IsEqualTo("server");
+        await Assert.That(registry.Current.NodeName).IsEqualTo("node-a");
     }
 
-    [Fact]
-    public void MarkSeen_WhenSourceIsUnknown_AddsSourceWithMatchingId()
+    [Test]
+    public async Task MarkSeen_WhenSourceIsUnknown_AddsSourceWithMatchingId()
     {
         var registry = CreateRegistry();
 
         registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
 
-        var source = Assert.Single(registry.List(), x => x.Id == "pod-b");
-        Assert.Equal("pod-b", source.DisplayName);
-        Assert.Equal(StructuredLogSourceStatus.Connected, source.Status);
+        var source = await Assert.That(registry.List()).HasSingleItem(x => x.Id == "pod-b");
+        await Assert.That(source.DisplayName).IsEqualTo("pod-b");
+        await Assert.That(source.Status).IsEqualTo(StructuredLogSourceStatus.Connected);
     }
 
-    [Fact]
-    public void MarkSeen_WhenSourceIsUnknown_DoesNotCopyLocalContainerMetadata()
+    [Test]
+    public async Task MarkSeen_WhenSourceIsUnknown_DoesNotCopyLocalContainerMetadata()
     {
         SetEnvironment("HOSTNAME", "local-pod");
         SetEnvironment("OTEL_SERVICE_NAME", "local-service");
@@ -64,18 +67,18 @@ public class StructuredLogSourceRegistryTests : IDisposable
 
         registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
 
-        var source = Assert.Single(registry.List(), x => x.Id == "pod-b");
-        Assert.Equal("pod-b", source.MachineName);
-        Assert.Equal(0, source.ProcessId);
-        Assert.Null(source.ServiceName);
-        Assert.Null(source.PodName);
-        Assert.Null(source.Namespace);
-        Assert.Null(source.ContainerName);
-        Assert.Null(source.NodeName);
+        var source = await Assert.That(registry.List()).HasSingleItem(x => x.Id == "pod-b");
+        await Assert.That(source.MachineName).IsEqualTo("pod-b");
+        await Assert.That(source.ProcessId).IsEqualTo(0);
+        await Assert.That(source.ServiceName).IsNull();
+        await Assert.That(source.PodName).IsNull();
+        await Assert.That(source.Namespace).IsNull();
+        await Assert.That(source.ContainerName).IsNull();
+        await Assert.That(source.NodeName).IsNull();
     }
 
-    [Fact]
-    public void MarkSeen_WhenSourceIsUnknown_RaisesSourceChanged()
+    [Test]
+    public async Task MarkSeen_WhenSourceIsUnknown_RaisesSourceChanged()
     {
         var registry = CreateRegistry();
         StructuredLogSource? changedSource = null;
@@ -83,13 +86,13 @@ public class StructuredLogSourceRegistryTests : IDisposable
 
         registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
 
-        Assert.NotNull(changedSource);
-        Assert.Equal("pod-b", changedSource.Id);
-        Assert.Equal(StructuredLogSourceStatus.Connected, changedSource.Status);
+        var source = await Assert.That(changedSource).IsNotNull();
+        await Assert.That(source.Id).IsEqualTo("pod-b");
+        await Assert.That(source.Status).IsEqualTo(StructuredLogSourceStatus.Connected);
     }
 
-    [Fact]
-    public void MarkSeen_WhenSourceIsKnown_DoesNotRaiseSourceChanged()
+    [Test]
+    public async Task MarkSeen_WhenSourceIsKnown_DoesNotRaiseSourceChanged()
     {
         var registry = CreateRegistry();
         registry.MarkSeen("pod-b", DateTimeOffset.UtcNow);
@@ -98,19 +101,19 @@ public class StructuredLogSourceRegistryTests : IDisposable
 
         registry.MarkSeen("pod-b", DateTimeOffset.UtcNow.AddSeconds(1));
 
-        Assert.Null(changedSource);
+        await Assert.That(changedSource).IsNull();
     }
 
-    [Fact]
-    public void List_WhenSourceHasNotBeenSeenRecently_MarksSourceAsStale()
+    [Test]
+    public async Task List_WhenSourceHasNotBeenSeenRecently_MarksSourceAsStale()
     {
         _options.SourceHeartbeatTimeout = TimeSpan.FromSeconds(5);
         var registry = CreateRegistry();
 
         registry.MarkSeen("pod-b", DateTimeOffset.UtcNow.AddMinutes(-1));
 
-        var source = Assert.Single(registry.List(), x => x.Id == "pod-b");
-        Assert.Equal(StructuredLogSourceStatus.Stale, source.Status);
+        var source = await Assert.That(registry.List()).HasSingleItem(x => x.Id == "pod-b");
+        await Assert.That(source.Status).IsEqualTo(StructuredLogSourceStatus.Stale);
     }
 
     public void Dispose()

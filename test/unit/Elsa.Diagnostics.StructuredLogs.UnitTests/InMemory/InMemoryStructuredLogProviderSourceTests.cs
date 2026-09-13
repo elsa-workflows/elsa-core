@@ -3,6 +3,7 @@ using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Providers.InMemory;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.InMemory;
 
@@ -21,7 +22,7 @@ public class InMemoryStructuredLogProviderSourceTests
         _provider = new(options, new StructuredLogSourceRegistry(options));
     }
 
-    [Fact]
+    [Test]
     public async Task GetRecentAsync_WhenNoSourceFilterIsApplied_ReturnsMergedSources()
     {
         await _provider.PublishAsync(CreateLog(1, "pod-a"));
@@ -29,10 +30,10 @@ public class InMemoryStructuredLogProviderSourceTests
 
         var result = await _provider.GetRecentAsync(new());
 
-        Assert.Equal(["pod-a", "pod-b"], result.Items.Select(x => x.SourceId));
+        await Assert.That(result.Items.Select(x => x.SourceId)).IsEquivalentTo(["pod-a", "pod-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task GetRecentAsync_WhenSourceFilterIsApplied_ReturnsOnlyThatSource()
     {
         await _provider.PublishAsync(CreateLog(1, "pod-a"));
@@ -44,10 +45,10 @@ public class InMemoryStructuredLogProviderSourceTests
             SourceId = "pod-b"
         });
 
-        Assert.Equal([2, 3], result.Items.Select(x => x.Sequence));
+        await Assert.That(result.Items.Select(x => x.Sequence)).IsEquivalentTo([2L, 3L], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task GetRecentAsync_WhenTimestampsTie_OrdersDeterministicallyAcrossSources()
     {
         var timestamp = DateTimeOffset.UtcNow;
@@ -56,7 +57,7 @@ public class InMemoryStructuredLogProviderSourceTests
 
         var result = await _provider.GetRecentAsync(new());
 
-        Assert.Equal(["pod-a", "pod-b"], result.Items.Select(x => x.SourceId));
+        await Assert.That(result.Items.Select(x => x.SourceId)).IsEquivalentTo(["pod-a", "pod-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static StructuredLogEvent CreateLog(long sequence, string sourceId, DateTimeOffset? timestamp = null)

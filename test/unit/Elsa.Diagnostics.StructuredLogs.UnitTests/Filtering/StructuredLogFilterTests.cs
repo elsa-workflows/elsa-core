@@ -1,5 +1,6 @@
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.Filtering;
 
@@ -23,8 +24,8 @@ public class StructuredLogFilterTests
         SourceId = "pod-a"
     };
 
-    [Fact]
-    public void Matches_WhenAllCriteriaMatch_ReturnsTrue()
+    [Test]
+    public async Task Matches_WhenAllCriteriaMatch_ReturnsTrue()
     {
         var filter = new StructuredLogFilter
         {
@@ -41,38 +42,38 @@ public class StructuredLogFilterTests
             To = _logEvent.Timestamp.AddMinutes(1)
         };
 
-        Assert.True(StructuredLogFilterEvaluator.Matches(_logEvent, filter));
+        await Assert.That(StructuredLogFilterEvaluator.Matches(_logEvent, filter)).IsTrue();
     }
 
-    [Fact]
-    public void Matches_WhenTextMatchesException_ReturnsTrue()
+    [Test]
+    public async Task Matches_WhenTextMatchesException_ReturnsTrue()
     {
-        Assert.True(StructuredLogFilterEvaluator.Matches(_logEvent, new()
+        await Assert.That(StructuredLogFilterEvaluator.Matches(_logEvent, new()
         {
             Text = "timeout"
-        }));
+        })).IsTrue();
     }
 
-    [Fact]
-    public void Matches_WhenTextMatchesMessageTemplateOrStructuredValue_ReturnsTrue()
+    [Test]
+    public async Task Matches_WhenTextMatchesMessageTemplateOrStructuredValue_ReturnsTrue()
     {
-        Assert.True(StructuredLogFilterEvaluator.Matches(_logEvent, new()
+        await Assert.That(StructuredLogFilterEvaluator.Matches(_logEvent, new()
         {
             Text = "WorkflowInstanceId"
-        }));
+        })).IsTrue();
 
-        Assert.True(StructuredLogFilterEvaluator.Matches(_logEvent, new()
+        await Assert.That(StructuredLogFilterEvaluator.Matches(_logEvent, new()
         {
             Text = "tenant-a"
-        }));
+        })).IsTrue();
     }
 
-    [Fact]
-    public void Matches_WhenSourceDoesNotMatch_ReturnsFalse()
+    [Test]
+    public async Task Matches_WhenSourceDoesNotMatch_ReturnsFalse()
     {
-        Assert.False(StructuredLogFilterEvaluator.Matches(_logEvent, new()
+        await Assert.That(StructuredLogFilterEvaluator.Matches(_logEvent, new()
         {
             SourceId = "pod-b"
-        }));
+        })).IsFalse();
     }
 }

@@ -3,6 +3,7 @@ using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Providers.InMemory;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.InMemory;
 
@@ -24,7 +25,7 @@ public class InMemoryStructuredLogProviderTests
         _provider = new(options, sources);
     }
 
-    [Fact]
+    [Test]
     public async Task GetRecentAsync_ReturnsNewestMatchingEventsWithinQueryLimit()
     {
         await _provider.PublishAsync(CreateLog(1, StructuredLogLevel.Information, "Elsa.Workflows"));
@@ -39,11 +40,11 @@ public class InMemoryStructuredLogProviderTests
             Take = 10
         });
 
-        Assert.Equal(1, result.DroppedEvents);
-        Assert.Equal([2, 4], result.Items.Select(x => x.Sequence));
+        await Assert.That(result.DroppedEvents).IsEqualTo(1);
+        await Assert.That(result.Items.Select(x => x.Sequence)).IsEquivalentTo([2L, 4L], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task SubscribeAsync_YieldsOnlyMatchingLiveEvents()
     {
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -57,11 +58,11 @@ public class InMemoryStructuredLogProviderTests
         await _provider.PublishAsync(CreateLog(1, StructuredLogLevel.Information, sourceId: "source-a"));
         await _provider.PublishAsync(CreateLog(2, StructuredLogLevel.Information, sourceId: "source-b"));
 
-        Assert.True(await next.WaitAsync(TimeSpan.FromSeconds(5)));
-        Assert.Equal(2, subscription.Current.Sequence);
+        await Assert.That(await next.WaitAsync(TimeSpan.FromSeconds(5))).IsTrue();
+        await Assert.That(subscription.Current.Sequence).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task SubscribeWithDroppedEventsAsync_WhenSubscriberCapacityIsReached_YieldsDroppedSummary()
     {
         _options.SubscriberChannelCapacity = 1;
@@ -72,12 +73,12 @@ public class InMemoryStructuredLogProviderTests
         await _provider.PublishAsync(CreateLog(1, StructuredLogLevel.Information));
         await _provider.PublishAsync(CreateLog(2, StructuredLogLevel.Information));
 
-        Assert.True(await next.WaitAsync(TimeSpan.FromSeconds(5)));
-        Assert.Equal(1, subscription.Current.LogEvent!.Sequence);
+        await Assert.That(await next.WaitAsync(TimeSpan.FromSeconds(5))).IsTrue();
+        await Assert.That(subscription.Current.LogEvent!.Sequence).IsEqualTo(1);
 
-        Assert.True(await subscription.MoveNextAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5)));
-        Assert.Equal(1, subscription.Current.DroppedEvents!.DroppedCount);
-        Assert.Equal("SubscriberChannelFull", subscription.Current.DroppedEvents.Reason);
+        await Assert.That(await subscription.MoveNextAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5))).IsTrue();
+        await Assert.That(subscription.Current.DroppedEvents!.DroppedCount).IsEqualTo(1);
+        await Assert.That(subscription.Current.DroppedEvents.Reason).IsEqualTo("SubscriberChannelFull");
     }
 
     private static StructuredLogEvent CreateLog(long sequence, StructuredLogLevel level, string category = "Elsa", string sourceId = "source-a") =>

@@ -4,26 +4,27 @@ using Elsa.Diagnostics.StructuredLogs.Providers.InMemory;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests;
 
 public class StructuredLogsStorageRegistrationTests
 {
-    [Fact]
-    public void AddStructuredLogsServices_WhenNoStoreIsConfigured_UsesInMemoryStorageAndComposedProvider()
+    [Test]
+    public async Task AddStructuredLogsServices_WhenNoStoreIsConfigured_UsesInMemoryStorageAndComposedProvider()
     {
         var services = new ServiceCollection();
 
         services.AddStructuredLogsServices();
 
         using var serviceProvider = services.BuildServiceProvider();
-        Assert.IsType<InMemoryStructuredLogStore>(serviceProvider.GetRequiredService<IStructuredLogStore>());
-        Assert.IsType<InMemoryStructuredLogLiveFeed>(serviceProvider.GetRequiredService<IStructuredLogLiveFeed>());
-        Assert.IsType<DefaultStructuredLogProvider>(serviceProvider.GetRequiredService<IStructuredLogProvider>());
+        await Assert.That(serviceProvider.GetRequiredService<IStructuredLogStore>()).IsOfType(typeof(InMemoryStructuredLogStore));
+        await Assert.That(serviceProvider.GetRequiredService<IStructuredLogLiveFeed>()).IsOfType(typeof(InMemoryStructuredLogLiveFeed));
+        await Assert.That(serviceProvider.GetRequiredService<IStructuredLogProvider>()).IsOfType(typeof(DefaultStructuredLogProvider));
     }
 
-    [Fact]
-    public void StructuredLogsAssembly_DoesNotReferenceSqlitePersistence()
+    [Test]
+    public async Task StructuredLogsAssembly_DoesNotReferenceSqlitePersistence()
     {
         var references = typeof(IStructuredLogProvider)
             .Assembly
@@ -31,17 +32,17 @@ public class StructuredLogsStorageRegistrationTests
             .Select(x => x.Name)
             .ToList();
 
-        Assert.DoesNotContain("Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite", references);
+        await Assert.That(references).DoesNotContain("Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite");
     }
 
-    [Fact]
-    public void AddStructuredLogsServices_RegistersLoggerProvider()
+    [Test]
+    public async Task AddStructuredLogsServices_RegistersLoggerProvider()
     {
         var services = new ServiceCollection();
 
         services.AddStructuredLogsServices();
 
         using var serviceProvider = services.BuildServiceProvider();
-        Assert.Contains(serviceProvider.GetServices<ILoggerProvider>(), x => x.GetType().Name == "StructuredLogLoggerProvider");
+        await Assert.That(serviceProvider.GetServices<ILoggerProvider>()).Contains(x => x.GetType().Name == "StructuredLogLoggerProvider");
     }
 }
