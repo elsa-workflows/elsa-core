@@ -7,7 +7,7 @@ namespace Elsa.Mediator.UnitTests;
 
 public class CommandCancellationBehaviorTests
 {
-    [Fact]
+    [Test]
     public async Task SendAsync_WithSuccessfulCommand_ReturnsResult()
     {
         // Arrange
@@ -17,10 +17,10 @@ public class CommandCancellationBehaviorTests
         var result = await fixture.CommandSender.SendAsync(new EchoCommand("Hello"));
 
         // Assert
-        Assert.Equal("Hello", result);
+        await Assert.That(result).IsEqualTo("Hello");
     }
 
-    [Fact]
+    [Test]
     public async Task SendAsync_WithCancelledToken_ThrowsOperationCanceledException()
     {
         // Arrange
@@ -29,11 +29,11 @@ public class CommandCancellationBehaviorTests
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => fixture.CommandSender.SendAsync(new SlowCommand(), cts.Token));
+        await Assert.That(() => fixture.CommandSender.SendAsync(new SlowCommand(), cts.Token))
+            .Throws<OperationCanceledException>();
     }
 
-    [Fact]
+    [Test]
     public async Task SendAsync_WithTimeout_ThrowsOperationCanceledException()
     {
         // Arrange
@@ -41,11 +41,11 @@ public class CommandCancellationBehaviorTests
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => fixture.CommandSender.SendAsync(new SlowCommand(), cts.Token));
+        await Assert.That(() => fixture.CommandSender.SendAsync(new SlowCommand(), cts.Token))
+            .Throws<OperationCanceledException>();
     }
 
-    [Fact]
+    [Test]
     public async Task SendAsync_WithSelfCancellingHandler_ThrowsTaskCanceledException()
     {
         // Arrange
@@ -53,21 +53,21 @@ public class CommandCancellationBehaviorTests
         using var cts = new CancellationTokenSource();
 
         // Act & Assert
-        await Assert.ThrowsAsync<TaskCanceledException>(
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(
             () => fixture.CommandSender.SendAsync(new SelfCancellingCommand(cts)));
     }
 
-    [Fact]
+    [Test]
     public async Task SendAsync_WithFailingHandler_ThrowsOriginalException()
     {
         // Arrange
         using var fixture = CreateCommandSender<FailingCommandHandler>();
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+        var ex = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             () => fixture.CommandSender.SendAsync(new FailingCommand("Test error")));
 
-        Assert.Equal("Test error", ex.Message);
+        await Assert.That(ex!.Message).IsEqualTo("Test error");
     }
 
     #region Helpers

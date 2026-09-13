@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <CoverageIncludeFilter>[Elsa.SasTokens]*</CoverageIncludeFilter>
+        <UseTUnit>true</UseTUnit>
     </PropertyGroup>
 
     <ItemGroup>

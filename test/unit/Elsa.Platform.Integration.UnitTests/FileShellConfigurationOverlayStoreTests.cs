@@ -4,10 +4,11 @@ using Elsa.Platform.Integration.Services;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.Platform.Integration.UnitTests;
 
-public class FileShellConfigurationOverlayStoreTests : IAsyncLifetime
+public class FileShellConfigurationOverlayStoreTests : IAsyncInitializer, IAsyncDisposable
 {
     private readonly string _directory = Path.Combine(Path.GetTempPath(), $"elsa-platform-overlay-{Guid.NewGuid():N}");
     private readonly FileShellConfigurationOverlayStore _store;
@@ -26,7 +27,7 @@ public class FileShellConfigurationOverlayStoreTests : IAsyncLifetime
             environment);
     }
 
-    [Fact]
+    [Test]
     public async Task ConfigureFeaturesAsync_WritesEnabledAndDisabledFeatureState()
     {
         var enabled = new Dictionary<string, System.Text.Json.JsonElement>
@@ -36,22 +37,22 @@ public class FileShellConfigurationOverlayStoreTests : IAsyncLifetime
 
         var changed = await _store.ConfigureFeaturesAsync("Default", enabled, ["Python"]);
 
-        Assert.True(changed);
+        await Assert.That(changed).IsTrue();
         var root = await ReadRootAsync();
-        Assert.Equal("https://example.com", root["CShells"]!["Shells"]!["Default"]!["Features"]!["Http"]!["baseUrl"]!.GetValue<string>());
-        Assert.Equal("Python", root["Elsa"]!["PlatformIntegration"]!["Shells"]!["Default"]!["DisabledFeatures"]![0]!.GetValue<string>());
+        await Assert.That(root["CShells"]!["Shells"]!["Default"]!["Features"]!["Http"]!["baseUrl"]!.GetValue<string>()).IsEqualTo("https://example.com");
+        await Assert.That(root["Elsa"]!["PlatformIntegration"]!["Shells"]!["Default"]!["DisabledFeatures"]![0]!.GetValue<string>()).IsEqualTo("Python");
     }
 
-    [Fact]
+    [Test]
     public async Task ConfigureSettingsAsync_MergesShellConfiguration()
     {
         var settings = System.Text.Json.JsonDocument.Parse("""{ "WebRouting": { "Path": "tenant-a" } }""").RootElement.Clone();
 
         var changed = await _store.ConfigureSettingsAsync("Default", settings);
 
-        Assert.True(changed);
+        await Assert.That(changed).IsTrue();
         var root = await ReadRootAsync();
-        Assert.Equal("tenant-a", root["CShells"]!["Shells"]!["Default"]!["Configuration"]!["WebRouting"]!["Path"]!.GetValue<string>());
+        await Assert.That(root["CShells"]!["Shells"]!["Default"]!["Configuration"]!["WebRouting"]!["Path"]!.GetValue<string>()).IsEqualTo("tenant-a");
     }
 
     public Task InitializeAsync()
@@ -60,12 +61,12 @@ public class FileShellConfigurationOverlayStoreTests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    public Task DisposeAsync()
+    public ValueTask DisposeAsync()
     {
         if (Directory.Exists(_directory))
             Directory.Delete(_directory, recursive: true);
 
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private async Task<JsonNode> ReadRootAsync()

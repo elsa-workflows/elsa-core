@@ -13,7 +13,7 @@ namespace Elsa.Mediator.UnitTests;
 
 public class BackgroundCommandProcessorTests
 {
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_UsesQueuedContextStrategyAndCancellationToken()
     {
         var services = new ServiceCollection();
@@ -40,11 +40,11 @@ public class BackgroundCommandProcessorTests
         await processorCancellationTokenSource.CancelAsync();
         await runTask;
 
-        Assert.Same(strategy, recordedCall.Strategy);
-        Assert.True(recordedCall.CancellationToken.IsCancellationRequested);
+        await Assert.That(recordedCall.Strategy).IsSameReferenceAs(strategy);
+        await Assert.That(recordedCall.CancellationToken.IsCancellationRequested).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task BackgroundStrategy_QueuesExecutableContext()
     {
         var services = new ServiceCollection();
@@ -60,10 +60,10 @@ public class BackgroundCommandProcessorTests
 
         var queuedContext = await channel.Reader.ReadAsync();
 
-        Assert.Same(CommandStrategy.Default, queuedContext.CommandStrategy);
-        Assert.Same(commandContext.Command, queuedContext.Command);
-        Assert.Same(commandContext.Headers, queuedContext.Headers);
-        Assert.False(queuedContext.CancellationToken.IsCancellationRequested);
+        await Assert.That(queuedContext.CommandStrategy).IsSameReferenceAs(CommandStrategy.Default);
+        await Assert.That(queuedContext.Command).IsSameReferenceAs(commandContext.Command);
+        await Assert.That(queuedContext.Headers).IsSameReferenceAs(commandContext.Headers);
+        await Assert.That(queuedContext.CancellationToken.IsCancellationRequested).IsFalse();
     }
 
     private sealed class RecordingCommandSender(CommandSenderRecorder recorder) : ICommandSender

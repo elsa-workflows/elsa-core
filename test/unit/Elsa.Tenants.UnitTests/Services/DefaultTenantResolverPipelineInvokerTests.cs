@@ -7,7 +7,7 @@ namespace Elsa.Tenants.UnitTests.Services;
 
 public class DefaultTenantResolverPipelineInvokerTests
 {
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithEmptyStringTenantId_FindsDefaultTenant()
     {
         // Arrange
@@ -18,11 +18,11 @@ public class DefaultTenantResolverPipelineInvokerTests
         var result = await invoker.InvokePipelineAsync();
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Default", result.Name);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.Name).IsEqualTo("Default");
     }
 
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithValidTenantId_FindsCorrectTenant()
     {
         // Arrange
@@ -33,11 +33,11 @@ public class DefaultTenantResolverPipelineInvokerTests
         var result = await invoker.InvokePipelineAsync();
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("Tenant 1", result.Name);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.Name).IsEqualTo("Tenant 1");
     }
 
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithNonExistentTenantId_ReturnsNull()
     {
         // Arrange
@@ -48,10 +48,10 @@ public class DefaultTenantResolverPipelineInvokerTests
         var result = await invoker.InvokePipelineAsync();
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithNullTenantIdsInList_DoesNotThrowDictionaryException()
     {
         // Arrange - Simulates legacy data with null IDs
@@ -64,10 +64,10 @@ public class DefaultTenantResolverPipelineInvokerTests
 
         // Act & Assert - Should not throw
         var result = await invoker.InvokePipelineAsync();
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithUnresolvedResult_ReturnsNull()
     {
         // Arrange
@@ -78,10 +78,10 @@ public class DefaultTenantResolverPipelineInvokerTests
         var result = await invoker.InvokePipelineAsync();
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithMultipleResolvers_UsesFirstResolvedResult()
     {
         // Arrange
@@ -94,12 +94,12 @@ public class DefaultTenantResolverPipelineInvokerTests
         var result = await invoker.InvokePipelineAsync();
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("tenant1", result.Id);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.Id).IsEqualTo("tenant1");
         await mockResolver2.DidNotReceive().ResolveAsync(Arg.Any<TenantResolverContext>());
     }
 
-    [Fact]
+    [Test]
     public async Task InvokePipelineAsync_WithLegacyNullTenantIds_NormalizesAndFindsDefaultTenant()
     {
         // Arrange - Simulates legacy data with null ID that gets normalized
@@ -114,8 +114,8 @@ public class DefaultTenantResolverPipelineInvokerTests
         var result = await invoker.InvokePipelineAsync();
 
         // Assert - The null tenant ID gets normalized to "" in dictionary, so it should be found
-        Assert.NotNull(result);
-        Assert.Equal("Legacy", result.Name); // Should find the Legacy tenant (normalized from null)
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.Name).IsEqualTo("Legacy"); // Should find the Legacy tenant (normalized from null)
     }
 
     // Helper methods

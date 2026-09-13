@@ -17,44 +17,44 @@ public class DataProtectorTokenServiceTests : IDisposable
         _service = new DataProtectorTokenService(_dataProtectionProvider);
     }
 
-    [Fact]
-    public void DecryptToken_CreatedWithLifetimeBeforeExpiration_ReturnsPayload()
+    [Test]
+    public async Task DecryptToken_CreatedWithLifetimeBeforeExpiration_ReturnsPayload()
     {
         var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
 
         var token = _service.CreateToken(payload, TimeSpan.FromMinutes(5));
         var result = _service.DecryptToken<TokenPayload>(token);
 
-        Assert.StartsWith("v1.tl.", token);
-        AssertPayload(payload, result);
+        await Assert.That(token).StartsWith("v1.tl.");
+        await AssertPayload(payload, result);
     }
 
-    [Fact]
-    public void TryDecryptToken_CreatedWithPastExpiration_ReturnsFalse()
+    [Test]
+    public async Task TryDecryptToken_CreatedWithPastExpiration_ReturnsFalse()
     {
         var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
 
         var token = _service.CreateToken(payload, DateTimeOffset.UtcNow.AddMinutes(-1));
         var result = _service.TryDecryptToken<TokenPayload>(token, out _);
 
-        Assert.False(result);
+        await Assert.That(result).IsFalse();
     }
 
-    [Fact]
-    public void TryDecryptToken_CreatedWithoutExpiration_ReturnsPayload()
+    [Test]
+    public async Task TryDecryptToken_CreatedWithoutExpiration_ReturnsPayload()
     {
         var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
 
         var token = _service.CreateToken(payload);
         var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
 
-        Assert.StartsWith("v1.ne.", token);
-        Assert.True(result);
-        AssertPayload(payload, decryptedPayload);
+        await Assert.That(token).StartsWith("v1.ne.");
+        await Assert.That(result).IsTrue();
+        await AssertPayload(payload, decryptedPayload);
     }
 
-    [Fact]
-    public void TryDecryptToken_LegacyTimeLimitedTokenBeforeExpiration_ReturnsPayload()
+    [Test]
+    public async Task TryDecryptToken_LegacyTimeLimitedTokenBeforeExpiration_ReturnsPayload()
     {
         var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
         var json = JsonSerializer.Serialize(payload);
@@ -62,12 +62,12 @@ public class DataProtectorTokenServiceTests : IDisposable
 
         var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
 
-        Assert.True(result);
-        AssertPayload(payload, decryptedPayload);
+        await Assert.That(result).IsTrue();
+        await AssertPayload(payload, decryptedPayload);
     }
 
-    [Fact]
-    public void TryDecryptToken_LegacyNonExpiringToken_ReturnsPayload()
+    [Test]
+    public async Task TryDecryptToken_LegacyNonExpiringToken_ReturnsPayload()
     {
         var payload = new TokenPayload("workflow-instance-1", "bookmark-1");
         var json = JsonSerializer.Serialize(payload);
@@ -75,17 +75,17 @@ public class DataProtectorTokenServiceTests : IDisposable
 
         var result = _service.TryDecryptToken<TokenPayload>(token, out var decryptedPayload);
 
-        Assert.True(result);
-        AssertPayload(payload, decryptedPayload);
+        await Assert.That(result).IsTrue();
+        await AssertPayload(payload, decryptedPayload);
     }
 
-    [Fact]
-    public void TryDecryptToken_StringPayloadCreatedWithPastExpiration_ReturnsFalse()
+    [Test]
+    public async Task TryDecryptToken_StringPayloadCreatedWithPastExpiration_ReturnsFalse()
     {
         var token = _service.CreateToken("payload", DateTimeOffset.UtcNow.AddMinutes(-1));
         var result = _service.TryDecryptToken<string>(token, out _);
 
-        Assert.False(result);
+        await Assert.That(result).IsFalse();
     }
 
     public void Dispose()
@@ -101,10 +101,10 @@ public class DataProtectorTokenServiceTests : IDisposable
         }
     }
 
-    private static void AssertPayload(TokenPayload expected, TokenPayload actual)
+    private static async Task AssertPayload(TokenPayload expected, TokenPayload actual)
     {
-        Assert.Equal(expected.WorkflowInstanceId, actual.WorkflowInstanceId);
-        Assert.Equal(expected.BookmarkId, actual.BookmarkId);
+        await Assert.That(actual.WorkflowInstanceId).IsEqualTo(expected.WorkflowInstanceId);
+        await Assert.That(actual.BookmarkId).IsEqualTo(expected.BookmarkId);
     }
 
     private record TokenPayload(string WorkflowInstanceId, string BookmarkId);

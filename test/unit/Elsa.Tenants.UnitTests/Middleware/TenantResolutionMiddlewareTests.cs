@@ -8,7 +8,7 @@ namespace Elsa.Tenants.UnitTests.Middleware;
 
 public class TenantResolutionMiddlewareTests
 {
-    [Fact]
+    [Test]
     public async Task InvokeAsync_WhenNextThrows_RestoresOriginalRequestServices()
     {
         await using var rootProvider = new ServiceCollection()
@@ -29,12 +29,12 @@ public class TenantResolutionMiddlewareTests
             .InvokePipelineAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<Tenant?>(null));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(
             () => middleware.InvokeAsync(context, tenantResolverPipelineInvoker));
 
-        Assert.Same(expectedException, exception);
-        Assert.Same(originalRequestServices, context.RequestServices);
-        Assert.NotNull(context.RequestServices.GetRequiredService<ScopedProbe>());
+        await Assert.That(exception).IsSameReferenceAs(expectedException);
+        await Assert.That(context.RequestServices).IsSameReferenceAs(originalRequestServices);
+        await Assert.That(context.RequestServices.GetRequiredService<ScopedProbe>()).IsNotNull();
     }
 
     private sealed class ScopedProbe

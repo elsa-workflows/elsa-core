@@ -18,7 +18,7 @@ namespace Elsa.Platform.Integration.UnitTests;
 
 public class ElsaLoomRecipeArtifactApplierTests
 {
-    [Fact]
+    [Test]
     public async Task ApplyAsync_WithInlineImportWorkflowDefinitionRecipe_ImportsWorkflowDefinition()
     {
         var importer = Substitute.For<IWorkflowDefinitionImporter>();
@@ -61,14 +61,14 @@ public class ElsaLoomRecipeArtifactApplierTests
 
         var result = await sut.ApplyAsync(CreateCommand(artifact), artifact, artifactZip);
 
-        Assert.True(result.Succeeded);
-        Assert.NotNull(importedRequest);
-        Assert.True(importedRequest.Publish);
-        Assert.Same(model, importedRequest.Model);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(importedRequest).IsNotNull();
+        await Assert.That(importedRequest!.Publish).IsTrue();
+        await Assert.That(importedRequest.Model).IsSameReferenceAs(model);
         await shellRegistry.DidNotReceiveWithAnyArgs().ReloadAsync(default!, default);
     }
 
-    [Fact]
+    [Test]
     public async Task ApplyAsync_WithMissingCapability_ReturnsRejected()
     {
         var services = new ServiceCollection()
@@ -96,8 +96,8 @@ public class ElsaLoomRecipeArtifactApplierTests
 
         var result = await sut.ApplyAsync(CreateCommand(artifact), artifact, artifactZip);
 
-        Assert.Equal(PlatformArtifactStatus.Rejected, result.Status);
-        Assert.Contains(result.Diagnostics, x => x.Code == "ELSA_PLATFORM_CAPABILITY_MISSING");
+        await Assert.That(result.Status).IsEqualTo(PlatformArtifactStatus.Rejected);
+        await Assert.That(result.Diagnostics).Contains(x => x.Code == "ELSA_PLATFORM_CAPABILITY_MISSING");
     }
 
     private static MemoryStream CreateArtifact(string recipeJson)

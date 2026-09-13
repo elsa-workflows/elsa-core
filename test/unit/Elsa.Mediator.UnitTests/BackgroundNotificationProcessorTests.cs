@@ -13,7 +13,7 @@ namespace Elsa.Mediator.UnitTests;
 
 public class BackgroundNotificationProcessorTests
 {
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_CreatesIndependentScopePerWorker()
     {
         var services = new ServiceCollection();
@@ -39,10 +39,10 @@ public class BackgroundNotificationProcessorTests
         await cancellationTokenSource.CancelAsync();
         await runTask;
 
-        Assert.Equal(2, recorder.ScopeIds.Distinct().Count());
+        await Assert.That(recorder.ScopeIds.Distinct().Count()).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_UsesQueuedContextStrategy()
     {
         var services = new ServiceCollection();
@@ -67,10 +67,10 @@ public class BackgroundNotificationProcessorTests
         await cancellationTokenSource.CancelAsync();
         await runTask;
 
-        Assert.Same(strategy, recordedCall.Strategy);
+        await Assert.That(recordedCall.Strategy).IsSameReferenceAs(strategy);
     }
 
-    [Fact]
+    [Test]
     public async Task BackgroundStrategy_QueuesExecutableContext()
     {
         var services = new ServiceCollection();
@@ -84,8 +84,8 @@ public class BackgroundNotificationProcessorTests
 
         var queuedContext = await channel.Reader.ReadAsync();
 
-        Assert.Same(NotificationStrategy.Sequential, queuedContext.NotificationStrategy);
-        Assert.Same(notificationContext.Notification, queuedContext.Notification);
+        await Assert.That(queuedContext.NotificationStrategy).IsSameReferenceAs(NotificationStrategy.Sequential);
+        await Assert.That(queuedContext.Notification).IsSameReferenceAs(notificationContext.Notification);
     }
 
     private sealed class RecordingNotificationSender(WorkerScopeMarker scopeMarker, NotificationSenderRecorder recorder) : INotificationSender
