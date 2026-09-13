@@ -1,6 +1,8 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
+using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 
 namespace Elsa.Alterations.Core.Stores;
@@ -8,29 +10,44 @@ namespace Elsa.Alterations.Core.Stores;
 /// <summary>
 /// A memory-based store for alteration jobs.
 /// </summary>
+/// <remarks>
+/// Ambient tenant is applied here rather than in callers.
+/// EF owns that via <c>SetTenantIdFilter</c> / <c>ApplyTenantId</c>; Memory must compensate.
+/// Alterations contracts have no TenantAgnostic flag, so isolation always applies (EF query filter).
+/// </remarks>
 public class MemoryAlterationJobStore : IAlterationJobStore
 {
     private readonly MemoryStore<AlterationJob> _store;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MemoryAlterationJobStore"/> class.
     /// </summary>
-    public MemoryAlterationJobStore(MemoryStore<AlterationJob> store)
+    public MemoryAlterationJobStore(MemoryStore<AlterationJob> store, ITenantAccessor? tenantAccessor = null)
     {
         _store = store;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
     public Task SaveAsync(AlterationJob job, CancellationToken cancellationToken = default)
     {
-        _store.Save(job, x => x.Id);
+        ApplyCurrentTenant(job);
+        lock (_store.Sync)
+            _store.Save(job, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<AlterationJob> jobs, CancellationToken cancellationToken = default)
     {
-        _store.SaveMany(jobs, x => x.Id);
+        var list = jobs.ToList();
+
+        foreach (var job in list)
+            ApplyCurrentTenant(job);
+
+        lock (_store.Sync)
+            _store.SaveMany(list, x => x.Id);
         return Task.CompletedTask;
     }
 
@@ -62,6 +79,20 @@ public class MemoryAlterationJobStore : IAlterationJobStore
         return Task.FromResult(count);
     }
 
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="AlterationJobFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<AlterationJob> Filter(IQueryable<AlterationJob> query, AlterationJobFilter filter) =>
+        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId));
 
-    private static IQueryable<AlterationJob> Filter(IQueryable<AlterationJob> query, AlterationJobFilter filter) => filter.Apply(query);
+    private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private void ApplyCurrentTenant(Entity entity)
+    {
+        if (entity.TenantId == Tenant.AgnosticTenantId || _tenantAccessor is null)
+            return;
+
+        entity.TenantId ??= _tenantAccessor.TenantId;
+    }
 }

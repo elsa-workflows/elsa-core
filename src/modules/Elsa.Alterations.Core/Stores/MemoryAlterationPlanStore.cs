@@ -1,6 +1,8 @@
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
+using Elsa.Common.Entities;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 
 namespace Elsa.Alterations.Core.Stores;
@@ -8,22 +10,31 @@ namespace Elsa.Alterations.Core.Stores;
 /// <summary>
 /// A memory-based store for alteration plans.
 /// </summary>
+/// <remarks>
+/// Ambient tenant is applied here rather than in callers.
+/// EF owns that via <c>SetTenantIdFilter</c> / <c>ApplyTenantId</c>; Memory must compensate.
+/// Alterations contracts have no TenantAgnostic flag, so isolation always applies (EF query filter).
+/// </remarks>
 public class MemoryAlterationPlanStore : IAlterationPlanStore
 {
     private readonly MemoryStore<AlterationPlan> _store;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MemoryAlterationPlanStore"/> class.
     /// </summary>
-    public MemoryAlterationPlanStore(MemoryStore<AlterationPlan> store)
+    public MemoryAlterationPlanStore(MemoryStore<AlterationPlan> store, ITenantAccessor? tenantAccessor = null)
     {
         _store = store;
+        _tenantAccessor = tenantAccessor;
     }
-    
+
     /// <inheritdoc />
     public Task SaveAsync(AlterationPlan plan, CancellationToken cancellationToken = default)
     {
-        _store.Save(plan, x => x.Id);
+        ApplyCurrentTenant(plan);
+        lock (_store.Sync)
+            _store.Save(plan, x => x.Id);
         return Task.CompletedTask;
     }
 
@@ -41,5 +52,20 @@ public class MemoryAlterationPlanStore : IAlterationPlanStore
         return Task.FromResult(count);
     }
 
-    private static IQueryable<AlterationPlan> Filter(IQueryable<AlterationPlan> query, AlterationPlanFilter filter) => filter.Apply(query);
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="AlterationPlanFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<AlterationPlan> Filter(IQueryable<AlterationPlan> query, AlterationPlanFilter filter) =>
+        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId));
+
+    private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private void ApplyCurrentTenant(Entity entity)
+    {
+        if (entity.TenantId == Tenant.AgnosticTenantId || _tenantAccessor is null)
+            return;
+
+        entity.TenantId ??= _tenantAccessor.TenantId;
+    }
 }

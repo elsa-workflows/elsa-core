@@ -519,6 +519,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Hosts.SmokeTests", "te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Labels.UnitTests", "test\unit\Elsa.Labels.UnitTests\Elsa.Labels.UnitTests.csproj", "{ED8D7C78-154D-4124-8C0A-E63785A862E5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Alterations.Core.UnitTests", "test\unit\Elsa.Alterations.Core.UnitTests\Elsa.Alterations.Core.UnitTests.csproj", "{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -2483,6 +2485,18 @@ Global
 		{ED8D7C78-154D-4124-8C0A-E63785A862E5}.Release|x64.Build.0 = Release|Any CPU
 		{ED8D7C78-154D-4124-8C0A-E63785A862E5}.Release|x86.ActiveCfg = Release|Any CPU
 		{ED8D7C78-154D-4124-8C0A-E63785A862E5}.Release|x86.Build.0 = Release|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Debug|x64.Build.0 = Debug|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Debug|x86.Build.0 = Debug|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Release|x64.ActiveCfg = Release|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Release|x64.Build.0 = Release|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Release|x86.ActiveCfg = Release|Any CPU
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2689,6 +2703,7 @@ Global
 		{0C16ED4D-2483-488D-9CA1-D269ED5BEB9F} = {18453B51-25EB-4317-A4B3-B10518252E92}
 		{0BE4BC01-D02D-4185-A433-E33780584261} = {90031D64-CA0F-46D0-9AF4-8DC023A5FFCD}
 		{ED8D7C78-154D-4124-8C0A-E63785A862E5} = {18453B51-25EB-4317-A4B3-B10518252E92}
+		{EAF427BE-7A07-42D7-A223-70FB1FC91BB2} = {18453B51-25EB-4317-A4B3-B10518252E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D4B5CEAA-7D70-4FCB-A68E-B03FBE5E0E5E}
