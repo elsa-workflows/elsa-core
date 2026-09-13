@@ -67,7 +67,7 @@ public class MemoryRoleStoreUniquenessTests
                 await store.AddAsync(role);
                 return null;
             }
-            catch (Exception exception)
+            catch (ArgumentException exception)
             {
                 return exception;
             }
@@ -99,7 +99,9 @@ public class MemoryRoleStoreUniquenessTests
         var tenantA = new MemoryRoleStore(backing, new TestTenantAccessor("tenant-a"));
         var tenantB = new MemoryRoleStore(backing, new TestTenantAccessor("tenant-b"));
 
-        await tenantA.SaveAsync(CreateRole("shared-role", "Tenant A role", "tenant-a"));
+        var tenantARole = CreateRole("shared-role", "Tenant A role", "tenant-a");
+        tenantARole.Permissions = ["tenant-a:permission"];
+        await tenantA.SaveAsync(tenantARole);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             tenantB.SaveAsync(CreateRole("shared-role", "Tenant B role", "tenant-b")));
@@ -109,14 +111,21 @@ public class MemoryRoleStoreUniquenessTests
         Assert.Null(await tenantB.FindAsync(new RoleFilter { Id = "shared-role" }));
 
         var roleTaggedAsOwner = CreateRole("shared-role", "Tenant A replacement", "tenant-a");
+        roleTaggedAsOwner.Permissions = ["tenant-b:permission"];
         await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveAsync(roleTaggedAsOwner));
 
         var roleRehomedFromTenantA = CreateRole("shared-role", "Rehomed role", "tenant-b");
+        roleRehomedFromTenantA.Permissions = ["tenant-b:permission"];
         await Assert.ThrowsAsync<InvalidOperationException>(() => tenantA.SaveAsync(roleRehomedFromTenantA));
+
+        var roleMadeAgnostic = CreateRole("shared-role", "Agnostic role", Tenant.AgnosticTenantId);
+        roleMadeAgnostic.Permissions = ["tenant-b:permission"];
+        await Assert.ThrowsAsync<InvalidOperationException>(() => tenantA.SaveAsync(roleMadeAgnostic));
 
         var unchanged = await tenantA.FindAsync(new RoleFilter { Id = "shared-role" });
         Assert.Equal("Tenant A role", unchanged!.Name);
         Assert.Equal("tenant-a", unchanged.TenantId);
+        Assert.Equal(["tenant-a:permission"], unchanged.Permissions);
     }
 
     [Fact(DisplayName = "SaveAsync allows a named tenant to update a visible agnostic role")]
