@@ -101,27 +101,25 @@ public sealed class ExecutionCycleHandle : IDisposable
         try { _cancelCallback?.Invoke(); }
         catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 
+        lock (_cycleCtsGate)
+            _cycleCtsCancellationInProgress = true;
+
         try
+        {
+            _cycleCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Dispose may have won before cancellation propagation started.
+        }
+        finally
         {
             lock (_cycleCtsGate)
             {
-                _cycleCtsCancellationInProgress = true;
-                try
-                {
-                    _cycleCts.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Dispose may have won before cancellation propagation started.
-                }
-                finally
-                {
-                    _cycleCtsCancellationInProgress = false;
-                    DisposeCycleCtsIfSafe();
-                }
+                _cycleCtsCancellationInProgress = false;
+                DisposeCycleCtsIfSafe();
             }
         }
-        catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }
 
         // Publish cancellation only after its effects complete. Dispose can transition CancellingState directly to
         // DisposedState, making this CAS fail when the cycle completed during the callback or CTS cancellation.
@@ -139,6 +137,7 @@ public sealed class ExecutionCycleHandle : IDisposable
         }
 
         _onDisposed?.Invoke(this);
+        _disposedTcs.TrySetResult();
         lock (_cycleCtsGate)
         {
             _cycleCtsDisposeRequested = true;
@@ -153,6 +152,5 @@ public sealed class ExecutionCycleHandle : IDisposable
 
         _cycleCtsDisposed = true;
         _cycleCts.Dispose();
-        _disposedTcs.TrySetResult();
     }
 }

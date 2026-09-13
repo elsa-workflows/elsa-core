@@ -143,43 +143,45 @@ public class ExecutionCycleRegistryTests
         Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
-    [Fact(DisplayName = "ExecutionCycleHandle.Dispose waits for CTS cancellation and wins logically")]
-    public async Task DisposeWaitsForCtsCancellationAndWinsLogically()
+    [Fact(DisplayName = "ExecutionCycleHandle.Dispose completes while a CTS callback waits for it")]
+    public async Task DisposeCompletesWhileCtsCallbackWaitsForIt()
     {
         var cancellationCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var releaseCancellationCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var disposeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var disposalCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackObservedDisposal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var handle = new ExecutionCycleHandle(
             Guid.NewGuid(),
             "instance-1",
             ingressSourceName: null,
             startedAt: DateTimeOffset.UtcNow,
             linkedToken: CancellationToken.None,
-            onDisposed: _ => disposeStarted.TrySetResult());
+            onDisposed: null);
         using var registration = handle.CancellationToken.Register(() =>
         {
             cancellationCallbackEntered.SetResult();
-            releaseCancellationCallback.Task.GetAwaiter().GetResult();
+            callbackObservedDisposal.SetResult(disposalCompleted.Task.Wait(TimeSpan.FromSeconds(5)));
         });
 
         var cancelTask = Task.Run(handle.TryCancel);
         await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        var disposeTask = Task.Run(handle.Dispose);
-        await disposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.False(disposeTask.IsCompleted);
+        var disposeTask = Task.Run(() =>
+        {
+            handle.Dispose();
+            disposalCompleted.TrySetResult();
+        });
 
-        releaseCancellationCallback.SetResult();
-
-        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.True(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5)));
         await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.True(handle.Disposed.IsCompletedSuccessfully);
+
+        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle defers CTS disposal from a cancellation callback")]
     public void DisposeDefersCtsDisposalUntilCancellationPropagationExits()
     {
-        var disposedDuringCancellation = false;
+        var logicallyDisposedDuringCancellation = false;
         var handle = new ExecutionCycleHandle(
             Guid.NewGuid(),
             "instance-1",
@@ -190,11 +192,11 @@ public class ExecutionCycleRegistryTests
         using var registration = handle.CancellationToken.Register(() =>
         {
             handle.Dispose();
-            disposedDuringCancellation = handle.Disposed.IsCompleted;
+            logicallyDisposedDuringCancellation = handle.Disposed.IsCompleted;
         });
 
         Assert.False(handle.TryCancel());
-        Assert.False(disposedDuringCancellation);
+        Assert.True(logicallyDisposedDuringCancellation);
         Assert.True(handle.Disposed.IsCompletedSuccessfully);
     }
 
