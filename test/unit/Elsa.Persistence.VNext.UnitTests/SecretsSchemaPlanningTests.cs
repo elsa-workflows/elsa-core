@@ -2,6 +2,7 @@ using Elsa.Persistence.VNext.Relational;
 using Elsa.Persistence.VNext.Sqlite;
 using Elsa.Secrets.Persistence.VNext;
 using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -11,36 +12,36 @@ public class SecretsSchemaPlanningTests
     private readonly RelationalSchemaPlanner _planner = new(new SqliteTypeMapper());
     private readonly SqliteSchemaSqlRenderer _renderer = new();
 
-    [Fact]
-    public void SecretsSchema_DeclaresStorageIntentOnce()
+    [Test]
+    public async Task SecretsSchema_DeclaresStorageIntentOnce()
     {
         var schema = _schemaProvider.DescribeSchema();
-        var storageUnit = Assert.Single(schema.StorageUnits);
+        var storageUnit = await Assert.That(schema.StorageUnits).HasSingleItem();
 
-        Assert.Equal("Elsa.Secrets", schema.Name);
-        Assert.Equal(1, schema.Version);
-        Assert.Empty(schema.Tables);
-        Assert.Equal("Secrets", storageUnit.Name);
-        Assert.Equal("Elsa", storageUnit.Namespace);
-        Assert.Equal(12, storageUnit.Fields.Count);
-        Assert.Equal("PK_Secrets", storageUnit.Key?.Name);
-        Assert.Equal(new[] { "Id" }, storageUnit.Key!.Columns);
-        Assert.Equal(5, storageUnit.Indexes.Count);
-        Assert.Contains(storageUnit.Indexes, x => x.Name == "IX_Secret_Name" && x.IsUnique && x.Columns.SequenceEqual(["Name"]));
+        await Assert.That(schema.Name).IsEqualTo("Elsa.Secrets");
+        await Assert.That(schema.Version).IsEqualTo(1);
+        await Assert.That(schema.Tables).IsEmpty();
+        await Assert.That(storageUnit.Name).IsEqualTo("Secrets");
+        await Assert.That(storageUnit.Namespace).IsEqualTo("Elsa");
+        await Assert.That(storageUnit.Fields.Count).IsEqualTo(12);
+        await Assert.That(storageUnit.Key?.Name).IsEqualTo("PK_Secrets");
+        await Assert.That(storageUnit.Key!.Columns).IsEquivalentTo(new[] { "Id" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(storageUnit.Indexes.Count).IsEqualTo(5);
+        await Assert.That(storageUnit.Indexes).Contains(x => x.Name == "IX_Secret_Name" && x.IsUnique && x.Columns.SequenceEqual(["Name"]));
     }
 
-    [Fact]
-    public void SqliteRenderer_ProducesProviderSpecificSchemaFromSecretsIntent()
+    [Test]
+    public async Task SqliteRenderer_ProducesProviderSpecificSchemaFromSecretsIntent()
     {
         var statements = RenderStatements();
 
-        Assert.Contains(statements, sql => sql.Contains("CREATE TABLE IF NOT EXISTS \"Secrets\"", StringComparison.Ordinal));
-        Assert.Contains(statements, sql => sql.Contains("\"CreatedAt\" TEXT NOT NULL", StringComparison.Ordinal));
-        Assert.Contains(statements, sql => sql.Contains("CONSTRAINT \"PK_Secrets\" PRIMARY KEY (\"Id\")", StringComparison.Ordinal));
-        Assert.Contains("CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Secret_Name\" ON \"Secrets\" (\"Name\");", statements);
+        await Assert.That(statements).Contains(sql => sql.Contains("CREATE TABLE IF NOT EXISTS \"Secrets\"", StringComparison.Ordinal));
+        await Assert.That(statements).Contains(sql => sql.Contains("\"CreatedAt\" TEXT NOT NULL", StringComparison.Ordinal));
+        await Assert.That(statements).Contains(sql => sql.Contains("CONSTRAINT \"PK_Secrets\" PRIMARY KEY (\"Id\")", StringComparison.Ordinal));
+        await Assert.That(statements).Contains("CREATE UNIQUE INDEX IF NOT EXISTS \"IX_Secret_Name\" ON \"Secrets\" (\"Name\");");
     }
 
-    [Fact]
+    [Test]
     public async Task SqliteRenderer_CreatesExecutableSchema()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -56,12 +57,12 @@ public class SecretsSchemaPlanningTests
         var columns = await ReadColumnsAsync(connection, "Secrets");
         var indexes = await ReadIndexesAsync(connection, "Secrets");
 
-        Assert.Equal("TEXT", columns["Id"].Type);
-        Assert.False(columns["Id"].IsNullable);
-        Assert.Equal("TEXT", columns["Versions"].Type);
-        Assert.False(columns["Versions"].IsNullable);
-        Assert.True(indexes["IX_Secret_Name"].IsUnique);
-        Assert.Contains("IX_Secret_Status", indexes.Keys);
+        await Assert.That(columns["Id"].Type).IsEqualTo("TEXT");
+        await Assert.That(columns["Id"].IsNullable).IsFalse();
+        await Assert.That(columns["Versions"].Type).IsEqualTo("TEXT");
+        await Assert.That(columns["Versions"].IsNullable).IsFalse();
+        await Assert.That(indexes["IX_Secret_Name"].IsUnique).IsTrue();
+        await Assert.That(indexes.Keys).Contains("IX_Secret_Status");
     }
 
     private IReadOnlyList<string> RenderStatements()

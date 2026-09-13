@@ -5,74 +5,75 @@ using Elsa.Persistence.VNext.Relational.Documents;
 using Elsa.Persistence.VNext.SqlServer;
 using Microsoft.Data.SqlClient;
 using Npgsql;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
 public class RelationalDocumentProviderTests
 {
-    [Fact]
-    public void SqlServerDocumentStore_UsesSharedRelationalStoreContract()
+    [Test]
+    public async Task SqlServerDocumentStore_UsesSharedRelationalStoreContract()
     {
         using var connection = new SqlConnection();
 
         var store = new SqlServerDocumentStore(connection, CreateSchema());
 
-        Assert.IsAssignableFrom<IDocumentStore>(store);
-        Assert.IsAssignableFrom<RelationalDocumentStore>(store);
+        await Assert.That(store).IsAssignableTo<IDocumentStore>();
+        await Assert.That(store).IsAssignableTo<RelationalDocumentStore>();
     }
 
-    [Fact]
-    public void PostgreSqlDocumentStore_UsesSharedRelationalStoreContract()
+    [Test]
+    public async Task PostgreSqlDocumentStore_UsesSharedRelationalStoreContract()
     {
         using var connection = new NpgsqlConnection();
 
         var store = new PostgreSqlDocumentStore(connection, CreateSchema());
 
-        Assert.IsAssignableFrom<IDocumentStore>(store);
-        Assert.IsAssignableFrom<RelationalDocumentStore>(store);
+        await Assert.That(store).IsAssignableTo<IDocumentStore>();
+        await Assert.That(store).IsAssignableTo<RelationalDocumentStore>();
     }
 
-    [Fact]
-    public void SqlServerDialect_RendersProviderSpecificDocumentStorage()
+    [Test]
+    public async Task SqlServerDialect_RendersProviderSpecificDocumentStorage()
     {
         var dialect = new SqlServerDocumentStoreDialect();
         var locks = string.Join(Environment.NewLine, dialect.CreateMaterializationLockStatements());
         var materialization = string.Join(Environment.NewLine, dialect.CreateMaterializationStatements());
         var upsert = dialect.RenderUpsertDocumentSql();
 
-        Assert.Contains("sp_getapplock", locks, StringComparison.Ordinal);
-        Assert.Contains("@LockOwner = N'Transaction'", locks, StringComparison.Ordinal);
-        Assert.Contains("IF OBJECT_ID", materialization, StringComparison.Ordinal);
-        Assert.Contains("CREATE TABLE [ElsaDocuments]", materialization, StringComparison.Ordinal);
-        Assert.Contains("[Content] nvarchar(max) NOT NULL", materialization, StringComparison.Ordinal);
-        Assert.Contains("IF @@ROWCOUNT = 0", upsert, StringComparison.Ordinal);
-        Assert.Contains("@storageUnit", upsert, StringComparison.Ordinal);
+        await Assert.That(locks).Contains("sp_getapplock").WithComparison(StringComparison.Ordinal);
+        await Assert.That(locks).Contains("@LockOwner = N'Transaction'").WithComparison(StringComparison.Ordinal);
+        await Assert.That(materialization).Contains("IF OBJECT_ID").WithComparison(StringComparison.Ordinal);
+        await Assert.That(materialization).Contains("CREATE TABLE [ElsaDocuments]").WithComparison(StringComparison.Ordinal);
+        await Assert.That(materialization).Contains("[Content] nvarchar(max) NOT NULL").WithComparison(StringComparison.Ordinal);
+        await Assert.That(upsert).Contains("IF @@ROWCOUNT = 0").WithComparison(StringComparison.Ordinal);
+        await Assert.That(upsert).Contains("@storageUnit").WithComparison(StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void PostgreSqlDialect_RendersProviderSpecificDocumentStorage()
+    [Test]
+    public async Task PostgreSqlDialect_RendersProviderSpecificDocumentStorage()
     {
         var dialect = new PostgreSqlDocumentStoreDialect();
         var locks = string.Join(Environment.NewLine, dialect.CreateMaterializationLockStatements());
         var materialization = string.Join(Environment.NewLine, dialect.CreateMaterializationStatements());
         var upsert = dialect.RenderUpsertDocumentSql();
 
-        Assert.Contains("pg_advisory_xact_lock", locks, StringComparison.Ordinal);
-        Assert.Contains("CREATE TABLE IF NOT EXISTS \"ElsaDocuments\"", materialization, StringComparison.Ordinal);
-        Assert.Contains("\"Content\" TEXT NOT NULL", materialization, StringComparison.Ordinal);
-        Assert.Contains("ON CONFLICT(\"StorageUnit\", \"Id\") DO UPDATE", upsert, StringComparison.Ordinal);
-        Assert.Contains("@storageUnit", upsert, StringComparison.Ordinal);
+        await Assert.That(locks).Contains("pg_advisory_xact_lock").WithComparison(StringComparison.Ordinal);
+        await Assert.That(materialization).Contains("CREATE TABLE IF NOT EXISTS \"ElsaDocuments\"").WithComparison(StringComparison.Ordinal);
+        await Assert.That(materialization).Contains("\"Content\" TEXT NOT NULL").WithComparison(StringComparison.Ordinal);
+        await Assert.That(upsert).Contains("ON CONFLICT(\"StorageUnit\", \"Id\") DO UPDATE").WithComparison(StringComparison.Ordinal);
+        await Assert.That(upsert).Contains("@storageUnit").WithComparison(StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void ProviderDialects_RejectUndeclaredIndexShape()
+    [Test]
+    public async Task ProviderDialects_RejectUndeclaredIndexShape()
     {
         var plan = new DocumentDatabasePlanner().Plan(CreateSchema());
-        var collection = Assert.Single(plan.Collections);
+        var collection = await Assert.That(plan.Collections).HasSingleItem();
         var dialect = new PostgreSqlDocumentStoreDialect();
         var query = new DocumentQuery("Orders", new Dictionary<string, string?> { ["Priority"] = "High" });
 
-        Assert.Throws<DocumentQueryNotIndexedException>(() => dialect.FindMatchingIndex(collection, query));
+        Assert.ThrowsExactly<DocumentQueryNotIndexedException>(() => dialect.FindMatchingIndex(collection, query));
     }
 
     private static PersistenceSchema CreateSchema()

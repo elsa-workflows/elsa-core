@@ -3,41 +3,42 @@ using Elsa.Persistence.VNext.Document;
 using Elsa.Persistence.VNext.MongoDb;
 using MongoDB.Driver;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
 public class MongoDbDocumentProviderTests
 {
-    [Fact]
-    public void MongoDbPlanner_ProducesNativeCollectionAndIndexPlan()
+    [Test]
+    public async Task MongoDbPlanner_ProducesNativeCollectionAndIndexPlan()
     {
         var plan = new MongoDbDatabasePlanner().Plan(CreateSchema());
 
-        var collection = Assert.Single(plan.Collections);
-        Assert.Equal("Elsa_Orders", collection.CollectionName);
-        Assert.Equal("Orders", collection.Collection.Name);
-        Assert.Contains(collection.Indexes, x => x.Name == "IX_Orders_Status" && x.Fields.SequenceEqual(["IndexValues.Status"]));
-        Assert.Contains(collection.Indexes, x => x.Name == "IX_Orders_CustomerId_Status" && x.Fields.SequenceEqual(["IndexValues.CustomerId", "IndexValues.Status"]));
+        var collection = await Assert.That(plan.Collections).HasSingleItem();
+        await Assert.That(collection.CollectionName).IsEqualTo("Elsa_Orders");
+        await Assert.That(collection.Collection.Name).IsEqualTo("Orders");
+        await Assert.That(collection.Indexes).Contains(x => x.Name == "IX_Orders_Status" && x.Fields.SequenceEqual(["IndexValues.Status"]));
+        await Assert.That(collection.Indexes).Contains(x => x.Name == "IX_Orders_CustomerId_Status" && x.Fields.SequenceEqual(["IndexValues.CustomerId", "IndexValues.Status"]));
     }
 
-    [Fact]
-    public void MongoDbDocumentStore_UsesProviderNeutralStoreContract()
+    [Test]
+    public async Task MongoDbDocumentStore_UsesProviderNeutralStoreContract()
     {
         var database = Substitute.For<IMongoDatabase>();
 
         var store = new MongoDbDocumentStore(database, CreateSchema());
 
-        Assert.IsAssignableFrom<IDocumentStore>(store);
+        await Assert.That(store).IsAssignableTo<IDocumentStore>();
     }
 
-    [Fact]
-    public void MongoDbProvider_RejectsUndeclaredIndexShape()
+    [Test]
+    public async Task MongoDbProvider_RejectsUndeclaredIndexShape()
     {
         var plan = new MongoDbDatabasePlanner().Plan(CreateSchema());
-        var collection = Assert.Single(plan.Collections);
+        var collection = await Assert.That(plan.Collections).HasSingleItem();
         var query = new DocumentQuery("Orders", new Dictionary<string, string?> { ["Priority"] = "High" });
 
-        Assert.Throws<DocumentQueryNotIndexedException>(() => DocumentIndexMatcher.FindMatchingIndex(collection.Collection, query));
+        Assert.ThrowsExactly<DocumentQueryNotIndexedException>(() => DocumentIndexMatcher.FindMatchingIndex(collection.Collection, query));
     }
 
     private static PersistenceSchema CreateSchema()

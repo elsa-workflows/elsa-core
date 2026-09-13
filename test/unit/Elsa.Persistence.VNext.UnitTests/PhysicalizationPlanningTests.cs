@@ -2,6 +2,7 @@ using Elsa.Persistence.VNext.Builders;
 using Elsa.Persistence.VNext.MongoDb.Physicalization;
 using Elsa.Persistence.VNext.Physicalization;
 using Elsa.Persistence.VNext.Sqlite.Physicalization;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -26,55 +27,55 @@ public class PhysicalizationPlanningTests
             new("UX_RuntimeEntity_Order_Number", ["Number"], true)
         ]);
 
-    [Fact]
-    public void SqlitePlanner_ProducesDedicatedTableAndIndexOperations()
+    [Test]
+    public async Task SqlitePlanner_ProducesDedicatedTableAndIndexOperations()
     {
         var plan = new SqlitePhysicalizationPlanner().Plan(_schema, _policy);
 
-        Assert.Equal("SQLite", plan.ProviderName);
-        Assert.Equal(_policy, plan.Policy);
-        Assert.Equal(3, plan.Operations.Count);
-        Assert.Contains(plan.Operations, x => x.Name == "CreateTable" && x.CommandText!.Contains("CREATE TABLE IF NOT EXISTS \"RuntimeEntity_Order\""));
-        Assert.Contains(plan.Operations, x => x.Name == "CreateTable" && x.CommandText!.Contains("\"Status\" TEXT NULL"));
-        Assert.Contains(plan.Operations, x => x.Name == "CreateTable" && x.CommandText!.Contains("\"Number\" TEXT NULL"));
-        Assert.Contains(plan.Operations, x => x.Name == "CreateIndex" && x.CommandText == "CREATE INDEX IF NOT EXISTS \"IX_RuntimeEntity_Order_Status\" ON \"RuntimeEntity_Order\" (\"Status\");");
-        Assert.Contains(plan.Operations, x => x.Name == "CreateIndex" && x.CommandText == "CREATE UNIQUE INDEX IF NOT EXISTS \"UX_RuntimeEntity_Order_Number\" ON \"RuntimeEntity_Order\" (\"Number\");");
+        await Assert.That(plan.ProviderName).IsEqualTo("SQLite");
+        await Assert.That(plan.Policy).IsEqualTo(_policy);
+        await Assert.That(plan.Operations.Count).IsEqualTo(3);
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateTable" && x.CommandText!.Contains("CREATE TABLE IF NOT EXISTS \"RuntimeEntity_Order\""));
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateTable" && x.CommandText!.Contains("\"Status\" TEXT NULL"));
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateTable" && x.CommandText!.Contains("\"Number\" TEXT NULL"));
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateIndex" && x.CommandText == "CREATE INDEX IF NOT EXISTS \"IX_RuntimeEntity_Order_Status\" ON \"RuntimeEntity_Order\" (\"Status\");");
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateIndex" && x.CommandText == "CREATE UNIQUE INDEX IF NOT EXISTS \"UX_RuntimeEntity_Order_Number\" ON \"RuntimeEntity_Order\" (\"Number\");");
     }
 
-    [Fact]
+    [Test]
     public void SqlitePlanner_RejectsDocumentCollectionTarget()
     {
         var policy = _policy with { Target = PhysicalizationTarget.DedicatedDocumentCollection };
 
-        Assert.Throws<InvalidOperationException>(() => new SqlitePhysicalizationPlanner().Plan(_schema, policy));
+        Assert.ThrowsExactly<InvalidOperationException>(() => new SqlitePhysicalizationPlanner().Plan(_schema, policy));
     }
 
-    [Fact]
-    public void MongoDbPlanner_ProducesDedicatedCollectionAndIndexOperations()
+    [Test]
+    public async Task MongoDbPlanner_ProducesDedicatedCollectionAndIndexOperations()
     {
         var policy = _policy with { Target = PhysicalizationTarget.DedicatedDocumentCollection };
 
         var plan = new MongoDbPhysicalizationPlanner().Plan(_schema, policy);
 
-        Assert.Equal("MongoDB", plan.ProviderName);
-        Assert.Equal(policy, plan.Policy);
-        Assert.Equal(3, plan.Operations.Count);
-        Assert.Contains(plan.Operations, x => x.Name == "CreateCollection" && x.Description.Contains("RuntimeEntity_Order"));
-        Assert.Contains(plan.Operations, x => x.Name == "CreateIndex" && x.Description.Contains("Data.Status:1"));
-        Assert.Contains(plan.Operations, x => x.Name == "CreateIndex" && x.Description.Contains("unique MongoDB index UX_RuntimeEntity_Order_Number"));
+        await Assert.That(plan.ProviderName).IsEqualTo("MongoDB");
+        await Assert.That(plan.Policy).IsEqualTo(policy);
+        await Assert.That(plan.Operations.Count).IsEqualTo(3);
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateCollection" && x.Description.Contains("RuntimeEntity_Order"));
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateIndex" && x.Description.Contains("Data.Status:1"));
+        await Assert.That(plan.Operations).Contains(x => x.Name == "CreateIndex" && x.Description.Contains("unique MongoDB index UX_RuntimeEntity_Order_Number"));
     }
 
-    [Fact]
+    [Test]
     public void MongoDbPlanner_RejectsRelationalTableTarget()
     {
-        Assert.Throws<InvalidOperationException>(() => new MongoDbPhysicalizationPlanner().Plan(_schema, _policy));
+        Assert.ThrowsExactly<InvalidOperationException>(() => new MongoDbPhysicalizationPlanner().Plan(_schema, _policy));
     }
 
-    [Fact]
+    [Test]
     public void Planner_RejectsPolicyForUndeclaredField()
     {
         var policy = _policy with { Indexes = [new("IX_Missing", ["Missing"])] };
 
-        Assert.Throws<InvalidOperationException>(() => new SqlitePhysicalizationPlanner().Plan(_schema, policy));
+        Assert.ThrowsExactly<InvalidOperationException>(() => new SqlitePhysicalizationPlanner().Plan(_schema, policy));
     }
 }

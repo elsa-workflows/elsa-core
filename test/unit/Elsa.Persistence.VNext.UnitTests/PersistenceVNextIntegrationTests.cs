@@ -6,13 +6,14 @@ using Elsa.Persistence.VNext.Extensions;
 using Elsa.Persistence.VNext.Extensions.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
 public class PersistenceVNextIntegrationTests
 {
-    [Fact]
-    public void SchemaCatalog_ComposesRegisteredManifests()
+    [Test]
+    public async Task SchemaCatalog_ComposesRegisteredManifests()
     {
         var services = new ServiceCollection();
         services.AddLogging();
@@ -23,12 +24,12 @@ public class PersistenceVNextIntegrationTests
         using var serviceProvider = services.BuildServiceProvider();
         var schema = serviceProvider.GetRequiredService<IPersistenceSchemaCatalog>().DescribeSchema();
 
-        Assert.Equal("Elsa", schema.Name);
-        Assert.Contains(schema.StorageUnits, x => x.Name == "Orders");
-        Assert.Contains(schema.StorageUnits, x => x.Name == "Customers");
+        await Assert.That(schema.Name).IsEqualTo("Elsa");
+        await Assert.That(schema.StorageUnits).Contains(x => x.Name == "Orders");
+        await Assert.That(schema.StorageUnits).Contains(x => x.Name == "Customers");
     }
 
-    [Fact]
+    [Test]
     public async Task StartupTask_MaterializesRegisteredDocumentStoresAndRecordsStatus()
     {
         var store = new RecordingDocumentStore();
@@ -39,18 +40,18 @@ public class PersistenceVNextIntegrationTests
         services.AddSingleton<IDocumentStore>(store);
 
         using var serviceProvider = services.BuildServiceProvider();
-        var startupTask = Assert.Single(serviceProvider.GetServices<IStartupTask>());
+        var startupTask = await Assert.That(serviceProvider.GetServices<IStartupTask>()).HasSingleItem();
 
         await startupTask.ExecuteAsync(CancellationToken.None);
 
         var status = serviceProvider.GetRequiredService<IPersistenceVNextStatus>().Snapshot;
-        Assert.True(store.WasMaterialized);
-        Assert.True(status.Succeeded);
-        Assert.Contains("Orders", status.StorageUnits);
-        Assert.Contains(typeof(RecordingDocumentStore).FullName!, status.DocumentStoreTypes);
+        await Assert.That(store.WasMaterialized).IsTrue();
+        await Assert.That(status.Succeeded).IsTrue();
+        await Assert.That(status.StorageUnits).Contains("Orders");
+        await Assert.That(status.DocumentStoreTypes).Contains(typeof(RecordingDocumentStore).FullName!);
     }
 
-    [Fact]
+    [Test]
     public async Task StartupTask_RecordsRecoveryHintsWhenMaterializationFails()
     {
         var services = new ServiceCollection();
@@ -60,15 +61,15 @@ public class PersistenceVNextIntegrationTests
         services.AddSingleton<IDocumentStore, FailingDocumentStore>();
 
         using var serviceProvider = services.BuildServiceProvider();
-        var startupTask = Assert.Single(serviceProvider.GetServices<IStartupTask>());
+        var startupTask = await Assert.That(serviceProvider.GetServices<IStartupTask>()).HasSingleItem();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => startupTask.ExecuteAsync(CancellationToken.None));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => startupTask.ExecuteAsync(CancellationToken.None));
 
         var status = serviceProvider.GetRequiredService<IPersistenceVNextStatus>().Snapshot;
-        Assert.False(status.Succeeded);
-        Assert.Equal("provider unavailable", status.ErrorMessage);
-        Assert.Contains(status.RecoveryHints, x => x.Contains("connect to its database"));
-        Assert.Contains(status.RecoveryHints, x => x.Contains("materialization lock strategy"));
+        await Assert.That(status.Succeeded).IsFalse();
+        await Assert.That(status.ErrorMessage).IsEqualTo("provider unavailable");
+        await Assert.That(status.RecoveryHints).Contains(x => x.Contains("connect to its database"));
+        await Assert.That(status.RecoveryHints).Contains(x => x.Contains("materialization lock strategy"));
     }
 
     private class OrdersSchemaProvider : IPersistenceSchemaProvider

@@ -1,6 +1,7 @@
 using Elsa.Persistence.VNext.Sqlite;
 using Elsa.Secrets.Persistence.VNext;
 using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -9,7 +10,7 @@ public class SqliteSchemaVersionRunnerTests
     private readonly SecretPersistenceSchemaProvider _schemaProvider = new();
     private readonly SqliteSchemaVersionRunner _runner = new();
 
-    [Fact]
+    [Test]
     public async Task MigrateAsync_AppliesSchemaAndRecordsVersion()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -19,15 +20,15 @@ public class SqliteSchemaVersionRunnerTests
         var recordedVersion = await ReadScalarAsync<int>(connection, """SELECT MAX("Version") FROM "ElsaSchemaVersions" WHERE "SchemaName" = 'Elsa.Secrets';""");
         var tableCount = await ReadScalarAsync<int>(connection, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'Secrets';");
 
-        Assert.True(result.Applied);
-        Assert.Equal(0, result.FromVersion);
-        Assert.Equal(1, result.ToVersion);
-        Assert.NotEmpty(result.Statements);
-        Assert.Equal(1, recordedVersion);
-        Assert.Equal(1, tableCount);
+        await Assert.That(result.Applied).IsTrue();
+        await Assert.That(result.FromVersion).IsEqualTo(0);
+        await Assert.That(result.ToVersion).IsEqualTo(1);
+        await Assert.That(result.Statements).IsNotEmpty();
+        await Assert.That(recordedVersion).IsEqualTo(1);
+        await Assert.That(tableCount).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task MigrateAsync_DoesNotReapplyCurrentVersion()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -37,12 +38,12 @@ public class SqliteSchemaVersionRunnerTests
         var second = await _runner.MigrateAsync(connection, schema);
         var historyRows = await ReadScalarAsync<int>(connection, """SELECT COUNT(*) FROM "ElsaSchemaVersions" WHERE "SchemaName" = 'Elsa.Secrets';""");
 
-        Assert.True(first.Applied);
-        Assert.False(second.Applied);
-        Assert.Equal(1, second.FromVersion);
-        Assert.Equal(1, second.ToVersion);
-        Assert.Empty(second.Statements);
-        Assert.Equal(1, historyRows);
+        await Assert.That(first.Applied).IsTrue();
+        await Assert.That(second.Applied).IsFalse();
+        await Assert.That(second.FromVersion).IsEqualTo(1);
+        await Assert.That(second.ToVersion).IsEqualTo(1);
+        await Assert.That(second.Statements).IsEmpty();
+        await Assert.That(historyRows).IsEqualTo(1);
     }
 
     private static async Task<T> ReadScalarAsync<T>(SqliteConnection connection, string sql)

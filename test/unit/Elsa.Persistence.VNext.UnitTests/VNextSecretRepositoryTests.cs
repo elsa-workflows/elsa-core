@@ -7,6 +7,7 @@ using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.VNext;
 using Elsa.Secrets.Persistence.VNext.Repositories;
 using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -22,26 +23,26 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
         _repository = new VNextSecretRepository(_store, new StubTenantAccessor(string.Empty));
     }
 
-    [Fact]
+    [Test]
     public async Task Repository_PersistsAndListsSecretsThroughDocumentStore()
     {
         await ActivateAsync();
         await _repository.AddAsync(CreateSecret("smtp:password", "SMTP password"));
 
         var reloaded = await _repository.GetAsync("SMTP:PASSWORD");
-        Assert.NotNull(reloaded);
-        Assert.Equal("SMTP password", reloaded.DisplayName);
-        Assert.Contains("api-key", reloaded.Tags);
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.DisplayName).IsEqualTo("SMTP password");
+        await Assert.That(reloaded.Tags).Contains("api-key");
 
         reloaded.DisplayName = "Updated password";
         await _repository.SaveAsync(reloaded);
 
         var listed = await _repository.ListAsync();
-        Assert.Single(listed);
-        Assert.Equal("Updated password", listed.Single().DisplayName);
+        await Assert.That(listed).HasSingleItem();
+        await Assert.That(listed.Single().DisplayName).IsEqualTo("Updated password");
     }
 
-    [Fact]
+    [Test]
     public async Task TryAddOrReplaceDeletedAsync_ReplacesOnlyDeletedSecret()
     {
         await ActivateAsync();
@@ -55,11 +56,11 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
         var deletedReplacementResult = await _repository.TryAddOrReplaceDeletedAsync(CreateSecret("SMTP:PASSWORD", "Replacement password"));
         var reloaded = await _repository.GetAsync("smtp:password");
 
-        Assert.False(activeReplacementResult);
-        Assert.True(deletedReplacementResult);
-        Assert.NotNull(reloaded);
-        Assert.Equal("Replacement password", reloaded.DisplayName);
-        Assert.Equal(SecretStatus.Active, reloaded.Status);
+        await Assert.That(activeReplacementResult).IsFalse();
+        await Assert.That(deletedReplacementResult).IsTrue();
+        await Assert.That(reloaded).IsNotNull();
+        await Assert.That(reloaded.DisplayName).IsEqualTo("Replacement password");
+        await Assert.That(reloaded.Status).IsEqualTo(SecretStatus.Active);
     }
 
     public async ValueTask DisposeAsync()
@@ -93,24 +94,24 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
         };
     }
 
-    [Theory]
+    [Test]
     // The provider keys documents by name alone, so serving a tenant would hand back another tenant's secret.
     // The default-tenant path needs no case of its own: every other test in this class runs through the same
     // guard with an empty tenant id, which is what a single-tenant deployment does.
-    [InlineData("tenant-a")]
-    [InlineData("*")]
+    [Arguments("tenant-a")]
+    [Arguments("*")]
     public async Task RefusesToServeANonDefaultTenant(string tenantId)
     {
         var repository = new VNextSecretRepository(_store, new StubTenantAccessor(tenantId));
 
-        await Assert.ThrowsAsync<NotSupportedException>(() => repository.ListAsync());
-        await Assert.ThrowsAsync<NotSupportedException>(() => repository.GetAsync("anything"));
-        await Assert.ThrowsAsync<NotSupportedException>(() => repository.AddAsync(new Secret { Name = "a", DisplayName = "a" }));
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => repository.ListAsync());
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => repository.GetAsync("anything"));
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => repository.AddAsync(new Secret { Name = "a", DisplayName = "a" }));
     }
 
 
-    [Fact]
-    public void ResolvesFromAContainerThatNeverAddedMultitenancy()
+    [Test]
+    public async Task ResolvesFromAContainerThatNeverAddedMultitenancy()
     {
         // The tenancy guard needs an ITenantAccessor, which the tenants module registers -- so a host that
         // never added multitenancy has none. Taking it as a required dependency made resolving the repository
@@ -123,7 +124,7 @@ public class VNextSecretRepositoryTests : IAsyncDisposable
 
         using var provider = services.BuildServiceProvider();
 
-        Assert.NotNull(provider.GetRequiredService<ISecretRepository>());
+        await Assert.That(provider.GetRequiredService<ISecretRepository>()).IsNotNull();
     }
 
     private sealed class StubTenantAccessor(string tenantId) : Elsa.Common.Multitenancy.ITenantAccessor

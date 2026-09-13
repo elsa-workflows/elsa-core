@@ -1,6 +1,7 @@
 using Elsa.Persistence.VNext.Runtime;
 using Elsa.Persistence.VNext.Runtime.Models;
 using Elsa.Persistence.VNext.Runtime.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -13,42 +14,42 @@ public class RuntimeEntityDefinitionValidatorTests
         _validator = new RuntimeEntityDefinitionValidator(Microsoft.Extensions.Options.Options.Create(new RuntimeEntityOptions()));
     }
 
-    [Fact]
-    public void Validate_RejectsMissingDefinitionName()
+    [Test]
+    public async Task Validate_RejectsMissingDefinitionName()
     {
         var definition = CreateDefinition();
         definition.Name = " ";
 
-        var exception = Assert.Throws<InvalidOperationException>(() => _validator.Validate(definition));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => _validator.Validate(definition));
 
-        Assert.Contains("name is required", exception.Message);
+        await Assert.That(exception.Message).Contains("name is required").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Validate_RejectsDefinitionWithoutFields()
+    [Test]
+    public async Task Validate_RejectsDefinitionWithoutFields()
     {
         var definition = CreateDefinition();
         definition.Fields.Clear();
 
-        var exception = Assert.Throws<InvalidOperationException>(() => _validator.Validate(definition));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => _validator.Validate(definition));
 
-        Assert.Contains("must declare at least one field", exception.Message);
+        await Assert.That(exception.Message).Contains("must declare at least one field").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Validate_RejectsDuplicateFieldsIgnoringCase()
+    [Test]
+    public async Task Validate_RejectsDuplicateFieldsIgnoringCase()
     {
         var definition = CreateDefinition();
         definition.Fields.Add(new("EMAIL", RuntimeEntityFieldType.String));
 
-        var exception = Assert.Throws<InvalidOperationException>(() => _validator.Validate(definition));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => _validator.Validate(definition));
 
-        Assert.Contains("declares field", exception.Message);
-        Assert.Contains("more than once", exception.Message);
+        await Assert.That(exception.Message).Contains("declares field").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains("more than once").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Validate_RejectsIndexesBeyondConfiguredLimit()
+    [Test]
+    public async Task Validate_RejectsIndexesBeyondConfiguredLimit()
     {
         var validator = new RuntimeEntityDefinitionValidator(Microsoft.Extensions.Options.Options.Create(new RuntimeEntityOptions { MaxIndexedFields = 2 }));
         var definition = CreateDefinition();
@@ -57,14 +58,14 @@ public class RuntimeEntityDefinitionValidatorTests
         definition.Indexes.Add(new("IX_Customer_Tier", "tier"));
         definition.Indexes.Add(new("IX_Customer_Region", "region"));
 
-        var exception = Assert.Throws<InvalidOperationException>(() => validator.Validate(definition));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => validator.Validate(definition));
 
-        Assert.Contains("declares 3 indexes", exception.Message);
-        Assert.Contains("only 2 runtime index slots", exception.Message);
+        await Assert.That(exception.Message).Contains("declares 3 indexes").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains("only 2 runtime index slots").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Validate_RejectsIndexesBeyondRuntimeSlotCount()
+    [Test]
+    public async Task Validate_RejectsIndexesBeyondRuntimeSlotCount()
     {
         var validator = new RuntimeEntityDefinitionValidator(Microsoft.Extensions.Options.Options.Create(new RuntimeEntityOptions { MaxIndexedFields = 100 }));
         var definition = CreateDefinition();
@@ -76,24 +77,24 @@ public class RuntimeEntityDefinitionValidatorTests
             definition.Indexes.Add(new($"IX_Customer_{fieldName}", fieldName));
         }
 
-        var exception = Assert.Throws<InvalidOperationException>(() => validator.Validate(definition));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => validator.Validate(definition));
 
-        Assert.Contains($"only {RuntimeEntityPersistenceSchemaProvider.IndexedFieldSlotCount} runtime index slots", exception.Message);
+        await Assert.That(exception.Message).Contains($"only {RuntimeEntityPersistenceSchemaProvider.IndexedFieldSlotCount} runtime index slots").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Validate_RejectsIndexReferencingUnknownField()
+    [Test]
+    public async Task Validate_RejectsIndexReferencingUnknownField()
     {
         var definition = CreateDefinition();
         definition.Indexes.Add(new("IX_Customer_Status", "status"));
 
-        var exception = Assert.Throws<InvalidOperationException>(() => _validator.Validate(definition));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => _validator.Validate(definition));
 
-        Assert.Contains("references unknown field 'status'", exception.Message);
+        await Assert.That(exception.Message).Contains("references unknown field 'status'").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void ValidateInstance_RejectsMissingRequiredField()
+    [Test]
+    public async Task ValidateInstance_RejectsMissingRequiredField()
     {
         var definition = CreateDefinition();
         var instance = new RuntimeEntityInstance
@@ -102,12 +103,12 @@ public class RuntimeEntityDefinitionValidatorTests
             DefinitionName = definition.Name
         };
 
-        var exception = Assert.Throws<InvalidOperationException>(() => _validator.ValidateInstance(definition, instance));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => _validator.ValidateInstance(definition, instance));
 
-        Assert.Contains("missing required field 'email'", exception.Message);
+        await Assert.That(exception.Message).Contains("missing required field 'email'").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public void ValidateInstance_MatchesRequiredFieldsIgnoringCase()
     {
         var definition = CreateDefinition();

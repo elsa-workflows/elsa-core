@@ -5,6 +5,7 @@ using Elsa.Persistence.VNext.Runtime.Services;
 using Elsa.Persistence.VNext.Sqlite;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -20,18 +21,18 @@ public class RuntimeEntityTests : IAsyncDisposable
         _manager = new RuntimeEntityManager(_store, new RuntimeEntityDefinitionValidator(Microsoft.Extensions.Options.Options.Create(new RuntimeEntityOptions())));
     }
 
-    [Fact]
-    public void SchemaProvider_UsesFixedStorageUnitsAndRuntimeIndexSlots()
+    [Test]
+    public async Task SchemaProvider_UsesFixedStorageUnitsAndRuntimeIndexSlots()
     {
         var schema = new RuntimeEntityPersistenceSchemaProvider().DescribeSchema();
 
-        Assert.Contains(schema.StorageUnits, x => x.Name == RuntimeEntityPersistenceSchemaProvider.DefinitionsStorageUnit);
-        var instances = Assert.Single(schema.StorageUnits, x => x.Name == RuntimeEntityPersistenceSchemaProvider.InstancesStorageUnit);
-        Assert.Contains(instances.Indexes, x => x.Name == "IX_RuntimeEntityInstances_Index1");
-        Assert.Contains(instances.Indexes, x => x.Name == "IX_RuntimeEntityInstances_Index4");
+        await Assert.That(schema.StorageUnits).Contains(x => x.Name == RuntimeEntityPersistenceSchemaProvider.DefinitionsStorageUnit);
+        var instances = await Assert.That(schema.StorageUnits).HasSingleItem(x => x.Name == RuntimeEntityPersistenceSchemaProvider.InstancesStorageUnit);
+        await Assert.That(instances.Indexes).Contains(x => x.Name == "IX_RuntimeEntityInstances_Index1");
+        await Assert.That(instances.Indexes).Contains(x => x.Name == "IX_RuntimeEntityInstances_Index4");
     }
 
-    [Fact]
+    [Test]
     public async Task RuntimeEntityManager_PublishesPersistsQueriesAndAuditsRuntimeEntities()
     {
         await ActivateAsync();
@@ -65,24 +66,24 @@ public class RuntimeEntityTests : IAsyncDisposable
         var deletedCustomer = await _manager.GetInstanceAsync("Customer", "customer-2");
         var audit = await _manager.ListAuditAsync("customer:customer-1");
 
-        Assert.Equal(RuntimeEntityDefinitionStatus.Published, published.Status);
-        var customer = Assert.Single(goldCustomers);
-        Assert.Equal("customer-1", customer.Id);
-        Assert.NotNull(loaded);
-        Assert.Equal("one@example.com", loaded!.Data["email"]!.ToString());
-        Assert.True(deleted);
-        Assert.Null(deletedCustomer);
-        Assert.Contains(audit, x => x.Action == "Created");
+        await Assert.That(published.Status).IsEqualTo(RuntimeEntityDefinitionStatus.Published);
+        var customer = await Assert.That(goldCustomers).HasSingleItem();
+        await Assert.That(customer.Id).IsEqualTo("customer-1");
+        await Assert.That(loaded).IsNotNull();
+        await Assert.That(loaded!.Data["email"]!.ToString()).IsEqualTo("one@example.com");
+        await Assert.That(deleted).IsTrue();
+        await Assert.That(deletedCustomer).IsNull();
+        await Assert.That(audit).Contains(x => x.Action == "Created");
     }
 
-    [Fact]
+    [Test]
     public async Task RuntimeEntityManager_RejectsQueriesForUndeclaredIndexes()
     {
         await ActivateAsync();
         await _manager.SaveDraftAsync(CreateCustomerDefinition());
         await _manager.PublishAsync("Customer");
 
-        await Assert.ThrowsAsync<DocumentQueryNotIndexedException>(() =>
+        await Assert.ThrowsExactlyAsync<DocumentQueryNotIndexedException>(() =>
             _manager.QueryInstancesAsync("Customer", "email", "one@example.com"));
     }
 

@@ -1,4 +1,5 @@
 using Elsa.Persistence.VNext.Runtime.Evaluation;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -6,8 +7,8 @@ public class WorkflowRuntimePersistenceEvaluatorTests
 {
     private readonly WorkflowRuntimePersistenceEvaluator _evaluator = new();
 
-    [Fact]
-    public void Evaluator_AdoptsMetadataStoreWithProviderContractTests()
+    [Test]
+    public async Task Evaluator_AdoptsMetadataStoreWithProviderContractTests()
     {
         var candidate = new WorkflowRuntimePersistenceCandidate(
             "WorkflowDefinitions",
@@ -20,12 +21,12 @@ public class WorkflowRuntimePersistenceEvaluatorTests
 
         var decision = _evaluator.Evaluate(candidate);
 
-        Assert.Equal(WorkflowRuntimePersistenceDecisionKind.AdoptVNext, decision.Kind);
-        Assert.Contains("Metadata workloads fit", decision.Reasons.Single());
+        await Assert.That(decision.Kind).IsEqualTo(WorkflowRuntimePersistenceDecisionKind.AdoptVNext);
+        await Assert.That(decision.Reasons.Single()).Contains("Metadata workloads fit").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Evaluator_DefersHotDistributedLookupWithoutBenchmarkEvidence()
+    [Test]
+    public async Task Evaluator_DefersHotDistributedLookupWithoutBenchmarkEvidence()
     {
         var candidate = new WorkflowRuntimePersistenceCandidate(
             "Bookmarks",
@@ -38,12 +39,12 @@ public class WorkflowRuntimePersistenceEvaluatorTests
 
         var decision = _evaluator.Evaluate(candidate);
 
-        Assert.Equal(WorkflowRuntimePersistenceDecisionKind.DeferUntilBenchmarked, decision.Kind);
-        Assert.Contains("benchmark and lock/concurrency evidence", decision.Reasons.Single());
+        await Assert.That(decision.Kind).IsEqualTo(WorkflowRuntimePersistenceDecisionKind.DeferUntilBenchmarked);
+        await Assert.That(decision.Reasons.Single()).Contains("benchmark and lock/concurrency evidence").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Evaluator_AllowsPhysicalizedHotLookupWhenEvidenceExists()
+    [Test]
+    public async Task Evaluator_AllowsPhysicalizedHotLookupWhenEvidenceExists()
     {
         var candidate = new WorkflowRuntimePersistenceCandidate(
             "Triggers",
@@ -56,12 +57,12 @@ public class WorkflowRuntimePersistenceEvaluatorTests
 
         var decision = _evaluator.Evaluate(candidate);
 
-        Assert.Equal(WorkflowRuntimePersistenceDecisionKind.AdoptWithPhysicalization, decision.Kind);
-        Assert.Contains("physicalization policy", decision.RequiredEvidence.Single());
+        await Assert.That(decision.Kind).IsEqualTo(WorkflowRuntimePersistenceDecisionKind.AdoptWithPhysicalization);
+        await Assert.That(decision.RequiredEvidence.Single()).Contains("physicalization policy").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Evaluator_KeepsQueueWorkloadSpecialized()
+    [Test]
+    public async Task Evaluator_KeepsQueueWorkloadSpecialized()
     {
         var candidate = new WorkflowRuntimePersistenceCandidate(
             "BookmarkQueue",
@@ -74,12 +75,12 @@ public class WorkflowRuntimePersistenceEvaluatorTests
 
         var decision = _evaluator.Evaluate(candidate);
 
-        Assert.Equal(WorkflowRuntimePersistenceDecisionKind.KeepSpecializedProvider, decision.Kind);
-        Assert.Contains("Queue workloads need", decision.Reasons.Single());
+        await Assert.That(decision.Kind).IsEqualTo(WorkflowRuntimePersistenceDecisionKind.KeepSpecializedProvider);
+        await Assert.That(decision.Reasons.Single()).Contains("Queue workloads need").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void Evaluator_KeepsOrderedLogSpecialized()
+    [Test]
+    public async Task Evaluator_KeepsOrderedLogSpecialized()
     {
         var candidate = new WorkflowRuntimePersistenceCandidate(
             "WorkflowExecutionLog",
@@ -92,7 +93,7 @@ public class WorkflowRuntimePersistenceEvaluatorTests
 
         var decision = _evaluator.Evaluate(candidate);
 
-        Assert.Equal(WorkflowRuntimePersistenceDecisionKind.KeepSpecializedProvider, decision.Kind);
-        Assert.Contains("ordered append", decision.Reasons.Single());
+        await Assert.That(decision.Kind).IsEqualTo(WorkflowRuntimePersistenceDecisionKind.KeepSpecializedProvider);
+        await Assert.That(decision.Reasons.Single()).Contains("ordered append").WithComparison(StringComparison.CurrentCulture);
     }
 }

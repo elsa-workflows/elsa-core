@@ -2,6 +2,7 @@ using Elsa.Persistence.VNext.Builders;
 using Elsa.Persistence.VNext.Document;
 using Elsa.Persistence.VNext.Sqlite;
 using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
 
 namespace Elsa.Persistence.VNext.UnitTests;
 
@@ -15,7 +16,7 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         _store = new SqliteDocumentStore(_connection, CreateSchema());
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAndLoadAsync_PersistsDocumentEnvelope()
     {
         await ActivateAsync();
@@ -23,15 +24,15 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         var saved = await SaveAsync("order-1", """{"number":"1001","status":"Open","customerId":"customer-1"}""", "Open", "customer-1");
         var loaded = await _store.LoadAsync("Orders", "order-1");
 
-        Assert.NotNull(loaded);
-        Assert.Equal("Orders", loaded.StorageUnit);
-        Assert.Equal("order-1", loaded.Id);
-        Assert.Equal(saved.Content, loaded.Content);
-        Assert.Equal(1, loaded.Version);
-        Assert.True(loaded.CreatedAt <= loaded.UpdatedAt);
+        await Assert.That(loaded).IsNotNull();
+        await Assert.That(loaded.StorageUnit).IsEqualTo("Orders");
+        await Assert.That(loaded.Id).IsEqualTo("order-1");
+        await Assert.That(loaded.Content).IsEqualTo(saved.Content);
+        await Assert.That(loaded.Version).IsEqualTo(1);
+        await Assert.That(loaded.CreatedAt <= loaded.UpdatedAt).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_ReplacesIndexValuesInSameDocumentVersion()
     {
         await ActivateAsync();
@@ -43,13 +44,13 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         var closedOrders = await QueryByStatusAsync("Closed");
         var customerOrders = await QueryByCustomerAndStatusAsync("customer-2", "Closed");
 
-        Assert.Empty(openOrders);
-        var closedOrder = Assert.Single(closedOrders);
-        Assert.Equal(2, closedOrder.Version);
-        Assert.Single(customerOrders);
+        await Assert.That(openOrders).IsEmpty();
+        var closedOrder = await Assert.That(closedOrders).HasSingleItem();
+        await Assert.That(closedOrder.Version).IsEqualTo(2);
+        await Assert.That(customerOrders).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task QueryAsync_ReturnsDocumentsByDeclaredIndex()
     {
         await ActivateAsync();
@@ -59,32 +60,32 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
 
         var results = await QueryByCustomerAndStatusAsync("customer-1", "Closed");
 
-        var result = Assert.Single(results);
-        Assert.Equal("order-2", result.Id);
+        var result = await Assert.That(results).HasSingleItem();
+        await Assert.That(result.Id).IsEqualTo("order-2");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryAsync_RejectsUndeclaredIndex()
     {
         await ActivateAsync();
         await SaveAsync("order-1", """{"status":"Open","customerId":"customer-1","priority":"High"}""", "Open", "customer-1");
 
         var query = new DocumentQuery("Orders", new Dictionary<string, string?> { ["Priority"] = "High" });
-        await Assert.ThrowsAsync<DocumentQueryNotIndexedException>(() => _store.QueryAsync(query));
+        await Assert.ThrowsExactlyAsync<DocumentQueryNotIndexedException>(() => _store.QueryAsync(query));
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_RejectsStaleVersion()
     {
         await ActivateAsync();
         await SaveAsync("order-1", """{"status":"Open","customerId":"customer-1"}""", "Open", "customer-1");
         await SaveAsync("order-1", """{"status":"Closed","customerId":"customer-1"}""", "Closed", "customer-1", expectedVersion: 1);
 
-        await Assert.ThrowsAsync<DocumentStoreConcurrencyException>(() =>
+        await Assert.ThrowsExactlyAsync<DocumentStoreConcurrencyException>(() =>
             SaveAsync("order-1", """{"status":"Cancelled","customerId":"customer-1"}""", "Cancelled", "customer-1", expectedVersion: 1));
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_RemovesDocumentAndIndexRows()
     {
         await ActivateAsync();
@@ -94,9 +95,9 @@ public class SqliteDocumentStoreTests : IAsyncDisposable
         var loaded = await _store.LoadAsync("Orders", "order-1");
         var results = await QueryByStatusAsync("Open");
 
-        Assert.True(deleted);
-        Assert.Null(loaded);
-        Assert.Empty(results);
+        await Assert.That(deleted).IsTrue();
+        await Assert.That(loaded).IsNull();
+        await Assert.That(results).IsEmpty();
     }
 
     private async Task ActivateAsync()
