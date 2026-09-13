@@ -47,6 +47,12 @@ public static class QuartzJobDataKeys
     public const string RetryScheduleGeneration = "Elsa.Scheduling.Quartz:RetryScheduleGeneration";
 
     /// <summary>
+    /// The schedule generation allowed by a persisted cancellation marker. When absent, the marker denies all retry
+    /// generations; when present, only the matching generation may continue after a reschedule.
+    /// </summary>
+    public const string CancellationAllowedScheduleGeneration = "Elsa.Scheduling.Quartz:CancellationAllowedScheduleGeneration";
+
+    /// <summary>
     /// Stable compatibility value for original triggers created before schedule-generation metadata was introduced.
     /// </summary>
     public const string LegacyScheduleGeneration = "legacy";

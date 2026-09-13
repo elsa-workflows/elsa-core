@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
@@ -113,8 +114,18 @@ public class QuartzWorkflowScheduler(
         var triggerKey = GetTriggerKey(taskName);
         await ExecuteCoordinatedAsync(triggerKey, async token =>
         {
-            await scheduler.UnscheduleJob(triggerKey, token);
-            await scheduler.UnscheduleJob(QuartzTriggerKeys.GetRetryTriggerKey(triggerKey), token);
+            // Keep cancellation observable after Quartz removes a firing trigger. An acquired execution can fail
+            // after both the original and its pending retry have disappeared, so the durable marker is written before
+            // those keyed removals. An absent allowed-generation value denies every acquired generation.
+            await PersistCancellationMarkerAsync(scheduler, triggerKey, allowedGeneration: null, token);
+
+            // The marker is the cancellation barrier. Once it is durable, finish removing both keyed triggers even if
+            // the caller cancels; Quartz has no transaction spanning the marker write and these removals, so honoring
+            // cancellation here would leave a denied marker beside a still-live original trigger.
+            await UnscheduleTriggersAsync(scheduler, triggerKey);
+
+            // Quartz does not expose one transaction spanning the marker and trigger operations, so a process crash
+            // can still leave a durable marker beside a trigger. A later keyed unschedule reconciles that state.
         }, cancellationToken);
     }
     
@@ -122,26 +133,49 @@ public class QuartzWorkflowScheduler(
     {
         await ExecuteCoordinatedAsync(QuartzTriggerKeys.GetOriginalTriggerKey(trigger), async token =>
         {
-            // Ensure the durable job referenced by the trigger exists before scheduling.
-            // The job is normally registered at startup by RegisterJobsTask, but it can be absent here when:
-            // - the trigger targets a tenant-specific job group that was never registered at startup,
-            // - the startup task has not run yet (or was skipped), or
-            // - the job rows were removed from the Quartz job store at runtime.
-            // Without this, Quartz throws "The job (...RunWorkflowJob) referenced by the trigger does not exist".
-            await EnsureJobAsync<TJobType>(scheduler, trigger.JobKey, token);
+            // A cancellation marker is retained across reschedules. Update it before persisting the replacement so an
+            // interrupted schedule operation cannot allow an acquired older generation to recreate a retry. The marker
+            // is keyed and therefore this remains constant-time per original schedule.
+            var cancellationMarkerKey = QuartzTriggerKeys.GetCancellationMarkerJobKey(trigger.Key);
+            var cancellationMarkerExists = await scheduler.GetJobDetail(cancellationMarkerKey, token) != null;
+            var existingTrigger = cancellationMarkerExists ? await scheduler.GetTrigger(trigger.Key, token) : null;
+
+            if (cancellationMarkerExists)
+            {
+                // Persist the proposed generation before scheduling, even when a preflight trigger snapshot exists:
+                // Quartz can naturally remove that trigger while this operation waits, after which ScheduleJob may
+                // successfully persist the proposed generation.
+                await PersistCancellationMarkerAsync(scheduler, trigger.Key, QuartzTriggerKeys.GetScheduleGeneration(trigger), token);
+            }
+
+            // Once marker state is durable, caller cancellation must not interrupt the matching trigger mutation. This
+            // preserves the marker-before-schedule invariant; scheduler acquisition and lock acquisition still use the
+            // caller token above.
+            var scheduleMutationToken = cancellationMarkerExists ? CancellationToken.None : token;
 
             try
             {
+                // Ensure the durable job referenced by the trigger exists before scheduling.
+                // The job is normally registered at startup by RegisterJobsTask, but it can be absent here when:
+                // - the trigger targets a tenant-specific job group that was never registered at startup,
+                // - the startup task has not run yet (or was skipped), or
+                // - the job rows were removed from the Quartz job store at runtime.
+                // Without this, Quartz throws "The job (...RunWorkflowJob) referenced by the trigger does not exist".
+                await EnsureJobAsync<TJobType>(scheduler, trigger.JobKey, scheduleMutationToken);
+
                 // Try to schedule the trigger. In clustered mode, multiple instances may attempt this simultaneously.
                 // The ScheduleJob method will throw ObjectAlreadyExistsException if a trigger with the same key already exists.
                 // Unlike AddJob, ScheduleJob does not have a 'replace' parameter - it always fails if the trigger exists.
                 // Note: To update an existing trigger, callers should first use UnscheduleAsync before scheduling the new trigger.
-                await scheduler.ScheduleJob(trigger, token);
+                await scheduler.ScheduleJob(trigger, scheduleMutationToken);
             }
             catch (JobPersistenceException e) when (e.InnerException is ObjectAlreadyExistsException)
             {
                 // SQL-backed Quartz stores (AdoJobStore) wrap the duplicate-trigger error in a JobPersistenceException.
                 // In clustered mode, this is an expected race condition when multiple pods attempt to schedule the same trigger.
+                if (cancellationMarkerExists)
+                    await RestoreCancellationMarkerToStoredTriggerAsync(scheduler, trigger.Key, existingTrigger, scheduleMutationToken);
+
                 logger.LogDebug("Trigger {TriggerKey} already exists (wrapped), skipping scheduling. This is expected in clustered deployments during concurrent operations", trigger.Key);
             }
             catch (ObjectAlreadyExistsException)
@@ -149,9 +183,69 @@ public class QuartzWorkflowScheduler(
                 // Trigger already exists. In clustered scenarios, this is an expected race condition
                 // when multiple instances attempt to schedule the same trigger during tenant activation or startup.
                 // We can safely ignore this and continue, as the trigger is already scheduled.
+                if (cancellationMarkerExists)
+                    await RestoreCancellationMarkerToStoredTriggerAsync(scheduler, trigger.Key, existingTrigger, scheduleMutationToken);
+
                 logger.LogDebug("Trigger {TriggerKey} already exists, skipping scheduling. This is expected in clustered deployments during concurrent operations", trigger.Key);
             }
+
         }, cancellationToken);
+    }
+
+    private static async Task UnscheduleTriggersAsync(QuartzIScheduler scheduler, TriggerKey originalTriggerKey)
+    {
+        var retryTriggerKey = QuartzTriggerKeys.GetRetryTriggerKey(originalTriggerKey);
+        Exception? firstException = null;
+
+        try
+        {
+            await scheduler.UnscheduleJob(originalTriggerKey, CancellationToken.None);
+        }
+        catch (Exception exception) when (exception is SchedulerException or OperationCanceledException)
+        {
+            firstException = exception;
+        }
+
+        try
+        {
+            await scheduler.UnscheduleJob(retryTriggerKey, CancellationToken.None);
+        }
+        catch (Exception exception) when (exception is SchedulerException or OperationCanceledException)
+        {
+            if (firstException != null)
+                throw new AggregateException("Failed to unschedule the original and retry triggers.", firstException, exception);
+
+            firstException = exception;
+        }
+
+        if (firstException != null)
+            ExceptionDispatchInfo.Capture(firstException).Throw();
+    }
+
+    private static async Task RestoreCancellationMarkerToStoredTriggerAsync(QuartzIScheduler scheduler, TriggerKey originalTriggerKey, ITrigger? existingTrigger, CancellationToken cancellationToken)
+    {
+        // Prefer the post-exception store read because the preflight snapshot may have fired or been replaced while
+        // ScheduleJob was in progress. If Quartz no longer exposes a trigger, the verified snapshot is the only known
+        // duplicate target and keeps the marker from authorizing the unpersisted proposed generation.
+        var storedTrigger = await scheduler.GetTrigger(originalTriggerKey, cancellationToken) ?? existingTrigger;
+
+        if (storedTrigger != null)
+            await PersistCancellationMarkerAsync(scheduler, originalTriggerKey, QuartzTriggerKeys.GetScheduleGeneration(storedTrigger), cancellationToken);
+    }
+
+    private static Task PersistCancellationMarkerAsync(QuartzIScheduler scheduler, TriggerKey originalTriggerKey, string? allowedGeneration, CancellationToken cancellationToken)
+    {
+        var markerData = new JobDataMap();
+        if (allowedGeneration != null)
+            markerData[QuartzJobDataKeys.CancellationAllowedScheduleGeneration] = allowedGeneration;
+
+        var marker = JobBuilder.Create<QuartzScheduleCancellationJob>()
+            .WithIdentity(QuartzTriggerKeys.GetCancellationMarkerJobKey(originalTriggerKey))
+            .UsingJobData(markerData)
+            .StoreDurably()
+            .Build();
+
+        return scheduler.AddJob(marker, replace: true, cancellationToken);
     }
 
     private Task ExecuteCoordinatedAsync(TriggerKey originalTriggerKey, Func<CancellationToken, Task> action, CancellationToken cancellationToken) =>

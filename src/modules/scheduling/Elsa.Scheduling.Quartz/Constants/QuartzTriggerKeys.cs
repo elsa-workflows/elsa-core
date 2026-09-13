@@ -18,15 +18,31 @@ public static class QuartzTriggerKeys
     public const string RetryGroup = "Elsa.Scheduling.Quartz:Retries";
 
     /// <summary>
+    /// Reserved Quartz group for durable cancellation markers. A marker survives removal of acquired triggers so a
+    /// late failure cannot recreate a retry for an explicitly unscheduled schedule. Markers are retained and updated
+    /// across reschedules because an acquired execution can fail after an arbitrary delay. Scheduling intentionally
+    /// does not delete the marker, leaving one durable row for each unique schedule key that was unscheduled.
+    /// </summary>
+    public const string CancellationGroup = "Elsa.Scheduling.Quartz:Cancellations";
+
+    /// <summary>
     /// Returns the stable key of the one-shot retry trigger that belongs to the original <paramref name="triggerKey"/>.
     /// The key does not expose caller-controlled names and is distinct from every ordinary trigger in its tenant group.
     /// Schedule generations are persisted in trigger data and used as a fence; they do not change the retry identity.
     /// </summary>
     public static TriggerKey GetRetryTriggerKey(TriggerKey triggerKey)
     {
-        var identity = $"{triggerKey.Group}\u001F{triggerKey.Name}";
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity))).ToLowerInvariant();
+        var hash = GetIdentityHash(triggerKey);
         return new TriggerKey($"retry-{hash}", RetryGroup);
+    }
+
+    /// <summary>
+    /// Returns the durable job key used as a cancellation marker for an original schedule. The marker is retained after
+    /// unscheduling and records the one replacement generation allowed to schedule retries.
+    /// </summary>
+    public static JobKey GetCancellationMarkerJobKey(TriggerKey triggerKey)
+    {
+        return new JobKey($"cancellation-{GetIdentityHash(triggerKey)}", CancellationGroup);
     }
 
     /// <summary>
@@ -65,9 +81,14 @@ public static class QuartzTriggerKeys
     /// </summary>
     internal static string GetScheduleLockKey(TriggerKey triggerKey)
     {
-        var identity = $"{triggerKey.Group}\u001F{triggerKey.Name}";
-        var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity))).ToLowerInvariant();
+        var hash = GetIdentityHash(triggerKey);
         return $"Elsa.Scheduling.Quartz:Schedule:{hash}";
+    }
+
+    private static string GetIdentityHash(TriggerKey triggerKey)
+    {
+        var identity = $"{triggerKey.Group}\u001F{triggerKey.Name}";
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity))).ToLowerInvariant();
     }
 
     /// <summary>

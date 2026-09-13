@@ -27,6 +27,18 @@ public class QuartzTriggerKeysTests
     }
 
     [Fact]
+    public void GetCancellationMarkerJobKey_UsesAStableReservedIdentity()
+    {
+        var original = new TriggerKey("task-1", "tenant-a");
+
+        var marker = QuartzTriggerKeys.GetCancellationMarkerJobKey(original);
+
+        Assert.StartsWith("cancellation-", marker.Name);
+        Assert.Equal(QuartzTriggerKeys.CancellationGroup, marker.Group);
+        Assert.Equal(marker, QuartzTriggerKeys.GetCancellationMarkerJobKey(original));
+    }
+
+    [Fact]
     public void IsRetryTrigger_OriginalTriggerWithRetrySuffix_ReturnsFalse()
     {
         var trigger = TriggerBuilder.Create().WithIdentity("task-1-retry", "Default").Build();

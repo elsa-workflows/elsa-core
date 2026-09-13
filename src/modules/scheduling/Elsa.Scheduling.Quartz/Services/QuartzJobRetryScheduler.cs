@@ -54,17 +54,25 @@ public class QuartzJobRetryScheduler(
         var delay = GetDelay(context, exception, attemptNumber, jobOptions);
         var retryTrigger = CreateRetryTrigger(context, attemptNumber, delay);
 
-        logger.LogWarning(
-            exception,
-            "Job {JobKey} failed with a retryable error. Scheduling retry {AttemptNumber} of {MaxRetryAttempts} in {RetryDelay}",
-            jobKey,
-            attemptNumber,
-            jobOptions.MaxRetryAttempts,
-            delay);
-
         var originalTriggerKey = QuartzTriggerKeys.GetOriginalTriggerKey(retryTrigger);
         await ExecuteCoordinatedAsync(originalTriggerKey, async token =>
         {
+            // The original trigger may already have been removed by explicit unscheduling. Check the durable marker
+            // before touching the retry key so an acquired one-shot/final-occurrence execution cannot resurrect it.
+            if (await IsCancellationMarkerBlockingAsync(context.Scheduler, retryTrigger, token))
+            {
+                logger.LogDebug("Schedule {OriginalTriggerKey} was explicitly cancelled; not scheduling retry {RetryTriggerKey}", originalTriggerKey, retryTrigger.Key);
+                return;
+            }
+
+            logger.LogWarning(
+                exception,
+                "Job {JobKey} failed with a retryable error. Scheduling retry {AttemptNumber} of {MaxRetryAttempts} in {RetryDelay}",
+                jobKey,
+                attemptNumber,
+                jobOptions.MaxRetryAttempts,
+                delay);
+
             // A recurring original can fire again while its deterministic retry is pending. Leave that pending retry in
             // place; replacing it would reset the retry chain to attempt 1 on every recurrence. A firing retry, on the
             // other hand, atomically replaces its own key to advance the chain to the next attempt.
@@ -113,20 +121,23 @@ public class QuartzJobRetryScheduler(
                     }
                 }
 
+                // Preserve the stable retry occupant seen immediately before scheduling. If Quartz reports a
+                // duplicate but the occupant disappears before reconciliation, this snapshot lets recovery
+                // distinguish a stale generation from an idempotent same-generation disappearance.
+                var preScheduleRetryTrigger = await context.Scheduler.GetTrigger(retryTrigger.Key, token);
+
                 try
                 {
                     await context.Scheduler.ScheduleJob(retryTrigger, token);
                 }
                 catch (JobPersistenceException e) when (e.InnerException is ObjectAlreadyExistsException)
                 {
-                    // Another concurrent execution won the race to create the deterministic retry key. The retry is already
-                    // scheduled, so report success to the job and avoid turning an idempotent operation into a failed attempt.
-                    logger.LogDebug("Retry trigger {RetryTriggerKey} already exists for job {JobKey}; keeping the existing retry", retryTrigger.Key, jobKey);
+                    await ReconcileDuplicateRetryAsync(context.Scheduler, retryTrigger, preScheduleRetryTrigger, token, jobKey);
                 }
                 catch (ObjectAlreadyExistsException)
                 {
                     // See the wrapped exception case above. Quartz may expose the duplicate directly depending on the store.
-                    logger.LogDebug("Retry trigger {RetryTriggerKey} already exists for job {JobKey}; keeping the existing retry", retryTrigger.Key, jobKey);
+                    await ReconcileDuplicateRetryAsync(context.Scheduler, retryTrigger, preScheduleRetryTrigger, token, jobKey);
                 }
             }
 
@@ -255,8 +266,105 @@ public class QuartzJobRetryScheduler(
         await scheduler.UnscheduleJob(expectedTrigger.Key, cancellationToken);
     }
 
+    private async Task ReconcileDuplicateRetryAsync(
+        QuartzScheduler scheduler,
+        ITrigger proposedRetryTrigger,
+        ITrigger? preScheduleRetryTrigger,
+        CancellationToken cancellationToken,
+        JobKey jobKey)
+    {
+        var storedRetryTrigger = await scheduler.GetTrigger(proposedRetryTrigger.Key, cancellationToken);
+
+        if (storedRetryTrigger == null && preScheduleRetryTrigger != null && !HasSameScheduleGeneration(proposedRetryTrigger, preScheduleRetryTrigger))
+        {
+            // The duplicate proved that a stale retry occupied the stable key, but that retry disappeared before
+            // reconciliation could read it. Make one bounded recovery attempt instead of losing the new generation.
+            await ScheduleMissingRetryAsync(scheduler, proposedRetryTrigger, cancellationToken, jobKey);
+            return;
+        }
+
+        if (storedRetryTrigger != null && !HasSameScheduleGeneration(proposedRetryTrigger, storedRetryTrigger))
+        {
+            // A prior generation can occupy the stable retry key after its original execution was explicitly
+            // unscheduled. Replace only that stale generation; a same-generation duplicate remains idempotent.
+            var nextFireTime = await scheduler.RescheduleJob(proposedRetryTrigger.Key, proposedRetryTrigger, cancellationToken);
+
+            if (nextFireTime != null)
+            {
+                logger.LogDebug("Retry trigger {RetryTriggerKey} for job {JobKey} was replaced with the newer schedule generation", proposedRetryTrigger.Key, jobKey);
+                return;
+            }
+
+            // RescheduleJob reports absence when the stale trigger disappears after the duplicate was observed. Make
+            // one bounded ScheduleJob attempt so the proposed generation is not lost in that window.
+            await ScheduleMissingRetryAsync(scheduler, proposedRetryTrigger, cancellationToken, jobKey);
+            return;
+        }
+
+        // Another concurrent execution won the race to create the same generation, or the stale trigger disappeared
+        // before it could be replaced. In either case, do not turn an idempotent retry request into a failed attempt.
+        logger.LogDebug("Retry trigger {RetryTriggerKey} already exists for job {JobKey}; keeping the existing retry", proposedRetryTrigger.Key, jobKey);
+    }
+
+    private async Task ScheduleMissingRetryAsync(QuartzScheduler scheduler, ITrigger proposedRetryTrigger, CancellationToken cancellationToken, JobKey jobKey)
+    {
+        try
+        {
+            await scheduler.ScheduleJob(proposedRetryTrigger, cancellationToken);
+            logger.LogDebug("Retry trigger {RetryTriggerKey} for job {JobKey} was scheduled after its stale predecessor disappeared", proposedRetryTrigger.Key, jobKey);
+            return;
+        }
+        catch (JobPersistenceException e) when (e.InnerException is ObjectAlreadyExistsException)
+        {
+            // A competing execution may have recreated the stable key while the fallback was in flight.
+        }
+        catch (ObjectAlreadyExistsException)
+        {
+            // See the wrapped exception case above.
+        }
+
+        var competingRetryTrigger = await scheduler.GetTrigger(proposedRetryTrigger.Key, cancellationToken);
+
+        if (competingRetryTrigger != null && HasSameScheduleGeneration(proposedRetryTrigger, competingRetryTrigger))
+        {
+            // Another execution already owns the proposed generation. Do not recurse or replace its idempotent retry.
+            logger.LogDebug("Retry trigger {RetryTriggerKey} already exists for job {JobKey}; keeping the existing retry", proposedRetryTrigger.Key, jobKey);
+            return;
+        }
+
+        if (competingRetryTrigger != null)
+        {
+            var nextFireTime = await scheduler.RescheduleJob(proposedRetryTrigger.Key, proposedRetryTrigger, cancellationToken);
+
+            if (nextFireTime != null)
+            {
+                logger.LogDebug("Retry trigger {RetryTriggerKey} for job {JobKey} was replaced with the newer schedule generation", proposedRetryTrigger.Key, jobKey);
+                return;
+            }
+        }
+
+        // A competing stale trigger disappeared during the bounded recovery. One final direct scheduling attempt
+        // closes that window without unbounded recursion; a duplicate at this point is left for the owning execution.
+        try
+        {
+            await scheduler.ScheduleJob(proposedRetryTrigger, cancellationToken);
+            logger.LogDebug("Retry trigger {RetryTriggerKey} for job {JobKey} was scheduled after competing stale retry disappeared", proposedRetryTrigger.Key, jobKey);
+        }
+        catch (JobPersistenceException e) when (e.InnerException is ObjectAlreadyExistsException)
+        {
+            logger.LogDebug("Retry trigger {RetryTriggerKey} already exists for job {JobKey}; keeping the existing retry", proposedRetryTrigger.Key, jobKey);
+        }
+        catch (ObjectAlreadyExistsException)
+        {
+            logger.LogDebug("Retry trigger {RetryTriggerKey} already exists for job {JobKey}; keeping the existing retry", proposedRetryTrigger.Key, jobKey);
+        }
+    }
+
     private static async Task<bool> IsCurrentRetryScheduleAsync(QuartzScheduler scheduler, ITrigger retryTrigger, CancellationToken cancellationToken)
     {
+        if (await IsCancellationMarkerBlockingAsync(scheduler, retryTrigger, cancellationToken))
+            return false;
+
         var originalTrigger = await scheduler.GetTrigger(QuartzTriggerKeys.GetOriginalTriggerKey(retryTrigger), cancellationToken);
 
         if (originalTrigger == null)
@@ -265,6 +373,28 @@ public class QuartzJobRetryScheduler(
         return string.Equals(
             QuartzTriggerKeys.GetScheduleGeneration(retryTrigger),
             QuartzTriggerKeys.GetScheduleGeneration(originalTrigger),
+            StringComparison.Ordinal);
+    }
+
+    private static async Task<bool> IsCancellationMarkerBlockingAsync(QuartzScheduler scheduler, ITrigger retryTrigger, CancellationToken cancellationToken)
+    {
+        var originalTriggerKey = QuartzTriggerKeys.GetOriginalTriggerKey(retryTrigger);
+        var marker = await scheduler.GetJobDetail(QuartzTriggerKeys.GetCancellationMarkerJobKey(originalTriggerKey), cancellationToken);
+
+        // No marker means this schedule has never been explicitly cancelled. Preserve the existing retry behavior for
+        // ordinary schedules and for natural one-shot/final-recurrence completion.
+        if (marker == null)
+            return false;
+
+        // A deny-all marker has no allowed generation. A reschedule writes exactly one allowed generation before its
+        // replacement trigger is persisted, so a crash before or after trigger persistence cannot revive an old retry.
+        var allowedGeneration = marker.JobDataMap.TryGetValue(QuartzJobDataKeys.CancellationAllowedScheduleGeneration, out var value) && value != null
+            ? Convert.ToString(value, CultureInfo.InvariantCulture)
+            : null;
+
+        return !string.Equals(
+            allowedGeneration,
+            QuartzTriggerKeys.GetScheduleGeneration(retryTrigger),
             StringComparison.Ordinal);
     }
 
