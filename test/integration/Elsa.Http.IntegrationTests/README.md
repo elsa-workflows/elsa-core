@@ -4,7 +4,7 @@ This test project contains integration tests for HTTP-related activities in Elsa
 
 ## Status
 
-✅ **Tests are working!** All tests pass successfully and are properly discovered by xUnit.
+✅ **Tests are working!** All tests pass successfully and are properly discovered by TUnit.
 
 ## Test Coverage
 
@@ -49,27 +49,25 @@ Elsa.Http.IntegrationTests/
 ├── Helpers/
 │   └── NullHttpContextAccessor.cs        # Mock HTTP context accessor
 ├── Elsa.Http.IntegrationTests.csproj
-├── README.md
-└── Usings.cs
+└── README.md
 ```
 
 ## Running the Tests
 
 ```bash
-dotnet test Elsa.Http.IntegrationTests.csproj
+dotnet run --project Elsa.Http.IntegrationTests.csproj -c Release -- \
+  --output Minimal --no-ansi --progress off --timeout 5m --minimum-expected-tests 2
 ```
 
-Or run specific tests:
+List the native TUnit discovery manifest with:
 
 ```bash
-dotnet test --filter "FullyQualifiedName~HttpContextLossTests"
+dotnet run --project Elsa.Http.IntegrationTests.csproj -c Release -- --list-tests
 ```
 
 ## Test Results
 
-```
-Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2
-```
+The verified native TUnit run reports 2 passed, 0 failed, and 0 skipped tests.
 
 ## Implementation Notes
 
@@ -77,4 +75,3 @@ Passed!  - Failed:     0, Passed:     2, Skipped:     0, Total:     2
 - Workflow classes are separated into individual files in the `Workflows` subfolder for better organization
 - `NullHttpContextAccessor` is a test helper that simulates HTTP context loss by always returning null
 - Tests automatically build the fixture and populate registries before execution
-
