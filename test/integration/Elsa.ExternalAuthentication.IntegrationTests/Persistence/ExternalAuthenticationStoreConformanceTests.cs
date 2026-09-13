@@ -37,16 +37,14 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         var second = CreateSession("session-b", "tenant-b", "refresh-a");
 
         await scenario.SessionStore.SaveAsync(first);
-        // The contracts require rejection; InMemory throws InvalidOperationException while EF surfaces its provider exception.
-        await Assert.ThrowsAnyAsync<Exception>(() => scenario.SessionStore.SaveAsync(second).AsTask());
+        await scenario.AssertRefreshTokenConflictAsync(() => scenario.SessionStore.SaveAsync(second).AsTask());
 
         Assert.Null(await scenario.SessionStore.FindByIdAsync(second.Id));
         Assert.Equal(first.Id, (await scenario.SessionStore.FindByRefreshTokenHashAsync(first.CurrentRefreshTokenHash!))!.Id);
 
         second.CurrentRefreshTokenHash = "refresh-b";
         await scenario.SessionStore.SaveAsync(second);
-        // Both implementations must reject the duplicate before changing the rotation state.
-        await Assert.ThrowsAnyAsync<Exception>(() => scenario.SessionStore.TryRotateRefreshTokenAsync(first.Id, "refresh-a", 0, "refresh-b", Now.AddMinutes(1)).AsTask());
+        await scenario.AssertRefreshTokenConflictAsync(() => scenario.SessionStore.TryRotateRefreshTokenAsync(first.Id, "refresh-a", 0, "refresh-b", Now.AddMinutes(1)).AsTask());
 
         var persistedFirst = await scenario.SessionStore.FindByIdAsync(first.Id);
         var persistedSecond = await scenario.SessionStore.FindByIdAsync(second.Id);
@@ -108,25 +106,25 @@ public abstract class ExternalAuthenticationStoreConformanceTests
 
         var transaction = CreateTransaction("concurrent-state", expiresAt);
         await scenario.StateStore.PutAsync("ExternalSignIn", transaction.HandleHash, transaction, expiresAt);
-        var stateResults = await Task.WhenAll(
-            scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash).AsTask(),
-            scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash).AsTask());
+        var stateResults = await RunConcurrentlyAsync(
+            () => scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash),
+            () => scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash));
         Assert.Single(stateResults.OfType<TakeResult<BrokerTransaction>.Taken>());
         Assert.Single(stateResults.OfType<TakeResult<BrokerTransaction>.AlreadyConsumed>());
 
         var grant = CreateGrant("concurrent-grant", expiresAt);
         await scenario.GrantStore.SaveAsync(grant);
-        var grantResults = await Task.WhenAll(
-            scenario.GrantStore.TryTakeAsync(grant.CodeHash).AsTask(),
-            scenario.GrantStore.TryTakeAsync(grant.CodeHash).AsTask());
+        var grantResults = await RunConcurrentlyAsync(
+            () => scenario.GrantStore.TryTakeAsync(grant.CodeHash),
+            () => scenario.GrantStore.TryTakeAsync(grant.CodeHash));
         Assert.Single(grantResults.OfType<TakeResult<AuthorizationGrant>.Taken>());
         Assert.Single(grantResults.OfType<TakeResult<AuthorizationGrant>.AlreadyConsumed>());
 
         var preview = CreatePreview("concurrent-preview", "administrator-a", expiresAt);
         await scenario.PreviewStore.SaveAsync(preview);
-        var previewResults = await Task.WhenAll(
-            scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId).AsTask(),
-            scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId).AsTask());
+        var previewResults = await RunConcurrentlyAsync(
+            () => scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId),
+            () => scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId));
         Assert.Single(previewResults.OfType<TakeResult<PreviewResult>.Taken>());
         Assert.Single(previewResults.OfType<TakeResult<PreviewResult>.AlreadyConsumed>());
     }
@@ -181,9 +179,9 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         await using var scenario = await CreateScenarioAsync();
         var request = new ProvisioningRequest("tenant-a", "contoso", Identity("subject-race"), null, "user-a");
 
-        var results = await Task.WhenAll(
-            scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(request).AsTask(),
-            scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+        var results = await RunConcurrentlyAsync(
+            () => scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(request),
+            () => scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(request));
 
         Assert.Single(results, x => x.WasLinkCreated);
         Assert.Single(results, x => !x.WasLinkCreated);
@@ -197,9 +195,9 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         await using var scenario = await CreateScenarioAsync();
         var old = (await scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", Identity("subject-old"), null, "user-a"))).Link;
 
-        var results = await Task.WhenAll(
-            scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-a"))).AsTask(),
-            scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-b"))).AsTask());
+        var results = await RunConcurrentlyAsync(
+            () => scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-a"))),
+            () => scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-b"))));
 
         Assert.Single(results.OfType<ExternalIdentityLinkReplaceResult.Success>());
         Assert.Single(results.OfType<ExternalIdentityLinkReplaceResult.NotFound>());
@@ -221,6 +219,32 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         Assert.Equal(initial + 1, advanced);
         Assert.False(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
         Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(advanced));
+
+        var concurrentAdvances = await RunConcurrentlyAsync(
+            () => scenario.RegistryVersionStore.AdvanceAsync(),
+            () => scenario.RegistryVersionStore.AdvanceAsync());
+        Assert.Equal(2, concurrentAdvances.Distinct().Count());
+        var final = await scenario.RegistryVersionStore.GetVersionAsync();
+        Assert.Equal(advanced + concurrentAdvances.Length, final);
+        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(final));
+    }
+
+    private static async Task<T[]> RunConcurrentlyAsync<T>(Func<ValueTask<T>> first, Func<ValueTask<T>> second)
+    {
+        var start = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var tasks = new[]
+        {
+            RunAfterStartAsync(start.Task, first),
+            RunAfterStartAsync(start.Task, second)
+        };
+        start.SetResult();
+        return await Task.WhenAll(tasks);
+    }
+
+    private static async Task<T> RunAfterStartAsync<T>(Task start, Func<ValueTask<T>> operation)
+    {
+        await start;
+        return await operation();
     }
 
     private static ExternalAuthenticationSession CreateSession(string id, string tenantId, string refreshTokenHash) => new()
@@ -328,6 +352,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     IIdentityProviderConnectionStore connectionStore,
     IExternalIdentityProvisioner identityProvisioner,
     IConnectionRegistryVersionStore registryVersionStore,
+    Func<Func<Task>, Task> assertRefreshTokenConflictAsync,
     Func<ValueTask> disposeAsync) : IAsyncDisposable
 {
     public ConformanceClock Clock { get; } = clock;
@@ -338,6 +363,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     public IIdentityProviderConnectionStore ConnectionStore { get; } = connectionStore;
     public IExternalIdentityProvisioner IdentityProvisioner { get; } = identityProvisioner;
     public IConnectionRegistryVersionStore RegistryVersionStore { get; } = registryVersionStore;
+    public Task AssertRefreshTokenConflictAsync(Func<Task> operation) => assertRefreshTokenConflictAsync(operation);
 
     public ValueTask DisposeAsync() => disposeAsync();
 
@@ -364,6 +390,7 @@ public sealed class ExternalAuthenticationStoreScenario(
             new InMemoryIdentityProviderConnectionStore(),
             provisioner,
             new InMemoryConnectionRegistryVersionStore(),
+            AssertInMemoryRefreshTokenConflictAsync,
             () =>
             {
                 hasher.Dispose();
@@ -412,6 +439,7 @@ public sealed class ExternalAuthenticationStoreScenario(
                 new EFCoreIdentityProviderConnectionStore(leaseFactory),
                 provisioner,
                 new EFCoreConnectionRegistryVersionStore(leaseFactory),
+                AssertSqliteRefreshTokenConflictAsync,
                 async () =>
                 {
                     hasher.Dispose();
@@ -429,6 +457,24 @@ public sealed class ExternalAuthenticationStoreScenario(
             File.Delete(databasePath);
             throw;
         }
+    }
+
+    private static Task AssertInMemoryRefreshTokenConflictAsync(Func<Task> operation) =>
+        Assert.ThrowsAsync<InvalidOperationException>(operation);
+
+    private static async Task AssertSqliteRefreshTokenConflictAsync(Func<Task> operation)
+    {
+        var exception = await Record.ExceptionAsync(operation);
+        var sqliteException = exception switch
+        {
+            DbUpdateException { InnerException: SqliteException inner } => inner,
+            SqliteException direct => direct,
+            _ => throw new Xunit.Sdk.XunitException($"Expected a SQLite uniqueness violation, received {exception?.GetType().FullName ?? "no exception"}.")
+        };
+
+        Assert.Equal(19, sqliteException.SqliteErrorCode);
+        Assert.Contains("UNIQUE constraint failed", sqliteException.Message, StringComparison.Ordinal);
+        Assert.Contains("ExternalAuthenticationSessionRefreshTokens.Hash", sqliteException.Message, StringComparison.Ordinal);
     }
 
     private static async Task<(MemoryUserStore Users, StoreBasedUserProvider Provider)> CreateUsersAsync()
