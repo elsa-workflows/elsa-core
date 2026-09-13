@@ -14,11 +14,10 @@ using Elsa.UserTasks.Persistence.EFCore.Repositories;
 using Elsa.UserTasks.Persistence.EFCore.Sqlite.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Elsa.UserTasks.Persistence.EFCore.UnitTests;
 
-public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
+public sealed class EFCoreUserTaskRepositoryTests
 {
     private readonly string databasePath = Path.Join(Path.GetTempPath(), $"elsa-user-tasks-{Guid.NewGuid():N}.db");
     private readonly ServiceProvider serviceProvider;
@@ -34,6 +33,7 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         serviceProvider = services.BuildServiceProvider();
     }
 
+    [Before(Test)]
     public async Task InitializeAsync()
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -42,6 +42,7 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         await dbContext.Database.MigrateAsync();
     }
 
+    [After(Test)]
     public async Task DisposeAsync()
     {
         await serviceProvider.DisposeAsync();
@@ -49,7 +50,7 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
             File.Delete(databasePath);
     }
 
-    [Fact]
+    [Test]
     public async Task RoundTrip_PreservesProtectedAggregateAndAppendOnlyHistory()
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -62,28 +63,26 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
 
         await repository.AddProjectionAsync(task);
         var reloaded = await repository.GetAsync(task.TenantId, task.Id);
-        Assert.NotNull(reloaded);
-        var loaded = reloaded!;
-        Assert.Single(loaded.CandidateUsers);
-        Assert.Equal("alice", loaded.CandidateUsers[0].DisplayName?.ToLowerInvariant());
-        Assert.Single(loaded.InvitationDefinitions);
-        Assert.Equal("Complete", loaded.Operations.Single().ActionKey);
+        var loaded = await Assert.That(reloaded).IsNotNull();
+        await Assert.That(loaded.CandidateUsers).HasSingleItem();
+        await Assert.That(loaded.CandidateUsers[0].DisplayName?.ToLowerInvariant()).IsEqualTo("alice");
+        await Assert.That(loaded.InvitationDefinitions).HasSingleItem();
+        await Assert.That(loaded.Operations.Single().ActionKey).IsEqualTo("Complete");
 
         loaded.Events.Add(new UserTaskEvent("event-2", task.TenantId, task.Id, 2, "Claimed", createdAt.AddMinutes(1), actor));
         loaded.Operations[0] = loaded.Operations[0] with { Status = UserTaskOperationStatus.Completed, ErrorCode = "none", UpdatedAt = createdAt.AddMinutes(1) };
         await repository.SaveAsync(loaded, 1);
 
         var saved = await repository.GetAsync(task.TenantId, task.Id);
-        Assert.NotNull(saved);
-        var persisted = saved!;
-        Assert.Equal(2, persisted.Events.Count);
-        Assert.Equal(2, persisted.Revision);
-        Assert.Equal(UserTaskOperationStatus.Completed, persisted.Operations.Single().Status);
-        Assert.Equal("Complete", persisted.Operations.Single().ActionKey);
-        Assert.Equal("none", persisted.Operations.Single().ErrorCode);
+        var persisted = await Assert.That(saved).IsNotNull();
+        await Assert.That(persisted.Events.Count).IsEqualTo(2);
+        await Assert.That(persisted.Revision).IsEqualTo(2);
+        await Assert.That(persisted.Operations.Single().Status).IsEqualTo(UserTaskOperationStatus.Completed);
+        await Assert.That(persisted.Operations.Single().ActionKey).IsEqualTo("Complete");
+        await Assert.That(persisted.Operations.Single().ErrorCode).IsEqualTo("none");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryScopeAndConcurrency_AreAppliedBeforePaging()
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -95,20 +94,20 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         await repository.AddProjectionAsync(pagingSecondTask);
 
         var query = await repository.QueryAsync(Query(task.TenantId, actor, limit: 1, includeTotalCount: true));
-        Assert.Single(query.Items);
-        Assert.Single(query.Items.Single().CandidateUsers);
-        Assert.Equal(2, query.TotalCount);
-        Assert.NotNull(query.NextCursor);
+        var queryItem = await Assert.That(query.Items).HasSingleItem();
+        await Assert.That(queryItem.CandidateUsers).HasSingleItem();
+        await Assert.That(query.TotalCount).IsEqualTo(2);
+        var nextCursor = await Assert.That(query.NextCursor).IsNotNull();
 
-        var finalPage = await repository.QueryAsync(Query(task.TenantId, actor, limit: 1) with { Cursor = query.NextCursor });
-        Assert.Single(finalPage.Items);
-        Assert.Null(finalPage.NextCursor);
+        var finalPage = await repository.QueryAsync(Query(task.TenantId, actor, limit: 1) with { Cursor = nextCursor });
+        await Assert.That(finalPage.Items).HasSingleItem();
+        await Assert.That(finalPage.NextCursor).IsNull();
 
         // The subject holds no assignment yet, so the assigned scope must be empty even though the
         // available scope returns both rows.
         var assignedScope = await repository.QueryAsync(Query(task.TenantId, actor, UserTaskQueryScopeKind.Assigned, includeTotalCount: true));
-        Assert.Empty(assignedScope.Items);
-        Assert.Equal(0, assignedScope.TotalCount);
+        await Assert.That(assignedScope.Items).IsEmpty();
+        await Assert.That(assignedScope.TotalCount).IsEqualTo(0);
 
         var crossTenantScope = await repository.QueryAsync(new UserTaskQuery
         {
@@ -116,31 +115,29 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
             IncludeTotalCount = true,
             Scope = new UserTaskQueryScope("other-tenant", actor with { TenantId = "other-tenant" }, [], Kind: UserTaskQueryScopeKind.Available)
         });
-        Assert.Empty(crossTenantScope.Items);
-        Assert.Equal(0, crossTenantScope.TotalCount);
+        await Assert.That(crossTenantScope.Items).IsEmpty();
+        await Assert.That(crossTenantScope.TotalCount).IsEqualTo(0);
 
         var first = await repository.GetAsync(task.TenantId, task.Id);
         var second = await repository.GetAsync(task.TenantId, task.Id);
-        Assert.NotNull(first);
-        Assert.NotNull(second);
-        var firstTask = first!;
-        var secondTask = second!;
+        var firstTask = await Assert.That(first).IsNotNull();
+        var secondTask = await Assert.That(second).IsNotNull();
         firstTask.Status = UserTaskStatus.Assigned;
         await repository.SaveAsync(firstTask, 1);
         secondTask.Status = UserTaskStatus.Completed;
-        await Assert.ThrowsAsync<UserTaskRevisionConflictException>(() => repository.SaveAsync(secondTask, 1));
+        await Assert.ThrowsExactlyAsync<UserTaskRevisionConflictException>(() => repository.SaveAsync(secondTask, 1));
 
         var excludedTask = CreateTask(DateTimeOffset.UtcNow.AddSeconds(2), actor);
         excludedTask.ExcludedUsers = [actor];
         await repository.AddProjectionAsync(excludedTask);
         var excludedQuery = await repository.QueryAsync(Query(task.TenantId, actor, includeTotalCount: true));
-        Assert.DoesNotContain(excludedQuery.Items, x => x.Id == excludedTask.Id);
+        await Assert.That(excludedQuery.Items).DoesNotContain(x => x.Id == excludedTask.Id);
         // Three tasks exist; the excluded one is filtered in the query path, so it is absent from the
         // total as well rather than merely being hidden on the page.
-        Assert.Equal(2, excludedQuery.TotalCount);
+        await Assert.That(excludedQuery.TotalCount).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task InvitationLookup_ResolvesTheOwningTaskFromATokenHashWithoutATenantHint()
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -156,14 +153,14 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
 
         var match = await repository.FindByInvitationTokenHashAsync("HASH-1");
 
-        Assert.NotNull(match);
-        var resolved = match!.Value;
-        Assert.Equal(task.Id, resolved.Task.Id);
-        Assert.Equal("Complete", Assert.Single(resolved.Invitation.AllowedActions));
-        Assert.Null(await repository.FindByInvitationTokenHashAsync("HASH-UNKNOWN"));
+        var resolved = await Assert.That(match).IsNotNull();
+        await Assert.That(resolved.Task.Id).IsEqualTo(task.Id);
+        var allowedAction = await Assert.That(resolved.Invitation.AllowedActions).HasSingleItem();
+        await Assert.That(allowedAction).IsEqualTo("Complete");
+        await Assert.That(await repository.FindByInvitationTokenHashAsync("HASH-UNKNOWN")).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task Manager_ReturnsARevisionConflictWhenAConcurrentEditWinsAgainstTheRealStore()
     {
         await using var scope = serviceProvider.CreateAsyncScope();
@@ -193,8 +190,8 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
         // conflict result rather than escaping to the unhandled-error middleware.
         var result = await manager.ClaimAsync(task.TenantId, task.Id, new(1, "claim-1"), actor);
 
-        Assert.False(result.Accepted);
-        Assert.Equal("revision-conflict", result.ConflictCode);
+        await Assert.That(result.Accepted).IsFalse();
+        await Assert.That(result.ConflictCode).IsEqualTo("revision-conflict");
     }
 
     private sealed class FixedClock : ISystemClock
