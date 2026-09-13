@@ -149,8 +149,8 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             await InstanceStore.Received().SaveAsync(Arg.Is<WorkflowInstance>(i => i.Id == handle.WorkflowInstanceId && i.SubStatus == WorkflowSubStatus.Interrupted), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "A null pre-cancel snapshot does not promote a later Finished/Cancelled row")]
-    public async Task NullSnapshotDoesNotPromoteLaterCancelledInstance()
+    [Fact(DisplayName = "A null pre-cancel snapshot still promotes a later drain-induced Finished/Cancelled row")]
+    public async Task NullSnapshotPromotesLaterCancelledInstance()
     {
         var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-missing", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
         ExecutionCycleRegistry.ActiveCount.Returns(1);
@@ -165,6 +165,23 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
 
                 return new ValueTask<WorkflowInstance?>(CancelledInstance("instance-missing"));
             });
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.Received().SaveAsync(Arg.Is<WorkflowInstance>(i => i.Id == "instance-missing" && i.SubStatus == WorkflowSubStatus.Interrupted), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "A confirmed Cancelled pre-cancel snapshot does not promote a later Finished/Cancelled row")]
+    public async Task CancelledSnapshotDoesNotPromoteLaterCancelledInstance()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-user-cancel", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(CancelledInstance("instance-user-cancel")));
 
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);

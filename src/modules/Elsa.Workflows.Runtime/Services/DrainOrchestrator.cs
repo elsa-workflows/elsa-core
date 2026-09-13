@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using Elsa.Common;
 using Elsa.Workflows.Management;
@@ -320,10 +321,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // DI scope so concurrent reads do not share an EF DbContext (Phase C stays
         // sequential on the outer scope for the same reason). Finds run concurrently
         // under a semaphore so a large live-cycle set cannot self-contend into
-        // 250ms timeouts. Timeout, error, or a null row: exclude that id (prefer
-        // preserving user-cancel / #8052 over promoting an unknown row). Only a
-        // confirmed non-Cancelled snapshot may join drainInduced.
+        // 250ms timeouts. Timeout/error: exclude that id (prefer preserving
+        // user-cancel / #8052). A successful null Find is not drain-induced yet —
+        // no persisted user-cancel exists, but we only promote if Phase A actually
+        // cancels that live handle (DeadlineBreachPersistsInterrupted).
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        var missingPersistedRowIds = new ConcurrentBag<string>();
         using var snapshotGate = new SemaphoreSlim(MaxConcurrentPreCancelSnapshotFinds);
         var snapshotTasks = live.Select(async handle =>
         {
@@ -341,10 +344,13 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                         .AsTask()
                         .WaitAsync(perFindCts.Token)
                         .ConfigureAwait(false);
-                    // Only a confirmed non-Cancelled row may join drainInduced. Null is
-                    // unknown pre-state: exclude so a later Finished/Cancelled cannot be
-                    // rewritten as Interrupted (user-cancel / #8052).
-                    if (snapshot is not null && snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                    if (snapshot is null)
+                    {
+                        missingPersistedRowIds.Add(handle.WorkflowInstanceId);
+                        return null;
+                    }
+
+                    if (snapshot.SubStatus != WorkflowSubStatus.Cancelled)
                         return handle.WorkflowInstanceId;
                 }
                 finally
@@ -377,18 +383,29 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // Phase A — cancel every handle synchronously. CancellationTokenSource.Cancel is
         // cheap and we want every runner to observe cancellation simultaneously rather
         // than serialized behind preceding settle waits.
+        var cancelledInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var handle in live)
         {
             try
             {
                 handle.Cancel();
                 totalCancelled++;
+                cancelledInstanceIds.Add(handle.WorkflowInstanceId);
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
                 _logger.LogError(ex, "Failed to cancel execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
+        }
+
+        // A live handle we ourselves cancelled whose snapshot found no row is drain-induced:
+        // there was no persisted user-cancel to preserve. Timeout/error stays excluded.
+        // Do not use reportedIds here — that list is capped by MaxForceCancelledInstanceIdsReported.
+        foreach (var instanceId in missingPersistedRowIds)
+        {
+            if (cancelledInstanceIds.Contains(instanceId))
+                drainInducedInstanceIds.Add(instanceId);
         }
 
         // Phase B — wait for every runner to settle in parallel under a shared deadline.
@@ -541,8 +558,9 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
     /// <summary>
     /// Skip persist when the row is already a real terminal outcome: natural completion,
-    /// fault, already Cancelled, or unknown pre-state (snapshot timeout). Only ids that
-    /// snapshot clearly showed were not already Cancelled may be promoted.
+    /// fault, already Cancelled, or unknown pre-state (snapshot timeout/error). Ids that
+    /// snapshot showed were not Cancelled, or that had no row and that we ourselves
+    /// force-cancelled, may be promoted.
     /// </summary>
     private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> drainInducedInstanceIds)
     {
