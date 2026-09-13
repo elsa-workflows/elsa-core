@@ -18,6 +18,28 @@ public static class TenantVisibility
         || entityTenantId is null && ambientTenantId == Tenant.DefaultTenantId;
 
     /// <summary>
+    /// Write counterpart of <see cref="IsVisible"/>. <c>*</c> is visible to every tenant, but only an
+    /// agnostic writer may replace it. Named tenants may replace their own rows (and the default tenant
+    /// may replace a null <see cref="Entity.TenantId"/>).
+    /// </summary>
+    public static bool CanReplace(string? existingTenantId, string writerTenantId) =>
+        existingTenantId == writerTenantId
+        || existingTenantId is null && writerTenantId == Tenant.DefaultTenantId;
+
+    /// <summary>
+    /// CAS match for an upsert: the existing row's tenant equals the stamped source tenant
+    /// (own row), or both sides are <c>*</c> and the writer is agnostic. A named writer never
+    /// matches a <c>*</c> row, even when the incoming entity is marked <c>*</c>.
+    /// </summary>
+    public static bool CanReplaceOwnedRow(string? existingTenantId, string? sourceTenantId, string ambientTenantId)
+    {
+        if (existingTenantId == Tenant.AgnosticTenantId)
+            return sourceTenantId == Tenant.AgnosticTenantId && ambientTenantId == Tenant.AgnosticTenantId;
+
+        return CanReplace(existingTenantId, sourceTenantId ?? Tenant.DefaultTenantId);
+    }
+
+    /// <summary>
     /// Restricts <paramref name="queryable"/> to rows visible to <paramref name="ambientTenantId"/>,
     /// unless <paramref name="tenantAgnostic"/> is set (EF <c>IgnoreQueryFilters</c>).
     /// </summary>

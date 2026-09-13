@@ -50,10 +50,38 @@ public sealed class AlterationStoreScenario(
             () => ValueTask.CompletedTask));
     }
 
-    public static async Task<AlterationStoreScenario> CreateSqliteAsync()
+    public static Task<AlterationStoreScenario> CreateSqliteAsync() =>
+        CreateSqliteAsync("tenant-a");
+
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(string tenantId) =>
+        CreateSqliteAsync(tenantId, Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db"), ownsDatabaseFile: true);
+
+    /// <summary>
+    /// Two EF/SQLite hosts that share a file and keep separate ambient tenants so concurrent
+    /// Save/SaveMany calls do not mutate a single <see cref="ITenantAccessor"/>.
+    /// </summary>
+    public static async Task<SqliteOwnershipPair> CreateSqlitePairAsync(string firstTenantId, string secondTenantId)
     {
-        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db");
-        var tenantAccessor = new TestTenantAccessor("tenant-a");
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-alterations-ownership-{Guid.NewGuid():N}.db");
+        var first = await CreateSqliteAsync(firstTenantId, databasePath, ownsDatabaseFile: false);
+        try
+        {
+            var second = await CreateSqliteAsync(secondTenantId, databasePath, ownsDatabaseFile: false);
+            return new SqliteOwnershipPair(first, second, databasePath);
+        }
+        catch
+        {
+            await first.DisposeAsync();
+            throw;
+        }
+    }
+
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(string tenantId, string databasePath, bool ownsDatabaseFile) =>
+        CreateSqliteHostAsync(tenantId, databasePath, ownsDatabaseFile);
+
+    private static async Task<AlterationStoreScenario> CreateSqliteHostAsync(string tenantId, string databasePath, bool ownsDatabaseFile)
+    {
+        var tenantAccessor = new TestTenantAccessor(tenantId);
         ServiceProvider? services = null;
         IServiceScope? scope = null;
 
@@ -91,8 +119,11 @@ public sealed class AlterationStoreScenario(
                 {
                     scope.Dispose();
                     await services.DisposeAsync();
-                    SqliteConnection.ClearAllPools();
-                    File.Delete(databasePath);
+                    if (ownsDatabaseFile)
+                    {
+                        SqliteConnection.ClearAllPools();
+                        File.Delete(databasePath);
+                    }
                 });
         }
         catch
@@ -100,8 +131,12 @@ public sealed class AlterationStoreScenario(
             scope?.Dispose();
             if (services is not null)
                 await services.DisposeAsync();
-            SqliteConnection.ClearAllPools();
-            File.Delete(databasePath);
+            if (ownsDatabaseFile)
+            {
+                SqliteConnection.ClearAllPools();
+                File.Delete(databasePath);
+            }
+
             throw;
         }
     }
@@ -120,6 +155,24 @@ public sealed class AlterationStoreScenario(
 
         public IEnumerable<IAlteration> DeserializeMany(string json) =>
             JsonSerializer.Deserialize<TestAlteration[]>(json)!;
+    }
+}
+
+/// <summary>
+/// Two SQLite alteration-store hosts that share one database file.
+/// </summary>
+public sealed class SqliteOwnershipPair(AlterationStoreScenario first, AlterationStoreScenario second, string databasePath) : IAsyncDisposable
+{
+    public AlterationStoreScenario First { get; } = first;
+    public AlterationStoreScenario Second { get; } = second;
+    public string DatabasePath { get; } = databasePath;
+
+    public async ValueTask DisposeAsync()
+    {
+        await First.DisposeAsync();
+        await Second.DisposeAsync();
+        SqliteConnection.ClearAllPools();
+        File.Delete(DatabasePath);
     }
 }
 
