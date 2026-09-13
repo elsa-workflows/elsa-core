@@ -120,7 +120,7 @@ public class ExceptionHandlingMiddleware(ActivityMiddlewareDelegate next, IIncid
         var incident = new ActivityIncident(activity.Id, activity.NodeId, activity.Type, strategyException.Message, exceptionState, now, context.Id);
 
         context.WorkflowExecutionContext.Incidents.Add(incident);
-        context.WorkflowExecutionContext.AddExecutionLogEntry("Faulted", strategyException.Message, exceptionState);
+        context.AddExecutionLogEntry("Faulted", strategyException.Message, payload: exceptionState);
 
         logger.LogError(
             strategyException,
