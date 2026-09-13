@@ -74,13 +74,27 @@ public sealed class ExecutionCycleHandle : IDisposable
     /// Invokes the cancel callback (when supplied at construction) to propagate cancellation into the workflow
     /// execution, then cancels the cycle's own linked CTS. Safe to call multiple times; idempotent.
     /// </summary>
-    public void Cancel()
+    public void Cancel() => TryCancel();
+
+    /// <summary>
+    /// Attempts to cancel the cycle. Returns <c>true</c> only when this call transitioned the handle from
+    /// not-cancelled to cancelled. Returns <c>false</c> when the handle was already disposed or already cancelled,
+    /// so drain can avoid treating a finished cycle as a force-cancel.
+    /// </summary>
+    public bool TryCancel()
     {
-        if (_disposed != 0) return;
+        if (Volatile.Read(ref _disposed) != 0)
+            return false;
+
         // Idempotent guard: ensures the cancel callback and CTS cancellation run AT MOST once even if Cancel() is
         // called repeatedly before disposal. Without this the drain orchestrator (or any other future caller) could
         // accidentally trigger a non-idempotent cancellation side effect multiple times.
-        if (Interlocked.Exchange(ref _cancelled, 1) != 0) return;
+        if (Interlocked.Exchange(ref _cancelled, 1) != 0)
+            return false;
+
+        // Disposed after we claimed cancel: the cycle already finished; do not treat as our force-cancel.
+        if (Volatile.Read(ref _disposed) != 0)
+            return false;
 
         // Propagate to the workflow execution first (this typically marks the workflow as Cancelled and clears its
         // schedule, so the runner stops scheduling new activities). The orchestrator's subsequent Interrupted
@@ -90,6 +104,8 @@ public sealed class ExecutionCycleHandle : IDisposable
 
         try { _cycleCts.Cancel(); }
         catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }
+
+        return true;
     }
 
     /// <summary>Releases the linked CTS, notifies the registry, and signals <see cref="Disposed"/>.</summary>

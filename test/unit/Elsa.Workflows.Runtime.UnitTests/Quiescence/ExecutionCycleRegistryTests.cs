@@ -101,6 +101,23 @@ public class ExecutionCycleRegistryTests
         Assert.True(handle.CancellationToken.IsCancellationRequested);
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle.TryCancel reports whether this call transitioned the handle")]
+    public void ExecutionCycleHandleTryCancelReportsTransition()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        var handle = sut.BeginCycle("instance-1", null, CancellationToken.None);
+
+        Assert.True(handle.TryCancel());
+        Assert.False(handle.TryCancel());
+
+        handle.Dispose();
+        Assert.False(handle.TryCancel());
+
+        var disposed = sut.BeginCycle("instance-2", null, CancellationToken.None);
+        disposed.Dispose();
+        Assert.False(disposed.TryCancel());
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle.Cancel invokes the cancel callback supplied at registration")]
     public void CancelCallbackIsInvoked()
     {
