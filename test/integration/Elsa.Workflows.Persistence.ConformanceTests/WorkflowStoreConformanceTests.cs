@@ -268,7 +268,7 @@ public abstract class WorkflowStoreConformanceTests
         Assert.Equal("ae-3", Assert.Single(await scenario.ActivityExecutions.FindManyAsync(new ActivityExecutionRecordFilter())).Id);
 
         await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-1", "instance-1", "activity-a", "Started"));
-        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-2", "instance-1", "activity-b", "Completed"));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-2", "instance-1", "activity-b", "Completed", activityType: "Elsa.Delay"));
         await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-3", "instance-2", "activity-a", "Started"));
 
         Assert.Equal("el-1", (await scenario.ExecutionLogs.FindAsync(new WorkflowExecutionLogRecordFilter { Id = "el-1" }))!.Id);
@@ -286,7 +286,7 @@ public abstract class WorkflowStoreConformanceTests
         Assert.Equal("el-2", Assert.Single((await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter { ActivityId = "activity-b" }, PageArgs.All)).Items).Id);
 
         var excluded = await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = "instance-1", ExcludeActivityType = "Elsa.WriteLine" }, PageArgs.All);
-        Assert.Equal(2, excluded.TotalCount);
+        Assert.Equal("el-2", Assert.Single(excluded.Items).Id);
 
         await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-1", "instance-1", "activity-a", "Resumed"));
         Assert.Equal("Resumed", (await scenario.ExecutionLogs.FindAsync(new WorkflowExecutionLogRecordFilter { Id = "el-1" }))!.EventName);
@@ -389,7 +389,8 @@ public abstract class WorkflowStoreConformanceTests
         string id,
         string workflowInstanceId,
         string activityId,
-        string eventName) =>
+        string eventName,
+        string activityType = "Elsa.WriteLine") =>
         new()
         {
             Id = id,
@@ -400,7 +401,7 @@ public abstract class WorkflowStoreConformanceTests
             WorkflowVersion = 1,
             ActivityInstanceId = $"ai-{id}",
             ActivityId = activityId,
-            ActivityType = "Elsa.WriteLine",
+            ActivityType = activityType,
             ActivityTypeVersion = 1,
             ActivityNodeId = $"node-{activityId}",
             Timestamp = StartedAt,
