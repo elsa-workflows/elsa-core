@@ -105,7 +105,7 @@ public sealed class ExecutionCycleHandle : IDisposable
         // schedule, so the runner stops scheduling new activities). The orchestrator's subsequent Interrupted
         // persistence then overrides the Cancelled sub-status — see Disposed-await sequencing in DrainOrchestrator.
         try { _cancelCallback?.Invoke(); }
-        catch (Exception ex) when (!IsFatalException(ex)) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
+        catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 
         PropagateCycleCtsCancellation();
 
@@ -154,7 +154,7 @@ public sealed class ExecutionCycleHandle : IDisposable
         {
             // Dispose may have won before cancellation propagation started.
         }
-        catch (Exception ex) when (!IsFatalException(ex))
+        catch (Exception ex) when (!ex.IsFatal())
         {
             // CTS callbacks are best-effort; preserve the lifecycle transition even when one reports a non-fatal error.
         }
@@ -201,8 +201,4 @@ public sealed class ExecutionCycleHandle : IDisposable
         _cycleCts.Dispose();
         _disposedTcs.TrySetResult();
     }
-
-    private static bool IsFatalException(Exception exception) =>
-        exception.IsFatal()
-        || exception is AggregateException aggregateException && aggregateException.Flatten().InnerExceptions.Any(inner => inner.IsFatal());
 }
