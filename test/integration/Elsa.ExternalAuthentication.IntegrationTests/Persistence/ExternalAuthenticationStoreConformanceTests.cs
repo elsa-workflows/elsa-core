@@ -555,9 +555,10 @@ public sealed class ExternalAuthenticationStoreScenario(
         Assert.Contains("ExternalAuthenticationSessionRefreshTokens.Hash", sqliteException.Message, StringComparison.Ordinal);
     }
 
-    // SQLite uses command boundaries to hold both callers before mutation. The in-memory implementations complete
-    // synchronously while holding their private lock, so there is no safe public boundary at which a test can pause
-    // both callers without changing production code; its completed handle still exercises the same shared outcomes.
+    // SQLite uses reader-disposal boundaries to hold both callers after EF has consumed their results and before
+    // mutation. The in-memory implementations complete synchronously while holding their private lock, so there is no
+    // safe public boundary at which a test can pause both callers without changing production code; its completed handle
+    // still exercises the same shared outcomes.
     public sealed class ConformanceRaceCoordinator(bool interceptCommands) : DbCommandInterceptor
     {
         private ConformanceRaceHandle? _activeRace;
@@ -573,15 +574,15 @@ public sealed class ExternalAuthenticationStoreScenario(
 
         public void Disarm(ConformanceRaceHandle race) => Interlocked.CompareExchange(ref _activeRace, null, race);
 
-        public override async ValueTask<DbDataReader> ReaderExecutedAsync(
+        public override InterceptionResult DataReaderDisposing(
             DbCommand command,
-            CommandExecutedEventData eventData,
-            DbDataReader result,
-            CancellationToken cancellationToken = default)
+            DataReaderDisposingEventData eventData,
+            InterceptionResult result)
         {
+            // EF calls this after CloseAsync, so the query result has been consumed and the provider reader is closed.
             var race = Volatile.Read(ref _activeRace);
             if (race is not null && race.Matches(command.CommandText))
-                await race.ParticipantReachedAsync(cancellationToken);
+                race.ParticipantReachedAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
 
             return result;
         }
