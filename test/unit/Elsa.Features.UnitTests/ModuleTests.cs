@@ -5,6 +5,7 @@ using Elsa.Features.Implementations;
 using Elsa.Features.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Threading.Tasks;
 
 namespace Elsa.Features.UnitTests;
 
@@ -25,81 +26,83 @@ public class ModuleTests
         _module.Properties[AppliedFeaturesKey] = _appliedFeatures;
     }
 
-    [Fact]
-    public void Apply_AppliesFeatureIntroducedFromApply()
+    [Test]
+    public async Task Apply_AppliesFeatureIntroducedFromApply()
     {
         _module.Configure<IntroducingFeature>();
 
         _module.Apply();
 
-        Assert.Contains(typeof(IntroducedFeature), _appliedFeatures);
-        Assert.Contains(_services, x => x.ServiceType == typeof(IntroducedMarker));
+        await Assert.That(_appliedFeatures).Contains(typeof(IntroducedFeature));
+        await Assert.That(_services).Contains(x => x.ServiceType == typeof(IntroducedMarker));
     }
 
-    [Fact]
-    public void Apply_AppliesEntireChainOfFeaturesIntroducedFromApply()
+    [Test]
+    public async Task Apply_AppliesEntireChainOfFeaturesIntroducedFromApply()
     {
         _module.Configure<ChainIntroducingFeature>();
 
         _module.Apply();
 
-        Assert.Contains(typeof(ChainMiddleFeature), _appliedFeatures);
-        Assert.Contains(typeof(ChainLeafFeature), _appliedFeatures);
+        await Assert.That(_appliedFeatures).Contains(typeof(ChainMiddleFeature));
+        await Assert.That(_appliedFeatures).Contains(typeof(ChainLeafFeature));
     }
 
-    [Fact]
-    public void Apply_AppliesDependenciesOfFeatureIntroducedFromApplyBeforeThatFeature()
+    [Test]
+    public async Task Apply_AppliesDependenciesOfFeatureIntroducedFromApplyBeforeThatFeature()
     {
         _module.Configure<IntroducingDependentFeature>();
 
         _module.Apply();
 
-        Assert.Contains(typeof(IntroducedDependencyFeature), _appliedFeatures);
-        Assert.True(_appliedFeatures.IndexOf(typeof(IntroducedDependencyFeature)) < _appliedFeatures.IndexOf(typeof(IntroducedDependentFeature)));
+        await Assert.That(_appliedFeatures).Contains(typeof(IntroducedDependencyFeature));
+        await Assert.That(_appliedFeatures.IndexOf(typeof(IntroducedDependencyFeature)) < _appliedFeatures.IndexOf(typeof(IntroducedDependentFeature))).IsTrue();
     }
 
-    [Fact]
-    public void Apply_RegistersHostedServicesOfFeatureIntroducedFromApply()
+    [Test]
+    public async Task Apply_RegistersHostedServicesOfFeatureIntroducedFromApply()
     {
         _module.Configure<IntroducingFeature>();
 
         _module.Apply();
 
-        Assert.Contains(_services, x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(IntroducedHostedService));
+        await Assert.That(_services).Contains(x => x.ServiceType == typeof(IHostedService) && x.ImplementationType == typeof(IntroducedHostedService));
     }
 
-    [Fact]
-    public void Apply_ListsFeatureIntroducedFromApplyInTheInstalledFeatureRegistry()
+    [Test]
+    public async Task Apply_ListsFeatureIntroducedFromApplyInTheInstalledFeatureRegistry()
     {
         _module.Configure<IntroducingFeature>();
 
         _module.Apply();
 
-        Assert.NotNull(GetInstalledFeatureRegistry().Find("Elsa.Introduced"));
+        await Assert.That(GetInstalledFeatureRegistry().Find("Elsa.Introduced")).IsNotNull();
     }
 
-    [Fact]
-    public void Apply_AppliesEachFeatureOnlyOnce()
+    [Test]
+    public async Task Apply_AppliesEachFeatureOnlyOnce()
     {
         _module.Configure<IntroducingFeature>();
 
         _module.Apply();
 
-        Assert.Equal(_appliedFeatures.Distinct().Count(), _appliedFeatures.Count);
+        await Assert.That(_appliedFeatures.Count).IsEqualTo(_appliedFeatures.Distinct().Count());
     }
 
-    [Fact]
-    public void Apply_AppliesFeaturesInDependencyOrder()
+    [Test]
+    public async Task Apply_AppliesFeaturesInDependencyOrder()
     {
         _module.Configure<DependentFeature>();
 
         _module.Apply();
 
-        Assert.Equal([typeof(DependencyFeature), typeof(DependentFeature)], _appliedFeatures);
+        await Assert.That(_appliedFeatures).IsEquivalentTo(
+            [typeof(DependencyFeature), typeof(DependentFeature)],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void Apply_RegistersHostedServicesInPriorityOrder()
+    [Test]
+    public async Task Apply_RegistersHostedServicesInPriorityOrder()
     {
         _module.ConfigureHostedService<SecondHostedService>(2);
         _module.ConfigureHostedService<FirstHostedService>(1);
@@ -107,11 +110,13 @@ public class ModuleTests
 
         _module.Apply();
 
-        Assert.Equal([typeof(FirstHostedService), typeof(SecondHostedService), typeof(IntroducedHostedService)], GetHostedServiceTypes());
+        await Assert.That(GetHostedServiceTypes()).IsEquivalentTo(
+            [typeof(FirstHostedService), typeof(SecondHostedService), typeof(IntroducedHostedService)],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void Apply_OrdersHostedServiceOfFeatureIntroducedFromApplyByPriority()
+    [Test]
+    public async Task Apply_OrdersHostedServiceOfFeatureIntroducedFromApplyByPriority()
     {
         _module.ConfigureHostedService<SecondHostedService>(10);
         _module.Configure<IntroducingFeature>();
@@ -119,23 +124,27 @@ public class ModuleTests
         _module.Apply();
 
         // The introduced feature configures its hosted service at priority 3, so it has to come first even though it shows up last.
-        Assert.Equal([typeof(IntroducedHostedService), typeof(SecondHostedService)], GetHostedServiceTypes());
+        await Assert.That(GetHostedServiceTypes()).IsEquivalentTo(
+            [typeof(IntroducedHostedService), typeof(SecondHostedService)],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void Apply_RegistersConfiguredHostedServicesBeforeThoseRegisteredFromApply()
+    [Test]
+    public async Task Apply_RegistersConfiguredHostedServicesBeforeThoseRegisteredFromApply()
     {
         _module.ConfigureHostedService<FirstHostedService>();
         _module.Configure<HostedServiceRegisteringFeature>();
 
         _module.Apply();
 
-        Assert.Equal([typeof(FirstHostedService), typeof(SelfRegisteredHostedService)], GetHostedServiceTypes());
+        await Assert.That(GetHostedServiceTypes()).IsEquivalentTo(
+            [typeof(FirstHostedService), typeof(SelfRegisteredHostedService)],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    private List<Type?> GetHostedServiceTypes()
+    private List<Type> GetHostedServiceTypes()
     {
-        return _services.Where(x => x.ServiceType == typeof(IHostedService)).Select(x => x.ImplementationType).ToList();
+        return _services.Where(x => x.ServiceType == typeof(IHostedService)).Select(x => x.ImplementationType!).ToList();
     }
 
     private IInstalledFeatureRegistry GetInstalledFeatureRegistry()
@@ -212,12 +221,12 @@ public class ModuleTests
         }
     }
 
-    [DependsOn(typeof(IntroducedDependencyFeature))]
+    [Elsa.Features.Attributes.DependsOn(typeof(IntroducedDependencyFeature))]
     public class IntroducedDependentFeature(IModule module) : RecordingFeature(module);
 
     public class IntroducedDependencyFeature(IModule module) : RecordingFeature(module);
 
-    [DependsOn(typeof(DependencyFeature))]
+    [Elsa.Features.Attributes.DependsOn(typeof(DependencyFeature))]
     public class DependentFeature(IModule module) : RecordingFeature(module);
 
     public class DependencyFeature(IModule module) : RecordingFeature(module);
