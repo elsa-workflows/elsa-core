@@ -1,63 +1,64 @@
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
+using System.Threading.Tasks;
 
 namespace Elsa.Expressions.UnitTests.Extensions;
 
 public class TypeExtensionsTests
 {
-    [Fact]
-    public void GetFriendlyTypeName_NonGenericType_ReturnsFullName()
+    [Test]
+    public async Task GetFriendlyTypeName_NonGenericType_ReturnsFullName()
     {
         var result = typeof(string).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal(typeof(string).FullName, result);
+        await Assert.That(result).IsEqualTo(typeof(string).FullName);
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_GenericType_ReturnsFriendlyName()
+    [Test]
+    public async Task GetFriendlyTypeName_GenericType_ReturnsFriendlyName()
     {
         var result = typeof(List<string>).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal("System.Collections.Generic.List<System.String>", result);
+        await Assert.That(result).IsEqualTo("System.Collections.Generic.List<System.String>");
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_ArrayOfGenericType_ReturnsFriendlyName()
+    [Test]
+    public async Task GetFriendlyTypeName_ArrayOfGenericType_ReturnsFriendlyName()
     {
         var result = typeof(List<string>[]).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal("System.Collections.Generic.List<System.String>[]", result);
+        await Assert.That(result).IsEqualTo("System.Collections.Generic.List<System.String>[]");
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_ArrayOfNonGenericType_ReturnsFullNameWithBrackets()
+    [Test]
+    public async Task GetFriendlyTypeName_ArrayOfNonGenericType_ReturnsFullNameWithBrackets()
     {
         var result = typeof(string[]).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal("System.String[]", result);
+        await Assert.That(result).IsEqualTo("System.String[]");
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_NestedGenericArray_ReturnsFriendlyName()
+    [Test]
+    public async Task GetFriendlyTypeName_NestedGenericArray_ReturnsFriendlyName()
     {
         var result = typeof(Dictionary<string, int>[]).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal("System.Collections.Generic.Dictionary<System.String, System.Int32>[]", result);
+        await Assert.That(result).IsEqualTo("System.Collections.Generic.Dictionary<System.String, System.Int32>[]");
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_MultiDimensionalArray_PreservesRank()
+    [Test]
+    public async Task GetFriendlyTypeName_MultiDimensionalArray_PreservesRank()
     {
         var result = typeof(int[,]).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal("System.Int32[,]", result);
+        await Assert.That(result).IsEqualTo("System.Int32[,]");
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_MultiDimensionalGenericArray_PreservesRank()
+    [Test]
+    public async Task GetFriendlyTypeName_MultiDimensionalGenericArray_PreservesRank()
     {
         var result = typeof(List<string>[,]).GetFriendlyTypeName(Brackets.Angle);
-        Assert.Equal("System.Collections.Generic.List<System.String>[,]", result);
+        await Assert.That(result).IsEqualTo("System.Collections.Generic.List<System.String>[,]");
     }
 
-    [Fact]
-    public void GetFriendlyTypeName_SquareBrackets_UsesCorrectBrackets()
+    [Test]
+    public async Task GetFriendlyTypeName_SquareBrackets_UsesCorrectBrackets()
     {
         var result = typeof(List<string>).GetFriendlyTypeName(Brackets.Square);
-        Assert.Equal("System.Collections.Generic.List[System.String]", result);
+        await Assert.That(result).IsEqualTo("System.Collections.Generic.List[System.String]");
     }
 }

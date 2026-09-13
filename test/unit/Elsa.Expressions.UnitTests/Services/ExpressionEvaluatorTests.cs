@@ -7,12 +7,14 @@ using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using System.Threading.Tasks;
 
 namespace Elsa.Expressions.UnitTests.Services;
 
 public class ExpressionEvaluatorTests
 {
-    [Fact(DisplayName = "Evaluates expression with generic type parameter")]
+    [Test]
+    [DisplayName("Evaluates expression with generic type parameter")]
     public async Task EvaluatesExpressionWithGenericTypeParameter()
     {
         // Arrange
@@ -24,10 +26,11 @@ public class ExpressionEvaluatorTests
         var result = await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext);
 
         // Assert
-        Assert.Equal("Test Value", result);
+        await Assert.That(result).IsEqualTo("Test Value");
     }
 
-    [Fact(DisplayName = "Evaluates expression with type parameter")]
+    [Test]
+    [DisplayName("Evaluates expression with type parameter")]
     public async Task EvaluatesExpressionWithTypeParameter()
     {
         // Arrange
@@ -39,10 +42,11 @@ public class ExpressionEvaluatorTests
         var result = await evaluator.EvaluateAsync(expression, typeof(int), context.ExpressionExecutionContext);
 
         // Assert
-        Assert.Equal(42, result);
+        await Assert.That(result).IsEqualTo(42);
     }
 
-    [Fact(DisplayName = "Throws when expression type not found in registry")]
+    [Test]
+    [DisplayName("Throws when expression type not found in registry")]
     public async Task ThrowsWhenExpressionTypeNotFound()
     {
         // Arrange
@@ -51,14 +55,16 @@ public class ExpressionEvaluatorTests
         var expression = new Expression("NonExistentType", "value");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(async () =>
+        var exception = await Assert.ThrowsExactlyAsync<Exception>(async () =>
             await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext));
 
-        Assert.Contains("Could not find a descriptor for expression type", exception.Message);
-        Assert.Contains("NonExistentType", exception.Message);
+        var exceptionMessage = exception!.Message;
+        await Assert.That(exceptionMessage).Contains("Could not find a descriptor for expression type").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exceptionMessage).Contains("NonExistentType").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Resolves expression handler via descriptor factory")]
+    [Test]
+    [DisplayName("Resolves expression handler via descriptor factory")]
     public async Task ResolvesExpressionHandlerViaDescriptorFactory()
     {
         // Arrange
@@ -71,7 +77,7 @@ public class ExpressionEvaluatorTests
         var result = await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext);
 
         // Assert
-        Assert.Equal("Mocked Result", result);
+        await Assert.That(result).IsEqualTo("Mocked Result");
         await mockHandler.Received(1).EvaluateAsync(
             Arg.Is<Expression>(e => e.Type == "CustomType" && e.Value as string == "test"),
             Arg.Any<Type>(),
@@ -79,7 +85,8 @@ public class ExpressionEvaluatorTests
             Arg.Any<ExpressionEvaluatorOptions>());
     }
 
-    [Fact(DisplayName = "Passes non-null options as default when not provided")]
+    [Test]
+    [DisplayName("Passes non-null options as default when not provided")]
     public async Task PassesNonNullOptionsAsDefault()
     {
         // Arrange
@@ -99,7 +106,8 @@ public class ExpressionEvaluatorTests
             Arg.Is<ExpressionEvaluatorOptions>(o => o != null));
     }
 
-    [Fact(DisplayName = "Wraps handler exceptions in evaluation context")]
+    [Test]
+    [DisplayName("Wraps handler exceptions in evaluation context")]
     public async Task WrapsHandlerExceptions()
     {
         // Arrange
@@ -109,10 +117,10 @@ public class ExpressionEvaluatorTests
         var expression = new Expression("FailingType", "bad value");
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(async () =>
             await evaluator.EvaluateAsync<string>(expression, context.ExpressionExecutionContext));
 
-        Assert.Equal("Handler failed", exception.Message);
+        await Assert.That(exception!.Message).IsEqualTo("Handler failed");
     }
 
     private static Task<ActivityExecutionContext> CreateContextAsync()

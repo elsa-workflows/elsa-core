@@ -8,12 +8,13 @@ using Elsa.Workflows.Activities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Expressions.UnitTests.CSharp;
 
 public class CSharpHostCodeExecutionTests
 {
-    [Fact]
+    [Test]
     public async Task Evaluator_BlocksExecution_WhenHostHasNotOptedIn()
     {
         using var memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -23,16 +24,16 @@ public class CSharpHostCodeExecutionTests
             memoryCache);
         var context = await new ActivityTestFixture(new WriteLine("test")).BuildAsync();
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             evaluator.EvaluateAsync("\"hello\"", typeof(string), context.ExpressionExecutionContext, new ExpressionEvaluatorOptions()));
 
-        Assert.Contains(nameof(CSharpOptions.AllowHostCodeExecution), exception.Message);
+        await Assert.That(exception!.Message).Contains(nameof(CSharpOptions.AllowHostCodeExecution)).WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Descriptor_Browsability_FollowsHostOptIn(bool allowHostCodeExecution)
+    [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Descriptor_Browsability_FollowsHostOptIn(bool allowHostCodeExecution)
     {
         var services = new ServiceCollection();
         services.AddOptions();
@@ -46,9 +47,7 @@ public class CSharpHostCodeExecutionTests
         var serviceProvider = services.BuildServiceProvider();
         var registry = serviceProvider.GetRequiredService<IExpressionDescriptorRegistry>();
 
-        var descriptor = registry.Find("CSharp");
-
-        Assert.NotNull(descriptor);
-        Assert.Equal(allowHostCodeExecution, descriptor.IsBrowsable);
+        var descriptor = await Assert.That(registry.Find("CSharp")).IsNotNull();
+        await Assert.That(descriptor.IsBrowsable).IsEqualTo(allowHostCodeExecution);
     }
 }
