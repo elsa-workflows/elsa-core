@@ -214,19 +214,19 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         var initial = await scenario.RegistryVersionStore.GetVersionAsync();
         Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
 
-        var advanced = await scenario.RegistryVersionStore.AdvanceAsync();
-
-        Assert.Equal(initial + 1, advanced);
-        Assert.False(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
-        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(advanced));
-
         var concurrentAdvances = await RunConcurrentlyAsync(
             () => scenario.RegistryVersionStore.AdvanceAsync(),
             () => scenario.RegistryVersionStore.AdvanceAsync());
         Assert.Equal(2, concurrentAdvances.Distinct().Count());
-        var final = await scenario.RegistryVersionStore.GetVersionAsync();
-        Assert.Equal(advanced + concurrentAdvances.Length, final);
-        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(final));
+        var afterConcurrent = await scenario.RegistryVersionStore.GetVersionAsync();
+        Assert.Equal(initial + concurrentAdvances.Length, afterConcurrent);
+        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(afterConcurrent));
+
+        var advanced = await scenario.RegistryVersionStore.AdvanceAsync();
+
+        Assert.Equal(afterConcurrent + 1, advanced);
+        Assert.False(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
+        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(advanced));
     }
 
     private static async Task<T[]> RunConcurrentlyAsync<T>(Func<ValueTask<T>> first, Func<ValueTask<T>> second)
