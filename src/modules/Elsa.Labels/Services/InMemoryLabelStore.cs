@@ -38,9 +38,14 @@ public class InMemoryLabelStore : ILabelStore
     /// <inheritdoc />
     public Task SaveAsync(Label record, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(record);
         lock (_labelStore.Sync)
+        {
+            ApplyCurrentTenant(record);
+            SyncNormalizedName(record);
+            EnsureNormalizedNameAvailable(record, [record]);
             _labelStore.Save(record, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -49,11 +54,20 @@ public class InMemoryLabelStore : ILabelStore
     {
         var list = records.ToList();
 
-        foreach (var record in list)
-            ApplyCurrentTenant(record);
-
         lock (_labelStore.Sync)
+        {
+            foreach (var record in list)
+            {
+                ApplyCurrentTenant(record);
+                SyncNormalizedName(record);
+            }
+
+            foreach (var record in list)
+                EnsureNormalizedNameAvailable(record, list);
+
             _labelStore.SaveMany(list, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -123,4 +137,36 @@ public class InMemoryLabelStore : ILabelStore
 
         entity.TenantId ??= _tenantAccessor.TenantId;
     }
+
+    private static void SyncNormalizedName(Label record) =>
+        record.NormalizedName = record.Name.ToLowerInvariant();
+
+    /// <summary>
+    /// Memory counterpart of the EF unique index on <c>(TenantId, NormalizedName)</c>.
+    /// Same-Id upserts are allowed so a row can rename itself. Incoming batch rows
+    /// replace same-Id store rows, so those store rows are ignored here.
+    /// </summary>
+    private void EnsureNormalizedNameAvailable(Label record, IReadOnlyCollection<Label> batch)
+    {
+        var batchIds = batch.Select(x => x.Id).ToHashSet();
+        var existing = _labelStore.Find(candidate =>
+            candidate.TenantId == record.TenantId
+            && candidate.Id != record.Id
+            && !batchIds.Contains(candidate.Id)
+            && candidate.NormalizedName == record.NormalizedName);
+
+        if (existing is not null)
+            throw DuplicateNormalizedName(record);
+
+        if (batch.Any(other =>
+                other.Id != record.Id
+                && other.TenantId == record.TenantId
+                && other.NormalizedName == record.NormalizedName))
+        {
+            throw DuplicateNormalizedName(record);
+        }
+    }
+
+    private static InvalidOperationException DuplicateNormalizedName(Label record) =>
+        new($"A label already exists with normalized name '{record.NormalizedName}' in tenant '{record.TenantId}'.");
 }
