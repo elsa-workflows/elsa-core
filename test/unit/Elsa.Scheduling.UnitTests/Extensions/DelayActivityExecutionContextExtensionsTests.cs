@@ -12,11 +12,11 @@ namespace Elsa.Scheduling.UnitTests.Extensions;
 
 public class DelayActivityExecutionContextExtensionsTests
 {
-    [Theory]
-    [InlineData(1, 0, 0)] // 1 hour
-    [InlineData(0, 30, 0)] // 30 minutes
-    [InlineData(0, 0, 45)] // 45 seconds
-    [InlineData(24, 0, 0)] // 1 day
+    [Test]
+    [Arguments(1, 0, 0)] // 1 hour
+    [Arguments(0, 30, 0)] // 30 minutes
+    [Arguments(0, 0, 45)] // 45 seconds
+    [Arguments(24, 0, 0)] // 1 day
     public async Task DelayFor_CalculatesCorrectResumeTime(int hours, int minutes, int seconds)
     {
         // Arrange
@@ -31,14 +31,14 @@ public class DelayActivityExecutionContextExtensionsTests
         var context = await ExecuteAsync(activity, clock);
 
         // Assert
-        var payload = GetDelayPayload(context);
-        Assert.Equal(expectedResumeAt, payload.ResumeAt);
+        var payload = await GetDelayPayload(context);
+        await Assert.That(payload.ResumeAt).IsEqualTo(expectedResumeAt);
     }
 
-    [Theory]
-    [InlineData(2025, 1, 6, 14, 30, 0)]
-    [InlineData(2025, 12, 31, 23, 59, 59)]
-    [InlineData(2026, 6, 15, 8, 0, 0)]
+    [Test]
+    [Arguments(2025, 1, 6, 14, 30, 0)]
+    [Arguments(2025, 12, 31, 23, 59, 59)]
+    [Arguments(2026, 6, 15, 8, 0, 0)]
     public async Task DelayUntil_UsesExactTime(int year, int month, int day, int hour, int minute, int second)
     {
         // Arrange
@@ -49,8 +49,8 @@ public class DelayActivityExecutionContextExtensionsTests
         var context = await ExecuteAsync(activity);
 
         // Assert
-        var payload = GetDelayPayload(context);
-        Assert.Equal(resumeAt, payload.ResumeAt);
+        var payload = await GetDelayPayload(context);
+        await Assert.That(payload.ResumeAt).IsEqualTo(resumeAt);
     }
 
     private static async Task<ActivityExecutionContext> ExecuteAsync(Inline activity, ISystemClock? clock = null)
@@ -70,10 +70,11 @@ public class DelayActivityExecutionContextExtensionsTests
         return clock;
     }
 
-    private static DelayPayload GetDelayPayload(ActivityExecutionContext context)
+    private static async Task<DelayPayload> GetDelayPayload(ActivityExecutionContext context)
     {
-        var bookmark = Assert.Single(context.WorkflowExecutionContext.Bookmarks);
-        Assert.Equal(SchedulingStimulusNames.Delay, bookmark.Name);
-        return Assert.IsType<DelayPayload>(bookmark.Payload);
+        var bookmark = await Assert.That(context.WorkflowExecutionContext.Bookmarks).HasSingleItem();
+        await Assert.That(bookmark.Name).IsEqualTo(SchedulingStimulusNames.Delay);
+        await Assert.That(bookmark.Payload).IsOfType(typeof(DelayPayload));
+        return (DelayPayload)bookmark.Payload!;
     }
 }

@@ -80,7 +80,7 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
             Arg.Any<Func<object, Exception?, string>>());
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithVerySmallDelay_ShouldStillSetupTimer()
     {
         // Arrange - simulate a case where the delay is very small (1 tick = 100ns)
@@ -94,7 +94,7 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
         AssertNoErrorLogged();
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithZeroDelay_ShouldUseCatchUpDelay()
     {
         // Arrange - simulate a case where startAt is exactly now
@@ -107,7 +107,7 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
         AssertDebugLogged();
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithNegativeDelay_ShouldUseCatchUpDelay()
     {
         // Arrange - simulate a case where startAt is in the past
@@ -120,7 +120,7 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
         AssertDebugLogged();
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithMultiplePastDueTasks_ShouldStaggerCatchUp()
     {
         SetupSystemClock(DefaultNow);
@@ -149,7 +149,7 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
             Arg.Any<Func<object, Exception?, string>>());
     }
 
-    [Fact]
+    [Test]
     public void DisposeDuringTimerCallback_ShouldNotCrash()
     {
         // Arrange - set up a very short delay so timer fires quickly

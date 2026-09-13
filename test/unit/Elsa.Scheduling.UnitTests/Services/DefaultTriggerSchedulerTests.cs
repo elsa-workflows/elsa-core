@@ -11,7 +11,7 @@ namespace Elsa.Scheduling.UnitTests.Services;
 
 public class DefaultTriggerSchedulerTests
 {
-    [Fact]
+    [Test]
     public async Task ScheduleAsync_SchedulesPastDueStartAtTriggerForCatchUp()
     {
         var workflowScheduler = Substitute.For<IWorkflowScheduler>();
@@ -35,8 +35,8 @@ public class DefaultTriggerSchedulerTests
         await scheduler.ScheduleAsync([trigger], CancellationToken.None);
 
         await workflowScheduler.Received(1).ScheduleAtAsync(trigger.Id, Arg.Any<ScheduleNewWorkflowInstanceRequest>(), executeAt, Arg.Any<CancellationToken>());
-        Assert.NotNull(scheduledRequest);
-        Assert.Equal(trigger.ActivityId, scheduledRequest.TriggerActivityId);
-        Assert.Equal(trigger.WorkflowDefinitionVersionId, scheduledRequest.WorkflowDefinitionHandle.DefinitionVersionId);
+        await Assert.That(scheduledRequest).IsNotNull();
+        await Assert.That(scheduledRequest.TriggerActivityId).IsEqualTo(trigger.ActivityId);
+        await Assert.That(scheduledRequest.WorkflowDefinitionHandle.DefinitionVersionId).IsEqualTo(trigger.WorkflowDefinitionVersionId);
     }
 }

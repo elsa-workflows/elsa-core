@@ -80,7 +80,7 @@ public class ScheduledCronTaskTests : IDisposable
             Arg.Any<Func<object, Exception?, string>>());
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithVerySmallDelay_ShouldStillSetupTimer()
     {
         // Arrange - simulate a case where the delay is very small (1 tick = 100ns)
@@ -94,8 +94,8 @@ public class ScheduledCronTaskTests : IDisposable
         AssertNoErrorLogged();
     }
 
-    [Fact]
-    public void Schedule_WithZeroDelay_ShouldRetryAndSetupTimer()
+    [Test]
+    public async Task Schedule_WithZeroDelay_ShouldRetryAndSetupTimer()
     {
         // Arrange - simulate a case where the first call returns exactly now
         // but the second call returns a proper future time
@@ -112,11 +112,11 @@ public class ScheduledCronTaskTests : IDisposable
         // May be called more if timer fires before disposal in rare race conditions
         _cronParser.Received().GetNextOccurrence(DefaultCronExpression);
         var calls = _cronParser.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
-        Assert.True(calls >= 2, $"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
+        await Assert.That(calls >= 2).IsTrue().Because($"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
     }
 
-    [Fact]
-    public void Schedule_WithNegativeDelay_ShouldRetryAndSetupTimer()
+    [Test]
+    public async Task Schedule_WithNegativeDelay_ShouldRetryAndSetupTimer()
     {
         // Arrange - simulate a case where the first call returns a time in the past
         SetupSystemClock(DefaultNow, DefaultNow);
@@ -132,11 +132,11 @@ public class ScheduledCronTaskTests : IDisposable
         // Assert - Should call GetNextOccurrence at least twice
         _cronParser.Received().GetNextOccurrence(DefaultCronExpression);
         var calls = _cronParser.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
-        Assert.True(calls >= 2, $"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
+        await Assert.That(calls >= 2).IsTrue().Because($"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
     }
 
-    [Fact]
-    public void Schedule_WithPersistentZeroDelay_ShouldLogWarningAndUseMinimumDelay()
+    [Test]
+    public async Task Schedule_WithPersistentZeroDelay_ShouldLogWarningAndUseMinimumDelay()
     {
         // Arrange - simulate the bug scenario: both attempts return zero/negative delay
         // This can happen if the system clock doesn't advance or if there's clock drift
@@ -155,11 +155,11 @@ public class ScheduledCronTaskTests : IDisposable
         // May be called more if timer fires before disposal and triggers Schedule() again
         _cronParser.Received().GetNextOccurrence(DefaultCronExpression);
         var calls = _cronParser.ReceivedCalls().Count(c => c.GetMethodInfo().Name == nameof(_cronParser.GetNextOccurrence));
-        Assert.True(calls >= 2, $"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
+        await Assert.That(calls >= 2).IsTrue().Because($"Expected at least 2 calls to GetNextOccurrence, but got {calls}");
         AssertWarningLogged();
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithNegativeDelayAfterRetry_ShouldLogWarningAndUseMinimumDelay()
     {
         // Arrange - simulate a case where even after retry, delay is negative
@@ -179,7 +179,7 @@ public class ScheduledCronTaskTests : IDisposable
         AssertWarningLogged();
     }
 
-    [Fact]
+    [Test]
     public void ReproduceOriginalIssue_WithRealCronParser_DemonstratesBugScenario()
     {
         // This test reproduces the exact scenario from the original issue report

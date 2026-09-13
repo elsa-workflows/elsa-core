@@ -3,6 +3,7 @@
     <PropertyGroup>
         <Include>[Elsa.Scheduling]*</Include>
         <Threshold>1</Threshold>
+        <UseTUnit>true</UseTUnit>
     </PropertyGroup>
 
     <ItemGroup>

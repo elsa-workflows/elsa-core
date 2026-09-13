@@ -6,8 +6,8 @@ namespace Elsa.Scheduling.UnitTests.Services;
 
 public class PastDueScheduleStaggererTests
 {
-    [Fact]
-    public void GetDelay_DoesNotExceedConfiguredWindow()
+    [Test]
+    public async Task GetDelay_DoesNotExceedConfiguredWindow()
     {
         var staggerer = new PastDueScheduleStaggerer(OptionsFactory.Create(new SchedulingOptions
         {
@@ -18,6 +18,10 @@ public class PastDueScheduleStaggererTests
 
         var delays = Enumerable.Range(0, 16).Select(_ => staggerer.GetDelay(TimeSpan.Zero)).ToList();
 
-        Assert.All(delays, delay => Assert.InRange(delay, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5)));
+        foreach (var delay in delays)
+        {
+            await Assert.That(delay).IsGreaterThanOrEqualTo(TimeSpan.FromSeconds(1));
+            await Assert.That(delay).IsLessThanOrEqualTo(TimeSpan.FromSeconds(5));
+        }
     }
 }

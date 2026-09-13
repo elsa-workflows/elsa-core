@@ -73,7 +73,7 @@ public class ScheduledRecurringTaskTests : IDisposable
             Arg.Any<Func<object, Exception?, string>>());
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithVerySmallDelay_ShouldStillSetupTimer()
     {
         // Arrange - simulate a case where the delay is very small (1 tick = 100ns)
@@ -87,8 +87,8 @@ public class ScheduledRecurringTaskTests : IDisposable
         AssertNoErrorLogged();
     }
 
-    [Fact]
-    public void Schedule_WithZeroDelay_ShouldRetryAndSetupTimer()
+    [Test]
+    public async Task Schedule_WithZeroDelay_ShouldRetryAndSetupTimer()
     {
         // Arrange - simulate a case where the first call returns exactly now
         // but the second call returns a proper future time
@@ -105,11 +105,11 @@ public class ScheduledRecurringTaskTests : IDisposable
         // May be called more if timer fires before disposal in rare race conditions
         _ = _systemClock.Received().UtcNow;
         var calls = _systemClock.ReceivedCalls().Count(c => c.GetMethodInfo().Name == "get_UtcNow");
-        Assert.True(calls >= 2, $"Expected at least 2 calls to UtcNow, but got {calls}");
+        await Assert.That(calls >= 2).IsTrue().Because($"Expected at least 2 calls to UtcNow, but got {calls}");
     }
 
-    [Fact]
-    public void Schedule_WithNegativeDelay_ShouldRetryAndSetupTimer()
+    [Test]
+    public async Task Schedule_WithNegativeDelay_ShouldRetryAndSetupTimer()
     {
         // Arrange - simulate a case where the first call returns a time in the past
         SetupSystemClock(DefaultNow, DefaultNow);
@@ -125,11 +125,11 @@ public class ScheduledRecurringTaskTests : IDisposable
         // May be called more if timer fires before disposal in rare race conditions
         _ = _systemClock.Received().UtcNow;
         var calls = _systemClock.ReceivedCalls().Count(c => c.GetMethodInfo().Name == "get_UtcNow");
-        Assert.True(calls >= 2, $"Expected at least 2 calls to UtcNow, but got {calls}");
+        await Assert.That(calls >= 2).IsTrue().Because($"Expected at least 2 calls to UtcNow, but got {calls}");
     }
 
-    [Fact]
-    public void Schedule_WithPersistentZeroDelay_ShouldLogWarningAndUseMinimumDelay()
+    [Test]
+    public async Task Schedule_WithPersistentZeroDelay_ShouldLogWarningAndUseMinimumDelay()
     {
         // Arrange - simulate the bug scenario: both attempts return zero/negative delay
         // This can happen if the system clock doesn't advance or if there's clock drift
@@ -147,11 +147,11 @@ public class ScheduledRecurringTaskTests : IDisposable
         // May be called more if timer fires before disposal
         _ = _systemClock.Received().UtcNow;
         var calls = _systemClock.ReceivedCalls().Count(c => c.GetMethodInfo().Name == "get_UtcNow");
-        Assert.True(calls >= 2, $"Expected at least 2 calls to UtcNow, but got {calls}");
+        await Assert.That(calls >= 2).IsTrue().Because($"Expected at least 2 calls to UtcNow, but got {calls}");
         AssertWarningLogged();
     }
 
-    [Fact]
+    [Test]
     public void Schedule_WithNegativeDelayAfterRetry_ShouldLogWarningAndUseMinimumDelay()
     {
         // Arrange - simulate a case where even after retry, delay is negative
@@ -169,7 +169,7 @@ public class ScheduledRecurringTaskTests : IDisposable
         AssertWarningLogged();
     }
 
-    [Fact]
+    [Test]
     public void DisposeDuringTimerCallback_ShouldNotCrash()
     {
         // Arrange - set up a very short delay so timer fires quickly

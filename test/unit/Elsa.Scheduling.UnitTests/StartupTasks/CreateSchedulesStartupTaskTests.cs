@@ -35,15 +35,15 @@ public class CreateSchedulesStartupTaskTests
             .Returns(new Page<StoredBookmark>(_bookmarks, _bookmarks.Length));
     }
 
-    [Fact]
-    public void Task_DependsOnPopulateRegistriesStartupTask()
+    [Test]
+    public async Task Task_DependsOnPopulateRegistriesStartupTask()
     {
-        var dependency = Assert.Single(typeof(CreateSchedulesStartupTask).GetCustomAttributes(typeof(TaskDependencyAttribute), false).Cast<TaskDependencyAttribute>());
+        var dependency = await Assert.That(typeof(CreateSchedulesStartupTask).GetCustomAttributes(typeof(TaskDependencyAttribute), false).Cast<TaskDependencyAttribute>()).HasSingleItem();
 
-        Assert.Equal(typeof(PopulateRegistriesStartupTask), dependency.DependencyTaskType);
+        await Assert.That(dependency.DependencyTaskType).IsEqualTo(typeof(PopulateRegistriesStartupTask));
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_WithoutTenantBackgroundQueue_SchedulesImmediately()
     {
         var task = new CreateSchedulesStartupTask(CreateServiceProvider(), OptionsFactory.Create(_options));
@@ -54,7 +54,7 @@ public class CreateSchedulesStartupTaskTests
         await _bookmarkScheduler.Received(1).ScheduleAsync(Arg.Is<IEnumerable<StoredBookmark>>(x => x.SequenceEqual(_bookmarks)), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_WithTenantBackgroundQueue_EnqueuesScheduleCreation()
     {
         TenantBackgroundWorkItem? workItem = null;
@@ -68,14 +68,14 @@ public class CreateSchedulesStartupTaskTests
         await workQueue.Received(1).EnqueueAsync(Arg.Any<TenantBackgroundWorkItem>(), Arg.Any<CancellationToken>());
         await _triggerScheduler.DidNotReceive().ScheduleAsync(Arg.Any<IEnumerable<StoredTrigger>>(), Arg.Any<CancellationToken>());
 
-        Assert.NotNull(workItem);
+        await Assert.That(workItem).IsNotNull();
         await workItem(serviceProvider, CancellationToken.None);
 
         await _triggerScheduler.Received(1).ScheduleAsync(Arg.Is<IEnumerable<StoredTrigger>>(x => x.SequenceEqual(_triggers)), Arg.Any<CancellationToken>());
         await _bookmarkScheduler.Received(1).ScheduleAsync(Arg.Is<IEnumerable<StoredBookmark>>(x => x.SequenceEqual(_bookmarks)), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ExecuteAsync_SchedulesInConfiguredPages()
     {
         var firstTriggerPage = new[] { _triggers[0] };

@@ -6,14 +6,14 @@ namespace Elsa.Scheduling.UnitTests.Services;
 
 public class CronosCronParserTests
 {
-    [Theory]
-    [InlineData("0 0 0 * * *")] // Daily at midnight
-    [InlineData("0 0 */6 * * *")] // Every 6 hours
-    [InlineData("0 0 0 * * MON")] // Every Monday
-    [InlineData("0 0 9 * * MON-FRI")] // Weekdays at 9 AM
-    [InlineData("0 0 0 1 */3 *")] // First day of every 3 months
-    [InlineData("0 0 0 L * *")] // Last day of month
-    public void GetNextOccurrence_WithValidExpression_ReturnsTimeInFuture(string cronExpression)
+    [Test]
+    [Arguments("0 0 0 * * *")] // Daily at midnight
+    [Arguments("0 0 */6 * * *")] // Every 6 hours
+    [Arguments("0 0 0 * * MON")] // Every Monday
+    [Arguments("0 0 9 * * MON-FRI")] // Weekdays at 9 AM
+    [Arguments("0 0 0 1 */3 *")] // First day of every 3 months
+    [Arguments("0 0 0 L * *")] // Last day of month
+    public async Task GetNextOccurrence_WithValidExpression_ReturnsTimeInFuture(string cronExpression)
     {
         // Arrange
         var parser = CreateParser(out var now);
@@ -22,11 +22,11 @@ public class CronosCronParserTests
         var nextOccurrence = parser.GetNextOccurrence(cronExpression);
 
         // Assert
-        Assert.True(nextOccurrence > now);
+        await Assert.That(nextOccurrence > now).IsTrue();
     }
 
-    [Fact]
-    public void GetNextOccurrence_WithSecondsPrecision_ReturnsCorrectSecond()
+    [Test]
+    public async Task GetNextOccurrence_WithSecondsPrecision_ReturnsCorrectSecond()
     {
         // Arrange
         var parser = CreateParser(out _);
@@ -35,11 +35,11 @@ public class CronosCronParserTests
         var nextOccurrence = parser.GetNextOccurrence("30 * * * * *");
 
         // Assert
-        Assert.Equal(30, nextOccurrence.Second);
+        await Assert.That(nextOccurrence.Second).IsEqualTo(30);
     }
 
-    [Fact]
-    public void GetNextOccurrence_AtMidnight_ReturnsNextDay()
+    [Test]
+    public async Task GetNextOccurrence_AtMidnight_ReturnsNextDay()
     {
         // Arrange
         var now = new DateTimeOffset(2025, 1, 6, 0, 0, 0, TimeSpan.Zero);
@@ -49,11 +49,11 @@ public class CronosCronParserTests
         var nextOccurrence = parser.GetNextOccurrence("0 0 0 * * *");
 
         // Assert
-        Assert.Equal(7, nextOccurrence.Day);
+        await Assert.That(nextOccurrence.Day).IsEqualTo(7);
     }
 
-    [Fact]
-    public void GetNextOccurrence_EverySecond_ReturnsNextSecond()
+    [Test]
+    public async Task GetNextOccurrence_EverySecond_ReturnsNextSecond()
     {
         // Arrange
         var now = new DateTimeOffset(2025, 1, 6, 12, 30, 45, TimeSpan.Zero);
@@ -63,12 +63,12 @@ public class CronosCronParserTests
         var nextOccurrence = parser.GetNextOccurrence("* * * * * *");
 
         // Assert
-        Assert.Equal(46, nextOccurrence.Second);
-        Assert.True((nextOccurrence - now).TotalSeconds < 2);
+        await Assert.That(nextOccurrence.Second).IsEqualTo(46);
+        await Assert.That((nextOccurrence - now).TotalSeconds < 2).IsTrue();
     }
 
-    [Fact]
-    public void GetNextOccurrence_WithSpecificDayOfMonth_ReturnsCorrectDay()
+    [Test]
+    public async Task GetNextOccurrence_WithSpecificDayOfMonth_ReturnsCorrectDay()
     {
         // Arrange
         var parser = CreateParser(out _);
@@ -77,23 +77,23 @@ public class CronosCronParserTests
         var nextOccurrence = parser.GetNextOccurrence("0 0 0 15 * *");
 
         // Assert
-        Assert.Equal(15, nextOccurrence.Day);
-        Assert.Equal(0, nextOccurrence.Hour);
+        await Assert.That(nextOccurrence.Day).IsEqualTo(15);
+        await Assert.That(nextOccurrence.Hour).IsEqualTo(0);
     }
 
-    [Theory]
-    [InlineData("invalid")]
-    [InlineData("* * * *")] // Too few fields
-    [InlineData("60 * * * * *")] // Invalid second (>59)
-    [InlineData("* 60 * * * *")] // Invalid minute (>59)
-    [InlineData("* * 25 * * *")] // Invalid hour (>23)
-    public void GetNextOccurrence_WithInvalidExpression_ThrowsException(string cronExpression)
+    [Test]
+    [Arguments("invalid")]
+    [Arguments("* * * *")] // Too few fields
+    [Arguments("60 * * * * *")] // Invalid second (>59)
+    [Arguments("* 60 * * * *")] // Invalid minute (>59)
+    [Arguments("* * 25 * * *")] // Invalid hour (>23)
+    public async Task GetNextOccurrence_WithInvalidExpression_ThrowsException(string cronExpression)
     {
         // Arrange
         var parser = CreateParser(out _);
 
         // Act & Assert
-        Assert.ThrowsAny<Exception>(() => parser.GetNextOccurrence(cronExpression));
+        await Assert.That(() => parser.GetNextOccurrence(cronExpression)).Throws<Exception>();
     }
 
     private static CronosCronParser CreateParser(out DateTimeOffset now)
