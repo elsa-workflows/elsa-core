@@ -10,43 +10,43 @@ namespace Elsa.Diagnostics.StructuredLogs.IntegrationTests;
 
 public class StructuredLogsModuleTests
 {
-    [Fact]
-    public void StructuredLogsFeature_BelongsToStructuredLogsAssembly()
+    [Test]
+    public async Task StructuredLogsFeature_BelongsToStructuredLogsAssembly()
     {
-        Assert.Equal("Elsa.Diagnostics.StructuredLogs", typeof(StructuredLogsFeature).Assembly.GetName().Name);
+        await Assert.That(typeof(StructuredLogsFeature).Assembly.GetName().Name).IsEqualTo("Elsa.Diagnostics.StructuredLogs");
     }
 
-    [Fact]
-    public void ShellStructuredLogsFeature_BelongsToStructuredLogsAssembly()
+    [Test]
+    public async Task ShellStructuredLogsFeature_BelongsToStructuredLogsAssembly()
     {
-        Assert.Equal("Elsa.Diagnostics.StructuredLogs", typeof(ShellStructuredLogsFeature).Assembly.GetName().Name);
+        await Assert.That(typeof(ShellStructuredLogsFeature).Assembly.GetName().Name).IsEqualTo("Elsa.Diagnostics.StructuredLogs");
     }
 
-    [Fact]
-    public void ShellStructuredLogsFeature_UsesDiagnosticsStructuredLogsFeatureName()
+    [Test]
+    public async Task ShellStructuredLogsFeature_UsesDiagnosticsStructuredLogsFeatureName()
     {
-        Assert.Equal("Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogsFeature", typeof(ShellStructuredLogsFeature).FullName);
+        await Assert.That(typeof(ShellStructuredLogsFeature).FullName).IsEqualTo("Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogsFeature");
     }
 
-    [Fact]
-    public void Readme_SeparatesStructuredLogsFromFutureDiagnosticsModules()
+    [Test]
+    public async Task Readme_SeparatesStructuredLogsFromFutureDiagnosticsModules()
     {
         var readme = File.ReadAllText(FindReadme());
 
-        Assert.Contains("semantic `ILogger` records only", readme);
-        Assert.Contains("future diagnostics console logs module", readme);
-        Assert.Contains("future diagnostics OpenTelemetry module", readme);
+        await Assert.That(readme).Contains("semantic `ILogger` records only").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(readme).Contains("future diagnostics console logs module").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(readme).Contains("future diagnostics OpenTelemetry module").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void ShellStructuredLogsFeature_RegistersFastEndpointsAndWebEndpointMapping()
+    [Test]
+    public async Task ShellStructuredLogsFeature_RegistersFastEndpointsAndWebEndpointMapping()
     {
-        Assert.True(typeof(IFastEndpointsShellFeature).IsAssignableFrom(typeof(ShellStructuredLogsFeature)));
-        Assert.True(typeof(IWebShellFeature).IsAssignableFrom(typeof(ShellStructuredLogsFeature)));
+        await Assert.That(typeof(IFastEndpointsShellFeature).IsAssignableFrom(typeof(ShellStructuredLogsFeature))).IsTrue();
+        await Assert.That(typeof(IWebShellFeature).IsAssignableFrom(typeof(ShellStructuredLogsFeature))).IsTrue();
     }
 
-    [Fact]
-    public void ShellStructuredLogsFeature_CopiesBindablePropertiesToOptions()
+    [Test]
+    public async Task ShellStructuredLogsFeature_CopiesBindablePropertiesToOptions()
     {
         var feature = new ShellStructuredLogsFeature
         {
@@ -62,14 +62,15 @@ public class StructuredLogsModuleTests
 
         feature.ConfigureServices(services);
 
-        var options = services.BuildServiceProvider().GetRequiredService<IOptions<StructuredLogsOptions>>().Value;
-        Assert.Equal(feature.RecentLogCapacity, options.RecentLogCapacity);
-        Assert.Equal(feature.SubscriberChannelCapacity, options.SubscriberChannelCapacity);
-        Assert.Equal(feature.MaxRecentLogQuerySize, options.MaxRecentLogQuerySize);
-        Assert.Equal(feature.SourceHeartbeatTimeout, options.SourceHeartbeatTimeout);
-        Assert.Equal(feature.IncludeStructuredLogsInternalLogs, options.IncludeStructuredLogsInternalLogs);
-        Assert.Equal(feature.SensitiveNames, options.SensitiveNames);
-        Assert.Equal(feature.SensitiveTextPatterns, options.SensitiveTextPatterns);
+        using var serviceProvider = services.BuildServiceProvider();
+        var options = serviceProvider.GetRequiredService<IOptions<StructuredLogsOptions>>().Value;
+        await Assert.That(options.RecentLogCapacity).IsEqualTo(feature.RecentLogCapacity);
+        await Assert.That(options.SubscriberChannelCapacity).IsEqualTo(feature.SubscriberChannelCapacity);
+        await Assert.That(options.MaxRecentLogQuerySize).IsEqualTo(feature.MaxRecentLogQuerySize);
+        await Assert.That(options.SourceHeartbeatTimeout).IsEqualTo(feature.SourceHeartbeatTimeout);
+        await Assert.That(options.IncludeStructuredLogsInternalLogs).IsEqualTo(feature.IncludeStructuredLogsInternalLogs);
+        await Assert.That(options.SensitiveNames).IsEquivalentTo(feature.SensitiveNames, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(options.SensitiveTextPatterns).IsEquivalentTo(feature.SensitiveTextPatterns, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static string FindReadme()
