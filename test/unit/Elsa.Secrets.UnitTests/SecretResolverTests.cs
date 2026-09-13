@@ -1,5 +1,4 @@
 using Elsa.Secrets.Models;
-using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
 
@@ -7,7 +6,7 @@ public class SecretResolverTests
 {
     private readonly SecretTestFixture _fixture = new();
 
-    [Fact]
+    [Test]
     public async Task ResolveAsync_ReturnsLatestActiveVersion()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", Value = "one" });
@@ -15,18 +14,18 @@ public class SecretResolverTests
 
         var value = await _fixture.Resolver.ResolveAsync("api:key");
 
-        Assert.Equal("two", value);
+        await Assert.That(value).IsEqualTo("two");
     }
 
-    [Fact]
+    [Test]
     public async Task ResolveAsync_ValidatesReferenceType()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", TypeName = SecretTypeNames.Text, Value = "one" });
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync(new SecretReference("api:key", SecretTypeNames.RsaKey)));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync(new SecretReference("api:key", SecretTypeNames.RsaKey)));
     }
     
-    [Fact]
+    [Test]
     public async Task TestAsync_ReturnsFailedResult_WhenEncryptedPayloadIsMalformed()
     {
         var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", Value = "one" });
@@ -35,7 +34,7 @@ public class SecretResolverTests
 
         var result = await _fixture.Manager.TestAsync("api:key");
 
-        Assert.False(result.Succeeded);
-        Assert.NotNull(result.Error);
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.Error).IsNotNull();
     }
 }

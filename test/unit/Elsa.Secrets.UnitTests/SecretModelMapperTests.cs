@@ -1,13 +1,12 @@
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Services;
-using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
 
 public class SecretModelMapperTests
 {
-    [Fact]
-    public void ToModel_ReportsExpired_WhenActiveSecretHasOnlyExpiredVersions()
+    [Test]
+    public async Task ToModel_ReportsExpired_WhenActiveSecretHasOnlyExpiredVersions()
     {
         var secret = new Secret
         {
@@ -25,8 +24,8 @@ public class SecretModelMapperTests
 
         var model = secret.ToModel();
 
-        Assert.Equal(SecretStatus.Expired, model.Status);
-        Assert.Null(model.CurrentVersion);
-        Assert.Null(model.ExpiresAt);
+        await Assert.That(model.Status).IsEqualTo(SecretStatus.Expired);
+        await Assert.That(model.CurrentVersion).IsNull();
+        await Assert.That(model.ExpiresAt).IsNull();
     }
 }

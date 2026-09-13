@@ -1,5 +1,4 @@
 using Elsa.Secrets.Models;
-using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
 
@@ -7,17 +6,17 @@ public class SecretManagerTests
 {
     private readonly SecretTestFixture _fixture = new();
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("a")]
-    [InlineData("1secret")]
-    [InlineData("secret name")]
+    [Test]
+    [Arguments("")]
+    [Arguments("a")]
+    [Arguments("1secret")]
+    [Arguments("secret name")]
     public async Task CreateAsync_RejectsInvalidTechnicalNames(string name)
     {
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = name, Value = "one" }));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = name, Value = "one" }));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAsync_NormalizesTechnicalName_AndDoesNotExposeValueInModel()
     {
         var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest
@@ -29,53 +28,54 @@ public class SecretManagerTests
 
         var model = Elsa.Secrets.Services.SecretModelMapper.ToModel(secret);
 
-        Assert.Equal("smtp:password", secret.Name);
-        Assert.Equal("SMTP password", model.DisplayName);
-        Assert.Equal(1, model.CurrentVersion);
-        Assert.DoesNotContain(model.GetType().GetProperties(), x => x.Name.Contains("Value", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(secret.Name).IsEqualTo("smtp:password");
+        await Assert.That(model.DisplayName).IsEqualTo("SMTP password");
+        await Assert.That(model.CurrentVersion).IsEqualTo(1);
+        await Assert.That(model.GetType().GetProperties()).DoesNotContain(x => x.Name.Contains("Value", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Test]
     public async Task RotateAsync_RetiresPreviousVersion_AndKeepsOneActiveVersion()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
         var rotated = await _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest { Value = "two" });
 
-        Assert.Equal(2, rotated.Versions.Count);
-        Assert.Single(rotated.Versions, x => x.Status == SecretStatus.Active);
-        Assert.Single(rotated.Versions, x => x.Status == SecretStatus.Retired);
+        await Assert.That(rotated.Versions.Count).IsEqualTo(2);
+        await Assert.That(rotated.Versions).HasSingleItem(x => x.Status == SecretStatus.Active);
+        await Assert.That(rotated.Versions).HasSingleItem(x => x.Status == SecretStatus.Retired);
     }
 
-    [Fact]
+    [Test]
     public async Task RevokeAsync_PreventsResolution()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
         await _fixture.Manager.RevokeAsync("smtp:password");
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync("smtp:password"));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Resolver.ResolveAsync("smtp:password"));
     }
 
-    [Fact]
+    [Test]
     public async Task RotateAsync_RejectsRevokedSecret()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
         await _fixture.Manager.RevokeAsync("smtp:password");
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest { Value = "two" }));
-        var secret = await _fixture.Manager.GetAsync("smtp:password");
-        Assert.Equal(SecretStatus.Revoked, secret!.Status);
-        Assert.All(secret.Versions, x => Assert.Equal(SecretStatus.Revoked, x.Status));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest { Value = "two" }));
+        var secret = await Assert.That(await _fixture.Manager.GetAsync("smtp:password")).IsNotNull();
+        await Assert.That(secret.Status).IsEqualTo(SecretStatus.Revoked);
+        foreach (var version in secret.Versions)
+            await Assert.That(version.Status).IsEqualTo(SecretStatus.Revoked);
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAsync_RejectsDuplicateTechnicalName()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = " SMTP:PASSWORD ", Value = "two" }));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = " SMTP:PASSWORD ", Value = "two" }));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAsync_AllowsReusingDeletedSecretName()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
@@ -83,13 +83,13 @@ public class SecretManagerTests
 
         var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = " SMTP:PASSWORD ", Value = "two" });
 
-        Assert.Equal("smtp:password", secret.Name);
-        Assert.Equal(SecretStatus.Active, secret.Status);
-        Assert.Single(secret.Versions);
-        Assert.Equal("two", await _fixture.Resolver.ResolveAsync("smtp:password"));
+        await Assert.That(secret.Name).IsEqualTo("smtp:password");
+        await Assert.That(secret.Status).IsEqualTo(SecretStatus.Active);
+        await Assert.That(secret.Versions).HasSingleItem();
+        await Assert.That(await _fixture.Resolver.ResolveAsync("smtp:password")).IsEqualTo("two");
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAsync_AllowsEncryptedCertificateWithThumbprintMetadata()
     {
         var secret = await _fixture.Manager.CreateAsync(new CreateSecretRequest
@@ -100,19 +100,19 @@ public class SecretManagerTests
             Metadata = new Dictionary<string, string> { ["thumbprint"] = "ABC123" }
         });
 
-        Assert.Equal(SecretTypeNames.X509Certificate, secret.TypeName);
-        Assert.Equal("ABC123", secret.Versions.Single().Payload.Metadata["thumbprint"]);
+        await Assert.That(secret.TypeName).IsEqualTo(SecretTypeNames.X509Certificate);
+        await Assert.That(secret.Versions.Single().Payload.Metadata["thumbprint"]).IsEqualTo("ABC123");
     }
 
-    [Theory]
-    [InlineData(SecretTypeNames.Text, SecretStoreNames.Encrypted, null, null)]
-    [InlineData(SecretTypeNames.RsaKey, SecretStoreNames.Encrypted, " ", null)]
-    [InlineData(SecretTypeNames.RsaKey, SecretStoreNames.Configuration, null, " ")]
-    [InlineData(SecretTypeNames.X509Certificate, SecretStoreNames.Encrypted, " ", null)]
-    [InlineData(SecretTypeNames.X509Certificate, SecretStoreNames.Configuration, null, " ")]
+    [Test]
+    [Arguments(SecretTypeNames.Text, SecretStoreNames.Encrypted, null, null)]
+    [Arguments(SecretTypeNames.RsaKey, SecretStoreNames.Encrypted, " ", null)]
+    [Arguments(SecretTypeNames.RsaKey, SecretStoreNames.Configuration, null, " ")]
+    [Arguments(SecretTypeNames.X509Certificate, SecretStoreNames.Encrypted, " ", null)]
+    [Arguments(SecretTypeNames.X509Certificate, SecretStoreNames.Configuration, null, " ")]
     public async Task CreateAsync_RejectsInvalidPayloadForTypeAndStore(string typeName, string storeName, string? value, string? configurationKey)
     {
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Manager.CreateAsync(new CreateSecretRequest
         {
             Name = $"secret:{Guid.NewGuid():N}",
             TypeName = typeName,
@@ -122,15 +122,15 @@ public class SecretManagerTests
         }));
     }
 
-    [Fact]
+    [Test]
     public async Task RotateAsync_RejectsInvalidReplacementPayload()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest()));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => _fixture.Manager.RotateAsync("smtp:password", new RotateSecretRequest()));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAsync_AllowsOnlyOneConcurrentReuseOfDeletedSecretName()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
@@ -140,27 +140,26 @@ public class SecretManagerTests
             .ToArray();
 
         var results = await Task.WhenAll(createTasks);
-        var stored = await _fixture.Manager.GetAsync("smtp:password");
+        var stored = await Assert.That(await _fixture.Manager.GetAsync("smtp:password")).IsNotNull();
 
-        Assert.Single(results, true);
-        Assert.NotNull(stored);
-        Assert.Equal(SecretStatus.Active, stored.Status);
+        await Assert.That(results).HasSingleItem(result => result);
+        await Assert.That(stored.Status).IsEqualTo(SecretStatus.Active);
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_RemovesEncryptedPayloadMaterial()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "smtp:password", Value = "one" });
 
         await _fixture.Manager.DeleteAsync("smtp:password");
-        var stored = await _fixture.Repository.GetAsync("smtp:password");
+        var stored = await Assert.That(await _fixture.Repository.GetAsync("smtp:password")).IsNotNull();
 
-        Assert.NotNull(stored);
-        Assert.Equal(SecretStatus.Deleted, stored.Status);
-        Assert.All(stored.Versions, x => Assert.False(x.Payload.Metadata.ContainsKey("protectedValue")));
+        await Assert.That(stored.Status).IsEqualTo(SecretStatus.Deleted);
+        foreach (var version in stored.Versions)
+            await Assert.That(version.Payload.Metadata.ContainsKey("protectedValue")).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task CountAsync_ReturnsTotalMatchingItems_NotPageSize()
     {
         for (var i = 0; i < 3; i++)
@@ -169,11 +168,11 @@ public class SecretManagerTests
         var items = await _fixture.Manager.ListAsync(new ListSecretsRequest { PageSize = 1 });
         var count = await _fixture.Manager.CountAsync(new ListSecretsRequest { PageSize = 1 });
 
-        Assert.Single(items);
-        Assert.Equal(3, count);
+        await Assert.That(items).HasSingleItem();
+        await Assert.That(count).IsEqualTo(3);
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateAsync_UpdatesMetadataWithoutChangingIdentityOrVersion()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest
@@ -191,18 +190,18 @@ public class SecretManagerTests
             Description = "  Rotated manually  "
         });
 
-        Assert.Equal("smtp:password", updated.Name);
-        Assert.Equal("SMTP credential", updated.DisplayName);
-        Assert.Equal("Rotated manually", updated.Description);
-        Assert.Equal("production", updated.Scope);
-        Assert.Equal(SecretTypeNames.Text, updated.TypeName);
-        Assert.Equal(SecretStoreNames.Encrypted, updated.StoreName);
-        Assert.Single(updated.Versions);
-        Assert.NotNull(updated.UpdatedAt);
-        Assert.Equal("one", await _fixture.Resolver.ResolveAsync("smtp:password"));
+        await Assert.That(updated.Name).IsEqualTo("smtp:password");
+        await Assert.That(updated.DisplayName).IsEqualTo("SMTP credential");
+        await Assert.That(updated.Description).IsEqualTo("Rotated manually");
+        await Assert.That(updated.Scope).IsEqualTo("production");
+        await Assert.That(updated.TypeName).IsEqualTo(SecretTypeNames.Text);
+        await Assert.That(updated.StoreName).IsEqualTo(SecretStoreNames.Encrypted);
+        await Assert.That(updated.Versions).HasSingleItem();
+        await Assert.That(updated.UpdatedAt).IsNotNull();
+        await Assert.That(await _fixture.Resolver.ResolveAsync("smtp:password")).IsEqualTo("one");
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateAsync_UsesTechnicalNameAsFallbackDisplayName_AndClearsBlankDescription()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest
@@ -219,21 +218,21 @@ public class SecretManagerTests
             Description = " "
         });
 
-        Assert.Equal("smtp:password", updated.DisplayName);
-        Assert.Null(updated.Description);
+        await Assert.That(updated.DisplayName).IsEqualTo("smtp:password");
+        await Assert.That(updated.Description).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task UpdateAsync_Throws_WhenSecretDoesNotExist()
     {
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => _fixture.Manager.UpdateAsync("missing:secret", new UpdateSecretRequest
+        await Assert.ThrowsExactlyAsync<KeyNotFoundException>(() => _fixture.Manager.UpdateAsync("missing:secret", new UpdateSecretRequest
         {
             DisplayName = "Missing",
             Description = "Missing"
         }));
     }
 
-    [Fact]
+    [Test]
     public async Task ListPageAsync_AppliesFiltersBeforePaging()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest
@@ -279,18 +278,19 @@ public class SecretManagerTests
             PageSize = 1
         });
 
-        Assert.Equal(2, page.TotalCount);
-        Assert.Single(page.Items);
-        Assert.Equal("smtp:password", page.Items.Single().Name);
+        await Assert.That(page.TotalCount).IsEqualTo(2);
+        await Assert.That(page.Items).HasSingleItem();
+        await Assert.That(page.Items.Single().Name).IsEqualTo("smtp:password");
     }
 
-    [Fact]
+    [Test]
     public async Task TestAsync_ReturnsFailedResult_WhenSecretDoesNotExist()
     {
         var result = await _fixture.Manager.TestAsync("missing:secret");
 
-        Assert.False(result.Succeeded);
-        Assert.Contains("missing:secret", result.Error);
+        await Assert.That(result.Succeeded).IsFalse();
+        var error = await Assert.That(result.Error).IsNotNull();
+        await Assert.That(error).Contains("missing:secret").WithComparison(StringComparison.CurrentCulture);
     }
 
     private async Task<bool> TryCreateAsync(CreateSecretRequest request)

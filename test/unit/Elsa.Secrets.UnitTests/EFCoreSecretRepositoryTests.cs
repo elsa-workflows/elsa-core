@@ -8,11 +8,10 @@ using Elsa.Secrets.Persistence.EFCore.Sqlite.Extensions;
 using Elsa.Secrets.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
 
-public class EFCoreSecretRepositoryTests : IAsyncLifetime
+public class EFCoreSecretRepositoryTests
 {
     private readonly string _databasePath = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.db");
     private readonly ServiceProvider _serviceProvider;
@@ -29,6 +28,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         _serviceProvider = services.BuildServiceProvider();
     }
 
+    [Before(Test)]
     public async Task InitializeAsync()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
@@ -37,6 +37,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         await dbContext.Database.MigrateAsync();
     }
 
+    [After(Test)]
     public async Task DisposeAsync()
     {
         await _serviceProvider.DisposeAsync();
@@ -45,7 +46,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
             File.Delete(_databasePath);
     }
 
-    [Fact]
+    [Test]
     public async Task SecretNamesAreUniquePerTenantRatherThanGlobally()
     {
         // Asserted against the schema rather than through the repository. The repository's own duplicate-name
@@ -62,10 +63,12 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
             .GetIndexes()
             .Single(x => x.IsUnique);
 
-        Assert.Equal(["TenantId", SecretShadowPropertyNames.NormalizedName], index.Properties.Select(x => x.Name));
+        await Assert.That(index.Properties.Select(x => x.Name)).IsEquivalentTo(
+            ["TenantId", SecretShadowPropertyNames.NormalizedName],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task ExistingSecretsCarryNoTenantUntilOneIsAssigned()
     {
         // The upgrade adds the column nullable with no backfill, so rows written before it stay null. That is
@@ -76,12 +79,11 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
 
         await repository.AddAsync(new Secret { Name = "legacy:secret", DisplayName = "Legacy" });
 
-        var stored = await repository.GetAsync("legacy:secret");
-        Assert.NotNull(stored);
-        Assert.Null(stored!.TenantId);
+        var stored = await Assert.That(await repository.GetAsync("legacy:secret")).IsNotNull();
+        await Assert.That(stored.TenantId).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task PersistsSecretAggregate()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
@@ -95,16 +97,15 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         };
 
         await repository.AddAsync(secret);
-        var reloaded = await repository.GetAsync("smtp:password");
+        var reloaded = await Assert.That(await repository.GetAsync("smtp:password")).IsNotNull();
 
-        Assert.NotNull(reloaded);
-        Assert.Equal("SMTP password", reloaded.DisplayName);
-        Assert.Contains("api-key", reloaded.Tags);
-        Assert.True(reloaded.Versions.Single().Payload.Metadata.ContainsKey("protectedvalue"));
-        Assert.Equal(1, reloaded.Versions.Single().Version);
+        await Assert.That(reloaded.DisplayName).IsEqualTo("SMTP password");
+        await Assert.That(reloaded.Tags).Contains("api-key");
+        await Assert.That(reloaded.Versions.Single().Payload.Metadata.ContainsKey("protectedvalue")).IsTrue();
+        await Assert.That(reloaded.Versions.Single().Version).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task TryAddOrReplaceDeletedAsync_ReplacesOnlyDeletedSecret()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
@@ -114,16 +115,15 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         var activeReplacementResult = await repository.TryAddOrReplaceDeletedAsync(new Secret { Name = "smtp:password", DisplayName = "Active replacement" });
         await repository.SaveAsync(new Secret { Name = "smtp:password", DisplayName = "Deleted password", Status = SecretStatus.Deleted });
         var deletedReplacementResult = await repository.TryAddOrReplaceDeletedAsync(new Secret { Name = "smtp:password", DisplayName = "Replacement password" });
-        var reloaded = await repository.GetAsync("smtp:password");
+        var reloaded = await Assert.That(await repository.GetAsync("smtp:password")).IsNotNull();
 
-        Assert.False(activeReplacementResult);
-        Assert.True(deletedReplacementResult);
-        Assert.NotNull(reloaded);
-        Assert.Equal("Replacement password", reloaded.DisplayName);
-        Assert.Equal(SecretStatus.Active, reloaded.Status);
+        await Assert.That(activeReplacementResult).IsFalse();
+        await Assert.That(deletedReplacementResult).IsTrue();
+        await Assert.That(reloaded.DisplayName).IsEqualTo("Replacement password");
+        await Assert.That(reloaded.Status).IsEqualTo(SecretStatus.Active);
     }
 
-    [Fact]
+    [Test]
     public async Task NameLookups_AreCaseInsensitive()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
@@ -133,17 +133,18 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         var reloaded = await repository.GetAsync("smtp:password");
         var whitespaceReloaded = await repository.GetAsync(" SMTP:PASSWORD ");
         var activeReplacementResult = await repository.TryAddOrReplaceDeletedAsync(new Secret { Name = "smtp:password", DisplayName = "Replacement password" });
-        var duplicateException = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "Duplicate password" }));
+        var duplicateException = await Assert.That(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "Duplicate password" }))).IsNotNull();
 
-        Assert.NotNull(reloaded);
-        Assert.NotNull(whitespaceReloaded);
-        Assert.Equal("SMTP:PASSWORD", reloaded.Name);
-        Assert.Equal(reloaded.Id, whitespaceReloaded.Id);
-        Assert.False(activeReplacementResult);
-        Assert.Equal("A secret named 'smtp:password' already exists.", duplicateException.Message);
+        var nonNullReloaded = await Assert.That(reloaded).IsNotNull();
+        var nonNullWhitespaceReloaded = await Assert.That(whitespaceReloaded).IsNotNull();
+        await Assert.That(nonNullReloaded.Name).IsEqualTo("SMTP:PASSWORD");
+        await Assert.That(nonNullWhitespaceReloaded.Id).IsEqualTo(nonNullReloaded.Id);
+        await Assert.That(activeReplacementResult).IsFalse();
+        await Assert.That(duplicateException.Message).IsEqualTo("A secret named 'smtp:password' already exists.");
     }
 
-    [Fact]
+    [Test]
     public async Task TryAddOrReplaceDeletedAsync_WhenReplacingDeletedSecret_PersistsReplacementId()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
@@ -152,12 +153,11 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
 
         var replacement = new Secret { Id = "new", Name = "SMTP:PASSWORD", DisplayName = "Replacement password" };
         var result = await repository.TryAddOrReplaceDeletedAsync(replacement);
-        var reloaded = await repository.GetAsync("smtp:password");
+        var reloaded = await Assert.That(await repository.GetAsync("smtp:password")).IsNotNull();
 
-        Assert.True(result);
-        Assert.NotNull(reloaded);
-        Assert.Equal("new", reloaded.Id);
-        Assert.Equal("Replacement password", reloaded.DisplayName);
-        Assert.Equal(SecretStatus.Active, reloaded.Status);
+        await Assert.That(result).IsTrue();
+        await Assert.That(reloaded.Id).IsEqualTo("new");
+        await Assert.That(reloaded.DisplayName).IsEqualTo("Replacement password");
+        await Assert.That(reloaded.Status).IsEqualTo(SecretStatus.Active);
     }
 }

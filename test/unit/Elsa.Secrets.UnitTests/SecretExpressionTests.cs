@@ -11,7 +11,6 @@ using Elsa.Secrets.Providers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
 
@@ -26,45 +25,48 @@ public class SecretExpressionTests
         _handler = new(_fixture.Resolver, _wellKnownTypeRegistry);
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateAsync_ResolvesSecretReference()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", Value = "top-secret" });
 
         var result = await EvaluateAsync<string>(new("api:key"));
 
-        Assert.Equal("top-secret", result);
+        await Assert.That(result).IsEqualTo("top-secret");
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateAsync_Throws_WhenSecretIsMissing()
     {
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => EvaluateAsync<string>(new("api:key")));
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => EvaluateAsync<string>(new("api:key")))).IsNotNull();
 
-        Assert.Equal("Secret 'api:key' was not found.", exception.Message);
+        await Assert.That(exception.Message).IsEqualTo("Secret 'api:key' was not found.");
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateAsync_Throws_WhenSecretTypeDoesNotMatchReference()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", TypeName = SecretTypeNames.Text, Value = "top-secret" });
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => EvaluateAsync<string>(new("api:key", SecretTypeNames.RsaKey)));
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => EvaluateAsync<string>(new("api:key", SecretTypeNames.RsaKey)))).IsNotNull();
 
-        Assert.Equal("Secret 'api:key' is not compatible with required type 'rsa-key'.", exception.Message);
+        await Assert.That(exception.Message).IsEqualTo("Secret 'api:key' is not compatible with required type 'rsa-key'.");
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateAsync_Throws_WhenSecretScopeDoesNotMatchReference()
     {
         await _fixture.Manager.CreateAsync(new CreateSecretRequest { Name = "api:key", Scope = "production", Value = "top-secret" });
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => EvaluateAsync<string>(new("api:key", Scope: "development")));
+        var exception = await Assert.That(
+            await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => EvaluateAsync<string>(new("api:key", Scope: "development")))).IsNotNull();
 
-        Assert.Equal("Secret 'api:key' is not compatible with required scope 'development'.", exception.Message);
+        await Assert.That(exception.Message).IsEqualTo("Secret 'api:key' is not compatible with required scope 'development'.");
     }
 
-    [Fact]
+    [Test]
     public async Task EvaluateAsync_PassesCancellationTokenToResolver()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -74,82 +76,91 @@ public class SecretExpressionTests
 
         await handler.EvaluateAsync(SecretExpression.Create(new("api:key")), typeof(string), context, ExpressionEvaluatorOptions.Empty);
 
-        Assert.Equal(cancellationTokenSource.Token, resolver.CancellationToken);
+        await Assert.That(resolver.CancellationToken).IsEqualTo(cancellationTokenSource.Token);
     }
 
-    [Fact]
-    public void SecretExpression_RoundTripsAsSecretReference()
+    [Test]
+    public async Task SecretExpression_RoundTripsAsSecretReference()
     {
         var options = CreateSerializerOptions();
         var expression = SecretExpression.Create(new("api:key", SecretTypeNames.Text, "production"));
 
         var json = JsonSerializer.Serialize(expression, options);
-        var deserializedExpression = JsonSerializer.Deserialize<Expression>(json, options)!;
-        var deserializedReference = Assert.IsType<SecretReference>(deserializedExpression.Value);
+        var deserializedExpression = await Assert.That(JsonSerializer.Deserialize<Expression>(json, options)).IsNotNull();
+        var deserializedValue = await Assert.That(deserializedExpression.Value).IsNotNull();
+        await Assert.That(deserializedValue).IsOfType(typeof(SecretReference));
+        var deserializedReference = (SecretReference)deserializedValue;
 
-        Assert.Contains("\"type\":\"Secret\"", json);
-        Assert.Contains("\"name\":\"api:key\"", json);
-        Assert.Contains("\"typeName\":\"text\"", json);
-        Assert.Contains("\"scope\":\"production\"", json);
-        Assert.DoesNotContain("top-secret", json);
-        Assert.Equal(SecretExpression.TypeName, deserializedExpression.Type);
-        Assert.Equal(new SecretReference("api:key", SecretTypeNames.Text, "production"), deserializedReference);
+        await Assert.That(json).Contains("\"type\":\"Secret\"").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(json).Contains("\"name\":\"api:key\"").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(json).Contains("\"typeName\":\"text\"").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(json).Contains("\"scope\":\"production\"").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(json).DoesNotContain("top-secret").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(deserializedExpression.Type).IsEqualTo(SecretExpression.TypeName);
+        await Assert.That(deserializedReference).IsEqualTo(new SecretReference("api:key", SecretTypeNames.Text, "production"));
     }
 
-    [Fact]
-    public void SecretExpression_DeserializesEmptyStringAsNullReference()
+    [Test]
+    public async Task SecretExpression_DeserializesEmptyStringAsNullReference()
     {
         var options = CreateSerializerOptions();
         const string json = """{"type":"Secret","value":""}""";
 
-        var expression = JsonSerializer.Deserialize<Expression>(json, options)!;
+        var expression = await Assert.That(JsonSerializer.Deserialize<Expression>(json, options)).IsNotNull();
 
-        Assert.Equal(SecretExpression.TypeName, expression.Type);
-        Assert.Null(expression.Value);
+        await Assert.That(expression.Type).IsEqualTo(SecretExpression.TypeName);
+        await Assert.That(expression.Value).IsNull();
     }
 
-    [Fact]
-    public void SecretExpression_DeserializesStringAsSecretName()
+    [Test]
+    public async Task SecretExpression_DeserializesStringAsSecretName()
     {
         var options = CreateSerializerOptions();
         const string json = """{"type":"Secret","value":"api:key"}""";
 
-        var expression = JsonSerializer.Deserialize<Expression>(json, options)!;
+        var expression = await Assert.That(JsonSerializer.Deserialize<Expression>(json, options)).IsNotNull();
 
-        var reference = Assert.IsType<SecretReference>(expression.Value);
-        Assert.Equal(new SecretReference("api:key"), reference);
+        var value = await Assert.That(expression.Value).IsNotNull();
+        await Assert.That(value).IsOfType(typeof(SecretReference));
+        var reference = (SecretReference)value;
+        await Assert.That(reference).IsEqualTo(new SecretReference("api:key"));
     }
 
-    [Fact]
-    public void SecretExpression_DeserializesStringifiedSecretReference()
+    [Test]
+    public async Task SecretExpression_DeserializesStringifiedSecretReference()
     {
         var options = CreateSerializerOptions();
         const string json = """{"type":"Secret","value":"{\"name\":\"api:key\",\"typeName\":\"text\",\"scope\":\"production\"}"}""";
 
-        var expression = JsonSerializer.Deserialize<Expression>(json, options)!;
+        var expression = await Assert.That(JsonSerializer.Deserialize<Expression>(json, options)).IsNotNull();
 
-        var reference = Assert.IsType<SecretReference>(expression.Value);
-        Assert.Equal(new SecretReference("api:key", SecretTypeNames.Text, "production"), reference);
+        var value = await Assert.That(expression.Value).IsNotNull();
+        await Assert.That(value).IsOfType(typeof(SecretReference));
+        var reference = (SecretReference)value;
+        await Assert.That(reference).IsEqualTo(new SecretReference("api:key", SecretTypeNames.Text, "production"));
     }
 
-    [Fact]
-    public void WorkflowInputJson_StoresSecretReferenceNotSecretValue()
+    [Test]
+    public async Task WorkflowInputJson_StoresSecretReferenceNotSecretValue()
     {
         var options = CreateSerializerOptions();
         var input = new Input<string>(SecretExpression.Create(new("api:key", SecretTypeNames.Text, "production")));
 
         var json = JsonSerializer.Serialize(input, options);
-        var deserializedInput = JsonSerializer.Deserialize<Input<string>>(json, options)!;
-        var deserializedReference = Assert.IsType<SecretReference>(deserializedInput.Expression!.Value);
+        var deserializedInput = await Assert.That(JsonSerializer.Deserialize<Input<string>>(json, options)).IsNotNull();
+        var expression = await Assert.That(deserializedInput.Expression).IsNotNull();
+        var value = await Assert.That(expression.Value).IsNotNull();
+        await Assert.That(value).IsOfType(typeof(SecretReference));
+        var deserializedReference = (SecretReference)value;
 
-        Assert.Contains("\"expression\":{\"type\":\"Secret\"", json);
-        Assert.Contains("\"value\":{\"name\":\"api:key\"", json);
-        Assert.DoesNotContain("top-secret", json);
-        Assert.Equal(new SecretReference("api:key", SecretTypeNames.Text, "production"), deserializedReference);
+        await Assert.That(json).Contains("\"expression\":{\"type\":\"Secret\"").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(json).Contains("\"value\":{\"name\":\"api:key\"").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(json).DoesNotContain("top-secret").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(deserializedReference).IsEqualTo(new SecretReference("api:key", SecretTypeNames.Text, "production"));
     }
 
-    [Fact]
-    public void AddSecretsServices_RegistersSecretExpressionDescriptorProvider()
+    [Test]
+    public async Task AddSecretsServices_RegistersSecretExpressionDescriptorProvider()
     {
         var services = new ServiceCollection();
 
@@ -159,9 +170,9 @@ public class SecretExpressionTests
         var provider = serviceProvider.GetServices<IExpressionDescriptorProvider>().Single(x => x is SecretExpressionDescriptorProvider);
         var descriptor = provider.GetDescriptors().Single();
 
-        Assert.Equal(SecretExpression.TypeName, descriptor.Type);
-        Assert.Equal("secret-picker", descriptor.Properties["UIHint"]);
-        Assert.Equal("/secrets/picker", descriptor.Properties["PickerEndpoint"]);
+        await Assert.That(descriptor.Type).IsEqualTo(SecretExpression.TypeName);
+        await Assert.That(descriptor.Properties["UIHint"]).IsEqualTo("secret-picker");
+        await Assert.That(descriptor.Properties["PickerEndpoint"]).IsEqualTo("/secrets/picker");
     }
 
     private async Task<T?> EvaluateAsync<T>(SecretReference reference)
