@@ -114,6 +114,10 @@ public sealed class ExecutionCycleHandle : IDisposable
         {
             // Dispose may have won before cancellation propagation started.
         }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            // CTS callbacks are best-effort; preserve the lifecycle transition even when one reports a non-fatal error.
+        }
         finally
         {
             lock (_cycleCtsGate)

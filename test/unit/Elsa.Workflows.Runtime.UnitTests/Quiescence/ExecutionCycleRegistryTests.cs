@@ -240,6 +240,24 @@ public class ExecutionCycleRegistryTests
         Assert.True(handle.CancellationToken.IsCancellationRequested);
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle.TryCancel swallows non-fatal CTS callback exceptions")]
+    public void TryCancelSwallowsNonFatalCtsCallbackExceptions()
+    {
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None);
+        using var registration = handle.CancellationToken.Register(() => throw new InvalidOperationException("callback refused to cancel"));
+
+        Assert.True(handle.TryCancel());
+        Assert.False(handle.TryCancel());
+
+        handle.Dispose();
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle.Disposed completes when the handle is disposed")]
     public async Task DisposedTaskCompletesOnDispose()
     {
