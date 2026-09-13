@@ -280,6 +280,63 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "An active snapshot disposed after a failed cancel is recovered after settling")]
+    public async Task ActiveSnapshotDisposedAfterFailedCancelIsRecoveredAfterSettling()
+    {
+        var targetCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseTargetCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var target = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-disposed-during-settle",
+            ingressSourceName: "http.trigger",
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () =>
+            {
+                targetCallbackEntered.SetResult();
+                releaseTargetCallback.Task.GetAwaiter().GetResult();
+            });
+        var blockerCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseBlockerCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var blocker = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-phase-a-blocker",
+            ingressSourceName: "http.trigger",
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () =>
+            {
+                blockerCallbackEntered.SetResult();
+                releaseBlockerCallback.Task.GetAwaiter().GetResult();
+            });
+        var preCancelTask = Task.Run(target.TryCancel);
+        await targetCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        ExecutionCycleRegistry.ActiveCount.Returns(2);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { target, blocker });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(ci => new ValueTask<WorkflowInstance?>(RunningInstance(ci.Arg<WorkflowInstanceFilter>().Id!)));
+
+        var sut = BuildSut();
+        var drainTask = Task.Run(async () => await sut.DrainAsync(DrainTrigger.OperatorForce));
+        await blockerCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(target.Disposed.IsCompleted);
+
+        releaseBlockerCallback.SetResult();
+        await Task.Yield();
+        target.Dispose();
+        releaseTargetCallback.SetResult();
+
+        Assert.False(await preCancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.Received(1).SaveAsync(
+            Arg.Is<WorkflowInstance>(i => i.Id == target.WorkflowInstanceId && i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting),
+            Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "A disposed handle is not persisted as Interrupted when its later row is still running")]
     public async Task DisposedHandleDoesNotPersistLaterRunningInstance()
     {

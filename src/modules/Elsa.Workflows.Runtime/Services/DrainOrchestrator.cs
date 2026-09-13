@@ -389,6 +389,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         var cancelledInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         var cancelledHandles = new List<ExecutionCycleHandle>(live.Count);
         var handlesToPersist = new List<ExecutionCycleHandle>(live.Count);
+        var activeSnapshotHandlesToRecover = new List<ExecutionCycleHandle>(live.Count);
         var disposedActiveSnapshotHandleIds = new HashSet<Guid>();
         foreach (var handle in live)
         {
@@ -399,11 +400,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 // later Finished/Cancelled row the runner already committed.
                 if (!handle.TryCancel())
                 {
-                    if (activeSnapshotHandleIds.ContainsKey(handle.Id) && handle.Disposed.IsCompleted)
-                    {
-                        disposedActiveSnapshotHandleIds.Add(handle.Id);
-                        handlesToPersist.Add(handle);
-                    }
+                    if (activeSnapshotHandleIds.ContainsKey(handle.Id))
+                        activeSnapshotHandlesToRecover.Add(handle);
                     continue;
                 }
 
@@ -455,6 +453,15 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
         });
         await Task.WhenAll(settleTasks).ConfigureAwait(false);
+
+        foreach (var handle in activeSnapshotHandlesToRecover)
+        {
+            if (!handle.Disposed.IsCompleted)
+                continue;
+
+            disposedActiveSnapshotHandleIds.Add(handle.Id);
+            handlesToPersist.Add(handle);
+        }
 
         // Phase C — persist Interrupted for every cancelled handle and disposed active checkpoint.
         // Sequential to keep DbContext usage single-threaded; per-handle persistence is small.

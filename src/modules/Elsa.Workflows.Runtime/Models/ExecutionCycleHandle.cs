@@ -70,10 +70,12 @@ public sealed class ExecutionCycleHandle : IDisposable
     public CancellationToken CancellationToken => _cycleCts.Token;
 
     /// <summary>
-    /// Completes when <see cref="Dispose"/> runs — i.e., when the workflow runner finishes the cycle (cleanly or
-    /// via cancellation) and the middleware exits its <c>using</c> block. The drain orchestrator awaits this with
-    /// a timeout before persisting <see cref="WorkflowSubStatus.Interrupted"/>, ensuring its write happens AFTER
-    /// any commit the runner emits in response to <see cref="Cancel"/>.
+    /// Completes after <see cref="Dispose"/> logically releases the handle and physically cleans up its linked CTS —
+    /// i.e., when the workflow runner finishes the cycle (cleanly or via cancellation) and the middleware exits its
+    /// <c>using</c> block. If cancellation callbacks are in flight, <see cref="Dispose"/> may return before this
+    /// cleanup completes. The drain orchestrator awaits this with a timeout before persisting
+    /// <see cref="WorkflowSubStatus.Interrupted"/>, ensuring its write happens AFTER any commit the runner emits in
+    /// response to <see cref="Cancel"/>.
     /// </summary>
     public Task Disposed => _disposedTcs.Task;
 
@@ -126,7 +128,10 @@ public sealed class ExecutionCycleHandle : IDisposable
         return Interlocked.CompareExchange(ref _lifecycleState, CancelledState, CancellingState) == CancellingState;
     }
 
-    /// <summary>Releases the linked CTS, notifies the registry, and signals <see cref="Disposed"/>.</summary>
+    /// <summary>
+    /// Logically releases the handle and notifies the registry. If cancellation callbacks are in flight, this method
+    /// may return before physical cleanup of the linked CTS completes; <see cref="Disposed"/> is signaled afterwards.
+    /// </summary>
     public void Dispose()
     {
         while (true)
@@ -137,7 +142,6 @@ public sealed class ExecutionCycleHandle : IDisposable
         }
 
         _onDisposed?.Invoke(this);
-        _disposedTcs.TrySetResult();
         lock (_cycleCtsGate)
         {
             _cycleCtsDisposeRequested = true;
@@ -152,5 +156,6 @@ public sealed class ExecutionCycleHandle : IDisposable
 
         _cycleCtsDisposed = true;
         _cycleCts.Dispose();
+        _disposedTcs.TrySetResult();
     }
 }
