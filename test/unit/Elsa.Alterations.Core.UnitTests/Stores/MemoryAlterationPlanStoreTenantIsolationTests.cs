@@ -1,4 +1,5 @@
 using Elsa.Alterations.Core.Entities;
+using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Common.Multitenancy;
@@ -52,21 +53,36 @@ public class MemoryAlterationPlanStoreTenantIsolationTests
         Assert.Equal(0, count);
     }
 
-    [Fact(DisplayName = "FindAsync does not return a same-ID row after another tenant replaces it")]
-    public async Task FindAsync_WhenSameIdWasReplacedByOtherTenant_ReturnsNullAndLeavesReplacement()
+    [Fact(DisplayName = "SaveAsync refuses to overwrite another tenant's row by Id")]
+    public async Task SaveAsync_WhenOtherTenantOwnsId_ThrowsAndLeavesExisting()
     {
         var backing = new MemoryStore<AlterationPlan>();
         var tenantA = new MemoryAlterationPlanStore(backing, new TestTenantAccessor("tenant-a"));
         var tenantB = new MemoryAlterationPlanStore(backing, new TestTenantAccessor("tenant-b"));
         await tenantA.SaveAsync(Plan("shared", "tenant-a"));
-        await tenantB.SaveAsync(Plan("shared", "tenant-b"));
 
-        var foundByA = await tenantA.FindAsync(new AlterationPlanFilter { Id = "shared" });
-        var foundByB = await tenantB.FindAsync(new AlterationPlanFilter { Id = "shared" });
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveAsync(Plan("shared", "tenant-b")));
+        var remaining = await tenantA.FindAsync(new AlterationPlanFilter { Id = "shared" });
 
-        Assert.Null(foundByA);
-        Assert.NotNull(foundByB);
-        Assert.Equal("tenant-b", foundByB.TenantId);
+        Assert.Contains("shared", ex.Message);
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-a", remaining.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveAsync still upserts a visible same-tenant row")]
+    public async Task SaveAsync_WhenSameTenantOwnsId_Upserts()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Plan("plan-a", "tenant-a"));
+        var updated = Plan("plan-a", "tenant-a");
+        updated.Status = AlterationPlanStatus.Completed;
+
+        await store.SaveAsync(updated);
+
+        var found = await store.FindAsync(new AlterationPlanFilter { Id = "plan-a" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationPlanStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
     }
 
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]

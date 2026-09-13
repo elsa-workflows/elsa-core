@@ -32,9 +32,13 @@ public class MemoryAlterationJobStore : IAlterationJobStore
     /// <inheritdoc />
     public Task SaveAsync(AlterationJob job, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(job);
         lock (_store.Sync)
+        {
+            ApplyCurrentTenant(job);
+            EnsureIdAvailable(job);
             _store.Save(job, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -43,11 +47,17 @@ public class MemoryAlterationJobStore : IAlterationJobStore
     {
         var list = jobs.ToList();
 
-        foreach (var job in list)
-            ApplyCurrentTenant(job);
-
         lock (_store.Sync)
+        {
+            foreach (var job in list)
+                ApplyCurrentTenant(job);
+
+            foreach (var job in list)
+                EnsureIdAvailable(job);
+
             _store.SaveMany(list, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -87,6 +97,19 @@ public class MemoryAlterationJobStore : IAlterationJobStore
         filter.Apply(query.WhereVisibleToTenant(CurrentTenantId));
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
+
+    private void EnsureIdAvailable(AlterationJob job)
+    {
+        var existing = _store.Find(x => x.Id == job.Id);
+
+        if (existing is not null && !IsVisible(existing))
+        {
+            throw new InvalidOperationException(
+                $"An alteration job with ID '{job.Id}' already exists and is not visible to the current tenant.");
+        }
+    }
 
     private void ApplyCurrentTenant(Entity entity)
     {

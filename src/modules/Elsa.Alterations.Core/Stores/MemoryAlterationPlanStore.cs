@@ -32,9 +32,13 @@ public class MemoryAlterationPlanStore : IAlterationPlanStore
     /// <inheritdoc />
     public Task SaveAsync(AlterationPlan plan, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(plan);
         lock (_store.Sync)
+        {
+            ApplyCurrentTenant(plan);
+            EnsureIdAvailable(plan);
             _store.Save(plan, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -60,6 +64,19 @@ public class MemoryAlterationPlanStore : IAlterationPlanStore
         filter.Apply(query.WhereVisibleToTenant(CurrentTenantId));
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
+
+    private void EnsureIdAvailable(AlterationPlan plan)
+    {
+        var existing = _store.Find(x => x.Id == plan.Id);
+
+        if (existing is not null && !IsVisible(existing))
+        {
+            throw new InvalidOperationException(
+                $"An alteration plan with ID '{plan.Id}' already exists and is not visible to the current tenant.");
+        }
+    }
 
     private void ApplyCurrentTenant(Entity entity)
     {
