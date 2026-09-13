@@ -52,8 +52,9 @@ public class InMemoryWorkflowDefinitionLabelStoreTenantIsolationTests
         var remainingForB = (await tenantB.FindByLabelIdsAsync(["red"])).ToList();
 
         Assert.False(deleted);
-        Assert.Single(remainingForB);
-        Assert.Equal("assoc-b", remainingForB[0].Id);
+        Assert.Contains(remainingForB, x => x.Id == "assoc-b");
+        Assert.Contains(remainingForB, x => x.Id == "assoc-star");
+        Assert.DoesNotContain(remainingForB, x => x.Id == "assoc-a");
     }
 
     [Fact(DisplayName = "DeleteByWorkflowDefinitionIdAsync leaves the other tenant's associations")]
@@ -93,8 +94,9 @@ public class InMemoryWorkflowDefinitionLabelStoreTenantIsolationTests
         Assert.Contains(remainingForA, x => x.Id == "assoc-a2");
         Assert.Contains(remainingForA, x => x.Id == "assoc-star");
         Assert.DoesNotContain(remainingForA, x => x.Id == "assoc-a");
-        Assert.Single(remainingForB);
-        Assert.Equal("assoc-b", remainingForB[0].Id);
+        Assert.Contains(remainingForB, x => x.Id == "assoc-b");
+        Assert.Contains(remainingForB, x => x.Id == "assoc-star");
+        Assert.DoesNotContain(remainingForB, x => x.Id == "assoc-a");
     }
 
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
