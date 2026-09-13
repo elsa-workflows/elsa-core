@@ -487,9 +487,9 @@ Use “proven” only when the raw artifact is attached. “Mapped” means the 
 
 | Requirement | xUnit v2 + VSTest | xUnit v3 + MTP | TUnit + MTP | Gate |
 | --- | --- | --- | --- | --- |
-| Unit build and pass | **Proven locally**, 274/274 | Not run | Latest committed wave: 591 verified cases across 9 projects; full-suite verification pending | Same case/name/outcome set |
+| Unit build and pass | **Proven locally**, 274/274 | Not run | Committed rollout: 2,047 verified cases across 32 projects; full-suite verification pending | Same case/name/outcome set |
 | Integration build and pass | **Proven locally**, 305/305 | Not run | Not run | Same case/name/outcome set |
-| Ten consecutive pilot runs | Not required for baseline; 5 timing samples recorded | Not run | Latest committed wave: 10/10 default-parallel passes per project; full pilot/CI gate pending | No failure or count drift |
+| Ten consecutive pilot runs | Not required for baseline; 5 timing samples recorded | Not run | Latest committed tranche: 10/10 default-parallel passes per project; full pilot/CI gate pending | No failure or count drift |
 | Initial serial policy | Five local samples used current defaults; serial control not yet captured | Not run | Planned with `--maximum-parallel-tests 1` | Exactly one active case in every A/B/C variant |
 | Same-class safety after raising cap | Current framework behavior | Project audit required | Project audit required; no custom shim | Native constraints and sentinel pass |
 | Unrelated-class concurrency after audit | Current framework behavior | Not in initial serial run | Not in initial serial run | Separate matched-cap experiment |
@@ -627,7 +627,7 @@ The complete conversion is intentionally split into independently reviewable com
 
 ### Verified rollout snapshot (2026-09-13)
 
-At `553710d56610890ca331d07ad0ca72315c908447`, 29 of the 55 active test projects recorded at the comparison base have committed TUnit opt-ins: 28 unit projects and one integration project. The latest verified wave is:
+At `6ab15bfa95044bfc4540b731272dead4dea8941a`, 32 of the 55 active test projects recorded at the comparison base have committed TUnit opt-ins: 31 unit projects and one integration project. The latest verified rollout wave is:
 
 | Project | Commit | Verified cases |
 | --- | --- | ---: |
@@ -640,17 +640,20 @@ At `553710d56610890ca331d07ad0ca72315c908447`, 29 of the 55 active test projects
 | `Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests` | `f79ca2d07f88e266a3ffc9b38797749481a547e7` | 18 |
 | `Elsa.Diagnostics.StructuredLogs.UnitTests` | `a54f71f020dc43a4247b44dc48dafec6d0b6bd37` | 36 |
 | `Elsa.ExternalAuthentication.UnitTests` | `553710d56610890ca331d07ad0ca72315c908447` | 205 |
-| **Wave total** | **9 projects** | **591** |
+| `Elsa.Secrets.UnitTests` | `62cee9cc7d5e62de954e3acddc7ddb4553b61806` | 65 |
+| `Elsa.UserTasks.Persistence.EFCore.UnitTests` | `a8d0ee2743a7424a01e6386c25686649616b90b3` | 4 |
+| `Elsa.UserTasks.UnitTests` | `6ab15bfa95044bfc4540b731272dead4dea8941a` | 103 |
+| **Wave total** | **12 projects** | **763** |
 
-Together with the preceding 20-project snapshot's 1,284 targeted cases, the committed rollout now covers 29 projects and 1,875 targeted cases.
+Together with the preceding 20-project snapshot's 1,284 targeted cases, the committed rollout now covers 32 projects and 2,047 targeted cases. The three-project Secrets/UserTasks tranche contributed 172 cases with exact xUnit discovery parity.
 
 Every project in this wave passed its focused Release build, exact native discovery check, semantic conversion audit, and ten consecutive runs under TUnit's default parallel policy. Only `StructuredLogSourceRegistryTests` is constrained, because it mutates fixed process-environment keys; ordinary tests remain parallel.
 
-Two discovery deltas are intentional and reviewed rather than duplicate execution. `Elsa.Identity.UnitTests` discovers 140 cases instead of the xUnit runner's 126 because TUnit enumerates all eight non-serializable `Action` rows in each of two `InvalidConfigurations` theories; xUnit had aggregated each theory at discovery. `Elsa.Resilience.Core.UnitTests` similarly discovers 96 cases instead of 94 because two deferred non-serializable data rows are enumerated. The other seven projects match their expected discovered case totals.
+Two discovery deltas are intentional and reviewed rather than duplicate execution. `Elsa.Identity.UnitTests` discovers 140 cases instead of the xUnit runner's 126 because TUnit enumerates all eight non-serializable `Action` rows in each of two `InvalidConfigurations` theories; xUnit had aggregated each theory at discovery. `Elsa.Resilience.Core.UnitTests` similarly discovers 96 cases instead of 94 because two deferred non-serializable data rows are enumerated. The other ten projects match their expected discovered case totals.
 
 The supporting package-alignment commits are `7696f3d0e5b1390569a6add6133f17897a9caa8a` and `7f3cd8475362dc51fef3acdb73e6d7ef96ddbfa2`; they add no test projects or cases.
 
-The baseline's 2,931 figure is a source count of attributed test methods before theory expansion, not a repository-wide runner-discovered case count. Therefore 591 must not be presented as a percentage of 2,931 or as repository-wide discovery parity.
+The baseline's 2,931 figure is a source count of attributed test methods before theory expansion, not a repository-wide runner-discovered case count. Therefore 763 must not be presented as a percentage of 2,931 or as repository-wide discovery parity.
 
 The repository remains mixed-runner during rollout. There is no root `global.json`; MTP selection remains scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables are the verified path for the converted projects; `dotnet test --project` from the nested MTP context currently reports zero tests for these test applications. These counts are not evidence of a root-level or full-suite MTP pass, and root runner integration remains an explicit final migration step.
 
