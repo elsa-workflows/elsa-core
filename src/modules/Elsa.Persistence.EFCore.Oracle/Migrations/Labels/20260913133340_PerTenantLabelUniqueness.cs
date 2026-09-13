@@ -18,6 +18,16 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Default tenant is "" (not null). Stamp leftover nulls so the filtered unique
+            // index (TenantId IS NOT NULL) covers them. Duplicates are not deleted —
+            // CreateIndex fails loudly; resolve them before upgrading.
+            // Name/NormalizedName are not truncated; values longer than 255 fail this ALTER.
+            migrationBuilder.Sql($"""
+                UPDATE "{_schema.Schema}"."Labels"
+                SET "TenantId" = ''
+                WHERE "TenantId" IS NULL;
+                """);
+
             migrationBuilder.AlterColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
@@ -29,10 +39,21 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Labels
                 oldNullable: true);
 
             migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "NVARCHAR2(255)",
+                maxLength: 255,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "NVARCHAR2(2000)");
+
+            migrationBuilder.AlterColumn<string>(
                 name: "NormalizedName",
                 schema: _schema.Schema,
                 table: "Labels",
-                type: "NVARCHAR2(450)",
+                type: "NVARCHAR2(255)",
+                maxLength: 255,
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "NVARCHAR2(2000)");
@@ -71,7 +92,18 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Labels
                 type: "NVARCHAR2(2000)",
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "NVARCHAR2(450)");
+                oldType: "NVARCHAR2(255)",
+                oldMaxLength: 255);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "NVARCHAR2(2000)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "NVARCHAR2(255)",
+                oldMaxLength: 255);
         }
     }
 }

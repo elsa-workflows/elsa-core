@@ -25,4 +25,16 @@ public class LabelNormalizedNameUniquenessTests
         Assert.Equal(["TenantId", "NormalizedName"], index.Properties.Select(x => x.Name));
         Assert.Equal("IX_Label_TenantId_NormalizedName", index.GetDatabaseName());
     }
+
+    [Fact]
+    public void Label_NameAndNormalizedName_HaveSharedMaxLength()
+    {
+        var builder = new ModelBuilder();
+        new Configurations().Configure(builder.Entity<Label>());
+        var entity = builder.Model.FindEntityType(typeof(Label))!;
+
+        Assert.Equal(Label.NameMaxLength, entity.FindProperty(nameof(Label.Name))!.GetMaxLength());
+        Assert.Equal(Label.NameMaxLength, entity.FindProperty(nameof(Label.NormalizedName))!.GetMaxLength());
+        Assert.Equal(255, Label.NameMaxLength);
+    }
 }

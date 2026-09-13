@@ -18,6 +18,15 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
+            // Duplicates are not deleted — CreateIndex fails loudly; resolve them before upgrading.
+            // Name/NormalizedName are not truncated; values longer than 255 fail this ALTER.
+            migrationBuilder.Sql($"""
+                UPDATE `{_schema.Schema}`.`Labels`
+                SET `TenantId` = ''
+                WHERE `TenantId` IS NULL;
+                """);
+
             migrationBuilder.AlterColumn<string>(
                 name: "TenantId",
                 schema: _schema.Schema,
@@ -31,10 +40,23 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "varchar(255)",
+                maxLength: 255,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "longtext")
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AlterColumn<string>(
                 name: "NormalizedName",
                 schema: _schema.Schema,
                 table: "Labels",
                 type: "varchar(255)",
+                maxLength: 255,
                 nullable: false,
                 oldClrType: typeof(string),
                 oldType: "longtext")
@@ -76,7 +98,20 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
                 type: "longtext",
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "varchar(255)")
+                oldType: "varchar(255)",
+                oldMaxLength: 255)
+                .Annotation("MySql:CharSet", "utf8mb4")
+                .OldAnnotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "longtext",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "varchar(255)",
+                oldMaxLength: 255)
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
         }

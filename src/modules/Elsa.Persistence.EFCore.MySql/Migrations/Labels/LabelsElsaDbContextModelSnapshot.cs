@@ -35,10 +35,12 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("TenantId")

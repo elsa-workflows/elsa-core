@@ -99,6 +99,21 @@ public class InMemoryLabelStoreUniquenessTests
         Assert.Equal("tenant-a", (await store.FindByIdAsync("label-1"))!.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync treats a null TenantId as the default tenant for uniqueness")]
+    public async Task SaveAsync_WhenNullTenantIdRepeatsDefaultTenantNormalizedName_Throws()
+    {
+        var labels = new MemoryStore<Label>();
+        labels.Save(new Label { Id = "label-null", Name = "Urgent", TenantId = null }, x => x.Id);
+        var store = new InMemoryLabelStore(labels, new MemoryStore<WorkflowDefinitionLabel>(), new TestTenantAccessor(Tenant.DefaultTenantId));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            store.SaveAsync(Label("label-default", "Urgent", Tenant.DefaultTenantId)));
+
+        Assert.Contains("already exists", exception.Message);
+        Assert.Null(await store.FindByIdAsync("label-default"));
+        Assert.Equal("Urgent", (await store.FindByIdAsync("label-null"))!.Name);
+    }
+
     [Fact(DisplayName = "SaveAsync allows the same normalized name for * and a tenant-scoped label")]
     public async Task SaveAsync_WhenAgnosticAndTenantScopedShareNormalizedName_Succeeds()
     {

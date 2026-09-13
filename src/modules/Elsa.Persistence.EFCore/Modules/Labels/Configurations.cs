@@ -8,8 +8,13 @@ public class Configurations : IEntityTypeConfiguration<Label>, IEntityTypeConfig
 {
     public void Configure(EntityTypeBuilder<Label> builder)
     {
+        builder.Property(x => x.Name).HasMaxLength(Label.NameMaxLength).IsRequired();
+        builder.Property(x => x.NormalizedName).HasMaxLength(Label.NameMaxLength).IsRequired();
+
         // Uniqueness is per tenant, matching Secrets (and User, Role, Application).
         // A global unique index would make the name a shared resource across tenants.
+        // SQL Server/Oracle still emit a filtered unique index (TenantId IS NOT NULL).
+        // Default-tenant rows use "" — migrations stamp leftover null TenantId to "" first.
         builder.HasIndex(x => new { x.TenantId, x.NormalizedName })
             .HasDatabaseName($"IX_{nameof(Label)}_{nameof(Label.TenantId)}_{nameof(Label.NormalizedName)}")
             .IsUnique();

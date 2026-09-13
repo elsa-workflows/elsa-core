@@ -35,11 +35,13 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("text");

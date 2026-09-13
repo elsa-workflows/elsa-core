@@ -35,11 +35,13 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(255)
+                        .HasColumnType("NVARCHAR2(255)");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasMaxLength(255)
+                        .HasColumnType("NVARCHAR2(255)");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("NVARCHAR2(450)");

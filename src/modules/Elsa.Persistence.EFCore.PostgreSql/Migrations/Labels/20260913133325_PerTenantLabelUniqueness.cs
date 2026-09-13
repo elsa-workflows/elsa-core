@@ -18,6 +18,35 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
+            // Duplicates are not deleted — CreateIndex fails loudly; resolve them before upgrading.
+            // Name/NormalizedName are not truncated; values longer than 255 fail this ALTER.
+            migrationBuilder.Sql($"""
+                UPDATE "{_schema.Schema}"."Labels"
+                SET "TenantId" = ''
+                WHERE "TenantId" IS NULL;
+                """);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "character varying(255)",
+                maxLength: 255,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "NormalizedName",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "character varying(255)",
+                maxLength: 255,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "text");
+
             migrationBuilder.CreateIndex(
                 name: "IX_Label_TenantId_NormalizedName",
                 schema: _schema.Schema,
@@ -33,6 +62,26 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
                 name: "IX_Label_TenantId_NormalizedName",
                 schema: _schema.Schema,
                 table: "Labels");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "NormalizedName",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(255)",
+                oldMaxLength: 255);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                schema: _schema.Schema,
+                table: "Labels",
+                type: "text",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(255)",
+                oldMaxLength: 255);
         }
     }
 }

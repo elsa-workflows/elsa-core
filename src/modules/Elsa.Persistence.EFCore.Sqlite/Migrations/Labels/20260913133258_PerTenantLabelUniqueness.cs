@@ -18,6 +18,14 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
+            // Duplicates are not deleted — CreateIndex fails loudly; resolve them before upgrading.
+            migrationBuilder.Sql($"""
+                UPDATE "{_schema.Schema}"."Labels"
+                SET "TenantId" = ''
+                WHERE "TenantId" IS NULL;
+                """);
+
             migrationBuilder.CreateIndex(
                 name: "IX_Label_TenantId_NormalizedName",
                 schema: _schema.Schema,

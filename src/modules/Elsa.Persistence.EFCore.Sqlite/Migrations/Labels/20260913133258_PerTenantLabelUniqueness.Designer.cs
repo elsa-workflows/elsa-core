@@ -34,10 +34,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
