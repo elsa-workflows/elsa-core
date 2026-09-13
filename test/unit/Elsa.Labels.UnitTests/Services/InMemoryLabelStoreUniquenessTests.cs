@@ -68,6 +68,24 @@ public class InMemoryLabelStoreUniquenessTests
         Assert.Equal("Later", (await store.FindByIdAsync("label-2"))!.Name);
     }
 
+    [Fact(DisplayName = "SaveAsync leaves the stored name unchanged when a Find result is renamed onto a collision")]
+    public async Task SaveAsync_WhenFoundLabelRenamedOntoCollision_LeavesStoredNameUnchanged()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Label("label-1", "Urgent", "tenant-a"));
+        await store.SaveAsync(Label("label-2", "Later", "tenant-a"));
+
+        var found = await store.FindByIdAsync("label-2");
+        found!.Name = "Urgent";
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveAsync(found));
+
+        Assert.Contains("already exists", exception.Message);
+        var stored = await store.FindByIdAsync("label-2");
+        Assert.Equal("Later", stored!.Name);
+        Assert.Equal("later", stored.NormalizedName);
+    }
+
     [Fact(DisplayName = "SaveAsync treats a stamped ambient tenant as the uniqueness tenant")]
     public async Task SaveAsync_WhenTenantIdUnset_UsesStampedAmbientTenantForUniqueness()
     {

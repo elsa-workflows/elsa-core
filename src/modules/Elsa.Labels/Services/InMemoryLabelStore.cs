@@ -104,7 +104,8 @@ public class InMemoryLabelStore : ILabelStore
     /// <inheritdoc />
     public Task<Label?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(FindVisibleLabel(id));
+        var found = FindVisibleLabel(id);
+        return Task.FromResult(found is null ? null : Clone(found));
     }
 
     /// <inheritdoc />
@@ -112,19 +113,37 @@ public class InMemoryLabelStore : ILabelStore
     {
         var query = _labelStore.List().AsQueryable().WhereVisibleToTenant(CurrentTenantId).OrderBy(x => x.Name);
         var page = query.ToPage(pageArgs);
-        return Task.FromResult(page);
+        return Task.FromResult(Page.Of(page.Items.Select(Clone).ToList(), page.TotalCount));
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<Label>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken)
     {
         var idList = ids.ToList();
-        var records = _labelStore.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => idList.Contains(x.Id)));
-        return Task.FromResult(records);
+        var records = _labelStore.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => idList.Contains(x.Id)))
+            .Select(Clone)
+            .ToList();
+        return Task.FromResult<IEnumerable<Label>>(records);
     }
 
     private Label? FindVisibleLabel(string id) =>
         _labelStore.Query(query => query.WhereVisibleToTenant(CurrentTenantId).Where(x => x.Id == id)).FirstOrDefault();
+
+    /// <summary>
+    /// Clone-on-read, matching Memory identity stores. Labels.Update does Find → mutate
+    /// Name (which writes NormalizedName) → Save. Without a copy, a rejected rename
+    /// would already have mutated the stored row.
+    /// </summary>
+    private static Label Clone(Label label) =>
+        new()
+        {
+            Id = label.Id,
+            TenantId = label.TenantId,
+            Name = label.Name,
+            NormalizedName = label.NormalizedName,
+            Description = label.Description,
+            Color = label.Color
+        };
 
     private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
 
