@@ -54,7 +54,7 @@ public abstract class LabelStoreConformanceTests
         await scenario.Associations.SaveAsync(Association("assoc-blue", "blue", "order", "order:1", "tenant-a"));
 
         await scenario.Associations.ReplaceAsync(
-            [Association("assoc-red", "red", "order", "order:1", "tenant-a")],
+            [Association("assoc-red", "wrong-label", "other", "other:9", "tenant-b")],
             [Association("assoc-green", "green", "order", "order:1", "tenant-a")]);
 
         var remaining = (await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1"))
@@ -228,6 +228,16 @@ public abstract class LabelStoreConformanceTests
             await scenario.Associations.SaveAsync(stampedAssociation);
             Assert.Equal(Tenant.DefaultTenantId, stampedAssociation.TenantId);
             Assert.Equal("assoc-null", Assert.Single(await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).Id);
+
+            var batchLabels = new[] { Label("label-batch-null", "BatchNull", tenantId: null) };
+            await scenario.Labels.SaveManyAsync(batchLabels);
+            Assert.Equal(Tenant.DefaultTenantId, batchLabels[0].TenantId);
+            Assert.Equal(Tenant.DefaultTenantId, (await scenario.Labels.FindByIdAsync("label-batch-null"))!.TenantId);
+
+            var batchAssociations = new[] { Association("assoc-batch-null", "blue", "order", "order:1", tenantId: null) };
+            await scenario.Associations.SaveManyAsync(batchAssociations);
+            Assert.Equal(Tenant.DefaultTenantId, batchAssociations[0].TenantId);
+            Assert.Equal("assoc-batch-null", Assert.Single(await scenario.AssociationQuery.FindByLabelIdsAsync(["blue"])).Id);
         }
 
         var agnostic = Label("label-star-2", "Star2", Tenant.AgnosticTenantId);
