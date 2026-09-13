@@ -1,5 +1,4 @@
 using Elsa.Workflows.Management;
-using Xunit;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Support;
 
@@ -18,6 +17,7 @@ internal static class DefinitionPublishing
     public static async Task PublishLatestAsync(IWorkflowDefinitionPublisher publisher, string definitionId)
     {
         var result = await publisher.PublishAsync(definitionId);
-        Assert.True(result.Succeeded, string.Join("; ", result.ValidationErrors.Select(e => e.Message)));
+        await Assert.That(result.Succeeded).IsTrue()
+            .Because(string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
     }
 }

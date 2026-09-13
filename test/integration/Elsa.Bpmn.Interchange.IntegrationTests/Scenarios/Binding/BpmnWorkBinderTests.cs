@@ -9,100 +9,120 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
+using TUnit.Assertions.Enums;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 
 /// <summary>
 /// Turning <c>BpmnWorkBinding</c> declarations into the activities a <c>BpmnProcess</c> scope runs.
 /// </summary>
-public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindingTestBase(testOutputHelper)
+public class BpmnWorkBinderTests : BpmnBindingTestBase
 {
     private const string ProcessId = "main";
 
-    [Fact(DisplayName = "A timer wait binds to a Delay of the declared ISO-8601 duration")]
-    public void TimerWait_BindsToADelay()
+    [Test]
+    [DisplayName("A timer wait binds to a Delay of the declared ISO-8601 duration")]
+    public async Task TimerWait_BindsToADelay()
     {
         var scope = Bind(Definition(Element("wait", BpmnElementTypes.IntermediateCatchEvent)), Timer("wait", "PT5M"));
 
-        var delay = Assert.IsType<Delay>(WorkOf(scope, "wait"));
+        var work = WorkOf(scope, "wait");
+        await Assert.That(work).IsOfType(typeof(Delay));
+        var delay = (Delay)work;
 
-        Assert.Equal(TimeSpan.FromMinutes(5), ValueOf<TimeSpan>(delay.TimeSpan));
+        await Assert.That(ValueOf<TimeSpan>(delay.TimeSpan)).IsEqualTo(TimeSpan.FromMinutes(5));
     }
 
-    [Fact(DisplayName = "A timer wait declaring something that is not an ISO-8601 duration is refused")]
-    public void TimerWait_RefusesADurationElsaCannotWaitFor()
+    [Test]
+    [DisplayName("A timer wait declaring something that is not an ISO-8601 duration is refused")]
+    public async Task TimerWait_RefusesADurationElsaCannotWaitFor()
     {
         // A duration quietly defaulted to zero is a timer boundary event that fires the moment it is armed, which
         // cancels the task it guards before that task has done anything.
-        var exception = Assert.Throws<BpmnBindingException>(() => Bind(Definition(Element("wait", BpmnElementTypes.IntermediateCatchEvent)), Timer("wait", "5 minutes")));
+        var exception = Assert.ThrowsExactly<BpmnBindingException>(() => Bind(Definition(Element("wait", BpmnElementTypes.IntermediateCatchEvent)), Timer("wait", "5 minutes")));
 
-        Assert.Contains("5 minutes", exception.Message);
+        await Assert.That(exception.Message).Contains("5 minutes", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "A message wait binds to an Event on the message name")]
-    public void MessageWait_BindsToAnEvent()
+    [Test]
+    [DisplayName("A message wait binds to an Event on the message name")]
+    public async Task MessageWait_BindsToAnEvent()
     {
         var scope = Bind(
             Definition(Element("receive", BpmnElementTypes.ReceiveTask)),
             new BpmnWorkBinding.MessageWait(ProcessId, "receive", Ref("receive"), BpmnBindingSlot.Primary, "OrderPlaced"));
 
-        var @event = Assert.IsType<Event>(WorkOf(scope, "receive"));
+        var work = WorkOf(scope, "receive");
+        await Assert.That(work).IsOfType(typeof(Event));
+        var @event = (Event)work;
 
-        Assert.Equal("OrderPlaced", ValueOf<string>(@event.EventName));
+        await Assert.That(ValueOf<string>(@event.EventName)).IsEqualTo("OrderPlaced");
 
         // A catch inside a scope is not a way into the workflow; only the process's own start events are, and saying
         // so is the enclosing BpmnProcess's decision, not this activity's.
-        Assert.False(@event.CanStartWorkflow);
+        await Assert.That(@event.CanStartWorkflow).IsFalse();
     }
 
-    [Fact(DisplayName = "A signal wait binds to an Event on the signal name")]
-    public void SignalWait_BindsToAnEvent()
+    [Test]
+    [DisplayName("A signal wait binds to an Event on the signal name")]
+    public async Task SignalWait_BindsToAnEvent()
     {
         var scope = Bind(
             Definition(Element("await", BpmnElementTypes.IntermediateCatchEvent)),
             new BpmnWorkBinding.SignalWait(ProcessId, "await", Ref("await"), BpmnBindingSlot.Primary, "Cancelled"));
 
-        Assert.Equal("Cancelled", ValueOf<string>(Assert.IsType<Event>(WorkOf(scope, "await")).EventName));
+        var work = WorkOf(scope, "await");
+        await Assert.That(work).IsOfType(typeof(Event));
+        var eventActivity = (Event)work;
+        await Assert.That(ValueOf<string>(eventActivity.EventName)).IsEqualTo("Cancelled");
     }
 
-    [Fact(DisplayName = "A message publish binds to a PublishEvent on the message name")]
-    public void MessagePublish_BindsToAPublishEvent()
+    [Test]
+    [DisplayName("A message publish binds to a PublishEvent on the message name")]
+    public async Task MessagePublish_BindsToAPublishEvent()
     {
         var scope = Bind(
             Definition(Element("send", BpmnElementTypes.SendTask)),
             new BpmnWorkBinding.MessagePublish(ProcessId, "send", Ref("send"), BpmnBindingSlot.Primary, "OrderShipped"));
 
-        Assert.Equal("OrderShipped", ValueOf<string>(Assert.IsType<PublishEvent>(WorkOf(scope, "send")).EventName));
+        var work = WorkOf(scope, "send");
+        await Assert.That(work).IsOfType(typeof(PublishEvent));
+        var publishEvent = (PublishEvent)work;
+        await Assert.That(ValueOf<string>(publishEvent.EventName)).IsEqualTo("OrderShipped");
     }
 
-    [Fact(DisplayName = "A call activity binds to a DispatchWorkflow on the called element, keeping fire-and-forget")]
-    public void CallProcess_BindsToADispatchWorkflow()
+    [Test]
+    [DisplayName("A call activity binds to a DispatchWorkflow on the called element, keeping fire-and-forget")]
+    public async Task CallProcess_BindsToADispatchWorkflow()
     {
         var scope = Bind(
             Definition(Element("call", BpmnElementTypes.CallActivity)),
             new BpmnWorkBinding.CallProcess(ProcessId, "call", Ref("call"), BpmnBindingSlot.Primary, "shipping-process", false));
 
-        var dispatch = Assert.IsType<DispatchWorkflow>(WorkOf(scope, "call"));
+        var work = WorkOf(scope, "call");
+        await Assert.That(work).IsOfType(typeof(DispatchWorkflow));
+        var dispatch = (DispatchWorkflow)work;
 
-        Assert.Equal("shipping-process", ValueOf<string>(dispatch.WorkflowDefinitionId));
+        await Assert.That(ValueOf<string>(dispatch.WorkflowDefinitionId)).IsEqualTo("shipping-process");
 
         // BPMN has no standard way to say "fire and forget", so the library carries it on the binding. Dropping it
         // here turns an asynchronous call into one the enclosing scope waits on, and the process stops where it used
         // to carry on.
-        Assert.False(ValueOf<bool>(dispatch.WaitForCompletion));
+        await Assert.That(ValueOf<bool>(dispatch.WaitForCompletion)).IsFalse();
     }
 
-    [Fact(DisplayName = "A call activity naming no called element is refused")]
+    [Test]
+    [DisplayName("A call activity naming no called element is refused")]
     public void CallProcess_RefusesACallWithNothingToCall()
     {
-        Assert.Throws<BpmnBindingException>(() => Bind(
+        Assert.ThrowsExactly<BpmnBindingException>(() => Bind(
             Definition(Element("call", BpmnElementTypes.CallActivity)),
             new BpmnWorkBinding.CallProcess(ProcessId, "call", Ref("call"), BpmnBindingSlot.Primary, null, true)));
     }
 
-    [Fact(DisplayName = "A nested process binds to a BpmnProcess scope that binds its own work")]
-    public void NestedProcess_BindsToANestedScope()
+    [Test]
+    [DisplayName("A nested process binds to a BpmnProcess scope that binds its own work")]
+    public async Task NestedProcess_BindsToANestedScope()
     {
         var body = new BpmnProcessDefinition("sub", Elements: [BoundElement("subWork", BpmnElementTypes.ServiceTask, new WriteLine("nested"))]);
 
@@ -111,27 +131,34 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
             new BpmnWorkBinding.NestedProcess(ProcessId, "sub", Ref("sub"), BpmnBindingSlot.Primary, body),
             Unbound("subWork", processId: "sub"));
 
-        var nested = Assert.IsType<BpmnProcess>(WorkOf(scope, "sub"));
+        var nestedWork = WorkOf(scope, "sub");
+        await Assert.That(nestedWork).IsOfType(typeof(BpmnProcess));
+        var nested = (BpmnProcess)nestedWork;
 
-        Assert.Same(body, nested.Process);
-        Assert.Equal("nested", ValueOf<string>(Assert.IsType<WriteLine>(WorkOf(nested, "subWork")).Text));
+        await Assert.That(nested.Process).IsSameReferenceAs(body);
+        var nestedActivity = WorkOf(nested, "subWork");
+        await Assert.That(nestedActivity).IsOfType(typeof(WriteLine));
+        var writeLine = (WriteLine)nestedActivity;
+        await Assert.That(ValueOf<string>(writeLine.Text)).IsEqualTo("nested");
 
         // A nested scope's start events are internal to the process around it. The command applier refuses a nested
         // scope that says otherwise, so a binder that marked one would only fail once the process ran.
-        Assert.False(nested.IsRootScope);
+        await Assert.That(nested.IsRootScope).IsFalse();
     }
 
-    [Fact(DisplayName = "Bind marks the one scope it returns directly as the workflow's root scope")]
-    public void Bind_MarksTheReturnedScopeAsRootScope()
+    [Test]
+    [DisplayName("Bind marks the one scope it returns directly as the workflow's root scope")]
+    public async Task Bind_MarksTheReturnedScopeAsRootScope()
     {
         // Binding one process definition on its own is what turns an imported .bpmn document into a workflow's own
         // entry point -- Bind is the only call that gets to decide this, and it decides it every time.
         var scope = Bind(Definition(BoundElement("only", BpmnElementTypes.ServiceTask, new WriteLine("only"))), Unbound("only"));
 
-        Assert.True(scope.IsRootScope);
+        await Assert.That(scope.IsRootScope).IsTrue();
     }
 
-    [Fact(DisplayName = "A document-declared variable is copied onto the bound scope, and drives a collection-mode multi-instance")]
+    [Test]
+    [DisplayName("A document-declared variable is copied onto the bound scope, and drives a collection-mode multi-instance")]
     public async Task DocumentDeclaredVariable_DrivesACollectionModeMultiInstance()
     {
         // BpmnScopeVariables.TryRead resolves purely through Elsa's own ExpressionExecutionContext.GetVariable, which
@@ -168,20 +195,21 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
 
         var scope = Bind(definition, Unbound("each"), Unbound("after"));
 
-        Assert.Contains(scope.Variables, variable => variable.Name == collectionVariableName);
+        await Assert.That(scope.Variables).Contains(variable => variable.Name == collectionVariableName);
 
         var eachActivityId = scope.WorkBindings[Ref("each")];
         var afterActivityId = scope.WorkBindings[Ref("after")];
 
         var result = await Services.GetRequiredService<IWorkflowRunner>().RunAsync(scope);
 
-        Assert.Equal(3, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == eachActivityId));
-        Assert.Equal(1, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == afterActivityId));
-        Assert.Empty(result.WorkflowState.Incidents);
+        await Assert.That(result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == eachActivityId)).IsEqualTo(3);
+        await Assert.That(result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == afterActivityId)).IsEqualTo(1);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
     }
 
-    [Fact(DisplayName = "A ScopeListener binding is bound like any other, under its own binding ref")]
-    public void ScopeListenerSlot_BindsWithNoSpecialCase()
+    [Test]
+    [DisplayName("A ScopeListener binding is bound like any other, under its own binding ref")]
+    public async Task ScopeListenerSlot_BindsWithNoSpecialCase()
     {
         // An event subprocess element carries two bindings: its body, and the listener its enclosing scope arms while
         // it runs. Both are entries in the same map; the interpreter arms the listener at scope start on its own.
@@ -197,11 +225,15 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
             new BpmnWorkBinding.NestedProcess(ProcessId, "escalationHandler", Ref("escalationHandler"), BpmnBindingSlot.Primary, new BpmnProcessDefinition("escalationHandler")),
             new BpmnWorkBinding.MessageWait(ProcessId, "escalationHandler", ListenerRef("escalationHandler"), BpmnBindingSlot.ScopeListener, "Escalated"));
 
-        Assert.IsType<BpmnProcess>(WorkForRef(scope, Ref("escalationHandler")));
-        Assert.Equal("Escalated", ValueOf<string>(Assert.IsType<Event>(WorkForRef(scope, ListenerRef("escalationHandler"))).EventName));
+        await Assert.That(WorkForRef(scope, Ref("escalationHandler"))).IsOfType(typeof(BpmnProcess));
+        var listenerWork = WorkForRef(scope, ListenerRef("escalationHandler"));
+        await Assert.That(listenerWork).IsOfType(typeof(Event));
+        var escalationEvent = (Event)listenerWork;
+        await Assert.That(ValueOf<string>(escalationEvent.EventName)).IsEqualTo("Escalated");
     }
 
-    [Fact(DisplayName = "A compensation handler is bound like any other work, and only compensation replay runs it")]
+    [Test]
+    [DisplayName("A compensation handler is bound like any other work, and only compensation replay runs it")]
     public async Task CompensationHandler_IsBoundAndOnlyReachedByReplay()
     {
         // An isForCompensation element binds work and takes no sequence flows, and the reader emits an ordinary
@@ -233,34 +265,40 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
 
         var result = await Services.GetRequiredService<IWorkflowRunner>().RunAsync(scope);
 
-        Assert.Equal(1, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == undoBookActivityId));
-        Assert.Equal(0, result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == undoPayActivityId));
-        Assert.Empty(result.WorkflowState.Incidents);
+        await Assert.That(result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == undoBookActivityId)).IsEqualTo(1);
+        await Assert.That(result.Journal.ActivityExecutionContexts.Count(context => context.Activity.Id == undoPayActivityId)).IsEqualTo(0);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
     }
 
-    [Fact(DisplayName = "An unbound task the document does not bind is refused, naming the element")]
-    public void UnboundTask_WithNoDeclarationIsRefused()
+    [Test]
+    [DisplayName("An unbound task the document does not bind is refused, naming the element")]
+    public async Task UnboundTask_WithNoDeclarationIsRefused()
     {
         // The failure that has to be loud. Skipping the binding instead would produce a scope whose interpreter
         // schedules work for a binding ref nothing maps, which surfaces much later and much further away.
-        var exception = Assert.Throws<BpmnBindingException>(() => Bind(Definition(Element("approve", BpmnElementTypes.UserTask)), Unbound("approve")));
+        var exception = Assert.ThrowsExactly<BpmnBindingException>(() => Bind(Definition(Element("approve", BpmnElementTypes.UserTask)), Unbound("approve")));
 
-        Assert.Contains("approve", exception.Message);
-        Assert.Contains(BpmnActivityBindingFormat.BindingElementName, exception.Message);
+        await Assert.That(exception.Message).Contains("approve", StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains(BpmnActivityBindingFormat.BindingElementName, StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "An unbound task the document binds resolves to the declared activity, inputs intact")]
-    public void UnboundTask_WithADeclarationResolves()
+    [Test]
+    [DisplayName("An unbound task the document binds resolves to the declared activity, inputs intact")]
+    public async Task UnboundTask_WithADeclarationResolves()
     {
         var scope = Bind(
             Definition(BoundElement("approve", BpmnElementTypes.UserTask, new WriteLine("approved"))),
             Unbound("approve"));
 
-        Assert.Equal("approved", ValueOf<string>(Assert.IsType<WriteLine>(WorkOf(scope, "approve")).Text));
+        var work = WorkOf(scope, "approve");
+        await Assert.That(work).IsOfType(typeof(WriteLine));
+        var writeLine = (WriteLine)work;
+        await Assert.That(ValueOf<string>(writeLine.Text)).IsEqualTo("approved");
     }
 
-    [Fact(DisplayName = "An activity binding on an element with no unbound task to bind is refused")]
-    public void DeadDeclaration_IsRefused()
+    [Test]
+    [DisplayName("An activity binding on an element with no unbound task to bind is refused")]
+    public async Task DeadDeclaration_IsRefused()
     {
         // Six of the seven kinds never consult a declaration, so one written on a timer configures nothing. Ignoring
         // it leaves the author's expression sitting in the file while the activity they configured never executes.
@@ -270,12 +308,13 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
             bindingRef: Ref("wait"),
             extensions: BpmnActivityBindingFormat.Attach(null, Format.Write(new WriteLine("never runs"))));
 
-        var exception = Assert.Throws<BpmnBindingException>(() => Bind(Definition(element), Timer("wait", "PT1M")));
+        var exception = Assert.ThrowsExactly<BpmnBindingException>(() => Bind(Definition(element), Timer("wait", "PT1M")));
 
-        Assert.Contains("wait", exception.Message);
+        await Assert.That(exception.Message).Contains("wait", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Two scopes declaring the same binding ref get their own activity instance and their own node")]
+    [Test]
+    [DisplayName("Two scopes declaring the same binding ref get their own activity instance and their own node")]
     public async Task SameBindingRefInTwoScopes_ProducesDistinctActivityNodes()
     {
         // A binding ref is unique within a scope, not across scopes. One instance shared between two scopes still
@@ -290,16 +329,18 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
             Unbound("work", processId: "sub"));
 
         var outer = WorkOf(scope, "work");
-        var inner = WorkOf(Assert.IsType<BpmnProcess>(WorkOf(scope, "sub")), "work");
+        var nestedWork = WorkOf(scope, "sub");
+        await Assert.That(nestedWork).IsOfType(typeof(BpmnProcess));
+        var inner = WorkOf((BpmnProcess)nestedWork, "work");
 
-        Assert.NotSame(outer, inner);
-        Assert.NotEqual(outer.Id, inner.Id);
+        await Assert.That(inner).IsNotSameReferenceAs(outer);
+        await Assert.That(inner.Id).IsNotEqualTo(outer.Id);
 
         // The invariant stated the way Elsa sees it: two nodes, one per logical position.
         var nodes = await IdentityGraphOfAsync(scope);
         var texts = nodes.Select(node => node.Activity).OfType<WriteLine>().Select(activity => ValueOf<string>(activity.Text)).Order().ToList();
 
-        Assert.Equal(new[] { "inner", "outer" }, texts);
+        await Assert.That(texts).IsEquivalentTo(new[] { "inner", "outer" }, CollectionOrdering.Matching);
     }
 
     private BpmnProcess Bind(BpmnProcessDefinition definition, params BpmnWorkBinding[] bindings) => Binder.Bind(definition, bindings);
@@ -342,7 +383,13 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
 
     private static IActivity WorkForRef(BpmnProcess scope, string bindingRef)
     {
-        Assert.True(scope.WorkBindings.TryGetValue(bindingRef, out var activityId), $"The scope maps no work to binding ref '{bindingRef}'.");
-        return Assert.Single(scope.Activities, activity => activity.Id == activityId);
+        if (!scope.WorkBindings.TryGetValue(bindingRef, out var activityId))
+            Assert.Fail($"The scope maps no work to binding ref '{bindingRef}'.");
+
+        var matches = scope.Activities.Where(activity => activity.Id == activityId).ToList();
+        if (matches.Count != 1)
+            Assert.Fail($"Expected exactly one activity for binding ref '{bindingRef}', but found {matches.Count}.");
+
+        return matches[0];
     }
 }

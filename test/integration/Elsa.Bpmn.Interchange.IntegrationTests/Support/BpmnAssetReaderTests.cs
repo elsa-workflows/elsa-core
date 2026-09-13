@@ -7,20 +7,22 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Support;
 /// </summary>
 public class BpmnAssetReaderTests
 {
-    [Fact(DisplayName = "Reading a plain fixture name returns its contents")]
-    public void Read_OfAPlainFileName_ReturnsContents()
+    [Test]
+    [DisplayName("Reading a plain fixture name returns its contents")]
+    public async Task Read_OfAPlainFileName_ReturnsContents()
     {
         var content = BpmnAssetReader.Read("camunda-order-process.bpmn");
 
-        Assert.Contains("order-process", content);
+        await Assert.That(content).Contains("order-process", StringComparison.CurrentCulture);
     }
 
-    [Theory(DisplayName = "Reading a rooted or nested file name is refused rather than resolved outside Assets")]
-    [InlineData("/etc/passwd")]
-    [InlineData("../secrets.txt")]
-    [InlineData("nested/file.bpmn")]
+    [Test]
+    [DisplayName("Reading a rooted or nested file name is refused rather than resolved outside Assets")]
+    [Arguments("/etc/passwd")]
+    [Arguments("../secrets.txt")]
+    [Arguments("nested/file.bpmn")]
     public void Read_OfARootedOrNestedFileName_Throws(string fileName)
     {
-        Assert.Throws<ArgumentException>(() => BpmnAssetReader.Read(fileName));
+        Assert.ThrowsExactly<ArgumentException>(() => BpmnAssetReader.Read(fileName));
     }
 }

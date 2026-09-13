@@ -5,20 +5,19 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 
 /// <summary>
 /// The application the Analyze/Import/Export endpoints' shared service is exercised in.
 /// </summary>
-public abstract class BpmnInterchangeTestBase : IAsyncLifetime
+public abstract class BpmnInterchangeTestBase
 {
     private readonly IServiceProvider _services;
 
-    protected BpmnInterchangeTestBase(ITestOutputHelper testOutputHelper)
+    protected BpmnInterchangeTestBase()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .Build();
 
@@ -43,9 +42,17 @@ public abstract class BpmnInterchangeTestBase : IAsyncLifetime
     /// <summary>Resolves activities out of a draft's <c>StringData</c> so a test can edit one before saving it back.</summary>
     protected IActivitySerializer ActivitySerializer { get; }
 
+    [Before(HookType.Test)]
     public Task InitializeAsync() => _services.PopulateRegistriesAsync();
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    [After(HookType.Test)]
+    public async Task DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
 
     /// <summary>Reads a fixture from the <c>Assets</c> directory shipped alongside this test project.</summary>
     protected static string ReadAsset(string fileName) => BpmnAssetReader.Read(fileName);

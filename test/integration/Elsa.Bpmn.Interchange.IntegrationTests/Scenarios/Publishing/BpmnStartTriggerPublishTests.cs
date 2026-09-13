@@ -8,7 +8,6 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Handlers;
 using Elsa.Workflows.Runtime.Stimuli;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 
@@ -19,44 +18,50 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 /// a process whose start events declare nothing to register must not leave one behind, while a process whose start
 /// events do declare something must still register it.
 /// </summary>
-public class BpmnStartTriggerPublishTests(ITestOutputHelper testOutputHelper) : BpmnPublishGateTestBase(testOutputHelper)
+public class BpmnStartTriggerPublishTests : BpmnPublishGateTestBase
 {
-    [Fact(DisplayName = "The runtime's trigger validation is part of the publish these tests go through")]
-    public void TriggerValidationIsRegistered()
+    [Test]
+    [DisplayName("The runtime's trigger validation is part of the publish these tests go through")]
+    public async Task TriggerValidationIsRegistered()
     {
         // Every other test here passes vacuously without this handler: it is the one that turns a stored trigger
         // without a payload into a refused publication.
-        Assert.Contains(Services.GetServices<INotificationHandler>(), handler => handler is ValidateWorkflowRequestHandler);
+        await Assert.That(Services.GetServices<INotificationHandler>()).Contains(handler => handler is ValidateWorkflowRequestHandler);
     }
 
-    [Fact(DisplayName = "An imported process whose only start is a plain start event publishes, and stores no trigger")]
+    [Test]
+    [DisplayName("An imported process whose only start is a plain start event publishes, and stores no trigger")]
     public async Task PlainStartProcess_Publishes_AndStoresNoTrigger()
     {
         var definitionId = await ImportAsync("camunda-order-process.bpmn");
 
         var result = await PublishAsync(definitionId);
 
-        Assert.True(result.Succeeded, string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
-        Assert.Empty(await StoredTriggersAsync(definitionId));
+        await Assert.That(result.Succeeded).IsTrue()
+            .Because(string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(await StoredTriggersAsync(definitionId)).IsEmpty();
     }
 
-    [Fact(DisplayName = "An imported process with a message start publishes, and stores the trigger an event publisher matches")]
+    [Test]
+    [DisplayName("An imported process with a message start publishes, and stores the trigger an event publisher matches")]
     public async Task MessageStartProcess_Publishes_AndIndexesItsTrigger()
     {
         var definitionId = await ImportAsync("message-start-order-process.bpmn");
 
         var result = await PublishAsync(definitionId);
 
-        Assert.True(result.Succeeded, string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(result.Succeeded).IsTrue()
+            .Because(string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
 
-        var trigger = Assert.Single(await StoredTriggersAsync(definitionId));
+        var trigger = (await Assert.That(await StoredTriggersAsync(definitionId)).HasSingleItem())!;
         var stimulus = new EventStimulus("OrderPlaced");
-        Assert.Equal(RuntimeStimulusNames.Event, trigger.Name);
-        Assert.Equal(stimulus, trigger.Payload);
-        Assert.Equal(Services.GetRequiredService<IStimulusHasher>().Hash(RuntimeStimulusNames.Event, stimulus), trigger.Hash);
+        await Assert.That(trigger.Name).IsEqualTo(RuntimeStimulusNames.Event);
+        await Assert.That(trigger.Payload).IsEqualTo(stimulus);
+        await Assert.That(trigger.Hash).IsEqualTo(Services.GetRequiredService<IStimulusHasher>().Hash(RuntimeStimulusNames.Event, stimulus));
     }
 
-    [Fact(DisplayName = "A root process whose only start is event-defined but registers nothing still fails publication")]
+    [Test]
+    [DisplayName("A root process whose only start is event-defined but registers nothing still fails publication")]
     public async Task UnresolvableEventDefinedStart_StillFailsPublication()
     {
         // The direction that could be mistaken for success: a start event that declares a timer the scope refuses
@@ -80,14 +85,15 @@ public class BpmnStartTriggerPublishTests(ITestOutputHelper testOutputHelper) : 
         var definitionId = await SaveDraftAsync(process);
         var result = await PublishAsync(definitionId);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.ValidationErrors, error => error.ActivityId == processId && error.Message == "Trigger should have a payload");
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.ValidationErrors).Contains(error => error.ActivityId == processId && error.Message == "Trigger should have a payload");
     }
 
     private async Task<string> ImportAsync(string assetFileName)
     {
         var imported = await DocumentService.ImportAsync(ReadAsset(assetFileName), definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded, string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue()
+            .Because(string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
 
         return imported.ImportResult.WorkflowDefinition.DefinitionId;
     }

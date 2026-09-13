@@ -2,6 +2,7 @@ using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
@@ -14,7 +15,6 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 
@@ -23,12 +23,13 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 /// writer after its match and before its save so a second writer can finish in that window; the first then gets
 /// the same refusal a stale If-Match gets, and the second writer's change is what stays stored.
 /// </summary>
-public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelper)
+public class BpmnDocumentPutCompareAndSwapTests
 {
-    [Fact(DisplayName = "A second document edit that wins the race leaves its change stored; the first writer is refused")]
+    [Test]
+    [DisplayName("A second document edit that wins the race leaves its change stored; the first writer is refused")]
     public async Task ImportDocumentAsync_WhenASecondWriterSavesAfterTheFirstMatched_RefusesTheFirstAndKeepsTheSecond()
     {
-        var services = new TestApplicationBuilder(testOutputHelper)
+        var services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .Build();
         await services.PopulateRegistriesAsync();
@@ -53,23 +54,24 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         await gate.Checked.Task.WaitAsync(TimeSpan.FromSeconds(10));
 
         var second = await setup.ImportDocumentAsync(secondEdit, definitionId, processId: null, CancellationToken.None, expectedETag);
-        Assert.True(second.ImportResult.Succeeded);
+        await Assert.That(second.ImportResult.Succeeded).IsTrue();
 
         gate.Release.TrySetResult();
 
-        var lost = await Assert.ThrowsAsync<BpmnDocumentPreconditionFailedException>(() => first);
+        var lost = (await Assert.ThrowsExactlyAsync<BpmnDocumentPreconditionFailedException>(() => first))!;
 
-        Assert.Contains("written since the ETag in If-Match was issued", lost.Message);
+        await Assert.That(lost.Message).Contains("written since the ETag in If-Match was issued", StringComparison.CurrentCulture);
 
         var after = await FindLatestAsync(innerStore, definitionId);
-        Assert.Equal(BpmnDocumentETag.From(second.ImportResult.WorkflowDefinition), BpmnDocumentETag.From(after));
-        Assert.NotEqual(expectedETag, BpmnDocumentETag.From(after));
+        await Assert.That(BpmnDocumentETag.From(after)).IsEqualTo(BpmnDocumentETag.From(second.ImportResult.WorkflowDefinition));
+        await Assert.That(BpmnDocumentETag.From(after)).IsNotEqualTo(expectedETag);
     }
 
-    [Fact(DisplayName = "A metadata-only save in the window is 412; the rename stays and the document PUT does not overwrite it")]
+    [Test]
+    [DisplayName("A metadata-only save in the window is 412; the rename stays and the document PUT does not overwrite it")]
     public async Task ImportDocumentAsync_WhenMetadataIsSavedAfterTheFirstMatched_RefusesRatherThanRevertingTheRename()
     {
-        var services = new TestApplicationBuilder(testOutputHelper)
+        var services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .Build();
         await services.PopulateRegistriesAsync();
@@ -98,20 +100,21 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
         gate.Release.TrySetResult();
 
-        var lost = await Assert.ThrowsAsync<BpmnDocumentPreconditionFailedException>(() => first);
+        var lost = (await Assert.ThrowsExactlyAsync<BpmnDocumentPreconditionFailedException>(() => first))!;
 
-        Assert.Contains("written since the ETag in If-Match was issued", lost.Message);
+        await Assert.That(lost.Message).Contains("written since the ETag in If-Match was issued", StringComparison.CurrentCulture);
 
         var after = await FindLatestAsync(innerStore, definitionId);
-        Assert.Equal("Renamed-in-window", after.Name);
-        Assert.Equal(stored.StringData, after.StringData);
+        await Assert.That(after.Name).IsEqualTo("Renamed-in-window");
+        await Assert.That(after.StringData).IsEqualTo(stored.StringData);
     }
 
-    [Fact(DisplayName = "A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
+    [Test]
+    [DisplayName("A rejecting DraftSaving handler fails the document PUT before persist; the stored definition is unchanged")]
     public async Task ImportDocumentAsync_WhenDraftSavingHandlerRejects_DoesNotPersist()
     {
         var probe = new DraftNotificationProbe();
-        var services = new TestApplicationBuilder(testOutputHelper)
+        var services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .ConfigureServices(s =>
             {
@@ -137,24 +140,24 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         var savedBefore = probe.SavedCount;
         probe.Reject = true;
 
-        var rejected = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag));
+        var rejected = (await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag)))!;
 
-        Assert.Equal("Draft save rejected.", rejected.Message);
-        Assert.Equal(savingBefore + 1, probe.SavingCount);
-        Assert.Equal(savedBefore, probe.SavedCount);
+        await Assert.That(rejected.Message).IsEqualTo("Draft save rejected.");
+        await Assert.That(probe.SavingCount).IsEqualTo(savingBefore + 1);
+        await Assert.That(probe.SavedCount).IsEqualTo(savedBefore);
 
         var after = await FindLatestAsync(store, definitionId);
-        Assert.Equal(expectedETag, BpmnDocumentETag.From(after));
-        Assert.Equal(before.StringData, after.StringData);
-        Assert.Equal(before.Name, after.Name);
+        await Assert.That(BpmnDocumentETag.From(after)).IsEqualTo(expectedETag);
+        await Assert.That(after.StringData).IsEqualTo(before.StringData);
+        await Assert.That(after.Name).IsEqualTo(before.Name);
     }
 
-    [Fact(DisplayName = "A published→draft document PUT keeps the same id, version and created-at from DraftSaving through persist and DraftSaved")]
+    [Test]
+    [DisplayName("A published→draft document PUT keeps the same id, version and created-at from DraftSaving through persist and DraftSaved")]
     public async Task ImportDocumentAsync_WhenLatestIsPublished_ReusesTheAnnouncedDraftIdentity()
     {
         var probe = new DraftNotificationProbe();
-        var services = new TestApplicationBuilder(testOutputHelper)
+        var services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .ConfigureServices(s =>
             {
@@ -174,7 +177,7 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         await Support.DefinitionPublishing.PublishLatestAsync(publisher, definitionId);
 
         var published = await FindLatestAsync(store, definitionId);
-        Assert.True(published.IsPublished);
+        await Assert.That(published.IsPublished).IsTrue();
         var expectedETag = BpmnDocumentETag.From(published);
         var reader = services.GetRequiredService<BpmnXmlReader>();
         var sourceXml = (string)published.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
@@ -184,26 +187,26 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
         var result = await setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
 
-        Assert.True(result.ImportResult.Succeeded);
-        Assert.NotNull(probe.SavingId);
-        Assert.Equal(probe.SavingId, probe.SavedId);
-        Assert.Equal(probe.SavingVersion, probe.SavedVersion);
-        Assert.Equal(probe.SavingCreatedAt, probe.SavedCreatedAt);
-        Assert.NotEqual(published.Id, probe.SavingId);
-        Assert.Equal(published.Version + 1, probe.SavingVersion);
+        await Assert.That(result.ImportResult.Succeeded).IsTrue();
+        await Assert.That(probe.SavingId).IsNotNull();
+        await Assert.That(probe.SavedId).IsEqualTo(probe.SavingId);
+        await Assert.That(probe.SavedVersion).IsEqualTo(probe.SavingVersion);
+        await Assert.That(probe.SavedCreatedAt).IsEqualTo(probe.SavingCreatedAt);
+        await Assert.That(probe.SavingId).IsNotEqualTo(published.Id);
+        await Assert.That(probe.SavingVersion).IsEqualTo(published.Version + 1);
 
         var persisted = result.ImportResult.WorkflowDefinition;
-        Assert.Equal(probe.SavingId, persisted.Id);
-        Assert.Equal(probe.SavingVersion, persisted.Version);
-        Assert.Equal(probe.SavingCreatedAt, persisted.CreatedAt);
+        await Assert.That(persisted.Id).IsEqualTo(probe.SavingId);
+        await Assert.That(persisted.Version).IsEqualTo(probe.SavingVersion);
+        await Assert.That(persisted.CreatedAt).IsEqualTo(probe.SavingCreatedAt);
 
         var stored = await FindLatestAsync(store, definitionId);
-        Assert.Equal(probe.SavingId, stored.Id);
-        Assert.Equal(probe.SavingVersion, stored.Version);
-        Assert.Equal(probe.SavingCreatedAt, stored.CreatedAt);
-        Assert.False(stored.IsPublished);
-        Assert.Equal("kept", stored.CustomProperties[DraftNotificationProbe.HandlerMarkerKey]);
-        Assert.Equal("Order", stored.Name);
+        await Assert.That(stored.Id).IsEqualTo(probe.SavingId);
+        await Assert.That(stored.Version).IsEqualTo(probe.SavingVersion);
+        await Assert.That(stored.CreatedAt).IsEqualTo(probe.SavingCreatedAt);
+        await Assert.That(stored.IsPublished).IsFalse();
+        await Assert.That(stored.CustomProperties[DraftNotificationProbe.HandlerMarkerKey]).IsEqualTo("kept");
+        await Assert.That(stored.Name).IsEqualTo("Order");
     }
 
     private static async Task<WorkflowDefinition> FindLatestAsync(IWorkflowDefinitionStore store, string definitionId)

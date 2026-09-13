@@ -4,9 +4,9 @@ using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Extensions;
-using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
@@ -18,7 +18,6 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 
@@ -27,41 +26,44 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Interchange;
 /// stored BPMN source is missing or stale, instead of silently exporting a document the caller does not actually
 /// have. See that type's remarks for why each situation gets its own message.
 /// </summary>
-public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : BpmnInterchangeTestBase(testOutputHelper)
+public class BpmnExportAvailabilityTests : BpmnInterchangeTestBase
 {
-    [Fact(DisplayName = "Exporting a freshly imported definition through the WorkflowDefinition overload succeeds")]
+    [Test]
+    [DisplayName("Exporting a freshly imported definition through the WorkflowDefinition overload succeeds")]
     public async Task Export_OfAFreshlyImportedDefinition_Succeeds()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
 
         var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
 
         var bytes = DocumentService.Export(stored);
 
-        Assert.NotEmpty(bytes);
+        await Assert.That(bytes).IsNotEmpty();
     }
 
-    [Fact(DisplayName = "Import records the definition's own version alongside the BPMN source")]
+    [Test]
+    [DisplayName("Import records the definition's own version alongside the BPMN source")]
     public async Task Import_RecordsTheSourceVersionAlongsideTheSourceXml()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
 
         var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
 
-        Assert.True(stored.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var sourceVersion));
-        Assert.Equal(stored.Version, sourceVersion);
+        await Assert.That(stored.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var sourceVersion)).IsTrue();
+        await Assert.That(sourceVersion).IsEqualTo(stored.Version);
     }
 
-    [Fact(DisplayName = "Exporting a definition whose unpublished draft was saved from the designer with a changed graph is refused as stale, even though its version has not changed")]
+    [Test]
+    [DisplayName("Exporting a definition whose unpublished draft was saved from the designer with a changed graph is refused as stale, even though its version has not changed")]
     public async Task Export_OfADefinitionSavedFromTheDesignerWithAChangedGraph_IsRefusedAsStale()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
         // Captured as plain values, not the live entity: the in-memory store this test runs against hands back the
@@ -75,43 +77,45 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         var storedAfterSave = await FindLatestAsync(definitionId);
 
         // Saved in place: same version, only the graph moved.
-        Assert.Equal(versionBeforeSave, storedAfterSave.Version);
-        Assert.NotEqual(stringDataBeforeSave, storedAfterSave.StringData);
+        await Assert.That(storedAfterSave.Version).IsEqualTo(versionBeforeSave);
+        await Assert.That(storedAfterSave.StringData).IsNotEqualTo(stringDataBeforeSave);
 
-        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(storedAfterSave));
+        var exception = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => DocumentService.Export(storedAfterSave));
 
-        Assert.Contains("has changed since it was imported", exception.Message);
+        await Assert.That(exception.Message).Contains("has changed since it was imported", StringComparison.CurrentCulture);
 
-        var documentException = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.ReadDocument(storedAfterSave));
-        Assert.Contains("has changed since it was imported", documentException.Message);
+        var documentException = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => DocumentService.ReadDocument(storedAfterSave));
+        await Assert.That(documentException.Message).Contains("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Exporting a definition whose unpublished draft was saved from the designer with no graph change still succeeds")]
+    [Test]
+    [DisplayName("Exporting a definition whose unpublished draft was saved from the designer with no graph change still succeeds")]
     public async Task Export_OfADefinitionSavedFromTheDesignerWithNoGraphChange_StillSucceeds()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
         // Round-trips the draft through the designer's save path unedited, so the graph hash still matches.
         var draft = await DefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draft);
+        await Assert.That(draft).IsNotNull();
         await DefinitionPublisher.SaveDraftAsync(draft!);
 
         var stored = await FindLatestAsync(definitionId);
 
         var bytes = DocumentService.Export(stored);
 
-        Assert.NotEmpty(bytes);
+        await Assert.That(bytes).IsNotEmpty();
     }
 
-    [Fact(DisplayName = "A definition imported before the graph-hash marker existed still exports after a designer save, on version alone")]
+    [Test]
+    [DisplayName("A definition imported before the graph-hash marker existed still exports after a designer save, on version alone")]
     public async Task Export_OfADefinitionWithoutAGraphHashMarker_FallsBackToVersionOnlyAfterADesignerSave()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
         // Simulates a definition imported before this marker existed.
@@ -122,19 +126,20 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         await SaveDraftFromTheDesignerAsync(definitionId);
 
         var storedAfterSave = await FindLatestAsync(definitionId);
-        Assert.False(storedAfterSave.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey));
+        await Assert.That(storedAfterSave.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey)).IsFalse();
 
         var bytes = DocumentService.Export(storedAfterSave);
 
-        Assert.NotEmpty(bytes);
+        await Assert.That(bytes).IsNotEmpty();
     }
 
-    [Fact(DisplayName = "Exporting a definition whose custom properties no longer carry the BPMN source is refused, naming that as the reason")]
+    [Test]
+    [DisplayName("Exporting a definition whose custom properties no longer carry the BPMN source is refused, naming that as the reason")]
     public async Task Export_OfADefinitionWithoutStoredSource_IsRefused()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
 
         var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
 
@@ -146,18 +151,19 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
 
         var refetched = await FindLatestAsync(stored.DefinitionId);
 
-        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
+        var exception = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
 
-        Assert.Contains("does not currently carry BPMN source", exception.Message);
-        Assert.DoesNotContain("has changed since it was imported", exception.Message);
+        await Assert.That(exception.Message).Contains("does not currently carry BPMN source", StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).DoesNotContain("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Exporting a definition whose version changed but whose graph did not is not refused: the graph hash, not the version, decides staleness")]
+    [Test]
+    [DisplayName("Exporting a definition whose version changed but whose graph did not is not refused: the graph hash, not the version, decides staleness")]
     public async Task Export_OfADefinitionWhoseVersionChangedButGraphDidNot_StillSucceeds()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
 
         var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
 
@@ -171,15 +177,16 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
 
         var bytes = DocumentService.Export(refetched);
 
-        Assert.NotEmpty(bytes);
+        await Assert.That(bytes).IsNotEmpty();
     }
 
-    [Fact(DisplayName = "A definition imported before the graph-hash marker existed is still refused as stale on version alone")]
+    [Test]
+    [DisplayName("A definition imported before the graph-hash marker existed is still refused as stale on version alone")]
     public async Task Export_OfADefinitionWithoutAGraphHashMarker_IsRefusedAsStaleWhenVersionChanges()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
 
         var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
 
@@ -191,13 +198,14 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
 
         var refetched = await FindLatestAsync(stored.DefinitionId);
 
-        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
+        var exception = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
 
-        Assert.Contains("has changed since it was imported", exception.Message);
-        Assert.DoesNotContain("does not currently carry BPMN source", exception.Message);
+        await Assert.That(exception.Message).Contains("has changed since it was imported", StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).DoesNotContain("does not currently carry BPMN source", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Exporting a definition published then renamed through the designer, with the same graph, still succeeds")]
+    [Test]
+    [DisplayName("Exporting a definition published then renamed through the designer, with the same graph, still succeeds")]
     public async Task Export_OfAPublishedDefinitionRenamedThroughTheDesigner_StillSucceeds()
     {
         var definitionId = await ImportThenPublishAsync();
@@ -205,21 +213,22 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         // A metadata-only save through the designer path — a rename — bumps a published definition to a new draft
         // (N+1) without touching the graph the stored BPMN source describes.
         var draft = await DefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draft);
+        await Assert.That(draft).IsNotNull();
         draft!.Name = "Renamed through the designer";
         await DefinitionPublisher.SaveDraftAsync(draft);
 
         var storedAfterRename = await FindLatestAsync(definitionId);
-        Assert.Equal(2, storedAfterRename.Version);
+        await Assert.That(storedAfterRename.Version).IsEqualTo(2);
 
         var bytes = DocumentService.Export(storedAfterRename);
-        Assert.NotEmpty(bytes);
+        await Assert.That(bytes).IsNotEmpty();
 
         var document = DocumentService.ReadDocument(storedAfterRename);
-        Assert.NotEmpty(document.Processes);
+        await Assert.That(document.Processes).IsNotEmpty();
     }
 
-    [Fact(DisplayName = "Exporting a definition published then edited through the designer, with a changed graph, is refused as stale")]
+    [Test]
+    [DisplayName("Exporting a definition published then edited through the designer, with a changed graph, is refused as stale")]
     public async Task Export_OfAPublishedDefinitionEditedThroughTheDesignerWithAChangedGraph_IsRefusedAsStale()
     {
         var definitionId = await ImportThenPublishAsync();
@@ -227,19 +236,20 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         await SaveDraftFromTheDesignerAsync(definitionId);
 
         var storedAfterSave = await FindLatestAsync(definitionId);
-        Assert.Equal(2, storedAfterSave.Version);
+        await Assert.That(storedAfterSave.Version).IsEqualTo(2);
 
-        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(storedAfterSave));
+        var exception = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => DocumentService.Export(storedAfterSave));
 
-        Assert.Contains("has changed since it was imported", exception.Message);
+        await Assert.That(exception.Message).Contains("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Exporting a definition that carries BPMN source without a recorded version is refused, distinctly from both other refusals")]
+    [Test]
+    [DisplayName("Exporting a definition that carries BPMN source without a recorded version is refused, distinctly from both other refusals")]
     public async Task Export_OfADefinitionCarryingSourceWithoutAVersionMarker_IsRefused()
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
 
         var stored = await FindLatestAsync(imported.ImportResult.WorkflowDefinition.DefinitionId);
 
@@ -251,17 +261,18 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
 
         var refetched = await FindLatestAsync(stored.DefinitionId);
 
-        var exception = Assert.Throws<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
+        var exception = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => DocumentService.Export(refetched));
 
-        Assert.Contains("carries BPMN source, but not the definition version", exception.Message);
-        Assert.DoesNotContain("does not currently carry BPMN source", exception.Message);
-        Assert.DoesNotContain("has changed since it was imported", exception.Message);
+        await Assert.That(exception.Message).Contains("carries BPMN source, but not the definition version", StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).DoesNotContain("does not currently carry BPMN source", StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).DoesNotContain("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "A post-import save that fails leaves nothing durably carrying BPMN source, so the definition exports as never imported rather than as a partial import")]
+    [Test]
+    [DisplayName("A post-import save that fails leaves nothing durably carrying BPMN source, so the definition exports as never imported rather than as a partial import")]
     public async Task ImportAsync_WhenThePostImportSaveFails_LeavesNothingDurablyCarryingEitherMarker()
     {
-        var services = new TestApplicationBuilder(testOutputHelper)
+        var services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .Build();
         await services.PopulateRegistriesAsync();
@@ -288,28 +299,27 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
 
         var xml = BpmnAssetReader.Read("camunda-order-process.bpmn");
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => documentService.ImportAsync(xml, draft.DefinitionId, name: null, processId: null, CancellationToken.None));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => documentService.ImportAsync(xml, draft.DefinitionId, name: null, processId: null, CancellationToken.None));
 
         // What the importer's own (already-succeeded) save durably committed, captured independently of the `draft`
         // reference ImportAsync went on to mutate for the save that then failed. Neither BPMN marker made it in —
         // not just the version marker, which is all that would be missing under the old, two-save behaviour this
         // finding replaced.
         var persisted = new WorkflowDefinition { Id = draft.Id, DefinitionId = draft.DefinitionId, Version = draft.Version, CustomProperties = importer.CommittedCustomProperties };
-        Assert.False(persisted.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey));
-        Assert.False(persisted.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey));
+        await Assert.That(persisted.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey)).IsFalse();
+        await Assert.That(persisted.CustomProperties.ContainsKey(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey)).IsFalse();
 
-        var exception = Assert.Throws<BpmnExportUnavailableException>(() => documentService.Export(persisted));
+        var exception = Assert.ThrowsExactly<BpmnExportUnavailableException>(() => documentService.Export(persisted));
 
-        Assert.Contains("does not currently carry BPMN source", exception.Message);
-        Assert.DoesNotContain("has changed since it was imported", exception.Message);
+        await Assert.That(exception.Message).Contains("does not currently carry BPMN source", StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).DoesNotContain("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
     private async Task<WorkflowDefinition> FindLatestAsync(string definitionId)
     {
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await DefinitionStore.FindAsync(filter);
-        Assert.NotNull(definition);
+        await Assert.That(definition).IsNotNull();
         return definition!;
     }
 
@@ -324,7 +334,7 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
     {
         var xml = ReadAsset("camunda-order-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded);
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue();
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
         await DefinitionPublishing.PublishLatestAsync(DefinitionPublisher, definitionId);
@@ -341,10 +351,13 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
     private async Task SaveDraftFromTheDesignerAsync(string definitionId)
     {
         var draft = await DefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draft);
+        await Assert.That(draft).IsNotNull();
 
-        var root = Assert.IsType<BpmnProcess>(ActivitySerializer.Deserialize(draft!.StringData!));
-        Assert.Single(root.Activities.OfType<WriteLine>()).Text = new("Notifying the warehouse, edited in the designer");
+        var deserializedRoot = ActivitySerializer.Deserialize(draft!.StringData!);
+        await Assert.That(deserializedRoot).IsOfType(typeof(BpmnProcess));
+        var root = (BpmnProcess)deserializedRoot;
+        var writeLine = (await Assert.That(root.Activities.OfType<WriteLine>()).HasSingleItem())!;
+        writeLine.Text = new("Notifying the warehouse, edited in the designer");
         draft.StringData = ActivitySerializer.Serialize(root);
 
         await DefinitionPublisher.SaveDraftAsync(draft);

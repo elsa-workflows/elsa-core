@@ -6,7 +6,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 
@@ -17,13 +16,13 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 /// A real container rather than substitutes: both halves go through Elsa's configured activity serializer and its
 /// activity registry, and a stand-in for either would agree with whatever the test expected instead of with Elsa.
 /// </remarks>
-public abstract class BpmnBindingTestBase : IAsyncLifetime
+public abstract class BpmnBindingTestBase
 {
     private readonly IServiceProvider _services;
 
-    protected BpmnBindingTestBase(ITestOutputHelper testOutputHelper)
+    protected BpmnBindingTestBase()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
             .Build();
 
@@ -38,9 +37,17 @@ public abstract class BpmnBindingTestBase : IAsyncLifetime
     /// <summary>The application the binder is exercised in, for a test that needs to run a bound scope end to end.</summary>
     protected IServiceProvider Services => _services;
 
+    [Before(HookType.Test)]
     public Task InitializeAsync() => _services.PopulateRegistriesAsync();
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    [After(HookType.Test)]
+    public async Task DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
 
     /// <summary>Elsa's own identity graph over the bound scope, which is what a published workflow is built from.</summary>
     protected async Task<IReadOnlyList<ActivityNode>> IdentityGraphOfAsync(IActivity root) =>

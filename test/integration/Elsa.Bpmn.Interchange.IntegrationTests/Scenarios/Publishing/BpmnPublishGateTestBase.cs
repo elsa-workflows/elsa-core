@@ -6,7 +6,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 
@@ -21,7 +20,7 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 /// </remarks>
 public abstract class BpmnPublishGateTestBase : BpmnBindingTestBase
 {
-    protected BpmnPublishGateTestBase(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+    protected BpmnPublishGateTestBase()
     {
         DocumentService = Services.GetRequiredService<BpmnInterchangeDocumentService>();
         Importer = Services.GetRequiredService<IWorkflowDefinitionImporter>();
@@ -53,7 +52,8 @@ public abstract class BpmnPublishGateTestBase : BpmnBindingTestBase
             Publish = false
         });
 
-        Assert.True(result.Succeeded, string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(result.Succeeded).IsTrue()
+            .Because(string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
 
         return result.WorkflowDefinition.DefinitionId;
     }

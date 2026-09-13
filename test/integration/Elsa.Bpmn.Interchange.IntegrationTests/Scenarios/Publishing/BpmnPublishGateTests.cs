@@ -5,7 +5,6 @@ using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Common.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 
@@ -14,11 +13,12 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 /// already refuses one at import, naming the element; these tests are for the definition that got past that first
 /// net and now needs the second one — one that imported clean and was edited afterward.
 /// </summary>
-public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPublishGateTestBase(testOutputHelper)
+public class BpmnPublishGateTests : BpmnPublishGateTestBase
 {
     private const string ProcessId = "main";
 
-    [Fact(DisplayName = "A process whose unbound task has no bound activity fails publication, naming the element")]
+    [Test]
+    [DisplayName("A process whose unbound task has no bound activity fails publication, naming the element")]
     public async Task UnboundTaskWithNoBoundActivity_FailsPublication()
     {
         // Built by hand rather than through BpmnWorkBinder: the binder itself already refuses this shape at bind
@@ -36,13 +36,14 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         var definitionId = await SaveDraftAsync(process);
         var result = await PublishAsync(definitionId);
 
-        Assert.False(result.Succeeded);
+        await Assert.That(result.Succeeded).IsFalse();
         // ActivityId names the containing BpmnProcess node - the real node in the materialized graph - not the BPMN
         // element id, which resolves to no node there; the element id still appears in the message text.
-        Assert.Contains(result.ValidationErrors, error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
+        await Assert.That(result.ValidationErrors).Contains(error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
     }
 
-    [Fact(DisplayName = "A process whose task is bound to a no-longer-installed activity type fails publication, naming the element and the missing type")]
+    [Test]
+    [DisplayName("A process whose task is bound to a no-longer-installed activity type fails publication, naming the element and the missing type")]
     public async Task UnboundTaskWithNotFoundActivity_FailsPublication()
     {
         // Simulates the module-removed scenario the finding describes without needing to actually uninstall a
@@ -72,15 +73,16 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         var definitionId = await SaveDraftAsync(process);
         var result = await PublishAsync(definitionId);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.ValidationErrors, error =>
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.ValidationErrors).Contains(error =>
             error.ActivityId == process.Id
             && error.Message.Contains("ServiceTask1")
             && error.Message.Contains("no longer installed")
             && error.Message.Contains(missingTypeName));
     }
 
-    [Fact(DisplayName = "A BPMN process composed inside a Flowchart with an unbound task fails publication, naming the element")]
+    [Test]
+    [DisplayName("A BPMN process composed inside a Flowchart with an unbound task fails publication, naming the element")]
     public async Task UnboundTaskInsideFlowchartComposedProcess_FailsPublication()
     {
         // Proves the justification for reaching the graph through IWorkflowGraphBuilder rather than a hand-rolled
@@ -96,11 +98,12 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         var definitionId = await SaveDraftAsync(flowchart);
         var result = await PublishAsync(definitionId);
 
-        Assert.False(result.Succeeded);
-        Assert.Contains(result.ValidationErrors, error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.ValidationErrors).Contains(error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
     }
 
-    [Fact(DisplayName = "A process whose tasks are all bound publishes successfully")]
+    [Test]
+    [DisplayName("A process whose tasks are all bound publishes successfully")]
     public async Task AllTasksBound_PublishesSuccessfully()
     {
         // Proves the gate is not satisfied by refusing everything: a fully bound scope, produced by the same
@@ -114,39 +117,44 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         var definitionId = await SaveDraftAsync(scope);
         var result = await PublishAsync(definitionId);
 
-        Assert.True(result.Succeeded, string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(result.Succeeded).IsTrue()
+            .Because(string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
     }
 
-    [Fact(DisplayName = "A definition that imported cleanly and then had its binding removed fails publication on re-publish")]
+    [Test]
+    [DisplayName("A definition that imported cleanly and then had its binding removed fails publication on re-publish")]
     public async Task DefinitionEditedAfterImport_LosesItsBinding_FailsRepublication()
     {
         var xml = ReadAsset("publish-gate-process.bpmn");
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
-        Assert.True(imported.ImportResult.Succeeded, string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(imported.ImportResult.Succeeded).IsTrue()
+            .Because(string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
 
         var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
 
         // Publishing the document as imported succeeds - the binding is intact, so this is not a gate that refuses
         // everything either.
         var publishedAsImported = await PublishAsync(definitionId);
-        Assert.True(publishedAsImported.Succeeded, string.Join("; ", publishedAsImported.ValidationErrors.Select(error => error.Message)));
+        await Assert.That(publishedAsImported.Succeeded).IsTrue()
+            .Because(string.Join("; ", publishedAsImported.ValidationErrors.Select(error => error.Message)));
 
         // Simulate the edit the issue exists for: through Elsa's own designer, not the BPMN document, the activity
         // NotifyWarehouse was bound to gets deleted from the graph. The BPMN source this scope still carries -
         // Process.Elements, and its elsa:activityBinding - is untouched by this; only WorkBindings/Activities move.
         var definition = await DefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Latest);
         var graph = await DefinitionService.MaterializeWorkflowAsync(definition!);
-        var scope = Assert.IsType<BpmnProcess>(graph.Workflow.Root);
-        var boundActivityId = Assert.Single(scope.WorkBindings.Values);
-        var boundActivity = Assert.Single(scope.Activities, activity => activity.Id == boundActivityId);
+        await Assert.That(graph.Workflow.Root).IsOfType(typeof(BpmnProcess));
+        var scope = (BpmnProcess)graph.Workflow.Root;
+        var boundActivityId = (await Assert.That(scope.WorkBindings.Values).HasSingleItem())!;
+        var boundActivity = (await Assert.That(scope.Activities).HasSingleItem(activity => activity.Id == boundActivityId))!;
 
-        Assert.True(scope.Activities.Remove(boundActivity));
+        await Assert.That(scope.Activities.Remove(boundActivity)).IsTrue();
 
         await SaveDraftAsync(scope, definitionId);
         var publishedAfterEdit = await PublishAsync(definitionId);
 
-        Assert.False(publishedAfterEdit.Succeeded);
+        await Assert.That(publishedAfterEdit.Succeeded).IsFalse();
         // Same distinction as above: ActivityId is the containing BpmnProcess's node id, not the removed element's.
-        Assert.Contains(publishedAfterEdit.ValidationErrors, error => error.ActivityId == scope.Id && error.Message.Contains("NotifyWarehouse"));
+        await Assert.That(publishedAfterEdit.ValidationErrors).Contains(error => error.ActivityId == scope.Id && error.Message.Contains("NotifyWarehouse"));
     }
 }

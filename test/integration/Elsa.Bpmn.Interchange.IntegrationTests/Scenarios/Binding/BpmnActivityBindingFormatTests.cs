@@ -3,7 +3,6 @@ using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Expressions.Models;
 using Elsa.Workflows.Activities;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 
@@ -15,53 +14,62 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Binding;
 /// so the round-trip is asserted on the element's own shape, not only on the activity that comes back. A change to a
 /// name or to how an input is encoded shows up here as a failing assertion rather than as files that stop importing.
 /// </remarks>
-public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) : BpmnBindingTestBase(testOutputHelper)
+public class BpmnActivityBindingFormatTests : BpmnBindingTestBase
 {
-    [Fact(DisplayName = "A written binding names the activity type and carries one element per configured input")]
-    public void Write_ProducesTheDocumentedShape()
+    [Test]
+    [DisplayName("A written binding names the activity type and carries one element per configured input")]
+    public async Task Write_ProducesTheDocumentedShape()
     {
         var element = Format.Write(new WriteLine("hello"));
 
-        Assert.Equal(new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.BindingElementName), element.Name);
-        Assert.Equal("Elsa.WriteLine", AttributeOf(element, BpmnActivityBindingFormat.ActivityTypeAttributeName));
+        await Assert.That(element.Name).IsEqualTo(new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.BindingElementName));
+        await Assert.That(AttributeOf(element, BpmnActivityBindingFormat.ActivityTypeAttributeName)).IsEqualTo("Elsa.WriteLine");
 
-        var input = Assert.Single(element.Children);
+        var input = (await Assert.That(element.Children).HasSingleItem())!;
 
-        Assert.Equal(new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.InputElementName), input.Name);
-        Assert.Equal("text", AttributeOf(input, BpmnActivityBindingFormat.InputNameAttributeName));
-        Assert.Contains("\"typeName\"", input.Value);
-        Assert.Contains("hello", input.Value);
+        await Assert.That(input.Name).IsEqualTo(new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.InputElementName));
+        await Assert.That(AttributeOf(input, BpmnActivityBindingFormat.InputNameAttributeName)).IsEqualTo("text");
+        await Assert.That(input.Value).Contains("\"typeName\"", StringComparison.CurrentCulture);
+        await Assert.That(input.Value).Contains("hello", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "A binding written then read back carries its literal inputs intact")]
-    public void WriteThenRead_PreservesALiteralInput()
+    [Test]
+    [DisplayName("A binding written then read back carries its literal inputs intact")]
+    public async Task WriteThenRead_PreservesALiteralInput()
     {
         var element = Format.Write(new WriteLine("hello"));
 
-        var activity = Assert.IsType<WriteLine>(Format.Read(element));
+        var result = Format.Read(element);
+        await Assert.That(result).IsOfType(typeof(WriteLine));
+        var activity = (WriteLine)result;
 
-        Assert.Equal("Elsa.WriteLine", activity.Type);
-        Assert.Equal("hello", ValueOf<string>(activity.Text));
+        await Assert.That(activity.Type).IsEqualTo("Elsa.WriteLine");
+        await Assert.That(ValueOf<string>(activity.Text)).IsEqualTo("hello");
     }
 
-    [Fact(DisplayName = "A binding written then read back carries an expression, not just a literal")]
-    public void WriteThenRead_PreservesAnExpression()
+    [Test]
+    [DisplayName("A binding written then read back carries an expression, not just a literal")]
+    public async Task WriteThenRead_PreservesAnExpression()
     {
         // The reason the disclosure note on BpmnActivityBindingFormat is not theoretical: an exported .bpmn carries
         // expression source verbatim. It also proves the encoding is Elsa's own input JSON rather than a value dump —
         // a value-only format would silently degrade this input to a literal, or to nothing.
         var element = Format.Write(new WriteLine(new Expression("JavaScript", "getSecretMessage()")));
 
-        Assert.Contains("getSecretMessage()", Assert.Single(element.Children).Value);
+        var input = (await Assert.That(element.Children).HasSingleItem())!;
+        await Assert.That(input.Value).Contains("getSecretMessage()", StringComparison.CurrentCulture);
 
-        var activity = Assert.IsType<WriteLine>(Format.Read(element));
+        var result = Format.Read(element);
+        await Assert.That(result).IsOfType(typeof(WriteLine));
+        var activity = (WriteLine)result;
 
-        Assert.Equal("JavaScript", activity.Text.Expression!.Type);
-        Assert.Equal("getSecretMessage()", ValueOf<string>(activity.Text));
+        await Assert.That(activity.Text.Expression!.Type).IsEqualTo("JavaScript");
+        await Assert.That(ValueOf<string>(activity.Text)).IsEqualTo("getSecretMessage()");
     }
 
-    [Fact(DisplayName = "A binding written then read back carries an attribute-declared input intact, not only an Input<T>-typed one")]
-    public void WriteThenRead_PreservesAnAttributeDeclaredInput()
+    [Test]
+    [DisplayName("A binding written then read back carries an attribute-declared input intact, not only an Input<T>-typed one")]
+    public async Task WriteThenRead_PreservesAnAttributeDeclaredInput()
     {
         // Switch.Cases is ICollection<SwitchCase>: [Input] on a plain-typed property, not one that derives from Input.
         // Write used to enumerate only properties whose CLR type derives from Input, which silently dropped this kind
@@ -73,17 +81,20 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
 
         var element = Format.Write(activity);
 
-        Assert.Contains(element.Children, child => AttributeOf(child, BpmnActivityBindingFormat.InputNameAttributeName) == "cases");
+        await Assert.That(element.Children).Contains(child => AttributeOf(child, BpmnActivityBindingFormat.InputNameAttributeName) == "cases");
 
-        var read = Assert.IsType<Switch>(Format.Read(element));
-        var readCase = Assert.Single(read.Cases);
+        var result = Format.Read(element);
+        await Assert.That(result).IsOfType(typeof(Switch));
+        var read = (Switch)result;
+        var readCase = (await Assert.That(read.Cases).HasSingleItem())!;
 
-        Assert.Equal("case one", readCase.Label);
-        Assert.Equal(true, readCase.Condition.Value);
+        await Assert.That(readCase.Label).IsEqualTo("case one");
+        await Assert.That(readCase.Condition.Value is true).IsTrue();
     }
 
-    [Fact(DisplayName = "A binding naming an input the activity type does not declare is refused, not silently dropped")]
-    public void Read_RefusesAnUnknownInputName()
+    [Test]
+    [DisplayName("A binding naming an input the activity type does not declare is refused, not silently dropped")]
+    public async Task Read_RefusesAnUnknownInputName()
     {
         // Elsa's own deserializer ignores a JSON member the target type does not declare, so a mistyped or stale
         // input name would otherwise import as an activity quietly missing that configuration, with no diagnostic
@@ -96,13 +107,14 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
             [Attribute(BpmnActivityBindingFormat.ActivityTypeAttributeName, "Elsa.WriteLine")],
             [new BpmnExtensionElement(inputName, [nameAttribute], null, "{\"typeName\":\"String\",\"expression\":{\"type\":\"Literal\",\"value\":\"hello\"}}")]);
 
-        var exception = Assert.Throws<BpmnBindingException>(() => Format.Read(element));
+        var exception = Assert.ThrowsExactly<BpmnBindingException>(() => Format.Read(element));
 
-        Assert.Contains("txt", exception.Message);
+        await Assert.That(exception.Message).Contains("txt", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "A binding naming an activity type nothing registered is refused, not turned into a placeholder")]
-    public void Read_RefusesAnUnregisteredActivityType()
+    [Test]
+    [DisplayName("A binding naming an activity type nothing registered is refused, not turned into a placeholder")]
+    public async Task Read_RefusesAnUnregisteredActivityType()
     {
         // Elsa answers an unknown activity type with a NotFoundActivity that only throws once it executes. Accepting
         // it here would import cleanly, publish cleanly, and fail in the middle of a running process.
@@ -110,21 +122,23 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
             new(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.BindingElementName),
             [new(new(null, BpmnActivityBindingFormat.ActivityTypeAttributeName), "Contoso.NoSuchActivity")]);
 
-        var exception = Assert.Throws<BpmnBindingException>(() => Format.Read(element));
+        var exception = Assert.ThrowsExactly<BpmnBindingException>(() => Format.Read(element));
 
-        Assert.Contains("Contoso.NoSuchActivity", exception.Message);
+        await Assert.That(exception.Message).Contains("Contoso.NoSuchActivity", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "A binding declaring no activity type is refused")]
+    [Test]
+    [DisplayName("A binding declaring no activity type is refused")]
     public void Read_RefusesAnElementWithNoActivityType()
     {
         var element = new BpmnExtensionElement(new(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.BindingElementName));
 
-        Assert.Throws<BpmnBindingException>(() => Format.Read(element));
+        Assert.ThrowsExactly<BpmnBindingException>(() => Format.Read(element));
     }
 
-    [Fact(DisplayName = "A binding declaring the same input name twice is refused, not resolved last-wins")]
-    public void Read_RefusesADuplicateInputName()
+    [Test]
+    [DisplayName("A binding declaring the same input name twice is refused, not resolved last-wins")]
+    public async Task Read_RefusesADuplicateInputName()
     {
         // Two <elsa:input name="text"> children for the same activity type. The second would otherwise silently win,
         // leaving the author's first configuration in the file but never applied — exactly the quiet wrong answer
@@ -141,31 +155,36 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
                 new BpmnExtensionElement(inputName, [nameAttribute], null, "{\"typeName\":\"String\",\"expression\":{\"type\":\"Literal\",\"value\":\"second\"}}")
             ]);
 
-        var exception = Assert.Throws<BpmnBindingException>(() => Format.Read(element));
+        var exception = Assert.ThrowsExactly<BpmnBindingException>(() => Format.Read(element));
 
-        Assert.Contains("text", exception.Message);
+        await Assert.That(exception.Message).Contains("text", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Attaching a binding replaces the previous one and leaves other retained content alone")]
-    public void Attach_ReplacesTheBindingAndKeepsForeignContent()
+    [Test]
+    [DisplayName("Attaching a binding replaces the previous one and leaves other retained content alone")]
+    public async Task Attach_ReplacesTheBindingAndKeepsForeignContent()
     {
         var foreign = new BpmnExtensionElement(new("http://camunda.org/schema/1.0/bpmn", "properties"));
         var extensions = new BpmnExtensions(ExtensionElements: [foreign, Format.Write(new WriteLine("first"))]);
 
         var updated = BpmnActivityBindingFormat.Attach(extensions, Format.Write(new WriteLine("second")));
 
-        Assert.Contains(foreign, updated.ExtensionElements);
-        Assert.Equal("second", ValueOf<string>(Assert.IsType<WriteLine>(Format.Read(BpmnActivityBindingFormat.Find(updated)!)).Text));
+        await Assert.That(updated.ExtensionElements).Contains(foreign);
+        var result = Format.Read(BpmnActivityBindingFormat.Find(updated)!);
+        await Assert.That(result).IsOfType(typeof(WriteLine));
+        var activity = (WriteLine)result;
+        await Assert.That(ValueOf<string>(activity.Text)).IsEqualTo("second");
 
         // Two bindings on one element would leave a reader taking the first of them applying the older one.
-        Assert.Single(updated.ExtensionElements, element => element.Name.LocalName == BpmnActivityBindingFormat.BindingElementName);
+        await Assert.That(updated.ExtensionElements).HasSingleItem(element => element.Name.LocalName == BpmnActivityBindingFormat.BindingElementName);
     }
 
-    [Fact(DisplayName = "Retained content declaring no binding reports none")]
-    public void Find_ReturnsNullWhenNothingIsDeclared()
+    [Test]
+    [DisplayName("Retained content declaring no binding reports none")]
+    public async Task Find_ReturnsNullWhenNothingIsDeclared()
     {
-        Assert.Null(BpmnActivityBindingFormat.Find(null));
-        Assert.Null(BpmnActivityBindingFormat.Find(BpmnExtensions.Empty));
+        await Assert.That(BpmnActivityBindingFormat.Find(null)).IsNull();
+        await Assert.That(BpmnActivityBindingFormat.Find(BpmnExtensions.Empty)).IsNull();
     }
 
     private static string? AttributeOf(BpmnExtensionElement element, string name) =>

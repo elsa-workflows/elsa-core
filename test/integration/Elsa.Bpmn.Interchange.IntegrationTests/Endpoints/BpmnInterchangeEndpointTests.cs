@@ -1,12 +1,8 @@
 using System.Net;
-using System.Security.Claims;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Elsa;
 using Elsa.Bpmn.Activities;
-using Elsa.Bpmn.Interchange.Features;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
@@ -18,14 +14,8 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using FastEndpoints;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Xunit.Abstractions;
+using TUnit.AspNetCore;
 
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Endpoints;
 
@@ -34,67 +24,18 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Endpoints;
 /// named after — multipart file-count validation, exception-to-status-code mapping, and permission gating — none of
 /// which <see cref="Scenarios.Interchange.BpmnInterchangeDocumentServiceTests"/> or
 /// <see cref="Scenarios.Interchange.BpmnExportAvailabilityTests"/> exercise, since those call the service directly.
-/// Follows the precedent in <c>Elsa.Resilience.IntegrationTests.SimulateResponseEndpointTests</c>: a real
-/// <see cref="WebApplication"/> with FastEndpoints and a <see cref="TestServer"/>, so status codes and permission
+/// Uses TUnit.AspNetCore's isolated per-test application factory with FastEndpoints, so status codes and permission
 /// gating are asserted against real HTTP responses rather than an endpoint invoked in isolation.
 /// </summary>
-[Collection(nameof(BpmnInterchangeEndpointCollection))]
-public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : IAsyncLifetime
+public class BpmnInterchangeEndpointTests : WebApplicationTest<BpmnInterchangeWebApplicationFactory, BpmnInterchangeTestEntryPoint>
 {
-    private WebApplication? _app;
-    private bool _wasSecurityEnabled;
+    private HttpClient? _httpClient;
+    private HttpClient HttpClient => _httpClient ??= Factory.CreateClient();
 
-    private HttpClient HttpClient { get; set; } = null!;
+    [Before(HookType.Test)]
+    public Task PopulateRegistriesAsync() => Services.PopulateRegistriesAsync();
 
-    public async Task InitializeAsync()
-    {
-        _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-        EndpointSecurityOptions.SecurityIsEnabled = true;
-
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-
-        builder.Services.AddAuthentication(TestAuthenticationHandler.AuthenticationScheme)
-            .AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(TestAuthenticationHandler.AuthenticationScheme, _ => { });
-        builder.Services.AddAuthorization();
-        builder.Services.AddFastEndpoints(o =>
-        {
-            o.Assemblies = [typeof(BpmnInterchangeFeature).Assembly];
-            o.DisableAutoDiscovery = true;
-        });
-        builder.Services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)));
-        builder.Services.AddElsa(elsa => elsa
-            .AddActivitiesFrom<WriteLine>()
-            .UseScheduling()
-            .UseCSharp(options => options.AllowHostCodeExecution = true)
-            .UseJavaScript()
-            .UseLiquid()
-            .UseWorkflowManagement()
-            .UseBpmnInterchange());
-
-        _app = builder.Build();
-        _app.UseAuthentication();
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-
-        await _app.StartAsync();
-        await _app.Services.PopulateRegistriesAsync();
-        HttpClient = _app.GetTestClient();
-    }
-
-    public async Task DisposeAsync()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        HttpClient.Dispose();
-
-        if (_app != null)
-        {
-            await _app.StopAsync();
-            await _app.DisposeAsync();
-        }
-    }
-
-    [Fact]
+    [Test]
     public async Task Analyze_WithZeroFiles_ReturnsBadRequest()
     {
         using var content = new MultipartFormDataContent();
@@ -105,10 +46,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [Fact]
+    [Test]
     public async Task Analyze_WithTwoFiles_ReturnsBadRequest()
     {
         using var content = new MultipartFormDataContent();
@@ -117,10 +58,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [Fact]
+    [Test]
     public async Task Analyze_WithOneValidFile_ReturnsOkWithAnalysis()
     {
         using var content = new MultipartFormDataContent();
@@ -128,13 +69,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(body);
-        Assert.Contains("order-process", document.RootElement.GetProperty("processIds").EnumerateArray().Select(e => e.GetString()));
+        await Assert.That(document.RootElement.GetProperty("processIds").EnumerateArray().Select(e => e.GetString())).Contains("order-process");
     }
 
-    [Fact]
+    [Test]
     public async Task Import_OfADocumentWithAnUnboundTask_ReturnsUnprocessableEntity()
     {
         using var content = new MultipartFormDataContent();
@@ -142,13 +83,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, CodeOf(body));
-        Assert.Contains("nothing binds it to an Elsa activity", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportBindingInvalid);
+        await Assert.That(body).Contains("nothing binds it to an Elsa activity", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Import_OfADocumentWithASubprocessNestedInsideASubprocessThatReusesItsParentsId_ReturnsUnprocessableEntityAndTheServerStaysAlive()
     {
         using var content = new MultipartFormDataContent();
@@ -156,10 +97,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
-        Assert.Contains("Outer", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportDuplicateElementId);
+        await Assert.That(body).Contains("Outer", StringComparison.CurrentCulture);
 
         // elsa-core#8074: before the fix, reading this document overflowed the stack and killed the process, which
         // .NET cannot catch — there would be no HTTP response to assert on at all. Reaching the assertions above already
@@ -167,10 +108,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var followUpContent = new MultipartFormDataContent();
         AddBpmnFile(followUpContent, ReadAsset("camunda-order-process.bpmn"), "file");
         var followUpResponse = await PostAuthenticatedAsync("bpmn/analyze", followUpContent, "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, followUpResponse.StatusCode);
+        await Assert.That(followUpResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task Import_OfADocumentWithASubprocessReusingItsParentTopLevelProcessesOwnId_ReturnsUnprocessableEntityAndTheServerStaysAlive()
     {
         using var content = new MultipartFormDataContent();
@@ -178,10 +119,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
-        Assert.Contains("P", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportDuplicateElementId);
+        await Assert.That(body).Contains("P", StringComparison.CurrentCulture);
 
         // elsa-core#8074: a top-level process's own id was never in the pool checked for uniqueness (only its
         // elements were), so a subprocess declared directly inside it that reuses that same id went undetected and
@@ -191,10 +132,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var followUpContent = new MultipartFormDataContent();
         AddBpmnFile(followUpContent, ReadAsset("camunda-order-process.bpmn"), "file");
         var followUpResponse = await PostAuthenticatedAsync("bpmn/analyze", followUpContent, "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, followUpResponse.StatusCode);
+        await Assert.That(followUpResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task Import_OfADocumentWithTwoTopLevelProcessesSharingAnId_ReturnsUnprocessableEntity()
     {
         using var content = new MultipartFormDataContent();
@@ -203,13 +144,13 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
-        Assert.Contains("shared", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportDuplicateElementId);
+        await Assert.That(body).Contains("shared", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Import_OfAValidDocument_ReturnsOkAndPersistsADefinition()
     {
         using var content = new MultipartFormDataContent();
@@ -217,34 +158,34 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(body);
-        Assert.False(string.IsNullOrWhiteSpace(document.RootElement.GetProperty("definitionId").GetString()));
+        await Assert.That(string.IsNullOrWhiteSpace(document.RootElement.GetProperty("definitionId").GetString())).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task Export_OfAMissingDefinition_ReturnsNotFound()
     {
         var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task Export_OfADefinitionNeverImportedFromBpmn_ReturnsUnprocessableEntity()
     {
         var definitionId = await CreateNonBpmnDefinitionAsync();
 
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ExportNotImported, CodeOf(body));
-        Assert.Contains("does not currently carry BPMN source", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ExportNotImported);
+        await Assert.That(body).Contains("does not currently carry BPMN source", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Export_OfADefinitionWithAChangedGraphAfterADesignerSave_ReturnsUnprocessableEntityCodedAsStale()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -252,50 +193,50 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ExportSourceStale, CodeOf(body));
-        Assert.Contains("has changed since it was imported", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ExportSourceStale);
+        await Assert.That(body).Contains("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Export_WithAMalformedVersion_ReturnsBadRequest()
     {
         var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/export?VersionOptions=not-a-number", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("not-a-number", body);
+        await Assert.That(body).Contains("not-a-number", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Export_OfAFreshlyImportedDefinition_ReturnsOkWithBpmnXml()
     {
         using var importContent = new MultipartFormDataContent();
         AddBpmnFile(importContent, ReadAsset("camunda-order-process.bpmn"), "file");
         var importResponse = await PostAuthenticatedAsync("bpmn/import", importContent, "workflows/definitions:write");
-        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+        await Assert.That(importResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         using var importDocument = JsonDocument.Parse(await importResponse.Content.ReadAsStringAsync());
         var definitionId = importDocument.RootElement.GetProperty("definitionId").GetString();
 
         var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        await Assert.That(exportResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var exportedXml = await exportResponse.Content.ReadAsStringAsync();
-        Assert.Contains("order-process", exportedXml);
+        await Assert.That(exportedXml).Contains("order-process", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Export_WhenUnauthenticated_ReturnsUnauthorized()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "bpmn/definitions/does-not-exist/export");
         var response = await HttpClient.SendAsync(request);
 
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Unauthorized);
     }
 
-    [Fact]
+    [Test]
     public async Task Import_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
     {
         using var content = new MultipartFormDataContent();
@@ -304,31 +245,31 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // Authenticated, but only holds the read permission Export needs, not the write permission Import needs.
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentGet_OfAMissingDefinition_ReturnsNotFound()
     {
         var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/document", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentGet_OfADefinitionNeverImportedFromBpmn_ReturnsUnprocessableEntity()
     {
         var definitionId = await CreateNonBpmnDefinitionAsync();
 
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ExportNotImported, CodeOf(body));
-        Assert.Contains("does not currently carry BPMN source", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ExportNotImported);
+        await Assert.That(body).Contains("does not currently carry BPMN source", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentGet_OfADefinitionWithAChangedGraphAfterADesignerSave_ReturnsUnprocessableEntityCodedAsStale()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -336,28 +277,28 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ExportSourceStale, CodeOf(body));
-        Assert.Contains("has changed since it was imported", body);
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ExportSourceStale);
+        await Assert.That(body).Contains("has changed since it was imported", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentGet_OfAFreshlyImportedDefinition_ReturnsOkWithTheLibraryFormatDocument()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
 
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/json");
 
         var body = await response.Content.ReadAsStringAsync();
         using var document = JsonDocument.Parse(body);
-        Assert.Contains("order-process", document.RootElement.GetProperty("processes").EnumerateArray().Select(process => process.GetProperty("processId").GetString()));
+        await Assert.That(document.RootElement.GetProperty("processes").EnumerateArray().Select(process => process.GetProperty("processId").GetString())).Contains("order-process");
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentGet_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -365,20 +306,20 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // Authenticated, but only holds the write permission Put needs, not the read permission Get needs.
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_OfAMissingDefinition_ReturnsNotFound()
     {
         using var content = new StringContent("{}", Encoding.UTF8, "application/json");
 
         var response = await PutAuthenticatedAsync("bpmn/definitions/does-not-exist/document", content, null, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithoutIfMatch_ReturnsPreconditionRequired()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -387,12 +328,12 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var content = new StringContent("{}", Encoding.UTF8, "application/json");
         var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, null, "workflows/definitions:write");
 
-        Assert.Equal((HttpStatusCode)428, response.StatusCode);
-        Assert.Equal(BpmnErrorCodes.DocumentPreconditionRequired, CodeOf(await response.Content.ReadAsStringAsync()));
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        await Assert.That(response.StatusCode).IsEqualTo((HttpStatusCode)428);
+        await Assert.That(CodeOf(await response.Content.ReadAsStringAsync())).IsEqualTo(BpmnErrorCodes.DocumentPreconditionRequired);
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(versionBeforePut);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithAWildcardIfMatch_ReturnsPreconditionRequiredAndOverwritesNothing()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -403,12 +344,12 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // If-Match exists to prevent.
         var response = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), "*");
 
-        Assert.Equal(HttpStatusCode.PreconditionRequired, response.StatusCode);
-        Assert.Equal(BpmnErrorCodes.DocumentPreconditionRequired, CodeOf(await response.Content.ReadAsStringAsync()));
-        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.PreconditionRequired);
+        await Assert.That(CodeOf(await response.Content.ReadAsStringAsync())).IsEqualTo(BpmnErrorCodes.DocumentPreconditionRequired);
+        await Assert.That(await LatestStoredAsync(definitionId)).IsEqualTo(storedBeforePut);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithTheCurrentIfMatch_ReturnsOkWithANewETagWhenTheContentChanged()
     {
         var definitionId = await ImportWrittenBackAsync("camunda-order-process.bpmn");
@@ -416,20 +357,20 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var putResponse = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), currentETag);
 
-        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var newETag = ETagOf(putResponse);
-        Assert.NotNull(newETag);
-        Assert.NotEqual(currentETag, newETag);
+        await Assert.That(newETag).IsNotNull();
+        await Assert.That(newETag).IsNotEqualTo(currentETag);
         // The returned ETag names what was stored, so it is exactly what the next GET hands out.
-        Assert.Equal(newETag, (await GetDocumentAsync(definitionId)).ETag);
+        await Assert.That((await GetDocumentAsync(definitionId)).ETag).IsEqualTo(newETag);
     }
 
-    [Theory]
-    [InlineData("camunda-order-process.bpmn")]
-    [InlineData("subprocess-boundary-events.bpmn")]
-    [InlineData("transaction-compensation.bpmn")]
-    [InlineData("nested-subprocesses.bpmn")]
-    [InlineData("top-level-call-activity.bpmn")]
+    [Test]
+    [Arguments("camunda-order-process.bpmn")]
+    [Arguments("subprocess-boundary-events.bpmn")]
+    [Arguments("transaction-compensation.bpmn")]
+    [Arguments("nested-subprocesses.bpmn")]
+    [Arguments("top-level-call-activity.bpmn")]
     public async Task DocumentPut_OfUnchangedContent_ReturnsTheETagTheGetReturned(string assetFileName)
     {
         // The nested fixtures prove the subprocess bodies a PUT writes back from the stored document come out
@@ -441,11 +382,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var putResponse = await PutDocumentAsync(definitionId, documentJson, currentETag);
 
         // Content-addressed: writing back exactly what is stored overwrites nothing, so the validator stays the same.
-        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
-        Assert.Equal(currentETag, ETagOf(putResponse));
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(ETagOf(putResponse)).IsEqualTo(currentETag);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_AfterAnInterveningDocumentPut_ReturnsPreconditionFailedAndOverwritesNothing()
     {
         var definitionId = await ImportWrittenBackAsync("camunda-order-process.bpmn");
@@ -453,18 +394,18 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var storedBeforeInterveningPut = await LatestStoredAsync(definitionId);
 
         var interveningPut = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), staleETag);
-        Assert.Equal(HttpStatusCode.OK, interveningPut.StatusCode);
+        await Assert.That(interveningPut.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         // A layout-only edit to an unpublished draft: same row, same version, same activity graph — only the stored
         // document moved, so this is the case that proves the document itself is part of the ETag.
         var storedAfterInterveningPut = await LatestStoredAsync(definitionId);
-        Assert.Equal(storedBeforeInterveningPut with { SourceXml = storedAfterInterveningPut.SourceXml }, storedAfterInterveningPut);
-        Assert.NotEqual(storedBeforeInterveningPut.SourceXml, storedAfterInterveningPut.SourceXml);
+        await Assert.That(storedAfterInterveningPut).IsEqualTo(storedBeforeInterveningPut with { SourceXml = storedAfterInterveningPut.SourceXml });
+        await Assert.That(storedAfterInterveningPut.SourceXml).IsNotEqualTo(storedBeforeInterveningPut.SourceXml);
 
         await AssertStalePutIsRefusedAsync(definitionId, documentJson, staleETag);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_AfterAnInterveningImportIntoTheSameDefinition_ReturnsPreconditionFailedAndOverwritesNothing()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -477,16 +418,16 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn").Replace("Order Handled", "Order Shipped"), "file");
         content.Add(new StringContent(definitionId), "DefinitionId");
         var importResponse = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
-        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+        await Assert.That(importResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         // Imported into the unpublished draft in place: same row, same version.
         var storedAfterImport = await LatestStoredAsync(definitionId);
-        Assert.Equal((storedBeforeImport.Id, storedBeforeImport.Version), (storedAfterImport.Id, storedAfterImport.Version));
+        await Assert.That((storedAfterImport.Id, storedAfterImport.Version)).IsEqualTo((storedBeforeImport.Id, storedBeforeImport.Version));
 
         await AssertStalePutIsRefusedAsync(definitionId, documentJson, staleETag);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_AfterAnInterveningDesignerSaveOfTheDraft_ReturnsPreconditionFailedAndOverwritesNothing()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -498,36 +439,36 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // Saved in place with every custom property carried forward: same row, same version, same stored document —
         // only the activity graph moved, so this is the case that proves the graph itself is part of the ETag.
         var storedAfterSave = await LatestStoredAsync(definitionId);
-        Assert.Equal(storedBeforeSave with { StringData = storedAfterSave.StringData }, storedAfterSave);
-        Assert.NotEqual(storedBeforeSave.StringData, storedAfterSave.StringData);
+        await Assert.That(storedAfterSave).IsEqualTo(storedBeforeSave with { StringData = storedAfterSave.StringData });
+        await Assert.That(storedAfterSave.StringData).IsNotEqualTo(storedBeforeSave.StringData);
 
         await AssertStalePutIsRefusedAsync(definitionId, documentJson, staleETag);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithMalformedJson_ReturnsBadRequestAndPersistsNoNewDraft()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
         var versionBeforePut = await LatestVersionOfAsync(definitionId);
 
         var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         using var content = new StringContent("{ not valid json", Encoding.UTF8, "application/json");
         var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, ETagOf(getResponse), "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(versionBeforePut);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_ThatRemovesARequiredActivityBinding_ReturnsUnprocessableEntityAndPersistsNoNewDraft()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
         var versionBeforePut = await LatestVersionOfAsync(definitionId);
 
         var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         // Strips the one <elsa:activityBinding> the document carries (on "NotifyWarehouse"), reproducing exactly
@@ -546,14 +487,14 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await putResponse.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, CodeOf(body));
-        Assert.Contains("nothing binds it to an Elsa activity", body);
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportBindingInvalid);
+        await Assert.That(body).Contains("nothing binds it to an Elsa activity", StringComparison.CurrentCulture);
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(versionBeforePut);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithARepeatedElementId_ReturnsUnprocessableEntityAndPersistsNoNewDraftAndTheServerStaysAlive()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -562,17 +503,17 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var (etag, documentJson) = await GetDocumentAsync(definitionId);
         var putResponse = await PutDocumentAsync(definitionId, WithADuplicatedElementId(documentJson), etag);
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await putResponse.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportDuplicateElementId);
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(versionBeforePut);
 
         // See the equivalent Import test's remarks: reaching the assertions above already proves the process
         // survived reading this document; a further successful request proves the host is still serving requests.
-        Assert.Equal(HttpStatusCode.OK, (await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view")).StatusCode);
+        await Assert.That((await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view")).StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithATopLevelProcessIdReusingAnExistingSubprocessId_ReturnsUnprocessableEntityAndPersistsNoNewDraftAndTheServerStaysAlive()
     {
         // nested-subprocesses.bpmn already declares a subprocess with id "Outer"; renaming the top-level process's
@@ -585,44 +526,42 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var (etag, documentJson) = await GetDocumentAsync(definitionId);
         var putResponse = await PutDocumentAsync(definitionId, WithTopLevelProcessIdReusingASubprocessId(documentJson, "Outer"), etag);
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.UnprocessableEntity);
         var body = await putResponse.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
-        Assert.Contains("Outer", body);
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        await Assert.That(CodeOf(body)).IsEqualTo(BpmnErrorCodes.ImportDuplicateElementId);
+        await Assert.That(body).Contains("Outer", StringComparison.CurrentCulture);
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(versionBeforePut);
 
         // See the equivalent repeated-element-id test's remarks: reaching the assertions above already proves the
         // process survived reading this document; a further successful request proves the host is still serving
         // requests, too.
-        Assert.Equal(HttpStatusCode.OK, (await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view")).StatusCode);
+        await Assert.That((await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view")).StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_UnchangedDocument_ReturnsOkAndTheSameFindingsAsImport()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
 
         var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
         var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using var putResult = JsonDocument.Parse(await putResponse.Content.ReadAsStringAsync());
-        Assert.Equal(definitionId, putResult.RootElement.GetProperty("definitionId").GetString());
-        Assert.Contains(
-            "order-process",
-            putResult.RootElement.GetProperty("analysis").GetProperty("processIds").EnumerateArray().Select(processId => processId.GetString()));
+        await Assert.That(putResult.RootElement.GetProperty("definitionId").GetString()).IsEqualTo(definitionId);
+        await Assert.That(putResult.RootElement.GetProperty("analysis").GetProperty("processIds").EnumerateArray().Select(processId => processId.GetString())).Contains("order-process");
 
         var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        await Assert.That(exportResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var exportedXml = await exportResponse.Content.ReadAsStringAsync();
-        Assert.Contains("order-process", exportedXml);
+        await Assert.That(exportedXml).Contains("order-process", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WithABindingChange_PreservesTheDefinitionsNonBpmnMetadata()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -632,20 +571,20 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var (etag, documentJson) = await GetDocumentAsync(definitionId);
         var putResponse = await PutDocumentAsync(definitionId, WithNotifyWarehouseTextChanged(documentJson), etag);
 
-        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         // Every field SetNonBpmnMetadataOnDraftAsync set survived the PUT unchanged.
         var metadataAfterPut = await CaptureMetadataAsync(definitionId);
-        Assert.Equal(metadataBeforePut, metadataAfterPut);
+        await Assert.That(metadataAfterPut).IsEqualTo(metadataBeforePut);
 
         // ...while the graph reflects the binding change the PUT carried.
         var exportResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/export", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, exportResponse.StatusCode);
+        await Assert.That(exportResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var exportedXml = await exportResponse.Content.ReadAsStringAsync();
-        Assert.Contains("Notifying the warehouse, rebound via document PUT", exportedXml);
+        await Assert.That(exportedXml).Contains("Notifying the warehouse, rebound via document PUT", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task Import_WithTheSameDefinitionId_StillReplacesTheDefinitionsMetadata()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -659,23 +598,23 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn"), "file");
         content.Add(new StringContent(definitionId), "DefinitionId");
         var importResponse = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
-        Assert.Equal(HttpStatusCode.OK, importResponse.StatusCode);
+        await Assert.That(importResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         var metadataAfterImport = await CaptureMetadataAsync(definitionId);
-        Assert.NotEqual(metadataBeforeImport, metadataAfterImport);
-        Assert.Equal("Order Process", metadataAfterImport.Name);
-        Assert.Null(metadataAfterImport.Description);
-        Assert.Equal(string.Empty, metadataAfterImport.VariableSummary);
-        Assert.Null(metadataAfterImport.UsableAsActivity);
-        Assert.Equal(string.Empty, metadataAfterImport.InputSummary);
-        Assert.Equal(string.Empty, metadataAfterImport.OutputSummary);
-        Assert.Equal(string.Empty, metadataAfterImport.OutcomeSummary);
-        Assert.Null(metadataAfterImport.ToolVersion);
-        Assert.False(metadataAfterImport.IsReadonly);
-        Assert.Null(metadataAfterImport.CustomPropertyValue);
+        await Assert.That(metadataAfterImport).IsNotEqualTo(metadataBeforeImport);
+        await Assert.That(metadataAfterImport.Name).IsEqualTo("Order Process");
+        await Assert.That(metadataAfterImport.Description).IsNull();
+        await Assert.That(metadataAfterImport.VariableSummary).IsEqualTo(string.Empty);
+        await Assert.That(metadataAfterImport.UsableAsActivity).IsNull();
+        await Assert.That(metadataAfterImport.InputSummary).IsEqualTo(string.Empty);
+        await Assert.That(metadataAfterImport.OutputSummary).IsEqualTo(string.Empty);
+        await Assert.That(metadataAfterImport.OutcomeSummary).IsEqualTo(string.Empty);
+        await Assert.That(metadataAfterImport.ToolVersion).IsNull();
+        await Assert.That(metadataAfterImport.IsReadonly).IsFalse();
+        await Assert.That(metadataAfterImport.CustomPropertyValue).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_AfterAMetadataOnlySaveCreatesANewDraftFromAPublishedVersion_SucceedsAndRecordsAFreshMarker()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -685,21 +624,21 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // A metadata-only save through the designer path bumps a published definition to a new draft (N+1) without
         // touching the graph, which is exactly the shape this issue is about: the document GET must not refuse that
         // draft as stale, so the PUT that follows (W11's flow) has an ETag to send at all.
-        Assert.Equal(2, await LatestVersionOfAsync(definitionId));
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(2);
         var (etag, documentJson) = await GetDocumentAsync(definitionId);
 
         var putResponse = await PutDocumentAsync(definitionId, WithFirstShapeMoved(documentJson), etag);
 
-        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         var stored = await FindLatestDefinitionAsync(definitionId);
-        Assert.True(stored.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var sourceVersion));
-        Assert.Equal(stored.Version, sourceVersion);
-        Assert.True(stored.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey, out var sourceGraphHash));
-        Assert.False(string.IsNullOrEmpty(sourceGraphHash));
+        await Assert.That(stored.CustomProperties.TryGetValue<int>(BpmnInterchangeDocumentService.SourceVersionCustomPropertyKey, out var sourceVersion)).IsTrue();
+        await Assert.That(sourceVersion).IsEqualTo(stored.Version);
+        await Assert.That(stored.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceGraphHashCustomPropertyKey, out var sourceGraphHash)).IsTrue();
+        await Assert.That(string.IsNullOrEmpty(sourceGraphHash)).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -708,10 +647,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // Authenticated, but only holds the read permission Get needs, not the write permission Put needs.
         var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", content, null, "workflows/definitions:view");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_ForASingleProcessDefinitionImportedBeforeSourceProcessIdExisted_ReturnsOk()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -719,7 +658,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         await RemoveSourceProcessIdCustomPropertyAsync(definitionId);
 
         var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
@@ -727,10 +666,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         // A single-process document does not need SourceProcessId to disambiguate anything, so the missing
         // property does not stop the edit from succeeding.
-        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        await Assert.That(putResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task DocumentPut_ForATwoProcessDefinitionImportedBeforeSourceProcessIdExisted_ReturnsBadRequestAndPersistsNoNewDraft()
     {
         var definitionId = await ImportTwoProcessDocumentAsync("first-process");
@@ -740,16 +679,16 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var versionBeforePut = await LatestVersionOfAsync(definitionId);
 
         var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        await Assert.That(getResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
         using var putContent = new StringContent(documentJson, Encoding.UTF8, "application/json");
         var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
-        Assert.True((int)putResponse.StatusCode is >= 400 and < 500, $"Expected a 4xx status code, got {(int)putResponse.StatusCode}.");
+        await Assert.That((int)putResponse.StatusCode is >= 400 and < 500).IsTrue().Because($"Expected a 4xx status code, got {(int)putResponse.StatusCode}.");
         var body = await putResponse.Content.ReadAsStringAsync();
-        Assert.Contains("specify which one to import", body);
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        await Assert.That(body).Contains("specify which one to import", StringComparison.CurrentCulture);
+        await Assert.That(await LatestVersionOfAsync(definitionId)).IsEqualTo(versionBeforePut);
     }
 
     /// <summary>
@@ -792,7 +731,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
     private async Task<string> CreateNonBpmnDefinitionAsync()
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var definitionId = Guid.NewGuid().ToString();
 
@@ -858,7 +797,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     private async Task<(string? ETag, string Json)> GetDocumentAsync(string definitionId)
     {
         var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         return (ETagOf(response), await response.Content.ReadAsStringAsync());
     }
 
@@ -876,9 +815,9 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var response = await PutDocumentAsync(definitionId, documentJson, staleETag);
 
-        Assert.Equal(HttpStatusCode.PreconditionFailed, response.StatusCode);
-        Assert.Equal(BpmnErrorCodes.DocumentPreconditionFailed, CodeOf(await response.Content.ReadAsStringAsync()));
-        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.PreconditionFailed);
+        await Assert.That(CodeOf(await response.Content.ReadAsStringAsync())).IsEqualTo(BpmnErrorCodes.DocumentPreconditionFailed);
+        await Assert.That(await LatestStoredAsync(definitionId)).IsEqualTo(storedBeforePut);
     }
 
     /// <summary>Moves the document's first diagram shape to the right — a layout-only edit, the kind W14 makes.</summary>
@@ -925,10 +864,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// </summary>
     private async Task SetNonBpmnMetadataOnDraftAsync(string definitionId)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
         var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draft);
+        await Assert.That(draft).IsNotNull();
 
         draft!.Name = "Renamed by the author, not by BPMN";
         draft.Description = "Handles a customer order end to end.";
@@ -981,11 +920,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
     private async Task<WorkflowDefinition> FindLatestDefinitionAsync(string definitionId)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await store.FindAsync(filter);
-        Assert.NotNull(definition);
+        await Assert.That(definition).IsNotNull();
         return definition!;
     }
 
@@ -997,14 +936,17 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// </summary>
     private async Task SaveDraftFromTheDesignerAsync(string definitionId)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
         var serializer = scope.ServiceProvider.GetRequiredService<IActivitySerializer>();
         var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draft);
+        await Assert.That(draft).IsNotNull();
 
-        var root = Assert.IsType<BpmnProcess>(serializer.Deserialize(draft!.StringData!));
-        Assert.Single(root.Activities.OfType<WriteLine>()).Text = new("Notifying the warehouse, edited in the designer");
+        var deserializedRoot = serializer.Deserialize(draft!.StringData!);
+        await Assert.That(deserializedRoot).IsOfType(typeof(BpmnProcess));
+        var root = (BpmnProcess)deserializedRoot;
+        var writeLine = (await Assert.That(root.Activities.OfType<WriteLine>()).HasSingleItem())!;
+        writeLine.Text = new("Notifying the warehouse, edited in the designer");
         draft.StringData = serializer.Serialize(root);
 
         await publisher.SaveDraftAsync(draft);
@@ -1019,7 +961,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset(assetFileName), "file");
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return document.RootElement.GetProperty("definitionId").GetString()!;
@@ -1036,7 +978,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var definitionId = await ImportAssetAsync(assetFileName);
         var (etag, documentJson) = await GetDocumentAsync(definitionId);
         var response = await PutDocumentAsync(definitionId, documentJson, etag);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         return definitionId;
     }
 
@@ -1047,7 +989,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         AddBpmnFile(content, ReadAsset("two-process.bpmn"), "file");
         content.Add(new StringContent(processId), "ProcessId");
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         return document.RootElement.GetProperty("definitionId").GetString()!;
@@ -1059,11 +1001,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// </summary>
     private async Task RemoveSourceProcessIdCustomPropertyAsync(string definitionId)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await store.FindAsync(filter);
-        Assert.NotNull(definition);
+        await Assert.That(definition).IsNotNull();
         definition!.CustomProperties.Remove(BpmnInterchangeDocumentService.SourceProcessIdCustomPropertyKey);
         await store.SaveAsync(definition);
     }
@@ -1074,7 +1016,7 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// </summary>
     private async Task MarkLatestPublishedAsync(string definitionId)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
         await DefinitionPublishing.PublishLatestAsync(publisher, definitionId);
     }
@@ -1088,10 +1030,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// </summary>
     private async Task RenameLatestDraftThroughTheDesignerAsync(string definitionId, string name)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var publisher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionPublisher>();
         var draft = await publisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draft);
+        await Assert.That(draft).IsNotNull();
         draft!.Name = name;
         await publisher.SaveDraftAsync(draft);
     }
@@ -1104,45 +1046,15 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     /// </summary>
     private async Task<StoredDefinition> LatestStoredAsync(string definitionId)
     {
-        using var scope = _app!.Services.CreateScope();
+        using var scope = Services.CreateScope();
         var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var definition = await store.FindAsync(filter);
-        Assert.NotNull(definition);
+        await Assert.That(definition).IsNotNull();
         definition!.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey, out var sourceXml);
         return new(definition.Id, definition.Version, definition.StringData, sourceXml);
     }
 
     private sealed record StoredDefinition(string Id, int Version, string? StringData, string? SourceXml);
 
-    private sealed class TestAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        public const string AuthenticationScheme = "Test";
-        public const string PermissionHeader = "X-Test-Permissions";
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            if (!Request.Headers.TryGetValue(PermissionHeader, out var permissionHeader))
-                return Task.FromResult(AuthenticateResult.NoResult());
-
-            var claims = permissionHeader
-                .SelectMany(x => x?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [])
-                .Select(x => new Claim(PermissionNames.ClaimType, x))
-                .ToList();
-
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, "test-user"));
-
-            var identity = new ClaimsIdentity(claims, AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, AuthenticationScheme);
-
-            return Task.FromResult(AuthenticateResult.Success(ticket));
-        }
-    }
 }
-
-[CollectionDefinition(nameof(BpmnInterchangeEndpointCollection), DisableParallelization = true)]
-public class BpmnInterchangeEndpointCollection;
