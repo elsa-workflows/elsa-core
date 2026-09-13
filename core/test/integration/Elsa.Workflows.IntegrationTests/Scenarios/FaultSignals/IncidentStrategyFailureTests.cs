@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Testing.Shared.Activities;
@@ -42,11 +43,18 @@ public class IncidentStrategyFailureTests(ITestOutputHelper testOutputHelper)
         // Assert: the workflow did not get misattributed by the workflow-level middleware because the activity-level
         // middleware swallowed the strategy's exception. The original fault incident and the strategy failure are
         // both attributed to the faulting activity, and no workflow-root fallback incident was added.
+        Assert.Equal(WorkflowSubStatus.Suspended, result.WorkflowState.SubStatus);
         Assert.Equal(2, result.WorkflowState.Incidents.Count);
         Assert.All(result.WorkflowState.Incidents, incident => Assert.Equal(_faultingActivity.Id, incident.ActivityId));
 
         var strategyIncident = Assert.Single(result.WorkflowState.Incidents, x => x.Message == "ThrowingIncidentStrategy");
         Assert.Equal("ThrowingIncidentStrategy", strategyIncident.Message);
+
+        var faultedContext = result.GetActivityContext(_faultingActivity);
+        Assert.NotNull(faultedContext);
+        Assert.Equal(ActivityStatus.Faulted, faultedContext.Status);
+        Assert.Equal(1, faultedContext.AggregateFaultCount);
+        Assert.All(faultedContext.GetAncestors(), ancestor => Assert.Equal(1, ancestor.AggregateFaultCount));
     }
 
     [Fact(DisplayName = "Cancellation from an incident strategy propagates unchanged")]
@@ -72,8 +80,10 @@ public class IncidentStrategyFailureTests(ITestOutputHelper testOutputHelper)
         }));
 
         // Assert: cancellation escaped the activity-level middleware and the workflow-level middleware cancelled the
-        // run. Incident bookkeeping is unchanged from the existing cancellation path.
+        // run. The activity-level middleware did not turn the strategy cancellation into a second activity incident.
         Assert.Equal(WorkflowSubStatus.Cancelled, result.WorkflowState.SubStatus);
+        Assert.DoesNotContain(result.WorkflowState.Incidents, incident =>
+            incident.ActivityId == _faultingActivity.Id && incident.Exception?.Type == typeof(OperationCanceledException));
     }
 
     /// <summary>
