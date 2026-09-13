@@ -285,7 +285,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
     {
         var targetCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseTargetCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var target = new ExecutionCycleHandle(
+        using var target = new ExecutionCycleHandle(
             Guid.NewGuid(),
             "instance-disposed-during-settle",
             ingressSourceName: "http.trigger",
@@ -298,7 +298,7 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             });
         var blockerCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseBlockerCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var blocker = new ExecutionCycleHandle(
+        using var blocker = new ExecutionCycleHandle(
             Guid.NewGuid(),
             "instance-phase-a-blocker",
             ingressSourceName: "http.trigger",
@@ -345,8 +345,6 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
             // Always release synchronous callback gates so an assertion or timeout cannot strand the test host.
             releaseBlockerCallback.TrySetResult();
             releaseTargetCallback.TrySetResult();
-            target.Dispose();
-            blocker.Dispose();
 
             await ObserveCleanupAsync(preCancelTask);
 
@@ -499,7 +497,11 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         {
             await task.WaitAsync(TimeSpan.FromSeconds(5));
         }
-        catch (Exception)
+        catch (TimeoutException)
+        {
+            // Preserve the original assertion/timeout while observing the cleanup task.
+        }
+        catch (OperationCanceledException)
         {
             // Preserve the original assertion/timeout while observing the cleanup task.
         }

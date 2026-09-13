@@ -178,6 +178,42 @@ public class ExecutionCycleRegistryTests
         Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle defers CTS disposal while linked-token cancellation is in progress")]
+    public async Task DisposeCompletesWhileLinkedTokenCancellationWaitsForIt()
+    {
+        using var linkedCts = new CancellationTokenSource();
+        var cancellationCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var disposalCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackObservedDisposal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-linked-cancellation",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: linkedCts.Token);
+        var cycleToken = handle.CancellationToken;
+        using var registration = cycleToken.Register(() =>
+        {
+            cancellationCallbackEntered.SetResult();
+            callbackObservedDisposal.SetResult(disposalCompleted.Task.Wait(TimeSpan.FromSeconds(5)));
+        });
+
+        var cancelTask = Task.Run(() => linkedCts.Cancel());
+        await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var disposeTask = Task.Run(() =>
+        {
+            handle.Dispose();
+            disposalCompleted.TrySetResult();
+        });
+
+        Assert.True(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+        Assert.True(cycleToken.IsCancellationRequested);
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle defers CTS disposal from a cancellation callback")]
     public void DisposeDefersCtsDisposalUntilCancellationPropagationExits()
     {

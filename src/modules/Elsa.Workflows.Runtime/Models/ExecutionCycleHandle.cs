@@ -10,11 +10,12 @@ namespace Elsa.Workflows.Runtime;
 public sealed class ExecutionCycleHandle : IDisposable
 {
     private readonly CancellationTokenSource _cycleCts;
+    private readonly CancellationTokenRegistration _linkedTokenRegistration;
     private readonly Action<ExecutionCycleHandle>? _onDisposed;
     private readonly Action? _cancelCallback;
     private readonly TaskCompletionSource _disposedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly object _cycleCtsGate = new();
-    private bool _cycleCtsCancellationInProgress;
+    private int _cycleCtsCancellationInProgress;
     private bool _cycleCtsDisposeRequested;
     private bool _cycleCtsDisposed;
     private int _lifecycleState;
@@ -47,7 +48,10 @@ public sealed class ExecutionCycleHandle : IDisposable
         WorkflowInstanceId = workflowInstanceId;
         IngressSourceName = ingressSourceName;
         StartedAt = startedAt;
-        _cycleCts = CancellationTokenSource.CreateLinkedTokenSource(linkedToken);
+        _cycleCts = new CancellationTokenSource();
+        _linkedTokenRegistration = linkedToken.UnsafeRegister(
+            static state => ((ExecutionCycleHandle)state!).PropagateLinkedCancellation(),
+            this);
         _onDisposed = onDisposed;
         _cancelCallback = cancelCallback;
     }
@@ -103,29 +107,7 @@ public sealed class ExecutionCycleHandle : IDisposable
         try { _cancelCallback?.Invoke(); }
         catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 
-        lock (_cycleCtsGate)
-            _cycleCtsCancellationInProgress = true;
-
-        try
-        {
-            _cycleCts.Cancel();
-        }
-        catch (ObjectDisposedException)
-        {
-            // Dispose may have won before cancellation propagation started.
-        }
-        catch (Exception ex) when (!ex.IsFatal())
-        {
-            // CTS callbacks are best-effort; preserve the lifecycle transition even when one reports a non-fatal error.
-        }
-        finally
-        {
-            lock (_cycleCtsGate)
-            {
-                _cycleCtsCancellationInProgress = false;
-                DisposeCycleCtsIfSafe();
-            }
-        }
+        PropagateCycleCtsCancellation();
 
         // Publish cancellation only after its effects complete. Dispose can transition CancellingState directly to
         // DisposedState, making this CAS fail when the cycle completed during the callback or CTS cancellation.
@@ -146,19 +128,76 @@ public sealed class ExecutionCycleHandle : IDisposable
         }
 
         _onDisposed?.Invoke(this);
+        RequestCycleCtsDisposal();
+    }
+
+    private void PropagateLinkedCancellation()
+    {
+        PropagateCycleCtsCancellation();
+    }
+
+    private void PropagateCycleCtsCancellation()
+    {
         lock (_cycleCtsGate)
         {
-            _cycleCtsDisposeRequested = true;
-            DisposeCycleCtsIfSafe();
+            if (_cycleCtsDisposed)
+                return;
+
+            _cycleCtsCancellationInProgress++;
+        }
+
+        try
+        {
+            _cycleCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Dispose may have won before cancellation propagation started.
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            // CTS callbacks are best-effort; preserve the lifecycle transition even when one reports a non-fatal error.
+        }
+        finally
+        {
+            var dispose = false;
+            lock (_cycleCtsGate)
+            {
+                _cycleCtsCancellationInProgress--;
+                if (_cycleCtsDisposeRequested && _cycleCtsCancellationInProgress == 0 && !_cycleCtsDisposed)
+                {
+                    _cycleCtsDisposed = true;
+                    dispose = true;
+                }
+            }
+
+            if (dispose)
+                DisposeCycleCts();
         }
     }
 
-    private void DisposeCycleCtsIfSafe()
+    private void RequestCycleCtsDisposal()
     {
-        if (!_cycleCtsDisposeRequested || _cycleCtsCancellationInProgress || _cycleCtsDisposed)
-            return;
+        var dispose = false;
+        lock (_cycleCtsGate)
+        {
+            _cycleCtsDisposeRequested = true;
+            if (_cycleCtsCancellationInProgress == 0 && !_cycleCtsDisposed)
+            {
+                _cycleCtsDisposed = true;
+                dispose = true;
+            }
+        }
 
-        _cycleCtsDisposed = true;
+        if (dispose)
+            DisposeCycleCts();
+    }
+
+    private void DisposeCycleCts()
+    {
+        // CancellationTokenRegistration.Dispose is self-unregister-safe when this is called from the linked
+        // token callback, and waits for a callback running on another thread before releasing the registration.
+        _linkedTokenRegistration.Dispose();
         _cycleCts.Dispose();
         _disposedTcs.TrySetResult();
     }
