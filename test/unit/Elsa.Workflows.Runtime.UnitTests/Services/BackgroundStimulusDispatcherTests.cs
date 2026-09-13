@@ -12,7 +12,7 @@ public class BackgroundStimulusDispatcherTests
     private readonly ICommandSender _commandSender = Substitute.For<ICommandSender>();
     private readonly ITenantAccessor _tenantAccessor = Substitute.For<ITenantAccessor>();
 
-    [Fact]
+    [Test]
     public async Task SendAsync_DoesNotPropagateCallerToken()
     {
         // Arrange

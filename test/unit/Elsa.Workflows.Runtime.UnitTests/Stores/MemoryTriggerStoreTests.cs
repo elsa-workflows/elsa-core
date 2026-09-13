@@ -14,7 +14,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.Stores;
 /// </summary>
 public class MemoryTriggerStoreTests
 {
-    [Fact(DisplayName = "ReplaceAsync keeps the first added record when the incoming batch repeats a logical key")]
+    [Test]
+    [DisplayName("ReplaceAsync keeps the first added record when the incoming batch repeats a logical key")]
     public async Task ReplaceAsync_WhenAddedBatchRepeatsLogicalKey_StoresOnlyTheFirst()
     {
         var store = CreateStore();
@@ -24,11 +25,12 @@ public class MemoryTriggerStoreTests
         await store.ReplaceAsync([], [first, duplicate]);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        var match = Assert.Single(stored);
-        Assert.Equal("id-1", match.Id);
+        var match = await Assert.That(stored).HasSingleItem();
+        await Assert.That(match.Id).IsEqualTo("id-1");
     }
 
-    [Fact(DisplayName = "ReplaceAsync skips an added record whose logical key is already present")]
+    [Test]
+    [DisplayName("ReplaceAsync skips an added record whose logical key is already present")]
     public async Task ReplaceAsync_WhenLogicalKeyAlreadyPresent_SkipsTheAddedRecord()
     {
         var store = CreateStore();
@@ -38,12 +40,13 @@ public class MemoryTriggerStoreTests
         await store.ReplaceAsync([], [Trigger("new-id", hash: "hash-1")]);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        var match = Assert.Single(stored);
-        Assert.Equal("existing-id", match.Id);
-        Assert.Equal("v1", match.WorkflowDefinitionVersionId);
+        var match = await Assert.That(stored).HasSingleItem();
+        await Assert.That(match.Id).IsEqualTo("existing-id");
+        await Assert.That(match.WorkflowDefinitionVersionId).IsEqualTo("v1");
     }
 
-    [Fact(DisplayName = "ReplaceAsync can insert a new Id after the existing logical-key row is removed")]
+    [Test]
+    [DisplayName("ReplaceAsync can insert a new Id after the existing logical-key row is removed")]
     public async Task ReplaceAsync_WhenExistingLogicalKeyIsRemoved_InsertsTheReplacement()
     {
         var store = CreateStore();
@@ -54,12 +57,13 @@ public class MemoryTriggerStoreTests
         await store.ReplaceAsync([existing], [replacement]);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        var match = Assert.Single(stored);
-        Assert.Equal("new-id", match.Id);
-        Assert.Equal("v2", match.WorkflowDefinitionVersionId);
+        var match = await Assert.That(stored).HasSingleItem();
+        await Assert.That(match.Id).IsEqualTo("new-id");
+        await Assert.That(match.WorkflowDefinitionVersionId).IsEqualTo("v2");
     }
 
-    [Fact(DisplayName = "ReplaceAsync stamps the current tenant when TenantId is unset")]
+    [Test]
+    [DisplayName("ReplaceAsync stamps the current tenant when TenantId is unset")]
     public async Task ReplaceAsync_WhenTenantIdIsUnset_AppliesCurrentTenant()
     {
         var store = CreateStore(new TestTenantAccessor("tenant-a"));
@@ -69,10 +73,11 @@ public class MemoryTriggerStoreTests
         await store.ReplaceAsync([], [trigger]);
 
         var stored = await store.FindAsync(new TriggerFilter { Id = "id-1" });
-        Assert.Equal("tenant-a", stored!.TenantId);
+        await Assert.That(stored!.TenantId).IsEqualTo("tenant-a");
     }
 
-    [Fact(DisplayName = "ReplaceAsync leaves a tenant-agnostic TenantId untouched")]
+    [Test]
+    [DisplayName("ReplaceAsync leaves a tenant-agnostic TenantId untouched")]
     public async Task ReplaceAsync_WhenTenantIdIsAgnostic_DoesNotOverwriteTenant()
     {
         var store = CreateStore(new TestTenantAccessor("tenant-a"));
@@ -82,10 +87,11 @@ public class MemoryTriggerStoreTests
         await store.ReplaceAsync([], [trigger]);
 
         var stored = await store.FindAsync(new TriggerFilter { Id = "id-1" });
-        Assert.Equal(Tenant.AgnosticTenantId, stored!.TenantId);
+        await Assert.That(stored!.TenantId).IsEqualTo(Tenant.AgnosticTenantId);
     }
 
-    [Fact(DisplayName = "ReplaceAsync treats different tenants as distinct logical keys")]
+    [Test]
+    [DisplayName("ReplaceAsync treats different tenants as distinct logical keys")]
     public async Task ReplaceAsync_WhenTenantIdsDiffer_StoresBothRecords()
     {
         var store = CreateStore();
@@ -97,12 +103,13 @@ public class MemoryTriggerStoreTests
         await store.ReplaceAsync([], [tenantA, tenantB]);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        Assert.Equal(2, stored.Count);
-        Assert.Contains(stored, x => x.Id == "id-a");
-        Assert.Contains(stored, x => x.Id == "id-b");
+        await Assert.That(stored.Count).IsEqualTo(2);
+        await Assert.That(stored).Contains(x => x.Id == "id-a");
+        await Assert.That(stored).Contains(x => x.Id == "id-b");
     }
 
-    [Fact(DisplayName = "SaveAsync stamps the current tenant when TenantId is unset")]
+    [Test]
+    [DisplayName("SaveAsync stamps the current tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdIsUnset_AppliesCurrentTenant()
     {
         var store = CreateStore(new TestTenantAccessor("tenant-a"));
@@ -112,10 +119,11 @@ public class MemoryTriggerStoreTests
         await store.SaveAsync(trigger);
 
         var stored = await store.FindAsync(new TriggerFilter { Id = "id-1" });
-        Assert.Equal("tenant-a", stored!.TenantId);
+        await Assert.That(stored!.TenantId).IsEqualTo("tenant-a");
     }
 
-    [Fact(DisplayName = "SaveAsync updates the existing row when the Id matches")]
+    [Test]
+    [DisplayName("SaveAsync updates the existing row when the Id matches")]
     public async Task SaveAsync_WhenIdMatches_UpdatesTheExistingRow()
     {
         var store = CreateStore();
@@ -124,25 +132,29 @@ public class MemoryTriggerStoreTests
         await store.SaveAsync(Trigger("id-1", hash: "hash-2", workflowDefinitionVersionId: "v2"));
 
         var stored = await store.FindAsync(new TriggerFilter { Id = "id-1" });
-        Assert.Equal("hash-2", stored!.Hash);
-        Assert.Equal("v2", stored.WorkflowDefinitionVersionId);
+        await Assert.That(stored!.Hash).IsEqualTo("hash-2");
+        await Assert.That(stored.WorkflowDefinitionVersionId).IsEqualTo("v2");
     }
 
-    [Fact(DisplayName = "SaveAsync rejects a different Id that repeats an existing logical key")]
+    [Test]
+    [DisplayName("SaveAsync rejects a different Id that repeats an existing logical key")]
     public async Task SaveAsync_WhenLogicalKeyExistsUnderAnotherId_Throws()
     {
         var store = CreateStore();
         await store.SaveAsync(Trigger("id-1", hash: "hash-1"));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             store.SaveAsync(Trigger("id-2", hash: "hash-1")).AsTask());
 
-        Assert.Contains("already exists", exception.Message);
+        var actualException = await Assert.That(exception).IsNotNull();
+        await Assert.That(actualException.Message).Contains("already exists").WithComparison(StringComparison.CurrentCulture);
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        Assert.Equal("id-1", Assert.Single(stored).Id);
+        var match = await Assert.That(stored).HasSingleItem();
+        await Assert.That(match.Id).IsEqualTo("id-1");
     }
 
-    [Fact(DisplayName = "SaveManyAsync keeps the first record when the batch repeats a logical key")]
+    [Test]
+    [DisplayName("SaveManyAsync keeps the first record when the batch repeats a logical key")]
     public async Task SaveManyAsync_WhenBatchRepeatsLogicalKey_StoresOnlyTheFirst()
     {
         var store = CreateStore();
@@ -150,24 +162,29 @@ public class MemoryTriggerStoreTests
         await store.SaveManyAsync([Trigger("id-1"), Trigger("id-2")]);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        Assert.Equal("id-1", Assert.Single(stored).Id);
+        var match = await Assert.That(stored).HasSingleItem();
+        await Assert.That(match.Id).IsEqualTo("id-1");
     }
 
-    [Fact(DisplayName = "SaveManyAsync rejects a batch whose logical key is already present under another Id")]
+    [Test]
+    [DisplayName("SaveManyAsync rejects a batch whose logical key is already present under another Id")]
     public async Task SaveManyAsync_WhenLogicalKeyExistsUnderAnotherId_Throws()
     {
         var store = CreateStore();
         await store.SaveAsync(Trigger("id-1", hash: "hash-1"));
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
             store.SaveManyAsync([Trigger("id-2", hash: "hash-1")]).AsTask());
 
-        Assert.Contains("already exists", exception.Message);
+        var actualException = await Assert.That(exception).IsNotNull();
+        await Assert.That(actualException.Message).Contains("already exists").WithComparison(StringComparison.CurrentCulture);
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        Assert.Equal("id-1", Assert.Single(stored).Id);
+        var match = await Assert.That(stored).HasSingleItem();
+        await Assert.That(match.Id).IsEqualTo("id-1");
     }
 
-    [Fact(DisplayName = "FindAsync returns the first record when a filter matches several distinct triggers")]
+    [Test]
+    [DisplayName("FindAsync returns the first record when a filter matches several distinct triggers")]
     public async Task FindAsync_WhenFilterMatchesMultipleTriggers_ReturnsTheFirst()
     {
         var store = CreateStore();
@@ -176,10 +193,11 @@ public class MemoryTriggerStoreTests
 
         var found = await store.FindAsync(new TriggerFilter { WorkflowDefinitionId = "workflow-1" });
 
-        Assert.True(found!.Id is "id-1" or "id-2");
+        await Assert.That(found!.Id is "id-1" or "id-2").IsTrue();
     }
 
-    [Fact(DisplayName = "FindAsync returns the matching record when the filter is unique")]
+    [Test]
+    [DisplayName("FindAsync returns the matching record when the filter is unique")]
     public async Task FindAsync_WhenOneLogicalKeyMatches_ReturnsThatRecord()
     {
         var store = CreateStore();
@@ -188,10 +206,11 @@ public class MemoryTriggerStoreTests
 
         var found = await store.FindAsync(new TriggerFilter { Hash = "hash-1" });
 
-        Assert.Equal("id-1", found!.Id);
+        await Assert.That(found!.Id).IsEqualTo("id-1");
     }
 
-    [Fact(DisplayName = "SaveAsync keeps distinct triggers whose fields contain the old delimiter character")]
+    [Test]
+    [DisplayName("SaveAsync keeps distinct triggers whose fields contain the old delimiter character")]
     public async Task SaveAsync_WhenFieldsContainUnitSeparator_DoesNotCollide()
     {
         var store = CreateStore();
@@ -202,9 +221,9 @@ public class MemoryTriggerStoreTests
         await store.SaveAsync(second);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        Assert.Equal(2, stored.Count);
-        Assert.Contains(stored, x => x.Id == "id-1");
-        Assert.Contains(stored, x => x.Id == "id-2");
+        await Assert.That(stored.Count).IsEqualTo(2);
+        await Assert.That(stored).Contains(x => x.Id == "id-1");
+        await Assert.That(stored).Contains(x => x.Id == "id-2");
     }
 
     private static MemoryTriggerStore CreateStore(ITenantAccessor? tenantAccessor = null) =>

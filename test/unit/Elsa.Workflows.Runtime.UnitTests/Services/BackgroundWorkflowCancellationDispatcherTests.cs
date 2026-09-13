@@ -14,7 +14,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
     private readonly ICommandSender _commandSender = Substitute.For<ICommandSender>();
     private readonly ITenantAccessor _tenantAccessor = Substitute.For<ITenantAccessor>();
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_SendsCommandWithBackgroundStrategy()
     {
         // Arrange
@@ -32,7 +32,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_IncludesTenantIdInHeaders_WhenTenantIsPresent()
     {
         // Arrange
@@ -59,7 +59,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_DoesNotIncludeTenantIdInHeaders_WhenTenantIsNull()
     {
         // Arrange
@@ -80,7 +80,7 @@ public class BackgroundWorkflowCancellationDispatcherTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_ReturnsResponse()
     {
         // Arrange
@@ -91,10 +91,10 @@ public class BackgroundWorkflowCancellationDispatcherTests
         var response = await dispatcher.DispatchAsync(request);
 
         // Assert
-        Assert.NotNull(response);
+        await Assert.That(response).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_DoesNotPropagateCallerToken()
     {
         // Arrange

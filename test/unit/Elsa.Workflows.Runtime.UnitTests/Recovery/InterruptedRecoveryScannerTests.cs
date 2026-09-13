@@ -17,7 +17,8 @@ public class InterruptedRecoveryScannerTests
     private readonly ILogger<InterruptedRecoveryScanner> _logger = Substitute.For<ILogger<InterruptedRecoveryScanner>>();
     private readonly RuntimeOptions _runtimeOptions = new() { RestartInterruptedWorkflowsBatchSize = 10 };
 
-    [Fact(DisplayName = "Scan filters by SubStatus = Interrupted")]
+    [Test]
+    [DisplayName("Scan filters by SubStatus = Interrupted")]
     public async Task FiltersBySubStatus()
     {
         StubInstances(new[] { Summary("a") });
@@ -31,7 +32,8 @@ public class InterruptedRecoveryScannerTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Scan calls IWorkflowRestarter once per matching instance and returns the count")]
+    [Test]
+    [DisplayName("Scan calls IWorkflowRestarter once per matching instance and returns the count")]
     public async Task RestartsEachInstance()
     {
         StubInstances(new[] { Summary("a"), Summary("b"), Summary("c") });
@@ -39,13 +41,14 @@ public class InterruptedRecoveryScannerTests
 
         var count = await sut.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal(3, count);
+        await Assert.That(count).IsEqualTo(3);
         await _restarter.Received(1).RestartWorkflowAsync("a", Arg.Any<CancellationToken>());
         await _restarter.Received(1).RestartWorkflowAsync("b", Arg.Any<CancellationToken>());
         await _restarter.Received(1).RestartWorkflowAsync("c", Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Per-instance failures are swallowed; remaining instances still requeued")]
+    [Test]
+    [DisplayName("Per-instance failures are swallowed; remaining instances still requeued")]
     public async Task SwallowsPerInstanceFailures()
     {
         StubInstances(new[] { Summary("a"), Summary("b"), Summary("c") });
@@ -55,12 +58,13 @@ public class InterruptedRecoveryScannerTests
 
         var count = await sut.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal(2, count); // 'b' failed
+        await Assert.That(count).IsEqualTo(2); // 'b' failed
         await _restarter.Received(1).RestartWorkflowAsync("a", Arg.Any<CancellationToken>());
         await _restarter.Received(1).RestartWorkflowAsync("c", Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "No interrupted instances → returns 0 without invoking restarter")]
+    [Test]
+    [DisplayName("No interrupted instances → returns 0 without invoking restarter")]
     public async Task EmptyResultSet()
     {
         StubInstances(Array.Empty<WorkflowInstanceSummary>());
@@ -68,11 +72,12 @@ public class InterruptedRecoveryScannerTests
 
         var count = await sut.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal(0, count);
+        await Assert.That(count).IsEqualTo(0);
         await _restarter.DidNotReceive().RestartWorkflowAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Tenant context is pushed for tenant-scoped instances")]
+    [Test]
+    [DisplayName("Tenant context is pushed for tenant-scoped instances")]
     public async Task PushesTenantContext()
     {
         StubInstances(new[] { Summary("a", tenantId: "tenant-1") });
@@ -87,14 +92,14 @@ public class InterruptedRecoveryScannerTests
         var sut = BuildSut(tenantService, tenantAccessor);
         await sut.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal("tenant-1", observedTenant);
-        Assert.Null(tenantAccessor.Tenant); // popped after the call
+        await Assert.That(observedTenant).IsEqualTo("tenant-1");
+        await Assert.That(tenantAccessor.Tenant).IsNull(); // popped after the call
     }
 
-    [Theory(DisplayName = "Default or agnostic tenant ids do NOT push tenant context")]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("*")]
+    [Test]
+    [Arguments(null, DisplayName = "Null tenant id does NOT push tenant context")]
+    [Arguments("", DisplayName = "Empty tenant id does NOT push tenant context")]
+    [Arguments("*", DisplayName = "Agnostic tenant id does NOT push tenant context")]
     public async Task DefaultOrAgnosticTenant(string? tenantId)
     {
         StubInstances(new[] { Summary("a", tenantId: tenantId) });
@@ -108,7 +113,7 @@ public class InterruptedRecoveryScannerTests
         var sut = BuildSut(tenantService, tenantAccessor);
         await sut.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Null(observedTenant);
+        await Assert.That(observedTenant).IsNull();
         await tenantService.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 

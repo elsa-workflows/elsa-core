@@ -4,11 +4,11 @@ namespace Elsa.Workflows.Runtime.UnitTests.Extensions;
 
 public class WorkflowDispatchCommandFactoryTests
 {
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void CreateCommand_UsesFallbackInstanceId_WhenRequestDoesNotSpecifyInstanceId(string? requestInstanceId)
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("   ")]
+    public async Task CreateCommand_UsesFallbackInstanceId_WhenRequestDoesNotSpecifyInstanceId(string? requestInstanceId)
     {
         var request = new DispatchWorkflowDefinitionRequest("definition-version-1")
         {
@@ -17,12 +17,12 @@ public class WorkflowDispatchCommandFactoryTests
 
         var command = WorkflowDispatchCommandFactory.CreateCommand(request, "generated-instance");
 
-        Assert.Equal("generated-instance", command.InstanceId);
-        Assert.True(command.SkipIfInstanceExists);
+        await Assert.That(command.InstanceId).IsEqualTo("generated-instance");
+        await Assert.That(command.SkipIfInstanceExists).IsTrue();
     }
 
-    [Fact]
-    public void CreateCommand_PreservesRequestInstanceId_WhenSpecified()
+    [Test]
+    public async Task CreateCommand_PreservesRequestInstanceId_WhenSpecified()
     {
         var request = new DispatchWorkflowDefinitionRequest("definition-version-1")
         {
@@ -31,18 +31,18 @@ public class WorkflowDispatchCommandFactoryTests
 
         var command = WorkflowDispatchCommandFactory.CreateCommand(request, "generated-instance");
 
-        Assert.Equal("requested-instance", command.InstanceId);
-        Assert.False(command.SkipIfInstanceExists);
+        await Assert.That(command.InstanceId).IsEqualTo("requested-instance");
+        await Assert.That(command.SkipIfInstanceExists).IsFalse();
     }
 
-    [Fact]
-    public void CreateCommand_DoesNotSkipExistingInstance_WhenFallbackInstanceIdIsMissing()
+    [Test]
+    public async Task CreateCommand_DoesNotSkipExistingInstance_WhenFallbackInstanceIdIsMissing()
     {
         var request = new DispatchWorkflowDefinitionRequest("definition-version-1");
 
         var command = WorkflowDispatchCommandFactory.CreateCommand(request);
 
-        Assert.Null(command.InstanceId);
-        Assert.False(command.SkipIfInstanceExists);
+        await Assert.That(command.InstanceId).IsNull();
+        await Assert.That(command.SkipIfInstanceExists).IsFalse();
     }
 }

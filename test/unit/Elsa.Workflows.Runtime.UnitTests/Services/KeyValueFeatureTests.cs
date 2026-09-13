@@ -21,8 +21,8 @@ public class KeyValueFeatureTests
         _module.Services.Returns(_services);
     }
 
-    [Fact]
-    public void ModuleFeature_DoesNotRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
+    [Test]
+    public async Task ModuleFeature_DoesNotRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
     {
         var feature = new ModuleKeyValueFeature(_module)
         {
@@ -31,12 +31,12 @@ public class KeyValueFeatureTests
 
         feature.Apply();
 
-        Assert.DoesNotContain(_services, x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
-        Assert.Contains(_services, x => x.ServiceType == typeof(IKeyValueStore));
+        await Assert.That(_services).DoesNotContain(x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
+        await Assert.That(_services).Contains(x => x.ServiceType == typeof(IKeyValueStore));
     }
 
-    [Fact]
-    public void ModuleFeature_CanExplicitlyRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
+    [Test]
+    public async Task ModuleFeature_CanExplicitlyRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
     {
         var feature = new ModuleKeyValueFeature(_module)
         {
@@ -46,11 +46,11 @@ public class KeyValueFeatureTests
 
         feature.Apply();
 
-        Assert.Contains(_services, x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
+        await Assert.That(_services).Contains(x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
     }
 
-    [Fact]
-    public void ModuleFeature_ConfiguredKeyValueStoreOverridesExistingRegistration()
+    [Test]
+    public async Task ModuleFeature_ConfiguredKeyValueStoreOverridesExistingRegistration()
     {
         _services.AddScoped<IKeyValueStore>(_ => new ExistingKeyValueStore());
         var feature = new ModuleKeyValueFeature(_module)
@@ -62,11 +62,12 @@ public class KeyValueFeatureTests
 
         using var provider = _services.BuildServiceProvider();
         var store = provider.GetRequiredService<IKeyValueStore>();
-        Assert.IsType<CustomKeyValueStore>(store);
+        await Assert.That(store).IsOfType(typeof(CustomKeyValueStore));
+        _ = (CustomKeyValueStore)store;
     }
 
-    [Fact]
-    public void ShellFeature_DoesNotRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
+    [Test]
+    public async Task ShellFeature_DoesNotRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
     {
         var feature = new ShellKeyValueFeature
         {
@@ -75,12 +76,12 @@ public class KeyValueFeatureTests
 
         feature.ConfigureServices(_services);
 
-        Assert.DoesNotContain(_services, x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
-        Assert.Contains(_services, x => x.ServiceType == typeof(IKeyValueStore));
+        await Assert.That(_services).DoesNotContain(x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
+        await Assert.That(_services).Contains(x => x.ServiceType == typeof(IKeyValueStore));
     }
 
-    [Fact]
-    public void ShellFeature_CanExplicitlyRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
+    [Test]
+    public async Task ShellFeature_CanExplicitlyRegisterMemoryStore_WhenKeyValueStoreIsCustomized()
     {
         var feature = new ShellKeyValueFeature
         {
@@ -90,11 +91,11 @@ public class KeyValueFeatureTests
 
         feature.ConfigureServices(_services);
 
-        Assert.Contains(_services, x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
+        await Assert.That(_services).Contains(x => x.ServiceType == typeof(MemoryStore<SerializedKeyValuePair>));
     }
 
-    [Fact]
-    public void ShellFeature_ConfiguredKeyValueStoreOverridesExistingRegistration()
+    [Test]
+    public async Task ShellFeature_ConfiguredKeyValueStoreOverridesExistingRegistration()
     {
         _services.AddScoped<IKeyValueStore>(_ => new ExistingKeyValueStore());
         var feature = new ShellKeyValueFeature
@@ -106,7 +107,8 @@ public class KeyValueFeatureTests
 
         using var provider = _services.BuildServiceProvider();
         var store = provider.GetRequiredService<IKeyValueStore>();
-        Assert.IsType<CustomKeyValueStore>(store);
+        await Assert.That(store).IsOfType(typeof(CustomKeyValueStore));
+        _ = (CustomKeyValueStore)store;
     }
 
     private class ExistingKeyValueStore : TestKeyValueStore;

@@ -6,7 +6,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
 public class WorkflowCommitNotificationBufferTests
 {
-    [Fact]
+    [Test]
     public async Task SendAsync_WhenBuffering_DoesNotPublishUntilScopeIsFlushed()
     {
         var mediator = Substitute.For<IMediator>();
@@ -24,7 +24,7 @@ public class WorkflowCommitNotificationBufferTests
         await mediator.Received(1).SendAsync(notification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task SendAsync_AfterScopeIsFlushed_PublishesImmediately()
     {
         var mediator = Substitute.For<IMediator>();
@@ -54,7 +54,7 @@ public class WorkflowCommitNotificationBufferTests
         await mediator.Received(1).SendAsync(subsequentNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task SendAsync_WhenBufferingScopeIsDisposedWithoutFlush_DiscardsNotifications()
     {
         var mediator = Substitute.For<IMediator>();
@@ -70,7 +70,7 @@ public class WorkflowCommitNotificationBufferTests
         await mediator.DidNotReceive().SendAsync(notification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FlushAsync_WhenNotificationFails_StillPublishesRemainingNotifications()
     {
         var mediator = Substitute.For<IMediator>();
@@ -86,13 +86,13 @@ public class WorkflowCommitNotificationBufferTests
         await sender.SendAsync(failingNotification);
         await sender.SendAsync(succeedingNotification);
 
-        await Assert.ThrowsAsync<AggregateException>(() => scope.FlushAsync());
+        await Assert.ThrowsExactlyAsync<AggregateException>(() => scope.FlushAsync());
 
         await mediator.Received(1).SendAsync(failingNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>());
         await mediator.Received(1).SendAsync(succeedingNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FlushAsync_WhenNotificationIsCanceled_PropagatesCancellation()
     {
         var mediator = Substitute.For<IMediator>();
@@ -106,7 +106,7 @@ public class WorkflowCommitNotificationBufferTests
         using var scope = buffer.Begin();
         await sender.SendAsync(notification);
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => scope.FlushAsync());
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => scope.FlushAsync());
     }
 
     private static WorkflowCommitNotificationBuffer CreateBuffer(IMediator mediator) => new(mediator, Substitute.For<ILogger<WorkflowCommitNotificationBuffer>>());

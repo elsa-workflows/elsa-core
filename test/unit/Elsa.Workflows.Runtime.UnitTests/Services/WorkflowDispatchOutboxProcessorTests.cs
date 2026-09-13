@@ -33,7 +33,7 @@ public class WorkflowDispatchOutboxProcessorTests
         _processor = CreateProcessor();
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_ReturnsWithoutScanning_WhenProcessorLockCannotBeAcquired()
     {
         var processor = CreateProcessor(new ContendedDistributedSynchronizationProvider());
@@ -43,7 +43,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_ReturnsWithoutScanning_WhenProcessorLockAcquisitionTimesOut()
     {
         var processor = CreateProcessor(new TimeoutDistributedSynchronizationProvider());
@@ -53,53 +53,57 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
     }
 
-    [Fact]
+    [Test]
     public async Task TryProcessAsync_ReturnsFalseWithoutScanning_WhenProcessorLockAcquisitionTimesOut()
     {
         var processor = CreateProcessor(new TimeoutDistributedSynchronizationProvider());
 
         var result = await processor.TryProcessAsync();
 
-        Assert.False(result);
+        await Assert.That(result).IsFalse();
         await _store.DidNotReceiveWithAnyArgs().FindManyAsync(default, default);
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_UsesTenantScopedProcessorLock_WhenTenantContextIsAvailable()
     {
         var lockProvider = new RecordingDistributedSynchronizationProvider();
         var tenantAccessor = new DefaultTenantAccessor();
         var processor = CreateProcessor(lockProvider, tenantAccessor);
         using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        string? observedLockName = null;
         _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
-                Assert.Equal("Elsa:WorkflowDispatchOutbox:Processor:tenant-a", lockProvider.CurrentLockName);
+                observedLockName = lockProvider.CurrentLockName;
                 return [];
             });
 
         await processor.ProcessAsync();
 
+        await Assert.That(observedLockName).IsEqualTo("Elsa:WorkflowDispatchOutbox:Processor:tenant-a");
         await _store.Received(1).FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task TryProcessAsync_UsesTenantScopedProcessorLock_WhenTenantContextIsAvailable()
     {
         var lockProvider = new RecordingDistributedSynchronizationProvider();
         var tenantAccessor = new DefaultTenantAccessor();
         var processor = CreateProcessor(lockProvider, tenantAccessor);
         using var tenantScope = tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        string? observedLockName = null;
         _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
-                Assert.Equal("Elsa:WorkflowDispatchOutbox:Processor:tenant-a", lockProvider.CurrentLockName);
+                observedLockName = lockProvider.CurrentLockName;
                 return [];
             });
 
         var result = await processor.TryProcessAsync();
 
-        Assert.True(result);
+        await Assert.That(result).IsTrue();
+        await Assert.That(observedLockName).IsEqualTo("Elsa:WorkflowDispatchOutbox:Processor:tenant-a");
         await _store.Received(1).FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
@@ -117,7 +121,7 @@ public class WorkflowDispatchOutboxProcessorTests
             tenantAccessor);
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DoesNotDispatch_WhenOwnerWorkflowHasNotCommittedOutboxMarker()
     {
         var item = CreateItem();
@@ -132,7 +136,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DeletesOutboxItem_WhenOwnerWorkflowNeverCommittedMarkerAfterRetentionPeriod()
     {
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
@@ -148,7 +152,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DoesNotCountDeliveryFailure_WhenUncommittedCleanupDeleteFails()
     {
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
@@ -162,12 +166,12 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _processor.ProcessAsync();
 
-        Assert.Equal(0, item.DeliveryAttempts);
+        await Assert.That(item.DeliveryAttempts).IsEqualTo(0);
         await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
         await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_KeepsOutboxItem_WhenOwnerWorkflowIsMissingWithinRetentionPeriod()
     {
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
@@ -183,7 +187,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DeletesOutboxItem_WhenOwnerWorkflowIsMissingAfterRetentionPeriod()
     {
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
@@ -199,7 +203,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DoesNotCountDeliveryFailure_WhenMissingOwnerCleanupDeleteFails()
     {
         var createdAt = new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero);
@@ -213,12 +217,12 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _processor.ProcessAsync();
 
-        Assert.Equal(0, item.DeliveryAttempts);
+        await Assert.That(item.DeliveryAttempts).IsEqualTo(0);
         await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
         await _commandSender.DidNotReceiveWithAnyArgs().SendAsync(default(DispatchWorkflowDefinitionCommand)!, default!, default!, default);
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DispatchesAndDeletes_WhenOwnerWorkflowCommittedOutboxMarker()
     {
         var item = CreateItem();
@@ -240,7 +244,7 @@ public class WorkflowDispatchOutboxProcessorTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_ReloadsOwnerBeforeRemovingCommittedMarker()
     {
         var item = CreateItem();
@@ -260,7 +264,7 @@ public class WorkflowDispatchOutboxProcessorTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_SavesMarkerRemovalWhileHoldingOwnerWorkflowInstanceLock()
     {
         var lockProvider = new RecordingDistributedSynchronizationProvider();
@@ -269,21 +273,23 @@ public class WorkflowDispatchOutboxProcessorTests
         _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        string? observedLockName = null;
         _workflowInstanceStore.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>())
             .Returns(_ =>
             {
-                Assert.Equal("workflow-instance:parent-1", lockProvider.CurrentLockName);
+                observedLockName = lockProvider.CurrentLockName;
                 return ValueTask.CompletedTask;
             });
 
         await processor.ProcessAsync();
 
+        await Assert.That(observedLockName).IsEqualTo("workflow-instance:parent-1");
         await _workflowInstanceStore.Received(1).SaveAsync(
             Arg.Is<WorkflowInstance>(x => !x.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id)),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DoesNotRecreateOutboxItem_WhenMarkerCleanupFails()
     {
         var item = CreateItem();
@@ -299,7 +305,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DoesNotCountDeliveryFailure_WhenDeleteAfterSendFails()
     {
         var item = CreateItem();
@@ -316,12 +322,12 @@ public class WorkflowDispatchOutboxProcessorTests
             CommandStrategy.Background,
             Arg.Any<IDictionary<object, object>>(),
             CancellationToken.None);
-        Assert.Equal(0, item.DeliveryAttempts);
+        await Assert.That(item.DeliveryAttempts).IsEqualTo(0);
         await _store.DidNotReceive().SaveAsync(item, Arg.Any<CancellationToken>());
         await _workflowInstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_KeepsOutboxItem_WhenDispatchFails()
     {
         var item = CreateItem();
@@ -338,7 +344,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).SaveAsync(Arg.Is<WorkflowDispatchOutboxItem>(x => x.Id == item.Id && x.DeliveryAttempts == 1), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_ContinuesBatch_WhenFailurePersistenceFails()
     {
         var failedItem = CreateItem(id: "outbox-1");
@@ -365,7 +371,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).DeleteAsync(nextItem.Id, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DeletesOutboxItem_WhenMaxDeliveryAttemptsIsReached()
     {
         var item = CreateItem();
@@ -382,7 +388,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_ContinuesBatch_WhenMaxAttemptDeleteFails()
     {
         var failedItem = CreateItem(id: "outbox-1");

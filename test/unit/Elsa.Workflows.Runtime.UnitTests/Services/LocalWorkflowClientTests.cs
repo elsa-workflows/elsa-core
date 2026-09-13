@@ -20,7 +20,7 @@ public class LocalWorkflowClientTests
     private readonly WorkflowStateMapper _workflowStateMapper = Substitute.For<WorkflowStateMapper>();
     private readonly ILogger<LocalWorkflowClient> _logger = Substitute.For<ILogger<LocalWorkflowClient>>();
 
-    [Fact]
+    [Test]
     public async Task CreateInstanceAsync_ThrowsWorkflowDefinitionNotFoundException_WhenDefinitionDoesNotExist()
     {
         // Arrange
@@ -37,11 +37,11 @@ public class LocalWorkflowClientTests
             .Returns(findResult);
 
         // Act & Assert
-        await Assert.ThrowsAsync<WorkflowDefinitionNotFoundException>(() =>
+        await Assert.ThrowsExactlyAsync<WorkflowDefinitionNotFoundException>(() =>
             client.CreateInstanceAsync(request));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateInstanceAsync_ThrowsWorkflowMaterializerNotFoundException_WhenMaterializerNotAvailable()
     {
         // Arrange
@@ -65,10 +65,10 @@ public class LocalWorkflowClientTests
             .Returns(findResult);
 
         // Act & Assert
-        await Assert.ThrowsAsync<WorkflowMaterializerNotFoundException>(() => client.CreateInstanceAsync(request));
+        await Assert.ThrowsExactlyAsync<WorkflowMaterializerNotFoundException>(() => client.CreateInstanceAsync(request));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAndRunInstanceAsync_ThrowsWorkflowDefinitionNotFoundException_WhenDefinitionDoesNotExist()
     {
         // Arrange
@@ -85,11 +85,11 @@ public class LocalWorkflowClientTests
             .Returns(findResult);
 
         // Act & Assert
-        await Assert.ThrowsAsync<WorkflowDefinitionNotFoundException>(() =>
+        await Assert.ThrowsExactlyAsync<WorkflowDefinitionNotFoundException>(() =>
             client.CreateAndRunInstanceAsync(request));
     }
 
-    [Fact]
+    [Test]
     public async Task CreateAndRunInstanceAsync_ThrowsWorkflowMaterializerNotFoundException_WhenMaterializerNotAvailable()
     {
         // Arrange
@@ -113,7 +113,7 @@ public class LocalWorkflowClientTests
             .Returns(findResult);
 
         // Act & Assert
-        await Assert.ThrowsAsync<WorkflowMaterializerNotFoundException>(() =>
+        await Assert.ThrowsExactlyAsync<WorkflowMaterializerNotFoundException>(() =>
             client.CreateAndRunInstanceAsync(request));
     }
 

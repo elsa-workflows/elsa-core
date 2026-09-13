@@ -32,7 +32,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
     }
 
-    [Fact(DisplayName = "When adding a new workflow it needs to be saved")]
+    [Test]
+    [DisplayName("When adding a new workflow it needs to be saved")]
     public async Task AddOrUpdateCoreAsync_NewWorkflowDefinition_AddsWorkflowDefinition()
     {
         var workflow = new MaterializedWorkflow(new()
@@ -47,7 +48,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await CheckIfWorkflowWasSaved(workflow.Workflow.Identity, wd => wd.IsLatest);
     }
 
-    [Fact(DisplayName = "When adding a workflow with the same version, ignore it")]
+    [Test]
+    [DisplayName("When adding a workflow with the same version, ignore it")]
     public async Task AddOrUpdateCoreAsync_ExistingWorkflowDefinition_KeepsExistingWorkflow()
     {
         _workflowDefinitionsInStore.Add(new()
@@ -81,11 +83,12 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
-    
-    [Theory(DisplayName = "When adding a newer workflow version, add it as latest and update the publication settings of older workflows")]
-    [InlineData(false, false, false, true)]
-    [InlineData(false, true, true, false)]
-    [InlineData(true, true, true, false)]
+
+    [Test]
+    [DisplayName("When adding a newer workflow version, update publication settings: latest=$workflowAddedIsLatest, published=$workflowAddedIsPublished")]
+    [Arguments(false, false, false, true)]
+    [Arguments(false, true, true, false)]
+    [Arguments(true, true, true, false)]
     public async Task AddOrUpdateCoreAsync_NewWorkflowDefinitionVersion_AddsWorkflowDefinition(bool workflowAddedIsLatest, bool workflowAddedIsPublished, bool expectedPublishedStateAdded, bool expectedPublishedStateExisting)
     {
         _workflowDefinitionsInStore.Add(new()
@@ -109,7 +112,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await CheckIfWorkflowWasSaved(workflow.Workflow.Identity, wd => wd.IsLatest && wd.IsPublished == expectedPublishedStateAdded);
     }
 
-    [Fact(DisplayName = "When adding a newer workflow version, ignore the root Version number")]
+    [Test]
+    [DisplayName("When adding a newer workflow version, ignore the root Version number")]
     public async Task AddOrUpdateCoreAsync_NewWorkflowDefinitionVersion_IgnoreRootVersion()
     {
         _workflowDefinitionsInStore.Add(new()
@@ -134,7 +138,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await CheckIfWorkflowWasSaved(workflow.Workflow.Identity, wd => wd is { IsLatest: true, IsPublished: true });
     }
 
-    [Fact(DisplayName = "When adding a workflow version with the same ID, ignore it")]
+    [Test]
+    [DisplayName("When adding a workflow version with the same ID, ignore it")]
     public async Task AddOrUpdateCoreAsync_NewWorkflowDefinitionVersionWithSameId_IsIgnored()
     {
         _workflowDefinitionsInStore.Add(
@@ -156,7 +161,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             .SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "When adding a older workflow version, keep the current latest as latest")]
+    [Test]
+    [DisplayName("When adding a older workflow version, keep the current latest as latest")]
     public async Task AddOrUpdateCoreAsync_OlderVersionAsLatest_ExistingVersionShouldRemainLatest()
     {
         _workflowDefinitionsInStore.Add(
@@ -182,7 +188,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await CheckIfWorkflowWasSaved(workflow.Workflow.Identity, wd => wd.IsLatest == false);
     }
 
-    [Fact(DisplayName = "When adding a newer workflow version, keep the current published version published")]
+    [Test]
+    [DisplayName("When adding a newer workflow version, keep the current published version published")]
     public async Task AddOrUpdateCoreAsync_OlderVersionAsPublished_ShouldNotBeUpdated()
     {
         _storeMock.FindManyAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
@@ -230,7 +237,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             .SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "PopulateStoreAsync imports workflows from current tenant")]
+    [Test]
+    [DisplayName("PopulateStoreAsync imports workflows from current tenant")]
     public async Task PopulateStoreAsync_CurrentTenantWorkflows_ImportsWorkflows()
     {
         var currentTenantId = "tenant-1";
@@ -241,11 +249,12 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         var populator = CreatePopulatorWithTenant(currentTenantId, workflow1, workflow2);
         var result = await populator.PopulateStoreAsync();
 
-        Assert.Equal(2, result.Count());
+        await Assert.That(result.Count()).IsEqualTo(2);
         await _storeMock.Received(2).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "PopulateStoreAsync skips workflows from other tenants")]
+    [Test]
+    [DisplayName("PopulateStoreAsync skips workflows from other tenants")]
     public async Task PopulateStoreAsync_OtherTenantWorkflows_SkipsWorkflows()
     {
         var currentTenantId = "tenant-1";
@@ -257,17 +266,17 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         var populator = CreatePopulatorWithTenant(currentTenantId, workflowCurrentTenant, workflowOtherTenant);
         var result = await populator.PopulateStoreAsync().ToList();
 
-        Assert.Single(result);
-        Assert.Equal("workflow-1", result.First().DefinitionId);
+        var importedWorkflow = await Assert.That(result).HasSingleItem();
+        await Assert.That(importedWorkflow.DefinitionId).IsEqualTo("workflow-1");
         await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
-    [InlineData(null, null, true)]  // Both null - should import
-    [InlineData("", "", true)]      // Both empty - should import
-    [InlineData(null, "", true)]    // Normalized as same - should import
-    [InlineData("tenant-1", null, false)]  // Different tenants - should skip
-    [InlineData("tenant-1", "", false)]    // Different tenants - should skip
+    [Test]
+    [Arguments(null, null, true, DisplayName = "PopulateStoreAsync imports when both tenant IDs are null")]
+    [Arguments("", "", true, DisplayName = "PopulateStoreAsync imports when both tenant IDs are empty")]
+    [Arguments(null, "", true, DisplayName = "PopulateStoreAsync imports when current tenant is null and workflow tenant is empty")]
+    [Arguments("tenant-1", null, false, DisplayName = "PopulateStoreAsync skips when current tenant is set and workflow tenant is null")]
+    [Arguments("tenant-1", "", false, DisplayName = "PopulateStoreAsync skips when current tenant is set and workflow tenant is empty")]
     public async Task PopulateStoreAsync_NullOrEmptyTenantIds_HandlesCorrectly(string? currentTenantId, string? workflowTenantId, bool shouldImport)
     {
         var workflow = CreateMaterializedWorkflow("workflow-1", "id-1", workflowTenantId);
@@ -276,12 +285,12 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
 
         if (shouldImport)
         {
-            Assert.Single(result);
+            await Assert.That(result).HasSingleItem();
             await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
         }
         else
         {
-            Assert.Empty(result);
+            await Assert.That(result).IsEmpty();
             await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
         }
     }

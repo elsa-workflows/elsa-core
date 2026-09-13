@@ -13,7 +13,7 @@ public class BackgroundWorkflowDispatcherTests
     private readonly INotificationSender _notificationSender = Substitute.For<INotificationSender>();
     private readonly ITenantAccessor _tenantAccessor = Substitute.For<ITenantAccessor>();
 
-    [Fact]
+    [Test]
     public async Task DispatchWorkflowDefinition_DoesNotPropagateCallerToken()
     {
         // Arrange
@@ -32,7 +32,7 @@ public class BackgroundWorkflowDispatcherTests
             CancellationToken.None);
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchWorkflowInstance_DoesNotPropagateCallerToken()
     {
         // Arrange
@@ -51,7 +51,7 @@ public class BackgroundWorkflowDispatcherTests
             CancellationToken.None);
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchTriggerWorkflows_DoesNotPropagateCallerToken()
     {
         // Arrange
@@ -70,7 +70,7 @@ public class BackgroundWorkflowDispatcherTests
             CancellationToken.None);
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchResumeWorkflows_DoesNotPropagateCallerToken()
     {
         // Arrange

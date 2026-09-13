@@ -14,46 +14,56 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
 public class DefaultCommitStateHandlerTests
 {
-    [Fact]
+    [Test]
     public async Task CommitAsync_ExecutesPersistenceInsideCommitTransaction()
     {
-        var fixture = await CommitTestFixture.CreateAsync();
+        await using var fixture = await CommitTestFixture.CreateAsync();
         fixture.WorkflowInstanceManager.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>()).Returns(fixture.WorkflowInstance);
-        fixture.BookmarkPersister.When(x => x.PersistBookmarksAsync(Arg.Any<UpdateBookmarksRequest>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
-        fixture.ActivityExecutionLogSink.When(x => x.PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
-        fixture.WorkflowExecutionLogSink.When(x => x.PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
-        fixture.VariablePersistenceManager.When(x => x.SaveVariablesAsync(fixture.WorkflowExecutionContext)).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
-        fixture.WorkflowInstanceManager.When(x => x.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>())).Do(_ => Assert.True(fixture.Transaction.IsExecuting));
+        var bookmarksPersistedInsideTransaction = false;
+        var activityLogsPersistedInsideTransaction = false;
+        var workflowLogsPersistedInsideTransaction = false;
+        var variablesSavedInsideTransaction = false;
+        var workflowSavedInsideTransaction = false;
+        fixture.BookmarkPersister.When(x => x.PersistBookmarksAsync(Arg.Any<UpdateBookmarksRequest>())).Do(_ => bookmarksPersistedInsideTransaction = fixture.Transaction.IsExecuting);
+        fixture.ActivityExecutionLogSink.When(x => x.PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => activityLogsPersistedInsideTransaction = fixture.Transaction.IsExecuting);
+        fixture.WorkflowExecutionLogSink.When(x => x.PersistExecutionLogsAsync(fixture.WorkflowExecutionContext, Arg.Any<CancellationToken>())).Do(_ => workflowLogsPersistedInsideTransaction = fixture.Transaction.IsExecuting);
+        fixture.VariablePersistenceManager.When(x => x.SaveVariablesAsync(fixture.WorkflowExecutionContext)).Do(_ => variablesSavedInsideTransaction = fixture.Transaction.IsExecuting);
+        fixture.WorkflowInstanceManager.When(x => x.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>())).Do(_ => workflowSavedInsideTransaction = fixture.Transaction.IsExecuting);
 
         await fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState);
 
-        Assert.True(fixture.Transaction.Completed);
-        Assert.False(fixture.ActivityExecutionContext.IsDirty);
+        await Assert.That(bookmarksPersistedInsideTransaction).IsTrue();
+        await Assert.That(activityLogsPersistedInsideTransaction).IsTrue();
+        await Assert.That(workflowLogsPersistedInsideTransaction).IsTrue();
+        await Assert.That(variablesSavedInsideTransaction).IsTrue();
+        await Assert.That(workflowSavedInsideTransaction).IsTrue();
+        await Assert.That(fixture.Transaction.Completed).IsTrue();
+        await Assert.That(fixture.ActivityExecutionContext.IsDirty).IsFalse();
         await fixture.NotificationSender.Received(1).SendAsync(
             Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == fixture.WorkflowInstance && x.WorkflowState == fixture.WorkflowState),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task CommitAsync_WhenPersistenceFails_DoesNotClearExecutionLogOrPublishCommittedNotification()
     {
-        var fixture = await CommitTestFixture.CreateAsync();
+        await using var fixture = await CommitTestFixture.CreateAsync();
         fixture.WorkflowExecutionContext.AddExecutionLogEntry("Started");
         fixture.WorkflowInstanceManager.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>()).Returns<Task<WorkflowInstance>>(_ => throw new InvalidOperationException("state save failed"));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState));
 
-        Assert.True(fixture.Transaction.Executed);
-        Assert.False(fixture.Transaction.Completed);
-        Assert.True(fixture.ActivityExecutionContext.IsDirty);
-        Assert.NotEmpty(fixture.WorkflowExecutionContext.ExecutionLog);
+        await Assert.That(fixture.Transaction.Executed).IsTrue();
+        await Assert.That(fixture.Transaction.Completed).IsFalse();
+        await Assert.That(fixture.ActivityExecutionContext.IsDirty).IsTrue();
+        await Assert.That(fixture.WorkflowExecutionContext.ExecutionLog).IsNotEmpty();
         await fixture.NotificationSender.DidNotReceive().SendAsync(Arg.Any<WorkflowStateCommitted>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task CommitAsync_WhenBufferedNotificationFlushFails_PublishesCommittedNotification()
     {
-        var fixture = await CommitTestFixture.CreateAsync();
+        await using var fixture = await CommitTestFixture.CreateAsync();
         var bufferedNotificationSender = new WorkflowCommitNotificationSender(fixture.Mediator, fixture.NotificationBuffer);
         var bufferedNotification = new TestNotification();
         fixture.WorkflowInstanceManager.SaveAsync(fixture.WorkflowState, Arg.Any<CancellationToken>()).Returns(fixture.WorkflowInstance);
@@ -64,14 +74,14 @@ public class DefaultCommitStateHandlerTests
             .SendAsync(bufferedNotification, Arg.Any<IEventPublishingStrategy?>(), Arg.Any<CancellationToken>())
             .Returns<Task>(_ => throw new InvalidOperationException("Buffered handler failed"));
 
-        await Assert.ThrowsAsync<AggregateException>(() => fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState));
+        await Assert.ThrowsExactlyAsync<AggregateException>(() => fixture.Handler.CommitAsync(fixture.WorkflowExecutionContext, fixture.WorkflowState));
 
         await fixture.NotificationSender.Received(1).SendAsync(
             Arg.Is<WorkflowStateCommitted>(x => x.WorkflowInstance == fixture.WorkflowInstance && x.WorkflowState == fixture.WorkflowState),
             Arg.Any<CancellationToken>());
     }
 
-    private class CommitTestFixture
+    private class CommitTestFixture : IAsyncDisposable
     {
         private CommitTestFixture(ActivityExecutionContext activityExecutionContext)
         {
@@ -113,6 +123,12 @@ public class DefaultCommitStateHandlerTests
             var fixture = new ActivityTestFixture(new WriteLine("Test"));
             var activityExecutionContext = await fixture.BuildAsync();
             return new(activityExecutionContext);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            ((IDisposable)ActivityExecutionContext).Dispose();
+            return ((IAsyncDisposable)WorkflowExecutionContext.ServiceProvider).DisposeAsync();
         }
     }
 

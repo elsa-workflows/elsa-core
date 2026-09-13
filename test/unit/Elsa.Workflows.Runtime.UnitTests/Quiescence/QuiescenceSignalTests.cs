@@ -23,53 +23,59 @@ public class QuiescenceSignalTests
         _sut = new QuiescenceSignal(_options, _clock, _cycleRegistry);
     }
 
-    [Fact(DisplayName = "Initial state is None and accepting new work")]
-    public void InitialState()
+    [Test]
+    [DisplayName("Initial state is None and accepting new work")]
+    public async Task InitialState()
     {
-        Assert.Equal(QuiescenceReason.None, _sut.CurrentState.Reason);
-        Assert.True(_sut.IsAcceptingNewWork);
+        await Assert.That(_sut.CurrentState.Reason).IsEqualTo(QuiescenceReason.None);
+        await Assert.That(_sut.IsAcceptingNewWork).IsTrue();
     }
 
-    [Fact(DisplayName = "BeginDrain sets Drain and is forward-only")]
+    [Test]
+    [DisplayName("BeginDrain sets Drain and is forward-only")]
     public async Task BeginDrainForwardOnly()
     {
         var first = await _sut.BeginDrainAsync();
-        Assert.Equal(QuiescenceReason.Drain, first.Reason);
-        Assert.NotNull(first.DrainStartedAt);
+        await Assert.That(first.Reason).IsEqualTo(QuiescenceReason.Drain);
+        await Assert.That(first.DrainStartedAt).IsNotNull();
 
         var second = await _sut.BeginDrainAsync();
-        Assert.Equal(first.DrainStartedAt, second.DrainStartedAt); // unchanged — idempotent
+        await Assert.That(second.DrainStartedAt).IsEqualTo(first.DrainStartedAt); // unchanged — idempotent
     }
 
-    [Fact(DisplayName = "Pause adds flag, second Pause is no-op")]
+    [Test]
+    [DisplayName("Pause adds flag, second Pause is no-op")]
     public async Task PauseIdempotent()
     {
         var first = await _sut.PauseAsync("maintenance", "op@ex.com", CancellationToken.None);
-        Assert.True(first.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        await Assert.That(first.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsTrue();
 
         var second = await _sut.PauseAsync("again", "op@ex.com", CancellationToken.None);
-        Assert.Equal(first.PausedAt, second.PausedAt); // unchanged — idempotent
+        await Assert.That(second.PausedAt).IsEqualTo(first.PausedAt); // unchanged — idempotent
     }
 
-    [Fact(DisplayName = "Resume clears AdministrativePause")]
+    [Test]
+    [DisplayName("Resume clears AdministrativePause")]
     public async Task ResumeClearsPause()
     {
         await _sut.PauseAsync(null, null, CancellationToken.None);
         var state = await _sut.ResumeAsync("op@ex.com", CancellationToken.None);
 
-        Assert.False(state.Reason.HasFlag(QuiescenceReason.AdministrativePause));
-        Assert.Null(state.PausedAt);
+        await Assert.That(state.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsFalse();
+        await Assert.That(state.PausedAt).IsNull();
     }
 
-    [Fact(DisplayName = "Resume on already-running runtime is no-op")]
+    [Test]
+    [DisplayName("Resume on already-running runtime is no-op")]
     public async Task ResumeIdempotent()
     {
         var state = await _sut.ResumeAsync("op@ex.com", CancellationToken.None);
 
-        Assert.Equal(QuiescenceReason.None, state.Reason);
+        await Assert.That(state.Reason).IsEqualTo(QuiescenceReason.None);
     }
 
-    [Fact(DisplayName = "Resume during drain is a no-op and does NOT clear pause")]
+    [Test]
+    [DisplayName("Resume during drain is a no-op and does NOT clear pause")]
     public async Task ResumeDuringDrainNoOp()
     {
         await _sut.PauseAsync(null, null, CancellationToken.None);
@@ -77,25 +83,27 @@ public class QuiescenceSignalTests
 
         var state = await _sut.ResumeAsync(null, CancellationToken.None);
 
-        Assert.True(state.Reason.HasFlag(QuiescenceReason.Drain));
-        Assert.True(state.Reason.HasFlag(QuiescenceReason.AdministrativePause)); // still paused
+        await Assert.That(state.Reason.HasFlag(QuiescenceReason.Drain)).IsTrue();
+        await Assert.That(state.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsTrue(); // still paused
     }
 
-    [Fact(DisplayName = "Drain + pause are composable; resume clears only pause")]
+    [Test]
+    [DisplayName("Drain + pause are composable; resume clears only pause")]
     public async Task DrainAndPauseComposable()
     {
         await _sut.BeginDrainAsync();
         var paused = await _sut.PauseAsync(null, null, CancellationToken.None);
 
-        Assert.True(paused.Reason.HasFlag(QuiescenceReason.Drain));
-        Assert.True(paused.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        await Assert.That(paused.Reason.HasFlag(QuiescenceReason.Drain)).IsTrue();
+        await Assert.That(paused.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsTrue();
         // Resume during drain is a no-op (guarantee from FR-002 + ResumeDuringDrainNoOp).
     }
 
-    [Fact(DisplayName = "ActiveExecutionCycleCount delegates to IBurstRegistry")]
-    public void ActiveExecutionCycleCountDelegates()
+    [Test]
+    [DisplayName("ActiveExecutionCycleCount delegates to IBurstRegistry")]
+    public async Task ActiveExecutionCycleCountDelegates()
     {
         _cycleRegistry.ActiveCount.Returns(7);
-        Assert.Equal(7, _sut.ActiveExecutionCycleCount);
+        await Assert.That(_sut.ActiveExecutionCycleCount).IsEqualTo(7);
     }
 }

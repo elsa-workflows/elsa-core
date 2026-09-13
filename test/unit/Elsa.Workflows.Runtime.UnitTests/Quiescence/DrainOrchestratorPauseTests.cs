@@ -4,19 +4,21 @@ namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 
 public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
 {
-    [Fact(DisplayName = "Empty registry: drain completes within deadline")]
+    [Test]
+    [DisplayName("Empty registry: drain completes within deadline")]
     public async Task EmptyRegistry()
     {
         var sut = BuildSut();
 
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
-        Assert.Empty(outcome.Sources);
-        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
+        await Assert.That(outcome.Sources).IsEmpty();
+        await Assert.That(outcome.ExecutionCyclesForceCancelledCount).IsEqualTo(0);
     }
 
-    [Fact(DisplayName = "All sources pause successfully — outcome is CompletedWithinDeadline")]
+    [Test]
+    [DisplayName("All sources pause successfully — outcome is CompletedWithinDeadline")]
     public async Task AllSourcesPauseCleanly()
     {
         var a = CreateSource("a");
@@ -26,12 +28,13 @@ public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
         await a.Received(1).PauseAsync(Arg.Any<CancellationToken>());
         await b.Received(1).PauseAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Source that throws is recorded as PauseFailed; other sources still complete")]
+    [Test]
+    [DisplayName("Source that throws is recorded as PauseFailed; other sources still complete")]
     public async Task ThrowingSourceIsIsolated()
     {
         var ok = CreateSource("ok");
@@ -41,12 +44,13 @@ public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
         await Registry.Received(1).MarkPauseFailedAsync("bad", "exception", Arg.Any<Exception>());
         await ok.Received(1).PauseAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Source that hangs past per-source timeout is recorded as PauseFailed (timeout)")]
+    [Test]
+    [DisplayName("Source that hangs past per-source timeout is recorded as PauseFailed (timeout)")]
     public async Task HangingSourceIsTimedOut()
     {
         var hanger = CreateSource(
@@ -62,11 +66,12 @@ public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
         await Registry.Received(1).MarkPauseFailedAsync("hanger", "timeout", Arg.Any<Exception>());
     }
 
-    [Fact(DisplayName = "Source that implements IForceStoppable is force-stopped after pause timeout")]
+    [Test]
+    [DisplayName("Source that implements IForceStoppable is force-stopped after pause timeout")]
     public async Task ForceStoppableSourceIsEscalated()
     {
         var combined = Substitute.For<IIngressSource, IForceStoppable>();
@@ -80,11 +85,12 @@ public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
         await ((IForceStoppable)combined).Received(1).ForceStopAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Source without IForceStoppable is left in PauseFailed without escalation")]
+    [Test]
+    [DisplayName("Source without IForceStoppable is left in PauseFailed without escalation")]
     public async Task NonForceStoppableSourceNotEscalated()
     {
         var bad = CreateSource("bad", pauseImpl: _ => throw new InvalidOperationException("nope"));
@@ -93,7 +99,7 @@ public class DrainOrchestratorPauseTests : DrainOrchestratorTestsBase
         var sut = BuildSut();
         var outcome = await sut.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
         // No force-stop interface means no escalation possible — drain still completes.
         await Registry.Received(1).MarkPauseFailedAsync("bad", "exception", Arg.Any<Exception>());
     }

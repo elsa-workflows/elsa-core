@@ -8,8 +8,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.Extensions;
 
 public class ServiceCollectionWorkflowExtensionsTests
 {
-    [Fact]
-    public void AddWorkflow_PostConfiguresRuntimeOptions()
+    [Test]
+    public async Task AddWorkflow_PostConfiguresRuntimeOptions()
     {
         var services = new ServiceCollection();
         var configuredWorkflows = new Dictionary<string, Func<IServiceProvider, ValueTask<IWorkflow>>>();
@@ -21,8 +21,8 @@ public class ServiceCollectionWorkflowExtensionsTests
         var options = serviceProvider.GetRequiredService<IOptions<RuntimeOptions>>().Value;
         var workflowKey = typeof(ServiceCollectionRegisteredWorkflow).GetSimpleAssemblyQualifiedName();
 
-        Assert.Same(configuredWorkflows, options.Workflows);
-        Assert.Contains(workflowKey, options.Workflows.Keys);
+        await Assert.That(options.Workflows).IsSameReferenceAs(configuredWorkflows);
+        await Assert.That(options.Workflows.Keys).Contains(workflowKey);
     }
 }
 

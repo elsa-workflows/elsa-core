@@ -13,7 +13,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 
 public class RestartInterruptedWorkflowsTaskTests
 {
-    [Fact(DisplayName = "ExecuteAsync restarts each workflow within its tenant context")]
+    [Test]
+    [DisplayName("ExecuteAsync restarts each workflow within its tenant context")]
     public async Task ExecuteAsync_RestartsWithinWorkflowTenantContext()
     {
         var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
@@ -55,16 +56,16 @@ public class RestartInterruptedWorkflowsTaskTests
 
         await task.ExecuteAsync(CancellationToken.None);
 
-        Assert.Equal(new[] { "tenant-a", "tenant-b" }, observedTenantIds);
-        Assert.Null(tenantAccessor.Tenant);
+        await Assert.That(observedTenantIds).IsEquivalentTo(new string?[] { "tenant-a", "tenant-b" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(tenantAccessor.Tenant).IsNull();
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-2", Arg.Any<CancellationToken>());
     }
 
-    [Theory(DisplayName = "ExecuteAsync does not push tenant context for default or agnostic tenant instances")]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("*")]
+    [Test]
+    [Arguments(null, DisplayName = "ExecuteAsync does not push tenant context for a null tenant id")]
+    [Arguments("", DisplayName = "ExecuteAsync does not push tenant context for an empty tenant id")]
+    [Arguments("*", DisplayName = "ExecuteAsync does not push tenant context for an agnostic tenant id")]
     public async Task ExecuteAsync_DefaultOrAgnosticTenant_DoesNotPushContext(string? tenantId)
     {
         var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
@@ -103,13 +104,14 @@ public class RestartInterruptedWorkflowsTaskTests
 
         await task.ExecuteAsync(CancellationToken.None);
 
-        Assert.Equal(new string?[] { null }, observedTenantIds);
-        Assert.Null(tenantAccessor.Tenant);
+        await Assert.That(observedTenantIds).IsEquivalentTo(new string?[] { null }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(tenantAccessor.Tenant).IsNull();
         await tenantService.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "ExecuteAsync continues restarting later workflows after a failure")]
+    [Test]
+    [DisplayName("ExecuteAsync continues restarting later workflows after a failure")]
     public async Task ExecuteAsync_ContinuesAfterFailure()
     {
         var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
@@ -151,7 +153,8 @@ public class RestartInterruptedWorkflowsTaskTests
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-2", Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "ExecuteAsync restarts tenant-specific workflows when tenant services are unavailable")]
+    [Test]
+    [DisplayName("ExecuteAsync restarts tenant-specific workflows when tenant services are unavailable")]
     public async Task ExecuteAsync_WithoutTenantServices_RestartsWorkflow()
     {
         var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();

@@ -25,7 +25,8 @@ public class DefaultRegistriesPopulatorTests
             _notificationSenderMock);
     }
 
-    [Fact(DisplayName = "PopulateAsync publishes WorkflowDefinitionsReloaded notification")]
+    [Test]
+    [DisplayName("PopulateAsync publishes WorkflowDefinitionsReloaded notification")]
     public async Task PopulateAsync_PublishesWorkflowDefinitionsReloadedNotification()
     {
         // Arrange
@@ -58,7 +59,7 @@ public class DefaultRegistriesPopulatorTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task PopulateAsync_EnsuresActivityRegistryBeforeEachWorkflowDefinitionStorePopulation()
     {
         // Arrange

@@ -1,3 +1,4 @@
+using System.IO;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.DistributedHosting.DistributedLocks;
 using Elsa.Workflows.Runtime.Distributed;
@@ -19,7 +20,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         _fileProvider = new(_lockDirectory);
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenFileSystemProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(_fileProvider);
@@ -27,20 +28,20 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
-    public void Validate_LogsWarning_WhenFileSystemProviderIsUsedWithoutOptIn()
+    [Test]
+    public async Task Validate_LogsWarning_WhenFileSystemProviderIsUsedWithoutOptIn()
     {
         var logger = new CapturingLogger<DistributedRuntimeLockProviderValidator>();
         var validator = CreateValidator(_fileProvider, logger: logger);
 
         validator.Validate();
 
-        Assert.Contains(logger.Entries, entry =>
+        await Assert.That(logger.Entries).Contains(entry =>
             entry.Level == LogLevel.Warning &&
             entry.Message.Contains("local-only lock provider", StringComparison.OrdinalIgnoreCase));
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenFileSystemProviderIsExplicitlyAllowed()
     {
         var validator = CreateValidator(_fileProvider, options => options.AllowLocalLockProviderInDistributedRuntime = true);
@@ -48,7 +49,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenWrappedProviderUsesFileSystemProvider()
     {
         var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider));
@@ -56,20 +57,20 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
-    public void Validate_LogsWarning_WhenWrappedProviderUsesFileSystemProvider()
+    [Test]
+    public async Task Validate_LogsWarning_WhenWrappedProviderUsesFileSystemProvider()
     {
         var logger = new CapturingLogger<DistributedRuntimeLockProviderValidator>();
         var validator = CreateValidator(new WrappedDistributedLockProvider(_fileProvider), logger: logger);
 
         validator.Validate();
 
-        Assert.Contains(logger.Entries, entry =>
+        await Assert.That(logger.Entries).Contains(entry =>
             entry.Level == LogLevel.Warning &&
             entry.Message.Contains(nameof(WrappedDistributedLockProvider), StringComparison.Ordinal));
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughCustomProperty()
     {
         var validator = CreateValidator(new CustomWrappedDistributedLockProvider(_fileProvider));
@@ -77,7 +78,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughProviderCollection()
     {
         var validator = CreateValidator(new CompositeDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
@@ -85,7 +86,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenProviderUsesFileSystemProviderThroughNonGenericProviderCollection()
     {
         System.Collections.IEnumerable providers = new IDistributedLockProvider[] { new CustomDistributedLockProvider(), _fileProvider };
@@ -94,7 +95,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_IgnoresObjectCollections_WhenTheyContainProviderInstances()
     {
         var validator = CreateValidator(new ObjectCollectionDistributedLockProvider([new CustomDistributedLockProvider(), _fileProvider]));
@@ -102,7 +103,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_IgnoresNullEntries_WhenProviderCollectionContainsNull()
     {
         var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null]));
@@ -110,7 +111,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenNullableProviderCollectionContainsFileSystemProvider()
     {
         var validator = CreateValidator(new NullableCompositeDistributedLockProvider([new CustomDistributedLockProvider(), null, _fileProvider]));
@@ -118,7 +119,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_IgnoresThrowingProviderProperties()
     {
         var validator = CreateValidator(new ThrowingPropertyDistributedLockProvider());
@@ -126,7 +127,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_IgnoresProviderCollectionsThatThrowDuringEnumeration()
     {
         var validator = CreateValidator(new ThrowingEnumerableDistributedLockProvider());
@@ -134,7 +135,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_IgnoresProviderCollectionsThatThrowObjectDisposedDuringEnumeration()
     {
         var validator = CreateValidator(new ObjectDisposedEnumerableDistributedLockProvider());
@@ -142,7 +143,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_UsesReferenceEquality_WhenProvidersOverrideEquality()
     {
         var validator = CreateValidator(new CompositeDistributedLockProvider([
@@ -153,7 +154,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenNoopProviderIsUsedWithoutOptIn()
     {
         var validator = CreateValidator(new NoopDistributedSynchronizationProvider());
@@ -161,7 +162,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenNoopProviderIsExplicitlyAllowed()
     {
         var validator = CreateValidator(new NoopDistributedSynchronizationProvider(), options => options.AllowLocalLockProviderInDistributedRuntime = true);
@@ -169,7 +170,7 @@ public class DistributedRuntimeLockProviderValidatorTests : IDisposable
         validator.Validate();
     }
 
-    [Fact]
+    [Test]
     public void Validate_DoesNotThrow_WhenProviderIsNotKnownLocalOnly()
     {
         var validator = CreateValidator(new CustomDistributedLockProvider());

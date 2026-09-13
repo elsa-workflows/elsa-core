@@ -8,7 +8,7 @@ namespace Elsa.Workflows.Runtime.UnitTests.Extensions;
 
 public class WorkflowInstanceStoreExtensionsTests
 {
-    [Fact]
+    [Test]
     public async Task EnumerateSummariesAsync_AdvancesAcrossPagesWithoutRepeatingOffsets()
     {
         // Arrange
@@ -49,9 +49,10 @@ public class WorkflowInstanceStoreExtensionsTests
             results.Add(workflowInstance);
 
         // Assert
-        Assert.Equal(["workflow-1", "workflow-2", "workflow-3", "workflow-4"], results.Select(x => x.Id).ToArray());
-        Assert.Equal([(int?)0, 2, 4], requestedPages.Select(x => x.Offset).ToArray());
-        Assert.All(requestedPages, x => Assert.Equal(2, x.Limit));
+        await Assert.That(results.Select(x => x.Id).ToArray()).IsEquivalentTo(["workflow-1", "workflow-2", "workflow-3", "workflow-4"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(requestedPages.Select(x => x.Offset).ToArray()).IsEquivalentTo([(int?)0, 2, 4], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        foreach (var requestedPage in requestedPages)
+            await Assert.That(requestedPage.Limit).IsEqualTo(2);
     }
 
     private static WorkflowInstanceSummary CreateSummary(string id) => new()

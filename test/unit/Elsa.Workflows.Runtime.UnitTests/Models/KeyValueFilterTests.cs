@@ -5,44 +5,44 @@ namespace Elsa.Workflows.Runtime.UnitTests.Models;
 
 public class KeyValueFilterTests
 {
-    [Fact]
-    public void Apply_OrdersByPersistedKey_WhenOrderByKeyIsEnabled()
+    [Test]
+    public async Task Apply_OrdersByPersistedKey_WhenOrderByKeyIsEnabled()
     {
         var filter = new KeyValueFilter { OrderByKey = true };
 
         var result = filter.Apply(CreateUnorderedPairs()).Select(x => x.Key).ToList();
 
-        Assert.Equal(["key-a", "key-b", "key-c"], result);
+        await Assert.That(result).IsEquivalentTo(["key-a", "key-b", "key-c"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void Apply_AppliesTakeAfterOrderingByPersistedKey()
+    [Test]
+    public async Task Apply_AppliesTakeAfterOrderingByPersistedKey()
     {
         var filter = new KeyValueFilter { OrderByKey = true, Take = 2 };
 
         var result = filter.Apply(CreateUnorderedPairs()).Select(x => x.Key).ToList();
 
-        Assert.Equal(["key-a", "key-b"], result);
+        await Assert.That(result).IsEquivalentTo(["key-a", "key-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void Apply_ReturnsNoRecords_WhenTakeIsZero()
+    [Test]
+    public async Task Apply_ReturnsNoRecords_WhenTakeIsZero()
     {
         var filter = new KeyValueFilter { Take = 0 };
 
         var result = filter.Apply(CreateUnorderedPairs()).ToList();
 
-        Assert.Empty(result);
+        await Assert.That(result).IsEmpty();
     }
 
-    [Fact]
-    public void Apply_DoesNotLimitRecords_WhenTakeIsNull()
+    [Test]
+    public async Task Apply_DoesNotLimitRecords_WhenTakeIsNull()
     {
         var filter = new KeyValueFilter { Take = null };
 
         var result = filter.Apply(CreateUnorderedPairs()).Select(x => x.Key).ToList();
 
-        Assert.Equal(["key-c", "key-a", "key-b"], result);
+        await Assert.That(result).IsEquivalentTo(["key-c", "key-a", "key-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static IQueryable<SerializedKeyValuePair> CreateUnorderedPairs()

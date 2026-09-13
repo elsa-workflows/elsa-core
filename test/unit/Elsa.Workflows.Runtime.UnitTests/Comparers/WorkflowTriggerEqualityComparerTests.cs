@@ -30,9 +30,10 @@ public class WorkflowTriggerEqualityComparerTests
     private record TestPayload(string Path, string Method);
     private record TypedPayload(Type PayloadType, object Value);
     private record NestedPayload(string Name);
-    
-    [Fact(DisplayName = "Fresh and round-tripped triggers with identical logical content should be considered equal")]
-    public void FreshAndRoundTrippedTriggers_ShouldBeEqual()
+
+    [Test]
+    [DisplayName("Fresh and round-tripped triggers with identical logical content should be considered equal")]
+    public async Task FreshAndRoundTrippedTriggers_ShouldBeEqual()
     {
         // Arrange: a freshly computed trigger (as produced by TriggerIndexer.CreateWorkflowTriggersAsync)
         var freshPayload = new TestPayload("/api/test", "GET");
@@ -51,14 +52,15 @@ public class WorkflowTriggerEqualityComparerTests
         // Before the fix, they were NOT equal because:
         // - freshPayload serialized as: {"Path":"/api/test","Method":"GET"} (PascalCase)
         // - roundTrippedPayload (a JsonElement) serialized as: {"path":"/api/test","method":"GET"} (camelCase preserved from DB)
-        Assert.True(areEqual,
+        await Assert.That(areEqual).IsTrue().Because(
             "Fresh trigger and DB-round-tripped trigger should be considered equal. " +
             "The payload serialization mismatch between WorkflowTriggerEqualityComparer (PascalCase) " +
             "and IPayloadSerializer (camelCase) causes them to differ.");
     }
 
-    [Fact(DisplayName = "Diff should produce empty Added/Removed sets when comparing fresh triggers against their round-tripped equivalents")]
-    public void Diff_FreshVsRoundTripped_ShouldProduceNoDifferences()
+    [Test]
+    [DisplayName("Diff should produce empty Added/Removed sets when comparing fresh triggers against their round-tripped equivalents")]
+    public async Task Diff_FreshVsRoundTripped_ShouldProduceNoDifferences()
     {
         // Arrange: simulate Pod A having indexed triggers (now in DB, round-tripped)
         var payload = new TestPayload("/api/orders", "POST");
@@ -78,13 +80,14 @@ public class WorkflowTriggerEqualityComparerTests
         // Assert: the diff should find no changes.
         // Before the fix, it reported Removed=[existingTrigger] and Added=[freshTrigger]
         // because the payload JSON representations differed (camelCase vs PascalCase).
-        Assert.Empty(diff.Added);
-        Assert.Empty(diff.Removed);
-        Assert.Single(diff.Unchanged);
+        await Assert.That(diff.Added).IsEmpty();
+        await Assert.That(diff.Removed).IsEmpty();
+        await Assert.That(diff.Unchanged).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Documents the underlying System.Text.Json casing behavior that necessitated the fix")]
-    public void PayloadSerializationMismatch_ProducesDifferentJson()
+    [Test]
+    [DisplayName("Documents the underlying System.Text.Json casing behavior that necessitated the fix")]
+    public async Task PayloadSerializationMismatch_ProducesDifferentJson()
     {
         // This test documents the raw System.Text.Json behavior difference.
         // Without PropertyNamingPolicy = CamelCase + payload normalization, CLR objects
@@ -107,13 +110,14 @@ public class WorkflowTriggerEqualityComparerTests
         // Result: {"path":"/api/test","method":"GET"} — camelCase preserved from JsonElement!
 
         // The mismatch:
-        Assert.NotEqual(freshJson, roundTrippedJson); // This proves the bug exists
-        Assert.Equal("{\"Path\":\"/api/test\",\"Method\":\"GET\"}", freshJson);
-        Assert.Equal("{\"path\":\"/api/test\",\"method\":\"GET\"}", roundTrippedJson);
+        await Assert.That(roundTrippedJson).IsNotEqualTo(freshJson); // This proves the bug exists
+        await Assert.That(freshJson).IsEqualTo("{\"Path\":\"/api/test\",\"Method\":\"GET\"}");
+        await Assert.That(roundTrippedJson).IsEqualTo("{\"path\":\"/api/test\",\"method\":\"GET\"}");
     }
 
-    [Fact(DisplayName = "Comparer serializes typed payload properties using the registered type aliases")]
-    public void TypedPayloadProperties_ShouldSerializeWithRegisteredAliases()
+    [Test]
+    [DisplayName("Comparer serializes typed payload properties using the registered type aliases")]
+    public async Task TypedPayloadProperties_ShouldSerializeWithRegisteredAliases()
     {
         var payload = new TypedPayload(typeof(NestedPayload), new NestedPayload("orders"));
         var comparer = new WorkflowTriggerEqualityComparer(CreateTypeRegistry());
@@ -151,9 +155,9 @@ public class WorkflowTriggerEqualityComparerTests
             """,
             PayloadSerializerOptions);
 
-        Assert.True(comparer.Equals(trigger, CreateTrigger("trigger-2", expectedAliasPayload!)));
-        Assert.False(comparer.Equals(trigger, CreateTrigger("trigger-3", assemblyQualifiedPayload!)));
-        Assert.False(comparer.Equals(trigger, CreateTrigger("trigger-4", missingTypePayload!)));
+        await Assert.That(comparer.Equals(trigger, CreateTrigger("trigger-2", expectedAliasPayload!))).IsTrue();
+        await Assert.That(comparer.Equals(trigger, CreateTrigger("trigger-3", assemblyQualifiedPayload!))).IsFalse();
+        await Assert.That(comparer.Equals(trigger, CreateTrigger("trigger-4", missingTypePayload!))).IsFalse();
     }
     
     /// <summary>

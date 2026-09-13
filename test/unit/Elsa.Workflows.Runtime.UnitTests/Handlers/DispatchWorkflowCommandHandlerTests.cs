@@ -18,7 +18,7 @@ public class DispatchWorkflowCommandHandlerTests
         _workflowRuntime.CreateClientAsync("child-1", Arg.Any<CancellationToken>()).Returns(new ValueTask<IWorkflowClient>(_workflowClient));
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_DoesNotCheckExistingInstanceAndCreatesAndRunsWorkflow_WhenIdempotencyIsNotRequested()
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
@@ -36,7 +36,7 @@ public class DispatchWorkflowCommandHandlerTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_DoesNotCreateAndRunWorkflow_WhenCommandInstanceAlreadyExistsAndIdempotencyIsRequested()
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
@@ -52,7 +52,7 @@ public class DispatchWorkflowCommandHandlerTests
         await _workflowClient.DidNotReceiveWithAnyArgs().CreateAndRunInstanceAsync(default!, default);
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_CreatesAndRunsWorkflow_WhenIdempotencyIsRequestedAndCommandInstanceDoesNotExist()
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")
@@ -70,10 +70,10 @@ public class DispatchWorkflowCommandHandlerTests
             Arg.Any<CancellationToken>());
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData(" ")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments(" ")]
     public async Task HandleAsync_DoesNotCheckExistingInstance_WhenCommandInstanceIdIsMissing(string? instanceId)
     {
         var command = new DispatchWorkflowDefinitionCommand("definition-version-1")

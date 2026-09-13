@@ -19,17 +19,17 @@ public class ElsaRuntimeHealthCheckTests
         _sut = new ElsaRuntimeHealthCheck(_workflowRuntime, _quiescenceSignal, NullLogger<ElsaRuntimeHealthCheck>.Instance);
     }
 
-    [Fact]
+    [Test]
     public async Task ReturnsHealthyWhenRuntimeAcceptsNewWork()
     {
         var result = await _sut.CheckHealthAsync(new HealthCheckContext());
 
-        Assert.Equal(HealthStatus.Healthy, result.Status);
-        Assert.Equal("runtime", result.Data["category"]);
-        Assert.True((bool)result.Data["acceptingNewWork"]);
+        await Assert.That(result.Status).IsEqualTo(HealthStatus.Healthy);
+        await Assert.That(result.Data["category"]).IsEqualTo("runtime");
+        await Assert.That((bool)result.Data["acceptingNewWork"]).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ReturnsDegradedWhenRuntimeIsPaused()
     {
         _quiescenceSignal.CurrentState.Returns(QuiescenceState.Initial("test") with
@@ -39,19 +39,19 @@ public class ElsaRuntimeHealthCheckTests
 
         var result = await _sut.CheckHealthAsync(new HealthCheckContext());
 
-        Assert.Equal(HealthStatus.Degraded, result.Status);
-        Assert.Equal("AdministrativePause", result.Data["reason"]);
-        Assert.False((bool)result.Data["acceptingNewWork"]);
+        await Assert.That(result.Status).IsEqualTo(HealthStatus.Degraded);
+        await Assert.That(result.Data["reason"]).IsEqualTo("AdministrativePause");
+        await Assert.That((bool)result.Data["acceptingNewWork"]).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task ReturnsUnhealthyWhenRuntimeClientCannotBeCreated()
     {
         _workflowRuntime.CreateClientAsync(Arg.Any<CancellationToken>()).Returns<ValueTask<IWorkflowClient>>(_ => throw new InvalidOperationException("boom"));
 
         var result = await _sut.CheckHealthAsync(new HealthCheckContext());
 
-        Assert.Equal(HealthStatus.Unhealthy, result.Status);
-        Assert.Equal("runtime", result.Data["category"]);
+        await Assert.That(result.Status).IsEqualTo(HealthStatus.Unhealthy);
+        await Assert.That(result.Data["category"]).IsEqualTo("runtime");
     }
 }

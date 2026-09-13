@@ -20,56 +20,58 @@ public class WorkflowRuntimeFeatureTests
     private readonly RuntimeFeature _feature = new(Substitute.For<IModule>());
     private readonly ShellRuntimeFeature _shellFeature = new();
 
-    [Fact]
+    [Test]
     public void AddWorkflow_Throws_WhenTypeDoesNotImplementWorkflow()
     {
-        Assert.Throws<ArgumentException>(() => _feature.AddWorkflow(typeof(NotAWorkflow)));
+        Assert.ThrowsExactly<ArgumentException>(() => _feature.AddWorkflow(typeof(NotAWorkflow)));
     }
 
-    [Theory]
-    [MemberData(nameof(NonInstantiableWorkflowTypes))]
+    [Test]
+    [MethodDataSource(nameof(NonInstantiableWorkflowTypes))]
+    [DisplayName("AddWorkflow rejects non-instantiable workflow type $workflowType")]
     public void AddWorkflow_Throws_WhenWorkflowTypeIsNotInstantiable(Type workflowType)
     {
-        Assert.Throws<ArgumentException>(() => _feature.AddWorkflow(workflowType));
+        Assert.ThrowsExactly<ArgumentException>(() => _feature.AddWorkflow(workflowType));
     }
 
-    [Fact]
+    [Test]
     public void ShellAddWorkflow_Throws_WhenTypeDoesNotImplementWorkflow()
     {
-        Assert.Throws<ArgumentException>(() => _shellFeature.AddWorkflow(typeof(NotAWorkflow)));
+        Assert.ThrowsExactly<ArgumentException>(() => _shellFeature.AddWorkflow(typeof(NotAWorkflow)));
     }
 
-    [Theory]
-    [MemberData(nameof(NonInstantiableWorkflowTypes))]
+    [Test]
+    [MethodDataSource(nameof(NonInstantiableWorkflowTypes))]
+    [DisplayName("ShellAddWorkflow rejects non-instantiable workflow type $workflowType")]
     public void ShellAddWorkflow_Throws_WhenWorkflowTypeIsNotInstantiable(Type workflowType)
     {
-        Assert.Throws<ArgumentException>(() => _shellFeature.AddWorkflow(workflowType));
+        Assert.ThrowsExactly<ArgumentException>(() => _shellFeature.AddWorkflow(workflowType));
     }
 
-    [Fact]
-    public void AddWorkflow_AllowsClosedGenericWorkflowType()
+    [Test]
+    public async Task AddWorkflow_AllowsClosedGenericWorkflowType()
     {
         var workflowType = typeof(GenericWorkflow<int>);
 
         _feature.AddWorkflow(workflowType);
 
-        Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _feature.Workflows.Keys);
-        Assert.Contains(workflowType.FullName!, _feature.Workflows.Keys);
+        await Assert.That(_feature.Workflows.Keys).Contains(workflowType.GetSimpleAssemblyQualifiedName());
+        await Assert.That(_feature.Workflows.Keys).Contains(workflowType.FullName!);
     }
 
-    [Fact]
-    public void ShellAddWorkflow_AllowsClosedGenericWorkflowType()
+    [Test]
+    public async Task ShellAddWorkflow_AllowsClosedGenericWorkflowType()
     {
         var workflowType = typeof(GenericWorkflow<int>);
 
         _shellFeature.AddWorkflow(workflowType);
 
-        Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _shellFeature.Workflows.Keys);
-        Assert.Contains(workflowType.FullName!, _shellFeature.Workflows.Keys);
+        await Assert.That(_shellFeature.Workflows.Keys).Contains(workflowType.GetSimpleAssemblyQualifiedName());
+        await Assert.That(_shellFeature.Workflows.Keys).Contains(workflowType.FullName!);
     }
 
-    [Fact]
-    public void WorkflowsAdd_RegistersWorkflowTypeAlias()
+    [Test]
+    public async Task WorkflowsAdd_RegistersWorkflowTypeAlias()
     {
         var workflowType = typeof(GenericWorkflow<int>);
         var options = new SerializationTypeOptions();
@@ -78,26 +80,28 @@ public class WorkflowRuntimeFeatureTests
 
         RegisterWorkflowTypeAliases(_feature, options);
 
-        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
+        await Assert.That(options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]).IsEqualTo(workflowType);
     }
 
-    [Fact]
-    public void WorkflowsAdd_DoesNotThrow_WhenLegacyKeyAlreadyExists()
+    [Test]
+    public async Task WorkflowsAdd_DoesNotThrow_WhenLegacyKeyAlreadyExists()
     {
         var workflowType = typeof(GenericWorkflow<int>);
         _feature.Workflows.Add(workflowType.FullName!, _ => new ValueTask<IWorkflow>(new GenericWorkflow<int>()));
 
         _feature.Workflows.Add(workflowType);
 
-        Assert.Contains(workflowType.GetSimpleAssemblyQualifiedName(), _feature.Workflows.Keys);
-        Assert.Contains(workflowType.FullName!, _feature.Workflows.Keys);
-        Assert.Same(_feature.Workflows[workflowType.FullName!], _feature.Workflows[workflowType.GetSimpleAssemblyQualifiedName()]);
+        await Assert.That(_feature.Workflows.Keys).Contains(workflowType.GetSimpleAssemblyQualifiedName());
+        await Assert.That(_feature.Workflows.Keys).Contains(workflowType.FullName!);
+        var canonicalFactory = _feature.Workflows[workflowType.GetSimpleAssemblyQualifiedName()];
+        var legacyFactory = _feature.Workflows[workflowType.FullName!];
+        await Assert.That(ReferenceEquals(canonicalFactory, legacyFactory)).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ClrWorkflowsProvider_MaterializesWorkflowOnce_WhenCanonicalAndLegacyKeysExist()
     {
-        CountingWorkflow.CreatedCount = 0;
+        var createdCount = 0;
         var builder = Substitute.For<IWorkflowBuilder>();
         var builderFactory = Substitute.For<IWorkflowBuilderFactory>();
         var provider = new ClrWorkflowsProvider(
@@ -107,15 +111,22 @@ public class WorkflowRuntimeFeatureTests
         builderFactory.CreateBuilder().Returns(builder);
         builder.BuildWorkflowAsync(Arg.Any<CancellationToken>()).Returns(new Workflow());
 
-        _feature.Workflows.Add(typeof(CountingWorkflow));
+        var workflowType = typeof(CountingWorkflow);
+        Func<IServiceProvider, ValueTask<IWorkflow>> factory = _ =>
+        {
+            Interlocked.Increment(ref createdCount);
+            return new(new CountingWorkflow());
+        };
+        _feature.Workflows.Add(workflowType.GetSimpleAssemblyQualifiedName(), factory);
+        _feature.Workflows.Add(workflowType.FullName!, factory);
         var workflows = await provider.GetWorkflowsAsync();
 
-        Assert.Single(workflows);
-        Assert.Equal(1, CountingWorkflow.CreatedCount);
+        await Assert.That(workflows).HasSingleItem();
+        await Assert.That(createdCount).IsEqualTo(1);
     }
 
-    [Fact]
-    public void ShellWorkflowsAdd_RegistersWorkflowTypeAlias()
+    [Test]
+    public async Task ShellWorkflowsAdd_RegistersWorkflowTypeAlias()
     {
         var workflowType = typeof(GenericWorkflow<int>);
         var options = new SerializationTypeOptions();
@@ -124,27 +135,27 @@ public class WorkflowRuntimeFeatureTests
 
         RegisterWorkflowTypeAliases(_shellFeature, options);
 
-        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
+        await Assert.That(options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]).IsEqualTo(workflowType);
     }
 
-    [Fact]
+    [Test]
     public void WorkflowsAdd_Throws_WhenTypeDoesNotImplementWorkflow()
     {
-        Assert.Throws<ArgumentException>(() => _feature.Workflows.Add(typeof(NotAWorkflow)));
+        Assert.ThrowsExactly<ArgumentException>(() => _feature.Workflows.Add(typeof(NotAWorkflow)));
     }
 
-    [Fact]
-    public void RuntimeFeature_DependsOnWorkflowsFeature()
+    [Test]
+    public async Task RuntimeFeature_DependsOnWorkflowsFeature()
     {
         var dependencyTypes = typeof(RuntimeFeature)
-            .GetCustomAttributes<DependsOnAttribute>()
+            .GetCustomAttributes<Elsa.Features.Attributes.DependsOnAttribute>()
             .Select(x => x.Type);
 
-        Assert.Contains(typeof(WorkflowsFeature), dependencyTypes);
+        await Assert.That(dependencyTypes).Contains(typeof(WorkflowsFeature));
     }
 
-    [Fact]
-    public void RegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
+    [Test]
+    public async Task RegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
     {
         var workflowType = typeof(GenericWorkflow<int>);
         var options = new SerializationTypeOptions();
@@ -153,12 +164,12 @@ public class WorkflowRuntimeFeatureTests
 
         RegisterWorkflowTypeAliases(_feature, options);
 
-        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
-        Assert.DoesNotContain(typeof(NotAWorkflow).AssemblyQualifiedName!, options.AliasTypeDictionary.Keys);
+        await Assert.That(options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]).IsEqualTo(workflowType);
+        await Assert.That(options.AliasTypeDictionary.Keys).DoesNotContain(typeof(NotAWorkflow).AssemblyQualifiedName!);
     }
 
-    [Fact]
-    public void ShellRegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
+    [Test]
+    public async Task ShellRegisterWorkflowTypeAliases_RegistersOnlyTrackedWorkflowTypes()
     {
         var workflowType = typeof(GenericWorkflow<int>);
         var options = new SerializationTypeOptions();
@@ -167,16 +178,16 @@ public class WorkflowRuntimeFeatureTests
 
         RegisterWorkflowTypeAliases(_shellFeature, options);
 
-        Assert.Equal(workflowType, options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]);
-        Assert.DoesNotContain(typeof(NotAWorkflow).AssemblyQualifiedName!, options.AliasTypeDictionary.Keys);
+        await Assert.That(options.AliasTypeDictionary[workflowType.GetSimpleAssemblyQualifiedName()]).IsEqualTo(workflowType);
+        await Assert.That(options.AliasTypeDictionary.Keys).DoesNotContain(typeof(NotAWorkflow).AssemblyQualifiedName!);
     }
 
-    public static TheoryData<Type> NonInstantiableWorkflowTypes() => new()
-    {
+    public static IEnumerable<Type> NonInstantiableWorkflowTypes() =>
+    [
         typeof(IWorkflow),
         typeof(WorkflowBase),
         typeof(GenericWorkflow<>)
-    };
+    ];
 
     private sealed class NotAWorkflow
     {
@@ -192,13 +203,6 @@ public class WorkflowRuntimeFeatureTests
 
     public sealed class CountingWorkflow : IWorkflow
     {
-        public static int CreatedCount { get; set; }
-
-        public CountingWorkflow()
-        {
-            CreatedCount++;
-        }
-
         public ValueTask BuildAsync(IWorkflowBuilder builder, CancellationToken cancellationToken = default)
         {
             return ValueTask.CompletedTask;

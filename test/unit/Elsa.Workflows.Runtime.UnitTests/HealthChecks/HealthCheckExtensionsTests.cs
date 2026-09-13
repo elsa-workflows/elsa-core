@@ -8,8 +8,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.HealthChecks;
 
 public class HealthCheckExtensionsTests
 {
-    [Fact]
-    public void AddElsaReadinessChecksRegistersReadinessOptions()
+    [Test]
+    public async Task AddElsaReadinessChecksRegistersReadinessOptions()
     {
         var services = new ServiceCollection();
 
@@ -19,12 +19,12 @@ public class HealthCheckExtensionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
 
-        Assert.NotNull(serviceProvider.GetRequiredService<IOptions<ElsaReadinessHealthCheckOptions>>());
+        await Assert.That(serviceProvider.GetRequiredService<IOptions<ElsaReadinessHealthCheckOptions>>()).IsNotNull();
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
+    [Test]
+    [Arguments(0)]
+    [Arguments(-1)]
     public void AddElsaReadinessChecksRejectsNonPositiveDistributedLockTimeout(int timeoutMilliseconds)
     {
         var services = new ServiceCollection();
@@ -38,11 +38,11 @@ public class HealthCheckExtensionsTests
 
         using var serviceProvider = services.BuildServiceProvider();
 
-        Assert.Throws<OptionsValidationException>(() => serviceProvider.GetRequiredService<IOptions<ElsaReadinessHealthCheckOptions>>().Value);
+        Assert.ThrowsExactly<OptionsValidationException>(() => _ = serviceProvider.GetRequiredService<IOptions<ElsaReadinessHealthCheckOptions>>().Value);
     }
 
-    [Fact]
-    public void AddElsaReadinessChecksUsesElsaSpecificReadinessTag()
+    [Test]
+    public async Task AddElsaReadinessChecksUsesElsaSpecificReadinessTag()
     {
         var services = new ServiceCollection();
 
@@ -53,9 +53,9 @@ public class HealthCheckExtensionsTests
         using var serviceProvider = services.BuildServiceProvider();
         var registrations = serviceProvider.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value.Registrations;
 
-        var registration = Assert.Single(registrations);
-        Assert.Contains("elsa", registration.Tags);
-        Assert.Contains(HealthCheckExtensions.ReadinessTag, registration.Tags);
-        Assert.DoesNotContain("readiness", registration.Tags);
+        var registration = await Assert.That(registrations).HasSingleItem();
+        await Assert.That(registration.Tags).Contains("elsa");
+        await Assert.That(registration.Tags).Contains(HealthCheckExtensions.ReadinessTag);
+        await Assert.That(registration.Tags).DoesNotContain("readiness");
     }
 }

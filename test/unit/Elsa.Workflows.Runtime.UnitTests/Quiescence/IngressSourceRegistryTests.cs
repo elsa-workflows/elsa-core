@@ -14,19 +14,21 @@ public class IngressSourceRegistryTests
         _clock.UtcNow.Returns(DateTimeOffset.Parse("2026-04-24T10:00:00Z"));
     }
 
-    [Fact(DisplayName = "Registration collects every IIngressSource from DI")]
-    public void CollectsSourcesFromDi()
+    [Test]
+    [DisplayName("Registration collects every IIngressSource from DI")]
+    public async Task CollectsSourcesFromDi()
     {
         var a = CreateSource("a");
         var b = CreateSource("b");
         var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a, b }), _clock);
 
-        Assert.Equal(2, sut.Sources.Count);
-        Assert.Contains(a, sut.Sources);
-        Assert.Contains(b, sut.Sources);
+        await Assert.That(sut.Sources.Count).IsEqualTo(2);
+        await Assert.That(sut.Sources).Contains(a);
+        await Assert.That(sut.Sources).Contains(b);
     }
 
-    [Fact(DisplayName = "Duplicate source names throw on first materialization")]
+    [Test]
+    [DisplayName("Duplicate source names throw on first materialization")]
     public void DuplicateNamesThrow()
     {
         // The registry is constructed with a Lazy<IEnumerable<IIngressSource>> to break a DI cycle (see
@@ -35,11 +37,12 @@ public class IngressSourceRegistryTests
         var a = CreateSource("same");
         var b = CreateSource("same");
         var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a, b }), _clock);
-        Assert.Throws<InvalidOperationException>(() => sut.Sources);
+        Assert.ThrowsExactly<InvalidOperationException>(() => _ = sut.Sources);
     }
 
-    [Fact(DisplayName = "Snapshot reports per-source state")]
-    public void SnapshotIncludesState()
+    [Test]
+    [DisplayName("Snapshot reports per-source state")]
+    public async Task SnapshotIncludesState()
     {
         var a = CreateSource("a");
         var sut = new IngressSourceRegistry(new Lazy<IEnumerable<IIngressSource>>(() => new[] { a }), _clock);
@@ -47,13 +50,14 @@ public class IngressSourceRegistryTests
         sut.RecordTransition("a", IngressSourceState.Pausing);
 
         var snap = sut.Snapshot();
-        Assert.Single(snap);
-        Assert.Equal("a", snap.First().Name);
-        Assert.Equal(IngressSourceState.Pausing, snap.First().State);
-        Assert.Equal(_clock.UtcNow, snap.First().LastTransitionAt);
+        await Assert.That(snap).HasSingleItem();
+        await Assert.That(snap.First().Name).IsEqualTo("a");
+        await Assert.That(snap.First().State).IsEqualTo(IngressSourceState.Pausing);
+        await Assert.That(snap.First().LastTransitionAt).IsEqualTo(_clock.UtcNow);
     }
 
-    [Fact(DisplayName = "MarkPauseFailed captures error and transitions to PauseFailed")]
+    [Test]
+    [DisplayName("MarkPauseFailed captures error and transitions to PauseFailed")]
     public async Task MarkPauseFailedCapturesError()
     {
         var a = CreateSource("a");
@@ -63,11 +67,12 @@ public class IngressSourceRegistryTests
         await sut.MarkPauseFailedAsync("a", "timeout", error);
 
         var snap = sut.Snapshot();
-        Assert.Equal(IngressSourceState.PauseFailed, snap.First().State);
-        Assert.Same(error, snap.First().LastError);
+        await Assert.That(snap.First().State).IsEqualTo(IngressSourceState.PauseFailed);
+        await Assert.That(snap.First().LastError).IsSameReferenceAs(error);
     }
 
-    [Fact(DisplayName = "MarkPauseFailed is concurrent-safe")]
+    [Test]
+    [DisplayName("MarkPauseFailed is concurrent-safe")]
     public async Task MarkPauseFailedConcurrent()
     {
         var a = CreateSource("a");
@@ -75,10 +80,11 @@ public class IngressSourceRegistryTests
 
         await Task.WhenAll(Enumerable.Range(0, 100).Select(_ => sut.MarkPauseFailedAsync("a", "race").AsTask()));
 
-        Assert.Equal(IngressSourceState.PauseFailed, sut.Snapshot().First().State);
+        await Assert.That(sut.Snapshot().First().State).IsEqualTo(IngressSourceState.PauseFailed);
     }
 
-    [Fact(DisplayName = "Concurrent first access does not double-populate or throw duplicate")]
+    [Test]
+    [DisplayName("Concurrent first access does not double-populate or throw duplicate")]
     public async Task ConcurrentFirstAccessIsSafe()
     {
         // Regression for the race in EnsureMaterialized: without a double-checked lock, two threads observing
@@ -99,7 +105,8 @@ public class IngressSourceRegistryTests
         startGate.SetResult();
         var counts = await Task.WhenAll(readers);
 
-        Assert.All(counts, c => Assert.Equal(3, c));
+        foreach (var count in counts)
+            await Assert.That(count).IsEqualTo(3);
     }
 
     private static IIngressSource CreateSource(string name)

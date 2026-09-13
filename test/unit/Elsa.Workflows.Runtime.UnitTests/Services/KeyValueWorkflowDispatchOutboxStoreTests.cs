@@ -25,7 +25,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             .Returns(Array.Empty<SerializedKeyValuePair>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_ReturnsOldestItemsBeforeApplyingLimit()
     {
         var newest = CreateItem("newest", new DateTimeOffset(2026, 5, 20, 12, 2, 0, TimeSpan.Zero));
@@ -39,13 +39,13 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync(2)).ToList();
 
-        Assert.Equal(["oldest", "middle"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["oldest", "middle"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await _keyValueStore.Received(1).FindManyAsync(
             Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Index:" && x.OrderByKey && x.Take == 2),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_MergesIndexedLegacyAndOrphanItems()
     {
         var indexed = CreateItem("indexed", new DateTimeOffset(2026, 5, 20, 12, 2, 0, TimeSpan.Zero));
@@ -61,10 +61,10 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync()).ToList();
 
-        Assert.Equal(["legacy", "orphan", "indexed"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["legacy", "orphan", "indexed"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_AppliesLimitAfterMergingRecoverableItems()
     {
         var indexed1 = CreateItem("indexed-1", new DateTimeOffset(2026, 5, 20, 12, 1, 0, TimeSpan.Zero));
@@ -80,10 +80,10 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync(2)).ToList();
 
-        Assert.Equal(["orphan", "indexed-1"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["orphan", "indexed-1"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_MigratesOnlyCallerLimitFromLegacyScan()
     {
         var first = CreateItem("legacy-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -95,7 +95,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync(2)).ToList();
 
-        Assert.Equal(["legacy-1", "legacy-2"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["legacy-1", "legacy-2"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await _keyValueStore.Received(1).SaveAsync(
             Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Items:legacy-1"),
             Arg.Any<CancellationToken>());
@@ -113,7 +113,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_MarksLegacyScanCompleted_WhenCallerLimitCoversRecoverableItems()
     {
         var first = CreateItem("legacy-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -124,13 +124,13 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync(2)).ToList();
 
-        Assert.Equal(["legacy-1", "legacy-2"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["legacy-1", "legacy-2"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await _keyValueStore.Received(1).SaveAsync(
             Arg.Is<SerializedKeyValuePair>(x => x.Key == "Elsa:WorkflowDispatchOutbox:State:LegacyScanCompleted" && x.SerializedValue == "true"),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_UsesRecoveryMarkersWithoutBroadScan_WhenLegacyScanAlreadyCompleted()
     {
         var orphan = CreateItem("orphan", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -144,7 +144,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync()).ToList();
 
-        Assert.Equal(["orphan"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["orphan"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await _keyValueStore.DidNotReceive().FindManyAsync(
             Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:" && x.StartsWith),
             Arg.Any<CancellationToken>());
@@ -154,7 +154,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Recovery:orphan", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_AppliesCallerLimitToRecoveryScan()
     {
         var first = CreateItem("orphan-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -169,13 +169,13 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync(2)).ToList();
 
-        Assert.Equal(["orphan-1", "orphan-2"], result.Select(x => x.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(["orphan-1", "orphan-2"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await _keyValueStore.Received(1).FindManyAsync(
             Arg.Is<KeyValueFilter>(x => x.Key == "Elsa:WorkflowDispatchOutbox:Recovery:" && x.StartsWith && x.OrderByKey && x.Take == 2),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_CleansUpCorruptIndexedItem_AllowingLaterItemsToProgress()
     {
         var keyValueStore = new MemoryKeyValueStore(new MemoryStore<SerializedKeyValuePair>());
@@ -196,15 +196,15 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         var firstBatch = (await store.FindManyAsync(1)).ToList();
         var secondBatch = (await store.FindManyAsync(1)).ToList();
 
-        Assert.Empty(firstBatch);
-        Assert.Equal(["valid"], secondBatch.Select(x => x.Id));
-        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Items:{corrupt.Id}"));
-        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Index:{corrupt.CreatedAt.UtcTicks:D20}:{corrupt.Id}"));
-        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:IndexById:{corrupt.Id}"));
-        Assert.Null(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Recovery:{corrupt.Id}"));
+        await Assert.That(firstBatch).IsEmpty();
+        await Assert.That(secondBatch.Select(x => x.Id)).IsEquivalentTo(["valid"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Items:{corrupt.Id}")).IsNull();
+        await Assert.That(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Index:{corrupt.CreatedAt.UtcTicks:D20}:{corrupt.Id}")).IsNull();
+        await Assert.That(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:IndexById:{corrupt.Id}")).IsNull();
+        await Assert.That(await FindAsync(keyValueStore, $"Elsa:WorkflowDispatchOutbox:Recovery:{corrupt.Id}")).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task FindManyAsync_CleansUpRecoveryRecord_WhenPayloadCannotBeDeserialized()
     {
         var item = CreateItem("corrupt", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -218,14 +218,14 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
 
         var result = (await _store.FindManyAsync()).ToList();
 
-        Assert.Empty(result);
+        await Assert.That(result).IsEmpty();
         await _keyValueStore.Received(1).DeleteAsync(indexKey, Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:IndexById:{item.Id}", Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Recovery:{item.Id}", Arg.Any<CancellationToken>());
         await _keyValueStore.Received(1).DeleteAsync($"Elsa:WorkflowDispatchOutbox:Items:{item.Id}", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task SaveAsync_WritesItemAndSortableIndex()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -248,7 +248,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Recovery:outbox-1", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_RemovesIndexBeforeItem()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -269,7 +269,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Recovery:outbox-1", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_CleansUpIndexRecords_WhenItemRecordIsMissing()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -287,7 +287,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Items:outbox-1", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_CleansUpIndexRecords_WhenItemPayloadCannotBeDeserialized()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -304,7 +304,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
         await _keyValueStore.Received(1).DeleteAsync("Elsa:WorkflowDispatchOutbox:Items:outbox-1", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_UsesIndexByIdBeforeScanningAllIndexes()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -323,7 +323,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_UsesScan_WhenIndexByIdValueDoesNotMatchExpectedId()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));
@@ -345,7 +345,7 @@ public class KeyValueWorkflowDispatchOutboxStoreTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DeleteAsync_UsesScan_WhenIndexByIdValueIsNotWellFormed()
     {
         var item = CreateItem("outbox-1", new DateTimeOffset(2026, 5, 20, 12, 0, 0, TimeSpan.Zero));

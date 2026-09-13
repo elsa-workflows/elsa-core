@@ -7,7 +7,8 @@ namespace Elsa.Workflows.Runtime.UnitTests.Extensions;
 
 public class ActivityExecutionStoreExtensionsTests
 {
-    [Fact(DisplayName = "GetExecutionChainAsync returns empty page when record not found")]
+    [Test]
+    [DisplayName("GetExecutionChainAsync returns empty page when record not found")]
     public async Task GetExecutionChainAsync_ReturnsEmptyPage_WhenRecordNotFound()
     {
         // Arrange
@@ -17,11 +18,12 @@ public class ActivityExecutionStoreExtensionsTests
         var result = await store.GetExecutionChainAsync("non-existent-id");
 
         // Assert
-        Assert.Empty(result.Items);
-        Assert.Equal(0, result.TotalCount);
+        await Assert.That(result.Items).IsEmpty();
+        await Assert.That(result.TotalCount).IsEqualTo(0);
     }
 
-    [Fact(DisplayName = "GetExecutionChainAsync returns single record when no parent exists")]
+    [Test]
+    [DisplayName("GetExecutionChainAsync returns single record when no parent exists")]
     public async Task GetExecutionChainAsync_ReturnsSingleRecord_WhenNoParent()
     {
         // Arrange
@@ -31,7 +33,8 @@ public class ActivityExecutionStoreExtensionsTests
         await AssertChainAsync(store, "record-1", expectedIds: ["record-1"]);
     }
 
-    [Fact(DisplayName = "GetExecutionChainAsync traverses chain correctly with multiple levels")]
+    [Test]
+    [DisplayName("GetExecutionChainAsync traverses chain correctly with multiple levels")]
     public async Task GetExecutionChainAsync_TraversesChainCorrectly_WithMultipleLevels()
     {
         // Arrange
@@ -41,9 +44,10 @@ public class ActivityExecutionStoreExtensionsTests
         await AssertChainAsync(store, "record-3", expectedIds: ["record-1", "record-2", "record-3"]);
     }
 
-    [Theory(DisplayName = "GetExecutionChainAsync respects workflow boundary based on includeCrossWorkflowChain")]
-    [InlineData(false, new[] { "child-root", "child-leaf" })]
-    [InlineData(true, new[] { "parent-record", "child-root", "child-leaf" })]
+    [Test]
+    [DisplayName("GetExecutionChainAsync respects workflow boundary: includeCrossWorkflowChain=$includeCrossWorkflowChain")]
+    [Arguments(false, new[] { "child-root", "child-leaf" })]
+    [Arguments(true, new[] { "parent-record", "child-root", "child-leaf" })]
     public async Task GetExecutionChainAsync_RespectsWorkflowBoundary(bool includeCrossWorkflowChain, string[] expectedIds)
     {
         // Arrange: Create records across workflow boundaries
@@ -56,11 +60,12 @@ public class ActivityExecutionStoreExtensionsTests
         await AssertChainAsync(store, "child-leaf", expectedIds, includeCrossWorkflowChain: includeCrossWorkflowChain);
     }
 
-    [Theory(DisplayName = "GetExecutionChainAsync applies pagination correctly")]
-    [InlineData(0, null, 4, new[] { "record-1", "record-2", "record-3", "record-4" })] // No pagination
-    [InlineData(2, null, 4, new[] { "record-3", "record-4" })]                          // Skip only
-    [InlineData(0, 2, 4, new[] { "record-1", "record-2" })]                             // Take only
-    [InlineData(1, 2, 4, new[] { "record-2", "record-3" })]                             // Skip and take
+    [Test]
+    [DisplayName("GetExecutionChainAsync applies pagination correctly: skip=$skip, take=$take")]
+    [Arguments(0, null, 4, new[] { "record-1", "record-2", "record-3", "record-4" })] // No pagination
+    [Arguments(2, null, 4, new[] { "record-3", "record-4" })]                          // Skip only
+    [Arguments(0, 2, 4, new[] { "record-1", "record-2" })]                             // Take only
+    [Arguments(1, 2, 4, new[] { "record-2", "record-3" })]                             // Skip and take
     public async Task GetExecutionChainAsync_AppliesPagination(int skip, int? take, int expectedTotal, string[] expectedIds)
     {
         // Arrange
@@ -71,11 +76,12 @@ public class ActivityExecutionStoreExtensionsTests
         var items = result.Items.ToList();
 
         // Assert
-        Assert.Equal(expectedTotal, result.TotalCount);
-        Assert.Equal(expectedIds, items.Select(x => x.Id).ToArray());
+        await Assert.That(result.TotalCount).IsEqualTo(expectedTotal);
+        await Assert.That(items.Select(x => x.Id).ToArray()).IsEquivalentTo(expectedIds, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "GetExecutionChainAsync handles circular reference gracefully")]
+    [Test]
+    [DisplayName("GetExecutionChainAsync handles circular reference gracefully")]
     public async Task GetExecutionChainAsync_HandlesCircularReference_Gracefully()
     {
         // Arrange: Create a circular reference (which shouldn't happen in practice, but should be handled)
@@ -87,7 +93,7 @@ public class ActivityExecutionStoreExtensionsTests
         var result = await store.GetExecutionChainAsync("record-1");
 
         // Assert: Should have visited both records (once each) and stopped
-        Assert.Equal(2, result.Items.Count);
+        await Assert.That(result.Items.Count).IsEqualTo(2);
     }
 
     #region Helpers
@@ -110,9 +116,9 @@ public class ActivityExecutionStoreExtensionsTests
         var result = await store.GetExecutionChainAsync(startRecordId, includeCrossWorkflowChain, skip, take);
         var items = result.Items.ToList();
 
-        Assert.Equal(expectedIds.Length, items.Count);
-        Assert.Equal(expectedIds, items.Select(x => x.Id).ToArray());
-        Assert.True(result.TotalCount >= expectedIds.Length);
+        await Assert.That(items.Count).IsEqualTo(expectedIds.Length);
+        await Assert.That(items.Select(x => x.Id).ToArray()).IsEquivalentTo(expectedIds, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.TotalCount >= expectedIds.Length).IsTrue();
     }
 
     private static ActivityExecutionRecord[] CreateChain(int length, string workflowId = "workflow-1")

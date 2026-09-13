@@ -32,7 +32,7 @@ public class BookmarkQueueDeadLetterTests
         _deadLetterStore = new(new MemoryStore<BookmarkQueueDeadLetterItem>());
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_MovesExpiredQueueItemsToDeadLetterBeforeDeleting()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
@@ -45,16 +45,16 @@ public class BookmarkQueueDeadLetterTests
 
         var remainingQueueItems = (await _queueStore.FindManyAsync(new BookmarkQueueFilter())).ToList();
         var deadLetters = (await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList();
-        Assert.Single(remainingQueueItems);
-        Assert.Equal("current", remainingQueueItems[0].Id);
-        Assert.Single(deadLetters);
-        Assert.Equal("expired", deadLetters[0].OriginalQueueItemId);
-        Assert.Equal("Expired", deadLetters[0].Reason);
-        Assert.Equal(_now, deadLetters[0].DeadLetteredAt);
-        Assert.True(deadLetters[0].CanReplay);
+        await Assert.That(remainingQueueItems).HasSingleItem();
+        await Assert.That(remainingQueueItems[0].Id).IsEqualTo("current");
+        await Assert.That(deadLetters).HasSingleItem();
+        await Assert.That(deadLetters[0].OriginalQueueItemId).IsEqualTo("expired");
+        await Assert.That(deadLetters[0].Reason).IsEqualTo("Expired");
+        await Assert.That(deadLetters[0].DeadLetteredAt).IsEqualTo(_now);
+        await Assert.That(deadLetters[0].CanReplay).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_DeletesExpiredQueueItemsInBatch()
     {
         var expired1 = NewQueueItem("expired-1", _now.AddMinutes(-3));
@@ -72,14 +72,14 @@ public class BookmarkQueueDeadLetterTests
 
         await purger.PurgeAsync();
 
-        var deleteFilter = Assert.Single(queueStore.DeleteFilters);
-        Assert.Null(deleteFilter.Id);
-        Assert.Equal(["expired-1", "expired-2"], deleteFilter.Ids);
-        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
-        Assert.Equal(2, (await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).Count());
+        var deleteFilter = await Assert.That(queueStore.DeleteFilters).HasSingleItem();
+        await Assert.That(deleteFilter.Id).IsNull();
+        await Assert.That(deleteFilter.Ids).IsEquivalentTo(["expired-1", "expired-2"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(await _queueStore.FindManyAsync(new BookmarkQueueFilter())).IsEmpty();
+        await Assert.That((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).Count()).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_WhenExpiredItemWasAlreadyRemoved_LeavesDeadLetterForAuditOnly()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
@@ -95,21 +95,21 @@ public class BookmarkQueueDeadLetterTests
 
         await purger.PurgeAsync();
 
-        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
-        Assert.Equal("expired", deadLetter.OriginalQueueItemId);
-        Assert.False(deadLetter.CanReplay);
-        Assert.Null(deadLetter.ReplayedAt);
-        Assert.Null(deadLetter.ReplayedQueueItemId);
+        var deadLetter = await Assert.That((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList()).HasSingleItem();
+        await Assert.That(deadLetter.OriginalQueueItemId).IsEqualTo("expired");
+        await Assert.That(deadLetter.CanReplay).IsFalse();
+        await Assert.That(deadLetter.ReplayedAt).IsNull();
+        await Assert.That(deadLetter.ReplayedQueueItemId).IsNull();
 
         var replayResult = await CreateManager().ReplayAsync(deadLetter.Id);
 
-        Assert.False(replayResult.Succeeded);
-        Assert.Equal(ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable, replayResult.Reason);
-        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        await Assert.That(replayResult.Succeeded).IsFalse();
+        await Assert.That(replayResult.Reason).IsEqualTo(ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable);
+        await Assert.That(await _queueStore.FindManyAsync(new BookmarkQueueFilter())).IsEmpty();
         await _signaler.DidNotReceive().TriggerAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_WhenOneExpiredItemWasAlreadyRemoved_KeepsReplayForDeletedItemsOnly()
     {
         var removed = NewQueueItem("removed", _now.AddMinutes(-3));
@@ -128,13 +128,13 @@ public class BookmarkQueueDeadLetterTests
         await purger.PurgeAsync();
 
         var deadLetters = (await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).OrderBy(x => x.OriginalQueueItemId).ToList();
-        Assert.Equal(["removed", "retained"], deadLetters.Select(x => x.OriginalQueueItemId));
-        Assert.False(deadLetters[0].CanReplay);
-        Assert.True(deadLetters[1].CanReplay);
-        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        await Assert.That(deadLetters.Select(x => x.OriginalQueueItemId)).IsEquivalentTo(["removed", "retained"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(deadLetters[0].CanReplay).IsFalse();
+        await Assert.That(deadLetters[1].CanReplay).IsTrue();
+        await Assert.That(await _queueStore.FindManyAsync(new BookmarkQueueFilter())).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_WhenExpiredItemAlreadyHasFailedDeadLetter_PreservesReplay()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
@@ -164,22 +164,22 @@ public class BookmarkQueueDeadLetterTests
 
         await purger.PurgeAsync();
 
-        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
-        Assert.Equal("Failed", deadLetter.Reason);
-        Assert.True(deadLetter.CanReplay);
-        Assert.Null(deadLetter.ReplayedAt);
-        Assert.Null(deadLetter.ReplayedQueueItemId);
+        var deadLetter = await Assert.That((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList()).HasSingleItem();
+        await Assert.That(deadLetter.Reason).IsEqualTo("Failed");
+        await Assert.That(deadLetter.CanReplay).IsTrue();
+        await Assert.That(deadLetter.ReplayedAt).IsNull();
+        await Assert.That(deadLetter.ReplayedQueueItemId).IsNull();
 
         var replayResult = await CreateManager().ReplayAsync(deadLetter.Id);
 
-        Assert.True(replayResult.Succeeded);
-        Assert.Equal("generated-1", replayResult.QueueItemId);
+        await Assert.That(replayResult.Succeeded).IsTrue();
+        await Assert.That(replayResult.QueueItemId).IsEqualTo("generated-1");
         var replayedItem = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "generated-1" });
-        Assert.NotNull(replayedItem);
+        await Assert.That(replayedItem).IsNotNull();
         await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_WhenDeadLetterWriteFails_DoesNotDeleteQueueItem()
     {
         var expired = NewQueueItem("expired", _now.AddMinutes(-2));
@@ -193,14 +193,14 @@ public class BookmarkQueueDeadLetterTests
             Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { Ttl = TimeSpan.FromMinutes(1), DeadLetterTtl = TimeSpan.FromDays(7) }),
             NullLogger<DefaultBookmarkQueuePurger>.Instance);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => purger.PurgeAsync());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => purger.PurgeAsync());
 
         var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "expired" });
-        Assert.NotNull(retained);
-        Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
+        await Assert.That(retained).IsNotNull();
+        await Assert.That(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task PurgeAsync_RemovesDeadLettersAfterRetentionTtl()
     {
         await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
@@ -216,10 +216,10 @@ public class BookmarkQueueDeadLetterTests
         await purger.PurgeAsync();
 
         var deadLetters = await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter());
-        Assert.Empty(deadLetters);
+        await Assert.That(deadLetters).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_DeadLettersQueueItemAfterMaxDeliveryAttempts()
     {
         var item = NewQueueItem("failed", _now);
@@ -234,22 +234,21 @@ public class BookmarkQueueDeadLetterTests
             NullLogger<BookmarkQueueProcessor>.Instance);
 
         await processor.ProcessAsync();
-        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "failed" });
-        Assert.NotNull(retained);
-        Assert.Equal(1, retained.DeliveryAttempts);
+        var retained = await Assert.That(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "failed" })).IsNotNull();
+        await Assert.That(retained.DeliveryAttempts).IsEqualTo(1);
 
         await processor.ProcessAsync();
 
-        Assert.Null(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "failed" }));
-        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
-        Assert.Equal("failed", deadLetter.OriginalQueueItemId);
-        Assert.Equal("Failed", deadLetter.Reason);
-        Assert.Equal(2, deadLetter.DeliveryAttempts);
-        Assert.Equal(typeof(ApplicationException).FullName, deadLetter.LastErrorType);
-        Assert.Equal("resume failed", deadLetter.LastErrorMessage);
+        await Assert.That(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "failed" })).IsNull();
+        var deadLetter = await Assert.That((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList()).HasSingleItem();
+        await Assert.That(deadLetter.OriginalQueueItemId).IsEqualTo("failed");
+        await Assert.That(deadLetter.Reason).IsEqualTo("Failed");
+        await Assert.That(deadLetter.DeliveryAttempts).IsEqualTo(2);
+        await Assert.That(deadLetter.LastErrorType).IsEqualTo(typeof(ApplicationException).FullName);
+        await Assert.That(deadLetter.LastErrorMessage).IsEqualTo("resume failed");
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_WhenResumeIsCanceled_PropagatesCancellationWithoutIncrementingDeliveryAttempts()
     {
         var item = NewQueueItem("canceled", _now);
@@ -262,15 +261,14 @@ public class BookmarkQueueDeadLetterTests
             Microsoft.Extensions.Options.Options.Create(new BookmarkQueuePurgeOptions { MaxDeliveryAttempts = 2 }),
             NullLogger<BookmarkQueueProcessor>.Instance);
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => processor.ProcessAsync());
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => processor.ProcessAsync());
 
-        var retained = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "canceled" });
-        Assert.NotNull(retained);
-        Assert.Equal(0, retained.DeliveryAttempts);
-        Assert.Empty(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter()));
+        var retained = await Assert.That(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "canceled" })).IsNotNull();
+        await Assert.That(retained.DeliveryAttempts).IsEqualTo(0);
+        await Assert.That(await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_WhenResumeThrowsBuiltInException_DeadLettersQueueItem()
     {
         var item = NewQueueItem("built-in-exception", _now);
@@ -285,16 +283,16 @@ public class BookmarkQueueDeadLetterTests
 
         await processor.ProcessAsync();
 
-        Assert.Null(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "built-in-exception" }));
-        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
-        Assert.Equal("built-in-exception", deadLetter.OriginalQueueItemId);
-        Assert.Equal("Failed", deadLetter.Reason);
-        Assert.Equal(1, deadLetter.DeliveryAttempts);
-        Assert.Equal(typeof(InvalidOperationException).FullName, deadLetter.LastErrorType);
-        Assert.Equal("transient failure", deadLetter.LastErrorMessage);
+        await Assert.That(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "built-in-exception" })).IsNull();
+        var deadLetter = await Assert.That((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList()).HasSingleItem();
+        await Assert.That(deadLetter.OriginalQueueItemId).IsEqualTo("built-in-exception");
+        await Assert.That(deadLetter.Reason).IsEqualTo("Failed");
+        await Assert.That(deadLetter.DeliveryAttempts).IsEqualTo(1);
+        await Assert.That(deadLetter.LastErrorType).IsEqualTo(typeof(InvalidOperationException).FullName);
+        await Assert.That(deadLetter.LastErrorMessage).IsEqualTo("transient failure");
     }
 
-    [Fact]
+    [Test]
     public async Task ProcessAsync_WhenProcessedItemsAreDeleted_DoesNotSkipNextPage()
     {
         for (var i = 0; i < 75; i++)
@@ -309,10 +307,10 @@ public class BookmarkQueueDeadLetterTests
 
         await processor.ProcessAsync();
 
-        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        await Assert.That(await _queueStore.FindManyAsync(new BookmarkQueueFilter())).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ReplayAsync_EnqueuesItemAndPreventsSecondReplay()
     {
         await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
@@ -332,21 +330,20 @@ public class BookmarkQueueDeadLetterTests
 
         var result = await manager.ReplayAsync("dead-letter");
 
-        Assert.True(result.Succeeded);
-        Assert.Equal("generated-1", result.QueueItemId);
-        var queueItem = await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "generated-1" });
-        Assert.NotNull(queueItem);
-        Assert.Equal("workflow-instance", queueItem.WorkflowInstanceId);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.QueueItemId).IsEqualTo("generated-1");
+        var queueItem = await Assert.That(await _queueStore.FindAsync(new BookmarkQueueFilter { Id = "generated-1" })).IsNotNull();
+        await Assert.That(queueItem.WorkflowInstanceId).IsEqualTo("workflow-instance");
         await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
 
         var secondResult = await manager.ReplayAsync("dead-letter");
 
-        Assert.False(secondResult.Succeeded);
-        Assert.Equal("NotReplayable", secondResult.Reason);
+        await Assert.That(secondResult.Succeeded).IsFalse();
+        await Assert.That(secondResult.Reason).IsEqualTo("NotReplayable");
         await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ReplayAsync_WhenCalledConcurrently_EnqueuesSingleItem()
     {
         await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
@@ -368,14 +365,14 @@ public class BookmarkQueueDeadLetterTests
             manager.ReplayAsync("dead-letter"),
             manager.ReplayAsync("dead-letter"));
 
-        Assert.Single(results, x => x.Succeeded);
-        Assert.Single(results, x => !x.Succeeded && x.Reason == ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable);
+        await Assert.That(results.Count(x => x.Succeeded)).IsEqualTo(1);
+        await Assert.That(results.Count(x => !x.Succeeded && x.Reason == ReplayBookmarkQueueDeadLetterResult.ReasonNotReplayable)).IsEqualTo(1);
         var queueItems = await _queueStore.FindManyAsync(new BookmarkQueueFilter());
-        Assert.Single(queueItems);
+        await Assert.That(queueItems).HasSingleItem();
         await _signaler.Received(1).TriggerAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ReplayAsync_WhenQueueEnqueueFails_RestoresDeadLetterReplayState()
     {
         await _deadLetterStore.AddAsync(new BookmarkQueueDeadLetterItem
@@ -393,11 +390,10 @@ public class BookmarkQueueDeadLetterTests
         });
         var inspectingDeadLetterStore = new InspectingSaveDeadLetterStore(_deadLetterStore, async () =>
         {
-            var marked = await _deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = "dead-letter" });
-            Assert.NotNull(marked);
-            Assert.False(marked.CanReplay);
-            Assert.Equal(_now, marked.ReplayedAt);
-            Assert.Equal("generated-1", marked.ReplayedQueueItemId);
+            var marked = await Assert.That(await _deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = "dead-letter" })).IsNotNull();
+            await Assert.That(marked.CanReplay).IsFalse();
+            await Assert.That(marked.ReplayedAt).IsEqualTo(_now);
+            await Assert.That(marked.ReplayedQueueItemId).IsEqualTo("generated-1");
         });
         var manager = new BookmarkQueueDeadLetterManager(
             inspectingDeadLetterStore,
@@ -407,23 +403,22 @@ public class BookmarkQueueDeadLetterTests
             _identityGenerator,
             NullLogger<BookmarkQueueDeadLetterManager>.Instance);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => manager.ReplayAsync("dead-letter"));
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => manager.ReplayAsync("dead-letter"));
 
-        var deadLetter = await _deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = "dead-letter" });
-        Assert.NotNull(deadLetter);
-        Assert.True(deadLetter.CanReplay);
-        Assert.Null(deadLetter.ReplayedAt);
-        Assert.Null(deadLetter.ReplayedQueueItemId);
-        Assert.Empty(await _queueStore.FindManyAsync(new BookmarkQueueFilter()));
+        var deadLetter = await Assert.That(await _deadLetterStore.FindAsync(new BookmarkQueueDeadLetterFilter { Id = "dead-letter" })).IsNotNull();
+        await Assert.That(deadLetter.CanReplay).IsTrue();
+        await Assert.That(deadLetter.ReplayedAt).IsNull();
+        await Assert.That(deadLetter.ReplayedQueueItemId).IsNull();
+        await Assert.That(await _queueStore.FindManyAsync(new BookmarkQueueFilter())).IsEmpty();
         await _signaler.DidNotReceive().TriggerAsync(Arg.Any<CancellationToken>());
 
         var retryResult = await CreateManager().ReplayAsync("dead-letter");
 
-        Assert.True(retryResult.Succeeded);
-        Assert.Equal("generated-2", retryResult.QueueItemId);
+        await Assert.That(retryResult.Succeeded).IsTrue();
+        await Assert.That(retryResult.QueueItemId).IsEqualTo("generated-2");
     }
 
-    [Fact]
+    [Test]
     public async Task DeadLetterAsync_WhenOriginalQueueItemAlreadyDeadLettered_ReturnsExistingItem()
     {
         var item = NewQueueItem("original", _now.AddMinutes(-2));
@@ -432,13 +427,13 @@ public class BookmarkQueueDeadLetterTests
         var first = await manager.DeadLetterAsync(item, "Expired");
         var second = await manager.DeadLetterAsync(item, "Failed", new InvalidOperationException("resume failed"));
 
-        Assert.Equal(first.Id, second.Id);
+        await Assert.That(second.Id).IsEqualTo(first.Id);
         var deadLetters = await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter());
-        Assert.Single(deadLetters);
-        Assert.Equal("Expired", first.Reason);
+        await Assert.That(deadLetters).HasSingleItem();
+        await Assert.That(first.Reason).IsEqualTo("Expired");
     }
 
-    [Fact]
+    [Test]
     public async Task DeadLetterAsync_WhenCalledConcurrentlyForSameQueueItem_StoresSingleDeadLetterItem()
     {
         var item = NewQueueItem("original", _now.AddMinutes(-2));
@@ -449,14 +444,14 @@ public class BookmarkQueueDeadLetterTests
             manager.DeadLetterAsync(item, "Expired"),
             manager.DeadLetterAsync(item, "Failed", new InvalidOperationException("resume failed")));
 
-        Assert.Equal(results[0].Id, results[1].Id);
+        await Assert.That(results[1].Id).IsEqualTo(results[0].Id);
         var deadLetters = (await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList();
-        var deadLetter = Assert.Single(deadLetters);
-        Assert.Equal("original", deadLetter.OriginalQueueItemId);
-        Assert.Equal(deadLetter.Id, results[0].Id);
+        var deadLetter = await Assert.That(deadLetters).HasSingleItem();
+        await Assert.That(deadLetter.OriginalQueueItemId).IsEqualTo("original");
+        await Assert.That(results[0].Id).IsEqualTo(deadLetter.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task MemoryStore_AddAsync_WhenCalledConcurrentlyForSameOriginalQueueItem_StoresSingleDeadLetterItem()
     {
         var records = Enumerable.Range(1, 20)
@@ -473,9 +468,9 @@ public class BookmarkQueueDeadLetterTests
 
         await Task.WhenAll(records.Select(record => Task.Run(() => _deadLetterStore.AddAsync(record))));
 
-        var deadLetter = Assert.Single((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList());
-        Assert.Equal("original", deadLetter.OriginalQueueItemId);
-        Assert.Contains(deadLetter.Id, records.Select(x => x.Id));
+        var deadLetter = await Assert.That((await _deadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter())).ToList()).HasSingleItem();
+        await Assert.That(deadLetter.OriginalQueueItemId).IsEqualTo("original");
+        await Assert.That(records.Select(x => x.Id)).Contains(deadLetter.Id);
     }
 
     private DefaultBookmarkQueuePurger CreatePurger(BookmarkQueuePurgeOptions options)

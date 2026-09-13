@@ -55,18 +55,20 @@ public class TriggerIndexerTests
             NullLogger<TriggerIndexer>.Instance);
     }
 
-    [Fact(DisplayName = "A payload without a name of its own is indexed under the activity type name")]
+    [Test]
+    [DisplayName("A payload without a name of its own is indexed under the activity type name")]
     public async Task GetTriggersAsync_PayloadWithoutName_UsesActivityTypeName()
     {
         var payload = new TestStimulus("a");
         var triggers = await IndexAsync(_ => [payload]);
 
-        var trigger = Assert.Single(triggers);
-        Assert.Equal(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), trigger.Name);
-        AssertMatchable(trigger, ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), payload);
+        var trigger = await Assert.That(triggers).HasSingleItem();
+        await Assert.That(trigger.Name).IsEqualTo(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>());
+        await AssertMatchable(trigger, ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), payload);
     }
 
-    [Fact(DisplayName = "An assigned trigger name applies to every payload the trigger returns")]
+    [Test]
+    [DisplayName("An assigned trigger name applies to every payload the trigger returns")]
     public async Task GetTriggersAsync_AssignedTriggerName_AppliesToEveryPayload()
     {
         var first = new TestStimulus("a");
@@ -76,13 +78,13 @@ public class TriggerIndexerTests
             context.TriggerName = EventStimulusName;
             return [first, second];
         });
-
-        Assert.Collection(triggers,
-            trigger => AssertMatchable(trigger, EventStimulusName, first),
-            trigger => AssertMatchable(trigger, EventStimulusName, second));
+        await Assert.That(triggers).Count().IsEqualTo(2);
+        await AssertMatchable(triggers[0], EventStimulusName, first);
+        await AssertMatchable(triggers[1], EventStimulusName, second);
     }
 
-    [Fact(DisplayName = "The last assignment of the trigger name wins for payloads that do not carry a name")]
+    [Test]
+    [DisplayName("The last assignment of the trigger name wins for payloads that do not carry a name")]
     public async Task GetTriggersAsync_TriggerNameAssignedTwice_LastWriteWinsForUnnamedPayloads()
     {
         var first = new TestStimulus("a");
@@ -93,14 +95,14 @@ public class TriggerIndexerTests
             context.TriggerName = TimerStimulusName;
             return [first, second];
         });
-
         // Pinned deliberately: the shared field keeps its existing semantics. Payloads that need their own name must say so.
-        Assert.Collection(triggers,
-            trigger => AssertMatchable(trigger, TimerStimulusName, first),
-            trigger => AssertMatchable(trigger, TimerStimulusName, second));
+        await Assert.That(triggers).Count().IsEqualTo(2);
+        await AssertMatchable(triggers[0], TimerStimulusName, first);
+        await AssertMatchable(triggers[1], TimerStimulusName, second);
     }
 
-    [Fact(DisplayName = "Each named payload is indexed under its own name, and each is matchable")]
+    [Test]
+    [DisplayName("Each named payload is indexed under its own name, and each is matchable")]
     public async Task GetTriggersAsync_NamedPayloads_AreEachIndexedUnderTheirOwnName()
     {
         var eventStimulus = new TestStimulus("order-received");
@@ -116,13 +118,13 @@ public class TriggerIndexerTests
                 new NamedTriggerPayload(TimerStimulusName, timerStimulus)
             ];
         });
-
-        Assert.Collection(triggers,
-            trigger => AssertMatchable(trigger, EventStimulusName, eventStimulus),
-            trigger => AssertMatchable(trigger, TimerStimulusName, timerStimulus));
+        await Assert.That(triggers).Count().IsEqualTo(2);
+        await AssertMatchable(triggers[0], EventStimulusName, eventStimulus);
+        await AssertMatchable(triggers[1], TimerStimulusName, timerStimulus);
     }
 
-    [Fact(DisplayName = "Named and unnamed payloads can be mixed on a single trigger")]
+    [Test]
+    [DisplayName("Named and unnamed payloads can be mixed on a single trigger")]
     public async Task GetTriggersAsync_MixedPayloads_NameEachPayloadIndependently()
     {
         var named = new TestStimulus("named");
@@ -132,46 +134,50 @@ public class TriggerIndexerTests
             context.TriggerName = TimerStimulusName;
             return [new NamedTriggerPayload(EventStimulusName, named), unnamed];
         });
-
-        Assert.Collection(triggers,
-            trigger => AssertMatchable(trigger, EventStimulusName, named),
-            trigger => AssertMatchable(trigger, TimerStimulusName, unnamed));
+        await Assert.That(triggers).Count().IsEqualTo(2);
+        await AssertMatchable(triggers[0], EventStimulusName, named);
+        await AssertMatchable(triggers[1], TimerStimulusName, unnamed);
     }
 
-    [Fact(DisplayName = "A named payload is stored unwrapped")]
+    [Test]
+    [DisplayName("A named payload is stored unwrapped")]
     public async Task GetTriggersAsync_NamedPayload_StoresTheInnerPayload()
     {
         var payload = new TestStimulus("a");
         var triggers = await IndexAsync(_ => [new NamedTriggerPayload(EventStimulusName, payload)]);
 
         // Storing the wrapper would produce a self-consistent but unmatchable row, and would hand the wrapper to payload validators.
-        var trigger = Assert.Single(triggers);
-        Assert.Same(payload, trigger.Payload);
-        Assert.IsType<TestStimulus>(trigger.Payload);
+        var trigger = await Assert.That(triggers).HasSingleItem();
+        await Assert.That(trigger.Payload).IsSameReferenceAs(payload);
+        await Assert.That(trigger.Payload).IsOfType(typeof(TestStimulus));
+        _ = (TestStimulus)trigger.Payload!;
     }
 
-    [Fact(DisplayName = "A trigger returning no payloads still produces a single placeholder row")]
+    [Test]
+    [DisplayName("A trigger returning no payloads still produces a single placeholder row")]
     public async Task GetTriggersAsync_NoPayloads_ProducesPlaceholderRow()
     {
         var triggers = await IndexAsync(_ => []);
 
-        var trigger = Assert.Single(triggers);
-        Assert.Null(trigger.Payload);
-        Assert.Equal(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), trigger.Name);
-        Assert.Equal(_hasher.Hash(trigger.Name!, null), trigger.Hash);
+        var trigger = await Assert.That(triggers).HasSingleItem();
+        await Assert.That(trigger.Payload).IsNull();
+        await Assert.That(trigger.Name).IsEqualTo(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>());
+        await Assert.That(trigger.Hash).IsEqualTo(_hasher.Hash(trigger.Name!, null));
     }
 
-    [Fact(DisplayName = "A trigger that throws produces a single placeholder row")]
+    [Test]
+    [DisplayName("A trigger that throws produces a single placeholder row")]
     public async Task GetTriggersAsync_ThrowingTrigger_ProducesPlaceholderRow()
     {
         var triggers = await IndexAsync(_ => throw new InvalidOperationException("Cannot resolve payloads."));
 
-        var trigger = Assert.Single(triggers);
-        Assert.Null(trigger.Payload);
-        Assert.Equal(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), trigger.Name);
+        var trigger = await Assert.That(triggers).HasSingleItem();
+        await Assert.That(trigger.Payload).IsNull();
+        await Assert.That(trigger.Name).IsEqualTo(ActivityTypeNameHelper.GenerateTypeName<TestTrigger>());
     }
 
-    [Fact(DisplayName = "A trigger that declares it registers no triggers, and returns no payloads, produces no row")]
+    [Test]
+    [DisplayName("A trigger that declares it registers no triggers, and returns no payloads, produces no row")]
     public async Task GetTriggersAsync_RegistersNoTriggers_ProducesNoRow()
     {
         var triggers = await IndexAsync(context =>
@@ -180,10 +186,11 @@ public class TriggerIndexerTests
             return [];
         });
 
-        Assert.Empty(triggers);
+        await Assert.That(triggers).IsEmpty();
     }
 
-    [Fact(DisplayName = "Payloads a trigger returns are indexed even when it also declares it registers no triggers")]
+    [Test]
+    [DisplayName("Payloads a trigger returns are indexed even when it also declares it registers no triggers")]
     public async Task GetTriggersAsync_RegistersNoTriggersButReturnsPayloads_IndexesThePayloads()
     {
         var payload = new TestStimulus("a");
@@ -194,11 +201,12 @@ public class TriggerIndexerTests
         });
 
         // The declaration only replaces the placeholder: dropping a payload the trigger did return would lose it silently.
-        var trigger = Assert.Single(triggers);
-        AssertMatchable(trigger, ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), payload);
+        var trigger = await Assert.That(triggers).HasSingleItem();
+        await AssertMatchable(trigger, ActivityTypeNameHelper.GenerateTypeName<TestTrigger>(), payload);
     }
 
-    [Fact(DisplayName = "A trigger that declares it registers no triggers and then throws still produces the placeholder row")]
+    [Test]
+    [DisplayName("A trigger that declares it registers no triggers and then throws still produces the placeholder row")]
     public async Task GetTriggersAsync_RegistersNoTriggersThenThrows_ProducesPlaceholderRow()
     {
         var triggers = await IndexAsync(context =>
@@ -208,27 +216,28 @@ public class TriggerIndexerTests
         });
 
         // A failure is never a deliberate decision: the placeholder is what surfaces it to workflow validation.
-        var trigger = Assert.Single(triggers);
-        Assert.Null(trigger.Payload);
+        var trigger = await Assert.That(triggers).HasSingleItem();
+        await Assert.That(trigger.Payload).IsNull();
     }
 
-    [Theory(DisplayName = "A named payload requires a stimulus name")]
-    [InlineData("")]
-    [InlineData(" ")]
+    [Test]
+    [Arguments("", DisplayName = "A named payload rejects an empty stimulus name")]
+    [Arguments(" ", DisplayName = "A named payload rejects a whitespace stimulus name")]
     public void NamedTriggerPayload_BlankName_Throws(string name)
     {
-        Assert.Throws<ArgumentException>(() => new NamedTriggerPayload(name, new TestStimulus("a")));
+        Assert.ThrowsExactly<ArgumentException>(() => new NamedTriggerPayload(name, new TestStimulus("a")));
     }
 
-    [Fact(DisplayName = "A named payload refuses to wrap another named payload")]
+    [Test]
+    [DisplayName("A named payload refuses to wrap another named payload")]
     public void NamedTriggerPayload_NestedPayload_Throws()
     {
         var inner = new NamedTriggerPayload(EventStimulusName, new TestStimulus("a"));
 
-        Assert.Throws<ArgumentException>(() => new NamedTriggerPayload(TimerStimulusName, inner));
+        Assert.ThrowsExactly<ArgumentException>(() => new NamedTriggerPayload(TimerStimulusName, inner));
     }
 
-    private async Task<ICollection<StoredTrigger>> IndexAsync(Func<TriggerIndexingContext, IEnumerable<object>> payloadsFactory)
+    private async Task<List<StoredTrigger>> IndexAsync(Func<TriggerIndexingContext, IEnumerable<object>> payloadsFactory)
     {
         var trigger = new TestTrigger
         {
@@ -246,14 +255,14 @@ public class TriggerIndexerTests
     /// Asserts that the row carries the expected name and payload, and that its hash is the one a publisher of that same stimulus name computes.
     /// Also asserts that the hash is not the one that would result from labelling the payload with the other stimulus name in play.
     /// </summary>
-    private void AssertMatchable(StoredTrigger trigger, string expectedName, object expectedPayload)
+    private async Task AssertMatchable(StoredTrigger trigger, string expectedName, object expectedPayload)
     {
         var otherName = expectedName == EventStimulusName ? TimerStimulusName : EventStimulusName;
 
-        Assert.Equal(expectedName, trigger.Name);
-        Assert.Same(expectedPayload, trigger.Payload);
-        Assert.Equal(_hasher.Hash(expectedName, expectedPayload), trigger.Hash);
-        Assert.NotEqual(_hasher.Hash(otherName, expectedPayload), trigger.Hash);
+        await Assert.That(trigger.Name).IsEqualTo(expectedName);
+        await Assert.That(trigger.Payload).IsSameReferenceAs(expectedPayload);
+        await Assert.That(trigger.Hash).IsEqualTo(_hasher.Hash(expectedName, expectedPayload));
+        await Assert.That(trigger.Hash).IsNotEqualTo(_hasher.Hash(otherName, expectedPayload));
     }
 }
 

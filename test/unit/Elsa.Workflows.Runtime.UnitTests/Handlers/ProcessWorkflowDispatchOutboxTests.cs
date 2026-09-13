@@ -24,7 +24,7 @@ public class ProcessWorkflowDispatchOutboxTests
         _serviceProvider.GetService(typeof(IWorkflowDispatchOutboxProcessor)).Returns(_processor);
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_DoesNotProcess_WhenCommittedStateHasNoOutboxItems()
     {
         var handler = CreateHandler();
@@ -35,7 +35,7 @@ public class ProcessWorkflowDispatchOutboxTests
         await _processor.DidNotReceive().TryProcessAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_Processes_WhenCommittedStateHasOutboxItems()
     {
         var handler = CreateHandler();
@@ -55,7 +55,7 @@ public class ProcessWorkflowDispatchOutboxTests
         await _processor.Received(1).TryProcessAsync(CancellationToken.None);
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_DoesNotThrow_WhenEagerOutboxProcessingFails()
     {
         var handler = CreateHandler();
