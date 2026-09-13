@@ -1,6 +1,5 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
-using Elsa.Common.Entities;
 using Elsa.Testing.Shared.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.ComponentTests.Abstractions;
@@ -9,7 +8,6 @@ using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
-using Elsa.Workflows.Runtime.OrderDefinitions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.LogPersistenceModes;
@@ -21,8 +19,8 @@ public class InternalStateLoggingTests(App app) : AppComponentTest(app)
     {
         var records = await ExecuteAndGetWriteLinesAsync("internal-state-logging-activity");
 
-        AssertInternalState(records[0], textIncluded: false, internalStateIncluded: true);
-        AssertInternalState(records[1], textIncluded: true, internalStateIncluded: false);
+        AssertInternalState(GetRecord(records, "WriteLine1"), textIncluded: false, internalStateIncluded: true);
+        AssertInternalState(GetRecord(records, "WriteLine2"), textIncluded: true, internalStateIncluded: false);
     }
 
     [Fact]
@@ -30,8 +28,13 @@ public class InternalStateLoggingTests(App app) : AppComponentTest(app)
     {
         var records = await ExecuteAndGetWriteLinesAsync("internal-state-logging-workflow");
 
-        AssertInternalState(records[0], textIncluded: false, internalStateIncluded: true);
-        AssertInternalState(records[1], textIncluded: false, internalStateIncluded: false);
+        AssertInternalState(GetRecord(records, "WriteLine1"), textIncluded: false, internalStateIncluded: true);
+        AssertInternalState(GetRecord(records, "WriteLine2"), textIncluded: false, internalStateIncluded: false);
+    }
+
+    private static ActivityExecutionRecord GetRecord(IReadOnlyList<ActivityExecutionRecord> records, string activityName)
+    {
+        return records.Single(x => x.ActivityName == activityName);
     }
 
     private static void AssertInternalState(ActivityExecutionRecord record, bool textIncluded, bool internalStateIncluded)
@@ -55,12 +58,10 @@ public class InternalStateLoggingTests(App app) : AppComponentTest(app)
         var model = await response.ReadAsJsonAsync<ExecuteWorkflowDefinitionResponse>(WorkflowServer.Services);
         var writeLineActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<WriteLine>();
         var store = Scope.ServiceProvider.GetRequiredService<IActivityExecutionStore>();
-        var records = await store.FindManyAsync(
-            new ActivityExecutionRecordFilter
-            {
-                WorkflowInstanceId = model.WorkflowState.Id
-            },
-            new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Ascending));
+        var records = await store.FindManyAsync(new ActivityExecutionRecordFilter
+        {
+            WorkflowInstanceId = model.WorkflowState.Id
+        });
 
         return records.Where(x => x.ActivityType == writeLineActivityTypeName).ToList();
     }

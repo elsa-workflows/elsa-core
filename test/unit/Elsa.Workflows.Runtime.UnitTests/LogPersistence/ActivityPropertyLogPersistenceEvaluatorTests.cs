@@ -1,10 +1,12 @@
 using Elsa.Expressions.Contracts;
+using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.LogPersistence;
 using Elsa.Workflows.LogPersistence.Strategies;
 using Elsa.Workflows.Management.Options;
+using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -91,6 +93,41 @@ public class ActivityPropertyLogPersistenceEvaluatorTests
         Assert.Equal(LogPersistenceMode.Exclude, map.InternalState);
     }
 
+    [Fact]
+    public async Task Evaluate_UsesWorkflowRootContext_ForWorkflowInternalStateExpression()
+    {
+        var activity = CreateWriteLine(defaultMode: typeof(Exclude));
+        var fixture = CreateFixture(activity);
+        var seed = await fixture.BuildAsync();
+        var workflowExecutionContext = seed.WorkflowExecutionContext;
+        var rootContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(workflowExecutionContext.Workflow);
+        var childContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(activity, new ActivityInvocationOptions
+        {
+            Owner = rootContext
+        });
+        workflowExecutionContext.AddActivityExecutionContext(rootContext);
+        workflowExecutionContext.AddActivityExecutionContext(childContext);
+
+        workflowExecutionContext.Workflow.CustomProperties["logPersistenceConfig"] = new Dictionary<string, object>
+        {
+            ["internalState"] = new LogPersistenceConfiguration
+            {
+                EvaluationMode = LogPersistenceEvaluationMode.Expression,
+                Expression = Expression.DelegateExpression(ctx =>
+                {
+                    ctx.TryGetActivityExecutionContext(out var evaluated);
+                    return evaluated.ParentActivityExecutionContext == null
+                        ? LogPersistenceMode.Include
+                        : LogPersistenceMode.Exclude;
+                })
+            }
+        };
+
+        var map = await CreateEvaluator(childContext).EvaluateLogPersistenceModesAsync(childContext);
+
+        Assert.Equal(LogPersistenceMode.Include, map.InternalState);
+    }
+
     private static WriteLine CreateWriteLine(Type defaultMode, Type? internalState = null)
     {
         var config = new Dictionary<string, object>
@@ -114,7 +151,15 @@ public class ActivityPropertyLogPersistenceEvaluatorTests
 
     private static async Task<ActivityLogPersistenceModeMap> EvaluateAsync(IActivity activity, Action<Workflow>? configureWorkflow = null)
     {
-        var fixture = new ActivityTestFixture(activity).ConfigureServices(services =>
+        var fixture = CreateFixture(activity);
+        var context = await fixture.BuildAsync();
+        context.WorkflowExecutionContext.AddActivityExecutionContext(context);
+        configureWorkflow?.Invoke(context.WorkflowExecutionContext.Workflow);
+        return await CreateEvaluator(context).EvaluateLogPersistenceModesAsync(context);
+    }
+
+    private static ActivityTestFixture CreateFixture(IActivity activity) =>
+        new ActivityTestFixture(activity).ConfigureServices(services =>
         {
             services.AddSingleton<ILogPersistenceStrategy, Include>();
             services.AddSingleton<ILogPersistenceStrategy, Exclude>();
@@ -122,11 +167,8 @@ public class ActivityPropertyLogPersistenceEvaluatorTests
             services.AddSingleton<ILogPersistenceStrategyService, DefaultLogPersistenceStrategyService>();
         });
 
-        var context = await fixture.BuildAsync();
-        context.WorkflowExecutionContext.AddActivityExecutionContext(context);
-        configureWorkflow?.Invoke(context.WorkflowExecutionContext.Workflow);
-
-        var evaluator = new ActivityPropertyLogPersistenceEvaluator(
+    private static ActivityPropertyLogPersistenceEvaluator CreateEvaluator(ActivityExecutionContext context) =>
+        new(
             context.GetRequiredService<ILogPersistenceStrategyService>(),
             context.GetRequiredService<IExpressionDescriptorRegistry>(),
             context.GetRequiredService<IExpressionEvaluator>(),
@@ -135,7 +177,4 @@ public class ActivityPropertyLogPersistenceEvaluatorTests
                 LogPersistenceMode = LogPersistenceMode.Include
             }),
             NullLogger<ActivityPropertyLogPersistenceEvaluator>.Instance);
-
-        return await evaluator.EvaluateLogPersistenceModesAsync(context);
-    }
 }
