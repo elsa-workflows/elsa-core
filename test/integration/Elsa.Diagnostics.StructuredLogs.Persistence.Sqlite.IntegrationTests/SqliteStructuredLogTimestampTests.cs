@@ -4,7 +4,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests;
 
 public class SqliteStructuredLogTimestampTests
 {
-    [Fact]
+    [Test]
     public async Task WriteAsync_StoresTimestampsAsUtcIso8601()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -12,8 +12,8 @@ public class SqliteStructuredLogTimestampTests
 
         await host.WriteAsync(StructuredLogTestEvents.Create("timestamp", timestamp));
 
-        var rawTimestamp = Assert.Single(await host.ReadRawTimestampsAsync());
-        Assert.EndsWith("+00:00", rawTimestamp, StringComparison.Ordinal);
-        Assert.Equal(timestamp.ToUniversalTime(), DateTimeOffset.Parse(rawTimestamp, CultureInfo.InvariantCulture));
+        var rawTimestamp = (await Assert.That(await host.ReadRawTimestampsAsync()).HasSingleItem())!;
+        await Assert.That(rawTimestamp).EndsWith("+00:00", StringComparison.Ordinal);
+        await Assert.That(DateTimeOffset.Parse(rawTimestamp, CultureInfo.InvariantCulture)).IsEqualTo(timestamp.ToUniversalTime());
     }
 }

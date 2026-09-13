@@ -2,7 +2,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests;
 
 public class SqliteStructuredLogRetentionTests
 {
-    [Fact]
+    [Test]
     public async Task CleanupAsync_DoesNotDeleteRows_WhenRetentionIsNotConfigured()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -12,10 +12,10 @@ public class SqliteStructuredLogRetentionTests
 
         await host.Retention.CleanupAsync();
 
-        Assert.Equal(2, await host.CountRowsAsync("StructuredLogEvents"));
+        await Assert.That(await host.CountRowsAsync("StructuredLogEvents")).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task CleanupAsync_AppliesMaxAgeAndMaxRows_WhenConfigured()
     {
         await using var host = new SqliteStructuredLogTestHost(options =>
@@ -31,7 +31,7 @@ public class SqliteStructuredLogRetentionTests
         await host.Retention.CleanupAsync();
 
         var result = await host.Store.QueryAsync(new() { Take = 10 });
-        var item = Assert.Single(result.Items);
-        Assert.Equal("new", item.Id);
+        var item = (await Assert.That(result.Items).HasSingleItem())!;
+        await Assert.That(item.Id).IsEqualTo("new");
     }
 }

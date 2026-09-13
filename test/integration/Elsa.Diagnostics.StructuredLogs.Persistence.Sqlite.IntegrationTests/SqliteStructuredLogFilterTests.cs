@@ -6,7 +6,7 @@ public class SqliteStructuredLogFilterTests
 {
     private readonly DateTimeOffset _baseTime = new(2026, 5, 13, 10, 0, 0, TimeSpan.Zero);
 
-    [Fact]
+    [Test]
     public async Task QueryAsync_AppliesStructuredLogFilters()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -36,11 +36,11 @@ public class SqliteStructuredLogFilterTests
     private static async Task AssertMatchesAsync(SqliteStructuredLogTestHost host, StructuredLogFilter filter)
     {
         var result = await host.Store.QueryAsync(filter with { Take = 1 });
-        var item = Assert.Single(result.Items);
-        Assert.Equal("filter-target", item.Id);
+        var item = (await Assert.That(result.Items).HasSingleItem())!;
+        await Assert.That(item.Id).IsEqualTo("filter-target");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryAsync_AppliesMinimumLevelAndLimit()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -51,11 +51,11 @@ public class SqliteStructuredLogFilterTests
 
         var result = await host.Store.QueryAsync(new() { MinimumLevel = StructuredLogLevel.Warning, Take = 1 });
 
-        var item = Assert.Single(result.Items);
-        Assert.Equal("error", item.Id);
+        var item = (await Assert.That(result.Items).HasSingleItem())!;
+        await Assert.That(item.Id).IsEqualTo("error");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryAsync_AppliesTimeRangeInSqlBeforeLimiting()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -74,7 +74,7 @@ public class SqliteStructuredLogFilterTests
             Take = 10
         });
 
-        var item = Assert.Single(result.Items);
-        Assert.Equal("old-target", item.Id);
+        var item = (await Assert.That(result.Items).HasSingleItem())!;
+        await Assert.That(item.Id).IsEqualTo("old-target");
     }
 }

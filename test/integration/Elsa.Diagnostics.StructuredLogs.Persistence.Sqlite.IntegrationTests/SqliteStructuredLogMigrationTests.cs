@@ -9,17 +9,17 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests;
 
 public class SqliteStructuredLogMigrationTests
 {
-    [Fact]
+    [Test]
     public async Task MigrateAsync_CreatesStructuredLogTableInEmptyDatabase()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);
 
         await host.Migrator.MigrateAsync();
 
-        Assert.True(await host.TableExistsAsync("StructuredLogEvents"));
+        await Assert.That(await host.TableExistsAsync("StructuredLogEvents")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task Startup_DoesNotRunMigrations_WhenOptedOut()
     {
         await using var host = new SqliteStructuredLogTestHost(options => options.RunMigrationsOnStartup = false, migrate: false);
@@ -27,10 +27,10 @@ public class SqliteStructuredLogMigrationTests
 
         await startup.StartAsync(CancellationToken.None);
 
-        Assert.False(await host.TableExistsAsync("StructuredLogEvents"));
+        await Assert.That(await host.TableExistsAsync("StructuredLogEvents")).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task StartupTask_RunsMigrations_WhenHostedServicesAreNotStarted()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);
@@ -39,10 +39,10 @@ public class SqliteStructuredLogMigrationTests
 
         await startup.ExecuteAsync(CancellationToken.None);
 
-        Assert.True(await host.TableExistsAsync("StructuredLogEvents"));
+        await Assert.That(await host.TableExistsAsync("StructuredLogEvents")).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task StartupTask_UsesSameInstance_AsHostedService()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);
@@ -50,18 +50,19 @@ public class SqliteStructuredLogMigrationTests
         var hostedService = host.Services.GetServices<IHostedService>().OfType<SqliteStructuredLogStartupService>().Single();
         var startupTask = scope.ServiceProvider.GetServices<IStartupTask>().OfType<SqliteStructuredLogStartupService>().Single();
 
-        Assert.Same(hostedService, startupTask);
+        await Assert.That(startupTask).IsSameReferenceAs(hostedService);
     }
 
-    [Fact]
+    [Test]
     public async Task HostedServices_StartMigrationBeforeWriteBuffer()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);
 
         var hostedServiceTypes = host.Services.GetServices<IHostedService>().Select(x => x.GetType()).ToList();
 
-        Assert.True(
-            hostedServiceTypes.IndexOf(typeof(SqliteStructuredLogStartupService)) < hostedServiceTypes.IndexOf(typeof(StructuredLogWriteBuffer)),
-            "SQLite migrations must run before the durable write buffer starts flushing queued logs.");
+        await Assert.That(
+                hostedServiceTypes.IndexOf(typeof(SqliteStructuredLogStartupService)) < hostedServiceTypes.IndexOf(typeof(StructuredLogWriteBuffer)))
+            .IsTrue()
+            .Because("SQLite migrations must run before the durable write buffer starts flushing queued logs.");
     }
 }

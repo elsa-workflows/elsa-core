@@ -6,7 +6,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests;
 
 public class SqliteStructuredLogStoreTests
 {
-    [Fact]
+    [Test]
     public async Task QueryAsync_ReturnsLogsWrittenByPreviousProviderInstance()
     {
         await using var firstHost = new SqliteStructuredLogTestHost();
@@ -18,10 +18,10 @@ public class SqliteStructuredLogStoreTests
 
         var result = await secondHost.Store.QueryAsync(new StructuredLogFilter { Take = 10 });
 
-        Assert.Contains(result.Items, x => x.Id == written.Id && x.Message == "persist me");
+        await Assert.That(result.Items).Contains(x => x.Id == written.Id && x.Message == "persist me");
     }
 
-    [Fact]
+    [Test]
     public async Task Logger_RedactsSensitiveValuesBeforePersisting()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -31,7 +31,7 @@ public class SqliteStructuredLogStoreTests
         await host.Buffer.FlushAsync();
 
         var result = await host.Store.QueryAsync(new StructuredLogFilter { Take = 10, Text = "[Redacted]" });
-        var item = Assert.Single(result.Items);
-        Assert.Equal("Authorization [Redacted]", item.Message);
+        var item = (await Assert.That(result.Items).HasSingleItem())!;
+        await Assert.That(item.Message).IsEqualTo("Authorization [Redacted]");
     }
 }

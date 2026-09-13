@@ -8,7 +8,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests;
 
 public class SqliteStructuredLogWriteQueueTests
 {
-    [Fact]
+    [Test]
     public async Task FlushAsync_PersistsQueuedWrites()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -16,10 +16,10 @@ public class SqliteStructuredLogWriteQueueTests
         await host.Buffer.WriteAsync(StructuredLogTestEvents.Create("queued"));
         await host.Buffer.FlushAsync();
 
-        Assert.Equal(1, await host.CountRowsAsync("StructuredLogEvents"));
+        await Assert.That(await host.CountRowsAsync("StructuredLogEvents")).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task WriteAsync_DropsWrites_WhenQueueIsFull()
     {
         await using var host = new SqliteStructuredLogTestHost(options =>
@@ -32,11 +32,11 @@ public class SqliteStructuredLogWriteQueueTests
         await host.Buffer.WriteAsync(StructuredLogTestEvents.Create("dropped"));
         await host.Buffer.FlushAsync();
 
-        Assert.Equal(1, host.Buffer.DroppedWriteCount);
-        Assert.Equal(1, await host.CountRowsAsync("StructuredLogEvents"));
+        await Assert.That(host.Buffer.DroppedWriteCount).IsEqualTo(1);
+        await Assert.That(await host.CountRowsAsync("StructuredLogEvents")).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task StopAsync_FlushesQueuedWrites()
     {
         await using var host = new SqliteStructuredLogTestHost();
@@ -45,10 +45,10 @@ public class SqliteStructuredLogWriteQueueTests
         await host.Buffer.WriteAsync(StructuredLogTestEvents.Create("shutdown"));
         await host.StopHostedServicesAsync();
 
-        Assert.Equal(1, await host.CountRowsAsync("StructuredLogEvents"));
+        await Assert.That(await host.CountRowsAsync("StructuredLogEvents")).IsEqualTo(1);
     }
 
-    [Fact]
+    [Test]
     public async Task BackgroundTask_FlushesLoggerWrites_ForShellLifecycle()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);
@@ -76,7 +76,7 @@ public class SqliteStructuredLogWriteQueueTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task BackgroundTask_Stop_DoesNotStopHostedWriteBuffer()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);
@@ -101,7 +101,7 @@ public class SqliteStructuredLogWriteQueueTests
         }
     }
 
-    [Fact]
+    [Test]
     public async Task BackgroundTask_StopWithoutStart_DoesNotStopHostedWriteBuffer()
     {
         await using var host = new SqliteStructuredLogTestHost(migrate: false);

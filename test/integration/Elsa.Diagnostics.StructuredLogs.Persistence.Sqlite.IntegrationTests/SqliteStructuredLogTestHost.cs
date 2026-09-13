@@ -21,7 +21,7 @@ internal sealed class SqliteStructuredLogTestHost : IAsyncDisposable
         _directory = Path.Join(Path.GetTempPath(), $"elsa-structured-logs-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_directory);
         DatabasePath = Path.Join(_directory, "structured-logs.db");
-        ConnectionString = $"Data Source={DatabasePath}";
+        ConnectionString = $"Data Source={DatabasePath};Pooling=False";
 
         var services = new ServiceCollection();
         services.AddLogging();
