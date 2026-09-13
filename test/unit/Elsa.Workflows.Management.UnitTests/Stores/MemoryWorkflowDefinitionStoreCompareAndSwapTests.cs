@@ -90,7 +90,7 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
         var firstHoldsLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var first = writerA.TryUpdateLatestAsync(
+        var first = Task.Run(() => writerA.TryUpdateLatestAsync(
             LatestOf("def-1"),
             loaded => loaded.StringData == "graph-v1",
             loaded =>
@@ -100,7 +100,7 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
                 var next = loaded.ShallowClone();
                 next.StringData = "winner-graph";
                 return next;
-            });
+            }));
 
         await firstHoldsLock.Task;
 
