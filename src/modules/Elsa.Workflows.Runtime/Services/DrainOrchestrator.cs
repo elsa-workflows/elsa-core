@@ -326,6 +326,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // no persisted user-cancel exists, but we only promote if Phase A actually
         // cancels that live handle (DeadlineBreachPersistsInterrupted).
         var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        var drainInducedCandidateIds = new ConcurrentDictionary<Guid, string>();
+        var activeSnapshotHandleIds = new ConcurrentDictionary<Guid, byte>();
         var missingPersistedRowIds = new ConcurrentBag<string>();
         using var snapshotGate = new SemaphoreSlim(MaxConcurrentPreCancelSnapshotFinds);
         var snapshotTasks = live.Select(async handle =>
@@ -351,7 +353,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                     }
 
                     if (snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                    {
+                        drainInducedCandidateIds.TryAdd(handle.Id, handle.WorkflowInstanceId);
+                        if (snapshot.IsExecuting)
+                            activeSnapshotHandleIds.TryAdd(handle.Id, 0);
                         return handle.WorkflowInstanceId;
+                    }
                 }
                 finally
                 {
@@ -369,11 +376,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             return null;
         });
 
-        foreach (var instanceId in await Task.WhenAll(snapshotTasks).ConfigureAwait(false))
-        {
-            if (instanceId is not null)
-                drainInducedInstanceIds.Add(instanceId);
-        }
+        await Task.WhenAll(snapshotTasks).ConfigureAwait(false);
 
         // Force-cancel proceeds in three phases. The split exists because cancelling and
         // awaiting in the same loop made every execution cycle after the first run at full speed
@@ -385,6 +388,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // than serialized behind preceding settle waits.
         var cancelledInstanceIds = new HashSet<string>(StringComparer.Ordinal);
         var cancelledHandles = new List<ExecutionCycleHandle>(live.Count);
+        var handlesToPersist = new List<ExecutionCycleHandle>(live.Count);
         foreach (var handle in live)
         {
             try
@@ -393,10 +397,15 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 // (cycle finished during snapshot); treating that as drain-induced would rewrite a
                 // later Finished/Cancelled row the runner already committed.
                 if (!handle.TryCancel())
+                {
+                    if (activeSnapshotHandleIds.ContainsKey(handle.Id) && handle.Disposed.IsCompleted)
+                        handlesToPersist.Add(handle);
                     continue;
+                }
 
                 totalCancelled++;
                 cancelledHandles.Add(handle);
+                handlesToPersist.Add(handle);
                 cancelledInstanceIds.Add(handle.WorkflowInstanceId);
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
             }
@@ -409,6 +418,12 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // A live handle we ourselves cancelled whose snapshot found no row is drain-induced:
         // there was no persisted user-cancel to preserve. Timeout/error and disposed no-ops stay excluded.
         // Do not use reportedIds here — that list is capped by MaxForceCancelledInstanceIdsReported.
+        foreach (var handle in cancelledHandles)
+        {
+            if (drainInducedCandidateIds.TryGetValue(handle.Id, out var instanceId))
+                drainInducedInstanceIds.Add(instanceId);
+        }
+
         foreach (var instanceId in missingPersistedRowIds)
         {
             if (cancelledInstanceIds.Contains(instanceId))
@@ -437,8 +452,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         });
         await Task.WhenAll(settleTasks).ConfigureAwait(false);
 
-        // Phase C — persist Interrupted for every handle. Sequential to keep DbContext
-        // usage single-threaded; per-handle persistence is small.
+        // Phase C — persist Interrupted for every cancelled handle and disposed active checkpoint.
+        // Sequential to keep DbContext usage single-threaded; per-handle persistence is small.
         //
         // Each persist runs under its own bounded token that is NOT linked to the drain CT.
         // Phase B's catch on OperationCanceledException explicitly comments "drain CT fired —
@@ -447,7 +462,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         // cancelled token and throw. Result: every execution cycle would be left in an unrecovered
         // executing state on host shutdown. The bounded non-drain token preserves the
         // forensic write while preventing a stuck DB from hanging shutdown indefinitely.
-        foreach (var handle in cancelledHandles)
+        foreach (var handle in handlesToPersist)
         {
             try
             {

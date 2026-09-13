@@ -219,6 +219,53 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await LogStore.DidNotReceive().AddAsync(Arg.Any<Entities.WorkflowExecutionLogRecord>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "A disposed handle with an executing snapshot is persisted as Interrupted")]
+    public async Task DisposedHandleWithExecutingSnapshotIsPersisted()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-disposed-at-checkpoint", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        handle.Dispose();
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(RunningInstance("instance-disposed-at-checkpoint")));
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.Received(1).SaveAsync(
+            Arg.Is<WorkflowInstance>(i => i.Id == "instance-disposed-at-checkpoint" && i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "A disposed handle with a suspended snapshot is not persisted as Interrupted")]
+    public async Task DisposedHandleWithSuspendedSnapshotIsNotPersisted()
+    {
+        var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-suspended", ingressSourceName: "http.trigger", startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        handle.Dispose();
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(new WorkflowInstance
+            {
+                Id = "instance-suspended",
+                DefinitionId = "def-1",
+                DefinitionVersionId = "ver-1",
+                Version = 1,
+                Status = WorkflowStatus.Running,
+                SubStatus = WorkflowSubStatus.Suspended,
+                IsExecuting = false,
+            }));
+
+        var sut = BuildSut();
+        var outcome = await sut.DrainAsync(DrainTrigger.OperatorForce);
+
+        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
+        await InstanceStore.DidNotReceive().SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact(DisplayName = "A disposed handle is not persisted as Interrupted when its later row is still running")]
     public async Task DisposedHandleDoesNotPersistLaterRunningInstance()
     {
