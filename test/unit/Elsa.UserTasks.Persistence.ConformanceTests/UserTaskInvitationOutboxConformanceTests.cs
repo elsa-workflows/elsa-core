@@ -16,24 +16,24 @@ public abstract class UserTaskInvitationOutboxConformanceTests(UserTaskStoreFixt
 
     private IUserTaskInvitationOutbox Outbox => Fixture.Outbox;
 
-    [ConformanceFact]
+    [Test]
     public async Task ADeliveryRoundTripsItsSecretAndItsRoutingMetadata()
     {
         await ActivateAsync();
         var delivery = Delivery(token: "s3cret-token", recipient: "guest@example.com");
         await Outbox.EnqueueAsync(delivery);
 
-        var dequeued = Assert.Single(await DequeueMineAsync());
+        var dequeued = await Assert.That(await DequeueMineAsync()).HasSingleItem();
 
-        Assert.Equal(delivery.Id, dequeued.Id);
-        Assert.Equal("s3cret-token", dequeued.Token);
-        Assert.Equal("guest@example.com", dequeued.Recipient);
-        Assert.Equal(delivery.TaskId, dequeued.TaskId);
-        Assert.Equal(delivery.InvitationId, dequeued.InvitationId);
-        Assert.Equal(delivery.DispatcherName, dequeued.DispatcherName);
+        await Assert.That(dequeued.Id).IsEqualTo(delivery.Id);
+        await Assert.That(dequeued.Token).IsEqualTo("s3cret-token");
+        await Assert.That(dequeued.Recipient).IsEqualTo("guest@example.com");
+        await Assert.That(dequeued.TaskId).IsEqualTo(delivery.TaskId);
+        await Assert.That(dequeued.InvitationId).IsEqualTo(delivery.InvitationId);
+        await Assert.That(dequeued.DispatcherName).IsEqualTo(delivery.DispatcherName);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ACompletedDeliveryIsRemovedSoTheSecretStopsExisting()
     {
         await ActivateAsync();
@@ -42,23 +42,23 @@ public abstract class UserTaskInvitationOutboxConformanceTests(UserTaskStoreFixt
 
         await Outbox.CompleteAsync(delivery.Id);
 
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ADeliveryIsNotDueBeforeItsScheduledTime()
     {
         await ActivateAsync();
         var delivery = Delivery(notBefore: Clock.UtcNow.AddMinutes(10));
         await Outbox.EnqueueAsync(delivery);
 
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
 
         Clock.Advance(TimeSpan.FromMinutes(11));
-        Assert.Single(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).HasSingleItem();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ReschedulingAdvancesTheAttemptCountAndDefersTheDelivery()
     {
         await ActivateAsync();
@@ -67,14 +67,14 @@ public abstract class UserTaskInvitationOutboxConformanceTests(UserTaskStoreFixt
         await Outbox.EnqueueAsync(delivery);
 
         await Outbox.RescheduleAsync(delivery.Id, Clock.UtcNow.AddMinutes(1));
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
 
         Clock.Advance(TimeSpan.FromMinutes(2));
-        var retried = Assert.Single(await DequeueMineAsync());
-        Assert.Equal(1, retried.Attempt);
+        var retried = await Assert.That(await DequeueMineAsync()).HasSingleItem();
+        await Assert.That(retried.Attempt).IsEqualTo(1);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task DeliveryIsAbandonedOnceTheRetryScheduleIsExhausted()
     {
         await ActivateAsync();
@@ -85,25 +85,25 @@ public abstract class UserTaskInvitationOutboxConformanceTests(UserTaskStoreFixt
         // One reschedule per configured delay is still retryable; the one past the end abandons.
         foreach (var _ in Fixture.Settings.InvitationDeliveryRetryDelays)
             await Outbox.RescheduleAsync(delivery.Id, Clock.UtcNow);
-        Assert.Single(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).HasSingleItem();
 
         await Outbox.RescheduleAsync(delivery.Id, Clock.UtcNow);
 
         // An undeliverable secret expires rather than being retried forever; a manager reissues instead.
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ReschedulingAnUnknownDeliveryIsHarmless()
     {
         await ActivateAsync();
 
         await Outbox.RescheduleAsync($"delivery-{Guid.NewGuid():N}", Clock.UtcNow);
 
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AnExpiredDeliveryIsDroppedRatherThanDeliveredLate()
     {
         await ActivateAsync();
@@ -112,13 +112,13 @@ public abstract class UserTaskInvitationOutboxConformanceTests(UserTaskStoreFixt
 
         Clock.Advance(TimeSpan.FromMinutes(6));
 
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
         // And it stays gone: a later sweep must not resurrect a secret whose invitation has expired.
         Clock.Advance(TimeSpan.FromMinutes(-6));
-        Assert.Empty(await DequeueMineAsync());
+        await Assert.That(await DequeueMineAsync()).IsEmpty();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TheDueBatchIsBoundedByTheRequestedCount()
     {
         await ActivateAsync();
@@ -127,7 +127,7 @@ public abstract class UserTaskInvitationOutboxConformanceTests(UserTaskStoreFixt
 
         var batch = await Outbox.DequeueDueAsync(1);
 
-        Assert.Single(batch);
+        await Assert.That(batch).HasSingleItem();
     }
 
     /// <summary>

@@ -1,5 +1,6 @@
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
+using Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
 using Elsa.UserTasks.Persistence.ConformanceTests.Providers;
 
 namespace Elsa.UserTasks.Persistence.ConformanceTests;
@@ -7,10 +8,11 @@ namespace Elsa.UserTasks.Persistence.ConformanceTests;
 /// <summary>
 /// Shared arrangement for every conformance class.
 ///
-/// The stores are shared for the whole provider collection so a container-backed provider is migrated once,
+/// The stores are shared by provider key so a container-backed provider is migrated once,
 /// and each test isolates itself with its own tenant instead. Every contract except the deliberately
 /// tenant-agnostic invitation-hash lookup is tenant-scoped, so this is isolation, not a shortcut.
 /// </summary>
+[SkipUnavailableConformanceProvider]
 public abstract class UserTaskConformanceTestBase(UserTaskStoreFixture fixture)
 {
     private int _sequence;

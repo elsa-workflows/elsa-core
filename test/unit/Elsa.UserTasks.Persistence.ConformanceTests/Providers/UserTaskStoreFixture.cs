@@ -4,17 +4,17 @@ using Elsa.UserTasks.Options;
 using Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.UserTasks.Persistence.ConformanceTests.Providers;
 
 /// <summary>
-/// One provider's live stores, shared by every conformance class in that provider's collection.
+/// One provider's live stores, shared by every conformance class carrying the same fixture key.
 ///
-/// Construction is deliberately lazy: xUnit builds a collection fixture even when every test in the
-/// collection is skipped, so an unreachable provider must not try to connect here or a clean skip would
-/// surface as an error.
+/// Construction is deliberately connection-free: TUnit can create a class data source during discovery,
+/// while the provider-aware class skip prevents its initializer from running when the provider is unavailable.
 /// </summary>
-public abstract class UserTaskStoreFixture : IAsyncLifetime
+public abstract class UserTaskStoreFixture : IAsyncInitializer, IAsyncDisposable
 {
     private readonly Lazy<Task> _activation;
 
@@ -54,9 +54,9 @@ public abstract class UserTaskStoreFixture : IAsyncLifetime
 
     protected abstract Task ActivateCoreAsync();
 
-    Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
+    public Task InitializeAsync() => ActivateAsync();
 
-    Task IAsyncLifetime.DisposeAsync() => DisposeCoreAsync();
+    public async ValueTask DisposeAsync() => await DisposeCoreAsync();
 
     protected virtual Task DisposeCoreAsync() => Task.CompletedTask;
 

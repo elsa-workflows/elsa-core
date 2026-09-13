@@ -30,7 +30,8 @@ Availability is resolved once per run by `ConformanceProviders`, and nothing is 
   `Elsa.UserTasks.Persistence.EFCore.MySql` cannot be referenced from a test project at all (NU1107).
 
 ```bash
-ELSA_USERTASKS_TEST_POSTGRES="Host=localhost;Database=elsa_conformance;Username=elsa;Password=elsa" dotnet test test/unit/Elsa.UserTasks.Persistence.ConformanceTests
+ELSA_USERTASKS_TEST_POSTGRES="Host=localhost;Database=elsa_conformance;Username=elsa;Password=elsa" \
+  dotnet run --project test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj --
 ```
 
 The remaining variables are `ELSA_USERTASKS_TEST_SQLSERVER` and `ELSA_USERTASKS_TEST_ORACLE`.
@@ -46,9 +47,13 @@ test output and to `user-task-conformance-coverage.md` in the output directory.
 ## Adding a provider
 
 1. Add a `ConformanceProvider` entry to `ConformanceProviders.All`.
-2. Add a fixture under `Providers/`.
-3. Add a collection and one concrete class per contract in `ProviderConformanceSuites.cs`, each carrying
-   `[ConformanceProvider(...)]`.
+2. Add an `IAsyncInitializer` fixture under `Providers/` whose constructor does not connect to the provider.
+3. Add a stable provider key to `ProviderFixtureKeys`.
+4. Add one concrete class per supported contract to `ProviderConformanceSuites.cs`. Put all four native
+   TUnit attributes directly on every concrete class: `[InheritsTests]`, a keyed
+   `[ClassDataSource<TFixture>(Shared = SharedType.Keyed, Key = ...)]`, `[NotInParallel(...)]` with the
+   same key, and `[ConformanceProvider(...)]`.
 
-A conformance class without `[ConformanceProvider]` is skipped with a wiring error rather than counted as
-coverage — the suite refuses to guess which provider a class exercised.
+An unavailable provider is skipped before its fixture initializes. A conformance class without
+`[ConformanceProvider]` is also skipped with a wiring error rather than counted as coverage — the suite
+refuses to guess which provider a class exercised.

@@ -13,7 +13,7 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
 {
     private IUserTaskGuestSessionIssuer Sessions => Fixture.GuestSessions;
 
-    [ConformanceFact]
+    [Test]
     public async Task AnIssuedCredentialResolvesToItsInvitationsSubjectAndActions()
     {
         await ActivateAsync();
@@ -22,25 +22,26 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
 
         var session = await Sessions.ResolveAsync(issued.Token!);
 
-        Assert.True(issued.Succeeded);
-        Assert.NotNull(session);
-        Assert.Equal(TenantId, session!.TenantId);
-        Assert.Equal("Complete", Assert.Single(session.AllowedActions));
-        Assert.True(subject.Matches(session.Subject));
+        await Assert.That(issued.Succeeded).IsTrue();
+        var resolvedSession = await Assert.That(session).IsNotNull();
+        await Assert.That(resolvedSession.TenantId).IsEqualTo(TenantId);
+        var allowedAction = await Assert.That(resolvedSession.AllowedActions).HasSingleItem();
+        await Assert.That(allowedAction).IsEqualTo("Complete");
+        await Assert.That(subject.Matches(resolvedSession.Subject)).IsTrue();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AnUnknownOrEmptyCredentialResolvesToNothing()
     {
         await ActivateAsync();
         await IssueAsync(Invitation(), Subject("guest-1"));
 
-        Assert.Null(await Sessions.ResolveAsync($"not-a-credential-{Guid.NewGuid():N}"));
-        Assert.Null(await Sessions.ResolveAsync(""));
-        Assert.Null(await Sessions.ResolveAsync("   "));
+        await Assert.That(await Sessions.ResolveAsync($"not-a-credential-{Guid.NewGuid():N}")).IsNull();
+        await Assert.That(await Sessions.ResolveAsync("")).IsNull();
+        await Assert.That(await Sessions.ResolveAsync("   ")).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task RevokingForATaskKillsEveryCredentialIssuedForIt()
     {
         await ActivateAsync();
@@ -50,11 +51,11 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
 
         await Sessions.RevokeForTaskAsync(TenantId, taskId);
 
-        Assert.Null(await Sessions.ResolveAsync(first.Token!));
-        Assert.Null(await Sessions.ResolveAsync(second.Token!));
+        await Assert.That(await Sessions.ResolveAsync(first.Token!)).IsNull();
+        await Assert.That(await Sessions.ResolveAsync(second.Token!)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task RevokingForOneInvitationLeavesAnotherInvitationsSessionAlive()
     {
         await ActivateAsync();
@@ -66,24 +67,24 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
 
         // Scoped revocation is the whole point: withdrawing one guest link must not sign the other guest
         // out, and must not leave the withdrawn one usable either.
-        Assert.Null(await Sessions.ResolveAsync(revoked.Token!));
-        Assert.NotNull(await Sessions.ResolveAsync(survivor.Token!));
+        await Assert.That(await Sessions.ResolveAsync(revoked.Token!)).IsNull();
+        await Assert.That(await Sessions.ResolveAsync(survivor.Token!)).IsNotNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task RevocationIsScopedByTenant()
     {
         await ActivateAsync();
         var issued = await IssueAsync(Invitation(id: "invitation-a"), Subject("guest-1"));
 
         await Sessions.RevokeForInvitationAsync("other-tenant", "invitation-a");
-        Assert.NotNull(await Sessions.ResolveAsync(issued.Token!));
+        await Assert.That(await Sessions.ResolveAsync(issued.Token!)).IsNotNull();
 
         await Sessions.RevokeForTaskAsync("other-tenant", "task-1");
-        Assert.NotNull(await Sessions.ResolveAsync(issued.Token!));
+        await Assert.That(await Sessions.ResolveAsync(issued.Token!)).IsNotNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task RevokingTwiceIsHarmless()
     {
         await ActivateAsync();
@@ -92,23 +93,23 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
         await Sessions.RevokeForInvitationAsync(TenantId, "invitation-a");
         await Sessions.RevokeForInvitationAsync(TenantId, "invitation-a");
 
-        Assert.Null(await Sessions.ResolveAsync(issued.Token!));
+        await Assert.That(await Sessions.ResolveAsync(issued.Token!)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ASessionStopsResolvingOnceItExpiresWithoutAnExplicitRevoke()
     {
         await ActivateAsync();
         Fixture.Settings.GuestSessionLifetime = TimeSpan.FromMinutes(30);
         var issued = await IssueAsync(Invitation(expiresAt: Clock.UtcNow.AddDays(1)), Subject("guest-1"));
-        Assert.NotNull(await Sessions.ResolveAsync(issued.Token!));
+        await Assert.That(await Sessions.ResolveAsync(issued.Token!)).IsNotNull();
 
         Clock.Advance(TimeSpan.FromMinutes(31));
 
-        Assert.Null(await Sessions.ResolveAsync(issued.Token!));
+        await Assert.That(await Sessions.ResolveAsync(issued.Token!)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ASessionNeverOutlivesTheInvitationItCameFrom()
     {
         await ActivateAsync();
@@ -117,24 +118,24 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
 
         var issued = await IssueAsync(Invitation(expiresAt: invitationExpiry), Subject("guest-1"));
 
-        Assert.Equal(invitationExpiry, issued.ExpiresAt);
+        await Assert.That(issued.ExpiresAt).IsEqualTo(invitationExpiry);
         Clock.Advance(TimeSpan.FromMinutes(11));
-        Assert.Null(await Sessions.ResolveAsync(issued.Token!));
+        await Assert.That(await Sessions.ResolveAsync(issued.Token!)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AnAlreadyExpiredInvitationIssuesNothingAtAll()
     {
         await ActivateAsync();
 
         var issued = await IssueAsync(Invitation(expiresAt: Clock.UtcNow.AddMinutes(-1)), Subject("guest-1"));
 
-        Assert.False(issued.Succeeded);
-        Assert.Null(issued.Token);
-        Assert.Equal("session-unavailable", issued.FailureCode);
+        await Assert.That(issued.Succeeded).IsFalse();
+        await Assert.That(issued.Token).IsNull();
+        await Assert.That(issued.FailureCode).IsEqualTo("session-unavailable");
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TheRawCredentialIsNeverRecoverableFromTheStore()
     {
         await ActivateAsync();
@@ -142,8 +143,8 @@ public abstract class UserTaskGuestSessionConformanceTests(UserTaskStoreFixture 
         var session = await Sessions.ResolveAsync(issued.Token!);
 
         // The credential is a bearer secret: the store keeps a hash, so nothing it exposes can be replayed.
-        Assert.NotNull(session);
-        Assert.DoesNotContain(issued.Token!, System.Text.Json.JsonSerializer.Serialize(session), StringComparison.Ordinal);
+        var resolvedSession = await Assert.That(session).IsNotNull();
+        await Assert.That(System.Text.Json.JsonSerializer.Serialize(resolvedSession)).DoesNotContain(issued.Token!, StringComparison.Ordinal);
     }
 
     private Task<GuestSessionResult> IssueAsync(UserTaskInvitation invitation, ParticipantReference subject) =>

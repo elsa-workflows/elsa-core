@@ -5,8 +5,7 @@ namespace Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
 ///
 /// A provider that cannot be reached is never silently omitted: it is reported by
 /// <see cref="ConformanceCoverageTests"/> and every one of its tests is reported as skipped, with the
-/// reason, by <see cref="ConformanceFactAttribute"/>. A provider that reads as "passed" must actually
-/// have run.
+/// provider-specific reason. A provider that reads as "passed" must actually have run.
 /// </summary>
 public static class ConformanceProviders
 {
@@ -40,9 +39,9 @@ public static class ConformanceProviders
 
     private static ConformanceProvider Gated(string name, string description, string variable) => new(
         name, description, variable,
-        Environment.GetEnvironmentVariable(variable) is { Length: > 0 }
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(variable))
             ? null
-            : $"{description} is not covered by this run: set {variable} to a connection string to include it.");
+            : $"{description} is not covered by this run: set {variable} to a non-empty, non-whitespace connection string to include it.");
 
     private static ConformanceProvider Blocked(string name, string description, string reason) => new(name, description, null, reason);
 }
@@ -55,8 +54,17 @@ public sealed record ConformanceProvider(string Name, string Description, string
 {
     public bool IsAvailable => SkipReason is null;
 
-    public string ConnectionString => ConnectionStringVariable is null
-        ? throw new InvalidOperationException($"Provider '{Name}' is not configured by a connection string.")
-        : Environment.GetEnvironmentVariable(ConnectionStringVariable)
-          ?? throw new InvalidOperationException($"Provider '{Name}' requires {ConnectionStringVariable} to be set.");
+    public string ConnectionString
+    {
+        get
+        {
+            if (ConnectionStringVariable is null)
+                throw new InvalidOperationException($"Provider '{Name}' is not configured by a connection string.");
+
+            var value = Environment.GetEnvironmentVariable(ConnectionStringVariable);
+            return !string.IsNullOrWhiteSpace(value)
+                ? value
+                : throw new InvalidOperationException($"Provider '{Name}' requires {ConnectionStringVariable} to contain a non-whitespace connection string.");
+        }
+    }
 }

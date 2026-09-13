@@ -12,7 +12,7 @@ namespace Elsa.UserTasks.Persistence.ConformanceTests;
 /// </summary>
 public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fixture) : UserTaskConformanceTestBase(fixture)
 {
-    [ConformanceFact]
+    [Test]
     public async Task AStaleSaveThrowsTheContractsConflictNotTheStoresNativeConcurrencyType()
     {
         await ActivateAsync();
@@ -24,16 +24,16 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         await Repository.SaveAsync(first, first.Revision);
 
         second.Priority = 10;
-        // Assert.ThrowsAsync matches the exact type, so this also pins that the store's own concurrency
+        // ThrowsExactlyAsync pins the exact type, so this also proves that the store's own concurrency
         // exception does not escape: DbUpdateConcurrencyException and DocumentStoreConcurrencyException
         // would both fail here, which is precisely the defect that shipped a 500 instead of a 409.
-        var conflict = await Assert.ThrowsAsync<UserTaskRevisionConflictException>(() => Repository.SaveAsync(second, second.Revision));
+        var conflict = (await Assert.ThrowsExactlyAsync<UserTaskRevisionConflictException>(() => Repository.SaveAsync(second, second.Revision)))!;
 
-        Assert.Equal(task.Id, conflict.TaskId);
-        Assert.Equal(second.Revision, conflict.ExpectedRevision);
+        await Assert.That(conflict.TaskId).IsEqualTo(task.Id);
+        await Assert.That(conflict.ExpectedRevision).IsEqualTo(second.Revision);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TwoWritersOnSeparateConnectionsLeaveExactlyOneWinnerAndOneConflict()
     {
         await ActivateAsync();
@@ -46,14 +46,14 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         theirs.Status = UserTaskStatus.Cancelled;
 
         await Repository.SaveAsync(mine, mine.Revision);
-        await Assert.ThrowsAsync<UserTaskRevisionConflictException>(() => other.SaveAsync(theirs, theirs.Revision));
+        await Assert.ThrowsExactlyAsync<UserTaskRevisionConflictException>(() => other.SaveAsync(theirs, theirs.Revision));
 
         var settled = await GetAsync(task.Id);
-        Assert.Equal(UserTaskStatus.Assigned, settled.Status);
-        Assert.Equal(task.Revision + 1, settled.Revision);
+        await Assert.That(settled.Status).IsEqualTo(UserTaskStatus.Assigned);
+        await Assert.That(settled.Revision).IsEqualTo(task.Revision + 1);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TryMutateReturnsFalseOnALostRaceRatherThanThrowing()
     {
         await ActivateAsync();
@@ -70,11 +70,11 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
             return true;
         });
 
-        Assert.False(mutated);
-        Assert.Equal(1, (await GetAsync(task.Id)).Priority);
+        await Assert.That(mutated).IsFalse();
+        await Assert.That((await GetAsync(task.Id)).Priority).IsEqualTo(1);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TryMutateCommitsNothingWhenTheMutationDeclines()
     {
         await ActivateAsync();
@@ -87,14 +87,14 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         });
 
         var settled = await GetAsync(task.Id);
-        Assert.False(mutated);
-        Assert.Equal(task.Priority, settled.Priority);
+        await Assert.That(mutated).IsFalse();
+        await Assert.That(settled.Priority).IsEqualTo(task.Priority);
         // A declined mutation must not consume the revision either, or the caller's next command would
         // fail with a conflict it has no way to explain.
-        Assert.Equal(task.Revision, settled.Revision);
+        await Assert.That(settled.Revision).IsEqualTo(task.Revision);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AppendEventDoesNotConsumeTheConcurrencyToken()
     {
         await ActivateAsync();
@@ -107,16 +107,16 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         await Repository.AppendEventAsync(TenantId, task.Id, Event(task, revision, "FieldRevealed", "event-b"));
 
         var audited = await GetAsync(task.Id);
-        Assert.Equal(revision, audited.Revision);
-        Assert.Equal(2, audited.Events.Count(x => x.Revision == revision));
+        await Assert.That(audited.Revision).IsEqualTo(revision);
+        await Assert.That(audited.Events.Count(x => x.Revision == revision)).IsEqualTo(2);
 
         // The revision the caller was already holding still commits.
         audited.Priority = 42;
         await Repository.SaveAsync(audited, revision);
-        Assert.Equal(42, (await GetAsync(task.Id)).Priority);
+        await Assert.That((await GetAsync(task.Id)).Priority).IsEqualTo(42);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AppendEventIgnoresAnUnknownTask()
     {
         await ActivateAsync();
@@ -125,10 +125,10 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         // Never projected. Auditing something that no longer exists is a lost race, not a fault.
         await Repository.AppendEventAsync(TenantId, task.Id, Event(task, 1, "Viewed", "event-orphan"));
 
-        Assert.Null(await Repository.GetAsync(TenantId, task.Id));
+        await Assert.That(await Repository.GetAsync(TenantId, task.Id)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AddProjectionIsIdempotentOnTheMaterializationKey()
     {
         await ActivateAsync();
@@ -141,25 +141,26 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         await Repository.AddProjectionAsync(replay);
 
         var all = await Repository.QueryAsync(Query(UserTaskQueryScopeKind.Available, includeTotalCount: true));
-        Assert.Equal(1, all.TotalCount);
-        Assert.Equal(task.Id, Assert.Single(all.Items).Id);
-        Assert.Null(await Repository.GetAsync(TenantId, replay.Id));
+        await Assert.That(all.TotalCount).IsEqualTo(1);
+        var projected = await Assert.That(all.Items).HasSingleItem();
+        await Assert.That(projected.Id).IsEqualTo(task.Id);
+        await Assert.That(await Repository.GetAsync(TenantId, replay.Id)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task LookupsByMaterializationKeyAndBookmarkAreTenantScoped()
     {
         await ActivateAsync();
         var task = await ProjectAsync(CreateTask(Subject()));
 
-        Assert.Equal(task.Id, (await Repository.FindByMaterializationKeyAsync(TenantId, task.MaterializationKey))?.Id);
-        Assert.Equal(task.Id, (await Repository.FindByBookmarkIdAsync(TenantId, task.BookmarkId))?.Id);
-        Assert.Null(await Repository.FindByMaterializationKeyAsync("other-tenant", task.MaterializationKey));
-        Assert.Null(await Repository.FindByBookmarkIdAsync("other-tenant", task.BookmarkId));
-        Assert.Null(await Repository.GetAsync("other-tenant", task.Id));
+        await Assert.That((await Repository.FindByMaterializationKeyAsync(TenantId, task.MaterializationKey))?.Id).IsEqualTo(task.Id);
+        await Assert.That((await Repository.FindByBookmarkIdAsync(TenantId, task.BookmarkId))?.Id).IsEqualTo(task.Id);
+        await Assert.That(await Repository.FindByMaterializationKeyAsync("other-tenant", task.MaterializationKey)).IsNull();
+        await Assert.That(await Repository.FindByBookmarkIdAsync("other-tenant", task.BookmarkId)).IsNull();
+        await Assert.That(await Repository.GetAsync("other-tenant", task.Id)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task InvitationLookupResolvesFromATokenHashAloneAndReturnsNullForUnknown()
     {
         await ActivateAsync();
@@ -176,15 +177,15 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         // trusted to name its own tenant.
         var match = await Repository.FindByInvitationTokenHashAsync(tokenHash);
 
-        Assert.NotNull(match);
-        var resolved = match!.Value;
-        Assert.Equal(task.Id, resolved.Task.Id);
-        Assert.Equal(TenantId, resolved.Task.TenantId);
-        Assert.Equal("Complete", Assert.Single(resolved.Invitation.AllowedActions));
-        Assert.Null(await Repository.FindByInvitationTokenHashAsync($"HASH-UNKNOWN-{Guid.NewGuid():N}"));
+        var resolved = await Assert.That(match).IsNotNull();
+        await Assert.That(resolved.Task.Id).IsEqualTo(task.Id);
+        await Assert.That(resolved.Task.TenantId).IsEqualTo(TenantId);
+        var allowedAction = await Assert.That(resolved.Invitation.AllowedActions).HasSingleItem();
+        await Assert.That(allowedAction).IsEqualTo("Complete");
+        await Assert.That(await Repository.FindByInvitationTokenHashAsync($"HASH-UNKNOWN-{Guid.NewGuid():N}")).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ScopeAndExclusionApplyBeforeTotalsCursorsAndPageLimits()
     {
         await ActivateAsync();
@@ -203,15 +204,17 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
 
         // The unauthorized rows are absent from the total, not merely hidden on the page. A count that
         // includes them leaks their existence and pushes authorized rows off the last page.
-        Assert.Equal(2, page.TotalCount);
-        Assert.Equal([visible.Id, alsoVisible.Id], page.Items.Select(x => x.Id).Order(StringComparer.Ordinal));
+        await Assert.That(page.TotalCount).IsEqualTo(2);
+        await Assert.That(page.Items.Select(x => x.Id).Order(StringComparer.Ordinal))
+            .IsEquivalentTo([visible.Id, alsoVisible.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         // The same must hold once a page limit forces a cursor: the excluded rows cannot occupy a slot.
         var paged = await PageThroughAsync(Query(), pageSize: 1);
-        Assert.Equal([visible.Id, alsoVisible.Id], paged.Order(StringComparer.Ordinal));
+        await Assert.That(paged.Order(StringComparer.Ordinal))
+            .IsEquivalentTo([visible.Id, alsoVisible.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AScopeFromAnotherTenantMatchesNothingEvenWhenTheQueryNamesThisOne()
     {
         await ActivateAsync();
@@ -224,19 +227,11 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         };
         var result = await Repository.QueryAsync(crossTenant);
 
-        Assert.Empty(result.Items);
-        Assert.Equal(0, result.TotalCount);
+        await Assert.That(result.Items).IsEmpty();
+        await Assert.That(result.TotalCount).IsEqualTo(0);
     }
 
-    [ConformanceTheory]
-    [InlineData("created", false)]
-    [InlineData("created", true)]
-    [InlineData("due", false)]
-    [InlineData("due", true)]
-    [InlineData("priority", false)]
-    [InlineData("priority", true)]
-    [InlineData("title", false)]
-    [InlineData("title", true)]
+    [Test, ConformanceCursorCases]
     public async Task CursorsAreStableAcrossEverySupportedSortAndDirection(string sort, bool descending)
     {
         await ActivateAsync();
@@ -249,10 +244,11 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         // Paging must reproduce the unpaged order exactly: no row seen twice, none skipped, and no
         // dependence on the page size. A cursor that only works at one limit is not a cursor.
         foreach (var pageSize in new[] { 1, 2, 3 })
-            Assert.Equal(expected, await PageThroughAsync(query, pageSize));
+            await Assert.That(await PageThroughAsync(query, pageSize))
+                .IsEquivalentTo(expected, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TasksWithoutADueDateOrderLastInBothDirections()
     {
         await ActivateAsync();
@@ -264,30 +260,31 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
             var dueDates = page.Items.Select(x => x.DueAt).ToList();
             var firstNull = dueDates.FindIndex(x => x is null);
 
-            Assert.NotEqual(-1, firstNull);
+            await Assert.That(firstNull).IsNotEqualTo(-1);
             // Once the nulls start they must not be interrupted, in either direction. A generic numeric
             // comparison reorders them and the cursor then drops or repeats rows at the boundary.
-            Assert.All(dueDates.Skip(firstNull), x => Assert.Null(x));
+            foreach (var dueDate in dueDates.Skip(firstNull))
+                await Assert.That(dueDate).IsNull();
         }
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ThePageLimitIsHonouredAndTheFinalPageReportsNoCursor()
     {
         await ActivateAsync();
         await SeedSortableTasksAsync();
 
         var first = await Repository.QueryAsync(Query(limit: 2));
-        Assert.Equal(2, first.Items.Count);
-        Assert.NotNull(first.NextCursor);
+        await Assert.That(first.Items.Count).IsEqualTo(2);
+        await Assert.That(first.NextCursor).IsNotNull();
 
         var last = await Repository.QueryAsync(Query(limit: 200));
-        Assert.Equal(SortableTaskCount, last.Items.Count);
+        await Assert.That(last.Items.Count).IsEqualTo(SortableTaskCount);
         // A cursor on a page that already returned everything sends the caller round again for nothing.
-        Assert.Null(last.NextCursor);
+        await Assert.That(last.NextCursor).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AnUnreadableCursorIsIgnoredRatherThanFailingTheRequest()
     {
         await ActivateAsync();
@@ -295,7 +292,7 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
 
         var result = await Repository.QueryAsync(Query(limit: 200, cursor: "not-a-cursor"));
 
-        Assert.Equal(SortableTaskCount, result.Items.Count);
+        await Assert.That(result.Items.Count).IsEqualTo(SortableTaskCount);
     }
 
     private const int SortableTaskCount = 6;

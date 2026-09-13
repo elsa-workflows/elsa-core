@@ -24,7 +24,7 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
     private readonly TestSink _sink = new();
     private readonly DefaultUserTaskAccessPolicy _policy = new();
 
-    [ConformanceFact]
+    [Test]
     public async Task AConcurrentEditMakesTheManagerReportAConflictInsteadOfFaulting()
     {
         await ActivateAsync();
@@ -40,11 +40,11 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
 
         // The store raises its own concurrency exception underneath. It must surface as the documented
         // conflict result rather than escaping to the unhandled-error middleware as a 500.
-        Assert.False(result.Accepted);
-        Assert.Equal("revision-conflict", result.ConflictCode);
+        await Assert.That(result.Accepted).IsFalse();
+        await Assert.That(result.ConflictCode).IsEqualTo("revision-conflict");
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task TwoCompletionsOnOneRevisionLeaveExactlyOneWinnerAndOneConflict()
     {
         await ActivateAsync();
@@ -55,22 +55,22 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
         var contender = CreateManager(Fixture.CreateSecondRepository());
 
         var claimed = await manager.ClaimAsync(TenantId, task.Id, new(task.Revision, "claim-1"), actor);
-        Assert.True(claimed.Accepted);
+        await Assert.That(claimed.Accepted).IsTrue();
         var revision = claimed.Task!.Revision;
 
         var first = await manager.CompleteAsync(TenantId, task.Id, new(revision, "op-first", "Complete"), actor);
         var second = await contender.CompleteAsync(TenantId, task.Id, new(revision, "op-second", "Complete"), actor);
 
-        Assert.True(first.Accepted);
-        Assert.False(second.Accepted);
+        await Assert.That(first.Accepted).IsTrue();
+        await Assert.That(second.Accepted).IsFalse();
         // The loser gets a conflict it can act on, never an unhandled exception and never a silent success.
-        Assert.Equal("revision-conflict", second.ConflictCode);
+        await Assert.That(second.ConflictCode).IsEqualTo("revision-conflict");
         // Completion is two-phase: the manager records the intent and the workflow resumption settles it.
         // With no resumer attached, Completing is the committed state, and only one of the two got there.
-        Assert.Equal(UserTaskStatus.Completing, (await GetAsync(task.Id)).Status);
+        await Assert.That((await GetAsync(task.Id)).Status).IsEqualTo(UserTaskStatus.Completing);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AFailureInThePreCommitSweepLeavesTheInvitationRevocableAndTheRetryRepairsIt()
     {
         await ActivateAsync();
@@ -81,23 +81,23 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
         // Fail the sweep that runs before anything is committed.
         sessions.FailRevokeForInvitationWhen = ordinal => ordinal == 1;
         var current = await GetAsync(task.Id);
-        await Assert.ThrowsAsync<InjectedStoreFaultException>(() =>
+        await Assert.ThrowsExactlyAsync<InjectedStoreFaultException>(() =>
             invitations.RevokeAsync(TenantId, task.Id, invitationId, current.Revision, ManagerActor()));
 
         // Nothing was committed, so the invitation is still open and the credential is still live. Failing
         // closed here is the point: committing the terminal state first would strand a live credential
         // behind a guard that rejects the retry.
         var afterFailure = await GetAsync(task.Id);
-        Assert.Equal(UserTaskInvitationStatus.Consumed, Invitation(afterFailure, invitationId).Status);
-        Assert.NotNull(await sessions.ResolveAsync(credential));
+        await Assert.That(Invitation(afterFailure, invitationId).Status).IsEqualTo(UserTaskInvitationStatus.Consumed);
+        await Assert.That(await sessions.ResolveAsync(credential)).IsNotNull();
 
         sessions.FailRevokeForInvitationWhen = null;
-        Assert.True(await invitations.RevokeAsync(TenantId, task.Id, invitationId, afterFailure.Revision, ManagerActor()));
-        Assert.Equal(UserTaskInvitationStatus.Revoked, Invitation(await GetAsync(task.Id), invitationId).Status);
-        Assert.Null(await sessions.ResolveAsync(credential));
+        await Assert.That(await invitations.RevokeAsync(TenantId, task.Id, invitationId, afterFailure.Revision, ManagerActor())).IsTrue();
+        await Assert.That(Invitation(await GetAsync(task.Id), invitationId).Status).IsEqualTo(UserTaskInvitationStatus.Revoked);
+        await Assert.That(await sessions.ResolveAsync(credential)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AFailureInThePostCommitSweepIsRepairedIdempotentlyByARetry()
     {
         await ActivateAsync();
@@ -109,22 +109,22 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
         // while a session issued in the commit window could still be live.
         sessions.FailRevokeForInvitationWhen = ordinal => ordinal == 2;
         var current = await GetAsync(task.Id);
-        await Assert.ThrowsAsync<InjectedStoreFaultException>(() =>
+        await Assert.ThrowsExactlyAsync<InjectedStoreFaultException>(() =>
             invitations.RevokeAsync(TenantId, task.Id, invitationId, current.Revision, ManagerActor()));
-        Assert.Equal(UserTaskInvitationStatus.Revoked, Invitation(await GetAsync(task.Id), invitationId).Status);
+        await Assert.That(Invitation(await GetAsync(task.Id), invitationId).Status).IsEqualTo(UserTaskInvitationStatus.Revoked);
 
         // The retry finds an already-revoked invitation. It must report success and sweep again rather than
         // reporting a failure the caller cannot act on and leaving the credential behind.
         sessions.FailRevokeForInvitationWhen = null;
         var sweepsBefore = sessions.RevokeForInvitationCallCount;
         var afterFailure = await GetAsync(task.Id);
-        Assert.True(await invitations.RevokeAsync(TenantId, task.Id, invitationId, afterFailure.Revision, ManagerActor()));
+        await Assert.That(await invitations.RevokeAsync(TenantId, task.Id, invitationId, afterFailure.Revision, ManagerActor())).IsTrue();
 
-        Assert.True(sessions.RevokeForInvitationCallCount > sweepsBefore);
-        Assert.Null(await sessions.ResolveAsync(credential));
+        await Assert.That(sessions.RevokeForInvitationCallCount > sweepsBefore).IsTrue();
+        await Assert.That(await sessions.ResolveAsync(credential)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ASuccessfulRevocationSweepsSessionsOnBothSidesOfTheCommit()
     {
         await ActivateAsync();
@@ -133,15 +133,15 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
         sessions.ResetCounters();
 
         var current = await GetAsync(task.Id);
-        Assert.True(await invitations.RevokeAsync(TenantId, task.Id, invitationId, current.Revision, ManagerActor()));
+        await Assert.That(await invitations.RevokeAsync(TenantId, task.Id, invitationId, current.Revision, ManagerActor())).IsTrue();
 
         // Both sweeps are load-bearing: the first keeps a store failure from committing, the second catches
         // a session a concurrent verification issued between the first sweep and the commit.
-        Assert.Equal(2, sessions.RevokeForInvitationCallCount);
-        Assert.Null(await sessions.ResolveAsync(credential));
+        await Assert.That(sessions.RevokeForInvitationCallCount).IsEqualTo(2);
+        await Assert.That(await sessions.ResolveAsync(credential)).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task ACredentialIssuedInsideTheRevokeCommitWindowIsDeadEitherWay()
     {
         await ActivateAsync();
@@ -151,7 +151,7 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
         var invitations = CreateInvitationService(Repository, sessions);
 
         var issued = await invitations.IssueAsync(TenantId, task.Id, new(task.Revision, "bearer", ["Complete"]), ManagerActor());
-        Assert.NotNull(issued);
+        var issuedResult = await Assert.That(issued).IsNotNull();
         await DrainOutboxAsync(dispatcher);
 
         // Revoke from inside IssueAsync, so the revocation runs after the guest session lands in the store
@@ -159,18 +159,18 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
         sessions.AfterIssue = async () =>
         {
             var current = await GetAsync(task.Id);
-            await invitations.RevokeAsync(TenantId, task.Id, issued!.Invitation.Id, current.Revision, ManagerActor());
+            await invitations.RevokeAsync(TenantId, task.Id, issuedResult.Invitation.Id, current.Revision, ManagerActor());
         };
 
         var verified = await invitations.VerifyAsync(new(dispatcher.Token!));
 
         // Whichever side wins, no live credential may survive a successful revoke.
-        Assert.False(verified.Succeeded);
-        Assert.Equal("invitation-unavailable", verified.FailureCode);
-        Assert.Null(verified.SessionToken);
+        await Assert.That(verified.Succeeded).IsFalse();
+        await Assert.That(verified.FailureCode).IsEqualTo("invitation-unavailable");
+        await Assert.That(verified.SessionToken).IsNull();
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AFailedSaveCommitsNothingAndTheRetrySucceedsOnTheSameRevision()
     {
         await ActivateAsync();
@@ -179,20 +179,20 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
 
         var attempt = await GetAsync(task.Id);
         attempt.Priority = 77;
-        await Assert.ThrowsAsync<InjectedStoreFaultException>(() => faulting.SaveAsync(attempt, task.Revision));
+        await Assert.ThrowsExactlyAsync<InjectedStoreFaultException>(() => faulting.SaveAsync(attempt, task.Revision));
 
         // A store that fails must leave the aggregate exactly as it was, revision included, or the retry
         // the caller is about to make would come back as a conflict it cannot explain.
         var afterFailure = await GetAsync(task.Id);
-        Assert.Equal(task.Priority, afterFailure.Priority);
-        Assert.Equal(task.Revision, afterFailure.Revision);
+        await Assert.That(afterFailure.Priority).IsEqualTo(task.Priority);
+        await Assert.That(afterFailure.Revision).IsEqualTo(task.Revision);
 
         await faulting.SaveAsync(attempt, task.Revision);
-        Assert.Equal(2, faulting.SaveCallCount);
-        Assert.Equal(77, (await GetAsync(task.Id)).Priority);
+        await Assert.That(faulting.SaveCallCount).IsEqualTo(2);
+        await Assert.That((await GetAsync(task.Id)).Priority).IsEqualTo(77);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AFailedCompareAndSwapCommitsNothingAndTheRetryConverges()
     {
         await ActivateAsync();
@@ -204,29 +204,29 @@ public abstract class UserTaskFaultInjectionConformanceTests(UserTaskStoreFixtur
             return true;
         };
 
-        await Assert.ThrowsAsync<InjectedStoreFaultException>(() => faulting.TryMutateAsync(TenantId, task.Id, task.Revision, mutation));
-        Assert.Equal(task.Status, (await GetAsync(task.Id)).Status);
+        await Assert.ThrowsExactlyAsync<InjectedStoreFaultException>(() => faulting.TryMutateAsync(TenantId, task.Id, task.Revision, mutation));
+        await Assert.That((await GetAsync(task.Id)).Status).IsEqualTo(task.Status);
 
-        Assert.True(await faulting.TryMutateAsync(TenantId, task.Id, task.Revision, mutation));
-        Assert.Equal(2, faulting.TryMutateCallCount);
-        Assert.Equal(UserTaskStatus.Cancelled, (await GetAsync(task.Id)).Status);
+        await Assert.That(await faulting.TryMutateAsync(TenantId, task.Id, task.Revision, mutation)).IsTrue();
+        await Assert.That(faulting.TryMutateCallCount).IsEqualTo(2);
+        await Assert.That((await GetAsync(task.Id)).Status).IsEqualTo(UserTaskStatus.Cancelled);
     }
 
-    [ConformanceFact]
+    [Test]
     public async Task AnAuditWriteFailureDoesNotConsumeTheCallersRevision()
     {
         await ActivateAsync();
         var task = await ProjectAsync(CreateTask(Subject()));
         var faulting = new FaultingUserTaskRepository(Repository) { FailAppendEventCalls = 1 };
 
-        await Assert.ThrowsAsync<InjectedStoreFaultException>(() =>
+        await Assert.ThrowsExactlyAsync<InjectedStoreFaultException>(() =>
             faulting.AppendEventAsync(TenantId, task.Id, new($"event-{Guid.NewGuid():N}", TenantId, task.Id, task.Revision, "Viewed", Clock.UtcNow)));
 
         // The command the caller was already holding a revision for still commits.
         var held = await GetAsync(task.Id);
         held.Priority = 33;
         await Repository.SaveAsync(held, task.Revision);
-        Assert.Equal(33, (await GetAsync(task.Id)).Priority);
+        await Assert.That((await GetAsync(task.Id)).Priority).IsEqualTo(33);
     }
 
     private async Task<(UserTask Task, string InvitationId, string Credential, FaultingGuestSessionIssuer Sessions)> IssueGuestSessionAsync()

@@ -1,6 +1,5 @@
 using System.Text;
 using Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
-using Xunit.Abstractions;
 
 namespace Elsa.UserTasks.Persistence.ConformanceTests;
 
@@ -11,7 +10,7 @@ namespace Elsa.UserTasks.Persistence.ConformanceTests;
 /// production behind a provider nobody ran. These tests fail when a provider that should have run did not,
 /// and otherwise write the full matrix to the test output and to an artifact file.
 /// </summary>
-public sealed class ConformanceCoverageTests(ITestOutputHelper output)
+public sealed class ConformanceCoverageTests
 {
     /// <summary>Providers that must run everywhere, including on a developer machine with no containers.</summary>
     private static readonly string[] RequiredProviders =
@@ -21,8 +20,8 @@ public sealed class ConformanceCoverageTests(ITestOutputHelper output)
         ConformanceProviders.VNext
     ];
 
-    [Fact]
-    public void EveryProviderThatMustRunIsReachable()
+    [Test]
+    public async Task EveryProviderThatMustRunIsReachable()
     {
         var unreachable = RequiredProviders
             .Select(ConformanceProviders.Get)
@@ -30,34 +29,34 @@ public sealed class ConformanceCoverageTests(ITestOutputHelper output)
             .Select(x => $"{x.Name}: {x.SkipReason}")
             .ToList();
 
-        Assert.True(unreachable.Count == 0,
-            "These providers must run in every conformance run but did not:" + Environment.NewLine + string.Join(Environment.NewLine, unreachable));
+        await Assert.That(unreachable.Count == 0).IsTrue()
+            .Because("These providers must run in every conformance run but did not:" + Environment.NewLine + string.Join(Environment.NewLine, unreachable));
     }
 
-    [Fact]
-    public void AProviderRequestedByTheEnvironmentIsNotQuietlyIgnored()
+    [Test]
+    public async Task AProviderRequestedByTheEnvironmentIsNotQuietlyIgnored()
     {
         // Setting the variable to whitespace is the failure mode worth catching: it looks configured on the
         // CI job and gates nothing, so the provider reports as skipped while the operator believes it ran.
         var misconfigured = ConformanceProviders.All
             .Where(x => x.ConnectionStringVariable is not null && !x.IsAvailable)
             .Where(x => Environment.GetEnvironmentVariable(x.ConnectionStringVariable!) is not null)
-            .Select(x => $"{x.Name}: {x.ConnectionStringVariable} is set but empty.")
+            .Select(x => $"{x.Name}: {x.ConnectionStringVariable} is set but empty or whitespace.")
             .ToList();
 
-        Assert.True(misconfigured.Count == 0, string.Join(Environment.NewLine, misconfigured));
+        await Assert.That(misconfigured.Count == 0).IsTrue().Because(string.Join(Environment.NewLine, misconfigured));
     }
 
-    [Fact]
-    public void TheCoverageMatrixIsReported()
+    [Test]
+    public async Task TheCoverageMatrixIsReported()
     {
         var report = BuildReport();
-        output.WriteLine(report);
+        TestContext.Current!.Output.WriteLine(report);
 
         var path = Path.Join(AppContext.BaseDirectory, "user-task-conformance-coverage.md");
         File.WriteAllText(path, report);
 
-        Assert.Contains("| Provider |", report, StringComparison.Ordinal);
+        await Assert.That(report).Contains("| Provider |", StringComparison.Ordinal);
     }
 
     private static string BuildReport()

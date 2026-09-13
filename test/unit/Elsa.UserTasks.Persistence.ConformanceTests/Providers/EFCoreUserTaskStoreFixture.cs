@@ -17,6 +17,7 @@ public abstract class EFCoreUserTaskStoreFixture : UserTaskStoreFixture
 {
     private ServiceProvider? _serviceProvider;
     private AsyncServiceScope _scope;
+    private readonly List<AsyncServiceScope> _secondaryScopes = [];
 
     protected EFCoreUserTaskStoreFixture(string providerName) : base(providerName)
     {
@@ -38,8 +39,23 @@ public abstract class EFCoreUserTaskStoreFixture : UserTaskStoreFixture
     /// tests need two genuinely independent writers; two calls on one scope would share EF state and
     /// quietly agree with each other.
     /// </summary>
-    public override IUserTaskRepository CreateSecondRepository() =>
-        (_serviceProvider ?? throw NotActivated()).CreateScope().ServiceProvider.GetRequiredService<EFCoreUserTaskRepository>();
+    public override IUserTaskRepository CreateSecondRepository()
+    {
+        var serviceProvider = _serviceProvider ?? throw NotActivated();
+        var scope = serviceProvider.CreateAsyncScope();
+
+        try
+        {
+            var repository = scope.ServiceProvider.GetRequiredService<EFCoreUserTaskRepository>();
+            _secondaryScopes.Add(scope);
+            return repository;
+        }
+        catch
+        {
+            scope.Dispose();
+            throw;
+        }
+    }
 
     protected abstract Assembly MigrationsAssembly { get; }
 
@@ -78,18 +94,35 @@ public abstract class EFCoreUserTaskStoreFixture : UserTaskStoreFixture
 
     protected override async Task DisposeCoreAsync()
     {
-        if (_serviceProvider is null)
+        var serviceProvider = _serviceProvider;
+        if (serviceProvider is null)
             return;
 
-        if (DropsOwnDatabase)
+        try
         {
-            var factory = _scope.ServiceProvider.GetRequiredService<IDbContextFactory<UserTasksElsaDbContext>>();
-            await using var dbContext = await factory.CreateDbContextAsync();
-            await dbContext.Database.EnsureDeletedAsync();
-        }
+            foreach (var secondaryScope in _secondaryScopes)
+                await secondaryScope.DisposeAsync();
+            _secondaryScopes.Clear();
 
-        await _scope.DisposeAsync();
-        await _serviceProvider.DisposeAsync();
+            if (DropsOwnDatabase)
+            {
+                var factory = _scope.ServiceProvider.GetRequiredService<IDbContextFactory<UserTasksElsaDbContext>>();
+                await using var dbContext = await factory.CreateDbContextAsync();
+                await dbContext.Database.EnsureDeletedAsync();
+            }
+        }
+        finally
+        {
+            try
+            {
+                await _scope.DisposeAsync();
+            }
+            finally
+            {
+                await serviceProvider.DisposeAsync();
+                _serviceProvider = null;
+            }
+        }
     }
 
     /// <summary>
