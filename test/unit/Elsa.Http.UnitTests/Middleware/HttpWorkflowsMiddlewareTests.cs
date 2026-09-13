@@ -107,6 +107,36 @@ public class HttpWorkflowsMiddlewareTests
     }
 
     [Fact]
+    public async Task InvokeAsync_WithMultiplePrefixSegmentsBeforeBasePath_SkipsRouteMatchingAndCallsNext()
+    {
+        var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/api/v1/workflows/status")]))
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/api/v1/workflows/status";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+        routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
     public async Task InvokeAsync_WithNonTenantPrefixedBasePathSegment_CallsNext()
     {
         var nextCalled = false;

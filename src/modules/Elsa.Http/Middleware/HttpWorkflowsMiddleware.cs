@@ -317,8 +317,11 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
         string.Equals(route, basePath, StringComparison.OrdinalIgnoreCase) ||
         route.StartsWith($"{basePath}/", StringComparison.OrdinalIgnoreCase);
 
-    private static bool CouldContainBasePath(string route, string basePath) =>
-        FindSegmentSequence(GetRouteSegments(route), GetRouteSegments(basePath)) >= 0;
+    private static bool CouldContainBasePath(string route, string basePath)
+    {
+        var basePathIndex = FindSegmentSequence(GetRouteSegments(route), GetRouteSegments(basePath));
+        return basePathIndex == 0 || basePathIndex == 1;
+    }
 
     private static bool IsSupportedBasePathIndex(string[] routeSegments, int basePathIndex) => basePathIndex == 0 || basePathIndex == 1 && routeSegments.Length > 0 && IsRouteParameterSegment(routeSegments[0]);
 
