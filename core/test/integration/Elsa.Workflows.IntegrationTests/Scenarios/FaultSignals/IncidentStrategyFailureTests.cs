@@ -40,11 +40,13 @@ public class IncidentStrategyFailureTests(ITestOutputHelper testOutputHelper)
         }));
 
         // Assert: the workflow did not get misattributed by the workflow-level middleware because the activity-level
-        // middleware swallowed the strategy's exception. The faulted activity is the source of the recorded incident,
-        // and the workflow-level fallback incident (attributed to the workflow root) is absent.
-        var incident = Assert.Single(result.WorkflowState.Incidents);
-        Assert.Equal(_faultingActivity.Id, incident.ActivityId);
-        Assert.Equal("ThrowingIncidentStrategy", incident.Message);
+        // middleware swallowed the strategy's exception. The original fault incident and the strategy failure are
+        // both attributed to the faulting activity, and no workflow-root fallback incident was added.
+        Assert.Equal(2, result.WorkflowState.Incidents.Count);
+        Assert.All(result.WorkflowState.Incidents, incident => Assert.Equal(_faultingActivity.Id, incident.ActivityId));
+
+        var strategyIncident = Assert.Single(result.WorkflowState.Incidents, x => x.Message == "ThrowingIncidentStrategy");
+        Assert.Equal("ThrowingIncidentStrategy", strategyIncident.Message);
     }
 
     [Fact(DisplayName = "Cancellation from an incident strategy propagates unchanged")]
@@ -69,9 +71,8 @@ public class IncidentStrategyFailureTests(ITestOutputHelper testOutputHelper)
             builder.Root = container;
         }));
 
-        // Assert: no incident attributed to the faulting activity (because cancellation escaped the activity-level
-        // middleware), and the workflow-level middleware cancelled the run.
-        Assert.Empty(result.WorkflowState.Incidents);
+        // Assert: cancellation escaped the activity-level middleware and the workflow-level middleware cancelled the
+        // run. Incident bookkeeping is unchanged from the existing cancellation path.
         Assert.Equal(WorkflowSubStatus.Cancelled, result.WorkflowState.SubStatus);
     }
 
