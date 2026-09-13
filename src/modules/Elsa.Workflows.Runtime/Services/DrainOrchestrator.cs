@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Elsa.Common;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -282,6 +283,22 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
     /// </summary>
     private static readonly TimeSpan PersistInterruptedTimeout = TimeSpan.FromSeconds(5);
 
+    /// <summary>
+    /// Short shutdown budget for the pre-cancel instance snapshot. Force-cancel runs after the drain
+    /// deadline, so remaining deadline is already zero. WaitAsync unblocks even if the store ignores
+    /// its cancellation token. The budget starts when a snapshot slot is acquired — not while
+    /// waiting for <see cref="MaxConcurrentPreCancelSnapshotFinds"/>.
+    /// </summary>
+    private static readonly TimeSpan PreCancelSnapshotTimeout = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Cap on concurrent pre-cancel snapshot Finds. Unbounded <c>Task.WhenAll</c> self-contends
+    /// under large live-cycle N: more 250ms timeouts, more <c>drainInduced</c> excludes, more
+    /// Interrupted misses. Queue wait uses the drain token only; each Find still gets its own
+    /// 250ms after it acquires a slot.
+    /// </summary>
+    internal const int MaxConcurrentPreCancelSnapshotFinds = 16;
+
     private async Task<(int Count, IReadOnlyList<string> Ids)> ForceCancelActiveCyclesAsync(DrainTrigger trigger, string generationId, CancellationToken cancellationToken)
     {
         var cap = _options.Value.MaxForceCancelledInstanceIdsReported;
@@ -298,6 +315,52 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         var reason = trigger == DrainTrigger.OperatorForce
             ? WorkflowInterruptedPayload.ReasonOperatorForce
             : WorkflowInterruptedPayload.ReasonDeadlineBreach;
+
+        // Snapshot before Phase A. Each Find has its own 250ms budget and its own
+        // DI scope so concurrent reads do not share an EF DbContext (Phase C stays
+        // sequential on the outer scope for the same reason). Finds run concurrently
+        // under a semaphore so a large live-cycle set cannot self-contend into
+        // 250ms timeouts. Timeout/error: exclude that id (prefer preserving
+        // user-cancel / #8052 over promoting an unknown row).
+        var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        using var snapshotGate = new SemaphoreSlim(MaxConcurrentPreCancelSnapshotFinds);
+        var snapshotTasks = live.Select(async handle =>
+        {
+            try
+            {
+                await snapshotGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    using var findScope = _scopeFactory.CreateScope();
+                    var findStore = findScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+                    using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    perFindCts.CancelAfter(PreCancelSnapshotTimeout);
+                    var snapshot = await findStore
+                        .FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, perFindCts.Token)
+                        .AsTask()
+                        .WaitAsync(perFindCts.Token)
+                        .ConfigureAwait(false);
+                    if (snapshot is null || snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                        return handle.WorkflowInstanceId;
+                }
+                finally
+                {
+                    snapshotGate.Release();
+                }
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogWarning(ex, "Pre-cancel snapshot for instance {InstanceId} timed out or failed; excluding from drain-induced promote.", handle.WorkflowInstanceId);
+            }
+
+            return null;
+        });
+
+        foreach (var instanceId in await Task.WhenAll(snapshotTasks).ConfigureAwait(false))
+        {
+            if (instanceId is not null)
+                drainInducedInstanceIds.Add(instanceId);
+        }
 
         // Force-cancel proceeds in three phases. The split exists because cancelling and
         // awaiting in the same loop made every execution cycle after the first run at full speed
@@ -358,7 +421,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             try
             {
                 using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
-                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, persistCts.Token);
+                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, persistCts.Token);
             }
             catch (Exception ex) when (!ex.IsFatal())
             {
@@ -375,6 +438,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         ExecutionCycleHandle handle,
         string generationId,
         string reason,
+        HashSet<string> drainInducedInstanceIds,
         CancellationToken cancellationToken)
     {
         var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
@@ -420,6 +484,14 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             return;
         }
 
+        if (ShouldSkipInterruptedPersist(instance, drainInducedInstanceIds))
+        {
+            _logger.LogInformation(
+                "Skipping Interrupted persist for instance {InstanceId}: already in terminal status {Status}/{SubStatus}.",
+                instance.Id, instance.Status, instance.SubStatus);
+            return;
+        }
+
         var actualReason = reason;
 
         try
@@ -458,5 +530,21 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
         return _registry.Snapshot()
             .Select(s => new IngressSourceFinalState(s.Name, s.State, s.LastError, WasForceStopped: s.State == IngressSourceState.PauseFailed && s.LastError is not null))
             .ToArray();
+    }
+
+    /// <summary>
+    /// Skip persist when the row is already a real terminal outcome: natural completion,
+    /// fault, already Cancelled, or unknown pre-state (snapshot timeout). Only ids that
+    /// snapshot clearly showed were not already Cancelled may be promoted.
+    /// </summary>
+    private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> drainInducedInstanceIds)
+    {
+        if (instance.Status != WorkflowStatus.Finished)
+            return false;
+
+        if (instance.SubStatus == WorkflowSubStatus.Cancelled)
+            return !drainInducedInstanceIds.Contains(instance.Id);
+
+        return true;
     }
 }
