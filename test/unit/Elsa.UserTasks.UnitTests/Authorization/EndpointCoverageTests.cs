@@ -5,7 +5,7 @@ namespace Elsa.UserTasks.UnitTests.Authorization;
 
 public class EndpointCoverageTests
 {
-    [Fact]
+    [Test]
     public void EveryUserTasksEndpointDeclaresItsAccess() =>
         EndpointCoverage.AssertEveryEndpointDeclaresAccess(typeof(DefaultUserTaskAccessPolicy).Assembly);
 }

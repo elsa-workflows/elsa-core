@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <UseTUnit>true</UseTUnit>
     <Include>[Elsa.UserTasks]*</Include>
     <Threshold>0</Threshold>
   </PropertyGroup>

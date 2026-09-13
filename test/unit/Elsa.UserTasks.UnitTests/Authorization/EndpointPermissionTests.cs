@@ -5,6 +5,7 @@ using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Services;
 using FastEndpoints;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.UserTasks.UnitTests.Authorization;
 
@@ -46,54 +47,43 @@ public class EndpointPermissionTests
         ("ListParticipantsEndpoint", UserTasksResourcePermissions.Participants, CoreVerbs.View)
     ];
 
-    public static TheoryData<string, string, string> Declarations
+    public static IEnumerable<(string, string, string)> Declarations => Expected;
+
+    [Test]
+    [MethodDataSource(nameof(Declarations))]
+    public async Task EndpointDeclaresItsExpectedPermission(string endpointName, string resource, string verb)
     {
-        get
-        {
-            var data = new TheoryData<string, string, string>();
+        var declared = await Declare(endpointName);
 
-            foreach (var (endpoint, resource, verb) in Expected)
-                data.Add(endpoint, resource, verb);
-
-            return data;
-        }
+        await Assert.That(declared).IsEqualTo(new Permission(resource, verb));
     }
 
-    [Theory]
-    [MemberData(nameof(Declarations))]
-    public void EndpointDeclaresItsExpectedPermission(string endpointName, string resource, string verb)
+    [Test]
+    [MethodDataSource(nameof(Declarations))]
+    public async Task EveryDeclaredPermissionIsAdvertisedByTheCatalog(string endpointName, string resource, string verb)
     {
-        var declared = Declare(endpointName);
-
-        Assert.Equal(new Permission(resource, verb), declared);
-    }
-
-    [Theory]
-    [MemberData(nameof(Declarations))]
-    public void EveryDeclaredPermissionIsAdvertisedByTheCatalog(string endpointName, string resource, string verb)
-    {
-        var declared = Declare(endpointName);
+        var declared = await Declare(endpointName);
         var descriptor = new UserTasksResourcePermissionsDescriptorProvider().GetDescriptors()
             .SingleOrDefault(x => x.Resource == declared.Resource);
 
-        Assert.True(descriptor is not null, $"{endpointName} requires resource '{declared.Resource}', which the module contributes no descriptor for, so it cannot be granted through the role editor.");
-        Assert.True(descriptor!.Supports(declared.Verb), $"{endpointName} requires '{declared}', but '{declared.Resource}' advertises only [{string.Join(", ", descriptor.SupportedVerbs)}].");
+        await Assert.That(descriptor is not null).IsTrue().Because($"{endpointName} requires resource '{declared.Resource}', which the module contributes no descriptor for, so it cannot be granted through the role editor.");
+        await Assert.That(descriptor!.Supports(declared.Verb)).IsTrue().Because($"{endpointName} requires '{declared}', but '{declared.Resource}' advertises only [{string.Join(", ", descriptor.SupportedVerbs)}].");
         // The theory data is what the migration guide's rows are written against, so it has to agree too.
-        Assert.Equal(new Permission(resource, verb), declared);
+        await Assert.That(declared).IsEqualTo(new Permission(resource, verb));
     }
 
-    [Fact]
-    public void EveryEndpointInTheModuleIsCovered()
+    [Test]
+    public async Task EveryEndpointInTheModuleIsCovered()
     {
         // Without this, deleting a row would silently stop testing an endpoint rather than fail.
         var declaring = EndpointNames().OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var asserted = Expected.Select(x => x.Endpoint).OrderBy(x => x, StringComparer.Ordinal).ToArray();
 
-        Assert.Equal(declaring, asserted);
+        await Assert.That(declaring).IsEquivalentTo(asserted, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
-    public void EveryAdvertisedVerbGuardsSomething()
+    [Test]
+    public async Task EveryAdvertisedVerbGuardsSomething()
     {
         // A verb nobody requires is one an administrator can grant to no effect.
         var required = Expected.Select(x => new Permission(x.Resource, x.Verb)).ToHashSet();
@@ -104,7 +94,7 @@ public class EndpointPermissionTests
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.True(unused.Length == 0, $"The catalog advertises {unused.Length} permission(s) no endpoint requires: {string.Join(", ", unused)}.");
+        await Assert.That(unused.Length == 0).IsTrue().Because($"The catalog advertises {unused.Length} permission(s) no endpoint requires: {string.Join(", ", unused)}.");
     }
 
     /// <summary>The Elsa endpoints this module declares, by simple name.</summary>
@@ -116,7 +106,7 @@ public class EndpointPermissionTests
     /// inline policy, which cannot be read back off the definition, so the registry is the only way to observe
     /// a declaration without booting a host.
     /// </summary>
-    private static Permission Declare(string endpointName)
+    private static async Task<Permission> Declare(string endpointName)
     {
         var endpointType = Module.GetTypes().Single(x => x.Name == endpointName);
         var arguments = endpointType.GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
@@ -133,7 +123,7 @@ public class EndpointPermissionTests
 
         var permission = EndpointPermissionRegistry.Find(endpointType);
 
-        Assert.True(permission.HasValue, $"{endpointName} declares no permission.");
+        await Assert.That(permission.HasValue).IsTrue().Because($"{endpointName} declares no permission.");
         return permission!.Value;
     }
 

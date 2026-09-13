@@ -20,49 +20,49 @@ public class ActorPermissionMatchingTests
 {
     private readonly UserTaskTestFixture _fixture = new();
 
-    [Theory]
-    [InlineData("user-tasks:view")]
-    [InlineData("user-tasks:*")]
-    [InlineData("user-tasks/*:view")]
-    [InlineData("*:view")]
-    [InlineData("*")]
+    [Test]
+    [Arguments("user-tasks:view")]
+    [Arguments("user-tasks:*")]
+    [Arguments("user-tasks/*:view")]
+    [Arguments("*:view")]
+    [Arguments("*")]
     public async Task GrantCoveringViewOpensTheAssignedScope(string grant)
     {
         var actor = _fixture.Actor("user-1", grant);
 
-        Assert.NotNull(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.Assigned));
+        await Assert.That(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.Assigned)).IsNotNull();
     }
 
-    [Theory]
-    [InlineData("user-tasks:complete")]
-    [InlineData("workflows/*:view")]
-    [InlineData("user-tasks/participants:view")]
+    [Test]
+    [Arguments("user-tasks:complete")]
+    [Arguments("workflows/*:view")]
+    [Arguments("user-tasks/participants:view")]
     public async Task GrantNotCoveringViewDoesNot(string grant)
     {
         var actor = _fixture.Actor("user-1", grant);
 
-        Assert.Null(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.Assigned));
+        await Assert.That(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.Assigned)).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task VerbWildcardAuthorizesAnOperationItNamesNoVerbFor()
     {
         var actor = _fixture.Actor("user-1", "user-tasks:*");
         var task = await _fixture.ProjectAsync(actor.Subject);
 
-        Assert.True(await _fixture.Policy.AuthorizeAsync(task, actor, UserTaskAccessOperation.Claim));
+        await Assert.That(await _fixture.Policy.AuthorizeAsync(task, actor, UserTaskAccessOperation.Claim)).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task SubtreeGrantConfersManagerStandingWhenTheHostSetsTheFlag()
     {
         // The tenant-wide scope needs view as well as supervise, and one subtree grant covers both.
         var actor = _fixture.Actor("manager-1", "user-tasks/*:view", "user-tasks/*:supervise") with { IsManager = true };
 
-        Assert.NotNull(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.All));
+        await Assert.That(await _fixture.Policy.CreateScopeAsync(actor, UserTaskQueryScopeKind.All)).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ClaimsResolverDerivesManagerStandingFromAWildcardGrant()
     {
         var resolver = new DefaultClaimsIdentityResolver(Microsoft.Extensions.Options.Options.Create(new UserTasksOptions()));
@@ -71,13 +71,13 @@ public class ActorPermissionMatchingTests
             new Claim("permissions", "user-tasks:*")
         ], "test"));
 
-        var actor = await resolver.ResolveAsync(principal);
+        var actor = await Assert.That(await resolver.ResolveAsync(principal)).IsNotNull();
 
-        Assert.True(actor!.IsManager);
-        Assert.True(actor.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Supervise));
+        await Assert.That(actor.IsManager).IsTrue();
+        await Assert.That(actor.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Supervise)).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task ClaimsResolverWithholdsManagerStandingFromAPlainWorkerGrant()
     {
         var resolver = new DefaultClaimsIdentityResolver(Microsoft.Extensions.Options.Options.Create(new UserTasksOptions()));
@@ -87,32 +87,32 @@ public class ActorPermissionMatchingTests
             new Claim("permissions", "user-tasks:claim")
         ], "test"));
 
-        var actor = await resolver.ResolveAsync(principal);
+        var actor = await Assert.That(await resolver.ResolveAsync(principal)).IsNotNull();
 
-        Assert.False(actor!.IsManager);
+        await Assert.That(actor.IsManager).IsFalse();
     }
 
-    [Fact]
-    public void MalformedGrantsAreIgnoredRatherThanMatched()
+    [Test]
+    public async Task MalformedGrantsAreIgnoredRatherThanMatched()
     {
         // The legacy spelling is not a well-formed permission on the resource axis: it parses as resource
         // 'read', verb 'user-tasks'. It must therefore authorize nothing here, which is what makes the
         // migration guide's rewrite mandatory rather than advisory.
         var actor = _fixture.Actor("user-1", "read:user-tasks", "not a permission");
 
-        Assert.False(actor.HasPermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View));
+        await Assert.That(actor.HasPermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View)).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task GuestSessionsCarryOnlyViewAndComplete()
     {
         var manager = _fixture.ManagerActor();
         var task = await _fixture.ProjectAsync(_fixture.Actor("user-1").Subject, UserTaskTestFixture.WithBearerInvitation());
         var (guest, _) = await _fixture.IssueGuestSessionAsync(task, manager);
 
-        Assert.True(guest.HasPermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View));
-        Assert.True(guest.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Complete));
-        Assert.False(guest.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Claim));
-        Assert.False(guest.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Supervise));
+        await Assert.That(guest.HasPermission(UserTasksResourcePermissions.UserTasks, CoreVerbs.View)).IsTrue();
+        await Assert.That(guest.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Complete)).IsTrue();
+        await Assert.That(guest.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Claim)).IsFalse();
+        await Assert.That(guest.HasPermission(UserTasksResourcePermissions.UserTasks, UserTaskVerbs.Supervise)).IsFalse();
     }
 }
