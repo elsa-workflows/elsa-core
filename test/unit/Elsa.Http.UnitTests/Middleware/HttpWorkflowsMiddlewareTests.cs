@@ -10,6 +10,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 
 namespace Elsa.Http.UnitTests.Middleware;
 
@@ -53,6 +54,184 @@ public class HttpWorkflowsMiddlewareTests
         Assert.NotNull(_bookmarkStore.LastFilter);
         var filter = _bookmarkStore.LastFilter!;
         Assert.False(filter.TenantAgnostic);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithConfiguredBasePathAndNonMatchingPath_SkipsRouteMatchingAndCallsNext()
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection().BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/health";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithSiblingPrefixPath_SkipsRouteMatchingAndCallsNext()
+    {
+        var nextCalled = false;
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection().BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows-v2/status";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithMultiplePrefixSegmentsBeforeBasePath_SkipsRouteMatchingAndCallsNext()
+    {
+        var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/api/v1/workflows/status")]))
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/api/v1/workflows/status";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+        routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithNonTenantPrefixedBasePathSegment_CallsNext()
+    {
+        var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/{tenantPrefix}/workflows/colliding")]))
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/api/workflows/colliding";
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.True(nextCalled);
+        routeMatcher.DidNotReceive().Match(Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithConfiguredBasePathAndMatchingPath_StillResolvesRoute()
+    {
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        routeMatcher.Match("/workflows/colliding", "/workflows/colliding").Returns(new RouteValueDictionary());
+        var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/colliding")]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = "/workflows/colliding";
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await _middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        routeMatcher.Received(1).Match("/workflows/colliding", "/workflows/colliding");
+        Assert.NotNull(bookmarkStore.LastFilter);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WithResolvedTenantPath_StillResolvesRoute()
+    {
+        var nextCalled = false;
+        var routeMatcher = Substitute.For<IRouteMatcher>();
+        var stimulusHasher = new CapturingStimulusHasher();
+        var middleware = new HttpWorkflowsMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+        routeMatcher.Match("/workflows/colliding", "/workflows/colliding").Returns(new RouteValueDictionary());
+        var bookmarkStore = new CapturingBookmarkStore(CurrentTenantId, CreateCollidingHttpEndpointBookmarks());
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IBookmarkStore>(bookmarkStore)
+            .AddSingleton(routeMatcher)
+            .AddSingleton<IRouteTable>(new ListRouteTable([new("/workflows/colliding")]))
+            .AddSingleton<IStimulusHasher>(stimulusHasher)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.PathBase = "/acme";
+        httpContext.Request.Path = "/workflows/colliding";
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
+            new EmptyHttpWorkflowLookupService());
+
+        Assert.False(nextCalled);
+        routeMatcher.Received(1).Match("/workflows/colliding", "/workflows/colliding");
+        Assert.Equal("/colliding", stimulusHasher.LastPayload?.Path);
+        Assert.NotNull(bookmarkStore.LastFilter);
     }
 
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
@@ -141,6 +320,17 @@ public class HttpWorkflowsMiddlewareTests
     private class FixedStimulusHasher : IStimulusHasher
     {
         public string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null) => BookmarkHash;
+    }
+
+    private class CapturingStimulusHasher : IStimulusHasher
+    {
+        public HttpEndpointBookmarkPayload? LastPayload { get; private set; }
+
+        public string Hash(string stimulusName, object? payload = null, string? activityInstanceId = null)
+        {
+            LastPayload = payload as HttpEndpointBookmarkPayload;
+            return BookmarkHash;
+        }
     }
 
     private class ExactRouteMatcher : IRouteMatcher
