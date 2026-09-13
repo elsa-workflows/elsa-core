@@ -111,12 +111,13 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     {
         lock (store.Sync)
         {
-            var uniqueDefinitions = DistinctByVersionKey(definitions).ToList();
+            var definitionList = definitions.ToList();
+            EnsureBatchVersionKeysUnique(definitionList);
 
-            foreach (var definition in uniqueDefinitions)
+            foreach (var definition in definitionList)
                 EnsureVersionKeyAvailable(definition);
 
-            store.SaveMany(uniqueDefinitions, GetId);
+            store.SaveMany(definitionList, GetId);
         }
 
         return Task.CompletedTask;
@@ -213,22 +214,26 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
         var existing = store.Find(x => x.Id != definition.Id && GetVersionKey(x) == versionKey);
 
         if (existing is not null)
-        {
-            throw new InvalidOperationException(
-                $"A workflow definition already exists for definition '{definition.DefinitionId}' version {definition.Version} tenant '{definition.TenantId}'.");
-        }
+            throw CreateVersionKeyConflict(definition);
     }
 
-    private static IEnumerable<WorkflowDefinition> DistinctByVersionKey(IEnumerable<WorkflowDefinition> definitions)
+    private static void EnsureBatchVersionKeysUnique(IEnumerable<WorkflowDefinition> definitions)
     {
-        var seen = new HashSet<DefinitionVersionKey>();
+        var seen = new Dictionary<DefinitionVersionKey, string>();
 
         foreach (var definition in definitions)
         {
-            if (seen.Add(GetVersionKey(definition)))
-                yield return definition;
+            var versionKey = GetVersionKey(definition);
+
+            if (seen.TryGetValue(versionKey, out var existingId) && existingId != definition.Id)
+                throw CreateVersionKeyConflict(definition);
+
+            seen[versionKey] = definition.Id;
         }
     }
+
+    private static InvalidOperationException CreateVersionKeyConflict(WorkflowDefinition definition) =>
+        new($"A workflow definition already exists for definition '{definition.DefinitionId}' version {definition.Version} tenant '{definition.TenantId}'.");
 
     private static DefinitionVersionKey GetVersionKey(WorkflowDefinition definition) =>
         new(definition.DefinitionId, definition.Version, definition.TenantId);

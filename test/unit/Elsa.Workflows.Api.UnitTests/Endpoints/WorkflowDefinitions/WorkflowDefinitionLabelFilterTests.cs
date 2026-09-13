@@ -164,8 +164,8 @@ public class WorkflowDefinitionLabelFilterTests
         var workflowDefinitionStore = new MemoryWorkflowDefinitionStore(memoryStore);
         await workflowDefinitionStore.SaveManyAsync(
         [
-            new WorkflowDefinition { Id = "red-version", DefinitionId = "red", Name = "Red", MaterializerName = "Json" },
-            new WorkflowDefinition { Id = "red-unlabeled-version", DefinitionId = "red", Name = "Red", MaterializerName = "Json" },
+            new WorkflowDefinition { Id = "red-version", DefinitionId = "red", Name = "Red", MaterializerName = "Json", Version = 1 },
+            new WorkflowDefinition { Id = "red-unlabeled-version", DefinitionId = "red", Name = "Red", MaterializerName = "Json", Version = 2 },
             new WorkflowDefinition { Id = "red-second-version", DefinitionId = "red-second", Name = "Red second", MaterializerName = "Json" },
             new WorkflowDefinition { Id = "blue-version", DefinitionId = "blue", Name = "Blue", MaterializerName = "Json" },
             new WorkflowDefinition { Id = "plain-version", DefinitionId = "plain", Name = "Plain", MaterializerName = "Json" }

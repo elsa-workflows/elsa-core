@@ -127,6 +127,27 @@ public abstract class WorkflowStoreConformanceTests
     }
 
     [Fact]
+    public async Task DefinitionSaveManyRejectsDuplicateVersionKeysInTheBatch()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        await scenario.Definitions.SaveAsync(Definition("def-kept", "kept", "tenant-a"));
+
+        await scenario.AssertUniquenessConflictAsync(() => scenario.Definitions.SaveManyAsync(
+        [
+            Definition("def-batch-1", "invoice", "tenant-a"),
+            Definition("def-batch-2", "invoice", "tenant-a")
+        ]));
+
+        var invoices = (await scenario.Definitions.FindManyAsync(new WorkflowDefinitionFilter
+        {
+            DefinitionId = "invoice",
+            TenantAgnostic = true
+        })).ToList();
+        Assert.Empty(invoices);
+        Assert.NotNull(await scenario.Definitions.FindAsync(new WorkflowDefinitionFilter { Id = "def-kept", TenantAgnostic = true }));
+    }
+
+    [Fact]
     public async Task DefinitionTenantIsolationHonorsAmbientTenantAndTenantAgnostic()
     {
         await using var scenario = await CreateScenarioAsync();
