@@ -326,6 +326,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Mqtt.UnitTests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Persistence.Dapper.UnitTests", "test\modules\persistence\Elsa.Persistence.Dapper.UnitTests\Elsa.Persistence.Dapper.UnitTests.csproj", "{C115D266-ED50-4584-B059-B4BB48B54C77}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "runtimes", "runtimes", "{743A35F0-4B12-4C73-928F-7DA1A3EEFA73}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Workflows.Runtime.ProtoActor.UnitTests", "test\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor.UnitTests\Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj", "{209765CA-207B-44F0-94E4-0711235E7F99}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -336,6 +340,18 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Debug|x64.Build.0 = Debug|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Debug|x86.Build.0 = Debug|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Release|x64.ActiveCfg = Release|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Release|x64.Build.0 = Release|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Release|x86.ActiveCfg = Release|Any CPU
+		{209765CA-207B-44F0-94E4-0711235E7F99}.Release|x86.Build.0 = Release|Any CPU
 		{4D16DD17-0BC9-476D-9B38-0A8644DD92FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4D16DD17-0BC9-476D-9B38-0A8644DD92FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4D16DD17-0BC9-476D-9B38-0A8644DD92FE}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -1557,6 +1573,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{743A35F0-4B12-4C73-928F-7DA1A3EEFA73} = {3DDE6F89-531C-47F8-9CD7-7A4E6984FA48}
+		{209765CA-207B-44F0-94E4-0711235E7F99} = {743A35F0-4B12-4C73-928F-7DA1A3EEFA73}
 		{3948BAF0-023F-4B43-8E77-56C3B00C6EFD} = {D0212324-351E-4CA6-95EE-27754B5367CC}
 		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {30CF0330-4B09-4784-B499-46BED303810B}
 		{45B793EC-7BFF-45C0-BD0E-2D1601C8D01E} = {30CF0330-4B09-4784-B499-46BED303810B}

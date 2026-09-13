@@ -196,10 +196,19 @@ internal class WorkflowInstance(
     {
         var workflowState = mappers.WorkflowStateJsonMapper.Map(request.SerializedWorkflowState);
         await EnsureStateAsync();
-        WorkflowState = workflowState;
+        var workflowGraph = WorkflowGraph;
+
+        if (workflowGraph.Workflow.Identity.Id != workflowState.DefinitionVersionId)
+        {
+            var workflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(workflowState.DefinitionVersionId);
+            workflowGraph = await FindWorkflowGraphAsync(workflowDefinitionHandle, Context.CancellationToken);
+        }
+
         await using var scope = scopeFactory.CreateAsyncScope();
         var workflowInstanceManager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
-        await workflowInstanceManager.SaveAsync(WorkflowState, Context.CancellationToken);
+        await workflowInstanceManager.SaveAsync(workflowState, Context.CancellationToken);
+        WorkflowGraph = workflowGraph;
+        WorkflowState = workflowState;
     }
 
     public override Task<InstanceExistsResponse> InstanceExists()

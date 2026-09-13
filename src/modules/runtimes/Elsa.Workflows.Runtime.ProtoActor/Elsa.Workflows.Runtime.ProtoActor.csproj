@@ -26,6 +26,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Workflows.Runtime.ProtoActor.UnitTests"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <Protobuf Include="Proto\Shared.proto" AdditionalImportDirs="./Proto"/>
         <Protobuf Include="Proto\WorkflowInstance.Messages.proto" AdditionalImportDirs="./Proto"/>
         <ProtoGrain Include="Proto\WorkflowInstance.proto" AdditionalImportDirs="./Proto" TemplateFiles="./Templates/Grain.tt"/>
