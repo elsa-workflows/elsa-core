@@ -1,6 +1,7 @@
 using Elsa.Hosting.Management.Options;
 using Elsa.Hosting.Management.Services;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Threading.Tasks;
 
 namespace Elsa.Hosting.Management.UnitTests.Services;
 
@@ -8,8 +9,8 @@ public class ConfiguredApplicationInstanceNameProviderTests
 {
     private static int ConfiguredInstanceNameMaxLength => ConfiguredApplicationInstanceNameProvider.ConfiguredInstanceNameMaxLength;
 
-    [Fact]
-    public void ExplicitInstanceName_IsUsedDirectly()
+    [Test]
+    public async Task ExplicitInstanceName_IsUsedDirectly()
     {
         var provider = CreateProvider(new()
         {
@@ -17,22 +18,22 @@ public class ConfiguredApplicationInstanceNameProviderTests
             InstanceNameEnvironmentVariable = "ELSA_TEST_INSTANCE_NAME"
         });
 
-        Assert.Equal("pod-0", provider.GetName());
+        await Assert.That(provider.GetName()).IsEqualTo("pod-0");
     }
 
-    [Fact]
-    public void ExplicitInstanceName_IsTrimmed()
+    [Test]
+    public async Task ExplicitInstanceName_IsTrimmed()
     {
         var provider = CreateProvider(new()
         {
             InstanceName = "  pod-0  "
         });
 
-        Assert.Equal("pod-0", provider.GetName());
+        await Assert.That(provider.GetName()).IsEqualTo("pod-0");
     }
 
-    [Fact]
-    public void ExplicitInstanceName_TakesPrecedenceOverEnvironmentVariable()
+    [Test]
+    public async Task ExplicitInstanceName_TakesPrecedenceOverEnvironmentVariable()
     {
         var variable = NewVariableName();
         Environment.SetEnvironmentVariable(variable, "from-env");
@@ -45,7 +46,7 @@ public class ConfiguredApplicationInstanceNameProviderTests
                 InstanceNameEnvironmentVariable = variable
             });
 
-            Assert.Equal("explicit", provider.GetName());
+            await Assert.That(provider.GetName()).IsEqualTo("explicit");
         }
         finally
         {
@@ -53,8 +54,8 @@ public class ConfiguredApplicationInstanceNameProviderTests
         }
     }
 
-    [Fact]
-    public void EnvironmentVariable_IsUsedWhenInstanceNameNotSet()
+    [Test]
+    public async Task EnvironmentVariable_IsUsedWhenInstanceNameNotSet()
     {
         var variable = NewVariableName();
         Environment.SetEnvironmentVariable(variable, "pod-7");
@@ -66,7 +67,7 @@ public class ConfiguredApplicationInstanceNameProviderTests
                 InstanceNameEnvironmentVariable = variable
             });
 
-            Assert.Equal("pod-7", provider.GetName());
+            await Assert.That(provider.GetName()).IsEqualTo("pod-7");
         }
         finally
         {
@@ -74,8 +75,8 @@ public class ConfiguredApplicationInstanceNameProviderTests
         }
     }
 
-    [Fact]
-    public void EnvironmentVariableName_IsTrimmed()
+    [Test]
+    public async Task EnvironmentVariableName_IsTrimmed()
     {
         var variable = NewVariableName();
         Environment.SetEnvironmentVariable(variable, "pod-7");
@@ -87,7 +88,7 @@ public class ConfiguredApplicationInstanceNameProviderTests
                 InstanceNameEnvironmentVariable = $"  {variable}  "
             });
 
-            Assert.Equal("pod-7", provider.GetName());
+            await Assert.That(provider.GetName()).IsEqualTo("pod-7");
         }
         finally
         {
@@ -95,8 +96,8 @@ public class ConfiguredApplicationInstanceNameProviderTests
         }
     }
 
-    [Fact]
-    public void EnvironmentVariable_ValueIsTrimmed()
+    [Test]
+    public async Task EnvironmentVariable_ValueIsTrimmed()
     {
         var variable = NewVariableName();
         Environment.SetEnvironmentVariable(variable, "  pod-7  ");
@@ -108,7 +109,7 @@ public class ConfiguredApplicationInstanceNameProviderTests
                 InstanceNameEnvironmentVariable = variable
             });
 
-            Assert.Equal("pod-7", provider.GetName());
+            await Assert.That(provider.GetName()).IsEqualTo("pod-7");
         }
         finally
         {
@@ -116,21 +117,21 @@ public class ConfiguredApplicationInstanceNameProviderTests
         }
     }
 
-    [Fact]
-    public void NoConfiguration_FallsBackToRandomName()
+    [Test]
+    public async Task NoConfiguration_FallsBackToRandomName()
     {
         var name1 = CreateProvider(new()).GetName();
         var name2 = CreateProvider(new()).GetName();
 
-        Assert.False(string.IsNullOrWhiteSpace(name1));
-        Assert.False(string.IsNullOrWhiteSpace(name2));
-        Assert.Matches(@"^[0-9a-f]+$", name1);
-        Assert.Matches(@"^[0-9a-f]+$", name2);
-        Assert.NotEqual(name1, name2);
+        await Assert.That(string.IsNullOrWhiteSpace(name1)).IsFalse();
+        await Assert.That(string.IsNullOrWhiteSpace(name2)).IsFalse();
+        await Assert.That(name1).Matches(@"^[0-9a-f]+$");
+        await Assert.That(name2).Matches(@"^[0-9a-f]+$");
+        await Assert.That(name2).IsNotEqualTo(name1);
     }
 
-    [Fact]
-    public void EnvironmentVariableConfiguredButEmpty_FallsBackToRandomName()
+    [Test]
+    public async Task EnvironmentVariableConfiguredButEmpty_FallsBackToRandomName()
     {
         var variable = NewVariableName();
         Environment.SetEnvironmentVariable(variable, null);
@@ -138,63 +139,63 @@ public class ConfiguredApplicationInstanceNameProviderTests
         var name1 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
         var name2 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
 
-        Assert.False(string.IsNullOrWhiteSpace(name1));
-        Assert.False(string.IsNullOrWhiteSpace(name2));
-        Assert.Matches(@"^[0-9a-f]+$", name1);
-        Assert.Matches(@"^[0-9a-f]+$", name2);
-        Assert.NotEqual(name1, name2);
+        await Assert.That(string.IsNullOrWhiteSpace(name1)).IsFalse();
+        await Assert.That(string.IsNullOrWhiteSpace(name2)).IsFalse();
+        await Assert.That(name1).Matches(@"^[0-9a-f]+$");
+        await Assert.That(name2).Matches(@"^[0-9a-f]+$");
+        await Assert.That(name2).IsNotEqualTo(name1);
     }
 
-    [Fact]
-    public void ExplicitInstanceName_AtMaximumLength_IsAccepted()
+    [Test]
+    public async Task ExplicitInstanceName_AtMaximumLength_IsAccepted()
     {
         var instanceName = new string('a', ConfiguredInstanceNameMaxLength);
 
         var provider = CreateProvider(new() { InstanceName = instanceName });
 
-        Assert.Equal(instanceName, provider.GetName());
+        await Assert.That(provider.GetName()).IsEqualTo(instanceName);
     }
 
-    [Fact]
-    public void ExplicitInstanceName_TooLong_IsShortenedDeterministically()
+    [Test]
+    public async Task ExplicitInstanceName_TooLong_IsShortenedDeterministically()
     {
         var instanceName = "nexxbiz-executor-api-v3-1-extra-long-replica-0001";
 
         var name1 = CreateProvider(new() { InstanceName = instanceName }).GetName();
         var name2 = CreateProvider(new() { InstanceName = instanceName }).GetName();
 
-        Assert.Equal(name1, name2);
-        Assert.True(name1.Length <= ConfiguredInstanceNameMaxLength);
-        Assert.StartsWith(instanceName[..8], name1);
-        Assert.NotEqual(instanceName, name1);
+        await Assert.That(name2).IsEqualTo(name1);
+        await Assert.That(name1.Length <= ConfiguredInstanceNameMaxLength).IsTrue();
+        await Assert.That(name1).StartsWith(instanceName[..8]).WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(name1).IsNotEqualTo(instanceName);
     }
 
-    [Theory]
-    [InlineData("pod 0")]
-    [InlineData("pöd-0")]
-    [InlineData("-pod-0")]
-    [InlineData("pod-0-")]
-    public void ExplicitInstanceName_InvalidCharacters_Throws(string instanceName)
+    [Test]
+    [Arguments("pod 0")]
+    [Arguments("pöd-0")]
+    [Arguments("-pod-0")]
+    [Arguments("pod-0-")]
+    public async Task ExplicitInstanceName_InvalidCharacters_Throws(string instanceName)
     {
-        var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
 
-        Assert.Contains("contains invalid characters", exception.Message);
+        await Assert.That(exception.Message).Contains("contains invalid characters").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void ExplicitInstanceName_InvalidCharactersAndTooLong_ReportsBothProblems()
+    [Test]
+    public async Task ExplicitInstanceName_InvalidCharactersAndTooLong_ReportsBothProblems()
     {
         var instanceName = new string('a', ConfiguredInstanceNameMaxLength) + " b";
 
-        var exception = Assert.Throws<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
+        var exception = Assert.ThrowsExactly<InvalidOperationException>(() => CreateProvider(new() { InstanceName = instanceName }));
 
-        Assert.Contains("contains invalid characters", exception.Message);
-        Assert.Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer", exception.Message);
-        Assert.Contains("Azure Service Bus", exception.Message);
+        await Assert.That(exception.Message).Contains("contains invalid characters").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains($"{ConfiguredInstanceNameMaxLength} characters or fewer").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains("Azure Service Bus").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void EnvironmentVariableValue_TooLong_IsShortenedDeterministically()
+    [Test]
+    public async Task EnvironmentVariableValue_TooLong_IsShortenedDeterministically()
     {
         var variable = NewVariableName();
         var instanceName = "nexxbiz-executor-api-v3-1-extra-long-replica-0001";
@@ -205,9 +206,9 @@ public class ConfiguredApplicationInstanceNameProviderTests
             var name1 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
             var name2 = CreateProvider(new() { InstanceNameEnvironmentVariable = variable }).GetName();
 
-            Assert.Equal(name1, name2);
-            Assert.True(name1.Length <= ConfiguredInstanceNameMaxLength);
-            Assert.NotEqual(instanceName, name1);
+            await Assert.That(name2).IsEqualTo(name1);
+            await Assert.That(name1.Length <= ConfiguredInstanceNameMaxLength).IsTrue();
+            await Assert.That(name1).IsNotEqualTo(instanceName);
         }
         finally
         {
