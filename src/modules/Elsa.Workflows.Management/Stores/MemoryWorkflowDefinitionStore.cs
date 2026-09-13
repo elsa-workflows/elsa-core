@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
@@ -10,7 +11,7 @@ namespace Elsa.Workflows.Management.Stores;
 /// <summary>
 /// A memory implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
-public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store) : IWorkflowDefinitionStore
+public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store, ITenantAccessor? tenantAccessor = null) : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -162,17 +163,31 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(store.Count(x => true, x => x.DefinitionId));
+        var count = store.Query(query => query.WhereVisibleToTenant(CurrentTenantId))
+            .Select(x => x.DefinitionId)
+            .Distinct()
+            .LongCount();
+        return Task.FromResult(count);
     }
 
     /// <inheritdoc />
     public Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        var exists = store.Any(x => x.Name == name && x.DefinitionId != definitionId);
+        var exists = store.Any(x =>
+            x.Name == name
+            && x.DefinitionId != definitionId
+            && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
         return Task.FromResult(!exists);
     }
 
-    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => filter.Apply(queryable);
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="WorkflowDefinitionFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c> / <c>IgnoreQueryFilters</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) =>
+        filter.Apply(queryable.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
+
+    private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
     private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;
 }

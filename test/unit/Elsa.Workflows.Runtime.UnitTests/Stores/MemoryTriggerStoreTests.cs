@@ -96,7 +96,7 @@ public class MemoryTriggerStoreTests
 
         await store.ReplaceAsync([], [tenantA, tenantB]);
 
-        var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
+        var stored = (await store.FindManyAsync(new TriggerFilter { TenantAgnostic = true })).ToList();
         Assert.Equal(2, stored.Count);
         Assert.Contains(stored, x => x.Id == "id-a");
         Assert.Contains(stored, x => x.Id == "id-b");

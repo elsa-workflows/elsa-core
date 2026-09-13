@@ -63,14 +63,14 @@ public class MemoryTriggerStore : ITriggerStore
     /// <inheritdoc />
     public ValueTask<StoredTrigger?> FindAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var entity = _store.Query(filter.Apply).FirstOrDefault();
+        var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
         return new(entity);
     }
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<StoredTrigger>> FindManyAsync(TriggerFilter filter, CancellationToken cancellationToken = default)
     {
-        var entities = _store.Query(filter.Apply);
+        var entities = _store.Query(query => Filter(query, filter));
         return new(entities);
     }
 
@@ -81,8 +81,8 @@ public class MemoryTriggerStore : ITriggerStore
 
     public ValueTask<Page<StoredTrigger>> FindManyAsync<TOrderBy>(TriggerFilter filter, PageArgs pageArgs, StoredTriggerOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = _store.Query(filter.Apply).LongCount();
-        var result = _store.Query(query => filter.Apply(query).OrderBy(order).Paginate(pageArgs)).ToList();
+        var count = _store.Query(query => Filter(query, filter)).LongCount();
+        var result = _store.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).ToList();
         return ValueTask.FromResult(Page.Of(result, count));
     }
 
@@ -121,10 +121,19 @@ public class MemoryTriggerStore : ITriggerStore
     {
         lock (_store.Sync)
         {
-            var ids = _store.Query(filter.Apply).Select(x => x.Id).ToList();
+            var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).ToList();
             return new(_store.DeleteMany(ids));
         }
     }
+
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="TriggerFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c> / <c>IgnoreQueryFilters</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<StoredTrigger> Filter(IQueryable<StoredTrigger> queryable, TriggerFilter filter) =>
+        filter.Apply(queryable.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
+
+    private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
     private void EnsureLogicalKeyAvailable(StoredTrigger record)
     {

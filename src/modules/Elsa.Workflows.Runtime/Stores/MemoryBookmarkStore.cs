@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Entities;
@@ -9,7 +10,7 @@ namespace Elsa.Workflows.Runtime.Stores;
 
 /// <inheritdoc />
 [UsedImplicitly]
-public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store) : IBookmarkStore
+public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store, ITenantAccessor? tenantAccessor = null) : IBookmarkStore
 {
     /// <inheritdoc />
     public ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
@@ -54,5 +55,12 @@ public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store) : IBookmarkS
         return store.DeleteMany(ids);
     }
     
-    private static IQueryable<StoredBookmark> Filter(IQueryable<StoredBookmark> query, BookmarkFilter filter) => filter.Apply(query);
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="BookmarkFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c> / <c>IgnoreQueryFilters</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<StoredBookmark> Filter(IQueryable<StoredBookmark> query, BookmarkFilter filter) =>
+        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
+
+    private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 }
