@@ -1,6 +1,7 @@
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests;
 
@@ -8,18 +9,18 @@ public class RelationalStructuredLogSqlBuilderTests
 {
     private readonly RelationalStructuredLogSqlBuilder _builder = new(new FakeDialect());
 
-    [Fact]
-    public void BuildInsert_UsesDialectQuotingAndParameters()
+    [Test]
+    public async Task BuildInsert_UsesDialectQuotingAndParameters()
     {
         var sql = _builder.BuildInsert();
 
-        Assert.StartsWith("INSERT INTO [StructuredLogEvents]", sql, StringComparison.Ordinal);
-        Assert.Contains("[TraceId]", sql, StringComparison.Ordinal);
-        Assert.Contains("@TraceId", sql, StringComparison.Ordinal);
+        await Assert.That(sql).StartsWith("INSERT INTO [StructuredLogEvents]").WithComparison(StringComparison.Ordinal);
+        await Assert.That(sql).Contains("[TraceId]").WithComparison(StringComparison.Ordinal);
+        await Assert.That(sql).Contains("@TraceId").WithComparison(StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void BuildQuery_AddsReusableFilterPredicates()
+    [Test]
+    public async Task BuildQuery_AddsReusableFilterPredicates()
     {
         var query = _builder.BuildQuery(new()
         {
@@ -39,59 +40,59 @@ public class RelationalStructuredLogSqlBuilderTests
             Take = 42
         });
 
-        Assert.Contains("[Level] >=", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[Level] IN (@Level0, @Level1)", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[Category] LIKE @Category", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[SourceId] = @SourceId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[WorkflowDefinitionId] = @WorkflowDefinitionId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[WorkflowInstanceId] = @WorkflowInstanceId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[CorrelationId] = @CorrelationId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[TraceId] = @TraceId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[Level] >=").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[Level] IN (@Level0, @Level1)").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[Category] LIKE @Category").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[SourceId] = @SourceId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[WorkflowDefinitionId] = @WorkflowDefinitionId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[WorkflowInstanceId] = @WorkflowInstanceId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[TenantId] = @TenantId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[CorrelationId] = @CorrelationId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[TraceId] = @TraceId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[SpanId] = @SpanId").WithComparison(StringComparison.Ordinal);
         foreach (var textColumn in new[] { "Message", "MessageTemplate", "Category", "ExceptionJson", "ScopesJson", "PropertiesJson" })
-            Assert.Contains($"[{textColumn}] LIKE @Text", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[Timestamp] >= @TimestampFrom", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[Timestamp] <= @TimestampTo", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("FETCH 42", query.Sql, StringComparison.Ordinal);
-        Assert.Equal("Elsa.Workflow%", query.Parameters["Category"]);
-        Assert.Equal("%needle%", query.Parameters["Text"]);
-        Assert.Contains("TimestampFrom", query.Parameters.Keys);
-        Assert.Contains("TimestampTo", query.Parameters.Keys);
+            await Assert.That(query.Sql).Contains($"[{textColumn}] LIKE @Text").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[Timestamp] >= @TimestampFrom").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[Timestamp] <= @TimestampTo").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("FETCH 42").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Parameters["Category"]).IsEqualTo("Elsa.Workflow%");
+        await Assert.That(query.Parameters["Text"]).IsEqualTo("%needle%");
+        await Assert.That(query.Parameters.Keys).Contains("TimestampFrom");
+        await Assert.That(query.Parameters.Keys).Contains("TimestampTo");
     }
 
-    [Theory]
-    [InlineData(null, "FETCH 100")]
-    [InlineData(-5, "FETCH 0")]
-    [InlineData(-1, "FETCH 0")]
-    [InlineData(2000, "FETCH 1000")]
-    [InlineData(5000, "FETCH 1000")]
-    public void BuildQuery_ClampsTakeToSupportedRange(int? take, string expectedLimit)
+    [Test]
+    [Arguments(null, "FETCH 100")]
+    [Arguments(-5, "FETCH 0")]
+    [Arguments(-1, "FETCH 0")]
+    [Arguments(2000, "FETCH 1000")]
+    [Arguments(5000, "FETCH 1000")]
+    public async Task BuildQuery_ClampsTakeToSupportedRange(int? take, string expectedLimit)
     {
         var query = _builder.BuildQuery(new() { Take = take });
 
-        Assert.Contains(expectedLimit, query.Sql, StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains(expectedLimit).WithComparison(StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void BuildListSources_GroupsBySourceAndOrdersBySource()
+    [Test]
+    public async Task BuildListSources_GroupsBySourceAndOrdersBySource()
     {
         var sql = _builder.BuildListSources();
 
-        Assert.Equal("SELECT [SourceId], MAX([ReceivedAt]) AS [LastSeen] FROM [StructuredLogEvents] GROUP BY [SourceId] ORDER BY [SourceId]", sql);
+        await Assert.That(sql).IsEqualTo("SELECT [SourceId], MAX([ReceivedAt]) AS [LastSeen] FROM [StructuredLogEvents] GROUP BY [SourceId] ORDER BY [SourceId]");
     }
 
-    [Fact]
-    public void BuildDeleteOlderThan_UsesReceivedAtCutoffParameter()
+    [Test]
+    public async Task BuildDeleteOlderThan_UsesReceivedAtCutoffParameter()
     {
         var query = _builder.BuildDeleteOlderThan("2026-05-13T13:00:00.0000000+00:00");
 
-        Assert.Equal("DELETE FROM [StructuredLogEvents] WHERE [ReceivedAt] < @Cutoff", query.Sql);
-        Assert.Equal("2026-05-13T13:00:00.0000000+00:00", query.Parameters["Cutoff"]);
+        await Assert.That(query.Sql).IsEqualTo("DELETE FROM [StructuredLogEvents] WHERE [ReceivedAt] < @Cutoff");
+        await Assert.That(query.Parameters["Cutoff"]).IsEqualTo("2026-05-13T13:00:00.0000000+00:00");
     }
 
-    [Fact]
-    public void BuildQuery_AddsTextPredicateAcrossSearchableColumns()
+    [Test]
+    public async Task BuildQuery_AddsTextPredicateAcrossSearchableColumns()
     {
         var query = _builder.BuildQuery(new()
         {
@@ -103,19 +104,19 @@ public class RelationalStructuredLogSqlBuilderTests
 
         const string expectedTextPredicate = "([Message] LIKE @Text OR [MessageTemplate] LIKE @Text OR [Category] LIKE @Text OR [ExceptionJson] LIKE @Text OR [ScopesJson] LIKE @Text OR [PropertiesJson] LIKE @Text)";
 
-        Assert.Contains(expectedTextPredicate, query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[TenantId] = @TenantId", query.Sql, StringComparison.Ordinal);
-        Assert.Contains("[SpanId] = @SpanId", query.Sql, StringComparison.Ordinal);
-        Assert.Equal("%failure%", query.Parameters["Text"]);
+        await Assert.That(query.Sql).Contains(expectedTextPredicate).WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[TenantId] = @TenantId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("[SpanId] = @SpanId").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Parameters["Text"]).IsEqualTo("%failure%");
     }
 
-    [Fact]
-    public void BuildDeleteRowsBeyondMax_DelegatesOffsetSyntaxToDialect()
+    [Test]
+    public async Task BuildDeleteRowsBeyondMax_DelegatesOffsetSyntaxToDialect()
     {
         var query = _builder.BuildDeleteRowsBeyondMax(250);
 
-        Assert.Contains("SKIP 250", query.Sql, StringComparison.Ordinal);
-        Assert.DoesNotContain("LIMIT -1", query.Sql, StringComparison.Ordinal);
+        await Assert.That(query.Sql).Contains("SKIP 250").WithComparison(StringComparison.Ordinal);
+        await Assert.That(query.Sql).DoesNotContain("LIMIT -1").WithComparison(StringComparison.Ordinal);
     }
 
     private class FakeDialect : IRelationalStructuredLogDialect

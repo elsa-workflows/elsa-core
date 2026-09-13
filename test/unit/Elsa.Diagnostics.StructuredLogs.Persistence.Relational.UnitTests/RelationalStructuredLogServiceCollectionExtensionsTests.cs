@@ -3,12 +3,13 @@ using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests;
 
 public class RelationalStructuredLogServiceCollectionExtensionsTests
 {
-    [Fact]
+    [Test]
     public async Task AddRelationalStructuredLogPersistence_WhenCalledTwice_DoesNotDuplicateRelationalRegistrations()
     {
         var services = new ServiceCollection();
@@ -22,12 +23,12 @@ public class RelationalStructuredLogServiceCollectionExtensionsTests
 
         services.AddRelationalStructuredLogPersistence();
 
-        Assert.Equal(diagnosticsCount, Count<IStructuredLogStorageDiagnostics>(services));
-        Assert.Equal(storeCount, Count<IStructuredLogStore>(services));
-        Assert.Equal(writeBufferCount, Count<IStructuredLogWriteBuffer>(services));
+        await Assert.That(Count<IStructuredLogStorageDiagnostics>(services)).IsEqualTo(diagnosticsCount);
+        await Assert.That(Count<IStructuredLogStore>(services)).IsEqualTo(storeCount);
+        await Assert.That(Count<IStructuredLogWriteBuffer>(services)).IsEqualTo(writeBufferCount);
 
         await using var serviceProvider = services.BuildServiceProvider();
-        Assert.NotNull(serviceProvider.GetRequiredService<IStructuredLogStorageDiagnostics>());
+        await Assert.That(serviceProvider.GetRequiredService<IStructuredLogStorageDiagnostics>()).IsNotNull();
     }
 
     private static int Count<T>(IEnumerable<ServiceDescriptor> services) => services.Count(x => x.ServiceType == typeof(T));

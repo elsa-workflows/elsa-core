@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Models;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests;
 
@@ -12,8 +13,8 @@ public class RelationalStructuredLogMapperTests
 {
     private readonly RelationalStructuredLogMapper _mapper = new();
 
-    [Fact]
-    public void Map_SerializesJsonFields()
+    [Test]
+    public async Task Map_SerializesJsonFields()
     {
         var logEvent = new StructuredLogEvent
         {
@@ -31,13 +32,13 @@ public class RelationalStructuredLogMapperTests
 
         var record = _mapper.Map(logEvent);
 
-        Assert.Contains("Boom", record.ExceptionJson, StringComparison.Ordinal);
-        Assert.Contains("Scope", record.ScopesJson, StringComparison.Ordinal);
-        Assert.Contains("Property", record.PropertiesJson, StringComparison.Ordinal);
+        await Assert.That(record.ExceptionJson).Contains("Boom").WithComparison(StringComparison.Ordinal);
+        await Assert.That(record.ScopesJson).Contains("Scope").WithComparison(StringComparison.Ordinal);
+        await Assert.That(record.PropertiesJson).Contains("Property").WithComparison(StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Map_FromReader_DeserializesPersistedFields()
+    [Test]
+    public async Task Map_FromReader_DeserializesPersistedFields()
     {
         var logEvent = new StructuredLogEvent
         {
@@ -65,34 +66,34 @@ public class RelationalStructuredLogMapperTests
         var record = _mapper.Map(logEvent);
 
         using var reader = CreateReader(record);
-        Assert.True(reader.Read());
+        await Assert.That(reader.Read()).IsTrue();
         var mapped = _mapper.Map(reader);
 
-        Assert.Equal(logEvent.Id, mapped.Id);
-        Assert.Equal(logEvent.Sequence, mapped.Sequence);
-        Assert.Equal(logEvent.Timestamp.ToUniversalTime(), mapped.Timestamp);
-        Assert.Equal(logEvent.ReceivedAt.ToUniversalTime(), mapped.ReceivedAt);
-        Assert.Equal(logEvent.Level, mapped.Level);
-        Assert.Equal(logEvent.Category, mapped.Category);
-        Assert.Equal(logEvent.EventId, mapped.EventId);
-        Assert.Equal(logEvent.EventName, mapped.EventName);
-        Assert.Equal(logEvent.Message, mapped.Message);
-        Assert.Equal(logEvent.MessageTemplate, mapped.MessageTemplate);
-        Assert.Equal(logEvent.Exception, mapped.Exception);
-        Assert.Equal("Value", mapped.Scopes["Scope"]);
-        Assert.True(mapped.Properties.TryGetValue("Property", out var propertyValue));
-        Assert.Null(propertyValue);
-        Assert.Equal(logEvent.TraceId, mapped.TraceId);
-        Assert.Equal(logEvent.SpanId, mapped.SpanId);
-        Assert.Equal(logEvent.CorrelationId, mapped.CorrelationId);
-        Assert.Equal(logEvent.TenantId, mapped.TenantId);
-        Assert.Equal(logEvent.WorkflowDefinitionId, mapped.WorkflowDefinitionId);
-        Assert.Equal(logEvent.WorkflowInstanceId, mapped.WorkflowInstanceId);
-        Assert.Equal(logEvent.SourceId, mapped.SourceId);
+        await Assert.That(mapped.Id).IsEqualTo(logEvent.Id);
+        await Assert.That(mapped.Sequence).IsEqualTo(logEvent.Sequence);
+        await Assert.That(mapped.Timestamp).IsEqualTo(logEvent.Timestamp.ToUniversalTime());
+        await Assert.That(mapped.ReceivedAt).IsEqualTo(logEvent.ReceivedAt.ToUniversalTime());
+        await Assert.That(mapped.Level).IsEqualTo(logEvent.Level);
+        await Assert.That(mapped.Category).IsEqualTo(logEvent.Category);
+        await Assert.That(mapped.EventId).IsEqualTo(logEvent.EventId);
+        await Assert.That(mapped.EventName).IsEqualTo(logEvent.EventName);
+        await Assert.That(mapped.Message).IsEqualTo(logEvent.Message);
+        await Assert.That(mapped.MessageTemplate).IsEqualTo(logEvent.MessageTemplate);
+        await Assert.That(mapped.Exception).IsEqualTo(logEvent.Exception);
+        await Assert.That(mapped.Scopes["Scope"]).IsEqualTo("Value");
+        await Assert.That(mapped.Properties.TryGetValue("Property", out var propertyValue)).IsTrue();
+        await Assert.That(propertyValue).IsNull();
+        await Assert.That(mapped.TraceId).IsEqualTo(logEvent.TraceId);
+        await Assert.That(mapped.SpanId).IsEqualTo(logEvent.SpanId);
+        await Assert.That(mapped.CorrelationId).IsEqualTo(logEvent.CorrelationId);
+        await Assert.That(mapped.TenantId).IsEqualTo(logEvent.TenantId);
+        await Assert.That(mapped.WorkflowDefinitionId).IsEqualTo(logEvent.WorkflowDefinitionId);
+        await Assert.That(mapped.WorkflowInstanceId).IsEqualTo(logEvent.WorkflowInstanceId);
+        await Assert.That(mapped.SourceId).IsEqualTo(logEvent.SourceId);
     }
 
-    [Fact]
-    public void Map_FromReader_ReturnsEmptyCollections_WhenJsonFieldsAreNull()
+    [Test]
+    public async Task Map_FromReader_ReturnsEmptyCollections_WhenJsonFieldsAreNull()
     {
         var record = new RelationalStructuredLogRecord
         {
@@ -108,29 +109,29 @@ public class RelationalStructuredLogMapperTests
         };
 
         using var reader = CreateReader(record, useNullJsonPayloads: true);
-        Assert.True(reader.Read());
+        await Assert.That(reader.Read()).IsTrue();
         var mapped = _mapper.Map(reader);
 
-        Assert.Null(mapped.Exception);
-        Assert.Empty(mapped.Scopes);
-        Assert.Empty(mapped.Properties);
-        Assert.Null(mapped.EventName);
-        Assert.Null(mapped.MessageTemplate);
+        await Assert.That(mapped.Exception).IsNull();
+        await Assert.That(mapped.Scopes).IsEmpty();
+        await Assert.That(mapped.Properties).IsEmpty();
+        await Assert.That(mapped.EventName).IsNull();
+        await Assert.That(mapped.MessageTemplate).IsNull();
     }
 
-    [Fact]
-    public void FormatTimestamp_StoresUtcIso8601Text()
+    [Test]
+    public async Task FormatTimestamp_StoresUtcIso8601Text()
     {
         var timestamp = new DateTimeOffset(2026, 5, 13, 15, 0, 0, TimeSpan.FromHours(2));
 
         var formatted = RelationalStructuredLogMapper.FormatTimestamp(timestamp);
 
-        Assert.Equal("2026-05-13T13:00:00.0000000+00:00", formatted);
-        Assert.Equal(timestamp.ToUniversalTime(), RelationalStructuredLogMapper.ParseTimestamp(formatted));
+        await Assert.That(formatted).IsEqualTo("2026-05-13T13:00:00.0000000+00:00");
+        await Assert.That(RelationalStructuredLogMapper.ParseTimestamp(formatted)).IsEqualTo(timestamp.ToUniversalTime());
     }
 
-    [Fact]
-    public void Map_FromReader_TreatsWhitespaceJsonAsEmptyValues()
+    [Test]
+    public async Task Map_FromReader_TreatsWhitespaceJsonAsEmptyValues()
     {
         var record = new RelationalStructuredLogRecord
         {
@@ -157,21 +158,21 @@ public class RelationalStructuredLogMapperTests
         };
 
         using var reader = CreateReader(record);
-        Assert.True(reader.Read());
+        await Assert.That(reader.Read()).IsTrue();
 
         var mapped = _mapper.Map(reader);
 
-        Assert.Null(mapped.EventName);
-        Assert.Null(mapped.MessageTemplate);
-        Assert.Null(mapped.Exception);
-        Assert.Empty(mapped.Scopes);
-        Assert.Empty(mapped.Properties);
-        Assert.Null(mapped.TraceId);
-        Assert.Null(mapped.SpanId);
-        Assert.Null(mapped.CorrelationId);
-        Assert.Null(mapped.TenantId);
-        Assert.Null(mapped.WorkflowDefinitionId);
-        Assert.Null(mapped.WorkflowInstanceId);
+        await Assert.That(mapped.EventName).IsNull();
+        await Assert.That(mapped.MessageTemplate).IsNull();
+        await Assert.That(mapped.Exception).IsNull();
+        await Assert.That(mapped.Scopes).IsEmpty();
+        await Assert.That(mapped.Properties).IsEmpty();
+        await Assert.That(mapped.TraceId).IsNull();
+        await Assert.That(mapped.SpanId).IsNull();
+        await Assert.That(mapped.CorrelationId).IsNull();
+        await Assert.That(mapped.TenantId).IsNull();
+        await Assert.That(mapped.WorkflowDefinitionId).IsNull();
+        await Assert.That(mapped.WorkflowInstanceId).IsNull();
     }
 
     private static DbDataReader CreateReader(RelationalStructuredLogRecord record, bool useNullJsonPayloads = false)
