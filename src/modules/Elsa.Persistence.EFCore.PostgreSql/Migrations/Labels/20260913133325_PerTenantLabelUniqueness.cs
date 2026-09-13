@@ -19,33 +19,32 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
-            // Duplicates are not deleted — CreateIndex fails loudly; resolve them before upgrading.
-            // Name/NormalizedName are not truncated; values longer than 255 fail this ALTER.
             migrationBuilder.Sql($"""
                 UPDATE "{_schema.Schema}"."Labels"
                 SET "TenantId" = ''
                 WHERE "TenantId" IS NULL;
                 """);
 
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                schema: _schema.Schema,
-                table: "Labels",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
+            // Keep provider column type (text). HasMaxLength(255) is a model annotation only.
+            // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
+            migrationBuilder.Sql($"""
+                DO $$
+                DECLARE keys text;
+                BEGIN
+                    SELECT string_agg(format('(%s, %s)', "TenantId", "NormalizedName"), ', ')
+                    INTO keys
+                    FROM (
+                        SELECT "TenantId", "NormalizedName"
+                        FROM "{_schema.Schema}"."Labels"
+                        GROUP BY "TenantId", "NormalizedName"
+                        HAVING COUNT(*) > 1
+                    ) d;
 
-            migrationBuilder.AlterColumn<string>(
-                name: "NormalizedName",
-                schema: _schema.Schema,
-                table: "Labels",
-                type: "character varying(255)",
-                maxLength: 255,
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "text");
+                    IF keys IS NOT NULL THEN
+                        RAISE EXCEPTION 'Cannot apply IX_Label_TenantId_NormalizedName. Operators must resolve leftover (TenantId, NormalizedName) rows before upgrade. Duplicate keys: %', keys;
+                    END IF;
+                END $$;
+                """);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Label_TenantId_NormalizedName",
@@ -62,26 +61,6 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
                 name: "IX_Label_TenantId_NormalizedName",
                 schema: _schema.Schema,
                 table: "Labels");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "NormalizedName",
-                schema: _schema.Schema,
-                table: "Labels",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(255)",
-                oldMaxLength: 255);
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Name",
-                schema: _schema.Schema,
-                table: "Labels",
-                type: "text",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "character varying(255)",
-                oldMaxLength: 255);
         }
     }
 }

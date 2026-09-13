@@ -19,11 +19,28 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
-            // Duplicates are not deleted — CreateIndex fails loudly; resolve them before upgrading.
             migrationBuilder.Sql($"""
                 UPDATE "{_schema.Schema}"."Labels"
                 SET "TenantId" = ''
                 WHERE "TenantId" IS NULL;
+                """);
+
+            // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
+            migrationBuilder.Sql($"""
+                SELECT RAISE(ABORT, 'Cannot apply IX_Label_TenantId_NormalizedName. Operators must resolve leftover (TenantId, NormalizedName) rows before upgrade. Duplicate keys: ' ||
+                    (SELECT group_concat('(' || IFNULL("TenantId", '') || ', ' || "NormalizedName" || ')', ', ')
+                     FROM (
+                         SELECT "TenantId", "NormalizedName"
+                         FROM "{_schema.Schema}"."Labels"
+                         GROUP BY "TenantId", "NormalizedName"
+                         HAVING COUNT(*) > 1
+                     )))
+                WHERE EXISTS (
+                    SELECT 1
+                    FROM "{_schema.Schema}"."Labels"
+                    GROUP BY "TenantId", "NormalizedName"
+                    HAVING COUNT(*) > 1
+                );
                 """);
 
             migrationBuilder.CreateIndex(

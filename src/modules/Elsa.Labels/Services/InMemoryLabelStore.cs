@@ -168,9 +168,8 @@ public class InMemoryLabelStore : ILabelStore
     private void EnsureNormalizedNameAvailable(Label record, IReadOnlyCollection<Label> batch)
     {
         var batchIds = batch.Select(x => x.Id).ToHashSet();
-        var tenantId = UniquenessTenantId(record.TenantId);
         var existing = _labelStore.Find(candidate =>
-            UniquenessTenantId(candidate.TenantId) == tenantId
+            candidate.TenantId == record.TenantId
             && candidate.Id != record.Id
             && !batchIds.Contains(candidate.Id)
             && candidate.NormalizedName == record.NormalizedName);
@@ -180,18 +179,12 @@ public class InMemoryLabelStore : ILabelStore
 
         if (batch.Any(other =>
                 other.Id != record.Id
-                && UniquenessTenantId(other.TenantId) == tenantId
+                && other.TenantId == record.TenantId
                 && other.NormalizedName == record.NormalizedName))
         {
             throw DuplicateNormalizedName(record);
         }
     }
-
-    /// <summary>
-    /// Default tenant is <see cref="Tenant.DefaultTenantId"/> (<c>""</c>), not null.
-    /// Null leftover rows are the same uniqueness tenant as "".
-    /// </summary>
-    private static string UniquenessTenantId(string? tenantId) => tenantId ?? Tenant.DefaultTenantId;
 
     private static InvalidOperationException DuplicateNormalizedName(Label record) =>
         new($"A label already exists with normalized name '{record.NormalizedName}' in tenant '{record.TenantId}'.");

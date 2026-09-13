@@ -19,13 +19,61 @@ namespace Elsa.Persistence.EFCore.SqlServer.Migrations.Labels
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Default tenant is "" (not null). Stamp leftover nulls so the filtered unique
-            // index (TenantId IS NOT NULL) covers them. Duplicates are not deleted —
-            // CreateIndex fails loudly; resolve them before upgrading.
-            // Name/NormalizedName are not truncated; values longer than 255 fail this ALTER.
+            // index (TenantId IS NOT NULL) covers them. Duplicates are not deleted.
             migrationBuilder.Sql($"""
                 UPDATE [{_schema.Schema}].[Labels]
                 SET [TenantId] = N''
                 WHERE [TenantId] IS NULL;
+                """);
+
+            // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
+            migrationBuilder.Sql($"""
+                IF EXISTS (
+                    SELECT 1
+                    FROM [{_schema.Schema}].[Labels]
+                    GROUP BY [TenantId], [NormalizedName]
+                    HAVING COUNT(*) > 1
+                )
+                BEGIN
+                    DECLARE @DuplicateKeys nvarchar(max);
+
+                    SELECT @DuplicateKeys = STRING_AGG(
+                        CAST(CONCAT(N'(', ISNULL([TenantId], N'<null>'), N', ', [NormalizedName], N')') AS nvarchar(max)),
+                        N'; '
+                    )
+                    FROM (
+                        SELECT [TenantId], [NormalizedName]
+                        FROM [{_schema.Schema}].[Labels]
+                        GROUP BY [TenantId], [NormalizedName]
+                        HAVING COUNT(*) > 1
+                    ) AS Duplicates;
+
+                    THROW 50001, CONCAT(
+                        N'Cannot create unique index IX_Label_TenantId_NormalizedName because leftover duplicate (TenantId, NormalizedName) rows exist. Operators must resolve leftover (TenantId, NormalizedName) rows before upgrade. Duplicate keys: ',
+                        LEFT(@DuplicateKeys, 1500)
+                    ), 1;
+                END
+                """);
+
+            // Name/NormalizedName are not truncated; list over-length Ids and abort before ALTER.
+            migrationBuilder.Sql($"""
+                IF EXISTS (
+                    SELECT 1
+                    FROM [{_schema.Schema}].[Labels]
+                    WHERE LEN([Name]) > 255 OR LEN([NormalizedName]) > 255
+                )
+                BEGIN
+                    DECLARE @OverLengthIds nvarchar(max);
+
+                    SELECT @OverLengthIds = STRING_AGG(CAST([Id] AS nvarchar(max)), N', ')
+                    FROM [{_schema.Schema}].[Labels]
+                    WHERE LEN([Name]) > 255 OR LEN([NormalizedName]) > 255;
+
+                    THROW 50002, CONCAT(
+                        N'Cannot alter Labels.Name / Labels.NormalizedName to nvarchar(255) because leftover rows exceed 255 characters. Operators must shorten or remove those rows before upgrade. Over-length Ids: ',
+                        LEFT(@OverLengthIds, 1500)
+                    ), 1;
+                END
                 """);
 
             migrationBuilder.AlterColumn<string>(
