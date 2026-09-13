@@ -11,92 +11,101 @@ namespace Elsa.Common.IntegrationTests.Serialization;
 /// </summary>
 public class ObjectFormatterTests
 {
-    [Fact(DisplayName = "String is preserved as-is")]
-    public void StringIsPreservedAsIs()
+    [Test]
+    [DisplayName("String is preserved as-is")]
+    public async Task StringIsPreservedAsIs()
     {
         var testString = "Hello World";
         var result = testString.Format();
 
-        Assert.Equal("Hello World", result);
+        await Assert.That(result).IsEqualTo("Hello World");
     }
 
-    [Fact(DisplayName = "Byte array is serialized as base64 string")]
-    public void ByteArrayIsSerializedAsBase64String()
+    [Test]
+    [DisplayName("Byte array is serialized as base64 string")]
+    public async Task ByteArrayIsSerializedAsBase64String()
     {
         var testByteArray = new byte[] { 0x01, 0x02, 0x03, 0x04, 0xFF };
         var result = testByteArray.Format();
 
         // Byte arrays are base64-encoded for serialization
-        Assert.NotNull(result);
+        var formattedResult = await Assert.That(result).IsNotNull();
         var expectedBase64 = Convert.ToBase64String(testByteArray);
-        Assert.Equal(expectedBase64, result);
+        await Assert.That(formattedResult).IsEqualTo(expectedBase64);
     }
 
-    [Fact(DisplayName = "Integer array is serialized as JSON array")]
-    public void IntegerArrayIsSerializedAsJsonArray()
+    [Test]
+    [DisplayName("Integer array is serialized as JSON array")]
+    public async Task IntegerArrayIsSerializedAsJsonArray()
     {
         var testArray = new[] { 1, 2, 3, 4, 5 };
         var result = testArray.Format();
 
-        Assert.Equal("[1,2,3,4,5]", result);
+        await Assert.That(result).IsEqualTo("[1,2,3,4,5]");
     }
 
-    [Fact(DisplayName = "String array is serialized as JSON array")]
-    public void StringArrayIsSerializedAsJsonArray()
+    [Test]
+    [DisplayName("String array is serialized as JSON array")]
+    public async Task StringArrayIsSerializedAsJsonArray()
     {
         var testArray = new[] { "Hello", "World" };
         var result = testArray.Format();
 
-        Assert.Equal("[\"Hello\",\"World\"]", result);
+        await Assert.That(result).IsEqualTo("[\"Hello\",\"World\"]");
     }
 
-    [Fact(DisplayName = "String array with multiple elements is serialized as JSON array")]
-    public void StringArrayWithMultipleElementsIsSerializedAsJsonArray()
+    [Test]
+    [DisplayName("String array with multiple elements is serialized as JSON array")]
+    public async Task StringArrayWithMultipleElementsIsSerializedAsJsonArray()
     {
         var testArray = new[] { "Element 1", "Element 2", "Element 3" };
         var result = testArray.Format();
 
-        Assert.Equal("[\"Element 1\",\"Element 2\",\"Element 3\"]", result);
+        await Assert.That(result).IsEqualTo("[\"Element 1\",\"Element 2\",\"Element 3\"]");
     }
 
-    [Fact(DisplayName = "Custom class array is serialized as JSON array")]
-    public void CustomClassArrayIsSerializedAsJsonArray()
+    [Test]
+    [DisplayName("Custom class array is serialized as JSON array")]
+    public async Task CustomClassArrayIsSerializedAsJsonArray()
     {
         var testArray = new[] { new TestClass { Name = "Item1" }, new TestClass { Name = "Item2" } };
         var result = testArray.Format();
 
         // Should be JSON, not "TestClass[] Array"
-        Assert.NotNull(result);
-        Assert.StartsWith("[", result);
-        Assert.Contains("Item1", result);
-        Assert.Contains("Item2", result);
+        var formattedResult = await Assert.That(result).IsNotNull();
+        await Assert.That(formattedResult).StartsWith("[").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(formattedResult).Contains("Item1").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(formattedResult).Contains("Item2").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "List of integers is serialized as JSON array")]
-    public void ListOfIntegersIsSerializedAsJsonArray()
+    [Test]
+    [DisplayName("List of integers is serialized as JSON array")]
+    public async Task ListOfIntegersIsSerializedAsJsonArray()
     {
         var testList = new List<int> { 1, 2, 3 };
         var result = testList.Format();
 
-        Assert.Equal("[1,2,3]", result);
+        await Assert.That(result).IsEqualTo("[1,2,3]");
     }
 
-    [Fact(DisplayName = "List with different values is serialized as JSON array")]
-    public void ListWithDifferentValuesIsSerializedAsJsonArray()
+    [Test]
+    [DisplayName("List with different values is serialized as JSON array")]
+    public async Task ListWithDifferentValuesIsSerializedAsJsonArray()
     {
         var testList = new List<int> { 10, 20, 30 };
         var result = testList.Format();
 
-        Assert.Equal("[10,20,30]", result);
+        await Assert.That(result).IsEqualTo("[10,20,30]");
     }
 
-    [Fact(DisplayName = "Null returns null")]
-    public void NullReturnsNull()
+    [Test]
+    [DisplayName("Null returns null")]
+    public async Task NullReturnsNull()
     {
         object? testValue = null;
         var result = testValue.Format();
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
     private class TestClass
@@ -104,4 +113,3 @@ public class ObjectFormatterTests
         public string Name { get; set; } = string.Empty;
     }
 }
-
