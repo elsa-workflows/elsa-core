@@ -66,6 +66,23 @@ public class MemoryRoleStoreUniquenessTests
         Assert.Equal("Operators", (await tenantB.FindAsync(new RoleFilter { Id = "operators" }))!.Name);
     }
 
+    [Fact(DisplayName = "SaveAsync leaves the stored name unchanged when a Find result is renamed onto a collision")]
+    public async Task SaveAsync_WhenFoundRoleRenamedOntoCollision_LeavesStoredNameUnchanged()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(CreateRole("role-1", "Operators", "tenant-a"));
+        await store.SaveAsync(CreateRole("role-2", "Reviewers", "tenant-a"));
+
+        var found = await store.FindAsync(new RoleFilter { Id = "role-2" });
+        found!.Name = "Operators";
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveAsync(found));
+
+        Assert.Contains("already exists", exception.Message);
+        var stored = await store.FindAsync(new RoleFilter { Id = "role-2" });
+        Assert.Equal("Reviewers", stored!.Name);
+    }
+
     [Fact(DisplayName = "SaveAsync rejects renaming onto a name another Id already owns")]
     public async Task SaveAsync_WhenRenamingOntoAnotherIdsName_Throws()
     {
