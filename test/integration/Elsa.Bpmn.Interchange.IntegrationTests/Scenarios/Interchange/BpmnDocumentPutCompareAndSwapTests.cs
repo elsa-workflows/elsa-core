@@ -149,6 +149,62 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         Assert.Equal(before.Name, after.Name);
     }
 
+    [Fact(DisplayName = "A published→draft document PUT keeps the same id, version and created-at from DraftSaving through persist and DraftSaved")]
+    public async Task ImportDocumentAsync_WhenLatestIsPublished_ReusesTheAnnouncedDraftIdentity()
+    {
+        var probe = new DraftNotificationProbe();
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmnInterchange())
+            .ConfigureServices(s =>
+            {
+                s.AddSingleton(probe);
+                s.AddNotificationHandler<RejectingDraftSavingHandler>();
+                s.AddNotificationHandler<CountingDraftSavedHandler>();
+            })
+            .Build();
+        await services.PopulateRegistriesAsync();
+
+        var store = services.GetRequiredService<IWorkflowDefinitionStore>();
+        var setup = services.GetRequiredService<BpmnInterchangeDocumentService>();
+        var publisher = services.GetRequiredService<IWorkflowDefinitionPublisher>();
+
+        var imported = await setup.ImportAsync(ReadAsset("camunda-order-process.bpmn"), definitionId: null, name: "Order", processId: null, CancellationToken.None);
+        var definitionId = imported.ImportResult.WorkflowDefinition.DefinitionId;
+        await Support.DefinitionPublishing.PublishLatestAsync(publisher, definitionId);
+
+        var published = await FindLatestAsync(store, definitionId);
+        Assert.True(published.IsPublished);
+        var expectedETag = BpmnDocumentETag.From(published);
+        var reader = services.GetRequiredService<BpmnXmlReader>();
+        var sourceXml = (string)published.CustomProperties[BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey];
+        var edit = reader.Read(sourceXml.Replace("Order Handled", "After publish"), new BpmnImportOptions()).Definitions;
+
+        probe.StampHandlerMarker = true;
+
+        var result = await setup.ImportDocumentAsync(edit, definitionId, processId: null, CancellationToken.None, expectedETag);
+
+        Assert.True(result.ImportResult.Succeeded);
+        Assert.NotNull(probe.SavingId);
+        Assert.Equal(probe.SavingId, probe.SavedId);
+        Assert.Equal(probe.SavingVersion, probe.SavedVersion);
+        Assert.Equal(probe.SavingCreatedAt, probe.SavedCreatedAt);
+        Assert.NotEqual(published.Id, probe.SavingId);
+        Assert.Equal(published.Version + 1, probe.SavingVersion);
+
+        var persisted = result.ImportResult.WorkflowDefinition;
+        Assert.Equal(probe.SavingId, persisted.Id);
+        Assert.Equal(probe.SavingVersion, persisted.Version);
+        Assert.Equal(probe.SavingCreatedAt, persisted.CreatedAt);
+
+        var stored = await FindLatestAsync(store, definitionId);
+        Assert.Equal(probe.SavingId, stored.Id);
+        Assert.Equal(probe.SavingVersion, stored.Version);
+        Assert.Equal(probe.SavingCreatedAt, stored.CreatedAt);
+        Assert.False(stored.IsPublished);
+        Assert.Equal("kept", stored.CustomProperties[DraftNotificationProbe.HandlerMarkerKey]);
+        Assert.Equal("Order", stored.Name);
+    }
+
     private static async Task<WorkflowDefinition> FindLatestAsync(IWorkflowDefinitionStore store, string definitionId)
     {
         var found = await store.FindAsync(WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter());
@@ -159,9 +215,18 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
 
     private sealed class DraftNotificationProbe
     {
+        public const string HandlerMarkerKey = "test:draft-saving-marker";
+
         public bool Reject { get; set; }
+        public bool StampHandlerMarker { get; set; }
         public int SavingCount { get; set; }
         public int SavedCount { get; set; }
+        public string? SavingId { get; set; }
+        public int SavingVersion { get; set; }
+        public DateTimeOffset SavingCreatedAt { get; set; }
+        public string? SavedId { get; set; }
+        public int SavedVersion { get; set; }
+        public DateTimeOffset SavedCreatedAt { get; set; }
     }
 
     private sealed class RejectingDraftSavingHandler(DraftNotificationProbe probe) : INotificationHandler<WorkflowDefinitionDraftSaving>
@@ -169,6 +234,13 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         public Task HandleAsync(WorkflowDefinitionDraftSaving notification, CancellationToken cancellationToken)
         {
             probe.SavingCount++;
+            probe.SavingId = notification.WorkflowDefinition.Id;
+            probe.SavingVersion = notification.WorkflowDefinition.Version;
+            probe.SavingCreatedAt = notification.WorkflowDefinition.CreatedAt;
+
+            if (probe.StampHandlerMarker)
+                notification.WorkflowDefinition.CustomProperties[DraftNotificationProbe.HandlerMarkerKey] = "kept";
+
             if (probe.Reject)
                 throw new InvalidOperationException("Draft save rejected.");
 
@@ -181,6 +253,9 @@ public class BpmnDocumentPutCompareAndSwapTests(ITestOutputHelper testOutputHelp
         public Task HandleAsync(WorkflowDefinitionDraftSaved notification, CancellationToken cancellationToken)
         {
             probe.SavedCount++;
+            probe.SavedId = notification.WorkflowDefinition.Id;
+            probe.SavedVersion = notification.WorkflowDefinition.Version;
+            probe.SavedCreatedAt = notification.WorkflowDefinition.CreatedAt;
             return Task.CompletedTask;
         }
     }

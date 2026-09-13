@@ -155,8 +155,10 @@ whole-definition import and resets them from the document, same as it always has
 - **Exactly the current `ETag`** — the request proceeds exactly as before, and the response carries the `ETag` of
   the draft as this `PUT` stored it. Metadata (name, variables, options, …) is taken from the row at save time, so a
   metadata-only save in that window is carried forward rather than reverted. `WorkflowDefinitionDraftSaving`
-  is dispatched before that persist so a rejecting handler fails the request before anything is written; a
-  lost race is still `412`. The swap is implemented on the in-memory and EF Core definition stores
+  is dispatched before that persist so a rejecting handler fails the request before anything is written;
+  a published→draft allocates its new id, version and created-at once for that notification and the save
+  reuses them, while metadata is still read from the row at save time. A lost race is still `412`. The
+  swap is implemented on the in-memory and EF Core definition stores
   (`IWorkflowDefinitionStore.TryUpdateLatestAsync`). Mongo, Dapper and Event Sourcing providers need the same
   method before this endpoint is concurrency-safe on those stores.
 
