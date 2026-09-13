@@ -33,15 +33,20 @@ public class MemoryApplicationStore : IApplicationStore
     public Task SaveAsync(Application application, CancellationToken cancellationToken = default)
     {
         ApplyCurrentTenant(application);
-        _store.Save(application, x => x.Id);
+        lock (_store.Sync)
+            _store.Save(application, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
     {
-        var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).Distinct().ToList();
-        _store.DeleteWhere(x => ids.Contains(x.Id));
+        lock (_store.Sync)
+        {
+            _store.DeleteWhere(application =>
+                IsVisible(application) && filter.Apply(new[] { application }.AsQueryable()).Any());
+        }
+
         return Task.CompletedTask;
     }
 
@@ -54,6 +59,8 @@ public class MemoryApplicationStore : IApplicationStore
 
     private IQueryable<Application> Filter(IQueryable<Application> queryable, ApplicationFilter filter) =>
         filter.Apply(queryable.WhereVisibleToTenant(_tenantAccessor.TenantId));
+
+    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, _tenantAccessor.TenantId);
 
     private void ApplyCurrentTenant(Entity entity)
     {

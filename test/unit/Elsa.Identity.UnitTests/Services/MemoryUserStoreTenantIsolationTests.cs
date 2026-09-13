@@ -78,6 +78,22 @@ public class MemoryUserStoreTenantIsolationTests
         Assert.Equal("user-b", remaining.Id);
     }
 
+    [Fact(DisplayName = "DeleteAsync leaves a same-ID row after another tenant replaces it")]
+    public async Task DeleteAsync_WhenSameIdWasReplacedByOtherTenant_LeavesReplacement()
+    {
+        var backing = new MemoryStore<User>();
+        var tenantA = new MemoryUserStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryUserStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(CreateUser("shared", "tenant-a"));
+        await tenantB.SaveAsync(CreateUser("shared", "tenant-b"));
+
+        await tenantA.DeleteAsync(new UserFilter { Id = "shared" });
+        var remaining = await tenantB.FindAsync(new UserFilter { Id = "shared" });
+
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-b", remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {

@@ -33,15 +33,20 @@ public class MemoryUserStore : IUserStore
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
         ApplyCurrentTenant(user);
-        _store.Save(user, x => x.Id);
+        lock (_store.Sync)
+            _store.Save(user, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
-        var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).Distinct().ToList();
-        _store.DeleteWhere(x => ids.Contains(x.Id));
+        lock (_store.Sync)
+        {
+            _store.DeleteWhere(user =>
+                IsVisible(user) && filter.Apply(new[] { user }.AsQueryable()).Any());
+        }
+
         return Task.CompletedTask;
     }
 
@@ -61,6 +66,8 @@ public class MemoryUserStore : IUserStore
 
     private IQueryable<User> Filter(IQueryable<User> queryable, UserFilter filter) =>
         filter.Apply(queryable.WhereVisibleToTenant(_tenantAccessor.TenantId));
+
+    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, _tenantAccessor.TenantId);
 
     private void ApplyCurrentTenant(Entity entity)
     {

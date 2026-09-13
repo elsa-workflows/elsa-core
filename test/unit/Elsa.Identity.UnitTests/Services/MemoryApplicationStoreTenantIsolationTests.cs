@@ -70,6 +70,22 @@ public class MemoryApplicationStoreTenantIsolationTests
         Assert.Equal("app-b", remaining.Id);
     }
 
+    [Fact(DisplayName = "DeleteAsync leaves a same-ID row after another tenant replaces it")]
+    public async Task DeleteAsync_WhenSameIdWasReplacedByOtherTenant_LeavesReplacement()
+    {
+        var backing = new MemoryStore<Application>();
+        var tenantA = new MemoryApplicationStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryApplicationStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(CreateApplication("shared", "tenant-a"));
+        await tenantB.SaveAsync(CreateApplication("shared", "tenant-b"));
+
+        await tenantA.DeleteAsync(new ApplicationFilter { Id = "shared" });
+        var remaining = await tenantB.FindAsync(new ApplicationFilter { Id = "shared" });
+
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-b", remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {
