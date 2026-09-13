@@ -487,9 +487,9 @@ Use “proven” only when the raw artifact is attached. “Mapped” means the 
 
 | Requirement | xUnit v2 + VSTest | xUnit v3 + MTP | TUnit + MTP | Gate |
 | --- | --- | --- | --- | --- |
-| Unit build and pass | **Proven locally**, 274/274 | Not run | Committed rollout: 2,766 discovered cases across 38 projects; the final six-project tranche recorded 593 passed, 126 intentionally skipped, and zero failed | Same intended case/name/outcome set, with reviewed discovery deltas |
-| Integration build and pass | **Proven locally**, 305/305 | Not run | Not run | Same case/name/outcome set |
-| Ten consecutive pilot runs | Not required for baseline; 5 timing samples recorded | Not run | Final six-project tranche: 10/10 successful default-parallel runs per project; full pilot/CI gate pending | No failure or count drift |
+| Unit build and pass | **Proven locally**, 274/274 | Not run | All 37 native unit/conformance executables re-listed successfully at 2,645 cases; the final six-project tranche recorded 593 passed, 126 intentionally skipped, and zero failed | Same intended case/name/outcome set, with reviewed discovery deltas |
+| Integration build and pass | **Proven locally**, 305/305 | Not run | **Proven locally in Release**: 876 discovered cases across 13 native integration projects, with zero failed or skipped | Same case/name/outcome set |
+| Ten consecutive pilot runs | Not required for baseline; 5 timing samples recorded | Not run | All 13 native integration projects completed 10/10 default-parallel Release runs (130/130 project runs) with stable case identities and no failure, skip, timeout, or flake | No failure or count drift |
 | Initial serial policy | Five local samples used current defaults; serial control not yet captured | Not run | Planned with `--maximum-parallel-tests 1` | Exactly one active case in every A/B/C variant |
 | Same-class safety after raising cap | Current framework behavior | Project audit required | Project audit required; no custom shim | Native constraints and sentinel pass |
 | Unrelated-class concurrency after audit | Current framework behavior | Not in initial serial run | Not in initial serial run | Separate matched-cap experiment |
@@ -508,7 +508,7 @@ Use “proven” only when the raw artifact is attached. “Mapped” means the 
 | GitHub annotations | Current logger in CI | Not verified | MTP extension mapped | Deliberate failure annotation |
 | Hang mini dump | Current component VSTest path | Not verified | MTP extension mapped | Bounded hang yields uploaded dump |
 | IDE discovery/debug | Current contributor experience | Not verified | Not verified | Exact supported IDE versions recorded |
-| Shared helper compatibility | Inventory complete | Not tested | Framework-neutral patch present only as uncommitted isolated-worktree state; commit and compatibility verification pending | No public API regression |
+| Shared helper compatibility | Inventory complete | Not tested | Framework-neutral shared-helper conversion is committed in `48337b14734d995312ba8ff3090e210c582641d2`; dependent integration builds and xUnit scans are clean | No public API regression |
 | Conformance discovery | Current custom discoverer | Not tested | One native list: 249 unique cases; each of 10 default-environment runs: 249 total, 123 passed, 126 provider-gated skips, and zero failed | Available/unavailable provider counts match |
 | Component fixture lifetime | Current serialized baseline | Not tested | Compatibility analysis pending | Init/dispose/serialization/reporting proven |
 | Complete CI job speed | Baseline workflow exists | Not measured | Not measured | Candidate median improves by >=10% |
@@ -627,7 +627,7 @@ The complete conversion is intentionally split into independently reviewable com
 
 ### Verified rollout snapshot (2026-09-13)
 
-At code commit `48337b14734d995312ba8ff3090e210c582641d2`, 46 of the fixed 55 active test projects recorded at comparison base `37b1a453169201e577ef6db0bfd0348b08070211` have committed native TUnit opt-ins: all 37 unit projects, the already-native `Elsa.Bpmn.Interchange.IntegrationTests`, and eight newly migrated integration projects. That frozen comparison-base filesystem inventory comprises 37 unit, 17 integration, and one component project; it excludes `test/TlsSmoke` and the BenchmarkDotNet performance project and is not recomputed from every project elsewhere under `test`.
+At code commit `f434da9d66c4173c3247fcb52d1352f6c4475300`, 50 of the fixed 55 active test projects recorded at comparison base `37b1a453169201e577ef6db0bfd0348b08070211` have committed native TUnit opt-ins: all 37 unit projects, the already-native `Elsa.Bpmn.Interchange.IntegrationTests`, and 12 newly migrated integration projects. That frozen comparison-base filesystem inventory comprises 37 unit, 17 integration, and one component project; it excludes `test/TlsSmoke` and the BenchmarkDotNet performance project and is not recomputed from every project elsewhere under `test`.
 
 The preceding verified unit/conformance wave is:
 
@@ -671,6 +671,65 @@ The `48337b147` integration tranche adds 695 newly migrated cases:
 
 All eight native executables built in Release, matched the exact discovery totals above, reported zero failures and zero skips, and passed ten consecutive runs under TUnit's unconstrained default parallel policy. Their discovery manifests contained no duplicate test UIDs and no duplicate display names within a method. The already-native `Elsa.Bpmn.Interchange.IntegrationTests` was independently reverified at 121 cases for ten Release runs with unique UIDs; its three pre-existing parameterized methods intentionally reuse display labels across rows. Thus the combined integration verification exercised 816 cases per pass, while only 695 are new migration cases. The cumulative committed rollout is 46 projects and 3,461 targeted discovered cases.
 
+#### Follow-on four-project checkpoint
+
+The next project-scoped sequence adds 60 native integration cases without changing the root runner, CI, shared libraries, product code, or any remaining xUnit project:
+
+| Project | Signed code commit | Verified discovered cases | Release build | Default-parallel Release runs |
+| --- | --- | ---: | ---: | ---: |
+| `Elsa.Common.IntegrationTests` | `8cdb500bb22010c4e70618cdd91f7bfffd758d8f` | 9 | 0 warnings/errors | 10/10 |
+| `Elsa.Diagnostics.StructuredLogs.IntegrationTests` | `49913ced0fbf78ce869f0a00d24b36444c57f76a` | 6 | 0 warnings/errors | 10/10 |
+| `Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests` | `f47bce7c080f50f625664e565db42684846ec895` | 19 | 0 warnings/errors | 10/10 |
+| `Elsa.Diagnostics.ConsoleLogs.IntegrationTests` | `f434da9d66c4173c3247fcb52d1352f6c4475300` | 26 | 0 warnings/errors | 10/10 |
+| **Checkpoint total** | **4 signed commits** | **60** | **4/4** | **40/40 project runs** |
+
+Each row was built and executed separately from the isolated worktree root. `<project>` below was the row's exact `test/integration/<Project>/<Project>.csproj` path, `<expected>` was respectively 9, 6, 19, or 26, and every `<unique-run-dir>` was freshly created for that one invocation:
+
+```bash
+dotnet build <project> -c Release -f net10.0 -p:CollectCoverage=false --disable-build-servers -m:1
+dotnet run --project <project> -c Release -f net10.0 --no-build -- --list-tests json
+dotnet run --project <project> -c Release -f net10.0 --no-build -- --minimum-expected-tests <expected> --results-directory <unique-run-dir> --no-ansi --progress off --output Minimal --timeout 2m
+```
+
+The run command intentionally contains no `--maximum-parallel-tests` or other parallel limiter. Every one of the 40 reports had exactly the table's total, all unique case IDs, all `passed`, and summary fields `failed=0`, `skipped=0`, `cancelled=0`, `timedOut=0`, and `flaky=0`. Sorted `{id, displayName, status}` manifests matched run 1 through run 10 for every project.
+
+The nine pre-existing custom display identities in `Elsa.Common.IntegrationTests` were preserved exactly:
+
+```text
+String is preserved as-is
+Byte array is serialized as base64 string
+Integer array is serialized as JSON array
+String array is serialized as JSON array
+String array with multiple elements is serialized as JSON array
+Custom class array is serialized as JSON array
+List of integers is serialized as JSON array
+List with different values is serialized as JSON array
+Null returns null
+```
+
+The Structured Logs and SQLite discovery manifests matched their six and 19 declared test-method names one-for-one. Console Logs expanded 20 `[Test]` methods and ten `[Arguments]` declarations to 26 unique cases. Its parameterized display identities were exactly:
+
+```text
+HubSubscribe_WithConsoleLogsPermission_AllowsAccess(diagnostics/console-logs:view)
+HubSubscribe_WithConsoleLogsPermission_AllowsAccess(*)
+HubSubscribe_WithConsoleLogsPermission_AllowsAccess(*:view)
+RestEndpoints_RequireConsoleLogsPermission(Elsa·Diagnostics·ConsoleLogs·Endpoints·ConsoleLogs·Recent·Endpoint)
+RestEndpoints_RequireConsoleLogsPermission(Elsa·Diagnostics·ConsoleLogs·Endpoints·ConsoleLogs·Sources·Endpoint)
+RecentEndpoint_MapsLowercaseStreamFilter(stdout, Stdout)
+RecentEndpoint_MapsLowercaseStreamFilter(stderr, Stderr)
+RecentEndpoint_MapsAllStreamFilterToNull(null)
+RecentEndpoint_MapsAllStreamFilterToNull()
+RecentEndpoint_MapsAllStreamFilterToNull(all)
+```
+
+The SQLite verification harness's first execution itself passed 19/19 and its JSON report passed the exact summary, unique-ID, and manifest checks. The wrapper then returned nonzero because its next bookkeeping operation attempted to copy the run-01 manifest onto the same path. No test invocation intervened: that validated run-01 manifest became the baseline, and runs 02 through 10 all passed 19/19 and matched it exactly. The ten-test-run gate is therefore run 01 plus runs 02-10; the bookkeeping error is not counted as a test failure or as an extra run.
+
+The migration review preserved framework semantics and tightened only project-local ownership. Common's xUnit default string comparisons are explicit `CurrentCulture`; Structured Logs disposes its built service provider and uses ordered collection equivalence; every SQLite host already owns a GUID-named directory and now disables connection pooling so disposal releases its database before directory deletion; Console Logs explicitly owns and disposes every subscription manager. The five reflection-based Console Logs endpoint calls assert that the reflected result is a `Task`, cast it, and await it. Exact exception types, reference identity, collection membership, assertion messages, null/empty checks, and helper assertion ordering were retained. None of the four projects adds a parallel constraint.
+
+A final native discovery pass re-listed every converted executable successfully. The 37 unit/conformance projects returned exit code zero and summed to 2,645 cases. The 13 integration projects re-listed 121, 123, 63, 23, 2, 16, 151, 12, 305, 9, 6, 19, and 26 cases: 876 total and 876 unique UIDs. The targeted committed boundary is therefore exactly 3,521 cases. The fixed base inventory now resolves to 50 native projects and five residual projects out of 55.
+
+The final scoped audit covered the 13 native integration projects and all three shared testing libraries. It found zero xUnit source/configuration references, zero legacy xUnit test attributes, 1,919 `Assert.That` sites and 1,919 matching awaited sites, zero restored xUnit libraries in all 13 `project.assets.json` graphs, TUnit `1.66.27` in all 13 graphs, zero xUnit-named Release files, and zero `xunit` strings in each primary test assembly. Central `TUnit` and `TUnit.AspNetCore` pins remain `1.66.27`.
+
 The shared testing libraries are now framework-neutral and contain no xUnit dependency. `ITestOutputHelper`-based constructors and the public `XunitConsoleTextWriter`, `XunitLogger`, and `XunitLoggerProvider` types were removed in favor of `TextWriter` APIs. This is an intentional source and binary compatibility break with no shim because the accepted migration is atomic within this boundary. Fixture initialization now publishes a provider only after successful activation, partial initialization is disposed, multi-resource teardown attempts every resource in reverse order and aggregates failures, and workflow dispatch hosts are stopped and disposed explicitly. A temporary blocking-workflow sentinel proved that a completion timeout still reaches `StopAsync` and surfaces a shutdown failure; the sentinel was removed after verification.
 
 The container-serialization equivalence call uses a TUnit source-generated custom assertion following TUnit's documented extension model. `EquivalencyAssertionExtensions.cs` declares `EquivalencyAssertionGeneration.IsEquivalentTo<TActual>(actual, expected, strict)` in a `file static` authoring class with `[GenerateAssertion]`; the required `strict` argument avoids colliding with TUnit's built-in overload, and the method delegates to the framework-neutral `TestAssert.Equivalent`. This preserves the existing recursive partial-equivalence semantics; TUnit 1.66.27's built-in enumerable equivalence remains positional and exact-count for this case. The generated overload and its call-site binding were inspected after compilation. [20][s20] [21][s21]
@@ -679,7 +738,7 @@ Two deterministic defects exposed by repeated parallel execution were fixed at t
 
 `Elsa.UserTasks.Persistence.ConformanceTests` retained exact same-environment discovery parity. Its native list contained 249 unique cases with no duplicate names, and each of ten default-environment runs reported 249 total: 123 passed and 126 were skipped with actionable provider-specific reasons. Available and covered were InMemory, EFCore.Sqlite, and VNext.Sqlite (repository only for VNext). EFCore.SqlServer, EFCore.PostgreSql, and EFCore.Oracle were not covered; each contributed 42 skips. EFCore.MySql has no executable suite and contributes no discovered cases because Pomelo's EF Core 9 dependency is incompatible with this repository's EF Core 10 line. The unavailable cursor theory deliberately emits one inert skipped row, preserving xUnit's collapsed discovery count. If `k` of the three optional providers is configured, the intended totals are `249 + 7k` discovered, `123 + 49k` passed, and `126 - 42k` skipped; that seven-case expansion per available provider already existed under xUnit and is not a TUnit discovery delta.
 
-Parallel constraints remain narrow in the earlier unit/conformance rollout. `StructuredLogSourceRegistryTests` is constrained because it mutates fixed process-environment keys. The conformance suites use provider-keyed fixture sharing and matching keyed `[NotInParallel]` constraints, so tests sharing one provider fixture serialize while different providers and ordinary tests remain eligible to run in parallel. The eight-project integration tranche contains no `[NotInParallel]`, parallel limiter, parallel group, runner-wide maximum, or other parallelism cap.
+Parallel constraints remain narrow in the earlier unit/conformance rollout. `StructuredLogSourceRegistryTests` is constrained because it mutates fixed process-environment keys. The conformance suites use provider-keyed fixture sharing and matching keyed `[NotInParallel]` constraints, so tests sharing one provider fixture serialize while different providers and ordinary tests remain eligible to run in parallel. Neither the earlier eight-project integration tranche nor the follow-on four-project checkpoint contains `[NotInParallel]`, a parallel limiter, a parallel group, a runner-wide maximum, or another parallelism cap.
 
 Three discovery deltas in the 18-project wave are intentional and reviewed rather than duplicate execution. `Elsa.Identity.UnitTests` discovers 140 cases instead of the xUnit runner's 126 because TUnit enumerates all eight non-serializable `Action` rows in each of two `InvalidConfigurations` theories; xUnit aggregated each theory at discovery. `Elsa.Resilience.Core.UnitTests` similarly discovers 96 cases instead of 94 because two deferred non-serializable data rows are enumerated. `Elsa.Workflows.Runtime.UnitTests` discovers 288 cases instead of 282 because `GracefulShutdownOptionsValidationTests.RejectsInvalidConfiguration` and `RejectsInvalidConfigurationDuringStartupValidation` each use four non-serializable `Action<GracefulShutdownOptions>` rows from `InvalidConfigurations`; xUnit aggregated each theory as one discovery case, while TUnit statically enumerates all four, adding three cases per theory and six overall. The same eight behaviors execute, so this is neither duplicate execution nor new coverage. The other fifteen projects match their expected discovered totals in the same environment.
 
@@ -689,11 +748,11 @@ The baseline's 2,931 figure is a source count of attributed test methods before 
 
 The repository remains mixed-runner during rollout. There is no root `global.json`; MTP selection remains scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables are the verified path for the converted projects; `dotnet test --project` from the nested MTP context currently reports zero tests for these test applications. These counts are not evidence of a root-level or full-suite MTP pass, and root runner integration remains an explicit final migration step.
 
-At the committed snapshot, the residual xUnit execution boundary is nine active projects: `Elsa.AI.IntegrationTests`, `Elsa.Common.IntegrationTests`, `Elsa.Diagnostics.ConsoleLogs.IntegrationTests`, `Elsa.Diagnostics.OpenTelemetry.IntegrationTests`, `Elsa.Diagnostics.StructuredLogs.IntegrationTests`, `Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests`, `Elsa.ExternalAuthentication.IntegrationTests`, `Elsa.Hosts.SmokeTests`, and `Elsa.Workflows.ComponentTests`. The remaining dependency/configuration surface still includes conditional central package and runner wiring in `Directory.Packages.props` and `test/Directory.Build.props`, xUnit references in those unmigrated projects, and the component project's `xunit.runner.json`. The performance props still mention removing inherited xUnit, but performance and `test/TlsSmoke` are outside the fixed 55-project denominator.
+At the committed snapshot, the residual xUnit execution boundary is five active projects: `Elsa.AI.IntegrationTests`, `Elsa.Diagnostics.OpenTelemetry.IntegrationTests`, `Elsa.ExternalAuthentication.IntegrationTests`, `Elsa.Hosts.SmokeTests`, and `Elsa.Workflows.ComponentTests`. The remaining dependency/configuration surface still includes conditional central package and runner wiring in `Directory.Packages.props` and `test/Directory.Build.props`, xUnit references in those unmigrated projects, and the component project's `xunit.runner.json`. The performance props still mention removing inherited xUnit, but performance and `test/TlsSmoke` are outside the fixed 55-project denominator.
 
 The previously protected 15-path framework-neutral shared-helper patch is incorporated into `48337b147` together with the eight dependent integration projects. The three shared libraries and all eight migrated projects build for every targeted framework/configuration used by the tranche. A post-restore audit found zero resolved xUnit packages in their `project.assets.json` graphs, zero xUnit-named files in their build output, and zero xUnit strings in 42 scanned first-party DLLs. Source audits found zero xUnit references, zero potentially un-awaited `Assert.That` calls among 1,450 assertion sites, zero temporary trace/sentinel references, and no changed paths outside the accepted tranche plus the `ElsaScriptCompiler` race fix and this evidence.
 
-This documentation update is the deliberate stop point for the eight-project integration tranche. It does not migrate or verify the remaining eight integration projects or the component project, switch the repository root or CI to MTP, close the coverage/reporting/diagnostics/IDE gates, or claim repository-wide xUnit removal. Those plan steps and checklist items remain open.
+This documentation update is the deliberate stop point after the follow-on four-project checkpoint, at 50 of 55 active projects and 3,521 targeted discoveries. It does not migrate or verify the four residual integration projects or the component project, switch the repository root or CI to MTP, close the coverage/reporting/diagnostics/IDE gates, or claim repository-wide xUnit removal. Those plan steps and checklist items remain open.
 
 1. **`docs: research TUnit migration and isolation plan`** — freeze the base SHA, inventories, baseline counts/timings, primary-source findings, accepted scope, risks, and reproducible validation matrix.
 2. **`test: add opt-in TUnit MTP infrastructure`** — central package versions, conditional test-project wiring, and a directory-scoped MTP selector. Exit: converted and unconverted projects can coexist without changing the root runner.
