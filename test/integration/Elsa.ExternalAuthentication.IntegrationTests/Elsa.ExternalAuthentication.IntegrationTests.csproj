@@ -2,7 +2,12 @@
 
     <PropertyGroup>
         <Include>[Elsa.ExternalAuthentication]*</Include>
+        <UseTUnit>true</UseTUnit>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="TUnit.AspNetCore" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />

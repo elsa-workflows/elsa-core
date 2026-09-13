@@ -2,62 +2,34 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using Elsa.Authorization;
-using Elsa.Identity.Contracts;
-using Elsa.Identity.Features;
-using Elsa.Identity.Models;
-using FastEndpoints;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
 using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
+using Elsa.Identity.Contracts;
+using Elsa.Identity.Models;
+using Elsa.Identity.Permissions;
+using Microsoft.Extensions.DependencyInjection;
+using TUnit.AspNetCore;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Identity;
 
-[Collection(nameof(EndpointSecurityCollection))]
-public sealed class RoleDeletionEndpointContractTests : IAsyncLifetime
+public sealed class RoleDeletionEndpointContractTests : WebApplicationTest<RoleDeletionEndpointContractWebApplicationFactory, ExternalAuthenticationTestEntryPoint>
 {
-    private WebApplication? _app;
     private HttpClient? _client;
-    private bool _wasSecurityEnabled;
+    private readonly TestAuthenticationState _authentication = new();
     private readonly CapturingRoleDeletionCoordinator _coordinator = new();
 
-    public async Task InitializeAsync()
+    private HttpClient Client => _client ??= Factory.CreateClient();
+
+    protected override void ConfigureTestServices(IServiceCollection services)
     {
-        _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-        EndpointSecurityOptions.SecurityIsEnabled = false;
-
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddFastEndpoints(options =>
-        {
-            options.Assemblies = [typeof(IdentityFeature).Assembly];
-            options.Filter = endpoint => endpoint.Namespace == "Elsa.Identity.Endpoints.Roles.Delete";
-        });
-        builder.Services.AddAuthorization();
-        builder.Services.AddSingleton<IRoleDeletionCoordinator>(_coordinator);
-
-        _app = builder.Build();
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-        await _app.StartAsync();
-        _client = _app.GetTestClient();
+        _authentication.SetPermissions($"{IdentityPermissions.Roles}:{CoreVerbs.Delete}");
+        services.AddSingleton(_authentication);
+        services.AddSingleton<IRoleDeletionCoordinator>(_coordinator);
     }
 
-    public async Task DisposeAsync()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        _client?.Dispose();
-        if (_app is not null)
-        {
-            await _app.StopAsync();
-            await _app.DisposeAsync();
-        }
-    }
-
-    [Fact]
+    [Test]
     public async Task RemediationBindsSelectedReferencesAndReplacementRole()
     {
-        var response = await _client!.PostAsJsonAsync(
+        var response = await Client.PostAsJsonAsync(
             "/identity/roles/target-role/remove-from-jit-policies-and-delete",
             new
             {
@@ -69,14 +41,12 @@ public sealed class RoleDeletionEndpointContractTests : IAsyncLifetime
                 replacementRoleId = "replacement-role"
             });
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.NotNull(_coordinator.Command);
-        Assert.Equal("target-role", _coordinator.Command.RoleId);
-        Assert.Equal("dependency-version", _coordinator.Command.ExpectedDependencyVersion);
-        Assert.Equal(
-            new RoleDeletionReferenceSelection("external-authentication", "connection-a"),
-            Assert.Single(_coordinator.Command.SelectedReferences!));
-        Assert.Equal("replacement-role", _coordinator.Command.ReplacementRoleId);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Conflict);
+        await Assert.That(_coordinator.Command).IsNotNull();
+        await Assert.That(_coordinator.Command.RoleId).IsEqualTo("target-role");
+        await Assert.That(_coordinator.Command.ExpectedDependencyVersion).IsEqualTo("dependency-version");
+        await Assert.That((await Assert.That(_coordinator.Command.SelectedReferences!).HasSingleItem())!).IsEqualTo(new RoleDeletionReferenceSelection("external-authentication", "connection-a"));
+        await Assert.That(_coordinator.Command.ReplacementRoleId).IsEqualTo("replacement-role");
     }
 
     private sealed class CapturingRoleDeletionCoordinator : IRoleDeletionCoordinator

@@ -7,6 +7,7 @@ using Elsa.ExternalAuthentication.Persistence.EFCore.Stores;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Distributed;
 
@@ -14,7 +15,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Distributed;
 /// Exercises durable state through independently constructed stores, which represent requests landing on
 /// different Elsa nodes while sharing the same persistence database.
 /// </summary>
-public sealed class MultiNodeBrokerTests : IAsyncLifetime
+public sealed class MultiNodeBrokerTests : IAsyncInitializer, IAsyncDisposable
 {
     private SqliteConnection _connection = null!;
     private ServiceProvider _services = null!;
@@ -36,13 +37,13 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
         await dbContext.DbContext.Database.EnsureCreatedAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
         await _connection.DisposeAsync();
     }
 
-    [Fact]
+    [Test]
     public async Task InitiationCallbackAndExchangeCanConsumeDurableStateAcrossNodesExactlyOnce()
     {
         var initiatingNode = new EFCoreExternalAuthenticationStateStore(_contexts, _clock);
@@ -56,16 +57,18 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
         };
 
         await initiatingNode.PutAsync("ExternalSignIn", transaction.HandleHash, transaction, transaction.ExpiresAt);
-        var taken = Assert.IsType<TakeResult<BrokerTransaction>.Taken>(await callbackNode.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash));
-        Assert.Equal("connection-a", taken.Value.ConnectionId);
-        Assert.IsType<TakeResult<BrokerTransaction>.AlreadyConsumed>(await initiatingNode.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash));
+        var takenValue1 = await callbackNode.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash);
+        await Assert.That(takenValue1).IsOfType(typeof(TakeResult<BrokerTransaction>.Taken));
+        var taken = (TakeResult<BrokerTransaction>.Taken)takenValue1!;
+        await Assert.That(taken.Value.ConnectionId).IsEqualTo("connection-a");
+        await Assert.That(await initiatingNode.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash)).IsOfType(typeof(TakeResult<BrokerTransaction>.AlreadyConsumed));
 
         await exchangeNode.SaveAsync(new AuthorizationGrant { CodeHash = "code-hash", ClientId = "studio", CallbackUri = transaction.CallbackUri, TenantId = "tenant-a", UserId = "user-a", ExternalSessionId = "session-a", PkceChallenge = "challenge", ExpiresAt = transaction.ExpiresAt });
-        Assert.IsType<TakeResult<AuthorizationGrant>.Taken>(await replayNode.TryTakeAsync("code-hash"));
-        Assert.IsType<TakeResult<AuthorizationGrant>.AlreadyConsumed>(await exchangeNode.TryTakeAsync("code-hash"));
+        await Assert.That(await replayNode.TryTakeAsync("code-hash")).IsOfType(typeof(TakeResult<AuthorizationGrant>.Taken));
+        await Assert.That(await exchangeNode.TryTakeAsync("code-hash")).IsOfType(typeof(TakeResult<AuthorizationGrant>.AlreadyConsumed));
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshRotationAndRevocationAreAtomicAcrossNodes()
     {
         var firstNode = new EFCoreExternalAuthenticationSessionStore(_contexts, _clock);
@@ -73,13 +76,13 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
         await firstNode.SaveAsync(Session());
 
         var rotation = await secondNode.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-b", _clock.UtcNow);
-        Assert.IsType<ExternalAuthenticationSessionRotationResult.Rotated>(rotation);
-        Assert.IsType<ExternalAuthenticationSessionRotationResult.Reused>(await firstNode.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-c", _clock.UtcNow));
+        await Assert.That(rotation).IsOfType(typeof(ExternalAuthenticationSessionRotationResult.Rotated));
+        await Assert.That(await firstNode.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-c", _clock.UtcNow)).IsOfType(typeof(ExternalAuthenticationSessionRotationResult.Reused));
         var revoked = await secondNode.FindByIdAsync("session-a");
-        Assert.Equal("refresh_token_reuse", revoked?.RevocationReason);
+        await Assert.That(revoked?.RevocationReason).IsEqualTo("refresh_token_reuse");
     }
 
-    [Fact]
+    [Test]
     public async Task MutationVersionAndLatestObservationAreImmediatelyVisibleToAnotherNode()
     {
         var firstVersionStore = new EFCoreConnectionRegistryVersionStore(_contexts);
@@ -91,11 +94,11 @@ public sealed class MultiNodeBrokerTests : IAsyncLifetime
         var committedVersion = await firstVersionStore.AdvanceAsync();
         await firstObservationStore.SaveLatestAsync(new ConnectionObservation("connection-a", "revision-b", _clock.UtcNow, ConnectionObservationStatus.Failed, "temporarily_unavailable", TimeSpan.Zero, "Safe summary", [], "correlation-a"));
 
-        Assert.True(committedVersion > initialVersion);
-        Assert.True(await secondVersionStore.IsCurrentAsync(committedVersion));
+        await Assert.That(committedVersion > initialVersion).IsTrue();
+        await Assert.That(await secondVersionStore.IsCurrentAsync(committedVersion)).IsTrue();
         var observation = await secondObservationStore.FindLatestAsync("connection-a");
-        Assert.Equal("revision-b", observation?.TestedMaterialRevision);
-        Assert.Equal(ConnectionObservationStatus.Failed, observation?.Status);
+        await Assert.That(observation?.TestedMaterialRevision).IsEqualTo("revision-b");
+        await Assert.That(observation?.Status).IsEqualTo(ConnectionObservationStatus.Failed);
     }
 
     private ExternalAuthenticationSession Session() => new()

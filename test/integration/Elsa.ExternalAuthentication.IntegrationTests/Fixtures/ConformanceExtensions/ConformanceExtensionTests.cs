@@ -9,7 +9,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Fixtures.ConformanceExten
 
 public class ConformanceExtensionTests
 {
-    [Fact]
+    [Test]
     public async Task ProviderPolicyAndGrantExtensionsUseTheProtocolNeutralEnvelope()
     {
         var adapter = new ConformanceExternalAuthenticationAdapter();
@@ -78,14 +78,14 @@ public class ConformanceExtensionTests
             "state",
             new Dictionary<string, IReadOnlyCollection<string>> { ["subject"] = ["subject-a"] },
             new TestClock()));
-        Assert.True(policyRegistry.TryGet(ConformanceUnlinkedIdentityPolicy.PolicyType, out var policy));
+        await Assert.That(policyRegistry.TryGet(ConformanceUnlinkedIdentityPolicy.PolicyType, out var policy)).IsTrue();
         var decision = await policy.EvaluateAsync(new UnlinkedIdentityContext(
             "tenant-a",
             effective,
             authentication.Identity,
             authentication.ProjectedClaims,
             default));
-        Assert.True(grantRegistry.TryGet(ConformancePermissionGrantSource.SourceType, out var source));
+        await Assert.That(grantRegistry.TryGet(ConformancePermissionGrantSource.SourceType, out var source)).IsTrue();
         var grants = await source.GetGrantsAsync(new PermissionGrantContext(
             "tenant-a",
             "user-a",
@@ -94,11 +94,12 @@ public class ConformanceExtensionTests
             authentication.ProjectedClaims,
             new GrantSourceSelection(source.Type, 1, default, 0)));
 
-        Assert.Equal(2, connection.AdapterSettingsVersion);
-        Assert.Equal("https://issuer.example", authentication.Identity.Issuer);
-        Assert.Equal("subject-a", authentication.Identity.Subject);
-        Assert.IsType<UnlinkedIdentityDecision.LinkExistingUser>(decision);
-        Assert.Equal("conformance:read", Assert.Single(grants.Grants).Permission);
+        await Assert.That(connection.AdapterSettingsVersion).IsEqualTo(2);
+        await Assert.That(authentication.Identity.Issuer).IsEqualTo("https://issuer.example");
+        await Assert.That(authentication.Identity.Subject).IsEqualTo("subject-a");
+        await Assert.That(decision).IsOfType(typeof(UnlinkedIdentityDecision.LinkExistingUser));
+        var grant = (await Assert.That(grants.Grants).HasSingleItem())!;
+        await Assert.That(grant.Permission).IsEqualTo("conformance:read");
     }
 
     private sealed class TestClock : ISystemClock

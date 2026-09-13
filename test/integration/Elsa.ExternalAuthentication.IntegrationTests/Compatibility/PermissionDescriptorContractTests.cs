@@ -15,8 +15,8 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Compatibility;
 /// </remarks>
 public class PermissionDescriptorContractTests
 {
-    [Fact]
-    public void ClientModelCarriesEveryFieldTheCatalogServes()
+    [Test]
+    public async Task ClientModelCarriesEveryFieldTheCatalogServes()
     {
         var served = typeof(PermissionDescriptor).GetProperties().Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
         var deserialized = typeof(ExternalAuthenticationPermissionDescriptor).GetProperties().Select(x => x.Name).ToHashSet(StringComparer.Ordinal);
@@ -28,7 +28,9 @@ public class PermissionDescriptorContractTests
         var missing = served.Except(deserialized).OrderBy(x => x, StringComparer.Ordinal).ToArray();
         var unknown = deserialized.Except(served).OrderBy(x => x, StringComparer.Ordinal).ToArray();
 
-        Assert.True(missing.Length == 0, $"The client model would silently drop: {string.Join(", ", missing)}.");
-        Assert.True(unknown.Length == 0, $"The client model expects fields the catalog does not serve, which will deserialize empty: {string.Join(", ", unknown)}.");
+        await Assert.That(missing.Length == 0).IsTrue()
+            .Because($"The client model would silently drop: {string.Join(", ", missing)}.");
+        await Assert.That(unknown.Length == 0).IsTrue()
+            .Because($"The client model expects fields the catalog does not serve, which will deserialize empty: {string.Join(", ", unknown)}.");
     }
 }

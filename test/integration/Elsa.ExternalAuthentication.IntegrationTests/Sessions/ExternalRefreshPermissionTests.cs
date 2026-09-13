@@ -16,7 +16,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Sessions;
 
 public class ExternalRefreshPermissionTests
 {
-    [Fact]
+    [Test]
     public async Task BrokerSnapshotsResolvedExternalGrantsWithProvenance()
     {
         var identity = new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>());
@@ -55,9 +55,11 @@ public class ExternalRefreshPermissionTests
             adapter.CorrelationState!,
             new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
-        Assert.Null(result.Error);
-        Assert.NotNull(savedSession);
-        Assert.Equal([expectedGrant], savedSession.ExternalGrants);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(savedSession).IsNotNull();
+        await Assert.That(savedSession!.ExternalGrants).IsEquivalentTo(
+            [expectedGrant],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
         await permissionResolver.Received(1).ResolveAsync(
             Arg.Is<PermissionGrantResolutionContext>(context =>
                 context.TargetTenantId == "tenant-a" &&
@@ -67,7 +69,7 @@ public class ExternalRefreshPermissionTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshRetainsBoundedExternalSnapshotAndReevaluatesCurrentElsaRoles()
     {
         var clock = new TestClock();
@@ -134,17 +136,21 @@ public class ExternalRefreshPermissionTests
             using var refreshToken = new SensitiveString(initial.RefreshToken);
             await issuer.RefreshAsync("studio", refreshToken);
 
-            Assert.Equal("tenant-b", tenantAccessor.TenantId);
+            await Assert.That(tenantAccessor.TenantId).IsEqualTo("tenant-b");
         }
 
-        Assert.Equal(2, issuanceContexts.Count);
-        Assert.Equal(["*", "reports:view"], issuanceContexts[0].Permissions);
-        Assert.Equal(["workflows:manage", "reports:view"], issuanceContexts[1].Permissions);
-        Assert.DoesNotContain("*", issuanceContexts[1].Permissions);
-        Assert.Equal("session-a", issuanceContexts[1].ExternalAuthenticationSessionId);
+        await Assert.That(issuanceContexts.Count).IsEqualTo(2);
+        await Assert.That(issuanceContexts[0].Permissions).IsEquivalentTo(
+            ["*", "reports:view"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(issuanceContexts[1].Permissions).IsEquivalentTo(
+            ["workflows:manage", "reports:view"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(issuanceContexts[1].Permissions).DoesNotContain("*");
+        await Assert.That(issuanceContexts[1].ExternalAuthenticationSessionId).IsEqualTo("session-a");
     }
 
-    [Fact]
+    [Test]
     public async Task DeploymentDenyBoundaryAppliesToRoleDerivedPermissionsAtIssuance()
     {
         // A role permission excluded by the boundary during grant resolution used to reappear here, because
@@ -156,18 +162,22 @@ public class ExternalRefreshPermissionTests
         var contexts = await IssueWithAsync(options, rolePermissions: ["workflows/definitions:delete", "workflows/definitions:view"]);
 
         // The denied role permission is gone; the role's other permission and the undenied external grant stay.
-        Assert.DoesNotContain("workflows/definitions:delete", contexts.Single().Permissions);
-        Assert.Equal(["workflows/definitions:view", "reports:view"], contexts.Single().Permissions);
+        await Assert.That(contexts.Single().Permissions).DoesNotContain("workflows/definitions:delete");
+        await Assert.That(contexts.Single().Permissions).IsEquivalentTo(
+            ["workflows/definitions:view", "reports:view"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task RolePermissionsAreUnaffectedWhenNoBoundaryIsConfigured()
     {
         // The default is both lists empty, and that must stay a no-op: an external login should not quietly
         // hand back less than the user's roles grant just because issuance now consults the boundary.
         var contexts = await IssueWithAsync(new ExternalAuthenticationOptions(), rolePermissions: ["workflows/definitions:delete", "*"]);
 
-        Assert.Equal(["workflows/definitions:delete", "*", "reports:view"], contexts.Single().Permissions);
+        await Assert.That(contexts.Single().Permissions).IsEquivalentTo(
+            ["workflows/definitions:delete", "*", "reports:view"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private static async Task<IReadOnlyList<TokenIssuanceContext>> IssueWithAsync(ExternalAuthenticationOptions options, string[] rolePermissions)

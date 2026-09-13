@@ -5,7 +5,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Operations;
 
 public class PreviewSignInTests
 {
-    [Fact]
+    [Test]
     public async Task PreviewResultIsAdministratorBoundOneTimeAndDoesNotCreateSessionOrCredentials()
     {
         var clock = new TestClock(DateTimeOffset.UtcNow);
@@ -17,12 +17,12 @@ public class PreviewSignInTests
         var first = await previews.TryTakeAsync("handle", "admin-a");
         var second = await previews.TryTakeAsync("handle", "admin-a");
 
-        Assert.IsType<TakeResult<PreviewResult>.NotFound>(wrongAdministrator);
-        Assert.IsType<TakeResult<PreviewResult>.Taken>(first);
-        Assert.IsType<TakeResult<PreviewResult>.AlreadyConsumed>(second);
+        await Assert.That(wrongAdministrator).IsOfType(typeof(TakeResult<PreviewResult>.NotFound));
+        await Assert.That(first).IsOfType(typeof(TakeResult<PreviewResult>.Taken));
+        await Assert.That(second).IsOfType(typeof(TakeResult<PreviewResult>.AlreadyConsumed));
         var value = ((TakeResult<PreviewResult>.Taken)first).Value;
-        Assert.Equal("connection-a", value.ConnectionId);
-        Assert.DoesNotContain(value.ProjectedClaims.SelectMany(x => x.Value), x => x.Contains("token", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(value.ConnectionId).IsEqualTo("connection-a");
+        await Assert.That(value.ProjectedClaims.SelectMany(x => x.Value)).DoesNotContain(x => x.Contains("token", StringComparison.OrdinalIgnoreCase));
     }
 
     private sealed class TestClock(DateTimeOffset now) : Elsa.Common.ISystemClock { public DateTimeOffset UtcNow { get; set; } = now; }

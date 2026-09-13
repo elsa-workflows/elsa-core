@@ -1,8 +1,5 @@
 using Elsa.Authorization;
 using System.Net;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
-using Elsa.ExternalAuthentication.Features;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Services;
@@ -14,92 +11,46 @@ using Elsa.Identity.Entities;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using Elsa.Workflows;
-using FastEndpoints;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
+using TUnit.AspNetCore;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Links;
 
-[Collection(nameof(EndpointSecurityCollection))]
-public class IdentityLinkAuthorizationTests : IAsyncLifetime
+public class IdentityLinkAuthorizationTests : WebApplicationTest<IdentityLinkAuthorizationWebApplicationFactory, ExternalAuthenticationTestEntryPoint>
 {
-    private WebApplication? _app;
     private HttpClient? _client;
-    private bool _wasSecurityEnabled;
+    private readonly TestAuthenticationState _authentication = new();
 
-    public async Task InitializeAsync()
+    private HttpClient Client => _client ??= Factory.CreateClient();
+
+    protected override void ConfigureTestServices(IServiceCollection services)
     {
-        _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-        EndpointSecurityOptions.SecurityIsEnabled = true;
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddAuthentication(TestAuthenticationHandler.AuthenticationScheme).AddScheme<AuthenticationSchemeOptions, TestAuthenticationHandler>(TestAuthenticationHandler.AuthenticationScheme, _ => { });
-        builder.Services.AddAuthorization();
-        builder.Services.AddSingleton<MemoryStore<User>>();
-        builder.Services.AddSingleton<IIdentityGenerator, GuidIdentityGenerator>();
-        builder.Services.AddSingleton<Elsa.Common.ISystemClock, Elsa.Common.Services.SystemClock>();
-        builder.Services.AddSingleton<IExternalAuthenticationHandleHasher, HmacExternalAuthenticationHandleHasher>();
-        builder.Services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
-        builder.Services.AddSingleton<IIdentityProviderConnectionRegistry>(Substitute.For<IIdentityProviderConnectionRegistry>());
+        _authentication.SetPermissions($"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.View}");
+        services.AddSingleton(_authentication);
+        services.AddSingleton<MemoryStore<User>>();
+        services.AddSingleton<IIdentityGenerator, GuidIdentityGenerator>();
+        services.AddSingleton<Elsa.Common.ISystemClock, Elsa.Common.Services.SystemClock>();
+        services.AddSingleton<IExternalAuthenticationHandleHasher, HmacExternalAuthenticationHandleHasher>();
+        services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
+        services.AddSingleton<IIdentityProviderConnectionRegistry>(Substitute.For<IIdentityProviderConnectionRegistry>());
         var tenant = Substitute.For<ITenantAccessor>();
         tenant.TenantId.Returns("tenant-a");
-        builder.Services.AddSingleton(tenant);
-        builder.Services.AddScoped<IUserStore, MemoryUserStore>();
-        builder.Services.AddScoped<IUserProvider, StoreBasedUserProvider>();
-        builder.Services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
-        builder.Services.AddScoped<InMemoryExternalIdentityProvisioner>();
-        builder.Services.AddScoped<IExternalIdentityProvisioner>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
-        builder.Services.AddScoped<IExternalIdentityLinkManagementStore>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
-        builder.Services.AddScoped<ExternalIdentityLinkManagementService>();
-        builder.Services.AddFastEndpoints(options =>
-        {
-            options.Assemblies = [typeof(ExternalAuthenticationFeature).Assembly];
-            options.Filter = endpoint => endpoint.Namespace == "Elsa.ExternalAuthentication.Endpoints.IdentityLinks";
-        });
-        _app = builder.Build();
-        _app.UseAuthentication();
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-        await _app.StartAsync();
-        _client = _app.GetTestClient();
+        services.AddSingleton(tenant);
+        services.AddScoped<IUserStore, MemoryUserStore>();
+        services.AddScoped<IUserProvider, StoreBasedUserProvider>();
+        services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
+        services.AddScoped<InMemoryExternalIdentityProvisioner>();
+        services.AddScoped<IExternalIdentityProvisioner>(provider => provider.GetRequiredService<InMemoryExternalIdentityProvisioner>());
+        services.AddScoped<IExternalIdentityLinkManagementStore>(provider => provider.GetRequiredService<InMemoryExternalIdentityProvisioner>());
+        services.AddScoped<ExternalIdentityLinkManagementService>();
     }
 
-    public async Task DisposeAsync()
-    {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        _client?.Dispose();
-        if (_app is not null)
-        {
-            await _app.StopAsync();
-            await _app.DisposeAsync();
-        }
-    }
-
-    [Fact]
+    [Test]
     public async Task UserOptionsRequiresTheLinkManagementPermissionRatherThanAnUnrelatedPermission()
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "/external-authentication/user-options");
-        request.Headers.Add(TestAuthenticationHandler.PermissionHeader, $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.View}");
-        Assert.Equal(HttpStatusCode.Forbidden, (await _client!.SendAsync(request)).StatusCode);
-    }
-
-    private sealed class TestAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder)
-        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
-    {
-        public const string AuthenticationScheme = "test";
-        public const string PermissionHeader = "X-Test-Permissions";
-
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-        {
-            var permissions = Request.Headers[PermissionHeader].SelectMany(x => x?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? []);
-            var identity = new ClaimsIdentity(permissions.Select(x => new Claim(PermissionNames.ClaimType, x)), AuthenticationScheme);
-            return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), AuthenticationScheme)));
-        }
+        await Assert.That((await Client.SendAsync(request)).StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
     }
 }

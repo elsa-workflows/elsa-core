@@ -3,41 +3,38 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Contracts;
-using Elsa.ExternalAuthentication.Features;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
-using FastEndpoints;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
+using TUnit.AspNetCore;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Broker;
 
 /// <summary>Contract-level assertions for the anonymous OAuth-shaped broker surface.</summary>
 public class BrokerContractTests
 {
-    [Fact]
+    [Test]
     public async Task TokenExchangeRejectsAnUnregisteredPublicOriginBeforeGrantLookup()
     {
         var broker = BrokerSecurityTests.CreateBroker(new BrokerSecurityTests.RecordingAdapter());
 
         var result = await broker.ExchangeAsync(new BrokerTokenRequest("authorization_code", "studio", new Uri("https://studio.example/authentication/external/callback"), "anything", "verifier", null, "https://attacker.example"));
 
-        Assert.Equal("invalid_request", result.Error?.Error);
-        Assert.Null(result.Token);
+        await Assert.That(result.Error?.Error).IsEqualTo("invalid_request");
+        await Assert.That(result.Token).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task DiscoveryRejectsUnknownAuthenticationClientsWithoutLeakingMethods()
     {
         var broker = BrokerSecurityTests.CreateBroker(new BrokerSecurityTests.RecordingAdapter());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => broker.DiscoverAsync("tenant-b", "unknown").AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => broker.DiscoverAsync("tenant-b", "unknown").AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task DiscoveryDoesNotAdvertiseAnInvalidConnection()
     {
         var broker = BrokerSecurityTests.CreateBroker(
@@ -48,10 +45,10 @@ public class BrokerContractTests
 
         var methods = await broker.DiscoverAsync("tenant-a", "studio");
 
-        Assert.DoesNotContain(methods, method => method.Id == "connection-a");
+        await Assert.That(methods).DoesNotContain(method => method.Id == "connection-a");
     }
 
-    [Fact]
+    [Test]
     public async Task InitiationRejectsAConnectionThatFailsRuntimeValidityAssessment()
     {
         var adapter = new BrokerSecurityTests.RecordingAdapter();
@@ -69,133 +66,106 @@ public class BrokerContractTests
             "/workflows",
             "contoso"), "tenant-a");
 
-        Assert.Equal("method_unavailable", result.Error?.Error);
-        Assert.Null(adapter.Connection);
+        await Assert.That(result.Error?.Error).IsEqualTo("method_unavailable");
+        await Assert.That(adapter.Connection).IsNull();
     }
 }
 
-[Collection(nameof(EndpointSecurityCollection))]
-public class BrokerDiscoveryEndpointContractTests : IAsyncLifetime
+public class BrokerDiscoveryEndpointContractTests : WebApplicationTest<BrokerDiscoveryEndpointContractWebApplicationFactory, ExternalAuthenticationTestEntryPoint>
 {
-    private WebApplication? _app;
     private HttpClient? _client;
-    private IExternalAuthenticationBroker _broker = null!;
-    private bool _wasSecurityEnabled;
+    private readonly TestAuthenticationState _authentication = new();
+    private readonly IExternalAuthenticationBroker _broker = Substitute.For<IExternalAuthenticationBroker>();
+    private readonly ITenantAccessor _tenant = Substitute.For<ITenantAccessor>();
 
-    public async Task InitializeAsync()
+    private HttpClient Client => _client ??= Factory.CreateClient();
+
+    public BrokerDiscoveryEndpointContractTests()
     {
-        _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-        EndpointSecurityOptions.SecurityIsEnabled = false;
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddFastEndpoints(options =>
-        {
-            options.Assemblies = [typeof(ExternalAuthenticationFeature).Assembly];
-            options.Filter = endpoint => endpoint.Namespace == "Elsa.ExternalAuthentication.Endpoints.Broker";
-        });
-        _broker = Substitute.For<IExternalAuthenticationBroker>();
+        _authentication.SetClaims(new Claim(Elsa.Identity.Constants.CustomClaimTypes.ExternalAuthenticationSessionId, "session-a"));
         _broker.DiscoverAsync("tenant-a", "studio", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<IReadOnlyCollection<LoginMethod>>([new("local", "local", LoginMethodKind.Local, "Elsa account", "elsa", 0, false, new Uri("/external-authentication/local/authorize", UriKind.Relative))]));
-        var tenant = Substitute.For<ITenantAccessor>();
-        tenant.TenantId.Returns("tenant-a");
-        builder.Services.AddSingleton(_broker);
-        builder.Services.AddSingleton(tenant);
-        builder.Services.AddRateLimiter(_ => { });
-        builder.Services.AddAuthorization();
-        _app = builder.Build();
-        _app.Use(async (context, next) =>
-        {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Elsa.Identity.Constants.CustomClaimTypes.ExternalAuthenticationSessionId, "session-a")], "test"));
-            await next(context);
-        });
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-        await _app.StartAsync();
-        _client = _app.GetTestClient();
+        _tenant.TenantId.Returns("tenant-a");
     }
 
-    public async Task DisposeAsync()
+    protected override void ConfigureTestServices(IServiceCollection services)
     {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        _client?.Dispose();
-        if (_app is not null)
-        {
-            await _app.StopAsync();
-            await _app.DisposeAsync();
-        }
+        services.AddSingleton(_authentication);
+        services.AddSingleton(_broker);
+        services.AddSingleton(_tenant);
     }
 
-    [Fact]
+    [Test]
     public async Task LoginMethodsUsesTrustedTenantAndNoStoreContract()
     {
-        var response = await _client!.GetAsync("/external-authentication/login-methods?clientId=studio&tenantId=attacker");
+        var response = await Client.GetAsync("/external-authentication/login-methods?clientId=studio&tenantId=attacker");
         var body = await response.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("no-store", response.Headers.CacheControl?.ToString());
-        Assert.Contains("local", body);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(response.Headers.CacheControl?.ToString()).IsEqualTo("no-store");
+        await Assert.That(body).Contains("local");
         await _broker.Received(1).DiscoverAsync("tenant-a", "studio", Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ExternalAuthorizeReturnsProviderRedirect()
     {
         _broker.InitiateExternalAsync(Arg.Any<BrokerAuthorizationRequest>(), "tenant-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerInitiationResult.Redirect(new Uri("https://issuer.example/authorize?state=opaque"))));
 
-        var response = await _client!.GetAsync("/external-authentication/authorize/contoso?client_id=studio&redirect_uri=https%3A%2F%2Fstudio.example%2Fcallback&response_type=code&code_challenge=x&code_challenge_method=S256&return_path=%2Fworkflows");
+        var response = await Client.GetAsync("/external-authentication/authorize/contoso?client_id=studio&redirect_uri=https%3A%2F%2Fstudio.example%2Fcallback&response_type=code&code_challenge=x&code_challenge_method=S256&return_path=%2Fworkflows");
 
-        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("https://issuer.example/authorize?state=opaque", response.Headers.Location?.AbsoluteUri);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Found);
+        await Assert.That(response.Headers.Location?.AbsoluteUri).IsEqualTo("https://issuer.example/authorize?state=opaque");
     }
 
-    [Fact]
+    [Test]
     public async Task ProviderCallbackReturnsTrustedClientRedirect()
     {
         _broker.CompleteCallbackAsync("contoso", "opaque", Arg.Any<IReadOnlyDictionary<string, IReadOnlyCollection<string>>>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/callback?code=one"))));
 
-        var response = await _client!.GetAsync("/external-authentication/callback/contoso?state=opaque&code=provider-code");
+        var response = await Client.GetAsync("/external-authentication/callback/contoso?state=opaque&code=provider-code");
 
-        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
-        Assert.Equal("https://studio.example/callback?code=one", response.Headers.Location?.AbsoluteUri);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Found);
+        await Assert.That(response.Headers.Location?.AbsoluteUri).IsEqualTo("https://studio.example/callback?code=one");
     }
 
-    [Fact]
+    [Test]
     public async Task LocalAuthorizeReturnsRedirectUriJson()
     {
         _broker.InitiateLocalAsync(Arg.Any<LocalBrokerAuthorizationRequest>(), "tenant-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/callback?code=one"))));
 
-        var response = await _client!.PostAsJsonAsync("/external-authentication/local/authorize", new { clientId = "studio", redirectUri = "https://studio.example/callback", responseType = "code", codeChallenge = "x", codeChallengeMethod = "S256", returnPath = "/workflows", username = "alice", password = "p" });
+        var response = await Client.PostAsJsonAsync("/external-authentication/local/authorize", new { clientId = "studio", redirectUri = "https://studio.example/callback", responseType = "code", codeChallenge = "x", codeChallengeMethod = "S256", returnPath = "/workflows", username = "alice", password = "p" });
         var body = await response.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("redirectUri", body);
-        Assert.Contains("https://studio.example/callback?code=one", body);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(body).Contains("redirectUri");
+        await Assert.That(body).Contains("https://studio.example/callback?code=one");
     }
 
-    [Fact]
+    [Test]
     public async Task TokenFormExchangeReturnsTokenShape()
     {
         _broker.ExchangeAsync(Arg.Any<BrokerTokenRequest>(), Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerTokenResult.Success(new ExternalTokenResponse("access", "Bearer", 3600, "refresh", 7200, 28800))));
 
-        var response = await _client!.PostAsync("/external-authentication/token", new FormUrlEncodedContent(new Dictionary<string, string> { ["grant_type"] = "authorization_code", ["client_id"] = "studio", ["redirect_uri"] = "https://studio.example/callback", ["code"] = "code", ["code_verifier"] = "verifier" }));
+        var response = await Client.PostAsync("/external-authentication/token", new FormUrlEncodedContent(new Dictionary<string, string> { ["grant_type"] = "authorization_code", ["client_id"] = "studio", ["redirect_uri"] = "https://studio.example/callback", ["code"] = "code", ["code_verifier"] = "verifier" }));
         var body = await response.Content.ReadAsStringAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("accessToken", body);
-        Assert.Contains("refreshToken", body);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(body).Contains("accessToken");
+        await Assert.That(body).Contains("refreshToken");
     }
 
-    [Fact]
+    [Test]
     public async Task LogoutAndLogoutCallbackHonorBrokerResponses()
     {
         _broker.LogoutAsync(Arg.Any<BrokerLogoutRequest>(), "session-a", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerLogoutResult.Complete(new Uri("https://studio.example/logout-callback"))));
         _broker.CompleteLogoutAsync("contoso", "opaque", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult(BrokerCallbackResult.Redirect(new Uri("https://studio.example/logout-callback"))));
 
-        var logout = await _client!.PostAsJsonAsync("/external-authentication/logout", new { clientId = "studio", postLogoutRedirectUri = "https://studio.example/logout-callback", mode = "local" });
-        var callback = await _client!.GetAsync("/external-authentication/logout/callback/contoso?state=opaque");
+        var logout = await Client.PostAsJsonAsync("/external-authentication/logout", new { clientId = "studio", postLogoutRedirectUri = "https://studio.example/logout-callback", mode = "local" });
+        var callback = await Client.GetAsync("/external-authentication/logout/callback/contoso?state=opaque");
 
-        Assert.Equal(HttpStatusCode.OK, logout.StatusCode);
-        Assert.Contains("completed", await logout.Content.ReadAsStringAsync());
-        Assert.Equal(HttpStatusCode.Found, callback.StatusCode);
-        Assert.Equal("https://studio.example/logout-callback", callback.Headers.Location?.AbsoluteUri);
+        await Assert.That(logout.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(await logout.Content.ReadAsStringAsync()).Contains("completed");
+        await Assert.That(callback.StatusCode).IsEqualTo(HttpStatusCode.Found);
+        await Assert.That(callback.Headers.Location?.AbsoluteUri).IsEqualTo("https://studio.example/logout-callback");
     }
 }

@@ -21,10 +21,11 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Persistence;
 
-public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
+public sealed class ExternalAuthenticationPersistenceTests : IAsyncInitializer, IAsyncDisposable
 {
     private SqliteConnection _connection = null!;
     private ServiceProvider _services = null!;
@@ -54,7 +55,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         await dbContext.Database.EnsureCreatedAsync();
     }
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
         await _connection.DisposeAsync();
@@ -74,34 +75,34 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             _clock,
             NullLogger<EFCoreExternalIdentityProvisioner>.Instance);
 
-    [Fact]
+    [Test]
     public async Task PersistsEveryDurableExternalAuthenticationAggregateWithTheRequiredIndexes()
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
         var model = dbContext.Model;
 
-        Assert.Contains(dbContext.Database.GetMigrations(), x => x.EndsWith("_Initial", StringComparison.Ordinal));
+        await Assert.That(dbContext.Database.GetMigrations()).Contains(x => x.EndsWith("_Initial", StringComparison.Ordinal));
 
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedIdentityProviderConnection));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedExternalIdentityLink));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedBrokerTransaction));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedAuthorizationGrant));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedExternalAuthenticationSession));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedExternalAuthenticationRefreshToken));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedConnectionObservation));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(PersistedPreviewResult));
-        Assert.Contains(model.GetEntityTypes(), x => x.ClrType == typeof(ExternalAuthenticationRegistryVersion));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedIdentityProviderConnection));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedExternalIdentityLink));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedBrokerTransaction));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedAuthorizationGrant));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedExternalAuthenticationSession));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedExternalAuthenticationRefreshToken));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedConnectionObservation));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(PersistedPreviewResult));
+        await Assert.That(model.GetEntityTypes()).Contains(x => x.ClrType == typeof(ExternalAuthenticationRegistryVersion));
 
         var connection = model.FindEntityType(typeof(PersistedIdentityProviderConnection))!;
-        Assert.True(connection.FindProperty(nameof(PersistedIdentityProviderConnection.Revision))!.IsConcurrencyToken);
-        Assert.Contains(connection.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedIdentityProviderConnection.TenantId), nameof(PersistedIdentityProviderConnection.Key)]));
+        await Assert.That(connection.FindProperty(nameof(PersistedIdentityProviderConnection.Revision))!.IsConcurrencyToken).IsTrue();
+        await Assert.That(connection.GetIndexes()).Contains(x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedIdentityProviderConnection.TenantId), nameof(PersistedIdentityProviderConnection.Key)]));
         var link = model.FindEntityType(typeof(PersistedExternalIdentityLink))!;
-        Assert.Contains(link.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalIdentityLink.TenantId), nameof(PersistedExternalIdentityLink.ConnectionKey), nameof(PersistedExternalIdentityLink.Issuer), nameof(PersistedExternalIdentityLink.SubjectHash)]));
+        await Assert.That(link.GetIndexes()).Contains(x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalIdentityLink.TenantId), nameof(PersistedExternalIdentityLink.ConnectionKey), nameof(PersistedExternalIdentityLink.Issuer), nameof(PersistedExternalIdentityLink.SubjectHash)]));
         var refreshToken = model.FindEntityType(typeof(PersistedExternalAuthenticationRefreshToken))!;
-        Assert.Contains(refreshToken.GetIndexes(), x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalAuthenticationRefreshToken.Hash)]));
+        await Assert.That(refreshToken.GetIndexes()).Contains(x => x.IsUnique && x.Properties.Select(p => p.Name).SequenceEqual([nameof(PersistedExternalAuthenticationRefreshToken.Hash)]));
     }
 
-    [Fact]
+    [Test]
     public async Task SqliteInitialMigrationCreatesTheOptionalRefreshTokenTable()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
@@ -115,15 +116,15 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
         await dbContext.Database.MigrateAsync();
 
-        Assert.Single(await dbContext.Database.GetAppliedMigrationsAsync());
+        await Assert.That(await dbContext.Database.GetAppliedMigrationsAsync()).HasSingleItem();
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'ExternalAuthenticationSessionRefreshTokens'";
-        Assert.Equal(1L, (long)(await command.ExecuteScalarAsync())!);
+        await Assert.That((long)(await command.ExecuteScalarAsync())!).IsEqualTo(1L);
         command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('ExternalAuthenticationSessions') WHERE name = 'CurrentRefreshTokenHash'";
-        Assert.Equal(0L, (long)(await command.ExecuteScalarAsync())!);
+        await Assert.That((long)(await command.ExecuteScalarAsync())!).IsEqualTo(0L);
     }
 
-    [Fact]
+    [Test]
     public async Task ExternalAuthenticationModelDoesNotReachIntoTheIdentityAggregate()
     {
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
@@ -131,32 +132,38 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
         // External authentication owns its own database context, so the identity aggregate must not leak into it.
         // ExternalIdentityLink.UserId is resolved through IUserProvider/IUserStore instead of a foreign key.
-        Assert.DoesNotContain(model.GetEntityTypes(), x => x.ClrType == typeof(User));
-        Assert.Empty(model.FindEntityType(typeof(PersistedExternalIdentityLink))!.GetForeignKeys());
+        await Assert.That(model.GetEntityTypes()).DoesNotContain(x => x.ClrType == typeof(User));
+        await Assert.That(model.FindEntityType(typeof(PersistedExternalIdentityLink))!.GetForeignKeys()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ConnectionStoreEnforcesUniqueScopeKeysAndOptimisticConcurrency()
     {
         var store = new EFCoreIdentityProviderConnectionStore(_leaseFactory);
-        var created = Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection()));
-        Assert.Equal(1, created.Connection.Revision);
-        Assert.IsType<ConnectionMutationResult.DuplicateKey>(await store.CreateAsync(CreateConnection("connection-b")));
+        var createdValue1 = await store.CreateAsync(CreateConnection());
+        await Assert.That(createdValue1).IsOfType(typeof(ConnectionMutationResult.Created));
+        var created = (ConnectionMutationResult.Created)createdValue1!;
+        await Assert.That(created.Connection.Revision).IsEqualTo(1);
+        await Assert.That(await store.CreateAsync(CreateConnection("connection-b"))).IsOfType(typeof(ConnectionMutationResult.DuplicateKey));
 
         created.Connection.DisplayName = "Updated";
-        var updated = Assert.IsType<ConnectionMutationResult.Updated>(await store.UpdateAsync(created.Connection, 1));
-        Assert.Equal(2, updated.Connection.Revision);
-        Assert.Equal("Updated", updated.Connection.DisplayName);
-        Assert.Equal(2, Assert.IsType<ConnectionMutationResult.RevisionConflict>(await store.UpdateAsync(created.Connection, 1)).CurrentRevision);
+        var updatedValue3 = await store.UpdateAsync(created.Connection, 1);
+        await Assert.That(updatedValue3).IsOfType(typeof(ConnectionMutationResult.Updated));
+        var updated = (ConnectionMutationResult.Updated)updatedValue3!;
+        await Assert.That(updated.Connection.Revision).IsEqualTo(2);
+        await Assert.That(updated.Connection.DisplayName).IsEqualTo("Updated");
+        var conflictResult = await store.UpdateAsync(created.Connection, 1);
+        await Assert.That(conflictResult).IsOfType(typeof(ConnectionMutationResult.RevisionConflict));
+        await Assert.That(((ConnectionMutationResult.RevisionConflict)conflictResult).CurrentRevision).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task ConnectionStoreReturnsOnlyTheRequestedScope()
     {
         var store = new EFCoreIdentityProviderConnectionStore(_leaseFactory);
-        Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection()));
-        Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection("connection-b", "tenant-b")));
-        Assert.IsType<ConnectionMutationResult.Created>(await store.CreateAsync(CreateConnection("connection-host", ConnectionScope.HostTenantId)));
+        await Assert.That(await store.CreateAsync(CreateConnection())).IsOfType(typeof(ConnectionMutationResult.Created));
+        await Assert.That(await store.CreateAsync(CreateConnection("connection-b", "tenant-b"))).IsOfType(typeof(ConnectionMutationResult.Created));
+        await Assert.That(await store.CreateAsync(CreateConnection("connection-host", ConnectionScope.HostTenantId))).IsOfType(typeof(ConnectionMutationResult.Created));
 
         var tenantScoped = await store.FindAsync(new() { Scope = new(ConnectionScopeKind.Tenant, "tenant-a") });
         var hostScoped = await store.FindAsync(new() { Scope = ConnectionScope.Host });
@@ -164,41 +171,45 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
         // The store honors ConnectionFilter.Scope, so callers that query by scope get only that scope's rows;
         // a store that accepted and ignored the filter would silently widen their reach.
-        Assert.Equal(["connection-a"], tenantScoped.Items.Select(x => x.Id).ToArray());
-        Assert.Equal(["connection-host"], hostScoped.Items.Select(x => x.Id).ToArray());
-        Assert.Equal(3, unscoped.Items.Count);
+        await Assert.That(tenantScoped.Items.Select(x => x.Id).ToArray()).IsEquivalentTo(
+            ["connection-a"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(hostScoped.Items.Select(x => x.Id).ToArray()).IsEquivalentTo(
+            ["connection-host"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(unscoped.Items.Count).IsEqualTo(3);
     }
 
-    [Fact]
+    [Test]
     public async Task DurableStateGrantSessionAndRegistryVersionOperationsAreSingleUseOrCompareAndSwap()
     {
         var durableDbContexts = _leaseFactory;
         var stateStore = new EFCoreExternalAuthenticationStateStore(durableDbContexts, _clock);
         var transaction = new BrokerTransaction { HandleHash = "state", Purpose = BrokerTransactionPurpose.ExternalSignIn, ClientId = "studio", CallbackUri = new Uri("https://studio.example/callback"), ReturnPath = "/", TenantId = "tenant-a", PkceChallenge = "challenge", ExpiresAt = _clock.UtcNow.AddMinutes(1) };
         await stateStore.PutAsync("ExternalSignIn", "state", transaction, transaction.ExpiresAt);
-        Assert.IsType<TakeResult<BrokerTransaction>.Taken>(await stateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", "state"));
-        Assert.IsType<TakeResult<BrokerTransaction>.AlreadyConsumed>(await stateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", "state"));
+        await Assert.That(await stateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", "state")).IsOfType(typeof(TakeResult<BrokerTransaction>.Taken));
+        await Assert.That(await stateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", "state")).IsOfType(typeof(TakeResult<BrokerTransaction>.AlreadyConsumed));
 
         var grantStore = new EFCoreAuthorizationGrantStore(durableDbContexts, _clock);
         await grantStore.SaveAsync(new AuthorizationGrant { CodeHash = "code", ClientId = "studio", CallbackUri = new Uri("https://studio.example/callback"), TenantId = "tenant-a", UserId = "user-a", PkceChallenge = "challenge", ExpiresAt = _clock.UtcNow.AddMinutes(1) });
-        Assert.IsType<TakeResult<AuthorizationGrant>.Taken>(await grantStore.TryTakeAsync("code"));
-        Assert.IsType<TakeResult<AuthorizationGrant>.AlreadyConsumed>(await grantStore.TryTakeAsync("code"));
+        await Assert.That(await grantStore.TryTakeAsync("code")).IsOfType(typeof(TakeResult<AuthorizationGrant>.Taken));
+        await Assert.That(await grantStore.TryTakeAsync("code")).IsOfType(typeof(TakeResult<AuthorizationGrant>.AlreadyConsumed));
 
         var sessionStore = new EFCoreExternalAuthenticationSessionStore(durableDbContexts, _clock);
         await sessionStore.SaveAsync(CreateSession());
-        Assert.IsType<ExternalAuthenticationSessionRotationResult.Rotated>(await sessionStore.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-b", _clock.UtcNow));
-        Assert.Null(await sessionStore.FindByRefreshTokenHashAsync("refresh-a"));
-        Assert.Equal("session-a", (await sessionStore.FindByRefreshTokenHashAsync("refresh-b"))!.Id);
-        Assert.IsType<ExternalAuthenticationSessionRotationResult.Reused>(await sessionStore.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-c", _clock.UtcNow));
+        await Assert.That(await sessionStore.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-b", _clock.UtcNow)).IsOfType(typeof(ExternalAuthenticationSessionRotationResult.Rotated));
+        await Assert.That(await sessionStore.FindByRefreshTokenHashAsync("refresh-a")).IsNull();
+        await Assert.That((await sessionStore.FindByRefreshTokenHashAsync("refresh-b"))!.Id).IsEqualTo("session-a");
+        await Assert.That(await sessionStore.TryRotateRefreshTokenAsync("session-a", "refresh-a", 0, "refresh-c", _clock.UtcNow)).IsOfType(typeof(ExternalAuthenticationSessionRotationResult.Reused));
 
         var firstNode = new EFCoreConnectionRegistryVersionStore(durableDbContexts);
         var secondNode = new EFCoreConnectionRegistryVersionStore(durableDbContexts);
-        Assert.Equal(1, await firstNode.GetVersionAsync());
+        await Assert.That(await firstNode.GetVersionAsync()).IsEqualTo(1);
         var version = await firstNode.AdvanceAsync();
-        Assert.True(await secondNode.IsCurrentAsync(version));
+        await Assert.That(await secondNode.IsCurrentAsync(version)).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task DurableStateStoreRoundTripsRelativePreviewCallbackUris()
     {
         var stateStore = new EFCoreExternalAuthenticationStateStore(_leaseFactory, _clock);
@@ -217,14 +228,16 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         };
 
         await stateStore.PutAsync("PreviewStart", transaction.HandleHash, transaction, transaction.ExpiresAt);
-        var stored = Assert.IsType<TakeResult<BrokerTransaction>.Taken>(
-            await stateStore.TryTakeAsync<BrokerTransaction>("PreviewStart", transaction.HandleHash));
+        var storedValue13 =
+            await stateStore.TryTakeAsync<BrokerTransaction>("PreviewStart", transaction.HandleHash);
+        await Assert.That(storedValue13).IsOfType(typeof(TakeResult<BrokerTransaction>.Taken));
+        var stored = (TakeResult<BrokerTransaction>.Taken)storedValue13!;
 
-        Assert.False(stored.Value.CallbackUri.IsAbsoluteUri);
-        Assert.Equal(transaction.CallbackUri, stored.Value.CallbackUri);
+        await Assert.That(stored.Value.CallbackUri.IsAbsoluteUri).IsFalse();
+        await Assert.That(stored.Value.CallbackUri).IsEqualTo(transaction.CallbackUri);
     }
 
-    [Fact]
+    [Test]
     public async Task DurableSingleUseStoresRejectExpiredEntriesInTheAtomicConsumePredicate()
     {
         var durableDbContexts = _leaseFactory;
@@ -234,23 +247,23 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
         var stateStore = new EFCoreExternalAuthenticationStateStore(durableDbContexts, new SteppingSystemClock(afterExpiry));
         await stateStore.PutAsync("state", "state", new BrokerTransaction { HandleHash = "state", Purpose = BrokerTransactionPurpose.ExternalSignIn, ClientId = "studio", CallbackUri = new Uri("https://studio.example/callback"), ReturnPath = "/", TenantId = "tenant-a", PkceChallenge = "challenge", ExpiresAt = expiresAt }, expiresAt);
-        Assert.IsType<TakeResult<BrokerTransaction>.Expired>(await stateStore.TryTakeAsync<BrokerTransaction>("state", "state"));
+        await Assert.That(await stateStore.TryTakeAsync<BrokerTransaction>("state", "state")).IsOfType(typeof(TakeResult<BrokerTransaction>.Expired));
 
         var grantStore = new EFCoreAuthorizationGrantStore(durableDbContexts, new SteppingSystemClock(afterExpiry));
         await grantStore.SaveAsync(new AuthorizationGrant { CodeHash = "grant", ClientId = "studio", CallbackUri = new Uri("https://studio.example/callback"), TenantId = "tenant-a", UserId = "user-a", PkceChallenge = "challenge", ExpiresAt = expiresAt });
-        Assert.IsType<TakeResult<AuthorizationGrant>.Expired>(await grantStore.TryTakeAsync("grant"));
+        await Assert.That(await grantStore.TryTakeAsync("grant")).IsOfType(typeof(TakeResult<AuthorizationGrant>.Expired));
 
         var previewStore = new EFCorePreviewResultStore(durableDbContexts, new SteppingSystemClock(afterExpiry));
         await previewStore.SaveAsync(new PreviewResult("preview", "admin-a", "tenant-a", "connection-a", "revision-a", "https://issuer.example", "subject", new Dictionary<string, IReadOnlyCollection<string>>(), "allowed", [], [], expiresAt, null));
-        Assert.IsType<TakeResult<PreviewResult>.Expired>(await previewStore.TryTakeAsync("preview", "admin-a"));
+        await Assert.That(await previewStore.TryTakeAsync("preview", "admin-a")).IsOfType(typeof(TakeResult<PreviewResult>.Expired));
 
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Null((await dbContext.ExternalAuthenticationBrokerTransactions.SingleAsync(x => x.HandleHash == "state")).ConsumedAt);
-        Assert.Null((await dbContext.ExternalAuthenticationAuthorizationGrants.SingleAsync(x => x.CodeHash == "grant")).ConsumedAt);
-        Assert.Null((await dbContext.ExternalAuthenticationPreviewResults.SingleAsync(x => x.HandleHash == "preview")).ConsumedAt);
+        await Assert.That((await dbContext.ExternalAuthenticationBrokerTransactions.SingleAsync(x => x.HandleHash == "state")).ConsumedAt).IsNull();
+        await Assert.That((await dbContext.ExternalAuthenticationAuthorizationGrants.SingleAsync(x => x.CodeHash == "grant")).ConsumedAt).IsNull();
+        await Assert.That((await dbContext.ExternalAuthenticationPreviewResults.SingleAsync(x => x.HandleHash == "preview")).ConsumedAt).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerCreatesCredentiallessUserAndOneDurableLinkPerIdentityTuple()
     {
         using var hasher = new HmacExternalAuthenticationHandleHasher();
@@ -260,17 +273,17 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var created = await provisioner.CreateLinkOrGetExistingAsync(request);
         var converged = await provisioner.CreateLinkOrGetExistingAsync(request);
 
-        Assert.True(created.WasCreated);
-        Assert.False(converged.WasCreated);
-        Assert.Equal(created.Link.Id, converged.Link.Id);
-        var user = Assert.Single(await _userStore.FindManyAsync(new UserFilter()));
-        Assert.Null(user.HashedPassword);
-        Assert.Null(user.HashedPasswordSalt);
+        await Assert.That(created.WasCreated).IsTrue();
+        await Assert.That(converged.WasCreated).IsFalse();
+        await Assert.That(converged.Link.Id).IsEqualTo(created.Link.Id);
+        var user = (await Assert.That(await _userStore.FindManyAsync(new UserFilter())).HasSingleItem())!;
+        await Assert.That(user.HashedPassword).IsNull();
+        await Assert.That(user.HashedPasswordSalt).IsNull();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
+        await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerPersistsTheLatestSuccessfulSignInTimestamp()
     {
         using var hasher = new HmacExternalAuthenticationHandleHasher();
@@ -281,15 +294,15 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var firstSignInAt = new DateTimeOffset(2026, 7, 26, 10, 0, 0, TimeSpan.Zero);
         var latestSignInAt = firstSignInAt.AddMinutes(1);
 
-        Assert.True(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, firstSignInAt));
-        Assert.True(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, latestSignInAt));
-        Assert.True(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, firstSignInAt));
+        await Assert.That(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, firstSignInAt)).IsTrue();
+        await Assert.That(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, latestSignInAt)).IsTrue();
+        await Assert.That(await provisioner.RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, firstSignInAt)).IsTrue();
 
         var persisted = await CreateProvisioner(hasher).FindLinkAsync("tenant-a", "connection-a", identity);
-        Assert.Equal(latestSignInAt, persisted!.LastSignedInAt);
+        await Assert.That(persisted!.LastSignedInAt).IsEqualTo(latestSignInAt);
     }
 
-    [Fact]
+    [Test]
     public async Task ConcurrentSignInsPreserveTheLatestTimestamp()
     {
         using var hasher = new HmacExternalAuthenticationHandleHasher();
@@ -304,20 +317,21 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var results = await Task.WhenAll(signInTimes.Select(async signedInAt =>
             await CreateProvisioner(hasher).RecordSuccessfulSignInAsync("tenant-a", "connection-a", identity, created.UserId, signedInAt)));
 
-        Assert.All(results, Assert.True);
+        foreach (var result in results)
+            await Assert.That(result).IsTrue();
         var persisted = await CreateProvisioner(hasher).FindLinkAsync("tenant-a", "connection-a", identity);
-        Assert.Equal(signInTimes.Max(), persisted!.LastSignedInAt);
+        await Assert.That(persisted!.LastSignedInAt).IsEqualTo(signInTimes.Max());
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerRemovesTheJustInTimeUserThatLosesTheLinkRace()
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-identity-provisioning-{Guid.NewGuid():N}.db");
-        await using var services = new ServiceCollection().BuildServiceProvider();
         try
         {
+            await using var services = new ServiceCollection().BuildServiceProvider();
             var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
-                .UseSqlite($"Data Source={databasePath};Default Timeout=30")
+                .UseSqlite($"Data Source={databasePath};Default Timeout=30;Pooling=False")
                 .Options;
             var factory = new TestDbContextFactory(options, services);
             await using (var dbContext = await factory.CreateDbContextAsync())
@@ -334,23 +348,22 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 firstNode.CreateLinkOrGetExistingAsync(request).AsTask(),
                 secondNode.CreateLinkOrGetExistingAsync(request).AsTask());
 
-            Assert.Single(results, x => x.WasCreated);
-            Assert.Single(results, x => !x.WasCreated);
-            Assert.Single(results.Select(x => x.Link.Id).Distinct(StringComparer.Ordinal));
-            var user = Assert.Single(await durableUsers.FindManyAsync(new UserFilter()));
-            Assert.Equal(results[0].UserId, user.Id);
-            Assert.Equal(results[1].UserId, user.Id);
+            await Assert.That(results).HasSingleItem(x => x.WasCreated);
+            await Assert.That(results).HasSingleItem(x => !x.WasCreated);
+            await Assert.That(results.Select(x => x.Link.Id).Distinct(StringComparer.Ordinal)).HasSingleItem();
+            var user = (await Assert.That(await durableUsers.FindManyAsync(new UserFilter())).HasSingleItem())!;
+            await Assert.That(user.Id).IsEqualTo(results[0].UserId);
+            await Assert.That(user.Id).IsEqualTo(results[1].UserId);
             await using var verificationContext = await factory.CreateDbContextAsync();
-            Assert.Single(await verificationContext.ExternalIdentityLinks.ToListAsync());
+            await Assert.That(await verificationContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem();
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
             File.Delete(databasePath);
         }
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerRemovesTheJustInTimeUserWhenLinkPersistenceFails()
     {
         var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
@@ -366,12 +379,12 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             new ExternalIdentity("https://issuer.example", "subject-link-failure", EmptyClaims),
             new UserCreationProposal("external"));
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+        await Assert.ThrowsExactlyAsync<DbUpdateException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
 
-        Assert.Empty(await _userStore.FindManyAsync(new UserFilter()));
+        await Assert.That(await _userStore.FindManyAsync(new UserFilter())).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerRemovesTheJustInTimeUserWhenPublicationIsCancelled()
     {
         using var cancellationTokenSource = new CancellationTokenSource();
@@ -384,15 +397,15 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             new ExternalIdentity("https://issuer.example", "subject-cancelled-publication", EmptyClaims),
             new UserCreationProposal("external"));
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
             provisioner.CreateLinkOrGetExistingAsync(request, cancellationTokenSource.Token).AsTask());
 
-        Assert.Empty(await users.FindManyAsync(new UserFilter()));
+        await Assert.That(await users.FindManyAsync(new UserFilter())).IsEmpty();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+        await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerFailsWhenAJustInTimeUserCannotBeCompensated()
     {
         var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
@@ -410,13 +423,13 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             new ExternalIdentity("https://issuer.example", "subject-compensation-failure", EmptyClaims),
             new UserCreationProposal("external"));
 
-        var exception = await Assert.ThrowsAsync<AggregateException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+        var exception = (await Assert.ThrowsExactlyAsync<AggregateException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask()))!;
 
-        Assert.Contains("No credentials were issued", exception.Message, StringComparison.Ordinal);
-        Assert.Single(await userStore.FindManyAsync(new UserFilter()));
+        await Assert.That(exception.Message).Contains("No credentials were issued").WithComparison(StringComparison.Ordinal);
+        await Assert.That(await userStore.FindManyAsync(new UserFilter())).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerRemovesTheLinkWhenUserDeletionWinsTheRace()
     {
         var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -434,14 +447,14 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             new ExternalIdentity("https://issuer.example", "subject-user-deletion-race", EmptyClaims),
             new UserCreationProposal("external"));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
 
-        Assert.Empty(await users.FindManyAsync(new UserFilter()));
+        await Assert.That(await users.FindManyAsync(new UserFilter())).IsEmpty();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+        await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerReconcilesAmbiguousPublicationForExistingUser()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -458,14 +471,14 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             null,
             "user-a");
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(request).AsTask());
 
-        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-a" }));
+        await Assert.That(await _userStore.FindAsync(new UserFilter { Id = "user-a" })).IsNull();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+        await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerAtomicallyReplacesLinksAndPreservesTheOldLinkOnConflict()
     {
         using var hasher = new HmacExternalAuthenticationHandleHasher();
@@ -476,36 +489,42 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var old = (await provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims), null, "user-a"))).Link;
         var conflicting = (await provisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-conflict", EmptyClaims), null, "user-b"))).Link;
 
-        var conflict = Assert.IsType<ExternalIdentityLinkReplaceResult.Conflict>(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-conflict", EmptyClaims))));
-        Assert.Equal(conflicting.Id, conflict.ConflictingLink.Id);
-        Assert.IsType<ExternalIdentityLinkReplaceResult.NotFound>(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-b", old.Id, "user-b", "contoso", new ExternalIdentity("https://issuer.example", "cross-tenant", EmptyClaims))));
+        var conflictValue17 = await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-conflict", EmptyClaims)));
+        await Assert.That(conflictValue17).IsOfType(typeof(ExternalIdentityLinkReplaceResult.Conflict));
+        var conflict = (ExternalIdentityLinkReplaceResult.Conflict)conflictValue17!;
+        await Assert.That(conflict.ConflictingLink.Id).IsEqualTo(conflicting.Id);
+        await Assert.That(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-b", old.Id, "user-b", "contoso", new ExternalIdentity("https://issuer.example", "cross-tenant", EmptyClaims)))).IsOfType(typeof(ExternalIdentityLinkReplaceResult.NotFound));
 
         await using (var dbContext = await _dbContextFactory.CreateDbContextAsync())
         {
-            Assert.Contains(await dbContext.ExternalIdentityLinks.ToListAsync(), x => x.Id == old.Id);
+            await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).Contains(x => x.Id == old.Id);
         }
 
-        var sameTupleReplacement = Assert.IsType<ExternalIdentityLinkReplaceResult.Success>(
-            await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims))));
-        Assert.NotEqual(old.Id, sameTupleReplacement.NewLink.Id);
+        var sameTupleReplacementValue19 =
+            await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims)));
+        await Assert.That(sameTupleReplacementValue19).IsOfType(typeof(ExternalIdentityLinkReplaceResult.Success));
+        var sameTupleReplacement = (ExternalIdentityLinkReplaceResult.Success)sameTupleReplacementValue19!;
+        await Assert.That(sameTupleReplacement.NewLink.Id).IsNotEqualTo(old.Id);
 
-        var replaced = Assert.IsType<ExternalIdentityLinkReplaceResult.Success>(await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", sameTupleReplacement.NewLink.Id, "user-b", "fabrikam", new ExternalIdentity("https://replacement.example", "subject-new", EmptyClaims))));
-        Assert.NotEqual(sameTupleReplacement.NewLink.Id, replaced.NewLink.Id);
-        Assert.Equal("user-b", replaced.NewLink.UserId);
-        Assert.Equal("fabrikam", replaced.NewLink.ConnectionKey);
-        Assert.Null(replaced.NewLink.LastSignedInAt);
+        var replacedValue20 = await provisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", sameTupleReplacement.NewLink.Id, "user-b", "fabrikam", new ExternalIdentity("https://replacement.example", "subject-new", EmptyClaims)));
+        await Assert.That(replacedValue20).IsOfType(typeof(ExternalIdentityLinkReplaceResult.Success));
+        var replaced = (ExternalIdentityLinkReplaceResult.Success)replacedValue20!;
+        await Assert.That(replaced.NewLink.Id).IsNotEqualTo(sameTupleReplacement.NewLink.Id);
+        await Assert.That(replaced.NewLink.UserId).IsEqualTo("user-b");
+        await Assert.That(replaced.NewLink.ConnectionKey).IsEqualTo("fabrikam");
+        await Assert.That(replaced.NewLink.LastSignedInAt).IsNull();
 
         await using (var dbContext = await _dbContextFactory.CreateDbContextAsync())
         {
             var links = await dbContext.ExternalIdentityLinks.ToListAsync();
-            Assert.DoesNotContain(links, x => x.Id == old.Id);
-            Assert.DoesNotContain(links, x => x.Id == sameTupleReplacement.NewLink.Id);
-            Assert.Contains(links, x => x.Id == replaced.NewLink.Id);
-            Assert.Contains(links, x => x.Id == conflicting.Id);
+            await Assert.That(links).DoesNotContain(x => x.Id == old.Id);
+            await Assert.That(links).DoesNotContain(x => x.Id == sameTupleReplacement.NewLink.Id);
+            await Assert.That(links).Contains(x => x.Id == replaced.NewLink.Id);
+            await Assert.That(links).Contains(x => x.Id == conflicting.Id);
         }
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerPreservesTheOldLinkWhenTargetUserDeletionWinsReplacementRace()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -517,7 +536,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2);
         var racingProvisioner = CreateProvisioner(hasher, userProvider: racingProvider);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
@@ -525,14 +544,14 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 "contoso",
                 new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
 
-        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
+        await Assert.That(await _userStore.FindAsync(new UserFilter { Id = "user-b" })).IsNull();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
-        Assert.Equal(old.Id, durableLink.Id);
-        Assert.Equal("user-a", durableLink.UserId);
+        var durableLink = (await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem())!;
+        await Assert.That(durableLink.Id).IsEqualTo(old.Id);
+        await Assert.That(durableLink.UserId).IsEqualTo("user-a");
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerLeavesNoLinkWhenBothReplacementUsersAreDeletedDuringCompensation()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -544,7 +563,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2, 3);
         var racingProvisioner = CreateProvisioner(hasher, userProvider: racingProvider);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
@@ -552,13 +571,13 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 "contoso",
                 new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
 
-        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-a" }));
-        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
+        await Assert.That(await _userStore.FindAsync(new UserFilter { Id = "user-a" })).IsNull();
+        await Assert.That(await _userStore.FindAsync(new UserFilter { Id = "user-b" })).IsNull();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+        await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerPreservesRestoredLinkWhenPreviousUserLookupFails()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -570,24 +589,24 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var racingProvider = new DeleteThenThrowUserProvider(new StoreBasedUserProvider(_userStore), _userStore);
         var racingProvisioner = CreateProvisioner(hasher, userProvider: racingProvider);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+        var exception = (await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
                 "user-b",
                 "contoso",
-                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask()))!;
 
-        Assert.Contains("lookup failure", exception.Message, StringComparison.Ordinal);
-        Assert.NotNull(await _userStore.FindAsync(new UserFilter { Id = "user-a" }));
-        Assert.Null(await _userStore.FindAsync(new UserFilter { Id = "user-b" }));
+        await Assert.That(exception.Message).Contains("lookup failure").WithComparison(StringComparison.Ordinal);
+        await Assert.That(await _userStore.FindAsync(new UserFilter { Id = "user-a" })).IsNotNull();
+        await Assert.That(await _userStore.FindAsync(new UserFilter { Id = "user-b" })).IsNull();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
-        Assert.Equal(old.Id, durableLink.Id);
-        Assert.Equal("user-a", durableLink.UserId);
+        var durableLink = (await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem())!;
+        await Assert.That(durableLink.Id).IsEqualTo(old.Id);
+        await Assert.That(durableLink.UserId).IsEqualTo("user-a");
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerFallsBackWhenInvalidRestoredLinkCleanupFailsOnce()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -604,7 +623,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2, 3);
         var racingProvisioner = CreateProvisioner(hasher, factory, userProvider: racingProvider);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => racingProvisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
@@ -613,10 +632,10 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
 
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        Assert.Empty(await dbContext.ExternalIdentityLinks.ToListAsync());
+        await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerDoesNotMisclassifyPostCommitUserLookupFailureAsConflict()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -628,7 +647,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var failingProvider = new ThrowOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), 2);
         var failingProvisioner = CreateProvisioner(hasher, userProvider: failingProvider);
 
-        await Assert.ThrowsAsync<DbUpdateException>(() => failingProvisioner.ReplaceAsync(
+        await Assert.ThrowsExactlyAsync<DbUpdateException>(() => failingProvisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
@@ -637,12 +656,12 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
 
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
-        Assert.NotEqual(old.Id, durableLink.Id);
-        Assert.Equal("user-b", durableLink.UserId);
+        var durableLink = (await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem())!;
+        await Assert.That(durableLink.Id).IsNotEqualTo(old.Id);
+        await Assert.That(durableLink.UserId).IsEqualTo("user-b");
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerReconcilesReplacementWhenCommitAcknowledgementIsLost()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -657,22 +676,24 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
             .Options;
         var provisioner = CreateProvisioner(hasher, new TestDbContextFactory(options, _services));
 
-        var result = Assert.IsType<ExternalIdentityLinkReplaceResult.Success>(await provisioner.ReplaceAsync(
+        var resultValue21 = await provisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
                 "user-b",
                 "contoso",
-                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))));
+                new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims)));
+        await Assert.That(resultValue21).IsOfType(typeof(ExternalIdentityLinkReplaceResult.Success));
+        var result = (ExternalIdentityLinkReplaceResult.Success)resultValue21!;
 
-        Assert.NotEqual(old.Id, result.NewLink.Id);
+        await Assert.That(result.NewLink.Id).IsNotEqualTo(old.Id);
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
-        Assert.Equal(result.NewLink.Id, durableLink.Id);
-        Assert.Equal("user-b", durableLink.UserId);
+        var durableLink = (await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem())!;
+        await Assert.That(durableLink.Id).IsEqualTo(result.NewLink.Id);
+        await Assert.That(durableLink.UserId).IsEqualTo("user-b");
     }
 
-    [Fact]
+    [Test]
     public async Task ProvisionerPreservesRestoredLinkWhenCompensationCommitAcknowledgementIsLost()
     {
         await _userStore.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
@@ -688,7 +709,7 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
         var racingProvider = new DeleteOnSelectedFindUserProvider(new StoreBasedUserProvider(_userStore), _userStore, 2);
         var provisioner = CreateProvisioner(hasher, new TestDbContextFactory(options, _services), userProvider: racingProvider);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.ReplaceAsync(
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => provisioner.ReplaceAsync(
             new ExternalIdentityLinkReplaceRequest(
                 "tenant-a",
                 old.Id,
@@ -697,20 +718,20 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 new ExternalIdentity("https://issuer.example", "subject-new", EmptyClaims))).AsTask());
 
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        var durableLink = Assert.Single(await dbContext.ExternalIdentityLinks.ToListAsync());
-        Assert.Equal(old.Id, durableLink.Id);
-        Assert.Equal("user-a", durableLink.UserId);
+        var durableLink = (await Assert.That(await dbContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem())!;
+        await Assert.That(durableLink.Id).IsEqualTo(old.Id);
+        await Assert.That(durableLink.UserId).IsEqualTo("user-a");
     }
 
-    [Fact]
+    [Test]
     public async Task DurableConcurrentReplacementUsesTheOldLinkIdAsAnAtomicGuard()
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-identity-links-{Guid.NewGuid():N}.db");
-        await using var services = new ServiceCollection().BuildServiceProvider();
         try
         {
+            await using var services = new ServiceCollection().BuildServiceProvider();
             var options = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>()
-                .UseSqlite($"Data Source={databasePath};Default Timeout=30")
+                .UseSqlite($"Data Source={databasePath};Default Timeout=30;Pooling=False")
                 .Options;
             var factory = new TestDbContextFactory(options, services);
             await using (var dbContext = await factory.CreateDbContextAsync())
@@ -732,19 +753,18 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
                 firstNode.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims))).AsTask(),
                 secondNode.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-b", EmptyClaims))).AsTask());
 
-            Assert.Single(results.OfType<ExternalIdentityLinkReplaceResult.Success>());
-            Assert.Single(results.OfType<ExternalIdentityLinkReplaceResult.NotFound>());
+            await Assert.That(results.OfType<ExternalIdentityLinkReplaceResult.Success>()).HasSingleItem();
+            await Assert.That(results.OfType<ExternalIdentityLinkReplaceResult.NotFound>()).HasSingleItem();
             await using var verificationContext = await factory.CreateDbContextAsync();
-            Assert.Single(await verificationContext.ExternalIdentityLinks.ToListAsync());
+            await Assert.That(await verificationContext.ExternalIdentityLinks.ToListAsync()).HasSingleItem();
         }
         finally
         {
-            SqliteConnection.ClearAllPools();
             File.Delete(databasePath);
         }
     }
 
-    [Fact]
+    [Test]
     public async Task CallbackCompletionPersistsTheSessionBeforeAnyRefreshTokenIsIssued()
     {
         var identityResolver = Substitute.For<IExternalIdentityResolver>();
@@ -762,13 +782,13 @@ public sealed class ExternalAuthenticationPersistenceTests : IAsyncLifetime
 
         var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
-        Assert.Null(result.Error);
+        await Assert.That(result.Error).IsNull();
         await using var dbContext = await _dbContextFactory.CreateDbContextAsync();
-        var session = Assert.Single(await dbContext.ExternalAuthenticationSessions.ToListAsync());
-        Assert.Equal("user-a", session.UserId);
-        Assert.Empty(await dbContext.ExternalAuthenticationRefreshTokens.ToListAsync());
-        Assert.Null((await new EFCoreExternalAuthenticationSessionStore(_leaseFactory, _clock).FindByIdAsync(session.Id))!.CurrentRefreshTokenHash);
-        Assert.Null(await new EFCoreExternalAuthenticationSessionStore(_leaseFactory, _clock).FindByRefreshTokenHashAsync(null!));
+        var session = (await Assert.That(await dbContext.ExternalAuthenticationSessions.ToListAsync()).HasSingleItem())!;
+        await Assert.That(session.UserId).IsEqualTo("user-a");
+        await Assert.That(await dbContext.ExternalAuthenticationRefreshTokens.ToListAsync()).IsEmpty();
+        await Assert.That((await new EFCoreExternalAuthenticationSessionStore(_leaseFactory, _clock).FindByIdAsync(session.Id))!.CurrentRefreshTokenHash).IsNull();
+        await Assert.That(await new EFCoreExternalAuthenticationSessionStore(_leaseFactory, _clock).FindByRefreshTokenHashAsync(null!)).IsNull();
     }
 
     private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();

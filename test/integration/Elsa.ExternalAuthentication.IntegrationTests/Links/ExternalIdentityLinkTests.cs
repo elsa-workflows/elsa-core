@@ -6,7 +6,6 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.ExternalAuthentication.Contracts;
-using Elsa.ExternalAuthentication.Features;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
 using Elsa.ExternalAuthentication.Policies;
@@ -17,199 +16,176 @@ using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
-using FastEndpoints;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
+using TUnit.AspNetCore;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Links;
 
-[Collection(nameof(EndpointSecurityCollection))]
-public partial class ExternalIdentityLinkTests : IAsyncLifetime
+public partial class ExternalIdentityLinkTests : WebApplicationTest<ExternalIdentityLinkWebApplicationFactory, ExternalAuthenticationTestEntryPoint>
 {
-    private WebApplication? _app;
     private HttpClient? _client;
-    private ITenantAccessor _tenant = null!;
-    private TestConnectionRegistry _connections = null!;
-    private INotificationSender _notifications = null!;
-    private bool _wasSecurityEnabled;
+    private readonly TestAuthenticationState _authentication = new();
+    private readonly MemoryStore<User> _users = new();
+    private readonly ITenantAccessor _tenant = Substitute.For<ITenantAccessor>();
+    private readonly TestConnectionRegistry _connections = new();
+    private readonly INotificationSender _notifications = Substitute.For<INotificationSender>();
+    private readonly ISystemClock _clock = new SteppingSystemClock(
+        new DateTimeOffset(2026, 7, 26, 10, 0, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 26, 10, 1, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 26, 10, 2, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 26, 10, 3, 0, TimeSpan.Zero),
+        new DateTimeOffset(2026, 7, 26, 10, 4, 0, TimeSpan.Zero));
 
-    protected HttpClient Client => _client!;
+    protected HttpClient Client => _client ??= Factory.CreateClient();
 
-    public async Task InitializeAsync()
+    public ExternalIdentityLinkTests()
     {
-        _wasSecurityEnabled = EndpointSecurityOptions.SecurityIsEnabled;
-        EndpointSecurityOptions.SecurityIsEnabled = false;
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddFastEndpoints(options =>
-        {
-            options.Assemblies = [typeof(ExternalAuthenticationFeature).Assembly];
-            options.Filter = endpoint => endpoint.Namespace == "Elsa.ExternalAuthentication.Endpoints.IdentityLinks";
-        });
-        builder.Services.AddAuthorization();
-        builder.Services.AddSingleton<MemoryStore<User>>();
-        builder.Services.AddSingleton<IIdentityGenerator, GuidIdentityGenerator>();
-        builder.Services.AddSingleton<ISystemClock>(new SteppingSystemClock(
-            new DateTimeOffset(2026, 7, 26, 10, 0, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 7, 26, 10, 1, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 7, 26, 10, 2, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 7, 26, 10, 3, 0, TimeSpan.Zero),
-            new DateTimeOffset(2026, 7, 26, 10, 4, 0, TimeSpan.Zero)));
-        builder.Services.AddSingleton<IExternalAuthenticationHandleHasher, HmacExternalAuthenticationHandleHasher>();
-        builder.Services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
-        builder.Services.AddScoped<IUserStore, MemoryUserStore>();
-        builder.Services.AddScoped<IUserProvider, StoreBasedUserProvider>();
-        builder.Services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
-        builder.Services.AddScoped<InMemoryExternalIdentityProvisioner>();
-        builder.Services.AddScoped<IExternalIdentityProvisioner>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
-        builder.Services.AddScoped<IExternalIdentityLinkManagementStore>(services => services.GetRequiredService<InMemoryExternalIdentityProvisioner>());
-        _connections = new TestConnectionRegistry();
-        builder.Services.AddSingleton<IIdentityProviderConnectionRegistry>(_connections);
-        _tenant = Substitute.For<ITenantAccessor>();
+        _authentication.SetClaims(
+            new Claim(PermissionNames.ClaimType, PermissionNames.All),
+            new Claim("sub", "admin"));
         _tenant.TenantId.Returns("tenant-a");
-        builder.Services.AddSingleton(_tenant);
-        _notifications = Substitute.For<INotificationSender>();
-        builder.Services.AddSingleton(_notifications);
-        builder.Services.AddScoped<ExternalIdentityLinkManagementService>();
-        _app = builder.Build();
-        _app.Use(async (context, next) =>
-        {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, PermissionNames.All), new Claim("sub", "admin")], "test"));
-            await next(context);
-        });
-        _app.UseAuthorization();
-        _app.UseFastEndpoints();
-        await _app.StartAsync();
-        _client = _app.GetTestClient();
-
-        await SeedUserAsync("user-a", "alice", "tenant-a");
-        await SeedUserAsync("user-b", "bob", "tenant-b");
-        await SeedUserAsync("user-c", "charlie", "tenant-a");
+        _users.SaveMany(
+        [
+            new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" },
+            new User { Id = "user-b", Name = "bob", TenantId = "tenant-b" },
+            new User { Id = "user-c", Name = "charlie", TenantId = "tenant-a" }
+        ], user => user.Id);
     }
 
-    public async Task DisposeAsync()
+    protected override void ConfigureTestServices(IServiceCollection services)
     {
-        EndpointSecurityOptions.SecurityIsEnabled = _wasSecurityEnabled;
-        _client?.Dispose();
-        if (_app is not null)
-        {
-            await _app.StopAsync();
-            await _app.DisposeAsync();
-        }
+        services.AddSingleton(_authentication);
+        services.AddSingleton(_users);
+        services.AddSingleton<IIdentityGenerator, GuidIdentityGenerator>();
+        services.AddSingleton(_clock);
+        services.AddSingleton<IExternalAuthenticationHandleHasher, HmacExternalAuthenticationHandleHasher>();
+        services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
+        services.AddScoped<IUserStore, MemoryUserStore>();
+        services.AddScoped<IUserProvider, StoreBasedUserProvider>();
+        services.AddSingleton<IRoleProvider>(Substitute.For<IRoleProvider>());
+        services.AddScoped<InMemoryExternalIdentityProvisioner>();
+        services.AddScoped<IExternalIdentityProvisioner>(provider => provider.GetRequiredService<InMemoryExternalIdentityProvisioner>());
+        services.AddScoped<IExternalIdentityLinkManagementStore>(provider => provider.GetRequiredService<InMemoryExternalIdentityProvisioner>());
+        services.AddSingleton<IIdentityProviderConnectionRegistry>(_connections);
+        services.AddSingleton(_tenant);
+        services.AddSingleton(_notifications);
+        services.AddScoped<ExternalIdentityLinkManagementService>();
     }
 
-    [Fact]
+    [Test]
     public async Task PrelinkListAndUnlinkAreTenantBoundCursorPagedAndPolicyFallsBackAfterRemoval()
     {
         var first = await PrelinkAsync("subject-a");
         var second = await PrelinkAsync("subject-b");
-        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
-        Assert.Equal(HttpStatusCode.Created, second.StatusCode);
+        await Assert.That(first.StatusCode).IsEqualTo(HttpStatusCode.Created);
+        await Assert.That(second.StatusCode).IsEqualTo(HttpStatusCode.Created);
 
-        var firstPage = await _client!.GetFromJsonAsync<LinkList>($"/external-authentication/identity-links?userId=user-a&pageSize=1");
-        Assert.NotNull(firstPage);
-        Assert.Single(firstPage!.Items);
-        Assert.NotNull(firstPage.NextCursor);
+        var firstPage = await Client.GetFromJsonAsync<LinkList>($"/external-authentication/identity-links?userId=user-a&pageSize=1");
+        await Assert.That(firstPage).IsNotNull();
+        await Assert.That(firstPage!.Items).HasSingleItem();
+        await Assert.That(firstPage.NextCursor).IsNotNull();
         var serializedPage = JsonSerializer.Serialize(firstPage);
-        Assert.DoesNotContain("subject-a", serializedPage);
-        Assert.DoesNotContain("subjecthash", serializedPage, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(serializedPage).DoesNotContain("subject-a");
+        await Assert.That(serializedPage).DoesNotContain("subjecthash").WithComparison(StringComparison.OrdinalIgnoreCase);
 
         var secondPage = await Client.GetFromJsonAsync<LinkList>($"/external-authentication/identity-links?userId=user-a&pageSize=1&cursor={Uri.EscapeDataString(firstPage.NextCursor!)}");
-        Assert.NotNull(secondPage);
-        Assert.Single(secondPage!.Items);
+        await Assert.That(secondPage).IsNotNull();
+        await Assert.That(secondPage!.Items).HasSingleItem();
 
         var link = await first.Content.ReadFromJsonAsync<LinkDocument>();
         var conflict = await PrelinkAsync("subject-a", "user-c");
-        Assert.Equal(HttpStatusCode.Conflict, conflict.StatusCode);
+        await Assert.That(conflict.StatusCode).IsEqualTo(HttpStatusCode.Conflict);
 
         _connections.Archived = true;
         var archived = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
-        Assert.NotNull(archived);
-        var archivedLinks = Assert.IsType<LinkList>(archived);
-        Assert.Equal(2, archivedLinks.Items.Count);
+        await Assert.That(archived).IsNotNull();
+        var archivedLinksValue1 = archived;
+        await Assert.That(archivedLinksValue1).IsOfType(typeof(LinkList));
+        var archivedLinks = (LinkList)archivedLinksValue1!;
+        await Assert.That(archivedLinks.Items.Count).IsEqualTo(2);
 
-        Assert.NotNull(link);
-        Assert.Equal(HttpStatusCode.NoContent, (await Client.DeleteAsync($"/external-authentication/identity-links/{link.Id}")).StatusCode);
-        await using var scope = _app!.Services.CreateAsyncScope();
+        await Assert.That(link).IsNotNull();
+        await Assert.That((await Client.DeleteAsync($"/external-authentication/identity-links/{link.Id}")).StatusCode).IsEqualTo(HttpStatusCode.NoContent);
+        await using var scope = Services.CreateAsyncScope();
         var resolver = new DefaultExternalIdentityResolver(
             scope.ServiceProvider.GetRequiredService<IExternalIdentityProvisioner>(),
             [new RejectUnlinkedIdentityPolicy()],
             Microsoft.Extensions.Options.Options.Create(new Elsa.ExternalAuthentication.Options.ExternalAuthenticationOptions()));
         var identity = new ExternalIdentity("https://issuer.example", "subject-a", new Dictionary<string, IReadOnlyCollection<string>>());
         var connection = await _connections.FindByKeyAsync("tenant-a", "contoso");
-        await Assert.ThrowsAsync<ExternalIdentityUnlinkedException>(() => resolver.ResolveAsync(new ExternalIdentityResolutionContext("tenant-a", connection!, identity, identity.Claims)).AsTask());
+        await Assert.ThrowsExactlyAsync<ExternalIdentityUnlinkedException>(() => resolver.ResolveAsync(new ExternalIdentityResolutionContext("tenant-a", connection!, identity, identity.Claims)).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task TenantIsolationRejectsCrossTenantUsersAndDoesNotRevealTheirLinks()
     {
-        Assert.Equal(HttpStatusCode.Created, (await PrelinkAsync("subject-a")).StatusCode);
+        await Assert.That((await PrelinkAsync("subject-a")).StatusCode).IsEqualTo(HttpStatusCode.Created);
         _tenant.TenantId.Returns("tenant-b");
 
         var crossTenantPrelink = await PrelinkAsync("subject-b", "user-a");
-        Assert.Equal(HttpStatusCode.NotFound, crossTenantPrelink.StatusCode);
-        var links = await _client!.GetFromJsonAsync<LinkList>("/external-authentication/identity-links");
-        Assert.NotNull(links);
-        Assert.Empty(links!.Items);
+        await Assert.That(crossTenantPrelink.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links");
+        await Assert.That(links).IsNotNull();
+        await Assert.That(links!.Items).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task IdentityLinksApiReturnsTheRecordedSignInForTheCurrentTenantAndConnection()
     {
         var identity = new ExternalIdentity("https://issuer.example", "subject-a", EmptyClaims);
         var prelinked = await (await PrelinkAsync(identity.Subject)).Content.ReadFromJsonAsync<LinkDocument>();
-        Assert.Null(prelinked!.LastSignedInAt);
+        await Assert.That(prelinked!.LastSignedInAt).IsNull();
         var signedInAt = new DateTimeOffset(2026, 7, 26, 11, 0, 0, TimeSpan.Zero);
-        await using (var scope = _app!.Services.CreateAsyncScope())
+        await using (var scope = Services.CreateAsyncScope())
         {
             var tracker = scope.ServiceProvider.GetRequiredService<InMemoryExternalIdentityProvisioner>();
-            Assert.True(await tracker.RecordSuccessfulSignInAsync("tenant-a", "contoso", identity, "user-a", signedInAt));
+            await Assert.That(await tracker.RecordSuccessfulSignInAsync("tenant-a", "contoso", identity, "user-a", signedInAt)).IsTrue();
         }
 
         var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
-        var link = Assert.Single(links!.Items);
-        Assert.Equal(prelinked.Id, link.Id);
-        Assert.Equal(signedInAt, link.LastSignedInAt);
-        Assert.Empty((await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=fabrikam"))!.Items);
+        var link = (await Assert.That(links!.Items).HasSingleItem())!;
+        await Assert.That(link.Id).IsEqualTo(prelinked.Id);
+        await Assert.That(link.LastSignedInAt).IsEqualTo(signedInAt);
+        await Assert.That((await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=fabrikam"))!.Items).IsEmpty();
 
         _tenant.TenantId.Returns("tenant-b");
-        Assert.Empty((await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso"))!.Items);
+        await Assert.That((await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso"))!.Items).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task ConcurrentPrelinksForTheSameTupleConvergeOnOneLinkAndUser()
     {
         var responses = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => PrelinkAsync("concurrent-subject")));
-        Assert.All(responses, response => Assert.True(response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK));
-        var links = await _client!.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
-        Assert.NotNull(links);
-        Assert.Single(links!.Items);
-        Assert.Equal("user-a", Assert.Single(links.Items).UserId);
+        foreach (var response in responses)
+            await Assert.That(response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK).IsTrue();
+        var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links?connectionKey=contoso");
+        await Assert.That(links).IsNotNull();
+        await Assert.That(links!.Items).HasSingleItem();
+        await Assert.That((await Assert.That(links.Items).HasSingleItem())!.UserId).IsEqualTo("user-a");
     }
 
-    [Fact]
+    [Test]
     public async Task RejectsMalformedOrOversizedCursorsAndPageSizes()
     {
-        Assert.Equal(HttpStatusCode.BadRequest, (await _client!.GetAsync("/external-authentication/identity-links?pageSize=101")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await _client.GetAsync($"/external-authentication/identity-links?cursor={new string('x', 513)}")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await Client.GetAsync("/external-authentication/user-options?pageSize=51")).StatusCode);
+        await Assert.That((await Client.GetAsync("/external-authentication/identity-links?pageSize=101")).StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That((await Client.GetAsync($"/external-authentication/identity-links?cursor={new string('x', 513)}")).StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        await Assert.That((await Client.GetAsync("/external-authentication/user-options?pageSize=51")).StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
-    [Fact]
+    [Test]
     public async Task AllowsInheritedHostConnectionsButRejectsOtherTenantConnections()
     {
         _connections.UseHostConnection = true;
-        Assert.Equal(HttpStatusCode.Created, (await PrelinkAsync("host-subject")).StatusCode);
+        await Assert.That((await PrelinkAsync("host-subject")).StatusCode).IsEqualTo(HttpStatusCode.Created);
 
         _connections.UseHostConnection = false;
         _tenant.TenantId.Returns("tenant-b");
-        Assert.Equal(HttpStatusCode.NotFound, (await PrelinkAsync("other-tenant-subject", "user-b")).StatusCode);
+        await Assert.That((await PrelinkAsync("other-tenant-subject", "user-b")).StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task ManualLinkManagementAllowsDisabledAndInvalidEffectiveConnections()
     {
         _connections.IsEnabled = false;
@@ -218,14 +194,14 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         var prelinked = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
         var response = await ReplaceAsync(prelinked!.Id, "subject-new");
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.NotEqual(prelinked.Id, (await response.Content.ReadFromJsonAsync<LinkDocument>())!.Id);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Created);
+        await Assert.That((await response.Content.ReadFromJsonAsync<LinkDocument>())!.Id).IsNotEqualTo(prelinked.Id);
 
         _connections.Archived = true;
-        Assert.Equal(HttpStatusCode.NotFound, (await PrelinkAsync("archived-subject")).StatusCode);
+        await Assert.That((await PrelinkAsync("archived-subject")).StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task ReplaceCreatesANewLinkAndResetsLifecycleMetadata()
     {
         var prelinked = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
@@ -233,26 +209,26 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         var response = await ReplaceAsync(prelinked!.Id, "subject-new", "user-c", "fabrikam", "https://replacement.example/path/");
         var replacement = await response.Content.ReadFromJsonAsync<LinkDocument>();
 
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        Assert.NotNull(replacement);
-        Assert.NotEqual(prelinked.Id, replacement!.Id);
-        Assert.Equal("user-c", replacement.UserId);
-        Assert.Equal("fabrikam", replacement.ConnectionKey);
-        Assert.Equal("https://replacement.example/path", replacement.Issuer);
-        Assert.True(replacement.CreatedAt > prelinked.CreatedAt);
-        Assert.Null(replacement.LastSignedInAt);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Created);
+        await Assert.That(replacement).IsNotNull();
+        await Assert.That(replacement!.Id).IsNotEqualTo(prelinked.Id);
+        await Assert.That(replacement.UserId).IsEqualTo("user-c");
+        await Assert.That(replacement.ConnectionKey).IsEqualTo("fabrikam");
+        await Assert.That(replacement.Issuer).IsEqualTo("https://replacement.example/path");
+        await Assert.That(replacement.CreatedAt > prelinked.CreatedAt).IsTrue();
+        await Assert.That(replacement.LastSignedInAt).IsNull();
 
         var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links");
-        var persisted = Assert.Single(links!.Items);
-        Assert.Equal(replacement.Id, persisted.Id);
+        var persisted = (await Assert.That(links!.Items).HasSingleItem())!;
+        await Assert.That(persisted.Id).IsEqualTo(replacement.Id);
 
-        await using var scope = _app!.Services.CreateAsyncScope();
+        await using var scope = Services.CreateAsyncScope();
         var provisioner = scope.ServiceProvider.GetRequiredService<IExternalIdentityProvisioner>();
-        Assert.Null(await provisioner.FindLinkAsync("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims)));
-        Assert.Equal(replacement.Id, (await provisioner.FindLinkAsync("tenant-a", "fabrikam", new ExternalIdentity("https://replacement.example/path", "subject-new", EmptyClaims)))!.Id);
+        await Assert.That(await provisioner.FindLinkAsync("tenant-a", "contoso", new ExternalIdentity("https://issuer.example", "subject-old", EmptyClaims))).IsNull();
+        await Assert.That((await provisioner.FindLinkAsync("tenant-a", "fabrikam", new ExternalIdentity("https://replacement.example/path", "subject-new", EmptyClaims)))!.Id).IsEqualTo(replacement.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task ReplaceConflictLeavesTheOldLinkUntouchedEvenWhenTheTupleBelongsToTheSameUser()
     {
         var old = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
@@ -260,34 +236,34 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
 
         var response = await ReplaceAsync(old!.Id, "subject-conflict");
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.Conflict);
         var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links");
-        Assert.Equal(2, links!.Items.Count);
-        Assert.Contains(links.Items, x => x.Id == old.Id && x.UserId == old.UserId && x.ConnectionKey == old.ConnectionKey);
-        Assert.Contains(links.Items, x => x.Id == conflicting!.Id);
+        await Assert.That(links!.Items.Count).IsEqualTo(2);
+        await Assert.That(links.Items).Contains(x => x.Id == old.Id && x.UserId == old.UserId && x.ConnectionKey == old.ConnectionKey);
+        await Assert.That(links.Items).Contains(x => x.Id == conflicting!.Id);
     }
 
-    [Fact]
+    [Test]
     public async Task ReplaceUsesTheOldIdAsATenantBoundConcurrencyGuard()
     {
         var old = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
 
         _tenant.TenantId.Returns("tenant-b");
-        Assert.Equal(HttpStatusCode.NotFound, (await ReplaceAsync(old!.Id, "cross-tenant-subject", "user-b")).StatusCode);
+        await Assert.That((await ReplaceAsync(old!.Id, "cross-tenant-subject", "user-b")).StatusCode).IsEqualTo(HttpStatusCode.NotFound);
         _tenant.TenantId.Returns("tenant-a");
 
         var responses = await Task.WhenAll(
             ReplaceAsync(old.Id, "winner-a"),
             ReplaceAsync(old.Id, "winner-b"));
 
-        Assert.Single(responses, x => x.StatusCode == HttpStatusCode.Created);
-        var missing = Assert.Single(responses, x => x.StatusCode == HttpStatusCode.NotFound);
-        Assert.Equal("not_found", (await missing.Content.ReadFromJsonAsync<ErrorDocument>())!.Error);
+        await Assert.That(responses).HasSingleItem(x => x.StatusCode == HttpStatusCode.Created);
+        var missing = (await Assert.That(responses).HasSingleItem(x => x.StatusCode == HttpStatusCode.NotFound))!;
+        await Assert.That((await missing.Content.ReadFromJsonAsync<ErrorDocument>())!.Error).IsEqualTo("not_found");
         var links = await Client.GetFromJsonAsync<LinkList>("/external-authentication/identity-links");
-        Assert.Single(links!.Items);
+        await Assert.That(links!.Items).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task ReplaceAuditsSuccessAndConflictButNotValidationFailures()
     {
         var old = await (await PrelinkAsync("subject-old")).Content.ReadFromJsonAsync<LinkDocument>();
@@ -297,47 +273,37 @@ public partial class ExternalIdentityLinkTests : IAsyncLifetime
         var successfulResponse = await ReplaceAsync(old!.Id, "subject-new", "user-c", "fabrikam");
         var replacement = await successfulResponse.Content.ReadFromJsonAsync<LinkDocument>();
         var replacementToConflict = await (await PrelinkAsync("subject-another")).Content.ReadFromJsonAsync<LinkDocument>();
-        Assert.Equal(HttpStatusCode.Conflict, (await ReplaceAsync(replacementToConflict!.Id, "subject-conflict", "user-c")).StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, (await ReplaceAsync(replacement!.Id, "subject-invalid", issuer: "http://issuer.example")).StatusCode);
+        await Assert.That((await ReplaceAsync(replacementToConflict!.Id, "subject-conflict", "user-c")).StatusCode).IsEqualTo(HttpStatusCode.Conflict);
+        await Assert.That((await ReplaceAsync(replacement!.Id, "subject-invalid", issuer: "http://issuer.example")).StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
 
         var notifications = _notifications.ReceivedCalls()
             .Select(x => x.GetArguments()[0])
             .OfType<ExternalIdentityLinkReplaced>()
             .ToArray();
-        Assert.Collection(
-            notifications,
-            succeeded =>
-            {
-                Assert.Equal(SecurityEventOutcome.Succeeded, succeeded.Context.Outcome);
-                Assert.Equal("admin", succeeded.Context.ActorId);
-                Assert.Equal("tenant-a", succeeded.Context.TenantId);
-                Assert.Equal(old.Id, succeeded.OldLinkId);
-                Assert.Equal(replacement.Id, succeeded.NewLinkId);
-                Assert.Equal("user-a", succeeded.OldUserId);
-                Assert.Equal("user-c", succeeded.NewUserId);
-                Assert.Equal("contoso", succeeded.OldConnectionKey);
-                Assert.Equal("fabrikam", succeeded.NewConnectionKey);
-                Assert.Null(succeeded.ConflictingLinkId);
-            },
-            failed =>
-            {
-                Assert.Equal(SecurityEventOutcome.Failed, failed.Context.Outcome);
-                Assert.Equal(replacementToConflict.Id, failed.OldLinkId);
-                Assert.Null(failed.NewLinkId);
-                Assert.Equal(conflicting!.Id, failed.ConflictingLinkId);
-                Assert.Equal("user-c", failed.ConflictingUserId);
-                Assert.Equal("contoso", failed.ConflictingConnectionKey);
-            });
+        await Assert.That(notifications.Length).IsEqualTo(2);
+        var succeeded = notifications[0];
+        await Assert.That(succeeded.Context.Outcome).IsEqualTo(SecurityEventOutcome.Succeeded);
+        await Assert.That(succeeded.Context.ActorId).IsEqualTo("admin");
+        await Assert.That(succeeded.Context.TenantId).IsEqualTo("tenant-a");
+        await Assert.That(succeeded.OldLinkId).IsEqualTo(old.Id);
+        await Assert.That(succeeded.NewLinkId).IsEqualTo(replacement.Id);
+        await Assert.That(succeeded.OldUserId).IsEqualTo("user-a");
+        await Assert.That(succeeded.NewUserId).IsEqualTo("user-c");
+        await Assert.That(succeeded.OldConnectionKey).IsEqualTo("contoso");
+        await Assert.That(succeeded.NewConnectionKey).IsEqualTo("fabrikam");
+        await Assert.That(succeeded.ConflictingLinkId).IsNull();
+
+        var failed = notifications[1];
+        await Assert.That(failed.Context.Outcome).IsEqualTo(SecurityEventOutcome.Failed);
+        await Assert.That(failed.OldLinkId).IsEqualTo(replacementToConflict.Id);
+        await Assert.That(failed.NewLinkId).IsNull();
+        await Assert.That(failed.ConflictingLinkId).IsEqualTo(conflicting!.Id);
+        await Assert.That(failed.ConflictingUserId).IsEqualTo("user-c");
+        await Assert.That(failed.ConflictingConnectionKey).IsEqualTo("contoso");
     }
 
-    private async Task<HttpResponseMessage> PrelinkAsync(string subject, string userId = "user-a") => await _client!.PostAsJsonAsync("/external-authentication/identity-links", new { userId, connectionKey = "contoso", issuer = "https://issuer.example/", subject });
-    private async Task<HttpResponseMessage> ReplaceAsync(string linkId, string subject, string userId = "user-a", string connectionKey = "contoso", string issuer = "https://issuer.example/") => await _client!.PostAsJsonAsync($"/external-authentication/identity-links/{linkId}/replace", new { userId, connectionKey, issuer, subject });
-
-    protected async Task SeedUserAsync(string id, string name, string tenantId)
-    {
-        await using var scope = _app!.Services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<IUserStore>().SaveAsync(new User { Id = id, Name = name, TenantId = tenantId });
-    }
+    private async Task<HttpResponseMessage> PrelinkAsync(string subject, string userId = "user-a") => await Client.PostAsJsonAsync("/external-authentication/identity-links", new { userId, connectionKey = "contoso", issuer = "https://issuer.example/", subject });
+    private async Task<HttpResponseMessage> ReplaceAsync(string linkId, string subject, string userId = "user-a", string connectionKey = "contoso", string issuer = "https://issuer.example/") => await Client.PostAsJsonAsync($"/external-authentication/identity-links/{linkId}/replace", new { userId, connectionKey, issuer, subject });
 
     private static IReadOnlyDictionary<string, IReadOnlyCollection<string>> EmptyClaims { get; } = new Dictionary<string, IReadOnlyCollection<string>>();
 

@@ -5,7 +5,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Operations;
 
 public class ConnectionTestTests
 {
-    [Fact]
+    [Test]
     public async Task LatestObservationIsSharedAndBecomesStaleWhenMaterialRevisionChanges()
     {
         var store = new InMemoryConnectionObservationStore();
@@ -13,9 +13,9 @@ public class ConnectionTestTests
 
         var latest = await store.FindLatestAsync("connection-a");
 
-        Assert.NotNull(latest);
-        Assert.Equal("revision-1", latest!.TestedMaterialRevision);
-        Assert.NotEqual("revision-2", latest.TestedMaterialRevision); // Management projections mark this revision mismatch stale.
-        Assert.DoesNotContain("secret", latest.Summary, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(latest).IsNotNull();
+        await Assert.That(latest!.TestedMaterialRevision).IsEqualTo("revision-1");
+        await Assert.That(latest.TestedMaterialRevision).IsNotEqualTo("revision-2"); // Management projections mark this revision mismatch stale.
+        await Assert.That(latest.Summary).DoesNotContain("secret").WithComparison(StringComparison.OrdinalIgnoreCase);
     }
 }

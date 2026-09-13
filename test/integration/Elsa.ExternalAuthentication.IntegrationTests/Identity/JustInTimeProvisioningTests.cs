@@ -19,7 +19,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Identity;
 
 public class JustInTimeProvisioningTests
 {
-    [Fact]
+    [Test]
     public async Task ExistingLinkResolvesWithoutApplyingTheUnlinkedPolicy()
     {
         var provisioner = new AtomicProvisioner();
@@ -28,22 +28,22 @@ public class JustInTimeProvisioningTests
 
         var resolution = await resolver.ResolveAsync(CreateContext());
 
-        Assert.Equal("user-a", resolution.UserId);
-        Assert.False(resolution.WasProvisioned);
+        await Assert.That(resolution.UserId).IsEqualTo("user-a");
+        await Assert.That(resolution.WasProvisioned).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task RejectPolicyDeniesAnUnknownIdentityWithoutUsingMutableClaims()
     {
         var resolver = CreateResolver(new AtomicProvisioner(), new RejectUnlinkedIdentityPolicy());
         var context = CreateContext("reject", new Dictionary<string, IReadOnlyCollection<string>> { ["email"] = ["person@example.test"] });
 
-        var exception = await Assert.ThrowsAsync<ExternalIdentityUnlinkedException>(() => resolver.ResolveAsync(context).AsTask());
+        var exception = (await Assert.ThrowsExactlyAsync<ExternalIdentityUnlinkedException>(() => resolver.ResolveAsync(context).AsTask()))!;
 
-        Assert.Equal("identity_unlinked", exception.SafeReason);
+        await Assert.That(exception.SafeReason).IsEqualTo("identity_unlinked");
     }
 
-    [Fact]
+    [Test]
     public async Task ConcurrentJitRequestsConvergeOnOneCredentiallessTenantUserAndLink()
     {
         var provisioner = new AtomicProvisioner();
@@ -52,27 +52,27 @@ public class JustInTimeProvisioningTests
 
         var results = await Task.WhenAll(Enumerable.Range(0, 16).Select(_ => resolver.ResolveAsync(context).AsTask()));
 
-        Assert.Equal("user-1", Assert.Single(results.Select(x => x.UserId).Distinct()));
-        Assert.Single(results, x => x.WasProvisioned);
-        var user = Assert.Single(provisioner.Users);
-        Assert.Equal("tenant-a", user.TenantId);
-        Assert.Null(user.HashedPassword);
-        Assert.Null(user.HashedPasswordSalt);
+        await Assert.That((await Assert.That(results.Select(x => x.UserId).Distinct()).HasSingleItem())!).IsEqualTo("user-1");
+        await Assert.That(results).HasSingleItem(x => x.WasProvisioned);
+        var user = (await Assert.That(provisioner.Users).HasSingleItem())!;
+        await Assert.That(user.TenantId).IsEqualTo("tenant-a");
+        await Assert.That(user.HashedPassword).IsNull();
+        await Assert.That(user.HashedPasswordSalt).IsNull();
         var validator = new DefaultUserCredentialsValidator(new StaticUserProvider(user), new DefaultSecretHasher());
-        Assert.Null(await validator.ValidateAsync(user.Name, "any-password"));
+        await Assert.That(await validator.ValidateAsync(user.Name, "any-password")).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ResolverRejectsALinkForAnotherTenant()
     {
         var provisioner = new AtomicProvisioner();
         provisioner.Seed("tenant-a", "tenant-b", "contoso", "https://issuer.example", "subject-a", "user-b");
         var resolver = CreateResolver(provisioner, new RejectUnlinkedIdentityPolicy());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => resolver.ResolveAsync(CreateContext()).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => resolver.ResolveAsync(CreateContext()).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task InMemoryProvisionerCreatesALinkForAnExistingUserOnlyInTheTargetTenant()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -84,23 +84,23 @@ public class JustInTimeProvisioningTests
         var result = await provisioner.CreateLinkOrGetExistingAsync(request);
         var replay = await provisioner.CreateLinkOrGetExistingAsync(request);
 
-        Assert.Equal(user.Id, result.UserId);
-        Assert.False(result.WasCreated);
-        Assert.Equal(result.Link.Id, replay.Link.Id);
-        Assert.False(replay.WasCreated);
+        await Assert.That(result.UserId).IsEqualTo(user.Id);
+        await Assert.That(result.WasCreated).IsFalse();
+        await Assert.That(replay.Link.Id).IsEqualTo(result.Link.Id);
+        await Assert.That(replay.WasCreated).IsFalse();
     }
 
-    [Fact]
+    [Test]
     public async Task InMemoryProvisionerRejectsLinkingAUserFromAnotherTenant()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-b"));
         await userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-b" });
         var provisioner = CreateInMemoryProvisioner(userStore);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(existingUserId: "user-b")).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(existingUserId: "user-b")).AsTask());
     }
 
-    [Fact]
+    [Test]
     public async Task InMemoryProvisionerRetriesAGeneratedUserNameCollision()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -110,14 +110,14 @@ public class JustInTimeProvisioningTests
         var result = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest());
         var user = await userStore.FindAsync(new Elsa.Identity.Models.UserFilter { Id = result.UserId });
 
-        Assert.True(result.WasCreated);
-        Assert.NotNull(user);
-        Assert.Equal("external-available", user.Name);
-        Assert.Null(user.HashedPassword);
-        Assert.Null(user.HashedPasswordSalt);
+        await Assert.That(result.WasCreated).IsTrue();
+        await Assert.That(user).IsNotNull();
+        await Assert.That(user.Name).IsEqualTo("external-available");
+        await Assert.That(user.HashedPassword).IsNull();
+        await Assert.That(user.HashedPasswordSalt).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task InMemoryProvisionerAssignsConfiguredDefaultRolesToNewUser()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -128,11 +128,13 @@ public class JustInTimeProvisioningTests
         var result = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(defaultRoleIds: ["admin"]));
         var user = await userStore.FindAsync(new Elsa.Identity.Models.UserFilter { Id = result.UserId });
 
-        Assert.NotNull(user);
-        Assert.Equal(["admin"], user.Roles);
+        await Assert.That(user).IsNotNull();
+        await Assert.That(user.Roles).IsEquivalentTo(
+            ["admin"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task InMemoryProvisionerTreatsEachExternalIdentityTupleAsDistinct()
     {
         var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
@@ -141,11 +143,11 @@ public class JustInTimeProvisioningTests
         var differentIssuer = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(issuer: "https://issuer-two.example"));
         var differentConnection = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(connectionKey: "fabrikam"));
 
-        Assert.Equal(3, new[] { first.Link.Id, differentIssuer.Link.Id, differentConnection.Link.Id }.Distinct().Count());
-        Assert.Equal(3, new[] { first.UserId, differentIssuer.UserId, differentConnection.UserId }.Distinct().Count());
+        await Assert.That(new[] { first.Link.Id, differentIssuer.Link.Id, differentConnection.Link.Id }.Distinct().Count()).IsEqualTo(3);
+        await Assert.That(new[] { first.UserId, differentIssuer.UserId, differentConnection.UserId }.Distinct().Count()).IsEqualTo(3);
     }
 
-    [Fact]
+    [Test]
     public async Task InMemoryProvisionerSharesTupleStateAcrossDependencyInjectionScopes()
     {
         var services = new ServiceCollection();
@@ -171,10 +173,10 @@ public class JustInTimeProvisioningTests
         var converged = await provisioner.CreateLinkOrGetExistingAsync(request);
         var resolved = await provisioner.FindLinkAsync(request.TenantId, request.ConnectionKey, request.Identity);
 
-        Assert.Equal(created.Link.Id, converged.Link.Id);
-        Assert.False(converged.WasCreated);
-        Assert.Equal(created.Link.Id, resolved?.Id);
-        Assert.Equal(new DateTimeOffset(2026, 7, 24, 12, 0, 0, TimeSpan.Zero), created.Link.CreatedAt);
+        await Assert.That(converged.Link.Id).IsEqualTo(created.Link.Id);
+        await Assert.That(converged.WasCreated).IsFalse();
+        await Assert.That(resolved?.Id).IsEqualTo(created.Link.Id);
+        await Assert.That(created.Link.CreatedAt).IsEqualTo(new DateTimeOffset(2026, 7, 24, 12, 0, 0, TimeSpan.Zero));
     }
 
     private static DefaultExternalIdentityResolver CreateResolver(IExternalIdentityProvisioner provisioner, IUnlinkedIdentityPolicy policy) => new(

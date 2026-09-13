@@ -10,20 +10,20 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Persistence;
 
 public class ExternalAuthenticationPersistenceRegistrationTests
 {
-    [Fact]
-    public void PersistenceRegistrationSuppliesTheDefaultHandleHasher()
+    [Test]
+    public async Task PersistenceRegistrationSuppliesTheDefaultHandleHasher()
     {
         var services = new ServiceCollection();
         services.AddExternalAuthenticationEntityFrameworkCore();
 
         using var serviceProvider = services.BuildServiceProvider();
 
-        Assert.IsType<HmacExternalAuthenticationHandleHasher>(
-            serviceProvider.GetRequiredService<IExternalAuthenticationHandleHasher>());
+        await Assert.That(
+            serviceProvider.GetRequiredService<IExternalAuthenticationHandleHasher>()).IsOfType(typeof(HmacExternalAuthenticationHandleHasher));
     }
 
-    [Fact]
-    public void SqliteIdentityShellFeatureDoesNotRegisterExternalAuthenticationPersistence()
+    [Test]
+    public async Task SqliteIdentityShellFeatureDoesNotRegisterExternalAuthenticationPersistence()
     {
         var services = new ServiceCollection();
         services.AddExternalAuthenticationServices();
@@ -37,11 +37,11 @@ public class ExternalAuthenticationPersistenceRegistrationTests
         // External authentication persistence has its own feature; enabling identity persistence must not imply it.
         var registration = services.Last(x => x.ServiceType == typeof(IIdentityProviderConnectionStore));
 
-        Assert.Equal(typeof(InMemoryIdentityProviderConnectionStore), registration.ImplementationType);
+        await Assert.That(registration.ImplementationType).IsEqualTo(typeof(InMemoryIdentityProviderConnectionStore));
     }
 
-    [Fact]
-    public void SqliteExternalAuthenticationShellFeatureRegistersEntityFrameworkCoreStores()
+    [Test]
+    public async Task SqliteExternalAuthenticationShellFeatureRegistersEntityFrameworkCoreStores()
     {
         var services = new ServiceCollection();
         services.AddExternalAuthenticationServices();
@@ -53,15 +53,15 @@ public class ExternalAuthenticationPersistenceRegistrationTests
         feature.ConfigureServices(services);
 
         var connectionStore = services.Last(x => x.ServiceType == typeof(IIdentityProviderConnectionStore));
-        Assert.Equal(typeof(EFCoreIdentityProviderConnectionStore), connectionStore.ImplementationType);
-        Assert.Equal(ServiceLifetime.Singleton, connectionStore.Lifetime);
+        await Assert.That(connectionStore.ImplementationType).IsEqualTo(typeof(EFCoreIdentityProviderConnectionStore));
+        await Assert.That(connectionStore.Lifetime).IsEqualTo(ServiceLifetime.Singleton);
 
         var sessionStore = services.Last(x => x.ServiceType == typeof(IExternalAuthenticationSessionStore));
-        Assert.Equal(typeof(EFCoreExternalAuthenticationSessionStore), sessionStore.ImplementationType);
+        await Assert.That(sessionStore.ImplementationType).IsEqualTo(typeof(EFCoreExternalAuthenticationSessionStore));
     }
 
-    [Fact]
-    public void StoresConsumedByTheSingletonConnectionSourceResolveFromTheRootProvider()
+    [Test]
+    public async Task StoresConsumedByTheSingletonConnectionSourceResolveFromTheRootProvider()
     {
         var services = new ServiceCollection();
         services.AddExternalAuthenticationServices();
@@ -78,7 +78,7 @@ public class ExternalAuthenticationPersistenceRegistrationTests
         // descriptors are legitimately unsatisfiable here.
         using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
 
-        Assert.IsType<EFCoreIdentityProviderConnectionStore>(serviceProvider.GetRequiredService<IIdentityProviderConnectionStore>());
-        Assert.IsType<EFCoreConnectionRegistryVersionStore>(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>());
+        await Assert.That(serviceProvider.GetRequiredService<IIdentityProviderConnectionStore>()).IsOfType(typeof(EFCoreIdentityProviderConnectionStore));
+        await Assert.That(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>()).IsOfType(typeof(EFCoreConnectionRegistryVersionStore));
     }
 }

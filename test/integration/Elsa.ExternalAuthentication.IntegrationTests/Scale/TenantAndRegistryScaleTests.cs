@@ -7,7 +7,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Scale;
 
 public sealed class TenantAndRegistryScaleTests
 {
-    [Fact]
+    [Test]
     public async Task HostWideConnectionsAreAvailableToEveryTenantAndLegacyTenantConnectionsAreIgnored()
     {
         var source = new StaticSource("configuration", ConnectionSourceOwnership.Configuration, new Dictionary<ConnectionScope, IReadOnlyCollection<IdentityProviderConnection>>
@@ -21,18 +21,19 @@ public sealed class TenantAndRegistryScaleTests
         foreach (var tenantId in new[] { "tenant-a", "tenant-b", "tenant-c", string.Empty })
         {
             var snapshot = await registry.GetAsync(tenantId);
-            var connection = Assert.Single(snapshot.Connections);
-            Assert.Equal(ConnectionScope.HostTenantId, connection.Connection.TenantId);
-            Assert.Equal("shared", connection.Connection.Key);
+            var connection = (await Assert.That(snapshot.Connections).HasSingleItem())!;
+            await Assert.That(connection.Connection.TenantId).IsEqualTo(ConnectionScope.HostTenantId);
+            await Assert.That(connection.Connection.Key).IsEqualTo("shared");
         }
 
         source.Add(new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), Connection("collision", "tenant-a", "shared"));
         var snapshotAfterLegacyCollision = await registry.GetAsync("tenant-a");
-        Assert.Equal(ConnectionValidity.Unknown, Assert.Single(snapshotAfterLegacyCollision.Connections).Validity);
-        Assert.Contains(snapshotAfterLegacyCollision.LoginMethods, x => x.Key == "shared");
+        var collidedConnection = (await Assert.That(snapshotAfterLegacyCollision.Connections).HasSingleItem())!;
+        await Assert.That(collidedConnection.Validity).IsEqualTo(ConnectionValidity.Unknown);
+        await Assert.That(snapshotAfterLegacyCollision.LoginMethods).Contains(x => x.Key == "shared");
     }
 
-    [Fact]
+    [Test]
     public async Task TenThousandConnectionsRemainDeterministicallyOrderedAndDiscoverable()
     {
         var connections = Enumerable.Range(0, 10_000)
@@ -44,12 +45,17 @@ public sealed class TenantAndRegistryScaleTests
         var first = await registry.GetAsync(string.Empty);
         var second = await registry.GetAsync(string.Empty);
 
-        Assert.Equal(10_000, first.LoginMethods.Count);
-        Assert.Equal(first.LoginMethods.Select(x => x.Id), second.LoginMethods.Select(x => x.Id));
-        Assert.Equal(first.LoginMethods.OrderBy(x => x.Order).ThenBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Id), first.LoginMethods.Select(x => x.Id));
-        Assert.Equal("connection-00042", Assert.Single(first.LoginMethods, x => x.IsPreferred).Id);
-        Assert.NotNull(await registry.FindByKeyAsync(string.Empty, "provider-00000"));
-        Assert.NotNull(await registry.FindByIdAsync(string.Empty, "connection-09999"));
+        await Assert.That(first.LoginMethods.Count).IsEqualTo(10_000);
+        await Assert.That(second.LoginMethods.Select(x => x.Id)).IsEquivalentTo(
+            first.LoginMethods.Select(x => x.Id),
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(first.LoginMethods.Select(x => x.Id)).IsEquivalentTo(
+            first.LoginMethods.OrderBy(x => x.Order).ThenBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Id),
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        var preferredConnection = (await Assert.That(first.LoginMethods).HasSingleItem(x => x.IsPreferred))!;
+        await Assert.That(preferredConnection.Id).IsEqualTo("connection-00042");
+        await Assert.That(await registry.FindByKeyAsync(string.Empty, "provider-00000")).IsNotNull();
+        await Assert.That(await registry.FindByIdAsync(string.Empty, "connection-09999")).IsNotNull();
     }
 
     private static IdentityProviderConnection Connection(string id, string tenantId, string key, int displayOrder = 0, bool isPreferred = false) => new()

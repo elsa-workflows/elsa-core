@@ -29,7 +29,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Broker;
 
 public class BrokerSecurityTests
 {
-    [Fact]
+    [Test]
     public async Task LocalAuthorizationCodeExchangeAndRefreshResolveCurrentPermissionsInTheTokenTenant()
     {
         const string verifier = "local-login-code-verifier";
@@ -98,13 +98,13 @@ public class BrokerSecurityTests
                 null,
                 "https://studio.example"));
 
-            Assert.Equal("tenant-b", tenantAccessor.TenantId);
+            await Assert.That(tenantAccessor.TenantId).IsEqualTo("tenant-b");
         }
 
-        Assert.Null(exchange.Error);
+        await Assert.That(exchange.Error).IsNull();
         var accessToken = new JsonWebTokenHandler().ReadJsonWebToken(exchange.Token!.AccessToken);
-        Assert.Contains(accessToken.Claims, claim => claim.Type == JwtRegisteredClaimNames.Sub && claim.Value == user.Id);
-        Assert.Contains(accessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
+        await Assert.That(accessToken.Claims).Contains(claim => claim.Type == JwtRegisteredClaimNames.Sub && claim.Value == user.Id);
+        await Assert.That(accessToken.Claims).Contains(claim => claim.Type == "permissions" && claim.Value == "*");
 
         role.Permissions = ["workflows:manage"];
         var refresh = await broker.ExchangeAsync(new BrokerTokenRequest(
@@ -116,17 +116,17 @@ public class BrokerSecurityTests
             exchange.Token.RefreshToken,
             "https://studio.example"));
 
-        Assert.Null(refresh.Error);
-        Assert.NotNull(refresh.Token);
-        Assert.True(exchange.Token.RefreshExpiresIn > 0);
-        Assert.True(refresh.Token.RefreshExpiresIn > 0);
+        await Assert.That(refresh.Error).IsNull();
+        await Assert.That(refresh.Token).IsNotNull();
+        await Assert.That(exchange.Token.RefreshExpiresIn > 0).IsTrue();
+        await Assert.That(refresh.Token.RefreshExpiresIn > 0).IsTrue();
         var refreshedAccessToken = new JsonWebTokenHandler().ReadJsonWebToken(refresh.Token.AccessToken);
-        Assert.Contains(refreshedAccessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "workflows:manage");
-        Assert.DoesNotContain(refreshedAccessToken.Claims, claim => claim.Type == "permissions" && claim.Value == "*");
+        await Assert.That(refreshedAccessToken.Claims).Contains(claim => claim.Type == "permissions" && claim.Value == "workflows:manage");
+        await Assert.That(refreshedAccessToken.Claims).DoesNotContain(claim => claim.Type == "permissions" && claim.Value == "*");
         await externalTokenIssuer.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<SensitiveString>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task LocalInitiationTreatsNullUserTenantAsTheDefaultTenant()
     {
         var credentials = Substitute.For<IUserCredentialsValidator>();
@@ -138,12 +138,12 @@ public class BrokerSecurityTests
 
         var result = await broker.InitiateLocalAsync(request, Tenant.DefaultTenantId);
 
-        Assert.Null(result.Error);
-        Assert.StartsWith("https://studio.example/authentication/external/callback?code=", result.RedirectUri?.AbsoluteUri);
-        Assert.Contains("state=state", result.RedirectUri?.Query);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(result.RedirectUri?.AbsoluteUri).StartsWith("https://studio.example/authentication/external/callback?code=");
+        await Assert.That(result.RedirectUri?.Query).Contains("state=state");
     }
 
-    [Fact]
+    [Test]
     public async Task OpaqueRefreshTokensContinueToUseTheExternalSessionIssuer()
     {
         var expected = new ExternalTokenResponse("access", "Bearer", 300, "session.rotated", 600, 600);
@@ -164,12 +164,12 @@ public class BrokerSecurityTests
             "session.random",
             "https://studio.example"));
 
-        Assert.Null(result.Error);
-        Assert.Same(expected, result.Token);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(result.Token).IsSameReferenceAs(expected);
         await identityRefreshTokenService.DidNotReceive().RefreshAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ExternalInitiationUsesExactlyOneOpaqueProviderStateAndPersistsAdapterPayload()
     {
         var adapter = new RecordingAdapter();
@@ -178,16 +178,18 @@ public class BrokerSecurityTests
 
         var result = await broker.InitiateExternalAsync(request, "tenant-a");
 
-        Assert.Null(result.Error);
-        Assert.NotNull(result.NavigationUri);
-        Assert.Equal(adapter.CorrelationState, Query(result.NavigationUri!, "state"));
-        Assert.NotEqual(adapter.Transaction!.HandleHash, adapter.CorrelationState);
-        Assert.NotEqual([1, 2, 3], adapter.Transaction.ProtectedPayload);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(result.NavigationUri).IsNotNull();
+        await Assert.That(Query(result.NavigationUri!, "state")).IsEqualTo(adapter.CorrelationState);
+        await Assert.That(adapter.CorrelationState).IsNotEqualTo(adapter.Transaction!.HandleHash);
+        await Assert.That(adapter.Transaction.ProtectedPayload).IsNotEquivalentTo(
+            new byte[] { 1, 2, 3 },
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory]
-    [InlineData("//evil.example")]
-    [InlineData("/administration")]
+    [Test]
+    [Arguments("//evil.example")]
+    [Arguments("/administration")]
     public async Task InitiationRejectsReturnPathsOutsideTheAuthenticationClientAllowlist(string returnPath)
     {
         var adapter = new RecordingAdapter();
@@ -195,11 +197,11 @@ public class BrokerSecurityTests
 
         var result = await broker.InitiateExternalAsync(Request(returnPath), "tenant-a");
 
-        Assert.Equal("invalid_request", result.Error?.Error);
-        Assert.Null(adapter.CorrelationState);
+        await Assert.That(result.Error?.Error).IsEqualTo("invalid_request");
+        await Assert.That(adapter.CorrelationState).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task CallbackFailureAfterTrustedStateRedirectsOnlyToRegisteredCallback()
     {
         var adapter = new RecordingAdapter { ThrowOnCallback = true };
@@ -208,12 +210,12 @@ public class BrokerSecurityTests
 
         var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
-        Assert.Equal("authentication_failed", result.Error?.Error);
-        Assert.StartsWith("https://studio.example/authentication/external/callback?", result.RedirectUri?.AbsoluteUri);
-        Assert.DoesNotContain("issuer.example", result.RedirectUri?.AbsoluteUri);
+        await Assert.That(result.Error?.Error).IsEqualTo("authentication_failed");
+        await Assert.That(result.RedirectUri?.AbsoluteUri).StartsWith("https://studio.example/authentication/external/callback?");
+        await Assert.That(result.RedirectUri?.AbsoluteUri).DoesNotContain("issuer.example");
     }
 
-    [Fact]
+    [Test]
     public async Task SuccessfulExternalSignInRecordsTheTimestampForAnExistingIdentityLink()
     {
         var scenario = CreateIdentityLinkTrackingScenario();
@@ -224,12 +226,12 @@ public class BrokerSecurityTests
         var result = await CompleteExternalSignInAsync(scenario);
         var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
 
-        Assert.Null(result.Error);
-        Assert.Equal(existing.Link.Id, link?.Id);
-        Assert.Equal(signedInAt, link?.LastSignedInAt);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(link?.Id).IsEqualTo(existing.Link.Id);
+        await Assert.That(link?.LastSignedInAt).IsEqualTo(signedInAt);
     }
 
-    [Fact]
+    [Test]
     public async Task SuccessfulExternalSignInRecordsTheInitialTimestampForANewIdentityLink()
     {
         var scenario = CreateIdentityLinkTrackingScenario();
@@ -239,12 +241,12 @@ public class BrokerSecurityTests
         var result = await CompleteExternalSignInAsync(scenario);
         var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
 
-        Assert.Null(result.Error);
-        Assert.NotNull(link);
-        Assert.Equal(signedInAt, link.LastSignedInAt);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(link).IsNotNull();
+        await Assert.That(link.LastSignedInAt).IsEqualTo(signedInAt);
     }
 
-    [Fact]
+    [Test]
     public async Task RepeatSuccessfulExternalSignInReplacesTheIdentityLinkTimestamp()
     {
         var scenario = CreateIdentityLinkTrackingScenario();
@@ -258,11 +260,11 @@ public class BrokerSecurityTests
         var result = await CompleteExternalSignInAsync(scenario);
         var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
 
-        Assert.Null(result.Error);
-        Assert.Equal(secondSignInAt, link?.LastSignedInAt);
+        await Assert.That(result.Error).IsNull();
+        await Assert.That(link?.LastSignedInAt).IsEqualTo(secondSignInAt);
     }
 
-    [Fact]
+    [Test]
     public async Task UnsuccessfulExternalSignInDoesNotRecordTheIdentityLinkTimestamp()
     {
         var scenario = CreateIdentityLinkTrackingScenario(throwOnCallback: true);
@@ -272,11 +274,11 @@ public class BrokerSecurityTests
         var result = await CompleteExternalSignInAsync(scenario);
         var link = await scenario.Provisioner.FindLinkAsync("tenant-a", "contoso", scenario.Identity);
 
-        Assert.Equal("authentication_failed", result.Error?.Error);
-        Assert.Null(link?.LastSignedInAt);
+        await Assert.That(result.Error?.Error).IsEqualTo("authentication_failed");
+        await Assert.That(link?.LastSignedInAt).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ProviderCallbackStateCannotBeReplayed()
     {
         var adapter = new RecordingAdapter { ThrowOnCallback = true };
@@ -287,14 +289,14 @@ public class BrokerSecurityTests
         _ = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, parameters);
         var replay = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, parameters);
 
-        Assert.Equal("invalid_request", replay.Error?.Error);
-        Assert.Null(replay.RedirectUri);
+        await Assert.That(replay.Error?.Error).IsEqualTo("invalid_request");
+        await Assert.That(replay.RedirectUri).IsNull();
     }
 
-    [Theory]
-    [InlineData("revision")]
-    [InlineData("disabled")]
-    [InlineData("archived")]
+    [Test]
+    [Arguments("revision")]
+    [Arguments("disabled")]
+    [Arguments("archived")]
     public async Task CallbackRejectsConnectionChangesAfterInitiation(string change)
     {
         var adapter = new RecordingAdapter { ThrowOnCallback = true };
@@ -310,11 +312,11 @@ public class BrokerSecurityTests
 
         var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
-        Assert.Equal(change == "revision" ? "flow_changed" : "method_unavailable", result.Error?.Error);
-        Assert.StartsWith("https://studio.example/authentication/external/callback?", result.RedirectUri?.AbsoluteUri);
+        await Assert.That(result.Error?.Error).IsEqualTo(change == "revision" ? "flow_changed" : "method_unavailable");
+        await Assert.That(result.RedirectUri?.AbsoluteUri).StartsWith("https://studio.example/authentication/external/callback?");
     }
 
-    [Fact]
+    [Test]
     public async Task RefreshRotationRevokesTheSessionWhenAnOlderTokenIsReused()
     {
         var clock = new TestClock();
@@ -334,15 +336,15 @@ public class BrokerSecurityTests
 
         var first = await issuer.IssueAsync(session);
         var second = await issuer.RefreshAsync("studio", new SensitiveString(first.RefreshToken));
-        await Assert.ThrowsAsync<InvalidOperationException>(() => issuer.RefreshAsync("studio", new SensitiveString(first.RefreshToken)).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => issuer.RefreshAsync("studio", new SensitiveString(first.RefreshToken)).AsTask());
         var revoked = await store.FindByIdAsync(session.Id);
 
-        Assert.NotEqual(first.RefreshToken, second.RefreshToken);
-        Assert.NotNull(revoked?.RevokedAt);
-        Assert.Equal("refresh_token_reuse", revoked?.RevocationReason);
+        await Assert.That(second.RefreshToken).IsNotEqualTo(first.RefreshToken);
+        await Assert.That(revoked?.RevokedAt).IsNotNull();
+        await Assert.That(revoked?.RevocationReason).IsEqualTo("refresh_token_reuse");
     }
 
-    [Fact]
+    [Test]
     public async Task PkceMismatchConsumesTheAuthorizationCode()
     {
         var grants = new InMemoryAuthorizationGrantStore(new TestClock());
@@ -352,11 +354,11 @@ public class BrokerSecurityTests
         var result = await broker.ExchangeAsync(new BrokerTokenRequest("authorization_code", "studio", new Uri("https://studio.example/authentication/external/callback"), "code", "wrong", null, "https://studio.example"));
         var after = await grants.TryTakeAsync("hash:code");
 
-        Assert.Equal("invalid_request", result.Error?.Error);
-        Assert.IsType<TakeResult<AuthorizationGrant>.AlreadyConsumed>(after);
+        await Assert.That(result.Error?.Error).IsEqualTo("invalid_request");
+        await Assert.That(after).IsOfType(typeof(TakeResult<AuthorizationGrant>.AlreadyConsumed));
     }
 
-    [Fact]
+    [Test]
     public async Task InitiationRejectsAnExactCallbackUriMismatch()
     {
         var adapter = new RecordingAdapter();
@@ -364,11 +366,11 @@ public class BrokerSecurityTests
 
         var result = await broker.InitiateExternalAsync(new BrokerAuthorizationRequest("studio", new Uri("https://studio.example/other"), "code", "challenge", "S256", "/workflows", "contoso"), "tenant-a");
 
-        Assert.Equal("invalid_request", result.Error?.Error);
-        Assert.Null(adapter.CorrelationState);
+        await Assert.That(result.Error?.Error).IsEqualTo("invalid_request");
+        await Assert.That(adapter.CorrelationState).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task ExchangeRequiresAnExactPublicOriginAndConfidentialBasicClientId()
     {
         var publicBroker = CreateBroker(new RecordingAdapter());
@@ -379,11 +381,11 @@ public class BrokerSecurityTests
         var confidentialBroker = CreateBroker(new RecordingAdapter(), clients: [confidentialClient], resolvers: [secretResolver]);
         var confidentialResult = await confidentialBroker.ExchangeAsync(new BrokerTokenRequest("authorization_code", "confidential", new Uri("https://studio.example/authentication/external/callback"), "code", "verifier", null, null, "other-client", "secret"));
 
-        Assert.Equal("invalid_request", publicResult.Error?.Error);
-        Assert.Equal("invalid_request", confidentialResult.Error?.Error);
+        await Assert.That(publicResult.Error?.Error).IsEqualTo("invalid_request");
+        await Assert.That(confidentialResult.Error?.Error).IsEqualTo("invalid_request");
     }
 
-    [Fact]
+    [Test]
     public async Task SecretGenerationRotationInvalidatesTrustedCallback()
     {
         var resolver = new MutableSecretResolver();
@@ -394,10 +396,10 @@ public class BrokerSecurityTests
 
         var result = await broker.CompleteCallbackAsync("contoso", adapter.CorrelationState!, new Dictionary<string, IReadOnlyCollection<string>> { ["state"] = [adapter.CorrelationState!] });
 
-        Assert.Equal("flow_changed", result.Error?.Error);
+        await Assert.That(result.Error?.Error).IsEqualTo("flow_changed");
     }
 
-    [Fact]
+    [Test]
     public async Task RejectedBrokerOutcomesPublishTheirSafePublicCategory()
     {
         var sender = Substitute.For<INotificationSender>();
@@ -407,7 +409,7 @@ public class BrokerSecurityTests
 
         var result = await broker.InitiateExternalAsync(Request("//attacker.example"), "tenant-a");
 
-        Assert.Equal("invalid_request", result.Error?.Error);
+        await Assert.That(result.Error?.Error).IsEqualTo("invalid_request");
         await sender.Received(1).SendAsync(
             Arg.Is<ExternalAuthenticationOutcomeRecorded>(notification =>
                 notification.Flow == "external" &&
@@ -417,7 +419,7 @@ public class BrokerSecurityTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task AdapterInitiationFailureReturnsASafeObservedOutcome()
     {
         var sender = Substitute.For<INotificationSender>();
@@ -428,7 +430,7 @@ public class BrokerSecurityTests
 
         var result = await broker.InitiateExternalAsync(Request("/workflows"), "tenant-a");
 
-        Assert.Equal("temporarily_unavailable", result.Error?.Error);
+        await Assert.That(result.Error?.Error).IsEqualTo("temporarily_unavailable");
         await sender.Received(1).SendAsync(
             Arg.Is<ExternalAuthenticationOutcomeRecorded>(notification =>
                 notification.Category == "temporarily_unavailable" &&

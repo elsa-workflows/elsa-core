@@ -11,7 +11,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Permissions;
 
 public class PermissionDelegationTests
 {
-    [Fact]
+    [Test]
     public async Task OrdinaryAdministratorMustPossessDelegationPermissionAndEveryGrantedPermission()
     {
         var authorizer = new DefaultPermissionDelegationAuthorizer(Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()), PermissionEvaluator.Shared);
@@ -24,12 +24,14 @@ public class PermissionDelegationTests
             Actor(DelegatePermission, "reports:view"),
             [selection]);
 
-        Assert.False(withoutGrantedPermission.IsAuthorized);
-        Assert.Equal(["reports:view"], withoutGrantedPermission.UnauthorizedPermissions);
-        Assert.True(withGrantedPermission.IsAuthorized);
+        await Assert.That(withoutGrantedPermission.IsAuthorized).IsFalse();
+        await Assert.That(withoutGrantedPermission.UnauthorizedPermissions).IsEquivalentTo(
+            ["reports:view"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(withGrantedPermission.IsAuthorized).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task UnrestrictedDelegationCannotCrossDeploymentDenyBoundary()
     {
         var options = new ExternalAuthenticationOptions();
@@ -40,8 +42,10 @@ public class PermissionDelegationTests
             Actor(DelegateUnrestrictedPermission, PermissionNames.All),
             [Selection("reports:view")]);
 
-        Assert.False(result.IsAuthorized);
-        Assert.Equal(["reports:view"], result.UnauthorizedPermissions);
+        await Assert.That(result.IsAuthorized).IsFalse();
+        await Assert.That(result.UnauthorizedPermissions).IsEquivalentTo(
+            ["reports:view"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private const string DelegatePermission = $"{ExternalAuthenticationResourcePermissions.PermissionGrants}:{ExternalAuthenticationVerbs.Delegate}";

@@ -20,23 +20,23 @@ public sealed class SensitiveDataLeakageTests
     private const string ProviderBody = "provider-response-must-not-leak";
     private const string RawClaim = "raw-claim-must-not-leak";
 
-    [Fact]
-    public void PublicErrorsAndRedirectsContainOnlySafeCategoryAndCorrelationData()
+    [Test]
+    public async Task PublicErrorsAndRedirectsContainOnlySafeCategoryAndCorrelationData()
     {
         var error = BrokerErrorFactory.Create(BrokerErrorCategory.AuthenticationFailed, $"{Secret}?{AccessToken}");
         var redirect = new Uri($"https://studio.example/authentication/external/callback?error={error.Error}&correlation_id={error.CorrelationId}");
         var serialized = JsonSerializer.Serialize(new { error, redirect = redirect.AbsoluteUri });
 
-        Assert.DoesNotContain(Secret, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(AccessToken, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(RefreshToken, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(ProviderBody, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(RawClaim, serialized, StringComparison.Ordinal);
-        Assert.Equal(32, error.CorrelationId.Length);
+        await Assert.That(serialized).DoesNotContain(Secret).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(AccessToken).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(RefreshToken).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(ProviderBody).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(RawClaim).WithComparison(StringComparison.Ordinal);
+        await Assert.That(error.CorrelationId.Length).IsEqualTo(32);
     }
 
-    [Fact]
-    public void RedactionBoundaryRemovesRawClaimsAndMasksConfiguredProjectedClaims()
+    [Test]
+    public async Task RedactionBoundaryRemovesRawClaimsAndMasksConfiguredProjectedClaims()
     {
         var projected = new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal)
         {
@@ -55,17 +55,21 @@ public sealed class SensitiveDataLeakageTests
             redacted
         });
 
-        Assert.Empty(raw);
-        Assert.Equal([ExternalAuthenticationRedactor.RedactedValue], redacted["email"]);
-        Assert.Equal(["operators"], redacted["groups"]);
-        Assert.DoesNotContain(Secret, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(AccessToken, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(ProviderBody, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(RawClaim, serialized, StringComparison.Ordinal);
+        await Assert.That(raw).IsEmpty();
+        await Assert.That(redacted["email"]).IsEquivalentTo(
+            [ExternalAuthenticationRedactor.RedactedValue],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(redacted["groups"]).IsEquivalentTo(
+            ["operators"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(serialized).DoesNotContain(Secret).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(AccessToken).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(ProviderBody).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(RawClaim).WithComparison(StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void SecurityNotificationsSerializeOnlyTheirExplicitSafeFields()
+    [Test]
+    public async Task SecurityNotificationsSerializeOnlyTheirExplicitSafeFields()
     {
         var notification = new ExternalAuthenticationOutcomeRecorded(
             new SecurityEventContext("admin", "tenant-a", "connection-a", "user-a", DateTimeOffset.UtcNow, SecurityEventOutcome.Rejected, "correlation-a", "Authentication could not be completed."),
@@ -74,16 +78,16 @@ public sealed class SensitiveDataLeakageTests
             "authentication_failed");
         var serialized = JsonSerializer.Serialize(notification);
 
-        Assert.DoesNotContain(Secret, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(AccessToken, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(RefreshToken, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(ProviderBody, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(RawClaim, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain("subject", serialized, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("claim", serialized, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(serialized).DoesNotContain(Secret).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(AccessToken).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(RefreshToken).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(ProviderBody).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(RawClaim).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain("subject").WithComparison(StringComparison.OrdinalIgnoreCase);
+        await Assert.That(serialized).DoesNotContain("claim").WithComparison(StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
+    [Test]
     public async Task HealthDetailsExposeOnlyTheFixedSafeSummaryOfExplicitTests()
     {
         var connection = new IdentityProviderConnection { Id = "connection-a", TenantId = ConnectionScope.DefaultTenantId, Key = "contoso", AdapterType = "test", DisplayName = "Contoso", IsEnabled = true, MaterialRevision = "revision-a" };
@@ -95,11 +99,11 @@ public sealed class SensitiveDataLeakageTests
         var result = await new ExternalAuthenticationHealthCheck(registry, observations).CheckHealthAsync(new HealthCheckContext());
         var serialized = JsonSerializer.Serialize(new { result.Status, result.Description, result.Data });
 
-        Assert.Equal(HealthStatus.Degraded, result.Status);
-        Assert.DoesNotContain(Secret, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(AccessToken, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(ProviderBody, serialized, StringComparison.Ordinal);
-        Assert.DoesNotContain(RawClaim, serialized, StringComparison.Ordinal);
+        await Assert.That(result.Status).IsEqualTo(HealthStatus.Degraded);
+        await Assert.That(serialized).DoesNotContain(Secret).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(AccessToken).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(ProviderBody).WithComparison(StringComparison.Ordinal);
+        await Assert.That(serialized).DoesNotContain(RawClaim).WithComparison(StringComparison.Ordinal);
     }
 
     private sealed class FixedRegistry(EffectiveIdentityProviderConnection connection) : IIdentityProviderConnectionRegistry

@@ -12,7 +12,7 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Operations;
 
 public class RecoveryAndRevocationTests
 {
-    [Fact]
+    [Test]
     public async Task FinalNormalConnectionRequiresBreakGlassOrConfirmedPrivilegedOverride()
     {
         var registry = Substitute.For<IIdentityProviderConnectionRegistry>();
@@ -22,22 +22,22 @@ public class RecoveryAndRevocationTests
         var existing = Connection(enabled: true);
         var disabled = Connection(enabled: false);
 
-        Assert.Equal(FinalLoginPathGuardResult.Denied, await guard.AuthorizeAsync(existing, disabled, "tenant-a", new ClaimsPrincipal(new ClaimsIdentity()), false));
+        await Assert.That(await guard.AuthorizeAsync(existing, disabled, "tenant-a", new ClaimsPrincipal(new ClaimsIdentity()), false)).IsEqualTo(FinalLoginPathGuardResult.Denied);
         var privileged = new ClaimsPrincipal(new ClaimsIdentity([new Claim(Elsa.PermissionNames.ClaimType, options.Value.FinalLoginPathGuard.PrivilegedOverridePermission)]));
-        Assert.Equal(FinalLoginPathGuardResult.Allowed, await guard.AuthorizeAsync(existing, disabled, "tenant-a", privileged, true));
+        await Assert.That(await guard.AuthorizeAsync(existing, disabled, "tenant-a", privileged, true)).IsEqualTo(FinalLoginPathGuardResult.Allowed);
         options.Value.FinalLoginPathGuard.HasBreakGlassAuthentication = true;
-        Assert.Equal(FinalLoginPathGuardResult.Allowed, await guard.AuthorizeAsync(existing, disabled, "tenant-a", new ClaimsPrincipal(), false));
+        await Assert.That(await guard.AuthorizeAsync(existing, disabled, "tenant-a", new ClaimsPrincipal(), false)).IsEqualTo(FinalLoginPathGuardResult.Allowed);
     }
 
-    [Fact]
+    [Test]
     public async Task RevokedExternalSessionCannotRemainActive()
     {
         var now = DateTimeOffset.UtcNow;
         var store = new InMemoryExternalAuthenticationSessionStore(new TestClock(now));
         var session = new ExternalAuthenticationSession { Id = "s", TenantId = "tenant-a", UserId = "u", ConnectionKey = "idp", AuthenticationClientId = "client", ConnectionMaterialRevision = "r", Issuer = "https://issuer", SubjectHash = "h", StartedAt = now, LastRefreshedAt = now, ExpiresAt = now.AddHours(1), RefreshExpiresAt = now.AddHours(1), CurrentRefreshTokenHash = "refresh" };
         await store.SaveAsync(session);
-        Assert.True(await store.RevokeAsync(session.Id, "administrator_revoked", now));
-        Assert.Single(await store.FindAsync(new ExternalAuthenticationSessionFilter { TenantId = "tenant-a", Status = "revoked" }));
+        await Assert.That(await store.RevokeAsync(session.Id, "administrator_revoked", now)).IsTrue();
+        await Assert.That(await store.FindAsync(new ExternalAuthenticationSessionFilter { TenantId = "tenant-a", Status = "revoked" })).HasSingleItem();
     }
 
     private static IdentityProviderConnection Connection(bool enabled) => new() { Id = "connection-a", TenantId = "tenant-a", Key = "idp", AdapterType = "test", DisplayName = "IdP", IsEnabled = enabled };

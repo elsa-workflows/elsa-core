@@ -7,24 +7,24 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Security;
 /// <summary>HTTP broker security contract invariants shared by every browser entry point.</summary>
 public class BrokerSecurityTests
 {
-    [Theory]
-    [InlineData("//attacker.example")]
-    [InlineData("https://attacker.example")]
-    [InlineData("/admin")]
-    public void ReturnPathMustBeLocalAndClientAllowlisted(string value)
+    [Test]
+    [Arguments("//attacker.example")]
+    [Arguments("https://attacker.example")]
+    [Arguments("/admin")]
+    public async Task ReturnPathMustBeLocalAndClientAllowlisted(string value)
     {
         var allowed = new HashSet<string>(StringComparer.Ordinal) { "/workflows" };
 
-        Assert.False(ClientReturnPathValidator.TryValidateForClient(value, allowed, out _));
+        await Assert.That(ClientReturnPathValidator.TryValidateForClient(value, allowed, out _)).IsFalse();
     }
 
-    [Fact]
-    public void PublicErrorsContainNoProviderOrSecretDetails()
+    [Test]
+    public async Task PublicErrorsContainNoProviderOrSecretDetails()
     {
         var error = BrokerErrorFactory.Create(BrokerErrorCategory.AuthenticationFailed);
 
-        Assert.Equal("authentication_failed", error.Error);
-        Assert.DoesNotContain("provider", error.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("secret", error.Message, StringComparison.OrdinalIgnoreCase);
+        await Assert.That(error.Error).IsEqualTo("authentication_failed");
+        await Assert.That(error.Message).DoesNotContain("provider").WithComparison(StringComparison.OrdinalIgnoreCase);
+        await Assert.That(error.Message).DoesNotContain("secret").WithComparison(StringComparison.OrdinalIgnoreCase);
     }
 }

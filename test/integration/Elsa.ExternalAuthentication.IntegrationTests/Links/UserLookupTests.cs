@@ -5,20 +5,20 @@ namespace Elsa.ExternalAuthentication.IntegrationTests.Links;
 
 public partial class ExternalIdentityLinkTests
 {
-    [Fact]
+    [Test]
     public async Task LookupReturnsOnlyMinimalTenantScopedDataAndSupportsCursorPaging()
     {
         var first = await Client.GetFromJsonAsync<UserList>("/external-authentication/user-options?pageSize=1");
-        Assert.NotNull(first);
-        Assert.Single(first!.Items);
-        Assert.NotNull(first.NextCursor);
-        Assert.DoesNotContain("roles", JsonSerializer.Serialize(first), StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("password", JsonSerializer.Serialize(first), StringComparison.OrdinalIgnoreCase);
+        await Assert.That(first).IsNotNull();
+        await Assert.That(first!.Items).HasSingleItem();
+        await Assert.That(first.NextCursor).IsNotNull();
+        await Assert.That(JsonSerializer.Serialize(first)).DoesNotContain("roles").WithComparison(StringComparison.OrdinalIgnoreCase);
+        await Assert.That(JsonSerializer.Serialize(first)).DoesNotContain("password").WithComparison(StringComparison.OrdinalIgnoreCase);
 
         var second = await Client.GetFromJsonAsync<UserList>($"/external-authentication/user-options?pageSize=1&cursor={Uri.EscapeDataString(first.NextCursor!)}");
-        Assert.NotNull(second);
-        Assert.Single(second!.Items);
-        Assert.DoesNotContain(second.Items, x => x.Id == "user-b");
+        await Assert.That(second).IsNotNull();
+        await Assert.That(second!.Items).HasSingleItem();
+        await Assert.That(second.Items).DoesNotContain(x => x.Id == "user-b");
     }
 
     private sealed record UserList(IReadOnlyCollection<UserDocument> Items, string? NextCursor);
