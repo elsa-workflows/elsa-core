@@ -310,31 +310,49 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
                 releaseBlockerCallback.Task.GetAwaiter().GetResult();
             });
         var preCancelTask = Task.Run(target.TryCancel);
-        await targetCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Task<DrainOutcome>? drainTask = null;
 
-        ExecutionCycleRegistry.ActiveCount.Returns(2);
-        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { target, blocker });
-        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
-            .Returns(ci => new ValueTask<WorkflowInstance?>(RunningInstance(ci.Arg<WorkflowInstanceFilter>().Id!)));
+        try
+        {
+            await targetCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        var sut = BuildSut();
-        var drainTask = Task.Run(async () => await sut.DrainAsync(DrainTrigger.OperatorForce));
-        await blockerCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.False(target.Disposed.IsCompleted);
+            ExecutionCycleRegistry.ActiveCount.Returns(2);
+            ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { target, blocker });
+            InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+                .Returns(ci => new ValueTask<WorkflowInstance?>(RunningInstance(ci.Arg<WorkflowInstanceFilter>().Id!)));
 
-        releaseBlockerCallback.SetResult();
-        await Task.Yield();
-        target.Dispose();
-        releaseTargetCallback.SetResult();
+            var sut = BuildSut();
+            drainTask = Task.Run(async () => await sut.DrainAsync(DrainTrigger.OperatorForce));
+            await blockerCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.False(target.Disposed.IsCompleted);
 
-        Assert.False(await preCancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
-        var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+            releaseBlockerCallback.TrySetResult();
+            await Task.Yield();
+            target.Dispose();
+            releaseTargetCallback.TrySetResult();
 
-        Assert.Equal(DrainResult.Forced, outcome.OverallResult);
-        Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
-        await InstanceStore.Received(1).SaveAsync(
-            Arg.Is<WorkflowInstance>(i => i.Id == target.WorkflowInstanceId && i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting),
-            Arg.Any<CancellationToken>());
+            Assert.False(await preCancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+            var outcome = await drainTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+            Assert.Equal(DrainResult.Forced, outcome.OverallResult);
+            Assert.Equal(1, outcome.ExecutionCyclesForceCancelledCount);
+            await InstanceStore.Received(1).SaveAsync(
+                Arg.Is<WorkflowInstance>(i => i.Id == target.WorkflowInstanceId && i.SubStatus == WorkflowSubStatus.Interrupted && !i.IsExecuting),
+                Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            // Always release synchronous callback gates so an assertion or timeout cannot strand the test host.
+            releaseBlockerCallback.TrySetResult();
+            releaseTargetCallback.TrySetResult();
+            target.Dispose();
+            blocker.Dispose();
+
+            await ObserveCleanupAsync(preCancelTask);
+
+            if (drainTask is not null)
+                await ObserveCleanupAsync(drainTask);
+        }
     }
 
     [Fact(DisplayName = "A disposed handle is not persisted as Interrupted when its later row is still running")]
@@ -474,6 +492,18 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         SubStatus = WorkflowSubStatus.Executing,
         IsExecuting = true,
     };
+
+    private static async Task ObserveCleanupAsync(Task task)
+    {
+        try
+        {
+            await task.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+        catch (Exception)
+        {
+            // Preserve the original assertion/timeout while observing the cleanup task.
+        }
+    }
 
     private static WorkflowInstance SuspendedInstance(string id) => new()
     {
