@@ -1,3 +1,4 @@
+using System.Data;
 using System.Data.Common;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
@@ -5,6 +6,7 @@ using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
@@ -324,6 +326,25 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     }
 
     [Fact]
+    public async Task SaveAsync_WhenJobIdIsHidden_DoesNotSendOwnershipConflictToDbExceptionHandler()
+    {
+        var handler = new RecordingDbExceptionHandler();
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync(
+            "tenant-a",
+            tenantsEnabled: true,
+            dbExceptionHandler: handler);
+        await scenario.Jobs.SaveAsync(Job("handler-conflict", "tenant-a", AlterationJobStatus.Pending, "owner"));
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Jobs.SaveAsync(
+                Job("handler-conflict", "tenant-b", AlterationJobStatus.Completed, "hidden")));
+        }
+
+        Assert.Null(handler.Exception);
+    }
+
+    [Fact]
     public async Task SaveAsync_ConcurrentSameTenantPlanId_BothWritersSucceedAndOnePayloadWins()
     {
         var gate = new GateFirstAlterationUpdates("AlterationPlans");
@@ -425,11 +446,13 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     [Fact]
     public async Task SaveManyAsync_ConcurrentNamedTenantsOnEmptyJobId_OneOwnerKeepsPayload()
     {
-        var gate = new GateFirstAlterationTransactions();
+        var gate = new GateFirstAlterationUpdates("AlterationJobs", gateBeforeExecution: true);
+        var transactionInterceptor = new DeferredSqliteTransactionInterceptor();
         await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync(
             "tenant-a",
             "tenant-b",
-            transactionInterceptor: gate);
+            gate,
+            transactionInterceptor);
         gate.Arm();
 
         var results = await Task.WhenAll(
@@ -438,7 +461,8 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
 
         Assert.Equal(1, results.Count(ex => ex is null));
         Assert.Equal(1, results.Count(ex => ex is InvalidOperationException));
-        Assert.Equal(2, gate.MatchedTransactionCount);
+        Assert.True(gate.BothReached);
+        Assert.Equal(3, gate.MatchedCommandCount);
 
         var winnerIsA = results[0] is null;
         using (pair.First.UseTenant(winnerIsA ? "tenant-a" : "tenant-b"))
@@ -555,19 +579,36 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
 }
 
 /// <summary>
-/// Releases the first two relevant alteration UPDATE commands after they complete, so competing
-/// Save calls reach their INSERT/retry paths together. The gate is armed explicitly after any
-/// setup writes so only the concurrent operation is coordinated.
+/// Coordinates the first two relevant alteration UPDATE commands so competing writers
+/// reach their INSERT/retry paths together. By default the gate releases them after
+/// execution; the batch race gates before execution so an explicit transaction does not
+/// hold a SQLite writer lock while waiting. The gate is armed explicitly after setup writes.
 /// </summary>
-public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInterceptor
+public sealed class GateFirstAlterationUpdates(
+    string tableName,
+    bool gateBeforeExecution = false) : DbCommandInterceptor
 {
     private readonly TaskCompletionSource<bool> _bothReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private int _armed;
     private int _matchedCommandCount;
 
     public int MatchedCommandCount => Volatile.Read(ref _matchedCommandCount);
+    public bool BothReached => _bothReached.Task.IsCompletedSuccessfully;
 
     public void Arm() => Volatile.Write(ref _armed, 1);
+
+    public override async ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        if (!gateBeforeExecution || !IsArmedAlterationUpdate(command))
+            return result;
+
+        await CoordinateAsync(cancellationToken);
+        return result;
+    }
 
     public override async ValueTask<int> NonQueryExecutedAsync(
         DbCommand command,
@@ -575,7 +616,7 @@ public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInte
         int result,
         CancellationToken cancellationToken = default)
     {
-        if (!IsArmedAlterationUpdate(command))
+        if (gateBeforeExecution || !IsArmedAlterationUpdate(command))
             return result;
 
         await CoordinateAsync(cancellationToken);
@@ -587,6 +628,9 @@ public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInte
 
     private async Task CoordinateAsync(CancellationToken cancellationToken)
     {
+        if (Volatile.Read(ref _armed) == 0)
+            return;
+
         var commandNumber = Interlocked.Increment(ref _matchedCommandCount);
         if (commandNumber <= 2)
         {
@@ -598,35 +642,26 @@ public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInte
     }
 }
 
-public sealed class GateFirstAlterationTransactions : DbTransactionInterceptor
+/// <summary>
+/// Uses a deferred SQLite transaction for the gated batch race. The normal SQLite
+/// transaction starts with <c>BEGIN IMMEDIATE</c>, which reserves the writer lock before
+/// a command interceptor can coordinate both writers.
+/// </summary>
+public sealed class DeferredSqliteTransactionInterceptor : DbTransactionInterceptor
 {
-    private readonly TaskCompletionSource<bool> _bothReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private int _armed;
-    private int _matchedTransactionCount;
-
-    public int MatchedTransactionCount => Volatile.Read(ref _matchedTransactionCount);
-
-    public void Arm() => Volatile.Write(ref _armed, 1);
-
-    public override async ValueTask<InterceptionResult<DbTransaction>> TransactionStartingAsync(
+    public override ValueTask<InterceptionResult<DbTransaction>> TransactionStartingAsync(
         DbConnection connection,
         TransactionStartingEventData eventData,
         InterceptionResult<DbTransaction> result,
         CancellationToken cancellationToken = default)
     {
-        if (Volatile.Read(ref _armed) != 0)
+        if (connection is SqliteConnection sqliteConnection)
         {
-            var transactionNumber = Interlocked.Increment(ref _matchedTransactionCount);
-            if (transactionNumber <= 2)
-            {
-                if (transactionNumber == 2)
-                    _bothReached.TrySetResult(true);
-
-                await _bothReached.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
-            }
+            var transaction = sqliteConnection.BeginTransaction(IsolationLevel.ReadUncommitted);
+            return ValueTask.FromResult(InterceptionResult<DbTransaction>.SuppressWithResult(transaction));
         }
 
-        return result;
+        return ValueTask.FromResult(result);
     }
 }
 

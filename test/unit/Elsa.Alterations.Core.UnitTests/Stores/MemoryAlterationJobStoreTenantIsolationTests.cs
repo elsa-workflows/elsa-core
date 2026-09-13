@@ -222,6 +222,22 @@ public class MemoryAlterationJobStoreTenantIsolationTests
         Assert.Equal("tenant-a", found.TenantId);
     }
 
+    [Fact(DisplayName = "SaveManyAsync preserves the first TenantId for repeated updates of a new Id")]
+    public async Task SaveManyAsync_WhenRepeatedIdWasAbsent_PreservesFirstTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        var first = Job("job-new", "tenant-a");
+        var second = Job("job-new", "tenant-b");
+        second.Status = AlterationJobStatus.Completed;
+
+        await store.SaveManyAsync([first, second]);
+
+        var found = await store.FindAsync(new AlterationJobFilter { Id = "job-new" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationJobStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {
