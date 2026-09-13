@@ -87,6 +87,10 @@ public abstract class LabelStoreConformanceTests
         Assert.Contains(byRed, x => x.Id == "assoc-v2-red");
         Assert.Contains(byRed, x => x.Id == "assoc-invoice");
 
+        var byRedAndBlue = (await scenario.AssociationQuery.FindByLabelIdsAsync(["red", "blue"])).ToList();
+        Assert.Equal(4, byRedAndBlue.Count);
+        Assert.Contains(byRedAndBlue, x => x.Id == "assoc-v1-blue");
+
         Assert.Equal(1, await scenario.Associations.DeleteByWorkflowDefinitionVersionIdAsync("order:2"));
         Assert.Empty(await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:2"));
         Assert.NotEmpty(await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1"));
@@ -157,6 +161,20 @@ public abstract class LabelStoreConformanceTests
         var byLabel = (await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).ToList();
         Assert.Equal(2, byLabel.Count);
         Assert.DoesNotContain(byLabel, x => x.Id == "assoc-b");
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            var tenantBLabels = (await scenario.Labels.ListAsync()).Items.ToList();
+            Assert.Contains(tenantBLabels, x => x.Id == "label-star");
+            Assert.DoesNotContain(tenantBLabels, x => x.Id == "label-a");
+            Assert.Equal("label-star", (await scenario.Labels.FindByIdAsync("label-star"))!.Id);
+
+            var tenantBByVersion = (await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1")).ToList();
+            Assert.Contains(tenantBByVersion, x => x.Id == "assoc-star");
+
+            var tenantBByLabel = (await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).ToList();
+            Assert.Contains(tenantBByLabel, x => x.Id == "assoc-star");
+        }
 
         Assert.False(await scenario.Labels.DeleteAsync("label-b"));
         Assert.False(await scenario.Associations.DeleteAsync("assoc-b"));
