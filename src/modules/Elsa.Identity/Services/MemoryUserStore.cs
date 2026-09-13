@@ -1,3 +1,4 @@
+using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Identity.Contracts;
@@ -9,6 +10,11 @@ namespace Elsa.Identity.Services;
 /// <summary>
 /// Represents an in-memory user store.
 /// </summary>
+/// <remarks>
+/// Ambient tenant is applied here rather than in callers.
+/// EF owns that via <c>SetTenantIdFilter</c> / <c>ApplyTenantId</c>; Memory must compensate.
+/// Null tenant IDs are visible only to the default tenant.
+/// </remarks>
 public class MemoryUserStore : IUserStore
 {
     private readonly MemoryStore<User> _store;
@@ -26,15 +32,21 @@ public class MemoryUserStore : IUserStore
     /// <inheritdoc />
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
-        _store.Save(user, x => x.Id);
+        ApplyCurrentTenant(user);
+        lock (_store.Sync)
+            _store.Save(user, x => x.Id);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
-        var ids = _store.Query(query => Filter(query, filter)).Select(x => x.Id).Distinct().ToList();
-        _store.DeleteWhere(x => ids.Contains(x.Id));
+        lock (_store.Sync)
+        {
+            _store.DeleteWhere(user =>
+                IsVisible(user) && filter.Apply(new[] { user }.AsQueryable()).Any());
+        }
+
         return Task.CompletedTask;
     }
 
@@ -51,17 +63,17 @@ public class MemoryUserStore : IUserStore
         var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
         return Task.FromResult(result);
     }
-    
-    /// <remarks>
-    /// The ambient tenant is applied here rather than left to callers. Isolation previously existed only
-    /// on the Entity Framework path, and only when multitenancy was enabled, so a deployment running the
-    /// default in-memory stores had none at all.
-    /// </remarks>
-    private IQueryable<User> Filter(IQueryable<User> queryable, UserFilter filter)
-    {
-        var tenantId = _tenantAccessor.TenantId;
-        queryable = queryable.Where(x => x.TenantId == tenantId || x.TenantId == Tenant.AgnosticTenantId || x.TenantId == null);
 
-        return filter.Apply(queryable);
+    private IQueryable<User> Filter(IQueryable<User> queryable, UserFilter filter) =>
+        filter.Apply(queryable.WhereVisibleToTenant(_tenantAccessor.TenantId));
+
+    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, _tenantAccessor.TenantId);
+
+    private void ApplyCurrentTenant(Entity entity)
+    {
+        if (entity.TenantId == Tenant.AgnosticTenantId)
+            return;
+
+        entity.TenantId ??= _tenantAccessor.TenantId;
     }
 }
