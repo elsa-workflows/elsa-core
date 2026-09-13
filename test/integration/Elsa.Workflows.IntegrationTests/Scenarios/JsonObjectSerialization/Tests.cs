@@ -1,26 +1,26 @@
 ﻿using Elsa.Testing.Shared;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JsonObjectSerialization;
 
 /// <summary>
 /// Tests for serializing and deserializing JSON objects containing reserved keywords such as $id.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
     private readonly IWorkflowStateSerializer _workflowStateSerializer;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowStateSerializer = _services.GetRequiredService<IWorkflowStateSerializer>();
     }
 
-    [Fact(DisplayName = "User-objects containing $id don't break deserialization into ExpandoObject.")]
+    [Test]
+    [DisplayName("User-objects containing $id don't break deserialization into ExpandoObject.")]
     public async Task Test1()
     {
         // Populate registries.
@@ -41,4 +41,6 @@ public class Tests
 
         // If we reach this point, the test has passed. Otherwise, an exception would have been thrown.
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

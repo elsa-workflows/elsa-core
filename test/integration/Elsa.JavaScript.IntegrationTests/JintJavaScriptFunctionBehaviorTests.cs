@@ -3,18 +3,20 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
 /// <summary>
 /// Tests that validate the behavior of JavaScript custom functions, not just their existence.
 /// </summary>
-public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHelper)
+public class JintJavaScriptFunctionBehaviorTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "All JavaScript functions should execute without errors (smoke test)")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("All JavaScript functions should execute without errors (smoke test)")]
     public async Task All_Functions_Should_Execute_Without_Errors()
     {
         // Arrange
@@ -58,11 +60,12 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
         var result = await EvaluateScriptAsync<string>(script);
 
         // Assert - script should execute and return JSON
-        Assert.NotNull(result);
-        Assert.Contains("workflowDefId", result);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result).Contains("workflowDefId", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "GUID functions should return valid formats")]
+    [Test]
+    [DisplayName("GUID functions should return valid formats")]
     public async Task Guid_Functions_Should_Return_Valid_Formats()
     {
         // Arrange
@@ -79,26 +82,27 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
         var result = await EvaluateScriptAsync<object>(script);
 
         // Assert
-        var dict = result as IDictionary<string, object>;
-        Assert.NotNull(dict);
+        var dict = await Assert.That(result as IDictionary<string, object>).IsNotNull();
 
         // Validate GUID formats
-        var guidString = dict["guidString"].ToString();
-        Assert.Matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", guidString ?? "");
+        var guidString = dict!["guidString"].ToString();
+        await Assert.That(guidString ?? "").Matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$");
 
         var shortGuid = dict["shortGuid"]?.ToString();
-        Assert.NotNull(shortGuid);
-        Assert.InRange(shortGuid.Length, 19, 22); // Base64 GUID without padding (can be 19-22 chars)
+        var nonNullShortGuid = await Assert.That(shortGuid).IsNotNull();
+        // The helper removes '/', '+', and '=' from Base64, so random payload characters can shorten the result.
+        await Assert.That(nonNullShortGuid).Matches("^[A-Za-z0-9]{1,22}$");
     }
 
-    [Theory(DisplayName = "Encoding functions should round-trip correctly")]
-    [InlineData("String encoding", @"
+    [Test]
+    [DisplayName("Encoding functions should round-trip correctly: $scenario")]
+    [Arguments("String encoding", @"
         var original = 'Hello, World!';
         var base64 = stringToBase64(original);
         var decoded = stringFromBase64(base64);
         return decoded === original;
     ")]
-    [InlineData("Bytes encoding", @"
+    [Arguments("Bytes encoding", @"
         var original = bytesFromString('Hello');
         var base64 = bytesToBase64(original);
         var decoded = bytesFromBase64(base64);
@@ -111,12 +115,13 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
         var result = await EvaluateScriptAsync<bool>(script);
 
         // Assert - round-trip should preserve the original data
-        Assert.True(result, $"{scenario} failed to round-trip correctly");
+        await Assert.That(result).IsTrue().Because($"{scenario} failed to round-trip correctly");
     }
 
-    [Theory(DisplayName = "Setter/getter functions should update and retrieve values correctly")]
-    [InlineData("setVariable/getVariable", "setVariable('MyVar', 200); return getVariable('MyVar');", 200, "MyVar", 100)]
-    [InlineData("Dynamic variable accessors", "setMyVariable(999); return getMyVariable();", 999, "MyVariable", 42)]
+    [Test]
+    [DisplayName("Setter/getter functions should update and retrieve values correctly: $scenario")]
+    [Arguments("setVariable/getVariable", "setVariable('MyVar', 200); return getVariable('MyVar');", 200, "MyVar", 100)]
+    [Arguments("Dynamic variable accessors", "setMyVariable(999); return getMyVariable();", 999, "MyVariable", 42)]
     public async Task Variable_Setters_Should_Update_Values(string scenario, string script, int expectedValue, string variableName, int initialValue)
     {
         // Arrange - Create context with variable
@@ -129,22 +134,24 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
         var result = await EvaluateScriptAsync<int>(script, context);
 
         // Assert
-        Assert.True(result == expectedValue, $"{scenario}: Expected {expectedValue} but got {result}");
+        await Assert.That(result == expectedValue).IsTrue().Because($"{scenario}: Expected {expectedValue} but got {result}");
     }
 
-    [Theory(DisplayName = "Workflow mutator functions should update workflow properties")]
-    [InlineData("setCorrelationId", "setCorrelationId('my-correlation-id'); return getCorrelationId();", "my-correlation-id")]
-    [InlineData("setWorkflowInstanceName", "setWorkflowInstanceName('My Custom Workflow Name'); return getWorkflowInstanceName();", "My Custom Workflow Name")]
+    [Test]
+    [DisplayName("Workflow mutator functions should update workflow properties: $functionName")]
+    [Arguments("setCorrelationId", "setCorrelationId('my-correlation-id'); return getCorrelationId();", "my-correlation-id")]
+    [Arguments("setWorkflowInstanceName", "setWorkflowInstanceName('My Custom Workflow Name'); return getWorkflowInstanceName();", "My Custom Workflow Name")]
     public async Task Workflow_Mutators_Should_Update_Properties(string functionName, string script, string expectedValue)
     {
         // Act
         var result = await EvaluateScriptAsync<string>(script);
 
         // Assert
-        Assert.True(result == expectedValue, $"{functionName}: Expected '{expectedValue}' but got '{result}'");
+        await Assert.That(result == expectedValue).IsTrue().Because($"{functionName}: Expected '{expectedValue}' but got '{result}'");
     }
 
-    [Fact(DisplayName = "String utility functions should validate correctly")]
+    [Test]
+    [DisplayName("String utility functions should validate correctly")]
     public async Task String_Utility_Functions_Should_Validate_Correctly()
     {
         // Arrange
@@ -163,19 +170,19 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
         var result = await EvaluateScriptAsync<object>(script);
 
         // Assert
-        var dict = result as IDictionary<string, object>;
-        Assert.NotNull(dict);
+        var dict = await Assert.That(result as IDictionary<string, object>).IsNotNull();
 
-        Assert.True((bool)dict["emptyIsNullOrWhiteSpace"]);
-        Assert.True((bool)dict["whitespaceIsNullOrWhiteSpace"]);
-        Assert.False((bool)dict["textIsNullOrWhiteSpace"]);
+        await Assert.That((bool)dict!["emptyIsNullOrWhiteSpace"]).IsTrue();
+        await Assert.That((bool)dict["whitespaceIsNullOrWhiteSpace"]).IsTrue();
+        await Assert.That((bool)dict["textIsNullOrWhiteSpace"]).IsFalse();
 
-        Assert.True((bool)dict["emptyIsNullOrEmpty"]);
-        Assert.False((bool)dict["whitespaceIsNullOrEmpty"]); // Whitespace is not considered empty
-        Assert.False((bool)dict["textIsNullOrEmpty"]);
+        await Assert.That((bool)dict["emptyIsNullOrEmpty"]).IsTrue();
+        await Assert.That((bool)dict["whitespaceIsNullOrEmpty"]).IsFalse(); // Whitespace is not considered empty
+        await Assert.That((bool)dict["textIsNullOrEmpty"]).IsFalse();
     }
 
-    [Fact(DisplayName = "toJson should serialize objects correctly")]
+    [Test]
+    [DisplayName("toJson should serialize objects correctly")]
     public async Task ToJson_Should_Serialize_Objects()
     {
         // Arrange
@@ -192,11 +199,11 @@ public class JintJavaScriptFunctionBehaviorTests(ITestOutputHelper testOutputHel
         var result = await EvaluateScriptAsync<string>(script);
 
         // Assert - should produce valid JSON
-        Assert.NotNull(result);
-        Assert.Contains("\"name\"", result);
-        Assert.Contains("\"Test\"", result);
-        Assert.Contains("\"value\"", result);
-        Assert.Contains("42", result);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result).Contains("\"name\"", StringComparison.CurrentCulture);
+        await Assert.That(result).Contains("\"Test\"", StringComparison.CurrentCulture);
+        await Assert.That(result).Contains("\"value\"", StringComparison.CurrentCulture);
+        await Assert.That(result).Contains("42", StringComparison.CurrentCulture);
     }
 
     private Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(Variable[]? variables = null)

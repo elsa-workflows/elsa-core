@@ -12,23 +12,25 @@ namespace Elsa.Workflows.IntegrationTests.Serialization.Polymorphism;
 
 public class Tests
 {
-    [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be serialized")]
-    public void Test1()
+    [Test]
+    [DisplayName("Objects mixed with primitive, complex, expando objects and arrays of these can be serialized")]
+    public async Task Test1()
     {
         var model = CreateModel();
         var expectedJson = File.ReadAllText("Serialization/Polymorphism/data.json").TrimEnd();
         var actualJson = JsonSerializer.Serialize(model, GetSerializerOptions());
-        Assert.Equal(expectedJson, actualJson);
+        await Assert.That(actualJson).IsEqualTo(expectedJson);
     }
 
-    [Fact(DisplayName = "Objects mixed with primitive, complex, expando objects and arrays of these can be round-tripped")]
-    public void Test2()
+    [Test]
+    [DisplayName("Objects mixed with primitive, complex, expando objects and arrays of these can be round-tripped")]
+    public async Task Test2()
     {
         var model = CreateModel();
         var json = JsonSerializer.Serialize(model, GetSerializerOptions());
         var deserializedModel = JsonSerializer.Deserialize<Model>(json, GetSerializerOptions());
         var roundTrippedJson = JsonSerializer.Serialize(deserializedModel, GetSerializerOptions());
-        Assert.Equal(json, roundTrippedJson);
+        await Assert.That(roundTrippedJson).IsEqualTo(json);
     }
 
     private Model CreateModel()
@@ -94,15 +96,16 @@ public class Tests
         return options;
     }
 
-    [Fact(DisplayName = "Types with custom converters that serialize to primitives are serialized as primitives")]
+    [Test]
+    [DisplayName("Types with custom converters that serialize to primitives are serialized as primitives")]
     
-    public void CustomConverterProducingPrimitive_IsSerializedAsPrimitive()
+    public async Task CustomConverterProducingPrimitive_IsSerializedAsPrimitive()
     {
         var model = new MyNumber { Number = 123UL };
         var options = GetSerializerOptions();
         var expectedJson = "123";
         var json = JsonSerializer.Serialize<object>(model, options);
-        Assert.Equal(expectedJson, json);
+        await Assert.That(json).IsEqualTo(expectedJson);
     }
 
     [JsonConverter(typeof(MyNumberConverter))]

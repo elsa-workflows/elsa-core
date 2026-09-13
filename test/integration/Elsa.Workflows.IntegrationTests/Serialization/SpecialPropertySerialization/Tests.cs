@@ -1,21 +1,21 @@
 ﻿using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Nodes;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.SpecialPropertySerialization
 {
-    public class Tests
+    public class Tests : IAsyncDisposable
     {
         private readonly IServiceProvider _services;
 
-        public Tests(ITestOutputHelper testOutputHelper)
+        public Tests()
         {
-            _services = new TestApplicationBuilder(testOutputHelper).Build();
+            _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
         }
 
-        [Fact(DisplayName = "Serialize and deserialize properties with $ prefix")]
-        public void Test_Special_Properties_Serialization_roundtrip()
+        [Test]
+        [DisplayName("Serialize and deserialize properties with $ prefix")]
+        public async Task Test_Special_Properties_Serialization_roundtrip()
         {
             var payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
             var jsonContent = "{\"prop1\":{\"script\":[{\"$id\":\"someid\"}]} }";
@@ -32,7 +32,9 @@ namespace Elsa.Workflows.IntegrationTests.Serialization.SpecialPropertySerializa
             var jsonResult = JsonNode.Parse(result)?.ToString();
             var jsonExpected = JsonNode.Parse(expected)?.ToString();
 
-            Assert.Equal(jsonExpected, jsonResult);
+            await Assert.That(jsonResult).IsEqualTo(jsonExpected);
         }
-    }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
+}
 }

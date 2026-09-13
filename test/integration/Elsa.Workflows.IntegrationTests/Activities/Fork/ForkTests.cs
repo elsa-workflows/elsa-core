@@ -3,7 +3,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Activities.Workflows;
 using Elsa.Workflows.Options;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
@@ -11,11 +10,12 @@ namespace Elsa.Workflows.IntegrationTests.Activities;
 /// Integration tests for the <see cref="Workflows.Activities.Fork"/> activity.
 /// Tests Fork behavior with different join modes and branch configurations.
 /// </summary>
-public class ForkTests(ITestOutputHelper testOutputHelper)
+public class ForkTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "Fork executes all branches with WaitAll")]
+    [Test]
+    [DisplayName("Fork executes all branches with WaitAll")]
     public async Task Fork_ExecutesAllBranchesWithWaitAll()
     {
         // Act
@@ -23,10 +23,11 @@ public class ForkTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "Branch 1", "Branch 2", "Branch 3" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Branch 1", "Branch 2", "Branch 3" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Fork with WaitAny continues after first branch completes")]
+    [Test]
+    [DisplayName("Fork with WaitAny continues after first branch completes")]
     public async Task Fork_WaitAnyContinuesAfterFirstBranch()
     {
         // Arrange & build services
@@ -40,7 +41,7 @@ public class ForkTests(ITestOutputHelper testOutputHelper)
 
         // Collect one of the bookmarks to resume the workflow
         var bookmark = result.WorkflowState.Bookmarks.FirstOrDefault(x => x.ActivityId == "Event2");
-        Assert.NotNull(bookmark);
+        await Assert.That(bookmark).IsNotNull();
 
         // Resume the workflow
         var runOptions = new RunWorkflowOptions { BookmarkId = bookmark.Id };
@@ -48,10 +49,11 @@ public class ForkTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "Start", "Branch 2", "End" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Start", "Branch 2", "End" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Fork with no branches completes successfully")]
+    [Test]
+    [DisplayName("Fork with no branches completes successfully")]
     public async Task Fork_WithNoBranchesCompletesSuccessfully()
     {
         // Act
@@ -59,6 +61,8 @@ public class ForkTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "Before fork", "After fork" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Before fork", "After fork" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_fixture);
 }

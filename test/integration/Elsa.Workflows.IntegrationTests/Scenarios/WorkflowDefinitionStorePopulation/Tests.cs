@@ -7,7 +7,6 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Stimuli;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDefinitionStorePopulation;
 
@@ -17,12 +16,12 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDefinitionStorePopul
 /// on ensuring correct behavior when workflow definitions are published or updated, and their effects
 /// on consuming workflows and triggers.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly Workflow _shiftyWorkflow;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
         _shiftyWorkflow = new()
         {
@@ -38,7 +37,7 @@ public class Tests
             }
         };
 
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureServices(services => services
                 .AddScoped<IWorkflowsProvider>(_ => new InMemoryWorkflowsProvider(_shiftyWorkflow))
                 .AddScoped<IWorkflowMaterializer>(_ => new InMemoryWorkflowMaterializer(_shiftyWorkflow)))
@@ -48,7 +47,8 @@ public class Tests
     /// <summary>
     /// When a dependency workflow is published, all consuming workflows are updated to point to the new version of the dependency.
     /// </summary>
-    [Fact(DisplayName = "When a workflow definition from a given source has a different Id than the one in the store, the trigger should still point to the workflow definition version ID in the store.")]
+    [Test]
+    [DisplayName("When a workflow definition from a given source has a different Id than the one in the store, the trigger should still point to the workflow definition version ID in the store.")]
     public async Task Test1()
     {
         // Initial population of the store from workflow providers.
@@ -69,6 +69,8 @@ public class Tests
         var triggerName = ActivityTypeNameHelper.GenerateTypeName<Event>();
         var result = await stimulusSender.SendAsync(triggerName, stimulus);
 
-        Assert.NotEmpty(result.WorkflowInstanceResponses);
+        await Assert.That(result.WorkflowInstanceResponses).IsNotEmpty();
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

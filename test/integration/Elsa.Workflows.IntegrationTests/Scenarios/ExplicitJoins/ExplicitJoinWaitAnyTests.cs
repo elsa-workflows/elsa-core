@@ -1,24 +1,24 @@
 using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ExplicitJoins;
 
-public class ExplicitJoinWaitAnyTests
+public class ExplicitJoinWaitAnyTests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public ExplicitJoinWaitAnyTests(ITestOutputHelper testOutputHelper)
+    public ExplicitJoinWaitAnyTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .Build();
     }
 
-    [Theory(DisplayName = "Workflows with explicit joins complete the workflow.")]
-    [InlineData("join-any-1.json", "Start; End")]
-    [InlineData("join-all-1.json", "Start; Line 1; Line 2; End")]
-    [InlineData("join-all-2.json", "Start; Line 1; Line 2; End")]
+    [Test]
+    [DisplayName("Workflows with explicit joins complete the workflow: $filename")]
+    [Arguments("join-any-1.json", "Start; End")]
+    [Arguments("join-all-1.json", "Start; Line 1; Line 2; End")]
+    [Arguments("join-all-2.json", "Start; Line 1; Line 2; End")]
     public async Task Test1(string filename, string expectedLines)
     {
         // Populate registries.
@@ -34,9 +34,11 @@ public class ExplicitJoinWaitAnyTests
         // Assert expected output.
         var lines = _capturingTextWriter.Lines.ToList();
         var expectedLinesArray = expectedLines.Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList();
-        Assert.Equal(expectedLinesArray, lines);
+        await Assert.That(lines).IsEquivalentTo(expectedLinesArray, TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         // Assert expected workflow status.
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

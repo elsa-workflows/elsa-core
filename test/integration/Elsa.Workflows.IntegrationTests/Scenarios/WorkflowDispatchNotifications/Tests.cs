@@ -3,18 +3,18 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDispatchNotifications;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
+    private readonly IServiceProvider _services;
     private readonly IWorkflowDispatcher _workflowDispatcher;
     private readonly Spy _spy;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        var services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureServices(s =>
             {
                 s.AddSingleton<Spy>();
@@ -25,11 +25,12 @@ public class Tests
             })
             .Build();
         
-        _workflowDispatcher = services.GetRequiredService<IWorkflowDispatcher>();
-        _spy = services.GetRequiredService<Spy>();
+        _workflowDispatcher = _services.GetRequiredService<IWorkflowDispatcher>();
+        _spy = _services.GetRequiredService<Spy>();
     }
 
-    [Fact(DisplayName = "Dispatching workflow definition should emit notifications")]
+    [Test]
+    [DisplayName("Dispatching workflow definition should emit notifications")]
     public async Task DispatchWorkflowDefinition_ShouldEmitNotifications()
     {
         // Arrange
@@ -43,21 +44,18 @@ public class Tests
         // Act
         await _workflowDispatcher.DispatchAsync(request, null);
 
-        // Wait for notification handlers to complete
-        await _spy.WaitForWorkflowDefinitionDispatchingAsync();
-        await _spy.WaitForWorkflowDefinitionDispatchedAsync();
-
         // Assert
-        Assert.True(_spy.WorkflowDefinitionDispatchingWasCalled, "WorkflowDefinitionDispatching notification should be called");
-        Assert.True(_spy.WorkflowDefinitionDispatchedWasCalled, "WorkflowDefinitionDispatched notification should be called");
-        Assert.NotNull(_spy.CapturedDefinitionRequest);
-        Assert.Equal(definitionVersionId, _spy.CapturedDefinitionRequest.DefinitionVersionId);
-        Assert.Equal("test-correlation-id", _spy.CapturedDefinitionRequest.CorrelationId);
-        Assert.NotNull(_spy.CapturedResponse);
-        Assert.True(_spy.CapturedResponse.Succeeded);
+        await Assert.That(_spy.WorkflowDefinitionDispatchingWasCalled).IsTrue().Because("WorkflowDefinitionDispatching notification should be called");
+        await Assert.That(_spy.WorkflowDefinitionDispatchedWasCalled).IsTrue().Because("WorkflowDefinitionDispatched notification should be called");
+        var capturedRequest = await Assert.That(_spy.CapturedDefinitionRequest).IsNotNull();
+        await Assert.That(capturedRequest.DefinitionVersionId).IsEqualTo(definitionVersionId);
+        await Assert.That(capturedRequest.CorrelationId).IsEqualTo("test-correlation-id");
+        var capturedResponse = await Assert.That(_spy.CapturedResponse).IsNotNull();
+        await Assert.That(capturedResponse.Succeeded).IsTrue();
     }
 
-    [Fact(DisplayName = "Dispatching workflow instance should emit notifications")]
+    [Test]
+    [DisplayName("Dispatching workflow instance should emit notifications")]
     public async Task DispatchWorkflowInstance_ShouldEmitNotifications()
     {
         // Arrange
@@ -71,17 +69,15 @@ public class Tests
         // Act
         await _workflowDispatcher.DispatchAsync(request, null);
 
-        // Wait for notification handlers to complete
-        await _spy.WaitForWorkflowInstanceDispatchingAsync();
-        await _spy.WaitForWorkflowInstanceDispatchedAsync();
-
         // Assert
-        Assert.True(_spy.WorkflowInstanceDispatchingWasCalled, "WorkflowInstanceDispatching notification should be called");
-        Assert.True(_spy.WorkflowInstanceDispatchedWasCalled, "WorkflowInstanceDispatched notification should be called");
-        Assert.NotNull(_spy.CapturedInstanceRequest);
-        Assert.Equal(instanceId, _spy.CapturedInstanceRequest.InstanceId);
-        Assert.Equal("test-correlation-id", _spy.CapturedInstanceRequest.CorrelationId);
-        Assert.NotNull(_spy.CapturedResponse);
-        Assert.True(_spy.CapturedResponse.Succeeded);
+        await Assert.That(_spy.WorkflowInstanceDispatchingWasCalled).IsTrue().Because("WorkflowInstanceDispatching notification should be called");
+        await Assert.That(_spy.WorkflowInstanceDispatchedWasCalled).IsTrue().Because("WorkflowInstanceDispatched notification should be called");
+        var capturedRequest = await Assert.That(_spy.CapturedInstanceRequest).IsNotNull();
+        await Assert.That(capturedRequest.InstanceId).IsEqualTo(instanceId);
+        await Assert.That(capturedRequest.CorrelationId).IsEqualTo("test-correlation-id");
+        var capturedResponse = await Assert.That(_spy.CapturedResponse).IsNotNull();
+        await Assert.That(capturedResponse.Succeeded).IsTrue();
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

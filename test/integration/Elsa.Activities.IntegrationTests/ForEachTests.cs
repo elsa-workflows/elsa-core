@@ -3,16 +3,18 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class ForEachTests(ITestOutputHelper testOutputHelper)
+public class ForEachTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
     private const string CurrentValueVar = "CurrentValue";
 
-    [Fact(DisplayName = "ForEach executes each activity for every item in the collection")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("ForEach executes each activity for every item in the collection")]
     public async Task ForEach_ExecutesEachActivity_ForEveryItem()
     {
         var expectedLines = new[]
@@ -26,7 +28,8 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
 
-    [Fact(DisplayName = "ForEach executes each activity for every item in the collection even if there's only one item")]
+    [Test]
+    [DisplayName("ForEach executes each activity for every item in the collection even if there's only one item")]
     public async Task ForEach_ExecutesEachActivity_ForSingleItem()
     {
         var expectedLines = new[]
@@ -40,7 +43,8 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
 
-    [Fact(DisplayName = "ForEach completes when the collection is empty")]
+    [Test]
+    [DisplayName("ForEach completes when the collection is empty")]
     public async Task ForEach_Completes_WhenCollectionIsEmpty()
     {
         string[] expectedLines = [];
@@ -51,11 +55,14 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         var result = await _fixture.RunActivityAsync(forEach);
         var journal = result.Journal;
         var forEachContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ForEach<string>);
-        Assert.NotNull(forEachContext);
-        Assert.Equal(ActivityStatus.Completed, forEachContext.Status);
+        forEachContext = (await Assert.That(forEachContext).IsNotNull())!;
+
+        await Assert.That(forEachContext.Status).IsEqualTo(ActivityStatus.Completed);
+
     }
 
-    [Fact(DisplayName = "ForEach faults when the collection is null")]
+    [Test]
+    [DisplayName("ForEach faults when the collection is null")]
     public async Task ForEach_Faults_WhenCollectionIsNull()
     {
         var forEach = new ForEach<string>((ICollection<string>)null!)
@@ -65,11 +72,14 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         var result = await _fixture.RunActivityAsync(forEach);
         var journal = result.Journal;
         var forEachContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ForEach<string>);
-        Assert.NotNull(forEachContext);
-        Assert.Equal(ActivityStatus.Faulted, forEachContext.Status);
+        forEachContext = (await Assert.That(forEachContext).IsNotNull())!;
+
+        await Assert.That(forEachContext.Status).IsEqualTo(ActivityStatus.Faulted);
+
     }
 
-    [Fact(DisplayName = "ForEach breaks when the Break activity executed")]
+    [Test]
+    [DisplayName("ForEach breaks when the Break activity executed")]
     public async Task ForEach_BreaksOutOfLoop_WhenExecutingBreakActivity()
     {
         var dataSource = new[]
@@ -93,14 +103,15 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
 
-    [Fact(DisplayName = "ForEach executes each activity for different item types")]
+    [Test]
+    [DisplayName("ForEach executes each activity for different item types")]
     public async Task ForEach_ExecutesEachActivity_ForDifferentItemTypes()
     {
         var dataSource = new object?[]
         {
             "a", 2, null, new Foo()
         };
-        var expectedLines = new object[]
+        var expectedLines = new string[]
         {
             "a", "2", "", "Baz"
         };
@@ -111,7 +122,8 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
 
-    [Fact(DisplayName = "ForEach completes when the end of the collection is reached even when an item is added to the collection at runtime")]
+    [Test]
+    [DisplayName("ForEach completes when the end of the collection is reached even when an item is added to the collection at runtime")]
     public async Task ForEach_Completes_WhenItemAddedToCollectionAtRuntime()
     {
         var dataSource = new[]
@@ -144,7 +156,8 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
     
-    [Fact(DisplayName = "ForEach completes when the end of the collection is reached even when an item is removed from the collection at runtime")]
+    [Test]
+    [DisplayName("ForEach completes when the end of the collection is reached even when an item is removed from the collection at runtime")]
     public async Task ForEach_Completes_WhenItemRemovedFromCollectionAtRuntime()
     {
         var dataSource = new[]
@@ -177,7 +190,8 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
     
-    [Fact(DisplayName = "ForEach completes when the end of the collection is reached even when an item is changed at runtime")]
+    [Test]
+    [DisplayName("ForEach completes when the end of the collection is reached even when an item is changed at runtime")]
     public async Task ForEach_Completes_WhenItemChangedAtRuntime()
     {
         var dataSource = new[]
@@ -211,7 +225,8 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         await RunAndAssertLines(forEach, expectedLines);
     }
     
-    [Fact(DisplayName = "ForEach remains in the Running state when an activity faults")]
+    [Test]
+    [DisplayName("ForEach remains in the Running state when an activity faults")]
     public async Task ForEach_Suspends_WhenActivityFaults()
     {
         var dataSource = new[]
@@ -242,18 +257,23 @@ public class ForEachTests(ITestOutputHelper testOutputHelper)
         var result = await _fixture.RunActivityAsync(forEach);
         var journal = result.Journal;
         var forEachContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ForEach<string>);
-        Assert.Equal(expectedLines, _fixture.CapturingTextWriter.Lines);
-        Assert.NotNull(forEachContext);
-        Assert.Equal(ActivityStatus.Running, forEachContext.Status);
-        Assert.Equal(1, forEachContext.AggregateFaultCount);
+        await Assert.That(_fixture.CapturingTextWriter.Lines).IsEquivalentTo(expectedLines, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        forEachContext = (await Assert.That(forEachContext).IsNotNull())!;
+
+        await Assert.That(forEachContext.Status).IsEqualTo(ActivityStatus.Running);
+
+        await Assert.That(forEachContext.AggregateFaultCount).IsEqualTo(1);
+
     }
     
     private static WriteLine WriteCurrentValue() => new(context => context.GetVariable<string>(CurrentValueVar));
     
-    private async Task RunAndAssertLines(IActivity activity, System.Collections.IEnumerable expected)
+    private async Task RunAndAssertLines(IActivity activity, IEnumerable<string> expected)
     {
         await _fixture.RunActivityAsync(activity);
-        Assert.Equal(expected, _fixture.CapturingTextWriter.Lines);
+        await Assert.That(_fixture.CapturingTextWriter.Lines).IsEquivalentTo(expected, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
     }
 }
 

@@ -3,29 +3,37 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Dsl.ElsaScript.IntegrationTests;
 
 /// <summary>
 /// Integration tests for the ElsaScript parser.
 /// </summary>
-public class ParserTests
+public class ParserTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IElsaScriptParser _parser;
 
-    public ParserTests(ITestOutputHelper testOutputHelper)
+    public ParserTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseElsaScript())
             .Build();
 
         _parser = _services.GetRequiredService<IElsaScriptParser>();
     }
 
-    [Fact(DisplayName = "Parser can parse a simple workflow definition")]
-    public void Parse_WithSimpleWorkflowDefinition_ShouldReturnWorkflowWithCorrectStructure()
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("Parser can parse a simple workflow definition")]
+    public async Task Parse_WithSimpleWorkflowDefinition_ShouldReturnWorkflowWithCorrectStructure()
     {
         // Arrange
         var source = @"
@@ -41,23 +49,30 @@ workflow HelloWorld {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("HelloWorld", workflow.Id);
+        await Assert.That(workflow.Id).IsEqualTo("HelloWorld");
+
 
         // Global use statements
-        Assert.Equal(2, program.GlobalUseStatements.Count);
+        await Assert.That(program.GlobalUseStatements.Count).IsEqualTo(2);
+
 
         // No workflow-level use statements (all are global)
-        Assert.Empty(workflow.UseStatements);
+        await Assert.That(workflow.UseStatements).IsEmpty();
 
-        Assert.Equal(2, workflow.Body.Count);
+
+        await Assert.That(workflow.Body.Count).IsEqualTo(2);
+
     }
 
-    [Fact(DisplayName = "Parser can parse variable declarations")]
-    public void Parse_WithVariableDeclarations_ShouldReturnWorkflowWithAllVariableNodes()
+    [Test]
+    [DisplayName("Parser can parse variable declarations")]
+    public async Task Parse_WithVariableDeclarations_ShouldReturnWorkflowWithAllVariableNodes()
     {
         // Arrange
         var source = @"
@@ -73,20 +88,33 @@ workflow VariableTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("VariableTest", workflow.Id);
-        Assert.Equal(3, workflow.Body.Count);
+        await Assert.That(workflow.Id).IsEqualTo("VariableTest");
 
-        var varDecl = Assert.IsType<Ast.VariableDeclarationNode>(workflow.Body[0]);
-        Assert.Equal(Ast.VariableKind.Var, varDecl.Kind);
-        Assert.Equal("greeting", varDecl.Name);
+        await Assert.That(workflow.Body.Count).IsEqualTo(3);
+
+
+        var varDeclValue = workflow.Body[0];
+
+
+        await Assert.That(varDeclValue).IsOfType(typeof(Ast.VariableDeclarationNode));
+
+
+        var varDecl = (Ast.VariableDeclarationNode)varDeclValue!;
+        await Assert.That(varDecl.Kind).IsEqualTo(Ast.VariableKind.Var);
+
+        await Assert.That(varDecl.Name).IsEqualTo("greeting");
+
     }
 
-    [Fact(DisplayName = "Parser can parse activity invocations with named arguments")]
-    public void Parse_WithActivityInvocationWithNamedArguments_ShouldReturnActivityNodeWithCorrectArguments()
+    [Test]
+    [DisplayName("Parser can parse activity invocations with named arguments")]
+    public async Task Parse_WithActivityInvocationWithNamedArguments_ShouldReturnActivityNodeWithCorrectArguments()
     {
         // Arrange
         var source = @"
@@ -100,20 +128,33 @@ workflow ActivityTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Single(workflow.Body);
+        await Assert.That(workflow.Body).HasSingleItem();
 
-        var activity = Assert.IsType<Ast.ActivityInvocationNode>(workflow.Body[0]);
-        Assert.Equal("WriteLine", activity.ActivityName);
-        Assert.Single(activity.Arguments);
-        Assert.Equal("Text", activity.Arguments[0].Name);
+
+        var activityValue = workflow.Body[0];
+
+
+        await Assert.That(activityValue).IsOfType(typeof(Ast.ActivityInvocationNode));
+
+
+        var activity = (Ast.ActivityInvocationNode)activityValue!;
+        await Assert.That(activity.ActivityName).IsEqualTo("WriteLine");
+
+        await Assert.That(activity.Arguments).HasSingleItem();
+
+        await Assert.That(activity.Arguments[0].Name).IsEqualTo("Text");
+
     }
 
-    [Fact(DisplayName = "Parser can parse listen statements")]
-    public void Parse_WithListenStatement_ShouldReturnWorkflowWithListenNode()
+    [Test]
+    [DisplayName("Parser can parse listen statements")]
+    public async Task Parse_WithListenStatement_ShouldReturnWorkflowWithListenNode()
     {
         // Arrange
         var source = @"
@@ -128,18 +169,29 @@ workflow ListenTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal(2, workflow.Body.Count);
+        await Assert.That(workflow.Body.Count).IsEqualTo(2);
 
-        var listen = Assert.IsType<Ast.ListenNode>(workflow.Body[0]);
-        Assert.Equal("HttpEndpoint", listen.Activity.ActivityName);
+
+        var listenValue = workflow.Body[0];
+
+
+        await Assert.That(listenValue).IsOfType(typeof(Ast.ListenNode));
+
+
+        var listen = (Ast.ListenNode)listenValue!;
+        await Assert.That(listen.Activity.ActivityName).IsEqualTo("HttpEndpoint");
+
     }
 
-    [Fact(DisplayName = "Parser can parse workflow without workflow keyword")]
-    public void Parse_WithoutWorkflowKeyword_ShouldReturnWorkflowWithCorrectStructure()
+    [Test]
+    [DisplayName("Parser can parse workflow without workflow keyword")]
+    public async Task Parse_WithoutWorkflowKeyword_ShouldReturnWorkflowWithCorrectStructure()
     {
         // Arrange
         var source = @"WriteLine(""Hello World""); WriteLine(""Great to meet you!"");";
@@ -148,15 +200,19 @@ workflow ListenTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal(2, workflow.Body.Count);
+        await Assert.That(workflow.Body.Count).IsEqualTo(2);
+
     }
 
-    [Fact(DisplayName = "Parser can parse complex workflow with variables, listen statements, and ElsaScript expressions")]
-    public void Parse_WithComplexWorkflow_ShouldReturnWorkflowWithCorrectStructure()
+    [Test]
+    [DisplayName("Parser can parse complex workflow with variables, listen statements, and ElsaScript expressions")]
+    public async Task Parse_WithComplexWorkflow_ShouldReturnWorkflowWithCorrectStructure()
     {
         // Arrange
         var source = @"
@@ -173,51 +229,86 @@ workflow HelloWorldHttpDsl {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("HelloWorldHttpDsl", workflow.Id);
+        await Assert.That(workflow.Id).IsEqualTo("HelloWorldHttpDsl");
+
 
         // Verify global use statement
-        Assert.Single(program.GlobalUseStatements);
+        await Assert.That(program.GlobalUseStatements).HasSingleItem();
+
         var useStatement = program.GlobalUseStatements[0];
-        Assert.Equal(Ast.UseType.Expressions, useStatement.Type);
-        Assert.Equal("js", useStatement.Value);
+        await Assert.That(useStatement.Type).IsEqualTo(Ast.UseType.Expressions);
+
+        await Assert.That(useStatement.Value).IsEqualTo("js");
+
 
         // No workflow-level use statements
-        Assert.Empty(workflow.UseStatements);
+        await Assert.That(workflow.UseStatements).IsEmpty();
+
 
         // Verify body contains: var declaration, listen statement, WriteLine, WriteHttpResponse
-        Assert.Equal(4, workflow.Body.Count);
+        await Assert.That(workflow.Body.Count).IsEqualTo(4);
+
 
         // Verify variable declaration
-        var varDecl = Assert.IsType<Ast.VariableDeclarationNode>(workflow.Body[0]);
-        Assert.Equal("message", varDecl.Name);
-        Assert.Equal(Ast.VariableKind.Var, varDecl.Kind);
+        var varDeclValue = workflow.Body[0];
+        await Assert.That(varDeclValue).IsOfType(typeof(Ast.VariableDeclarationNode));
+        var varDecl = (Ast.VariableDeclarationNode)varDeclValue!;
+        await Assert.That(varDecl.Name).IsEqualTo("message");
+
+        await Assert.That(varDecl.Kind).IsEqualTo(Ast.VariableKind.Var);
+
 
         // Verify listen statement
-        var listenNode = Assert.IsType<Ast.ListenNode>(workflow.Body[1]);
-        Assert.Equal("HttpEndpoint", listenNode.Activity.ActivityName);
-        Assert.Single(listenNode.Activity.Arguments);
+        var listenNodeValue = workflow.Body[1];
+        await Assert.That(listenNodeValue).IsOfType(typeof(Ast.ListenNode));
+        var listenNode = (Ast.ListenNode)listenNodeValue!;
+        await Assert.That(listenNode.Activity.ActivityName).IsEqualTo("HttpEndpoint");
+
+        await Assert.That(listenNode.Activity.Arguments).HasSingleItem();
+
 
         // Verify WriteLine with ElsaScript expression
-        var writeLineNode = Assert.IsType<Ast.ActivityInvocationNode>(workflow.Body[2]);
-        Assert.Equal("WriteLine", writeLineNode.ActivityName);
-        Assert.Single(writeLineNode.Arguments);
-        var writeLineExpr = Assert.IsType<Ast.ElsaExpressionNode>(writeLineNode.Arguments[0].Value);
-        Assert.Equal("js", writeLineExpr.Language);
+        var writeLineNodeValue = workflow.Body[2];
+        await Assert.That(writeLineNodeValue).IsOfType(typeof(Ast.ActivityInvocationNode));
+        var writeLineNode = (Ast.ActivityInvocationNode)writeLineNodeValue!;
+        await Assert.That(writeLineNode.ActivityName).IsEqualTo("WriteLine");
+
+        await Assert.That(writeLineNode.Arguments).HasSingleItem();
+
+        var writeLineExprValue = writeLineNode.Arguments[0].Value;
+
+        await Assert.That(writeLineExprValue).IsOfType(typeof(Ast.ElsaExpressionNode));
+
+        var writeLineExpr = (Ast.ElsaExpressionNode)writeLineExprValue!;
+        await Assert.That(writeLineExpr.Language).IsEqualTo("js");
+
 
         // Verify WriteHttpResponse with variable reference
-        var writeHttpNode = Assert.IsType<Ast.ActivityInvocationNode>(workflow.Body[3]);
-        Assert.Equal("WriteHttpResponse", writeHttpNode.ActivityName);
-        Assert.Single(writeHttpNode.Arguments);
-        var writeHttpArg = Assert.IsType<Ast.IdentifierNode>(writeHttpNode.Arguments[0].Value);
-        Assert.Equal("message", writeHttpArg.Name);
+        var writeHttpNodeValue = workflow.Body[3];
+        await Assert.That(writeHttpNodeValue).IsOfType(typeof(Ast.ActivityInvocationNode));
+        var writeHttpNode = (Ast.ActivityInvocationNode)writeHttpNodeValue!;
+        await Assert.That(writeHttpNode.ActivityName).IsEqualTo("WriteHttpResponse");
+
+        await Assert.That(writeHttpNode.Arguments).HasSingleItem();
+
+        var writeHttpArgValue = writeHttpNode.Arguments[0].Value;
+
+        await Assert.That(writeHttpArgValue).IsOfType(typeof(Ast.IdentifierNode));
+
+        var writeHttpArg = (Ast.IdentifierNode)writeHttpArgValue!;
+        await Assert.That(writeHttpArg.Name).IsEqualTo("message");
+
     }
 
-    [Fact(DisplayName = "Parser can parse for loop with 'to' keyword (exclusive)")]
-    public void Parse_WithForLoopExclusive_ShouldReturnWorkflowWithForNode()
+    [Test]
+    [DisplayName("Parser can parse for loop with 'to' keyword (exclusive)")]
+    public async Task Parse_WithForLoopExclusive_ShouldReturnWorkflowWithForNode()
     {
         // Arrange
         var source = @"
@@ -234,31 +325,65 @@ workflow ForLoopTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("ForLoopTest", workflow.Id);
-        Assert.Single(workflow.Body);
+        await Assert.That(workflow.Id).IsEqualTo("ForLoopTest");
 
-        var forNode = Assert.IsType<Ast.ForNode>(workflow.Body[0]);
-        Assert.True(forNode.DeclaresVariable); // var i
-        Assert.Equal("i", forNode.VariableName);
-        Assert.False(forNode.IsInclusive);
+        await Assert.That(workflow.Body).HasSingleItem();
 
-        var startLiteral = Assert.IsType<Ast.LiteralNode>(forNode.Start);
+
+        var forNodeValue = workflow.Body[0];
+
+
+        await Assert.That(forNodeValue).IsOfType(typeof(Ast.ForNode));
+
+
+        var forNode = (Ast.ForNode)forNodeValue!;
+        await Assert.That(forNode.DeclaresVariable).IsTrue(); // var i
+        await Assert.That(forNode.VariableName).IsEqualTo("i");
+
+        await Assert.That(forNode.IsInclusive).IsFalse();
+
+
+        var startLiteralValue = forNode.Start;
+
+
+        await Assert.That(startLiteralValue).IsOfType(typeof(Ast.LiteralNode));
+
+
+        var startLiteral = (Ast.LiteralNode)startLiteralValue!;
         // Numbers are parsed as decimals by the parser
-        Assert.Equal(0m, Convert.ToDecimal(startLiteral.Value!));
+        await Assert.That(Convert.ToDecimal(startLiteral.Value!)).IsEqualTo(0m);
 
-        var endLiteral = Assert.IsType<Ast.LiteralNode>(forNode.End);
-        Assert.Equal(10m, Convert.ToDecimal(endLiteral.Value!));
 
-        var stepLiteral = Assert.IsType<Ast.LiteralNode>(forNode.Step);
-        Assert.Equal(1m, Convert.ToDecimal(stepLiteral.Value!));
+        var endLiteralValue = forNode.End;
+
+
+        await Assert.That(endLiteralValue).IsOfType(typeof(Ast.LiteralNode));
+
+
+        var endLiteral = (Ast.LiteralNode)endLiteralValue!;
+        await Assert.That(Convert.ToDecimal(endLiteral.Value!)).IsEqualTo(10m);
+
+
+        var stepLiteralValue = forNode.Step;
+
+
+        await Assert.That(stepLiteralValue).IsOfType(typeof(Ast.LiteralNode));
+
+
+        var stepLiteral = (Ast.LiteralNode)stepLiteralValue!;
+        await Assert.That(Convert.ToDecimal(stepLiteral.Value!)).IsEqualTo(1m);
+
     }
 
-    [Fact(DisplayName = "Parser can parse for loop with 'through' keyword (inclusive)")]
-    public void Parse_WithForLoopInclusive_ShouldReturnWorkflowWithForNode()
+    [Test]
+    [DisplayName("Parser can parse for loop with 'through' keyword (inclusive)")]
+    public async Task Parse_WithForLoopInclusive_ShouldReturnWorkflowWithForNode()
     {
         // Arrange
         var source = @"
@@ -275,21 +400,34 @@ workflow ForLoopInclusiveTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("ForLoopInclusiveTest", workflow.Id);
-        Assert.Single(workflow.Body);
+        await Assert.That(workflow.Id).IsEqualTo("ForLoopInclusiveTest");
 
-        var forNode = Assert.IsType<Ast.ForNode>(workflow.Body[0]);
-        Assert.True(forNode.DeclaresVariable); // var i
-        Assert.Equal("i", forNode.VariableName);
-        Assert.True(forNode.IsInclusive);
+        await Assert.That(workflow.Body).HasSingleItem();
+
+
+        var forNodeValue = workflow.Body[0];
+
+
+        await Assert.That(forNodeValue).IsOfType(typeof(Ast.ForNode));
+
+
+        var forNode = (Ast.ForNode)forNodeValue!;
+        await Assert.That(forNode.DeclaresVariable).IsTrue(); // var i
+        await Assert.That(forNode.VariableName).IsEqualTo("i");
+
+        await Assert.That(forNode.IsInclusive).IsTrue();
+
     }
 
-    [Fact(DisplayName = "Parser can parse workflow with metadata")]
-    public void Parse_WithWorkflowMetadata_ShouldReturnWorkflowWithCorrectMetadata()
+    [Test]
+    [DisplayName("Parser can parse workflow with metadata")]
+    public async Task Parse_WithWorkflowMetadata_ShouldReturnWorkflowWithCorrectMetadata()
     {
         // Arrange
         var source = @"
@@ -312,31 +450,45 @@ workflow HelloWorldDsl(
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("HelloWorldDsl", workflow.Id);
+        await Assert.That(workflow.Id).IsEqualTo("HelloWorldDsl");
+
 
         // Check metadata
-        Assert.Equal("Hello World DSL", (string)workflow.Metadata["DisplayName"]);
-        Assert.Equal("Demonstrates ElsaScript with metadata", (string)workflow.Metadata["Description"]);
-        Assert.Equal("hello-world-dsl", (string)workflow.Metadata["DefinitionId"]);
-        Assert.Equal("hello-world-dsl-v1", (string)workflow.Metadata["DefinitionVersionId"]);
-        Assert.Equal(1L, Convert.ToInt64(workflow.Metadata["Version"]));
-        Assert.True(Convert.ToBoolean(workflow.Metadata["UsableAsActivity"]));
+        await Assert.That((string)workflow.Metadata["DisplayName"]).IsEqualTo("Hello World DSL");
+
+        await Assert.That((string)workflow.Metadata["Description"]).IsEqualTo("Demonstrates ElsaScript with metadata");
+
+        await Assert.That((string)workflow.Metadata["DefinitionId"]).IsEqualTo("hello-world-dsl");
+
+        await Assert.That((string)workflow.Metadata["DefinitionVersionId"]).IsEqualTo("hello-world-dsl-v1");
+
+        await Assert.That(Convert.ToInt64(workflow.Metadata["Version"])).IsEqualTo(1L);
+
+        await Assert.That(Convert.ToBoolean(workflow.Metadata["UsableAsActivity"])).IsTrue();
+
 
         // Check use statements (workflow-level only, global handled separately)
-        Assert.Single(workflow.UseStatements);
-        Assert.Equal(Ast.UseType.Expressions, workflow.UseStatements[0].Type);
-        Assert.Equal("js", workflow.UseStatements[0].Value);
+        await Assert.That(workflow.UseStatements).HasSingleItem();
+
+        await Assert.That(workflow.UseStatements[0].Type).IsEqualTo(Ast.UseType.Expressions);
+
+        await Assert.That(workflow.UseStatements[0].Value).IsEqualTo("js");
+
 
         // Check body
-        Assert.Single(workflow.Body);
+        await Assert.That(workflow.Body).HasSingleItem();
+
     }
 
-    [Fact(DisplayName = "Parser can parse empty flowchart")]
-    public void Parse_WithEmptyFlowchart_ShouldReturnFlowchartNode()
+    [Test]
+    [DisplayName("Parser can parse empty flowchart")]
+    public async Task Parse_WithEmptyFlowchart_ShouldReturnFlowchartNode()
     {
         // Arrange
         var source = @"
@@ -349,18 +501,24 @@ workflow FlowchartTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        Assert.Equal("FlowchartTest", workflow.Id);
-        Assert.Single(workflow.Body);
+        await Assert.That(workflow.Id).IsEqualTo("FlowchartTest");
 
-        Assert.IsType<Ast.FlowchartNode>(workflow.Body[0]);
+        await Assert.That(workflow.Body).HasSingleItem();
+
+
+        await Assert.That(workflow.Body[0]).IsOfType(typeof(Ast.FlowchartNode));
+
     }
 
-    [Fact(DisplayName = "Parser can parse flowchart with node and connection")]
-    public void Parse_WithFlowchartNodeAndConnection_ShouldReturnCorrectStructure()
+    [Test]
+    [DisplayName("Parser can parse flowchart with node and connection")]
+    public async Task Parse_WithFlowchartNodeAndConnection_ShouldReturnCorrectStructure()
     {
         // Arrange
         var source = @"
@@ -377,26 +535,36 @@ workflow FlowchartTest {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        Assert.Single(program.Workflows);
+        program = (await Assert.That(program).IsNotNull())!;
+
+        await Assert.That(program.Workflows).HasSingleItem();
+
 
         var workflow = program.Workflows[0];
-        var flowchart = Assert.IsType<Ast.FlowchartNode>(workflow.Body[0]);
+        var flowchartValue = workflow.Body[0];
+        await Assert.That(flowchartValue).IsOfType(typeof(Ast.FlowchartNode));
+        var flowchart = (Ast.FlowchartNode)flowchartValue!;
 
         // Check entry point
-        Assert.Equal("Start", flowchart.EntryPoint);
+        await Assert.That(flowchart.EntryPoint).IsEqualTo("Start");
+
 
         // Check nodes
-        Assert.Equal(2, flowchart.Activities.Count);
+        await Assert.That(flowchart.Activities.Count).IsEqualTo(2);
+
 
         // Check connections
-        Assert.Single(flowchart.Connections);
-        Assert.Equal("Start", flowchart.Connections[0].Source);
-        Assert.Equal("End", flowchart.Connections[0].Target);
+        await Assert.That(flowchart.Connections).HasSingleItem();
+
+        await Assert.That(flowchart.Connections[0].Source).IsEqualTo("Start");
+
+        await Assert.That(flowchart.Connections[0].Target).IsEqualTo("End");
+
     }
 
-    [Fact(DisplayName = "Parser can parse flowchart with block node")]
-    public void Parse_WithFlowchartBlockNode_ShouldReturnBlockStatement()
+    [Test]
+    [DisplayName("Parser can parse flowchart with block node")]
+    public async Task Parse_WithFlowchartBlockNode_ShouldReturnBlockStatement()
     {
         // Arrange
         var source = @"
@@ -415,16 +583,24 @@ workflow FlowchartWithBlock {
         var program = _parser.Parse(source);
 
         // Assert
-        Assert.NotNull(program);
-        var workflow = program.Workflows[0];
-        var flowchart = Assert.IsType<Ast.FlowchartNode>(workflow.Body[0]);
+        program = (await Assert.That(program).IsNotNull())!;
 
-        Assert.Single(flowchart.Activities);
-        Assert.Equal("Start", flowchart.Activities[0].Label);
+        var workflow = program.Workflows[0];
+        var flowchartValue = workflow.Body[0];
+        await Assert.That(flowchartValue).IsOfType(typeof(Ast.FlowchartNode));
+        var flowchart = (Ast.FlowchartNode)flowchartValue!;
+
+        await Assert.That(flowchart.Activities).HasSingleItem();
+
+        await Assert.That(flowchart.Activities[0].Label).IsEqualTo("Start");
+
 
         // The block should be a BlockNode with 2 statements
-        var blockNode = Assert.IsType<Ast.BlockNode>(flowchart.Activities[0].Activity);
-        Assert.Equal(2, blockNode.Statements.Count);
+        var blockNodeValue = flowchart.Activities[0].Activity;
+        await Assert.That(blockNodeValue).IsOfType(typeof(Ast.BlockNode));
+        var blockNode = (Ast.BlockNode)blockNodeValue!;
+        await Assert.That(blockNode.Statements.Count).IsEqualTo(2);
+
     }
 
 }

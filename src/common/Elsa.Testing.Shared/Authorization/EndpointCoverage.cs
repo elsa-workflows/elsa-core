@@ -1,5 +1,4 @@
 using System.Reflection;
-using Xunit;
 
 namespace Elsa.Testing.Shared.Authorization;
 
@@ -30,11 +29,11 @@ public static class EndpointCoverage
         var endpoints = FindEndpoints(assembly).ToArray();
 
         // A reflection gate that silently matches nothing passes forever.
-        Assert.True(endpoints.Length > 0, $"No Elsa endpoints found in {assembly.GetName().Name}. The gate is not looking where it thinks it is.");
+        TestAssert.True(endpoints.Length > 0, $"No Elsa endpoints found in {assembly.GetName().Name}. The gate is not looking where it thinks it is.");
 
         var undeclared = endpoints.Where(x => !DeclaresAccess(x)).Select(x => x.FullName).OrderBy(x => x, StringComparer.Ordinal).ToArray();
 
-        Assert.True(
+        TestAssert.True(
             undeclared.Length == 0,
             $"{undeclared.Length} endpoint(s) declare no access: {string.Join(", ", undeclared)}. "
             + "Every endpoint must call exactly one of RequirePermission, RequireAuthenticatedOnly, or AllowAnonymous. "

@@ -4,8 +4,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.LogPersistence;
 using Jint;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
@@ -13,57 +11,71 @@ namespace Elsa.JavaScript.IntegrationTests;
 /// Pins how .NET enums are exposed to JavaScript: a value reaches script as its member name, and so does a
 /// constant read off the registered enum type, so the two compare equal.
 /// </summary>
-public class EnumConversionTests
+public class EnumConversionTests : IAsyncDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IJavaScriptEvaluator _evaluator;
 
-    public EnumConversionTests(ITestOutputHelper testOutputHelper)
+    public EnumConversionTests()
     {
-        _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+        _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
         _evaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
     }
 
-    [Fact(DisplayName = "An enum value reaches a script as its member name")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("An enum value reaches a script as its member name")]
     public async Task EnumValuesAreExposedAsTheirName()
     {
-        Assert.Equal("Include", await EvaluateAsync("return mode;", engine => engine.SetValue("mode", LogPersistenceMode.Include)));
+        await Assert.That(await EvaluateAsync("return mode;", engine => engine.SetValue("mode", LogPersistenceMode.Include))).IsEqualTo("Include");
     }
 
-    [Fact(DisplayName = "An enum value reaches a script as a string")]
+    [Test]
+    [DisplayName("An enum value reaches a script as a string")]
     public async Task EnumValuesAreStrings()
     {
-        Assert.Equal("string", await EvaluateAsync("return typeof mode;", engine => engine.SetValue("mode", LogPersistenceMode.Include)));
+        await Assert.That(await EvaluateAsync("return typeof mode;", engine => engine.SetValue("mode", LogPersistenceMode.Include))).IsEqualTo("string");
     }
 
-    [Fact(DisplayName = "A constant read off a registered enum type is its member name")]
+    [Test]
+    [DisplayName("A constant read off a registered enum type is its member name")]
     public async Task EnumConstantsAreExposedAsTheirName()
     {
-        Assert.Equal("Include", await EvaluateAsync("return LogPersistenceMode.Include;"));
+        await Assert.That(await EvaluateAsync("return LogPersistenceMode.Include;")).IsEqualTo("Include");
     }
 
-    [Fact(DisplayName = "An enum value compares equal to the constant of the same member")]
+    [Test]
+    [DisplayName("An enum value compares equal to the constant of the same member")]
     public async Task EnumValuesCompareEqualToTheirConstant()
     {
         // The two directions used to disagree: a value crossing the boundary became its name while a constant
         // read off the registered type stayed the underlying number, so this comparison was always false.
-        Assert.Equal("true", await EvaluateAsync("return '' + (mode === LogPersistenceMode.Include);", engine => engine.SetValue("mode", LogPersistenceMode.Include)));
+        await Assert.That(await EvaluateAsync("return '' + (mode === LogPersistenceMode.Include);", engine => engine.SetValue("mode", LogPersistenceMode.Include))).IsEqualTo("true");
     }
 
-    [Fact(DisplayName = "An enum-valued property of a .NET object reaches a script as its member name")]
+    [Test]
+    [DisplayName("An enum-valued property of a .NET object reaches a script as its member name")]
     public async Task EnumMembersOfWrappedObjectsAreExposedAsTheirName()
     {
-        Assert.Equal("Exclude", await EvaluateAsync("return holder.Mode;", engine => engine.SetValue("holder", new ModeHolder { Mode = LogPersistenceMode.Exclude })));
+        await Assert.That(await EvaluateAsync("return holder.Mode;", engine => engine.SetValue("holder", new ModeHolder { Mode = LogPersistenceMode.Exclude }))).IsEqualTo("Exclude");
     }
 
-    [Fact(DisplayName = "A member name written back from a script converts to the enum value")]
+    [Test]
+    [DisplayName("A member name written back from a script converts to the enum value")]
     public async Task EnumMembersAcceptTheirNameOnTheWayBack()
     {
         var holder = new ModeHolder();
 
         await EvaluateAsync("holder.Mode = 'Exclude'; return '';", engine => engine.SetValue("holder", holder));
 
-        Assert.Equal(LogPersistenceMode.Exclude, holder.Mode);
+        await Assert.That(holder.Mode).IsEqualTo(LogPersistenceMode.Exclude);
     }
 
     private async Task<string?> EvaluateAsync(string script, Action<Engine>? configureEngine = null)

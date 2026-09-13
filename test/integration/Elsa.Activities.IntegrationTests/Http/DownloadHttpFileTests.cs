@@ -1,18 +1,18 @@
 using System.Net;
-using Elsa.Activities.UnitTests.Http.Helpers;
+using Elsa.Activities.IntegrationTests.Http.Helpers;
 using Elsa.Extensions;
 using Elsa.Http;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Http;
 
-public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
+public class DownloadHttpFileTests
 {
-    [Fact(DisplayName = "DownloadHttpFile downloads file successfully")]
+    [Test]
+    [DisplayName("DownloadHttpFile downloads file successfully")]
     public async Task DownloadsFile_Successfully()
     {
         // Arrange
@@ -24,18 +24,24 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
         // Assert
         var file = workflowResult.GetActivityOutput<HttpFile>(activity);
-        Assert.NotNull(file);
-        Assert.Equal("document.pdf", file.Filename);
-        Assert.Equal("application/pdf", file.ContentType);
+        file = (await Assert.That(file).IsNotNull())!;
+
+        await Assert.That(file.Filename).IsEqualTo("document.pdf");
+
+        await Assert.That(file.ContentType).IsEqualTo("application/pdf");
+
 
         var stream = workflowResult.GetActivityOutput<Stream>(activity, nameof(DownloadHttpFile.ResponseContentStream));
-        Assert.NotNull(stream);
+        stream = (await Assert.That(stream).IsNotNull())!;
+
         using var reader = new StreamReader(stream);
         var content = await reader.ReadToEndAsync();
-        Assert.Equal("Test file content", content);
+        await Assert.That(content).IsEqualTo("Test file content");
+
     }
 
-    [Fact(DisplayName = "DownloadHttpFile handles POST requests")]
+    [Test]
+    [DisplayName("DownloadHttpFile handles POST requests")]
     public async Task HandlesPostRequest()
     {
         // Arrange
@@ -52,13 +58,16 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
         // Assert
         var statusCode = workflowResult.GetActivityOutput<int>(activity, nameof(DownloadHttpFile.StatusCode));
-        Assert.Equal(200, statusCode);
+        await Assert.That(statusCode).IsEqualTo(200);
+
 
         var file = workflowResult.GetActivityOutput<HttpFile>(activity);
-        Assert.NotNull(file);
+        file = (await Assert.That(file).IsNotNull())!;
+
     }
 
-    [Fact(DisplayName = "DownloadHttpFile includes authorization header")]
+    [Test]
+    [DisplayName("DownloadHttpFile includes authorization header")]
     public async Task IncludesAuthorizationHeader()
     {
         // Arrange
@@ -74,14 +83,17 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
         // Assert
         var capturedRequest = requestCapture[0];
-        Assert.NotNull(capturedRequest);
-        Assert.NotNull(capturedRequest.Headers.Authorization);
-        Assert.Equal("Bearer test-token", capturedRequest.Headers.Authorization.ToString());
+        capturedRequest = (await Assert.That(capturedRequest).IsNotNull())!;
+
+        var authorization = (await Assert.That(capturedRequest.Headers.Authorization).IsNotNull())!;
+        await Assert.That(authorization.ToString()).IsEqualTo("Bearer test-token");
+
     }
 
-    [Theory(DisplayName = "DownloadHttpFile extracts filename correctly")]
-    [InlineData("https://example.com/generate-report", "annual-report.xlsx", "annual-report.xlsx")] // From Content-Disposition
-    [InlineData("https://example.com/downloads/image.png", null, "image.png")] // From URL
+    [Test]
+    [DisplayName("DownloadHttpFile extracts filename correctly ($url)")]
+    [Arguments("https://example.com/generate-report", "annual-report.xlsx", "annual-report.xlsx")] // From Content-Disposition
+    [Arguments("https://example.com/downloads/image.png", null, "image.png")] // From URL
     public async Task ExtractsFilename(string url, string? contentDispositionFilename, string expectedFilename)
     {
         // Arrange
@@ -93,14 +105,17 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
         // Assert
         var file = workflowResult.GetActivityOutput<HttpFile>(activity);
-        Assert.NotNull(file);
-        Assert.Equal(expectedFilename, file.Filename);
+        file = (await Assert.That(file).IsNotNull())!;
+
+        await Assert.That(file.Filename).IsEqualTo(expectedFilename);
+
     }
 
-    [Theory(DisplayName = "DownloadHttpFile handles various status codes")]
-    [InlineData(200)]
-    [InlineData(201)]
-    [InlineData(404)]
+    [Test]
+    [DisplayName("DownloadHttpFile handles various status codes ($statusCode)")]
+    [Arguments(200)]
+    [Arguments(201)]
+    [Arguments(404)]
     public async Task HandlesStatusCodes(int statusCode)
     {
         // Arrange
@@ -114,10 +129,12 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
         // Assert
         var actualStatusCode = workflowResult.GetActivityOutput<int>(activity, nameof(DownloadHttpFile.StatusCode));
-        Assert.Equal(statusCode, actualStatusCode);
+        await Assert.That(actualStatusCode).IsEqualTo(statusCode);
+
     }
 
-    [Fact(DisplayName = "DownloadHttpFile sets response headers")]
+    [Test]
+    [DisplayName("DownloadHttpFile sets response headers")]
     public async Task SetsResponseHeaders()
     {
         // Arrange
@@ -133,9 +150,13 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
 
         // Assert
         var responseHeaders = workflowResult.GetActivityOutput<HttpHeaders>(activity, nameof(DownloadHttpFile.ResponseHeaders));
-        Assert.NotNull(responseHeaders);
-        Assert.Contains(responseHeaders.Keys, k => k.Equals("X-Rate-Limit", StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(responseHeaders.Keys, k => k.Equals("X-Request-Id", StringComparison.OrdinalIgnoreCase));
+        await Assert.That(responseHeaders).IsNotNull();
+        var headers = responseHeaders!;
+
+        await Assert.That(headers.Keys).Contains(k => k.Equals("X-Rate-Limit", StringComparison.OrdinalIgnoreCase));
+
+        await Assert.That(headers.Keys).Contains(k => k.Equals("X-Request-Id", StringComparison.OrdinalIgnoreCase));
+
     }
 
     private async Task<(RunWorkflowResult Result, DownloadHttpFile Activity)> RunActivityAsync(
@@ -147,7 +168,7 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
         string? authorization = null,
         int[]? expectedStatusCodes = null)
     {
-        var fixture = CreateFixture(handler);
+        await using var fixture = CreateFixture(handler);
         var activity = new DownloadHttpFile
         {
             Url = new(new Uri(url)),
@@ -169,7 +190,7 @@ public class DownloadHttpFileTests(ITestOutputHelper testOutputHelper)
     }
 
     private WorkflowTestFixture CreateFixture(HttpMessageHandler handler) =>
-        new WorkflowTestFixture(testOutputHelper)
+        new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseHttp(http =>
             {
                 http.HttpClientBuilder = builder => builder.ConfigurePrimaryHttpMessageHandler(() => handler);

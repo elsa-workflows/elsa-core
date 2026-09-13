@@ -7,7 +7,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.IncidentStrategies;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.Composition;
 
@@ -15,11 +14,14 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.Composition;
 /// A <see cref="BpmnProcess"/> has to work wherever an activity works — nested in another BPMN scope, and (D11)
 /// composed into a <c>Flowchart</c> — and it has to stay a nested scope when it is one.
 /// </summary>
-public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
+public class BpmnCompositionTests : IAsyncDisposable
 {
-    private readonly BpmnTestHost _host = new(testOutputHelper);
+    private readonly BpmnTestHost _host = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "A BPMN process composed into a flowchart runs, and the flowchart continues after it")]
+    public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    [Test]
+    [DisplayName("A BPMN process composed into a flowchart runs, and the flowchart continues after it")]
     public async Task BpmnProcessInsideAFlowchart_RunsAndTheFlowchartCarriesOn()
     {
         // The runtime machinery is the same in a flowchart as it is under another scope: the process schedules its own
@@ -46,11 +48,14 @@ public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(flowchart);
 
         // Assert: the flowchart ran into the process, the process ran its own work, and the flowchart went on.
-        Assert.Equal(["executed:before", "executed:only", "executed:after-process"], _host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(["executed:before", "executed:only", "executed:after-process"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A BPMN process composed into a flowchart and connected on both outcomes routes down the one it completes with")]
+    [Test]
+    [DisplayName("A BPMN process composed into a flowchart and connected on both outcomes routes down the one it completes with")]
     public async Task BpmnProcessInsideAFlowchart_RoutesDownTheCancelledPortWhenTheProcessCancels()
     {
         // The gap this closes: the activity declares both outcomes as flow ports, so a flowchart can connect the
@@ -76,13 +81,18 @@ public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(flowchart);
 
         // Assert: only the Cancelled branch ran.
-        Assert.Contains("executed:work", _host.Log.Entries);
-        Assert.Contains("executed:on-cancelled", _host.Log.Entries);
-        Assert.DoesNotContain("executed:on-done", _host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).Contains("executed:work");
+
+        await Assert.That(_host.Log.Entries).Contains("executed:on-cancelled");
+
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:on-done");
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A nested scope runs with the trigger opt-out off, which is its default")]
+    [Test]
+    [DisplayName("A nested scope runs with the trigger opt-out off, which is its default")]
     public async Task NestedScope_RunsWithTheTriggerOptOutOff()
     {
         // The direction that could be mistaken for success: this is the ordinary case, and it must stay ordinary.
@@ -93,17 +103,21 @@ public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
         var process = BpmnTestProcesses.NestedSubprocess(_host.Log);
 
         // Assert: nothing set it, and nothing inferred it.
-        Assert.False(NestedScopeOf(process).IsRootScope);
+        await Assert.That(NestedScopeOf(process).IsRootScope).IsFalse();
+
 
         // Act
         var result = await _host.RunAsync(process);
 
         // Assert
-        Assert.Equal(["executed:subOnly", "executed:after"], _host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(["executed:subOnly", "executed:after"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A nested scope that claims root position is refused, naming it")]
+    [Test]
+    [DisplayName("A nested scope that claims root position is refused, naming it")]
     public async Task NestedScopeClaimingRootPosition_IsRefused()
     {
         // A subprocess body marked as able to start the workflow has already had its start events indexed as ways
@@ -118,16 +132,22 @@ public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(process, typeof(FaultStrategy));
 
         // Assert: the scope faulted before starting the nested work...
-        Assert.DoesNotContain("executed:subOnly", _host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:subOnly");
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
+
 
         // ...and said which activity, and why.
-        var incident = Assert.Single(result.WorkflowState.Incidents);
-        Assert.Contains("sub", incident.Exception!.Message);
-        Assert.Contains("root scope", incident.Exception.Message);
+        var incident = (await Assert.That(result.WorkflowState.Incidents).HasSingleItem())!;
+
+        await Assert.That(incident.Exception!.Message).Contains("sub", StringComparison.CurrentCulture);
+
+        await Assert.That(incident.Exception.Message).Contains("root scope", StringComparison.CurrentCulture);
+
     }
 
-    [Fact(DisplayName = "A root scope that claims root position runs")]
+    [Test]
+    [DisplayName("A root scope that claims root position runs")]
     public async Task RootScopeClaimingRootPosition_Runs()
     {
         // The refusal is about nesting, not about the flag: the root process is exactly where the flag belongs, and
@@ -141,8 +161,10 @@ public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(process);
 
         // Assert
-        Assert.Equal(["executed:subOnly", "executed:after"], _host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(["executed:subOnly", "executed:after"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
     /// <summary>The one nested BPMN scope of the given process.</summary>

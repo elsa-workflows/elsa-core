@@ -9,20 +9,19 @@ using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Management.Services;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDefinitionVersioning;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_ShouldClearLatestFlagFromPreviousUnpublishedDraft()
     {
         const string definitionId = "test-definition";
@@ -55,14 +54,14 @@ public class Tests
             }
         )).ToDictionary(x => x.Id);
 
-        Assert.False(definitions["v1"].IsLatest);
-        Assert.True(definitions["v2"].IsLatest);
-        Assert.Single(definitions.Values, x => x.IsLatest);
-        Assert.Equal(2, definitions["v2"].Version);
-        Assert.Equal(2, savedDraft.Version);
+        await Assert.That(definitions["v1"].IsLatest).IsFalse();
+        await Assert.That(definitions["v2"].IsLatest).IsTrue();
+        await Assert.That(definitions.Values.Where(x => x.IsLatest)).HasSingleItem();
+        await Assert.That(definitions["v2"].Version).IsEqualTo(2);
+        await Assert.That(savedDraft.Version).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_ShouldKeepExistingDraftLatestWhenResaved()
     {
         const string definitionId = "test-definition";
@@ -89,16 +88,16 @@ public class Tests
             }
         )).ToList();
 
-        var persistedDraft = Assert.Single(definitions);
+        var persistedDraft = await Assert.That(definitions).HasSingleItem();
 
-        Assert.Equal("draft-1", persistedDraft.Id);
-        Assert.Equal(1, persistedDraft.Version);
-        Assert.True(persistedDraft.IsLatest);
-        Assert.Equal(1, savedDraft.Version);
-        Assert.True(savedDraft.IsLatest);
+        await Assert.That(persistedDraft.Id).IsEqualTo("draft-1");
+        await Assert.That(persistedDraft.Version).IsEqualTo(1);
+        await Assert.That(persistedDraft.IsLatest).IsTrue();
+        await Assert.That(savedDraft.Version).IsEqualTo(1);
+        await Assert.That(savedDraft.IsLatest).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_ShouldDemoteActualLatestWhenHighestVersionIsNotLatest()
     {
         const string definitionId = "test-definition";
@@ -112,15 +111,15 @@ public class Tests
         var savedDraft = await publisher.SaveDraftAsync(CreateDefinition("v3", definitionId, 0, false));
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
-        Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
-        Assert.False(definitions.Single(x => x.Id == "v2").IsLatest);
-        Assert.True(definitions.Single(x => x.Id == "v3").IsLatest);
-        Assert.Equal(3, savedDraft.Version);
-        Assert.Equal(3, definitions.Single(x => x.Id == "v3").Version);
-        Assert.Single(definitions, x => x.IsLatest);
+        await Assert.That(definitions.Single(x => x.Id == "v1").IsLatest).IsFalse();
+        await Assert.That(definitions.Single(x => x.Id == "v2").IsLatest).IsFalse();
+        await Assert.That(definitions.Single(x => x.Id == "v3").IsLatest).IsTrue();
+        await Assert.That(savedDraft.Version).IsEqualTo(3);
+        await Assert.That(definitions.Single(x => x.Id == "v3").Version).IsEqualTo(3);
+        await Assert.That(definitions.Where(x => x.IsLatest)).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_ShouldPreserveActualLatestVersionWhenHigherVersionIsNotLatest()
     {
         const string definitionId = "test-definition";
@@ -135,15 +134,15 @@ public class Tests
         var savedDraft = await publisher.SaveDraftAsync(latestDraft);
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
-        Assert.Equal(2, definitions.Count);
-        Assert.Equal(1, savedDraft.Version);
-        Assert.Equal(1, definitions.Single(x => x.Id == "v1").Version);
-        Assert.True(definitions.Single(x => x.Id == "v1").IsLatest);
-        Assert.False(definitions.Single(x => x.Id == "v2").IsLatest);
-        Assert.Single(definitions, x => x.IsLatest);
+        await Assert.That(definitions.Count).IsEqualTo(2);
+        await Assert.That(savedDraft.Version).IsEqualTo(1);
+        await Assert.That(definitions.Single(x => x.Id == "v1").Version).IsEqualTo(1);
+        await Assert.That(definitions.Single(x => x.Id == "v1").IsLatest).IsTrue();
+        await Assert.That(definitions.Single(x => x.Id == "v2").IsLatest).IsFalse();
+        await Assert.That(definitions.Where(x => x.IsLatest)).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_ShouldPreserveHighestVersionWhenPromotingNonLatestDraft()
     {
         const string definitionId = "test-definition";
@@ -158,15 +157,15 @@ public class Tests
         var savedDraft = await publisher.SaveDraftAsync(highestDraft!);
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
-        Assert.Equal(2, definitions.Count);
-        Assert.Equal("v2", savedDraft.Id);
-        Assert.Equal(2, savedDraft.Version);
-        Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
-        Assert.True(definitions.Single(x => x.Id == "v2").IsLatest);
-        Assert.Single(definitions, x => x.IsLatest);
+        await Assert.That(definitions.Count).IsEqualTo(2);
+        await Assert.That(savedDraft.Id).IsEqualTo("v2");
+        await Assert.That(savedDraft.Version).IsEqualTo(2);
+        await Assert.That(definitions.Single(x => x.Id == "v1").IsLatest).IsFalse();
+        await Assert.That(definitions.Single(x => x.Id == "v2").IsLatest).IsTrue();
+        await Assert.That(definitions.Where(x => x.IsLatest)).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_ShouldPreservePublishedStateWhenCreatingDraftAfterPublishedLatest()
     {
         const string definitionId = "test-definition";
@@ -180,18 +179,18 @@ public class Tests
 
         var definitions = (await store.FindManyAsync(new WorkflowDefinitionFilter { DefinitionId = definitionId })).ToList();
         var persistedPublishedDefinition = definitions.Single(x => x.Id == "v1");
-        Assert.True(persistedPublishedDefinition.IsPublished);
-        Assert.False(persistedPublishedDefinition.IsLatest);
-        Assert.Equal(1, persistedPublishedDefinition.Version);
-        Assert.False(savedDraft.IsPublished);
-        Assert.True(savedDraft.IsLatest);
-        Assert.Equal(2, savedDraft.Version);
-        Assert.Single(definitions, x => x.IsLatest);
+        await Assert.That(persistedPublishedDefinition.IsPublished).IsTrue();
+        await Assert.That(persistedPublishedDefinition.IsLatest).IsFalse();
+        await Assert.That(persistedPublishedDefinition.Version).IsEqualTo(1);
+        await Assert.That(savedDraft.IsPublished).IsFalse();
+        await Assert.That(savedDraft.IsLatest).IsTrue();
+        await Assert.That(savedDraft.Version).IsEqualTo(2);
+        await Assert.That(definitions.Where(x => x.IsLatest)).HasSingleItem();
     }
 
-    [Theory]
-    [InlineData(BatchFailurePoint.Replacement)]
-    [InlineData(BatchFailurePoint.PreviousLatest)]
+    [Test]
+    [Arguments(BatchFailurePoint.Replacement)]
+    [Arguments(BatchFailurePoint.PreviousLatest)]
     public async Task SaveDraftAsync_WhenReplacementBatchFails_ShouldPreserveSinglePreviousLatest(
         BatchFailurePoint failurePoint
     )
@@ -211,24 +210,24 @@ public class Tests
 
         var replacement = CreateDefinition("v2", definitionId, 0, false);
 
-        await Assert.ThrowsAsync<TestPersistenceException>(
+        await Assert.ThrowsExactlyAsync<TestPersistenceException>(
             () => publisher.SaveDraftAsync(replacement)
         );
 
-        var previous = Assert.Single(persisted.Values);
+        var previous = await Assert.That(persisted.Values).HasSingleItem();
 
-        Assert.Equal("v1", previous.Id);
-        Assert.True(previous.IsLatest);
-        Assert.Single(persisted.Values, x => x.IsLatest);
+        await Assert.That(previous.Id).IsEqualTo("v1");
+        await Assert.That(previous.IsLatest).IsTrue();
+        await Assert.That(persisted.Values.Where(x => x.IsLatest)).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task SaveDraftAsync_WhenDraftSavedNotificationFails_ShouldKeepCommittedLatestStateConsistent()
     {
         const string definitionId = "test-definition";
 
-        var services = new TestApplicationBuilder(
-            _services.GetRequiredService<ITestOutputHelper>()
+        await using var services = (ServiceProvider)new TestApplicationBuilder(
+            _services.GetRequiredService<TextWriter>()
         )
             .ConfigureServices(serviceCollection =>
                 serviceCollection.AddNotificationHandler<
@@ -243,7 +242,7 @@ public class Tests
 
         await store.SaveAsync(CreateDefinition("v1", definitionId, 1, true));
 
-        await Assert.ThrowsAsync<TestNotificationException>(
+        await Assert.ThrowsExactlyAsync<TestNotificationException>(
             () => publisher.SaveDraftAsync(CreateDefinition("v2", definitionId, 0, false))
         );
 
@@ -254,13 +253,13 @@ public class Tests
             }
         )).ToList();
 
-        Assert.Equal(2, definitions.Count);
-        Assert.False(definitions.Single(x => x.Id == "v1").IsLatest);
-        Assert.True(definitions.Single(x => x.Id == "v2").IsLatest);
-        Assert.Single(definitions, x => x.IsLatest);
+        await Assert.That(definitions.Count).IsEqualTo(2);
+        await Assert.That(definitions.Single(x => x.Id == "v1").IsLatest).IsFalse();
+        await Assert.That(definitions.Single(x => x.Id == "v2").IsLatest).IsTrue();
+        await Assert.That(definitions.Where(x => x.IsLatest)).HasSingleItem();
     }
 
-    [Fact]
+    [Test]
     public async Task RevertVersionAsync_ShouldAllocateVersionAfterHighestStoredVersion()
     {
         const string definitionId = "test-definition";
@@ -299,7 +298,7 @@ public class Tests
 
         var revertedDefinition = await publisher.RevertVersionAsync(definitionId, 1);
 
-        Assert.Equal(4, revertedDefinition.Version);
+        await Assert.That(revertedDefinition.Version).IsEqualTo(4);
     }
 
     private static IWorkflowDefinitionStore CreateFailingStore(
@@ -425,4 +424,6 @@ public class Tests
     private class TestPersistenceException : Exception;
 
     private class TestNotificationException : Exception;
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

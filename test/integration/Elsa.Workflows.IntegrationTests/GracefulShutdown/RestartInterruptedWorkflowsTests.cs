@@ -8,25 +8,25 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 
 /// <summary>
 /// Integration tests for the <see cref="RestartInterruptedWorkflowsTask" />
 /// </summary>
-public class RestartInterruptedWorkflowsTests
+public class RestartInterruptedWorkflowsTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
 
-    public RestartInterruptedWorkflowsTests(ITestOutputHelper testOutputHelper)
+    public RestartInterruptedWorkflowsTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseWorkflowRuntime())
             .Build();
     }
 
-    [Fact(DisplayName = "Task ignores instances NOT Interrupted")]
+    [Test]
+    [DisplayName("Task ignores instances NOT Interrupted")]
     public async Task Filter()
     {
         var fakeRestarter = new RecordingRestarter();
@@ -41,8 +41,9 @@ public class RestartInterruptedWorkflowsTests
         var scanner = ActivatorUtilities.CreateInstance<RestartInterruptedWorkflowsTask>(scope.ServiceProvider, fakeRestarter);
         await scanner.ExecuteAsync(CancellationToken.None);
 
-        Assert.Equal(3, fakeRestarter.RestartedIds.Count);
-        Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("stale-", id));
+        await Assert.That(fakeRestarter.RestartedIds.Count).IsEqualTo(3);
+        foreach (var id in fakeRestarter.RestartedIds)
+            await Assert.That(id).StartsWith("stale-", StringComparison.CurrentCulture);
     }
 
     private static DateTimeOffset GetStaleTimestamp(IServiceProvider serviceProvider)
@@ -92,4 +93,6 @@ public class RestartInterruptedWorkflowsTests
             return Task.CompletedTask;
         }
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

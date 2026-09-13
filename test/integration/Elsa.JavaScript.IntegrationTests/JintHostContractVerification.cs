@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Xunit;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
@@ -37,9 +36,10 @@ internal static class JintHostContractVerification
 /// </summary>
 public class JintHostContractVerificationTests
 {
-    [Fact(DisplayName = "Jint's host-contract verifiers are enabled for this assembly")]
-    public void VerifiersAreEnabled()
+    [Test]
+    [DisplayName("Jint's host-contract verifiers are enabled for this assembly")]
+    public async Task VerifiersAreEnabled()
     {
-        Assert.True(AppContext.TryGetSwitch("Jint.EnableHostContractVerification", out var enabled) && enabled);
+        await Assert.That(AppContext.TryGetSwitch("Jint.EnableHostContractVerification", out var enabled) && enabled).IsTrue();
     }
 }

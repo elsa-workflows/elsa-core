@@ -1,22 +1,22 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.DependencyWorkflows;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .WithWorkflowsFromDirectory("Scenarios", "DependencyWorkflows", "Workflows")
             .Build();
     }
 
-    [Fact(DisplayName = "Workflows provided from JSON files that depend on other workflows are executed correctly.")]
+    [Test]
+    [DisplayName("Workflows provided from JSON files that depend on other workflows are executed correctly.")]
     public async Task Should_Execute_Multi_Level_Nested_Workflow_Definitions()
     {
         // Populate registries.
@@ -29,6 +29,8 @@ public class Tests
         // Assert.
         var lines = _capturingTextWriter.Lines.ToList();
 
-        Assert.Equal(new[] { "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom", "Atom" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

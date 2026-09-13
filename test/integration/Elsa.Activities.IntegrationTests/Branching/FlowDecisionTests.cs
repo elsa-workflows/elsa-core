@@ -4,20 +4,21 @@ using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Options;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
 
 /// <summary>
 /// Integration tests for FlowDecision activity in flowchart scenarios.
 /// </summary>
-[Collection("FlowchartTests")]
-public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
+public class FlowDecisionTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Theory(DisplayName = "FlowDecision follows correct path based on condition")]
-    [MemberData(nameof(BasicPathTestCases))]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("FlowDecision follows correct path based on condition ($executionMode, condition: $condition)")]
+    [MethodDataSource(nameof(BasicPathTestCases))]
     public async Task Should_Follow_Correct_Path_Based_On_Condition(FlowchartExecutionMode executionMode, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
@@ -44,20 +45,21 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
         await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
-        AssertOutputs(expectedOutputs, unexpectedOutputs);
+        await AssertOutputs(expectedOutputs, unexpectedOutputs);
     }
 
-    public static IEnumerable<object[]> BasicPathTestCases()
+    public static IEnumerable<Func<(FlowchartExecutionMode, bool, string[], string[])>> BasicPathTestCases()
     {
         // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
-        yield return [FlowchartExecutionMode.TokenBased, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
-        yield return [FlowchartExecutionMode.TokenBased, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
-        yield return [FlowchartExecutionMode.CounterBased, true, new[] { "Start", "TruePath" }, new[] { "FalsePath" }];
-        yield return [FlowchartExecutionMode.CounterBased, false, new[] { "Start", "FalsePath" }, new[] { "TruePath" }];
+        yield return () => (FlowchartExecutionMode.TokenBased, true, ["Start", "TruePath"], ["FalsePath"]);
+        yield return () => (FlowchartExecutionMode.TokenBased, false, ["Start", "FalsePath"], ["TruePath"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, true, ["Start", "TruePath"], ["FalsePath"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, false, ["Start", "FalsePath"], ["TruePath"]);
     }
 
-    [Theory(DisplayName = "FlowDecision handles nested decisions")]
-    [MemberData(nameof(NestedDecisionTestCases))]
+    [Test]
+    [DisplayName("FlowDecision handles nested decisions ($executionMode, outer: $outerCondition, inner: $innerCondition)")]
+    [MethodDataSource(nameof(NestedDecisionTestCases))]
     public async Task Should_Handle_Nested_Decisions(FlowchartExecutionMode executionMode, bool outerCondition, bool innerCondition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
@@ -88,24 +90,25 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
         await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
-        AssertOutputs(expectedOutputs, unexpectedOutputs);
+        await AssertOutputs(expectedOutputs, unexpectedOutputs);
     }
 
-    public static IEnumerable<object[]> NestedDecisionTestCases()
+    public static IEnumerable<Func<(FlowchartExecutionMode, bool, bool, string[], string[])>> NestedDecisionTestCases()
     {
         // useTokenFlow, outerCondition, innerCondition, expectedOutputs, unexpectedOutputs
-        yield return [FlowchartExecutionMode.TokenBased, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
-        yield return [FlowchartExecutionMode.TokenBased, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
-        yield return [FlowchartExecutionMode.TokenBased, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
-        yield return [FlowchartExecutionMode.TokenBased, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
-        yield return [FlowchartExecutionMode.CounterBased, true, true, new[] { "Start", "InnerTrue" }, new[] { "InnerFalse", "OuterFalse" }];
-        yield return [FlowchartExecutionMode.CounterBased, true, false, new[] { "Start", "InnerFalse" }, new[] { "InnerTrue", "OuterFalse" }];
-        yield return [FlowchartExecutionMode.CounterBased, false, true, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
-        yield return [FlowchartExecutionMode.CounterBased, false, false, new[] { "Start", "OuterFalse" }, new[] { "InnerTrue", "InnerFalse" }];
+        yield return () => (FlowchartExecutionMode.TokenBased, true, true, ["Start", "InnerTrue"], ["InnerFalse", "OuterFalse"]);
+        yield return () => (FlowchartExecutionMode.TokenBased, true, false, ["Start", "InnerFalse"], ["InnerTrue", "OuterFalse"]);
+        yield return () => (FlowchartExecutionMode.TokenBased, false, true, ["Start", "OuterFalse"], ["InnerTrue", "InnerFalse"]);
+        yield return () => (FlowchartExecutionMode.TokenBased, false, false, ["Start", "OuterFalse"], ["InnerTrue", "InnerFalse"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, true, true, ["Start", "InnerTrue"], ["InnerFalse", "OuterFalse"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, true, false, ["Start", "InnerFalse"], ["InnerTrue", "OuterFalse"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, false, true, ["Start", "OuterFalse"], ["InnerTrue", "InnerFalse"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, false, false, ["Start", "OuterFalse"], ["InnerTrue", "InnerFalse"]);
     }
 
-    [Theory(DisplayName = "FlowDecision works with only one path connected")]
-    [MemberData(nameof(OnePathConnectedTestCases))]
+    [Test]
+    [DisplayName("FlowDecision works with only one path connected ($executionMode, condition: $condition)")]
+    [MethodDataSource(nameof(OnePathConnectedTestCases))]
     public async Task Should_Work_With_Only_One_Path_Connected(FlowchartExecutionMode executionMode, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
@@ -133,20 +136,21 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
         await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
-        AssertOutputs(expectedOutputs, unexpectedOutputs);
+        await AssertOutputs(expectedOutputs, unexpectedOutputs);
     }
 
-    public static IEnumerable<object[]> OnePathConnectedTestCases()
+    public static IEnumerable<Func<(FlowchartExecutionMode, bool, string[], string[])>> OnePathConnectedTestCases()
     {
         // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
-        yield return [FlowchartExecutionMode.TokenBased, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
-        yield return [FlowchartExecutionMode.TokenBased, false, new[] { "Start" }, new[] { "TruePath", "End" }];
-        yield return [FlowchartExecutionMode.CounterBased, true, new[] { "Start", "TruePath", "End" }, Array.Empty<string>()];
-        yield return [FlowchartExecutionMode.CounterBased, false, new[] { "Start" }, new[] { "TruePath", "End" }];
+        yield return () => (FlowchartExecutionMode.TokenBased, true, ["Start", "TruePath", "End"], []);
+        yield return () => (FlowchartExecutionMode.TokenBased, false, ["Start"], ["TruePath", "End"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, true, ["Start", "TruePath", "End"], []);
+        yield return () => (FlowchartExecutionMode.CounterBased, false, ["Start"], ["TruePath", "End"]);
     }
 
-    [Theory(DisplayName = "FlowDecision converges paths correctly")]
-    [MemberData(nameof(ConvergePathsTestCases))]
+    [Test]
+    [DisplayName("FlowDecision converges paths correctly ($executionMode, condition: $condition)")]
+    [MethodDataSource(nameof(ConvergePathsTestCases))]
     public async Task Should_Converge_Paths_Correctly(FlowchartExecutionMode executionMode, bool condition, string[] expectedOutputs, string[] unexpectedOutputs)
     {
         // Arrange
@@ -176,21 +180,23 @@ public class FlowDecisionTests(ITestOutputHelper testOutputHelper)
         await _fixture.RunActivityAsync(flowchart, options);
 
         // Assert
-        AssertOutputs(expectedOutputs, unexpectedOutputs);
+        await AssertOutputs(expectedOutputs, unexpectedOutputs);
     }
 
-    public static IEnumerable<object[]> ConvergePathsTestCases()
+    public static IEnumerable<Func<(FlowchartExecutionMode, bool, string[], string[])>> ConvergePathsTestCases()
     {
         // useTokenFlow, condition, expectedOutputs, unexpectedOutputs
-        yield return [FlowchartExecutionMode.TokenBased, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
-        yield return [FlowchartExecutionMode.TokenBased, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
-        yield return [FlowchartExecutionMode.CounterBased, true, new[] { "Start", "TruePath", "Converge" }, new[] { "FalsePath" }];
-        yield return [FlowchartExecutionMode.CounterBased, false, new[] { "Start", "FalsePath", "Converge" }, new[] { "TruePath" }];
+        yield return () => (FlowchartExecutionMode.TokenBased, true, ["Start", "TruePath", "Converge"], ["FalsePath"]);
+        yield return () => (FlowchartExecutionMode.TokenBased, false, ["Start", "FalsePath", "Converge"], ["TruePath"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, true, ["Start", "TruePath", "Converge"], ["FalsePath"]);
+        yield return () => (FlowchartExecutionMode.CounterBased, false, ["Start", "FalsePath", "Converge"], ["TruePath"]);
     }
 
-    private void AssertOutputs(string[] expectedOutputs, string[] unexpectedOutputs)
+    private async Task AssertOutputs(string[] expectedOutputs, string[] unexpectedOutputs)
     {
-        foreach (var expected in expectedOutputs) Assert.Contains(expected, _fixture.CapturingTextWriter.Lines);
-        foreach (var unexpected in unexpectedOutputs) Assert.DoesNotContain(unexpected, _fixture.CapturingTextWriter.Lines);
+        foreach (var expected in expectedOutputs)
+            await Assert.That(_fixture.CapturingTextWriter.Lines).Contains(expected);
+        foreach (var unexpected in unexpectedOutputs)
+            await Assert.That(_fixture.CapturingTextWriter.Lines).DoesNotContain(unexpected);
     }
 }

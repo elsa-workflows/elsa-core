@@ -1,45 +1,49 @@
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
-public class FinishTests
+public class FinishTests : IAsyncDisposable
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public FinishTests(ITestOutputHelper testOutputHelper)
+    public FinishTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "Subsequent activities are not executed")]
+    [Test]
+    [DisplayName("Subsequent activities are not executed")]
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();
         await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Line 1" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Line 1" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
     
-    [Fact(DisplayName = "Workflow status is set to Finished")]
+    [Test]
+    [DisplayName("Workflow status is set to Finished")]
     public async Task Test2()
     {
         await _services.PopulateRegistriesAsync();
         var result = await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
         var workflowState = result.WorkflowState;
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, workflowState.SubStatus);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(workflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
     
-    [Fact(DisplayName = "All bookmarks are removed")]
+    [Test]
+    [DisplayName("All bookmarks are removed")]
     public async Task Test3()
     {
         await _services.PopulateRegistriesAsync();
         var result = await _workflowRunner.RunAsync<FinishSequentialWorkflow>();
-        Assert.Empty(result.WorkflowState.Bookmarks);
+        await Assert.That(result.WorkflowState.Bookmarks).IsEmpty();
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

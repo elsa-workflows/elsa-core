@@ -2,26 +2,26 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ImportAndPublish;
 
-public class ImportAndPublishHttpEndpointsTests
+public class ImportAndPublishHttpEndpointsTests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
-    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly TextWriter _testOutput;
     private readonly IServiceProvider _services;
 
-    public ImportAndPublishHttpEndpointsTests(ITestOutputHelper testOutputHelper)
+    public ImportAndPublishHttpEndpointsTests()
     {
-        _testOutputHelper = testOutputHelper;
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _testOutput = TestContext.Current!.Output.StandardOutput;
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(configure => configure.UseHttp())
             .Build();
     }
 
-    [Fact(DisplayName = "Http endpoint workflow imported from file should publish successfully.")]
+    [Test]
+    [DisplayName("Http endpoint workflow imported from file should publish successfully.")]
     public async Task ImportAndPublish_ShouldSucceed_WithGoodHttpEndpoint()
     {
         // Populate registries.
@@ -35,11 +35,12 @@ public class ImportAndPublishHttpEndpointsTests
         var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
         // Assert.
-        Assert.True(result.Succeeded);
-        Assert.Empty(result.ValidationErrors);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.ValidationErrors).IsEmpty();
     }
 
-    [Fact(DisplayName = "Http endpoint workflow imported from file should not publish successfully with same path and method.")]
+    [Test]
+    [DisplayName("Http endpoint workflow imported from file should not publish successfully with same path and method.")]
     public async Task ImportAndPublish_ShouldFailed_WithTwoHttpEndpointSamePathMethod()
     {
         // Populate registries.
@@ -53,8 +54,8 @@ public class ImportAndPublishHttpEndpointsTests
         var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
         // Assert first workflow.
-        Assert.True(result.Succeeded);
-        Assert.Empty(result.ValidationErrors);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.ValidationErrors).IsEmpty();
 
         // Import second workflow.
         workflowDefinition = await _services.ImportWorkflowDefinitionAsync($"Scenarios/ImportAndPublish/Workflows/http-workflow.json");
@@ -63,16 +64,17 @@ public class ImportAndPublishHttpEndpointsTests
         result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
         // Assert second workflow.
-        Assert.False(result.Succeeded);
-        Assert.Single(result.ValidationErrors);
-        Assert.Equal("The /test path and get method are already in use by another workflow!", result.ValidationErrors.Single().Message);
+        await Assert.That(result.Succeeded).IsFalse();
+        await Assert.That(result.ValidationErrors).HasSingleItem();
+        await Assert.That(result.ValidationErrors.Single().Message).IsEqualTo("The /test path and get method are already in use by another workflow!");
     }
 
-    [Fact(DisplayName = "Http endpoint workflow with duplicate path and method should publish successfully when FailOnValidationErrors is disabled.")]
+    [Test]
+    [DisplayName("Http endpoint workflow with duplicate path and method should publish successfully when FailOnValidationErrors is disabled.")]
     public async Task ImportAndPublish_ShouldSucceed_WithTwoHttpEndpointSamePathMethod_WhenFailOnValidationErrorsDisabled()
     {
         // Opt out of strict publishing.
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(_testOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(configure => configure
                 .UseHttp()
@@ -90,8 +92,8 @@ public class ImportAndPublishHttpEndpointsTests
         var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
         // Assert first workflow.
-        Assert.True(result.Succeeded);
-        Assert.Empty(result.ValidationErrors);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.ValidationErrors).IsEmpty();
 
         // Import second workflow.
         workflowDefinition = await services.ImportWorkflowDefinitionAsync($"Scenarios/ImportAndPublish/Workflows/http-workflow.json");
@@ -100,8 +102,10 @@ public class ImportAndPublishHttpEndpointsTests
         result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
         // Assert: publishing succeeds while the validation error is surfaced as a warning.
-        Assert.True(result.Succeeded);
-        Assert.Single(result.ValidationErrors);
-        Assert.Equal("The /test path and get method are already in use by another workflow!", result.ValidationErrors.Single().Message);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.ValidationErrors).HasSingleItem();
+        await Assert.That(result.ValidationErrors.Single().Message).IsEqualTo("The /test path and get method are already in use by another workflow!");
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

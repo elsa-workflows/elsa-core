@@ -2,22 +2,29 @@ using Elsa.Expressions.JavaScript.Contracts;
 using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
-public class GuidTests
+public class GuidTests : IAsyncDisposable
 {
     private readonly IJavaScriptEvaluator _evaluator;
     private readonly IServiceProvider _serviceProvider;
 
-    public GuidTests(ITestOutputHelper testOutputHelper)
+    public GuidTests()
     {
-        _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+        _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
         _evaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
+    }
     
-    [Fact]
+    [Test]
     public async Task NewGuidReturnsGuid()
     {
         //Setup
@@ -28,6 +35,6 @@ public class GuidTests
         var result = (Guid)(await _evaluator.EvaluateAsync(script, typeof(Guid), expressionExecutionContext))!;
 
         //Assert
-        Assert.IsType<Guid>(result);
+        await Assert.That(result).IsOfType(typeof(Guid));
     }   
 }

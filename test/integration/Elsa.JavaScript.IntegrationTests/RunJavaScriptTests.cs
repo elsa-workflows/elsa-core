@@ -3,18 +3,20 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
-public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
+public class RunJavaScriptTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Theory(DisplayName = "RunJavaScript should execute valid scripts successfully")]
-    [InlineData("return 1 + 1;", 2d)]
-    [InlineData("return 'Hello World';", "Hello World")]
-    [InlineData("return 42;", 42d)]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("RunJavaScript should execute valid scripts successfully: $script")]
+    [Arguments("return 1 + 1;", 2d)]
+    [Arguments("return 'Hello World';", "Hello World")]
+    [Arguments("return 42;", 42d)]
     public async Task Should_Execute_Valid_Scripts(string script, object expectedOutput)
     {
         // Arrange
@@ -25,12 +27,12 @@ public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
 
         // Assert - script returns expected value
         var output = result.GetActivityOutput<object>(activity);
-        Assert.Equal(expectedOutput, output);
+        await Assert.That(output).IsEqualTo(expectedOutput);
     }
 
-    [Theory(DisplayName = "RunJavaScript should set outcomes correctly")]
-    [InlineData("setOutcome('Success');", new[] { "Success" })]
-    [InlineData("setOutcomes(['Branch1', 'Branch2', 'Branch3']);", new[] { "Branch1", "Branch2", "Branch3" })]
+    [Test]
+    [DisplayName("RunJavaScript should set outcomes correctly: $script")]
+    [MethodDataSource(nameof(OutcomeTestCases))]
     public async Task Should_Set_Outcomes(string script, string[] expectedOutcomes)
     {
         // Arrange
@@ -41,16 +43,17 @@ public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
 
         // Assert - activity produced expected outcomes
         var outcomes = _fixture.GetOutcomes(result, activity).ToArray();
-        Assert.Equal(expectedOutcomes.Length, outcomes.Length);
+        await Assert.That(outcomes.Length).IsEqualTo(expectedOutcomes.Length);
         foreach (var expectedOutcome in expectedOutcomes)
         {
-            Assert.Contains(expectedOutcome, outcomes);
+            await Assert.That(outcomes).Contains(expectedOutcome);
         }
     }
 
-    [Theory(DisplayName = "RunJavaScript should produce null output for empty or whitespace scripts")]
-    [InlineData("")]
-    [InlineData("   ")]
+    [Test]
+    [DisplayName("RunJavaScript should produce null output for empty or whitespace scripts: $script")]
+    [Arguments("", DisplayName = "RunJavaScript should produce null output for empty or whitespace scripts: empty")]
+    [Arguments("   ", DisplayName = "RunJavaScript should produce null output for empty or whitespace scripts: whitespace")]
     public async Task Should_Produce_Null_Output_For_Empty_Scripts(string script)
     {
         // Arrange
@@ -61,10 +64,11 @@ public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
 
         // Assert - empty/whitespace scripts produce no output
         var output = result.GetActivityOutput<object>(activity);
-        Assert.Null(output);
+        await Assert.That(output).IsNull();
     }
 
-    [Fact(DisplayName = "RunJavaScript should access workflow variables")]
+    [Test]
+    [DisplayName("RunJavaScript should access workflow variables")]
     public async Task Should_Access_Workflow_Variables()
     {
         // Arrange
@@ -82,10 +86,11 @@ public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
 
         // Assert - variable was accessed and returned
         var output = result.GetActivityOutput<int>(runJavaScript);
-        Assert.Equal(100, output);
+        await Assert.That(output).IsEqualTo(100);
     }
 
-    [Fact(DisplayName = "RunJavaScript should execute complex script with multiple statements and outcomes")]
+    [Test]
+    [DisplayName("RunJavaScript should execute complex script with multiple statements and outcomes")]
     public async Task Should_Execute_Complex_Script_With_Multiple_Statements()
     {
         // Arrange
@@ -107,13 +112,14 @@ public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
 
         // Assert - script returns calculated sum
         var output = result.GetActivityOutput<int>(activity);
-        Assert.Equal(30, output);
+        await Assert.That(output).IsEqualTo(30);
     }
 
-    [Theory(DisplayName = "RunJavaScript should fault on invalid JavaScript syntax")]
-    [InlineData("this is not valid javascript")]
-    [InlineData("return unclosedBracket(;")]
-    [InlineData("undefined.property.access")]
+    [Test]
+    [DisplayName("RunJavaScript should fault on invalid JavaScript syntax: $script")]
+    [Arguments("this is not valid javascript")]
+    [Arguments("return unclosedBracket(;")]
+    [Arguments("undefined.property.access")]
     public async Task Should_Fault_On_Invalid_JavaScript(string script)
     {
         // Arrange
@@ -124,6 +130,12 @@ public class RunJavaScriptTests(ITestOutputHelper testOutputHelper)
 
         // Assert - activity should be in faulted state
         var activityStatus = _fixture.GetActivityStatus(result, activity);
-        Assert.Equal(ActivityStatus.Faulted, activityStatus);
+        await Assert.That(activityStatus).IsEqualTo(ActivityStatus.Faulted);
+    }
+
+    public static IEnumerable<TestDataRow<Func<(string Script, string[] ExpectedOutcomes)>>> OutcomeTestCases()
+    {
+        yield return new(static () => ("setOutcome('Success');", ["Success"]));
+        yield return new(static () => ("setOutcomes(['Branch1', 'Branch2', 'Branch3']);", ["Branch1", "Branch2", "Branch3"]));
     }
 }

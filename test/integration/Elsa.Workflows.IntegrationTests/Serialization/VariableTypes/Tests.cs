@@ -2,22 +2,23 @@ using System.Collections.ObjectModel;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.VariableTypes;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
+    private readonly IServiceProvider _services;
     private readonly IPayloadSerializer _payloadSerializer;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        var services = new TestApplicationBuilder(testOutputHelper).Build();
-        _payloadSerializer = services.GetRequiredService<IPayloadSerializer>();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
+        _payloadSerializer = _services.GetRequiredService<IPayloadSerializer>();
     }
     
-    [Fact(DisplayName = "Variable types remain intact after serialization")]
-    public void Test1()
+    [Test]
+    [DisplayName("Variable types remain intact after serialization")]
+    public async Task Test1()
     {
         // Create collection of variables to serialize.
         var variables = new Collection<Variable>();
@@ -39,6 +40,8 @@ public class Tests
         var deserializedVariable = deserializedModel.Variables.First();
         
         // Assert that the variable is of the correct type.
-        Assert.IsType<Variable<bool>>(deserializedVariable);
+        await Assert.That(deserializedVariable).IsOfType(typeof(Variable<bool>));
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

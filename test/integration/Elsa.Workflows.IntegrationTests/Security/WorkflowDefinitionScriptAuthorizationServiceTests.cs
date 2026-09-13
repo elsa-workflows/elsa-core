@@ -14,22 +14,24 @@ namespace Elsa.Workflows.IntegrationTests.Security;
 public class WorkflowDefinitionScriptAuthorizationServiceTests
 {
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_BlocksCSharpExpression_WhenHostHasNotOptedIn()
     {
-        var service = CreateService(hostAllowsCSharp: false, hostAllowsPython: true);
+        await using var context = CreateService(hostAllowsCSharp: false, hostAllowsPython: true);
+        var service = context.Service;
         var model = CreateModelWithCSharpExpression();
 
         var result = await service.AuthorizeAsync(model);
 
-        Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled, result.FailureReason);
-        Assert.Contains("CSharpOptions.AllowHostCodeExecution", result.Message);
+        await Assert.That(result.FailureReason).IsEqualTo(WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled);
+        await Assert.That(result.Message).Contains("CSharpOptions.AllowHostCodeExecution", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_AllowsCSharpExpression_WhenHostOptedIn()
     {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        await using var context = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        var service = context.Service;
         var model = CreateModelWithCSharpExpression();
 
         var result = await service.AuthorizeAsync(model);
@@ -38,14 +40,15 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         // under the server's authority, not the caller's, so gating on the caller never constrained what a
         // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
         // this is the settled behaviour rather than an interim state.
-        Assert.True(result.Succeeded);
-        Assert.Null(result.FailureReason);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.FailureReason).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_AllowsWorkflowWithoutScriptUsage()
     {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        await using var context = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        var service = context.Service;
         var model = new WorkflowDefinitionModel
         {
             Root = new WriteLine("hello")
@@ -53,13 +56,14 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
 
         var result = await service.AuthorizeAsync(model);
 
-        Assert.True(result.Succeeded);
+        await Assert.That(result.Succeeded).IsTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_TreatsRunCSharpActivityAsCSharpUsage()
     {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        await using var context = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        var service = context.Service;
         var model = new WorkflowDefinitionModel
         {
             Root = new WriteLine("hello")
@@ -74,26 +78,28 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         // under the server's authority, not the caller's, so gating on the caller never constrained what a
         // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
         // this is the settled behaviour rather than an interim state.
-        Assert.True(result.Succeeded);
-        Assert.Null(result.FailureReason);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.FailureReason).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_BlocksPythonExpression_WhenHostHasNotOptedIn()
     {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: false);
+        await using var context = CreateService(hostAllowsCSharp: true, hostAllowsPython: false);
+        var service = context.Service;
         var model = CreateModelWithPythonExpression();
 
         var result = await service.AuthorizeAsync(model);
 
-        Assert.Equal(WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled, result.FailureReason);
-        Assert.Contains("PythonOptions.AllowHostCodeExecution", result.Message);
+        await Assert.That(result.FailureReason).IsEqualTo(WorkflowDefinitionScriptAuthorizationFailureReason.HostDisabled);
+        await Assert.That(result.Message).Contains("PythonOptions.AllowHostCodeExecution", StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_AllowsPythonExpression_WhenHostOptedIn()
     {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        await using var context = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        var service = context.Service;
         var model = CreateModelWithPythonExpression();
 
         var result = await service.AuthorizeAsync(model);
@@ -102,14 +108,15 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         // under the server's authority, not the caller's, so gating on the caller never constrained what a
         // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
         // this is the settled behaviour rather than an interim state.
-        Assert.True(result.Succeeded);
-        Assert.Null(result.FailureReason);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.FailureReason).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task AuthorizeAsync_TreatsRunPythonActivityAsPythonUsage()
     {
-        var service = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        await using var context = CreateService(hostAllowsCSharp: true, hostAllowsPython: true);
+        var service = context.Service;
         var model = new WorkflowDefinitionModel
         {
             Root = new WriteLine("hello")
@@ -124,8 +131,8 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         // under the server's authority, not the caller's, so gating on the caller never constrained what a
         // script could do. The service no longer takes a principal at all, and #7975 closed won't-do, so
         // this is the settled behaviour rather than an interim state.
-        Assert.True(result.Succeeded);
-        Assert.Null(result.FailureReason);
+        await Assert.That(result.Succeeded).IsTrue();
+        await Assert.That(result.FailureReason).IsNull();
     }
 
     private static WorkflowDefinitionModel CreateModelWithCSharpExpression()
@@ -150,7 +157,7 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         };
     }
 
-    private static WorkflowDefinitionScriptAuthorizationService CreateService(bool hostAllowsCSharp, bool hostAllowsPython)
+    private static ServiceContext CreateService(bool hostAllowsCSharp, bool hostAllowsPython)
     {
         var expressionDescriptors = new[]
         {
@@ -174,14 +181,19 @@ public class WorkflowDefinitionScriptAuthorizationServiceTests
         provider.GetDescriptors().Returns(expressionDescriptors);
 
         var registry = new ExpressionDescriptorRegistry([provider]);
+        var services = new ServiceCollection().BuildServiceProvider();
         var visitor = new ActivityVisitor(
             [
                 new SwitchActivityResolver(),
                 new PropertyBasedActivityResolver()
             ],
-            new ServiceCollection().BuildServiceProvider());
+            services);
 
-        return new(visitor, registry);
+        return new(new(visitor, registry), services);
     }
 
+    private sealed record ServiceContext(WorkflowDefinitionScriptAuthorizationService Service, ServiceProvider Services) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => Services.DisposeAsync();
+    }
 }

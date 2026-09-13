@@ -2,16 +2,16 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
-public class InputStateStorageTests
+public class InputStateStorageTests : EvaluationTestBase
 {
-    [Theory(DisplayName = "Stores primitive values in activity state")]
-    [InlineData(42)]
-    [InlineData(0)]
-    [InlineData(-100)]
+    [Test]
+    [DisplayName("Stores primitive values in activity state: $expectedValue")]
+    [Arguments(42)]
+    [Arguments(0)]
+    [Arguments(-100)]
     public async Task StoresPrimitiveIntValues(int expectedValue)
     {
         // Arrange
@@ -23,12 +23,13 @@ public class InputStateStorageTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Contains(expectedValue, context.ActivityState.Values);
+        await Assert.That(context.ActivityState.Values).Contains(expectedValue);
     }
 
-    [Theory(DisplayName = "Stores boolean values in activity state")]
-    [InlineData(true)]
-    [InlineData(false)]
+    [Test]
+    [DisplayName("Stores boolean values in activity state: $expectedValue")]
+    [Arguments(true)]
+    [Arguments(false)]
     public async Task StoresBooleanValues(bool expectedValue)
     {
         // Arrange
@@ -40,12 +41,13 @@ public class InputStateStorageTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Contains(expectedValue, context.ActivityState.Values);
+        await Assert.That(context.ActivityState.Values).Contains(expectedValue);
     }
 
-    [Theory(DisplayName = "Stores string values in activity state")]
-    [InlineData("Test String")]
-    [InlineData("")]
+    [Test]
+    [DisplayName("Stores string values in activity state: $expectedValue")]
+    [Arguments("Test String")]
+    [Arguments("")]
     public async Task StoresStringValues(string expectedValue)
     {
         // Arrange
@@ -57,10 +59,11 @@ public class InputStateStorageTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Contains(expectedValue, context.ActivityState.Values);
+        await Assert.That(context.ActivityState.Values).Contains(expectedValue);
     }
 
-    [Fact(DisplayName = "Stores values using input descriptor name as key")]
+    [Test]
+    [DisplayName("Stores values using input descriptor name as key")]
     public async Task StoresValuesByInputDescriptorName()
     {
         // Arrange
@@ -72,11 +75,12 @@ public class InputStateStorageTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.ActivityState.ContainsKey("Text"));
-        Assert.Equal(textValue, context.ActivityState["Text"]);
+        await Assert.That(context.ActivityState.ContainsKey("Text")).IsTrue();
+        await Assert.That(context.ActivityState["Text"]).IsEqualTo(textValue);
     }
 
-    [Fact(DisplayName = "Stores null values correctly")]
+    [Test]
+    [DisplayName("Stores null values correctly")]
     public async Task StoresNullValues()
     {
         // Arrange
@@ -87,11 +91,12 @@ public class InputStateStorageTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.ActivityState.ContainsKey("Text"));
-        Assert.Null(context.ActivityState["Text"]);
+        await Assert.That(context.ActivityState.ContainsKey("Text")).IsTrue();
+        await Assert.That(context.ActivityState["Text"]).IsNull();
     }
 
-    [Fact(DisplayName = "Overwrites previous values on re-evaluation")]
+    [Test]
+    [DisplayName("Overwrites previous values on re-evaluation")]
     public async Task OverwritesPreviousValuesOnReEvaluation()
     {
         // Arrange
@@ -110,11 +115,12 @@ public class InputStateStorageTests
         var secondValue = context.ActivityState["Text"];
 
         // Assert
-        Assert.Equal(initialValue, firstValue);
-        Assert.Equal(updatedValue, secondValue);
+        await Assert.That(firstValue).IsEqualTo(initialValue);
+        await Assert.That(secondValue).IsEqualTo(updatedValue);
     }
 
-    [Fact(DisplayName = "Stores multiple inputs separately")]
+    [Test]
+    [DisplayName("Stores multiple inputs separately")]
     public async Task StoresMultipleInputsSeparately()
     {
         // Arrange
@@ -126,10 +132,11 @@ public class InputStateStorageTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.ActivityState.Count >= 1);
+        await Assert.That(context.ActivityState.Count >= 1).IsTrue();
     }
 
-    [Fact(DisplayName = "Maintains state across multiple evaluations")]
+    [Test]
+    [DisplayName("Maintains state across multiple evaluations")]
     public async Task MaintainsStateAcrossMultipleEvaluations()
     {
         // Arrange
@@ -146,7 +153,7 @@ public class InputStateStorageTests
         var stateCountAfterSecond = context.ActivityState.Count;
 
         // Assert
-        Assert.Equal(stateCountAfterFirst, stateCountAfterSecond);
-        Assert.Equal(value1, context.ActivityState["Text"]);
+        await Assert.That(stateCountAfterSecond).IsEqualTo(stateCountAfterFirst);
+        await Assert.That(context.ActivityState["Text"]).IsEqualTo(value1);
     }
 }

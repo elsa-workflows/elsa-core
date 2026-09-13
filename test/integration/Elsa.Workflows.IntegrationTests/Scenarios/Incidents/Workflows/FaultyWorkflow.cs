@@ -1,12 +1,13 @@
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Elsa.Workflows.IntegrationTests.Scenarios.Incidents.Statics;
 using Elsa.Workflows.Runtime.Activities;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.Incidents.Workflows;
 
-public class FaultyWorkflow : WorkflowBase
+public sealed record FaultyWorkflowOptions(Type IncidentStrategyType);
+
+public class FaultyWorkflow(FaultyWorkflowOptions options) : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder)
     {
@@ -19,7 +20,7 @@ public class FaultyWorkflow : WorkflowBase
         var step2B = new WriteLine("Step 2b");
         var fault = Fault.Create("Whoops!", "Test", "Test");
 
-        builder.WorkflowOptions.IncidentStrategyType = TestSettings.IncidentStrategyType;
+        builder.WorkflowOptions.IncidentStrategyType = options.IncidentStrategyType;
         
         builder.Root = new Flowchart
         {

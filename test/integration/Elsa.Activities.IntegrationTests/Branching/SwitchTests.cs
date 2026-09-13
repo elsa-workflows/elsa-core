@@ -1,18 +1,20 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
 
 /// <summary>
 /// Integration tests for Switch activity.
 /// </summary>
-public class SwitchTests(ITestOutputHelper testOutputHelper)
+public class SwitchTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
+
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
     
-    [Fact(DisplayName = "Switch completes immediately when no matches and no activities scheduled")]
+    [Test]
+    [DisplayName("Switch completes immediately when no matches and no activities scheduled")]
     public async Task Switch_CompletesImmediately_WhenNoMatchesAndNoActivitiesScheduled()
     {
         // Arrange
@@ -37,7 +39,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesNotExecuted(case1Activity, case2Activity);
     }
 
-    [Fact(DisplayName = "Switch completes immediately when no matches but has null default")]
+    [Test]
+    [DisplayName("Switch completes immediately when no matches but has null default")]
     public async Task Switch_CompletesImmediately_WhenNoMatchesAndDefaultIsNull()
     {
         // Arrange
@@ -59,7 +62,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivityNotExecuted(case1Activity);
     }
 
-    [Fact(DisplayName = "Switch schedules default activity when no cases match")]
+    [Test]
+    [DisplayName("Switch schedules default activity when no cases match")]
     public async Task Switch_SchedulesDefaultActivity_WhenNoCasesMatch()
     {
         // Arrange
@@ -85,7 +89,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesNotExecuted(case1Activity, case2Activity);
     }
 
-    [Fact(DisplayName = "Switch in MatchFirst mode schedules only first matching case")]
+    [Test]
+    [DisplayName("Switch in MatchFirst mode schedules only first matching case")]
     public async Task Switch_InMatchFirstMode_SchedulesOnlyFirstMatchingCase()
     {
         // Arrange
@@ -112,7 +117,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesNotExecuted(case1Activity, case3Activity);
     }
 
-    [Fact(DisplayName = "Switch in MatchAny mode schedules all matching cases")]
+    [Test]
+    [DisplayName("Switch in MatchAny mode schedules all matching cases")]
     public async Task Switch_InMatchAnyMode_SchedulesAllMatchingCases()
     {
         // Arrange
@@ -143,7 +149,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesNotExecuted(case1Activity, case4Activity);
     }
 
-    [Fact(DisplayName = "Switch completes only after all scheduled activities complete")]
+    [Test]
+    [DisplayName("Switch completes only after all scheduled activities complete")]
     public async Task Switch_CompletesOnlyAfterAllScheduledActivitiesComplete()
     {
         // Arrange
@@ -169,7 +176,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesCompleted(switchActivity, activity1, activity2, activity3);
     }
 
-    [Fact(DisplayName = "Switch completes after default activity completes")]
+    [Test]
+    [DisplayName("Switch completes after default activity completes")]
     public async Task Switch_CompletesAfterDefaultActivityCompletes()
     {
         // Arrange
@@ -193,7 +201,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivityNotExecuted(case1Activity);
     }
 
-    [Fact(DisplayName = "Switch with nested activities completes after all complete")]
+    [Test]
+    [DisplayName("Switch with nested activities completes after all complete")]
     public async Task Switch_WithNestedActivities_CompletesAfterAllComplete()
     {
         // Arrange
@@ -232,7 +241,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesCompleted(switchActivity, nestedSequence1, nestedSequence2);
     }
 
-    [Fact(DisplayName = "Switch in MatchFirst mode with single match")]
+    [Test]
+    [DisplayName("Switch in MatchFirst mode with single match")]
     public async Task Switch_InMatchFirstMode_WithSingleMatch()
     {
         // Arrange
@@ -259,7 +269,8 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         result.AssertActivitiesNotExecuted(case1Activity, case2Activity);
     }
 
-    [Fact(DisplayName = "Switch evaluates conditions with expression context")]
+    [Test]
+    [DisplayName("Switch evaluates conditions with expression context")]
     public async Task Switch_EvaluatesConditionsWithExpressionContext()
     {
         // Arrange

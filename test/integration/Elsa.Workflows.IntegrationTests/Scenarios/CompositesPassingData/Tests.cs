@@ -1,20 +1,19 @@
 using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.CompositesPassingData;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(elsa => elsa.UseJavaScript())
             .Build();
@@ -22,7 +21,8 @@ public class Tests
         _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "The main workflow can capture the result of the composite activity")]
+    [Test]
+    [DisplayName("The main workflow can capture the result of the composite activity")]
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();
@@ -33,6 +33,8 @@ public class Tests
 
         // Verify expected output.
         var line = _capturingTextWriter.Lines.ToList().Last();
-        Assert.Equal("hi there obi wan", line);
+        await Assert.That(line).IsEqualTo("hi there obi wan");
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

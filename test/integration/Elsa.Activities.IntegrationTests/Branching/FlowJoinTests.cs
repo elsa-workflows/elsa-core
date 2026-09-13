@@ -2,7 +2,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Xunit.Abstractions;
 using static Elsa.Activities.IntegrationTests.Flow.FlowchartTestHelpers;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
@@ -10,22 +9,28 @@ namespace Elsa.Activities.IntegrationTests.Branching;
 /// <summary>
 /// Integration tests for FlowJoin activity in complex flowchart scenarios.
 /// </summary>
-public class FlowJoinTests
+public class FlowJoinTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
 
-    public FlowJoinTests(ITestOutputHelper testOutputHelper)
+    public FlowJoinTests()
     {
         _output = new();
-        _services = CreateServiceProvider(testOutputHelper, _output);
+        _services = CreateServiceProvider(TestContext.Current!.Output.StandardOutput, _output);
     }
 
-    [Theory]
-    [InlineData(true, FlowJoinMode.WaitAny)]
-    [InlineData(true, FlowJoinMode.WaitAll)]
-    [InlineData(false, FlowJoinMode.WaitAny)]
-    [InlineData(false, FlowJoinMode.WaitAll)]
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeServiceProviderAsync(_services);
+        _output.Dispose();
+    }
+
+    [Test]
+    [Arguments(true, FlowJoinMode.WaitAny)]
+    [Arguments(true, FlowJoinMode.WaitAll)]
+    [Arguments(false, FlowJoinMode.WaitAny)]
+    [Arguments(false, FlowJoinMode.WaitAll)]
     public async Task Should_Handle_Complex_Flowchart_Scenarios(bool useTokenFlow, FlowJoinMode joinMode)
     {
         // Test with a more complex flowchart that has multiple activities
@@ -51,7 +56,8 @@ public class FlowJoinTests
         await RunFlowchartAsync(_services, flowchart, executionMode);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
         
       
         // In token flow mode, both WaitAny and WaitAll should act as no-ops
@@ -63,14 +69,15 @@ public class FlowJoinTests
         
         // Since there's only one inbound connection, both should behave similarly
         
-        Assert.Contains("AfterJoin", _output.Lines);
+        await Assert.That(_output.Lines).Contains("AfterJoin");
+
     }
 
-    [Theory]
-    [InlineData(true, FlowJoinMode.WaitAny)]
-    [InlineData(true, FlowJoinMode.WaitAll)]
-    [InlineData(false, FlowJoinMode.WaitAny)]
-    [InlineData(false, FlowJoinMode.WaitAll)]
+    [Test]
+    [Arguments(true, FlowJoinMode.WaitAny)]
+    [Arguments(true, FlowJoinMode.WaitAll)]
+    [Arguments(false, FlowJoinMode.WaitAny)]
+    [Arguments(false, FlowJoinMode.WaitAll)]
     public async Task Should_Handle_Fork_Join_Scenarios(bool useTokenFlow, FlowJoinMode joinMode)
     {
         // Test FlowJoin with a Fork-Join pattern
@@ -103,15 +110,19 @@ public class FlowJoinTests
         await RunFlowchartAsync(_services, flowchart, executionMode);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
         
         if (useTokenFlow)
         {
             // In token flow mode, FlowJoin acts as a no-op
             // Both branches should execute and continue to AfterJoin
-            Assert.Contains("Branch1", _output.Lines);
-            Assert.Contains("Branch2", _output.Lines);
-            Assert.Contains("AfterJoin", _output.Lines);
+            await Assert.That(_output.Lines).Contains("Branch1");
+
+            await Assert.That(_output.Lines).Contains("Branch2");
+
+            await Assert.That(_output.Lines).Contains("AfterJoin");
+
         }
         else
         {
@@ -119,25 +130,30 @@ public class FlowJoinTests
             if (joinMode == FlowJoinMode.WaitAny)
             {
                 // WaitAny allows continuation after first branch completes
-                Assert.Contains("AfterJoin", _output.Lines);
+                await Assert.That(_output.Lines).Contains("AfterJoin");
+
                 // At least one branch should execute
-                Assert.True(_output.Lines.Contains("Branch1") || _output.Lines.Contains("Branch2"));
+                await Assert.That(_output.Lines.Contains("Branch1") || _output.Lines.Contains("Branch2")).IsTrue();
+
             }
             else // WaitAll
             {
                 // WaitAll waits for both branches to complete
-                Assert.Contains("Branch1", _output.Lines);
-                Assert.Contains("Branch2", _output.Lines);
-                Assert.Contains("AfterJoin", _output.Lines);
+                await Assert.That(_output.Lines).Contains("Branch1");
+
+                await Assert.That(_output.Lines).Contains("Branch2");
+
+                await Assert.That(_output.Lines).Contains("AfterJoin");
+
             }
         }
     }
 
-    [Theory]
-    [InlineData(true, FlowJoinMode.WaitAny)]
-    [InlineData(true, FlowJoinMode.WaitAll)]
-    [InlineData(false, FlowJoinMode.WaitAny)]
-    [InlineData(false, FlowJoinMode.WaitAll)]
+    [Test]
+    [Arguments(true, FlowJoinMode.WaitAny)]
+    [Arguments(true, FlowJoinMode.WaitAll)]
+    [Arguments(false, FlowJoinMode.WaitAny)]
+    [Arguments(false, FlowJoinMode.WaitAll)]
     public async Task Should_Handle_Multiple_Join_Scenarios(bool useTokenFlow, FlowJoinMode joinMode)
     {
         // Test multiple FlowJoin activities in a complex flowchart
@@ -181,18 +197,25 @@ public class FlowJoinTests
         await RunFlowchartAsync(_services, flowchart, executionMode);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("Middle", _output.Lines);
-        Assert.Contains("End", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
+        await Assert.That(_output.Lines).Contains("Middle");
+
+        await Assert.That(_output.Lines).Contains("End");
+
         
         // Verify expected execution patterns based on flow mode and join mode
         if (useTokenFlow)
         {
             // In token flow mode, all activities should execute
-            Assert.Contains("A", _output.Lines);
-            Assert.Contains("B", _output.Lines);
-            Assert.Contains("C", _output.Lines);
-            Assert.Contains("D", _output.Lines);
+            await Assert.That(_output.Lines).Contains("A");
+
+            await Assert.That(_output.Lines).Contains("B");
+
+            await Assert.That(_output.Lines).Contains("C");
+
+            await Assert.That(_output.Lines).Contains("D");
+
         }
         else
         {
@@ -200,17 +223,23 @@ public class FlowJoinTests
             if (joinMode == FlowJoinMode.WaitAll)
             {
                 // WaitAll ensures all parallel branches complete
-                Assert.Contains("A", _output.Lines);
-                Assert.Contains("B", _output.Lines);
-                Assert.Contains("C", _output.Lines);
-                Assert.Contains("D", _output.Lines);
+                await Assert.That(_output.Lines).Contains("A");
+
+                await Assert.That(_output.Lines).Contains("B");
+
+                await Assert.That(_output.Lines).Contains("C");
+
+                await Assert.That(_output.Lines).Contains("D");
+
             }
             else // WaitAny
             {
                 // WaitAny allows continuation after first branch in each fork
                 // At least one from each pair should execute
-                Assert.True(_output.Lines.Contains("A") || _output.Lines.Contains("B"));
-                Assert.True(_output.Lines.Contains("C") || _output.Lines.Contains("D"));
+                await Assert.That(_output.Lines.Contains("A") || _output.Lines.Contains("B")).IsTrue();
+
+                await Assert.That(_output.Lines.Contains("C") || _output.Lines.Contains("D")).IsTrue();
+
             }
         }
     }

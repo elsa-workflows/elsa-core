@@ -2,18 +2,17 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWithInput;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly Spy _spy;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .AddWorkflow<ParentWorkflow>()
             .AddWorkflow<ChildWorkflow>()
             .ConfigureServices(services =>
@@ -26,7 +25,8 @@ public class Tests
         _spy = _services.GetRequiredService<Spy>();
     }
 
-    [Fact(DisplayName = "Each dispatched child workflow receives its own input dictionary")]
+    [Test]
+    [DisplayName("Each dispatched child workflow receives its own input dictionary")]
     public async Task BulkDispatch_EachChildReceivesDistinctInputDictionary()
     {
         // Arrange
@@ -36,16 +36,18 @@ public class Tests
         await _services.RunWorkflowUntilEndAsync(nameof(ParentWorkflow));
 
         // Assert - each dispatch should receive a distinct dictionary instance
-        Assert.Equal(3, _spy.CapturedInputReferences.Count);
-        Assert.Equal(3, _spy.CapturedInputReferences.Distinct().Count());
+        await Assert.That(_spy.CapturedInputReferences.Count).IsEqualTo(3);
+        await Assert.That(_spy.CapturedInputReferences.Distinct().Count()).IsEqualTo(3);
 
         // Assert - each dispatch should have its corresponding item value
         var items = _spy.CapturedInputSnapshots
             .Select(s => s?.GetValueOrDefault<string>("Item"))
             .ToList();
         
-        Assert.Contains("Apple", items);
-        Assert.Contains("Banana", items);
-        Assert.Contains("Cherry", items);
+        await Assert.That(items).Contains("Apple");
+        await Assert.That(items).Contains("Banana");
+        await Assert.That(items).Contains("Cherry");
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

@@ -3,13 +3,13 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
-public class WrappedInputEvaluationTests
+public class WrappedInputEvaluationTests : EvaluationTestBase
 {
-    [Fact(DisplayName = "Sets memory block reference with deterministic ID")]
+    [Test]
+    [DisplayName("Sets memory block reference with deterministic ID")]
     public async Task SetsMemoryBlockReferenceWithDeterministicId()
     {
         // Arrange
@@ -22,12 +22,13 @@ public class WrappedInputEvaluationTests
 
         // Assert
         var memoryReference = writeLine.Text.MemoryBlockReference();
-        Assert.NotNull(memoryReference);
+        await Assert.That(memoryReference).IsNotNull();
         var storedValue = memoryReference.Get(context.ExpressionExecutionContext);
-        Assert.Equal(expectedValue, storedValue);
+        await Assert.That(storedValue).IsEqualTo(expectedValue);
     }
 
-    [Fact(DisplayName = "Handles missing memory block reference ID")]
+    [Test]
+    [DisplayName("Handles missing memory block reference ID")]
     public async Task HandlesMissingMemoryBlockReferenceId()
     {
         // Arrange
@@ -40,12 +41,13 @@ public class WrappedInputEvaluationTests
 
         // Assert
         var memoryReference = writeLine.Text.MemoryBlockReference();
-        Assert.NotNull(memoryReference);
-        Assert.NotNull(memoryReference.Id);
-        Assert.False(string.IsNullOrEmpty(memoryReference.Id));
+        await Assert.That(memoryReference).IsNotNull();
+        await Assert.That(memoryReference.Id).IsNotNull();
+        await Assert.That(string.IsNullOrEmpty(memoryReference.Id)).IsFalse();
     }
 
-    [Fact(DisplayName = "Stores evaluated value in ExpressionExecutionContext")]
+    [Test]
+    [DisplayName("Stores evaluated value in ExpressionExecutionContext")]
     public async Task StoresEvaluatedValueInExpressionExecutionContext()
     {
         // Arrange
@@ -60,13 +62,14 @@ public class WrappedInputEvaluationTests
         // Assert
         var memoryReference = setVariable.Value.MemoryBlockReference();
         var storedValue = memoryReference.Get(context.ExpressionExecutionContext);
-        Assert.Equal(expectedValue, storedValue);
+        await Assert.That(storedValue).IsEqualTo(expectedValue);
     }
 
-    [Theory(DisplayName = "Evaluates different expression types correctly")]
-    [InlineData("Literal", "Literal Test")]
-    [InlineData("Delegate", "Delegate Result")]
-    [InlineData("Variable", "Variable Value")]
+    [Test]
+    [DisplayName("Evaluates different expression types correctly: $expressionType")]
+    [Arguments("Literal", "Literal Test")]
+    [Arguments("Delegate", "Delegate Result")]
+    [Arguments("Variable", "Variable Value")]
     public async Task EvaluatesExpressionTypes(string expressionType, string expectedValue)
     {
         // Arrange
@@ -98,6 +101,6 @@ public class WrappedInputEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Equal(expectedValue, context.ActivityState["Text"]);
+        await Assert.That(context.ActivityState["Text"]).IsEqualTo(expectedValue);
     }
 }

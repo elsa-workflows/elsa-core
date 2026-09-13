@@ -6,7 +6,6 @@ using FluentStorage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Xunit.Abstractions;
 
 namespace Elsa.Testing.Shared;
 
@@ -15,23 +14,24 @@ namespace Elsa.Testing.Shared;
 /// </summary>
 public class TestApplicationBuilder
 {
-    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly TextWriter _testOutput;
     private readonly ServiceCollection _services;
     private Action<IModule> _configureElsa;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TestApplicationBuilder"/> class.
     /// </summary>
-    /// <param name="testOutputHelper">The test output helper.</param>
-    public TestApplicationBuilder(ITestOutputHelper testOutputHelper)
+    /// <param name="testOutput">The writer that receives diagnostic and workflow output.</param>
+    public TestApplicationBuilder(TextWriter testOutput)
     {
-        _testOutputHelper = testOutputHelper;
+        ArgumentNullException.ThrowIfNull(testOutput);
+        _testOutput = TextWriter.Synchronized(testOutput);
         _services = new();
 
         _services
-            .AddSingleton(testOutputHelper)
+            .AddSingleton(_testOutput)
             .AddSingleton<IConfiguration, ConfigurationManager>()
-            .AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(testOutputHelper)).SetMinimumLevel(LogLevel.Debug));
+            .AddLogging(logging => logging.AddProvider(new TextWriterLoggerProvider(_testOutput)).SetMinimumLevel(LogLevel.Debug));
 
         _configureElsa += elsa => elsa
             .AddActivitiesFrom<WriteLine>()
@@ -41,7 +41,7 @@ public class TestApplicationBuilder
             .UseLiquid()
             .UseWorkflowManagement()
             .UseWorkflows(workflows => workflows
-                .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(new XunitConsoleTextWriter(_testOutputHelper)))
+                .WithStandardOutStreamProvider(_ => new StandardOutStreamProvider(_testOutput))
             );
     }
 
@@ -84,7 +84,7 @@ public class TestApplicationBuilder
     /// <returns>The <see cref="TestApplicationBuilder"/>.</returns>
     public TestApplicationBuilder WithCapturingTextWriter(CapturingTextWriter capturingTextWriter)
     {
-        var combinedTextWriter = new CombinedTextWriter(capturingTextWriter, new XunitConsoleTextWriter(_testOutputHelper));
+        var combinedTextWriter = TextWriter.Synchronized(new CombinedTextWriter(capturingTextWriter, _testOutput));
         var provider = new StandardOutStreamProvider(combinedTextWriter);
 
         ConfigureElsa(elsa => elsa.UseWorkflows(workflows => workflows.WithStandardOutStreamProvider(_ => provider)));

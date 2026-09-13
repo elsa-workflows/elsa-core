@@ -6,17 +6,16 @@ using Elsa.Testing.Shared;
 using Jint;
 using Jint.Runtime;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
 /// <summary>
 /// Verifies that a runaway JavaScript expression cannot occupy the calling thread indefinitely.
 /// </summary>
-public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
+public class ExecutionConstraintTests : IAsyncDisposable
 {
     private const string InfiniteLoop = "while (true) {}";
+    private IServiceProvider? _services;
 
     /// <summary>
     /// Tests whose subject is a constraint other than the timeout still register a timeout, so that a regression
@@ -28,16 +27,18 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
     /// </summary>
     private static readonly TimeSpan FailsafeTimeout = TimeSpan.FromSeconds(30);
 
-    [Fact(DisplayName = "An expression that never returns is aborted by the execution timeout")]
+    [Test]
+    [DisplayName("An expression that never returns is aborted by the execution timeout")]
     public async Task ExecutionTimeoutAbortsRunawayExpression()
     {
         // No failsafe needed: the timeout is the subject here, so the test is bounded by the thing it asserts.
         var services = BuildServices(options => options.ExecutionTimeout = TimeSpan.FromMilliseconds(250));
 
-        await Assert.ThrowsAsync<TimeoutException>(() => EvaluateAsync(services, InfiniteLoop));
+        await Assert.ThrowsExactlyAsync<TimeoutException>(() => EvaluateAsync(services, InfiniteLoop));
     }
 
-    [Fact(DisplayName = "An expression that never returns is aborted when the cancellation token is signalled")]
+    [Test]
+    [DisplayName("An expression that never returns is aborted when the cancellation token is signalled")]
     public async Task CancellationAbortsRunawayExpression()
     {
         var services = BuildServices(options => options.ExecutionTimeout = FailsafeTimeout);
@@ -53,7 +54,8 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
             cancellationTokenSource.Token));
     }
 
-    [Fact(DisplayName = "An expression that exceeds the statement limit is aborted")]
+    [Test]
+    [DisplayName("An expression that exceeds the statement limit is aborted")]
     public async Task StatementLimitAbortsRunawayExpression()
     {
         var services = BuildServices(options =>
@@ -65,7 +67,8 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
         await AssertAbortedByAsync<StatementsCountOverflowException>(() => EvaluateAsync(services, InfiniteLoop));
     }
 
-    [Fact(DisplayName = "An expression that allocates without bound is aborted by the memory limit")]
+    [Test]
+    [DisplayName("An expression that allocates without bound is aborted by the memory limit")]
     public async Task MemoryLimitAbortsAllocationHeavyExpression()
     {
         var services = BuildServices(options =>
@@ -80,7 +83,8 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
         await AssertAbortedByAsync<MemoryLimitExceededException>(() => EvaluateAsync(services, "var s = 'x'; while (true) { s += s; }"));
     }
 
-    [Fact(DisplayName = "An expression that recurses without bound is aborted")]
+    [Test]
+    [DisplayName("An expression that recurses without bound is aborted")]
     public async Task RecursionLimitAbortsRunawayExpression()
     {
         var services = BuildServices(options =>
@@ -92,19 +96,29 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
         await AssertAbortedByAsync<RecursionDepthOverflowException>(() => EvaluateAsync(services, "function f() { return f(); } return f();"));
     }
 
-    [Fact(DisplayName = "A well-behaved expression is unaffected by the default constraints")]
+    [Test]
+    [DisplayName("A well-behaved expression is unaffected by the default constraints")]
     public async Task DefaultConstraintsDoNotAffectNormalExpressions()
     {
         var services = BuildServices(_ => { });
 
-        Assert.Equal("3", await EvaluateAsync(services, "return '' + (1 + 2);"));
+        await Assert.That(await EvaluateAsync(services, "return '' + (1 + 2);")).IsEqualTo("3");
     }
 
     private IServiceProvider BuildServices(Action<JintOptions> configure)
     {
-        return new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseJavaScript(configure))
             .Build();
+        return _services;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
     }
 
     private static async Task<string?> EvaluateAsync(IServiceProvider services, string script, Action<Engine>? configureEngine = null, CancellationToken cancellationToken = default)
@@ -121,14 +135,11 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
     /// </summary>
     private static async Task AssertAbortedByAsync<TException>(Func<Task> evaluate) where TException : Exception
     {
-        var exception = await Record.ExceptionAsync(evaluate);
+        var exception = await Assert.That(evaluate).ThrowsException()
+            .Because($"Expected the expression to be aborted by {typeof(TException).Name}, but it ran to completion.");
 
-        if (exception is null)
-            Assert.Fail($"Expected the expression to be aborted by {typeof(TException).Name}, but it ran to completion.");
-
-        if (exception is TimeoutException)
-            Assert.Fail($"The {FailsafeTimeout.TotalSeconds:0} second failsafe execution timeout fired before {typeof(TException).Name} was thrown: the constraint under test did not abort the expression.");
-
-        Assert.IsType<TException>(exception);
+        await Assert.That(exception is not TimeoutException).IsTrue()
+            .Because($"The {FailsafeTimeout.TotalSeconds:0} second failsafe execution timeout fired before {typeof(TException).Name} was thrown: the constraint under test did not abort the expression.");
+        await Assert.That(exception).IsOfType(typeof(TException));
     }
 }

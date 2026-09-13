@@ -1,6 +1,5 @@
 using Bpmn.Model.State;
 using Elsa.Workflows;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -8,11 +7,14 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 /// What survives a suspend and a resume: the pruned <see cref="BpmnExecutionState"/> and the host-side work ledger,
 /// both persisted as JSON strings in <see cref="ActivityExecutionContext.Properties"/>.
 /// </summary>
-public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
+public class BpmnPersistenceTests : IAsyncDisposable
 {
-    private readonly BpmnTestHost _host = new(testOutputHelper);
+    private readonly BpmnTestHost _host = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "The persisted execution state stays bounded across many evaluations of one scope")]
+    public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    [Test]
+    [DisplayName("The persisted execution state stays bounded across many evaluations of one scope")]
     public async Task PersistedExecutionState_StaysBoundedAcrossManyEvaluations()
     {
         // A sequential multi-instance loop drives one evaluation per iteration, all on the same scope. Every
@@ -34,34 +36,41 @@ public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
             await _host.FinishWorkAsync("each");
 
             var (state, _) = _host.PersistedScopeMemory();
-            Assert.NotNull(state);
+            state = (await Assert.That(state).IsNotNull())!;
+
             maxTokenCount = Math.Max(maxTokenCount, state.Tokens.Count);
         }
 
         await _host.FinishWorkAsync("each");
 
         // Assert: the loop actually ran to completion...
-        Assert.Equal(cardinality, _host.Log.Occurrences("executed:each"));
-        Assert.Equal(1, _host.Log.Occurrences("executed:after"));
+        await Assert.That(_host.Log.Occurrences("executed:each")).IsEqualTo(cardinality);
+
+        await Assert.That(_host.Log.Occurrences("executed:after")).IsEqualTo(1);
+
 
         // ...and the persisted state's token count stayed flat rather than growing with the iteration count. Without
         // pruning, a consumed token from every prior iteration would still be there by the time the loop is nearly
         // done, so the count would climb toward the iteration count instead of staying near-constant.
-        Assert.True(
-            maxTokenCount < cardinality,
-            $"Expected the persisted token count to stay well below the iteration count ({cardinality}) because Prune() drops consumed tokens no active work references, but the highest observed count was {maxTokenCount}.");
+        await Assert.That(maxTokenCount < cardinality)
+            .IsTrue()
+            .Because($"Expected the persisted token count to stay well below the iteration count ({cardinality}) because Prune() drops consumed tokens no active work references, but the highest observed count was {maxTokenCount}.");
     }
 
-    [Fact(DisplayName = "A scope resumed from a JSON round trip matches each completion back to its binding through the rehydrated ledger")]
+    [Test]
+    [DisplayName("A scope resumed from a JSON round trip matches each completion back to its binding through the rehydrated ledger")]
     public async Task ResumedScope_WithTwoUnitsOfLiveWork_MatchesEachCompletionToItsBindingThroughTheRehydratedLedger()
     {
         // Arrange: suspend with two live units of work outstanding, both bound under the same scope.
         await _host.RunAsync(BpmnTestProcesses.ParallelSplitAndJoinBlocking(_host.Log));
 
         var (_, ledgerBeforeResume) = _host.PersistedScopeMemory();
-        Assert.Equal(2, ledgerBeforeResume.Records.Count);
-        Assert.Contains(ledgerBeforeResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("left"));
-        Assert.Contains(ledgerBeforeResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("right"));
+        await Assert.That(ledgerBeforeResume.Records.Count).IsEqualTo(2);
+
+        await Assert.That(ledgerBeforeResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("left"));
+
+        await Assert.That(ledgerBeforeResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("right"));
+
 
         // Act: round-trip the workflow state through Elsa's own serializer -- what a real persistence store would
         // do -- and resume each branch by name, one at a time, round-tripping again between them.
@@ -69,9 +78,12 @@ public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
 
         // Assert: the ledger the resumed scope would read from is intact before either branch is even resumed.
         var (_, ledgerAfterResume) = _host.PersistedScopeMemory();
-        Assert.Equal(2, ledgerAfterResume.Records.Count);
-        Assert.Contains(ledgerAfterResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("left"));
-        Assert.Contains(ledgerAfterResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("right"));
+        await Assert.That(ledgerAfterResume.Records.Count).IsEqualTo(2);
+
+        await Assert.That(ledgerAfterResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("left"));
+
+        await Assert.That(ledgerAfterResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("right"));
+
 
         await _host.FinishWorkAsync("left");
         _host.RoundTripStateThroughJson();
@@ -81,13 +93,18 @@ public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
         // ledger still mapped each completing child context back to its own binding: a scope with a lost or shared
         // handle map either drops a completion outright (the join never fires and the workflow never finishes) or
         // cannot tell the two branches apart (the join fires more than once).
-        Assert.Contains("resumed:left", _host.Log.Entries);
-        Assert.Contains("resumed:right", _host.Log.Entries);
-        Assert.Equal(1, _host.Log.Occurrences("executed:after"));
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).Contains("resumed:left");
+
+        await Assert.That(_host.Log.Entries).Contains("resumed:right");
+
+        await Assert.That(_host.Log.Occurrences("executed:after")).IsEqualTo(1);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A nested scope resumed from a JSON round trip matches each completion back to its binding through its own rehydrated ledger")]
+    [Test]
+    [DisplayName("A nested scope resumed from a JSON round trip matches each completion back to its binding through its own rehydrated ledger")]
     public async Task ResumedNestedScope_WithTwoUnitsOfLiveWork_MatchesEachCompletionToItsBindingThroughTheRehydratedLedger()
     {
         // Arrange: suspend with two live units of work outstanding inside the nested scope -- the embedded
@@ -95,9 +112,12 @@ public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
         await _host.RunAsync(BpmnTestProcesses.NestedParallelSplitAndJoinBlocking(_host.Log));
 
         var (_, nestedLedgerBeforeResume) = _host.PersistedScopeMemory(nested: true);
-        Assert.Equal(2, nestedLedgerBeforeResume.Records.Count);
-        Assert.Contains(nestedLedgerBeforeResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("subLeft"));
-        Assert.Contains(nestedLedgerBeforeResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("subRight"));
+        await Assert.That(nestedLedgerBeforeResume.Records.Count).IsEqualTo(2);
+
+        await Assert.That(nestedLedgerBeforeResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("subLeft"));
+
+        await Assert.That(nestedLedgerBeforeResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("subRight"));
+
 
         // Act: round-trip the workflow state through Elsa's own serializer, then resume each branch by name, one at
         // a time, round-tripping again between them -- exactly as the root-scope test above does, but crossing into
@@ -106,9 +126,12 @@ public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
 
         // Assert: the nested scope's own ledger is intact before either branch is even resumed.
         var (_, nestedLedgerAfterResume) = _host.PersistedScopeMemory(nested: true);
-        Assert.Equal(2, nestedLedgerAfterResume.Records.Count);
-        Assert.Contains(nestedLedgerAfterResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("subLeft"));
-        Assert.Contains(nestedLedgerAfterResume.Records, x => x.BindingRef == BpmnTestProcesses.BindingRef("subRight"));
+        await Assert.That(nestedLedgerAfterResume.Records.Count).IsEqualTo(2);
+
+        await Assert.That(nestedLedgerAfterResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("subLeft"));
+
+        await Assert.That(nestedLedgerAfterResume.Records).Contains(x => x.BindingRef == BpmnTestProcesses.BindingRef("subRight"));
+
 
         await _host.FinishWorkAsync("subLeft");
         _host.RoundTripStateThroughJson();
@@ -119,10 +142,15 @@ public class BpmnPersistenceTests(ITestOutputHelper testOutputHelper)
         // ledger still mapped each completing child context back to its own binding: a nested scope with a lost or
         // shared handle map either drops a completion outright (the nested join never fires and the process never
         // finishes) or cannot tell the two branches apart (the nested join fires more than once).
-        Assert.Contains("resumed:subLeft", _host.Log.Entries);
-        Assert.Contains("resumed:subRight", _host.Log.Entries);
-        Assert.Equal(1, _host.Log.Occurrences("executed:subAfter"));
-        Assert.Equal(1, _host.Log.Occurrences("executed:after"));
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).Contains("resumed:subLeft");
+
+        await Assert.That(_host.Log.Entries).Contains("resumed:subRight");
+
+        await Assert.That(_host.Log.Occurrences("executed:subAfter")).IsEqualTo(1);
+
+        await Assert.That(_host.Log.Occurrences("executed:after")).IsEqualTo(1);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 }

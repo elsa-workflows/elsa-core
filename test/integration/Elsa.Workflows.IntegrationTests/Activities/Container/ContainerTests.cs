@@ -1,104 +1,110 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities.Container;
 
 /// <summary>
 /// Integration tests for the <see cref="Container"/> activity.
 /// </summary>
-public class ContainerTests(ITestOutputHelper testOutputHelper)
+public class ContainerTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "Container executes child activities in order")]
+    [Test]
+    [DisplayName("Container executes child activities in order")]
     public async Task Container_ExecutesChildActivitiesInOrder()
     {
         // Arrange & Act
         var (result, lines) = await RunWorkflowAndCaptureOutput(new SimpleContainerWorkflow());
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Equal(new[] { "Activity 1", "Activity 2", "Activity 3" }, lines);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Activity 1", "Activity 2", "Activity 3" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Container with variables makes them available to child activities")]
+    [Test]
+    [DisplayName("Container with variables makes them available to child activities")]
     public async Task Container_WithVariables_MakesThemAvailableToChildren()
     {
         // Arrange & Act
         var (result, lines) = await RunWorkflowAndCaptureOutput(new ContainerWithVariablesWorkflow());
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Contains("Counter: 0", lines[0]);
-        Assert.Contains("Counter: 1", lines[1]);
-        Assert.Contains("Counter: 2", lines[2]);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lines[0]).Contains("Counter: 0", StringComparison.CurrentCulture);
+        await Assert.That(lines[1]).Contains("Counter: 1", StringComparison.CurrentCulture);
+        await Assert.That(lines[2]).Contains("Counter: 2", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Container with nested containers scopes variables correctly")]
+    [Test]
+    [DisplayName("Container with nested containers scopes variables correctly")]
     public async Task Container_WithNestedContainers_ScopesVariablesCorrectly()
     {
         // Arrange & Act
         var (result, lines) = await RunWorkflowAndCaptureOutput(new NestedContainersWorkflow());
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Contains("Outer: 10", lines[0]);
-        Assert.Contains("Inner: 20", lines[1]);
-        Assert.Contains("Outer again: 10", lines[2]);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lines[0]).Contains("Outer: 10", StringComparison.CurrentCulture);
+        await Assert.That(lines[1]).Contains("Inner: 20", StringComparison.CurrentCulture);
+        await Assert.That(lines[2]).Contains("Outer again: 10", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Container with unnamed variables auto-names them")]
+    [Test]
+    [DisplayName("Container with unnamed variables auto-names them")]
     public async Task Container_WithUnnamedVariables_AutoNamesThem()
     {
         // Arrange & Act
         var (result, _) = await RunWorkflowAndCaptureOutput(new ContainerWithUnnamedVariablesWorkflow());
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
         // The workflow should complete successfully even with unnamed variables
     }
 
-    [Fact(DisplayName = "Container with no activities completes successfully")]
+    [Test]
+    [DisplayName("Container with no activities completes successfully")]
     public async Task Container_WithNoActivities_CompletesSuccessfully()
     {
         // Arrange & Act
         var (result, lines) = await RunWorkflowAndCaptureOutput(new EmptyContainerWorkflow());
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Empty(lines);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lines).IsEmpty();
     }
 
-    [Fact(DisplayName = "Container with multiple variable types handles them correctly")]
+    [Test]
+    [DisplayName("Container with multiple variable types handles them correctly")]
     public async Task Container_WithMultipleVariableTypes_HandlesThemCorrectly()
     {
         // Arrange & Act
         var (result, lines) = await RunWorkflowAndCaptureOutput(new ContainerWithMixedVariableTypesWorkflow());
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Contains("Int: 42", lines[0]);
-        Assert.Contains("String: Hello", lines[1]);
-        Assert.Contains("Bool: True", lines[2]);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lines[0]).Contains("Int: 42", StringComparison.CurrentCulture);
+        await Assert.That(lines[1]).Contains("String: Hello", StringComparison.CurrentCulture);
+        await Assert.That(lines[2]).Contains("Bool: True", StringComparison.CurrentCulture);
     }
 
-    [Theory(DisplayName = "Container handles different numbers of child activities")]
-    [InlineData(1)]
-    [InlineData(5)]
-    [InlineData(10)]
+    [Test]
+    [DisplayName("Container handles different numbers of child activities: $activityCount")]
+    [Arguments(1)]
+    [Arguments(5)]
+    [Arguments(10)]
     public async Task Container_HandlesDifferentNumbersOfChildActivities(int activityCount)
     {
         // Arrange & Act
         var (result, lines) = await RunWorkflowAndCaptureOutput(new DynamicContainerWorkflow(activityCount));
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Equal(activityCount, lines.Count);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lines.Count).IsEqualTo(activityCount);
         for (var i = 0; i < activityCount; i++)
         {
-            Assert.Equal($"Activity {i + 1}", lines[i]);
+            await Assert.That(lines[i]).IsEqualTo($"Activity {i + 1}");
         }
     }
     
@@ -108,4 +114,6 @@ public class ContainerTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
         return (result, lines);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_fixture);
 }

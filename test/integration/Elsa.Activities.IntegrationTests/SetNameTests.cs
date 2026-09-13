@@ -1,21 +1,24 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class SetNameTests(ITestOutputHelper testOutputHelper)
+public class SetNameTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "SetName sets the workflow instance name.")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("SetName sets the workflow instance name.")]
     public async Task Test1()
     {
         const string expectedName = "Foo";
         var setName = new SetName(new Input<string>(expectedName));
         var result = await _fixture.RunActivityAsync(setName);
         var actualName = result.WorkflowState.Name;
-        Assert.Equal(expectedName, actualName);
+        await Assert.That(actualName).IsEqualTo(expectedName);
+
     }
 }

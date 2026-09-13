@@ -3,7 +3,6 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.Activities.Flowchart.Models;
-using Xunit.Abstractions;
 using static Elsa.Activities.IntegrationTests.Flow.FlowchartTestHelpers;
 
 namespace Elsa.Activities.IntegrationTests.Flow;
@@ -11,19 +10,31 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 /// <summary>
 /// Integration tests for counter-based flowchart execution strategy.
 /// </summary>
-[Collection("FlowchartTests")]
-public class FlowchartCounterBasedTests
+public class FlowchartCounterBasedTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output;
 
-    public FlowchartCounterBasedTests(ITestOutputHelper testOutputHelper)
+    public FlowchartCounterBasedTests()
     {
         _output = new();
-        _services = CreateServiceProvider(testOutputHelper, _output);
+        _services = CreateServiceProvider(TestContext.Current!.Output.StandardOutput, _output);
     }
 
-    [Fact(DisplayName = "Executes simple linear flowchart")]
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await DisposeServiceProviderAsync(_services);
+        }
+        finally
+        {
+            _output.Dispose();
+        }
+    }
+
+    [Test]
+    [DisplayName("Executes simple linear flowchart")]
     public async Task ExecutesSimpleLinearFlowchart()
     {
         // Arrange
@@ -37,13 +48,18 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Equal(3, _output.Lines.Count);
-        Assert.Equal("First", _output.Lines.ElementAt(0));
-        Assert.Equal("Second", _output.Lines.ElementAt(1));
-        Assert.Equal("Third", _output.Lines.ElementAt(2));
+        await Assert.That(_output.Lines.Count).IsEqualTo(3);
+
+        await Assert.That(_output.Lines.ElementAt(0)).IsEqualTo("First");
+
+        await Assert.That(_output.Lines.ElementAt(1)).IsEqualTo("Second");
+
+        await Assert.That(_output.Lines.ElementAt(2)).IsEqualTo("Third");
+
     }
 
-    [Fact(DisplayName = "Executes both branches in parallel flowchart")]
+    [Test]
+    [DisplayName("Executes both branches in parallel flowchart")]
     public async Task ExecutesBothBranches()
     {
         // Arrange
@@ -56,13 +72,18 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Equal(3, _output.Lines.Count);
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("Branch1", _output.Lines);
-        Assert.Contains("Branch2", _output.Lines);
+        await Assert.That(_output.Lines.Count).IsEqualTo(3);
+
+        await Assert.That(_output.Lines).Contains("Start");
+
+        await Assert.That(_output.Lines).Contains("Branch1");
+
+        await Assert.That(_output.Lines).Contains("Branch2");
+
     }
 
-    [Fact(DisplayName = "Handles flowchart with no connections")]
+    [Test]
+    [DisplayName("Handles flowchart with no connections")]
     public async Task HandlesNoConnections()
     {
         // Arrange
@@ -77,11 +98,14 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Single(_output.Lines);
-        Assert.Equal("Isolated", _output.Lines.ElementAt(0));
+        await Assert.That(_output.Lines).HasSingleItem();
+
+        await Assert.That(_output.Lines.ElementAt(0)).IsEqualTo("Isolated");
+
     }
 
-    [Fact(DisplayName = "Completes when start activity is null")]
+    [Test]
+    [DisplayName("Completes when start activity is null")]
     public async Task CompletesWhenStartIsNull()
     {
         // Arrange
@@ -94,11 +118,14 @@ public class FlowchartCounterBasedTests
         var result = await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Empty(_output.Lines);
+        await Assert.That(result).IsNotNull();
+
+        await Assert.That(_output.Lines).IsEmpty();
+
     }
 
-    [Fact(DisplayName = "Follows conditional branches with If activity")]
+    [Test]
+    [DisplayName("Follows conditional branches with If activity")]
     public async Task FollowsConditionalBranches()
     {
         // Arrange
@@ -118,11 +145,14 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Single(_output.Lines);
-        Assert.Equal("Then branch", _output.Lines.ElementAt(0));
+        await Assert.That(_output.Lines).HasSingleItem();
+
+        await Assert.That(_output.Lines.ElementAt(0)).IsEqualTo("Then branch");
+
     }
 
-    [Fact(DisplayName = "Executes join node with WaitAny mode")]
+    [Test]
+    [DisplayName("Executes join node with WaitAny mode")]
     public async Task ExecutesJoinNodeWaitAny()
     {
         // Arrange
@@ -150,13 +180,17 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("AfterJoin", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
+        await Assert.That(_output.Lines).Contains("AfterJoin");
+
         // At least one branch should execute
-        Assert.True(_output.Lines.Contains("Branch1") || _output.Lines.Contains("Branch2"));
+        await Assert.That(_output.Lines.Contains("Branch1") || _output.Lines.Contains("Branch2")).IsTrue();
+
     }
 
-    [Fact(DisplayName = "Executes join node with WaitAll mode")]
+    [Test]
+    [DisplayName("Executes join node with WaitAll mode")]
     public async Task ExecutesJoinNodeWaitAll()
     {
         // Arrange
@@ -184,13 +218,18 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("Branch1", _output.Lines);
-        Assert.Contains("Branch2", _output.Lines);
-        Assert.Contains("AfterJoin", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
+        await Assert.That(_output.Lines).Contains("Branch1");
+
+        await Assert.That(_output.Lines).Contains("Branch2");
+
+        await Assert.That(_output.Lines).Contains("AfterJoin");
+
     }
 
-    [Fact(DisplayName = "Handles multiple sequential joins")]
+    [Test]
+    [DisplayName("Handles multiple sequential joins")]
     public async Task HandlesMultipleSequentialJoins()
     {
         // Arrange
@@ -225,15 +264,22 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("A1", _output.Lines);
-        Assert.Contains("A2", _output.Lines);
-        Assert.Contains("B1", _output.Lines);
-        Assert.Contains("B2", _output.Lines);
-        Assert.Contains("End", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
+        await Assert.That(_output.Lines).Contains("A1");
+
+        await Assert.That(_output.Lines).Contains("A2");
+
+        await Assert.That(_output.Lines).Contains("B1");
+
+        await Assert.That(_output.Lines).Contains("B2");
+
+        await Assert.That(_output.Lines).Contains("End");
+
     }
 
-    [Fact(DisplayName = "Handles complex diamond pattern")]
+    [Test]
+    [DisplayName("Handles complex diamond pattern")]
     public async Task HandlesComplexDiamondPattern()
     {
         // Arrange
@@ -265,15 +311,22 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Contains("Start", _output.Lines);
-        Assert.Contains("Left1", _output.Lines);
-        Assert.Contains("Left2", _output.Lines);
-        Assert.Contains("Right1", _output.Lines);
-        Assert.Contains("Right2", _output.Lines);
-        Assert.Contains("End", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Start");
+
+        await Assert.That(_output.Lines).Contains("Left1");
+
+        await Assert.That(_output.Lines).Contains("Left2");
+
+        await Assert.That(_output.Lines).Contains("Right1");
+
+        await Assert.That(_output.Lines).Contains("Right2");
+
+        await Assert.That(_output.Lines).Contains("End");
+
     }
 
-    [Fact(DisplayName = "Executes activities in correct order for sequential flow")]
+    [Test]
+    [DisplayName("Executes activities in correct order for sequential flow")]
     public async Task ExecutesInCorrectOrderForSequential()
     {
         // Arrange
@@ -288,14 +341,20 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Equal(4, _output.Lines.Count);
-        Assert.Equal("1", _output.Lines.ElementAt(0));
-        Assert.Equal("2", _output.Lines.ElementAt(1));
-        Assert.Equal("3", _output.Lines.ElementAt(2));
-        Assert.Equal("4", _output.Lines.ElementAt(3));
+        await Assert.That(_output.Lines.Count).IsEqualTo(4);
+
+        await Assert.That(_output.Lines.ElementAt(0)).IsEqualTo("1");
+
+        await Assert.That(_output.Lines.ElementAt(1)).IsEqualTo("2");
+
+        await Assert.That(_output.Lines.ElementAt(2)).IsEqualTo("3");
+
+        await Assert.That(_output.Lines.ElementAt(3)).IsEqualTo("4");
+
     }
 
-    [Fact(DisplayName = "Handles nested flowcharts")]
+    [Test]
+    [DisplayName("Handles nested flowcharts")]
     public async Task HandlesNestedFlowcharts()
     {
         // Arrange
@@ -311,16 +370,21 @@ public class FlowchartCounterBasedTests
         );
 
         // Act
-        await RunFlowchartAsync(_services, outerFlowchart);
+        await RunFlowchartAsync(_services, outerFlowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Contains("Outer1", _output.Lines);
-        Assert.Contains("Inner1", _output.Lines);
-        Assert.Contains("Inner2", _output.Lines);
-        Assert.Contains("Outer2", _output.Lines);
+        await Assert.That(_output.Lines).Contains("Outer1");
+
+        await Assert.That(_output.Lines).Contains("Inner1");
+
+        await Assert.That(_output.Lines).Contains("Inner2");
+
+        await Assert.That(_output.Lines).Contains("Outer2");
+
     }
 
-    [Fact(DisplayName = "Handles unconnected activities in flowchart")]
+    [Test]
+    [DisplayName("Handles unconnected activities in flowchart")]
     public async Task HandlesUnconnectedActivities()
     {
         // Arrange
@@ -338,9 +402,12 @@ public class FlowchartCounterBasedTests
         await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert
-        Assert.Single(_output.Lines);
-        Assert.Equal("Connected", _output.Lines.ElementAt(0));
-        Assert.DoesNotContain("Unconnected", _output.Lines);
+        await Assert.That(_output.Lines).HasSingleItem();
+
+        await Assert.That(_output.Lines.ElementAt(0)).IsEqualTo("Connected");
+
+        await Assert.That(_output.Lines).DoesNotContain("Unconnected");
+
     }
 
     /// <summary>
@@ -350,7 +417,8 @@ public class FlowchartCounterBasedTests
     /// activity was not yet in the scheduler, causing the flowchart to finish prematurely without running
     /// the activity downstream of the join.
     /// </summary>
-    [Fact(DisplayName = "WaitAny join schedules outbound before canceling blocked branch, preventing premature completion")]
+    [Test]
+    [DisplayName("WaitAny join schedules outbound before canceling blocked branch, preventing premature completion")]
     public async Task WaitAnyJoin_SchedulesOutboundBeforeCancelingBlockedBranch()
     {
         // Arrange
@@ -388,13 +456,16 @@ public class FlowchartCounterBasedTests
         var result = await RunFlowchartAsync(_services, flowchart, FlowchartExecutionMode.CounterBased);
 
         // Assert: the outbound path of the join must have executed
-        Assert.Contains("AfterJoin", _output.Lines);
+        await Assert.That(_output.Lines).Contains("AfterJoin");
+
 
         // Assert: the workflow must have finished, not suspended waiting for the canceled bookmark
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+
 
         // Assert: the blocked branch's bookmark was cleared when it was canceled
-        Assert.Empty(result.WorkflowState.Bookmarks);
+        await Assert.That(result.WorkflowState.Bookmarks).IsEmpty();
+
     }
 
     /// <summary>

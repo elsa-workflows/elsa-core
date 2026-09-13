@@ -3,39 +3,45 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class ParallelForEachTests(ITestOutputHelper testOutputHelper)
+public class ParallelForEachTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
     private const string CurrentValueVar = "CurrentValue";
-    private static readonly string[] ThreeItems = ["a", "b", "c"];
+    private static string[] ThreeItems => ["a", "b", "c"];
 
     private CapturingTextWriter CapturingTextWriter => _fixture.CapturingTextWriter;
 
-    [Theory(DisplayName = "ParallelForEach executes body for all items")]
-    [MemberData(nameof(ItemTestCases))]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("ParallelForEach executes body for all items ($items)")]
+    [MethodDataSource(nameof(ItemTestCases))]
     public async Task ParallelForEach_ExecutesBody_ForAllItems(string[] items)
     {
         await ExecuteAndAssertAllItems(items);
     }
 
-    [Fact(DisplayName = "ParallelForEach completes when collection is empty")]
+    [Test]
+    [DisplayName("ParallelForEach completes when collection is empty")]
     public async Task ParallelForEach_Completes_WhenCollectionEmpty()
     {
         await ExecuteAndAssertStatus([], ActivityStatus.Completed);
-        Assert.Empty(CapturingTextWriter.Lines);
+        await Assert.That(CapturingTextWriter.Lines).IsEmpty();
+
     }
 
-    [Fact(DisplayName = "ParallelForEach completes when collection is null")]
+    [Test]
+    [DisplayName("ParallelForEach completes when collection is null")]
     public async Task ParallelForEach_Completes_WhenCollectionNull()
     {
         await ExecuteAndAssertStatus(null, ActivityStatus.Completed);
     }
 
-    [Fact(DisplayName = "ParallelForEach executes all items when one faults")]
+    [Test]
+    [DisplayName("ParallelForEach executes all items when one faults")]
     public async Task ParallelForEach_ExecutesAllItems_WhenOneFaults()
     {
         var body = new Sequence
@@ -52,12 +58,16 @@ public class ParallelForEachTests(ITestOutputHelper testOutputHelper)
 
         await RunActivityAsync(ThreeItems, body);
 
-        Assert.Contains("a", CapturingTextWriter.Lines);
-        Assert.DoesNotContain("b", CapturingTextWriter.Lines);
-        Assert.Contains("c", CapturingTextWriter.Lines);
+        await Assert.That(CapturingTextWriter.Lines).Contains("a");
+
+        await Assert.That(CapturingTextWriter.Lines).DoesNotContain("b");
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("c");
+
     }
 
-    [Fact(DisplayName = "ParallelForEach executes body for different item types")]
+    [Test]
+    [DisplayName("ParallelForEach executes body for different item types")]
     public async Task ParallelForEach_ExecutesBody_ForDifferentItemTypes()
     {
         var items = new object?[]
@@ -71,51 +81,65 @@ public class ParallelForEachTests(ITestOutputHelper testOutputHelper)
 
         await _fixture.RunActivityAsync(parallelForEach);
 
-        Assert.Equal(items.Length, CapturingTextWriter.Lines.Count);
-        Assert.Contains("a", CapturingTextWriter.Lines);
-        Assert.Contains("2", CapturingTextWriter.Lines);
-        Assert.Contains("", CapturingTextWriter.Lines);
-        Assert.Contains("Baz", CapturingTextWriter.Lines);
+        await Assert.That(CapturingTextWriter.Lines.Count).IsEqualTo(items.Length);
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("a");
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("2");
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("");
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("Baz");
+
     }
 
-    [Fact(DisplayName = "ParallelForEach provides CurrentIndex variable")]
+    [Test]
+    [DisplayName("ParallelForEach provides CurrentIndex variable")]
     public async Task ParallelForEach_ProvidesCurrentIndex_ForEachIteration()
     {
         var body = new WriteLine(context => context.GetVariable<int>("CurrentIndex").ToString());
 
         await RunActivityAsync(ThreeItems, body);
 
-        Assert.Equal(ThreeItems.Length, CapturingTextWriter.Lines.Count);
-        Assert.Contains("0", CapturingTextWriter.Lines);
-        Assert.Contains("1", CapturingTextWriter.Lines);
-        Assert.Contains("2", CapturingTextWriter.Lines);
+        await Assert.That(CapturingTextWriter.Lines.Count).IsEqualTo(ThreeItems.Length);
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("0");
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("1");
+
+        await Assert.That(CapturingTextWriter.Lines).Contains("2");
+
     }
 
-    [Fact(DisplayName = "ParallelForEach completes when all bodies complete")]
+    [Test]
+    [DisplayName("ParallelForEach completes when all bodies complete")]
     public async Task ParallelForEach_Completes_WhenAllBodiesComplete()
     {
         await ExecuteAndAssertStatus(ThreeItems, ActivityStatus.Completed);
     }
 
-    public static TheoryData<string[]> ItemTestCases =>
+    public static IEnumerable<Func<string[]>> ItemTestCases =>
     [
-        ThreeItems,
-        ["single"]
+        () => ["a", "b", "c"],
+        () => ["single"]
     ];
 
     private async Task ExecuteAndAssertAllItems(string[] items)
     {
         await RunActivityAsync(items, WriteCurrentValue());
 
-        Assert.Equal(items.Length, CapturingTextWriter.Lines.Count);
-        Assert.All(items, item => Assert.Contains(item, CapturingTextWriter.Lines));
+        await Assert.That(CapturingTextWriter.Lines.Count).IsEqualTo(items.Length);
+
+        foreach (var item in items)
+            await Assert.That(CapturingTextWriter.Lines).Contains(item);
     }
 
     private async Task ExecuteAndAssertStatus(string[]? items, ActivityStatus expectedStatus)
     {
         var result = await RunActivityAsync(items, WriteCurrentValue());
-        var context = GetParallelForEachContext(result);
-        Assert.Equal(expectedStatus, context.Status);
+        var context = await GetParallelForEachContext(result);
+        await Assert.That(context.Status).IsEqualTo(expectedStatus);
+
     }
 
     private async Task<RunWorkflowResult> RunActivityAsync(string[]? items, IActivity body)
@@ -126,10 +150,11 @@ public class ParallelForEachTests(ITestOutputHelper testOutputHelper)
 
     private static WriteLine WriteCurrentValue() => new(context => context.GetVariable<string>(CurrentValueVar));
 
-    private static ActivityExecutionContext GetParallelForEachContext(RunWorkflowResult result)
+    private static async Task<ActivityExecutionContext> GetParallelForEachContext(RunWorkflowResult result)
     {
         var context = result.Journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is ParallelForEach<string>);
-        Assert.NotNull(context);
-        return context;
+        await Assert.That(context).IsNotNull();
+
+        return context!;
     }
 }

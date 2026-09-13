@@ -12,7 +12,6 @@ using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Stimuli;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 using Timer = Elsa.Scheduling.Activities.Timer;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing;
@@ -21,15 +20,15 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing;
 /// Characterises how the trigger kinds that ship with Elsa are indexed, so that a change to the indexer that alters any of their rows is visible.
 /// The invariant asserted for every row: its hash is the one a publisher computes from that row's own name and payload.
 /// </summary>
-public class ExistingTriggerKindsTests
+public class ExistingTriggerKindsTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly ITriggerIndexer _triggerIndexer;
     private readonly IStimulusHasher _stimulusHasher;
 
-    public ExistingTriggerKindsTests(ITestOutputHelper testOutputHelper)
+    public ExistingTriggerKindsTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseHttp().AddActivity<MultiStimulusTrigger>())
             .Build();
 
@@ -37,7 +36,8 @@ public class ExistingTriggerKindsTests
         _stimulusHasher = _services.GetRequiredService<IStimulusHasher>();
     }
 
-    [Fact(DisplayName = "Each built-in trigger kind indexes one row per payload under its own stimulus name")]
+    [Test]
+    [DisplayName("Each built-in trigger kind indexes one row per payload under its own stimulus name")]
     public async Task GetTriggersAsync_BuiltInTriggerKinds_IndexUnderTheirOwnStimulusName()
     {
         var startAt = new DateTimeOffset(2035, 1, 1, 0, 0, 0, TimeSpan.Zero);
@@ -72,37 +72,50 @@ public class ExistingTriggerKindsTests
             });
 
         // Event: names its payload through the shared trigger name.
-        var eventTrigger = Assert.Single(triggers["event"]);
-        AssertMatchable(eventTrigger, RuntimeStimulusNames.Event);
-        Assert.Equal(new EventStimulus("order-received"), eventTrigger.Payload);
+        var eventTrigger = await Assert.That(triggers["event"]).HasSingleItem();
+        await AssertMatchableAsync(eventTrigger, RuntimeStimulusNames.Event);
+        await Assert.That(eventTrigger.Payload).IsEqualTo(new EventStimulus("order-received"));
 
         // Timer: names its payload through the shared trigger name. Its start time is relative to the clock, so only the interval is pinned.
-        var timerTrigger = Assert.Single(triggers["timer"]);
-        AssertMatchable(timerTrigger, SchedulingStimulusNames.Timer);
-        Assert.Equal(interval, Assert.IsType<TimerTriggerPayload>(timerTrigger.Payload).Interval);
+        var timerTrigger = await Assert.That(triggers["timer"]).HasSingleItem();
+        await AssertMatchableAsync(timerTrigger, SchedulingStimulusNames.Timer);
+        await Assert.That(timerTrigger.Payload).IsOfType(typeof(TimerTriggerPayload));
+        var timerPayload = (TimerTriggerPayload)timerTrigger.Payload!;
+        await Assert.That(timerPayload.Interval).IsEqualTo(interval);
 
         // Cron and StartAt: never assign a trigger name, so they fall back to the activity type name.
-        var cronTrigger = Assert.Single(triggers["cron"]);
-        AssertMatchable(cronTrigger, SchedulingStimulusNames.Cron);
-        Assert.Equal(new CronTriggerPayload("0 0 * * *"), cronTrigger.Payload);
+        var cronTrigger = await Assert.That(triggers["cron"]).HasSingleItem();
+        await AssertMatchableAsync(cronTrigger, SchedulingStimulusNames.Cron);
+        await Assert.That(cronTrigger.Payload).IsEqualTo(new CronTriggerPayload("0 0 * * *"));
 
-        var startAtTrigger = Assert.Single(triggers["start-at"]);
-        AssertMatchable(startAtTrigger, SchedulingStimulusNames.StartAt);
-        Assert.Equal(new StartAtPayload(startAt), startAtTrigger.Payload);
+        var startAtTrigger = await Assert.That(triggers["start-at"]).HasSingleItem();
+        await AssertMatchableAsync(startAtTrigger, SchedulingStimulusNames.StartAt);
+        await Assert.That(startAtTrigger.Payload).IsEqualTo(new StartAtPayload(startAt));
 
         // HttpEndpoint: one row per supported method, all sharing a single trigger name.
         var httpTriggers = triggers["http-endpoint"];
-        Assert.Equal(2, httpTriggers.Count);
-        Assert.All(httpTriggers, trigger => AssertMatchable(trigger, HttpStimulusNames.HttpEndpoint));
-        Assert.Equal(
+        await Assert.That(httpTriggers.Count).IsEqualTo(2);
+        foreach (var trigger in httpTriggers)
+            await AssertMatchableAsync(trigger, HttpStimulusNames.HttpEndpoint);
+
+        var httpPayloads = new List<(string Path, string Method)>();
+        foreach (var trigger in httpTriggers)
+        {
+            await Assert.That(trigger.Payload).IsOfType(typeof(HttpEndpointBookmarkPayload));
+            var payload = (HttpEndpointBookmarkPayload)trigger.Payload!;
+            httpPayloads.Add((payload.Path, payload.Method));
+        }
+
+        await Assert.That(httpPayloads.OrderBy(x => x.Method)).IsEquivalentTo(
             [
                 ("/orders", "get"),
                 ("/orders", "post")
             ],
-            httpTriggers.Select(x => Assert.IsType<HttpEndpointBookmarkPayload>(x.Payload)).Select(x => (x.Path, x.Method)).OrderBy(x => x.Method));
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "A trigger that contributes named payloads indexes each of them under its own stimulus name")]
+    [Test]
+    [DisplayName("A trigger that contributes named payloads indexes each of them under its own stimulus name")]
     public async Task GetTriggersAsync_NamedPayloads_IndexUnderTheirOwnStimulusName()
     {
         var triggers = await IndexAsync(new MultiStimulusTrigger
@@ -112,19 +125,21 @@ public class ExistingTriggerKindsTests
 
         // Both rows must be matchable: the event by a published event, the timer by the trigger scheduler.
         var rows = triggers["multi"];
-        Assert.Equal(2, rows.Count);
+        await Assert.That(rows.Count).IsEqualTo(2);
 
         var eventRow = rows.Single(x => x.Name == RuntimeStimulusNames.Event);
-        AssertMatchable(eventRow, RuntimeStimulusNames.Event);
-        Assert.Equal(new EventStimulus(MultiStimulusTrigger.EventName), eventRow.Payload);
-        Assert.Equal(_stimulusHasher.Hash(RuntimeStimulusNames.Event, new EventStimulus(MultiStimulusTrigger.EventName)), eventRow.Hash);
+        await AssertMatchableAsync(eventRow, RuntimeStimulusNames.Event);
+        await Assert.That(eventRow.Payload).IsEqualTo(new EventStimulus(MultiStimulusTrigger.EventName));
+        await Assert.That(eventRow.Hash).IsEqualTo(_stimulusHasher.Hash(RuntimeStimulusNames.Event, new EventStimulus(MultiStimulusTrigger.EventName)));
 
         var timerRow = rows.Single(x => x.Name == SchedulingStimulusNames.Timer);
-        AssertMatchable(timerRow, SchedulingStimulusNames.Timer);
-        Assert.Equal(MultiStimulusTrigger.Interval, Assert.IsType<TimerTriggerPayload>(timerRow.Payload).Interval);
+        await AssertMatchableAsync(timerRow, SchedulingStimulusNames.Timer);
+        await Assert.That(timerRow.Payload).IsOfType(typeof(TimerTriggerPayload));
+        var timerPayload = (TimerTriggerPayload)timerRow.Payload!;
+        await Assert.That(timerPayload.Interval).IsEqualTo(MultiStimulusTrigger.Interval);
 
         // The name is also what DefaultTriggerScheduler filters on, so the timer row is schedulable without any trigger-specific machinery.
-        Assert.Single(rows.Filter<Timer>());
+        await Assert.That(rows.Filter<Timer>()).HasSingleItem();
     }
 
     private async Task<IDictionary<string, IList<StoredTrigger>>> IndexAsync(params IActivity[] activities)
@@ -148,11 +163,13 @@ public class ExistingTriggerKindsTests
         return triggers.GroupBy(x => x.ActivityId).ToDictionary(x => x.Key, IList<StoredTrigger> (x) => x.ToList());
     }
 
-    private void AssertMatchable(StoredTrigger trigger, string expectedName)
+    private async Task AssertMatchableAsync(StoredTrigger trigger, string expectedName)
     {
-        Assert.Equal(expectedName, trigger.Name);
-        Assert.Equal(_stimulusHasher.Hash(expectedName, trigger.Payload), trigger.Hash);
+        await Assert.That(trigger.Name).IsEqualTo(expectedName);
+        await Assert.That(trigger.Hash).IsEqualTo(_stimulusHasher.Hash(expectedName, trigger.Payload));
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }
 
 /// <summary>

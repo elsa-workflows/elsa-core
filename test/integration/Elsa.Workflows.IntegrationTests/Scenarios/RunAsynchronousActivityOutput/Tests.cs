@@ -10,9 +10,10 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.RunAsynchronousActivityOutpu
 
 public class Tests
 {
-    [Theory(DisplayName = "Activity outputs captured in activity execution record")]
-    [InlineData(true)]
-    [InlineData(false)]
+    [Test]
+    [DisplayName("Single activity outputs captured in activity execution record: $runAsynchronously")]
+    [Arguments(true)]
+    [Arguments(false)]
     public async Task ActivityOutputCaptureTest(bool? runAsynchronously)
     {
         // Arrange
@@ -54,27 +55,28 @@ public class Tests
         );
 
         // Assert
-        Assert.NotNull(workflowFinishedRecord);
-        Assert.Equal(WorkflowStatus.Finished, workflowFinishedRecord.WorkflowState.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, workflowFinishedRecord.WorkflowState.SubStatus);
+        await Assert.That(workflowFinishedRecord).IsNotNull();
+        await Assert.That(workflowFinishedRecord!.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(workflowFinishedRecord.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
 
         var activityExecutionRecord = await activityExecutionStore.FindAsync(new()
         {
             ActivityId = "SampleActivity1"
         });
-        Assert.NotNull(activityExecutionRecord?.Outputs);
-        Assert.Equal(2, activityExecutionRecord.Outputs!.Count);
-        Assert.Equal(12, activityExecutionRecord.Outputs!.GetValue<int>("Sum"));
-        Assert.Equal(32, activityExecutionRecord.Outputs!.GetValue<int>("Product"));
+        await Assert.That(activityExecutionRecord?.Outputs).IsNotNull();
+        await Assert.That(activityExecutionRecord!.Outputs!.Count).IsEqualTo(2);
+        await Assert.That(activityExecutionRecord.Outputs!.GetValue<int>("Sum")).IsEqualTo(12);
+        await Assert.That(activityExecutionRecord.Outputs!.GetValue<int>("Product")).IsEqualTo(32);
 
         var activityOutputRegister = workflowFinishedRecord.WorkflowExecutionContext.GetActivityOutputRegister();
-        Assert.Equal(12, activityOutputRegister.FindOutputByActivityId("SampleActivity1", "Sum"));
-        Assert.Equal(32, activityOutputRegister.FindOutputByActivityId("SampleActivity1", "Product"));
+        await Assert.That(activityOutputRegister.FindOutputByActivityId("SampleActivity1", "Sum")).IsEqualTo(12);
+        await Assert.That(activityOutputRegister.FindOutputByActivityId("SampleActivity1", "Product")).IsEqualTo(32);
     }
 
-    [Theory(DisplayName = "Activity outputs captured in activity execution record")]
-    [InlineData(true)]
-    [InlineData(false)]
+    [Test]
+    [DisplayName("Parallel activity outputs captured in activity execution record: $runAsynchronously")]
+    [Arguments(true)]
+    [Arguments(false)]
     public async Task ActivityOutputCaptureParallelTest(bool? runAsynchronously)
     {
         // Arrange
@@ -117,7 +119,7 @@ public class Tests
         var workflowFinishedRecord = await workflow.DispatchWorkflowAndRunToCompletion(
             configureElsa: elsa =>
             {
-                // Use the distributed runtime feature so the correct bookmark queue worker and its dependencies are registered.
+                // Use the distributed runtime feature so its workflow runtime, bookmark worker, and dependencies are registered.
                 elsa.UseWorkflowRuntime(workflowRuntime =>
                 {
                     workflowRuntime.UseDistributedRuntime();
@@ -127,26 +129,26 @@ public class Tests
             });
 
         // Assert
-        Assert.NotNull(workflowFinishedRecord);
-        Assert.Equal(WorkflowStatus.Finished, workflowFinishedRecord.WorkflowState.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, workflowFinishedRecord.WorkflowState.SubStatus);
+        await Assert.That(workflowFinishedRecord).IsNotNull();
+        await Assert.That(workflowFinishedRecord!.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(workflowFinishedRecord.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
 
         var activityExecutionRecord1 = await activityExecutionStore.FindAsync(new()
         {
             ActivityId = "SampleActivity1"
         });
-        Assert.NotNull(activityExecutionRecord1?.Outputs);
-        Assert.Equal(2, activityExecutionRecord1.Outputs!.Count);
-        Assert.Equal(12, activityExecutionRecord1.Outputs!.GetValue<int>("Sum"));
-        Assert.Equal(32, activityExecutionRecord1.Outputs!.GetValue<int>("Product"));
+        await Assert.That(activityExecutionRecord1?.Outputs).IsNotNull();
+        await Assert.That(activityExecutionRecord1!.Outputs!.Count).IsEqualTo(2);
+        await Assert.That(activityExecutionRecord1.Outputs!.GetValue<int>("Sum")).IsEqualTo(12);
+        await Assert.That(activityExecutionRecord1.Outputs!.GetValue<int>("Product")).IsEqualTo(32);
 
         var activityExecutionRecord2 = await activityExecutionStore.FindAsync(new()
         {
             ActivityId = "SampleActivity2"
         });
-        Assert.NotNull(activityExecutionRecord2?.Outputs);
-        Assert.Equal(2, activityExecutionRecord2.Outputs!.Count);
-        Assert.Equal(9, activityExecutionRecord2.Outputs!.GetValue<int>("Sum"));
-        Assert.Equal(14, activityExecutionRecord2.Outputs!.GetValue<int>("Product"));
+        await Assert.That(activityExecutionRecord2?.Outputs).IsNotNull();
+        await Assert.That(activityExecutionRecord2!.Outputs!.Count).IsEqualTo(2);
+        await Assert.That(activityExecutionRecord2.Outputs!.GetValue<int>("Sum")).IsEqualTo(9);
+        await Assert.That(activityExecutionRecord2.Outputs!.GetValue<int>("Product")).IsEqualTo(14);
     }
 }

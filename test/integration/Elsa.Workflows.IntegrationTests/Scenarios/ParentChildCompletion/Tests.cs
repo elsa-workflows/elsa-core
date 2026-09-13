@@ -1,21 +1,21 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ParentChildCompletion;
 
 /// <summary>
 /// Tests for mapping an activity's output directly to the workflow's output definition.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
     }
 
-    [Fact(DisplayName = "Parent workflow invoking child workflow as activity completes successfully.")]
+    [Test]
+    [DisplayName("Parent workflow invoking child workflow as activity completes successfully.")]
     public async Task Test1()
     {
         // Populate registries.
@@ -33,6 +33,8 @@ public class Tests
         var workflowState = await _services.RunWorkflowUntilEndAsync(parentWorkflowDefinition.DefinitionId);
 
         // Assert expected status
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

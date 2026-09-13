@@ -2,13 +2,13 @@ using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
-using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
-public class InputPropertyEvaluationTests
+public class InputPropertyEvaluationTests : EvaluationTestBase
 {
-    [Fact(DisplayName = "Evaluates all auto-evaluate inputs")]
+    [Test]
+    [DisplayName("Evaluates all auto-evaluate inputs")]
     public async Task EvaluatesAllAutoEvaluateInputs()
     {
         // Arrange
@@ -20,10 +20,11 @@ public class InputPropertyEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Contains(expectedText, context.ActivityState.Values);
+        await Assert.That(context.ActivityState.Values).Contains(expectedText);
     }
 
-    [Fact(DisplayName = "Evaluates specific input by name")]
+    [Test]
+    [DisplayName("Evaluates specific input by name")]
     public async Task EvaluatesSpecificInputByName()
     {
         // Arrange
@@ -35,11 +36,12 @@ public class InputPropertyEvaluationTests
         var result = await context.EvaluateInputPropertyAsync("Text");
 
         // Assert
-        Assert.Equal(expectedValue, result);
-        Assert.Contains(expectedValue, context.ActivityState.Values);
+        await Assert.That(result).IsEqualTo(expectedValue);
+        await Assert.That(context.ActivityState.Values).Contains(expectedValue);
     }
 
-    [Fact(DisplayName = "Evaluates specific input by property expression")]
+    [Test]
+    [DisplayName("Evaluates specific input by property expression")]
     public async Task EvaluatesSpecificInputByExpression()
     {
         // Arrange
@@ -52,10 +54,11 @@ public class InputPropertyEvaluationTests
         var result = await context.EvaluateInputPropertyAsync<SetVariable<int>, int>(x => x.Value);
 
         // Assert
-        Assert.Equal(expectedValue, result);
+        await Assert.That(result).IsEqualTo(expectedValue);
     }
 
-    [Fact(DisplayName = "Throws when input name not found")]
+    [Test]
+    [DisplayName("Throws when input name not found")]
     public async Task ThrowsWhenInputNameNotFound()
     {
         // Arrange
@@ -63,25 +66,26 @@ public class InputPropertyEvaluationTests
         var context = await CreateContextAsync(writeLine);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<Exception>(
+        var exception = await Assert.ThrowsExactlyAsync<Exception>(
             async () => await context.EvaluateInputPropertyAsync("NonExistentInput"));
 
-        Assert.Contains("No input with name NonExistentInput could be found", exception.Message);
+        await Assert.That(exception!.Message).Contains("No input with name NonExistentInput could be found", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Sets HasEvaluatedProperties flag after evaluation")]
+    [Test]
+    [DisplayName("Sets HasEvaluatedProperties flag after evaluation")]
     public async Task SetsHasEvaluatedPropertiesFlag()
     {
         // Arrange
         var writeLine = new WriteLine("Test");
         var context = await CreateContextAsync(writeLine);
 
-        Assert.False(context.GetHasEvaluatedProperties());
+        await Assert.That(context.GetHasEvaluatedProperties()).IsFalse();
 
         // Act
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.GetHasEvaluatedProperties());
+        await Assert.That(context.GetHasEvaluatedProperties()).IsTrue();
     }
 }

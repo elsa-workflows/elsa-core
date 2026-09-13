@@ -2,7 +2,6 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 
@@ -12,13 +11,13 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 /// by the unit tests in <c>DrainOrchestratorWaitTests</c>; here we only verify the production wiring resolves
 /// correctly and a no-op drain returns the expected outcome.
 /// </summary>
-public class DrainOrchestratorIntegrationTests
+public class DrainOrchestratorIntegrationTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
 
-    public DrainOrchestratorIntegrationTests(ITestOutputHelper testOutputHelper)
+    public DrainOrchestratorIntegrationTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa
                 .UseWorkflowRuntime(runtime => runtime
                     .ConfigureGracefulShutdown(options =>
@@ -29,16 +28,18 @@ public class DrainOrchestratorIntegrationTests
             .Build();
     }
 
-    [Fact(DisplayName = "Full DI graph resolves IDrainOrchestrator, IQuiescenceSignal, IIngressSourceRegistry, IExecutionCycleRegistry")]
-    public void ServicesResolveCleanly()
+    [Test]
+    [DisplayName("Full DI graph resolves IDrainOrchestrator, IQuiescenceSignal, IIngressSourceRegistry, IExecutionCycleRegistry")]
+    public async Task ServicesResolveCleanly()
     {
-        Assert.NotNull(_services.GetRequiredService<IDrainOrchestrator>());
-        Assert.NotNull(_services.GetRequiredService<IQuiescenceSignal>());
-        Assert.NotNull(_services.GetRequiredService<IIngressSourceRegistry>());
-        Assert.NotNull(_services.GetRequiredService<IExecutionCycleRegistry>());
+        await Assert.That(_services.GetRequiredService<IDrainOrchestrator>()).IsNotNull();
+        await Assert.That(_services.GetRequiredService<IQuiescenceSignal>()).IsNotNull();
+        await Assert.That(_services.GetRequiredService<IIngressSourceRegistry>()).IsNotNull();
+        await Assert.That(_services.GetRequiredService<IExecutionCycleRegistry>()).IsNotNull();
     }
 
-    [Fact(DisplayName = "Drain with no active execution cycles returns CompletedWithinDeadline")]
+    [Test]
+    [DisplayName("Drain with no active execution cycles returns CompletedWithinDeadline")]
     public async Task EmptyGraphDrainsCleanly()
     {
         var orchestrator = _services.GetRequiredService<IDrainOrchestrator>();
@@ -46,19 +47,23 @@ public class DrainOrchestratorIntegrationTests
 
         var outcome = await orchestrator.DrainAsync(DrainTrigger.HostStopSignal);
 
-        Assert.Equal(DrainResult.CompletedWithinDeadline, outcome.OverallResult);
+        await Assert.That(outcome.OverallResult).IsEqualTo(DrainResult.CompletedWithinDeadline);
         // The default registration includes the internal bookmark-queue-worker as an ingress source for diagnostic
         // visibility — it is paused as a no-op. We assert that all sources reach a terminal "paused" state.
-        Assert.All(outcome.Sources, s => Assert.True(s.State == IngressSourceState.Paused || s.State == IngressSourceState.PauseFailed));
-        Assert.Equal(0, outcome.ExecutionCyclesForceCancelledCount);
-        Assert.True(signal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain), "Drain flag should be set after drain.");
+        foreach (var source in outcome.Sources)
+            await Assert.That(source.State is IngressSourceState.Paused or IngressSourceState.PauseFailed).IsTrue();
+        await Assert.That(outcome.ExecutionCyclesForceCancelledCount).IsEqualTo(0);
+        await Assert.That(signal.CurrentState.Reason.HasFlag(QuiescenceReason.Drain)).IsTrue().Because("Drain flag should be set after drain.");
     }
 
-    [Fact(DisplayName = "Quiescence signal in the production DI graph reads as accepting new work at startup")]
-    public void QuiescenceStartsAccepting()
+    [Test]
+    [DisplayName("Quiescence signal in the production DI graph reads as accepting new work at startup")]
+    public async Task QuiescenceStartsAccepting()
     {
         var signal = _services.GetRequiredService<IQuiescenceSignal>();
-        Assert.True(signal.IsAcceptingNewWork);
-        Assert.Equal(QuiescenceReason.None, signal.CurrentState.Reason);
+        await Assert.That(signal.IsAcceptingNewWork).IsTrue();
+        await Assert.That(signal.CurrentState.Reason).IsEqualTo(QuiescenceReason.None);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

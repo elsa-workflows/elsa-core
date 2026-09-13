@@ -10,7 +10,6 @@ using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Testing.Shared;
 
@@ -18,18 +17,19 @@ namespace Elsa.Testing.Shared;
 /// A test fixture for integration testing workflows and activities.
 /// Provides a fluent API to configure services, run workflows, and capture output.
 /// </summary>
-public class WorkflowTestFixture
+public class WorkflowTestFixture : IAsyncDisposable
 {
     private readonly TestApplicationBuilder _testApplicationBuilder;
     private IServiceProvider? _services;
+    private int _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WorkflowTestFixture"/> class.
     /// </summary>
-    /// <param name="testOutputHelper">The test output helper</param>
-    public WorkflowTestFixture(ITestOutputHelper testOutputHelper)
+    /// <param name="testOutput">The writer that receives diagnostic and workflow output.</param>
+    public WorkflowTestFixture(TextWriter testOutput)
     {
-        _testApplicationBuilder = new(testOutputHelper);
+        _testApplicationBuilder = new(testOutput);
         CapturingTextWriter = new();
         _testApplicationBuilder.WithCapturingTextWriter(CapturingTextWriter);
     }
@@ -105,14 +105,76 @@ public class WorkflowTestFixture
     /// </summary>
     public async Task<WorkflowTestFixture> BuildAsync()
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+
         if (_services != null)
             return this;
-        
-        _services = _testApplicationBuilder.Build();
-        var tenantService = Services.GetRequiredService<ITenantService>();
-        await tenantService.ActivateTenantsAsync();
-        
-        return this;
+
+        var services = _testApplicationBuilder.Build();
+        try
+        {
+            var tenantService = services.GetRequiredService<ITenantService>();
+            await tenantService.ActivateTenantsAsync();
+            _services = services;
+            return this;
+        }
+        catch (Exception activationException)
+        {
+            try
+            {
+                if (services is IAsyncDisposable asyncDisposable)
+                {
+                    await asyncDisposable.DisposeAsync();
+                }
+                else if (services is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+            }
+            catch (Exception disposalException)
+            {
+                throw new AggregateException(
+                    "Tenant activation and service-provider disposal both failed.",
+                    activationException,
+                    disposalException);
+            }
+
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Deactivates tenant runtimes so their background work drains, then disposes the service provider.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+
+        var services = Interlocked.Exchange(ref _services, null);
+        try
+        {
+            if (services != null)
+            {
+                try
+                {
+                    var tenantService = services.GetService<ITenantService>();
+                    if (tenantService != null)
+                        await tenantService.DeactivateTenantsAsync();
+                }
+                finally
+                {
+                    if (services is IAsyncDisposable asyncDisposable)
+                        await asyncDisposable.DisposeAsync();
+                    else if (services is IDisposable disposable)
+                        disposable.Dispose();
+                }
+            }
+        }
+        finally
+        {
+            CapturingTextWriter.Dispose();
+        }
     }
 
     /// <summary>

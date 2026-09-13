@@ -2,28 +2,21 @@ using Elsa.Extensions;
 using Elsa.Features.Contracts;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests;
 
 public class BpmnFeatureTests
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
-    public BpmnFeatureTests(ITestOutputHelper testOutputHelper)
+    [Test]
+    public async Task Build_WithUseBpmn_RegistersBpmnFeature()
     {
-        _testOutputHelper = testOutputHelper;
-    }
-
-    [Fact]
-    public void Build_WithUseBpmn_RegistersBpmnFeature()
-    {
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseBpmn())
             .Build();
 
         var registry = services.GetRequiredService<IInstalledFeatureRegistry>();
 
-        Assert.NotNull(registry.Find("Elsa.Bpmn"));
+        await Assert.That(registry.Find("Elsa.Bpmn")).IsNotNull();
+
     }
 }

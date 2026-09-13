@@ -4,15 +4,23 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
-public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
+public class JsonElementConverterTests : IAsyncDisposable
 {
-    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
 
-    [Fact(DisplayName = "JsonElement JsonObject can be passed to JavaScript")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("JsonElement JsonObject can be passed to JavaScript")]
     public async Task TestJsonObjectPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -24,10 +32,11 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable').age";
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(int), expressionExecutionContext);
-        Assert.Equal(30, result);
+        await Assert.That(result).IsEqualTo(30);
     }
 
-    [Fact(DisplayName = "JsonElement JsonArray can be passed to JavaScript")]
+    [Test]
+    [DisplayName("JsonElement JsonArray can be passed to JavaScript")]
     public async Task TestJsonArrayPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -39,10 +48,11 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable')[3]";
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(int), expressionExecutionContext);
-        Assert.Equal(4, result);
+        await Assert.That(result).IsEqualTo(4);
     }
 
-    [Fact(DisplayName = "JsonElement string can be passed to JavaScript")]
+    [Test]
+    [DisplayName("JsonElement string can be passed to JavaScript")]
     public async Task TestStringPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -54,10 +64,11 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable')";
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(string), expressionExecutionContext);
-        Assert.Equal("I'm just a string", result);
+        await Assert.That(result).IsEqualTo("I'm just a string");
     }
 
-    [Fact(DisplayName = "JsonElement boolean can be passed to JavaScript")]
+    [Test]
+    [DisplayName("JsonElement boolean can be passed to JavaScript")]
     public async Task TestBooleanPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -69,10 +80,11 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
         jsonVariable.Set(expressionExecutionContext, jsonElement);
         var script = "getVariable('JsonVariable')";
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(bool), expressionExecutionContext);
-        Assert.Equal(false, result);
+        await Assert.That((bool)result!).IsFalse();
     }
 
-    [Fact(DisplayName = "JsonElement containing nested Json objects and arrays be passed to JavaScript")]
+    [Test]
+    [DisplayName("JsonElement containing nested Json objects and arrays be passed to JavaScript")]
     public async Task TestNestedJsonPassedAsJsonElement()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -114,22 +126,22 @@ public class JsonElementConverterTests(ITestOutputHelper testOutputHelper)
 
         var script = "getVariable('JsonVariable').projects[1].team[0]";
         var result = await javaScriptEvaluator.EvaluateAsync(script, typeof(string), expressionExecutionContext);
-        Assert.Equal("Charlie", result);
+        await Assert.That(result).IsEqualTo("Charlie");
 
         var script2 = "getVariable('JsonVariable').isEmployed";
         var result2 = await javaScriptEvaluator.EvaluateAsync(script2, typeof(bool), expressionExecutionContext);
-        Assert.Equal(true, result2);
+        await Assert.That((bool)result2!).IsTrue();
 
         var script3 = "getVariable('JsonVariable').skills[0].level";
         var result3 = await javaScriptEvaluator.EvaluateAsync(script3, typeof(string), expressionExecutionContext);
-        Assert.Equal("Advanced", result3);
+        await Assert.That(result3).IsEqualTo("Advanced");
 
         var script4 = "getVariable('JsonVariable').address.coordinates.lat";
         var result4 = await javaScriptEvaluator.EvaluateAsync(script4, typeof(double), expressionExecutionContext);
-        Assert.Equal(40.7128, result4);
+        await Assert.That(result4).IsEqualTo(40.7128);
 
         var script5 = "getVariable('JsonVariable').age";
         var result5 = await javaScriptEvaluator.EvaluateAsync(script5, typeof(int), expressionExecutionContext);
-        Assert.Equal(35, result5);
+        await Assert.That(result5).IsEqualTo(35);
     }
 }

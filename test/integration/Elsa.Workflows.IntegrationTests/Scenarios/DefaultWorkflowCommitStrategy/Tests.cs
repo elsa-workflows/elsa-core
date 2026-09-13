@@ -5,26 +5,26 @@ using Elsa.Workflows.CommitStates.Strategies;
 using Elsa.Workflows.IntegrationTests.SharedHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.DefaultWorkflowCommitStrategy;
 
 public class Tests
 {
-    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly TextWriter _testOutput;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _testOutputHelper = testOutputHelper;
+        _testOutput = TestContext.Current!.Output.StandardOutput;
     }
 
-    [Fact(DisplayName = "Workflow uses default workflow commit strategy when no explicit workflow commit strategy is set")]
+    [Test]
+    [DisplayName("Workflow uses default workflow commit strategy when no explicit workflow commit strategy is set")]
     public async Task WorkflowUsesDefaultWorkflowCommitStrategy()
     {
         // Arrange
         var commitTracker = new CommitTracker();
         var defaultStrategy = new ActivityExecutedWorkflowStrategy();
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(_testOutput)
             .ConfigureElsa(elsa => elsa
                 .UseWorkflows(workflows =>
                 {
@@ -42,23 +42,24 @@ public class Tests
         var result = await workflowRunner.RunAsync<SimpleWorkflowWithoutWorkflowCommitStrategy>();
 
         // Assert - workflow should finish successfully with default strategy configured
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.NotNull(options.Value.DefaultWorkflowCommitStrategy);
-        Assert.Same(defaultStrategy, options.Value.DefaultWorkflowCommitStrategy);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(options.Value.DefaultWorkflowCommitStrategy).IsNotNull();
+        await Assert.That(options.Value.DefaultWorkflowCommitStrategy).IsSameReferenceAs(defaultStrategy);
 
         // Verify exact commit count: ActivityExecutedWorkflowStrategy commits after each activity completes
         // With 3 WriteLine activities in a Sequence, this results in exactly 6 commits due to
         // how composite activities and workflow completion signals interact
-        Assert.Equal(6, commitTracker.CommitCount);
+        await Assert.That(commitTracker.CommitCount).IsEqualTo(6);
     }
 
-    [Fact(DisplayName = "Workflow-specific strategy overrides default workflow commit strategy")]
+    [Test]
+    [DisplayName("Workflow-specific strategy overrides default workflow commit strategy")]
     public async Task WorkflowSpecificStrategyOverridesDefault()
     {
         // Arrange
         var commitTracker = new CommitTracker();
         var defaultStrategy = new ActivityExecutedWorkflowStrategy();
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(_testOutput)
             .ConfigureElsa(elsa => elsa
                 .UseWorkflows(workflows => workflows
                     .WithDefaultWorkflowCommitStrategy(defaultStrategy)
@@ -76,21 +77,22 @@ public class Tests
         var result = await workflowRunner.RunAsync<WorkflowWithExplicitWorkflowCommitStrategy>();
 
         // Assert - workflow should complete successfully
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
         // Default strategy should be configured (available for workflows without explicit strategy)
-        Assert.Same(defaultStrategy, options.Value.DefaultWorkflowCommitStrategy);
+        await Assert.That(options.Value.DefaultWorkflowCommitStrategy).IsSameReferenceAs(defaultStrategy);
 
         // Verify the workflow used its explicit "WorkflowExecuting" strategy (commits before workflow starts)
         // 1 commit at the beginning before any activities execute
-        Assert.Equal(1, commitTracker.CommitCount);
+        await Assert.That(commitTracker.CommitCount).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "No commits occur when no default workflow commit strategy and no workflow strategy")]
+    [Test]
+    [DisplayName("No commits occur when no default workflow commit strategy and no workflow strategy")]
     public async Task NoCommitsWithoutAnyWorkflowCommitStrategy()
     {
         // Arrange
         var commitTracker = new CommitTracker();
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(_testOutput)
             .ConfigureElsa(elsa => elsa
                 .UseWorkflows(workflows =>
                 {
@@ -107,19 +109,20 @@ public class Tests
         var result = await workflowRunner.RunAsync<SimpleWorkflowWithoutWorkflowCommitStrategy>();
 
         // Assert - workflow should still complete even without commit strategy
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
         // No default strategy should be configured
-        Assert.Null(options.Value.DefaultWorkflowCommitStrategy);
+        await Assert.That(options.Value.DefaultWorkflowCommitStrategy).IsNull();
 
         // Verify no commits occurred during workflow execution (only final commit from WorkflowRunner)
-        Assert.Equal(1, commitTracker.CommitCount);
+        await Assert.That(commitTracker.CommitCount).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "Default workflow strategy is not visible in commit strategy registry")]
-    public void DefaultWorkflowStrategyNotInRegistry()
+    [Test]
+    [DisplayName("Default workflow strategy is not visible in commit strategy registry")]
+    public async Task DefaultWorkflowStrategyNotInRegistry()
     {
         // Arrange
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(_testOutput)
             .ConfigureElsa(elsa => elsa
                 .UseWorkflows(workflows => workflows
                     .WithDefaultWorkflowCommitStrategy(new ActivityExecutedWorkflowStrategy())
@@ -133,14 +136,15 @@ public class Tests
         var registeredStrategies = registry.ListWorkflowStrategyRegistrations().ToList();
 
         // Assert - default strategy should not be in the registry
-        Assert.Empty(registeredStrategies);
+        await Assert.That(registeredStrategies).IsEmpty();
     }
 
-    [Fact(DisplayName = "Default workflow strategy with standard strategies does not duplicate")]
-    public void DefaultWorkflowStrategyWithStandardStrategiesNoDuplicate()
+    [Test]
+    [DisplayName("Default workflow strategy with standard strategies does not duplicate")]
+    public async Task DefaultWorkflowStrategyWithStandardStrategiesNoDuplicate()
     {
         // Arrange
-        var services = new TestApplicationBuilder(_testOutputHelper)
+        await using var services = (ServiceProvider)new TestApplicationBuilder(_testOutput)
             .ConfigureElsa(elsa => elsa
                 .UseWorkflows(workflows => workflows
                     .WithDefaultWorkflowCommitStrategy(new ActivityExecutedWorkflowStrategy())
@@ -162,6 +166,6 @@ public class Tests
         var registeredStrategies = registry.ListWorkflowStrategyRegistrations().ToList();
 
         // Assert - should only have the 4 standard strategies, not 5
-        Assert.Equal(4, registeredStrategies.Count);
+        await Assert.That(registeredStrategies.Count).IsEqualTo(4);
     }
 }

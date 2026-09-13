@@ -5,23 +5,23 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Jint;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
 /// <summary>
 /// Pins how an object-valued workflow variable is marshalled into JavaScript.
 /// </summary>
-public class VariableMarshallingTests(ITestOutputHelper testOutputHelper)
+public class VariableMarshallingTests
 {
-    [Fact(DisplayName = "An object-valued variable is readable from a script")]
+    [Test]
+    [DisplayName("An object-valued variable is readable from a script")]
     public async Task ObjectValuedVariablesAreReadable()
     {
-        Assert.Equal("Alice", await EvaluateAsync<string>("return variables.Person.Name;"));
+        await Assert.That(await EvaluateAsync<string>("return variables.Person.Name;")).IsEqualTo("Alice");
     }
 
-    [Fact(DisplayName = "An object-valued variable is built in the shaped representation")]
+    [Test]
+    [DisplayName("An object-valued variable is built in the shaped representation")]
     public async Task ObjectValuedVariablesAreShaped()
     {
         // Building into the shared-layout representation is a silent optimisation: JsObject.CreateFromEntries
@@ -33,7 +33,7 @@ public class VariableMarshallingTests(ITestOutputHelper testOutputHelper)
         var engine = await EvaluateAndCaptureEngineAsync("return variables.Person.Name;");
         var person = engine.Evaluate("variables.Person").AsObject();
 
-        Assert.True(engine.Advanced.HasSharedShape(person));
+        await Assert.That(engine.Advanced.HasSharedShape(person)).IsTrue();
     }
 
     private static ExpandoObject CreatePerson()
@@ -46,7 +46,7 @@ public class VariableMarshallingTests(ITestOutputHelper testOutputHelper)
 
     private async Task<T> EvaluateAsync<T>(string script)
     {
-        var fixture = new WorkflowTestFixture(testOutputHelper);
+        await using var fixture = new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput);
         var context = await fixture.CreateExpressionExecutionContextAsync([new Variable<ExpandoObject>("Person", CreatePerson())]);
         var evaluator = fixture.Services.GetRequiredService<IJavaScriptEvaluator>();
         var result = await evaluator.EvaluateAsync(script, typeof(T), context);
@@ -57,7 +57,7 @@ public class VariableMarshallingTests(ITestOutputHelper testOutputHelper)
     private async Task<Engine> EvaluateAndCaptureEngineAsync(string script)
     {
         Engine? engine = null;
-        var fixture = new WorkflowTestFixture(testOutputHelper);
+        await using var fixture = new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput);
         fixture.ConfigureElsa(elsa => elsa.UseJavaScript(jintOptions => jintOptions.ConfigureEngine(e => engine = e)));
 
         var context = await fixture.CreateExpressionExecutionContextAsync([new Variable<ExpandoObject>("Person", CreatePerson())]);

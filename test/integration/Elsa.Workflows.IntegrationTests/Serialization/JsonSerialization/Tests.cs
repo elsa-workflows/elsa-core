@@ -5,22 +5,22 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.JsonSerialization;
 
-public class SerializationTests(ITestOutputHelper testOutputHelper)
+public class SerializationTests : IAsyncDisposable
 {
-    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper)
+    private readonly IServiceProvider _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
         .ConfigureServices(services => services.Configure<SerializationTypeOptions>(options => options.AddTypeAlias<TestObject>()))
         .Build();
 
-    [Theory(DisplayName = "write")]
-    [InlineData(typeof(JsonObject), "JsonObjectIsland")]
-    [InlineData(typeof(JObject), "JObjectIsland")]
-    [InlineData(typeof(JsonArray), "JsonArrayIsland")]
-    [InlineData(typeof(JArray), "JArrayIsland")]
-    public void Test_Serialization_create_Island(Type type, string fileName)
+    [Test]
+    [DisplayName("write: $type")]
+    [Arguments(typeof(JsonObject), "JsonObjectIsland")]
+    [Arguments(typeof(JObject), "JObjectIsland")]
+    [Arguments(typeof(JsonArray), "JsonArrayIsland")]
+    [Arguments(typeof(JArray), "JArrayIsland")]
+    public async Task Test_Serialization_create_Island(Type type, string fileName)
     {
         var dict = GetContent(type);
 
@@ -28,15 +28,16 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
 
         var expected = File.ReadAllText($"Serialization/JsonSerialization/{fileName}.json");
 
-        CompareJsonsObjects(expected, result);
+        await CompareJsonObjectsAsync(expected, result);
     }
 
-    [Theory(DisplayName = "roundtrip")]
-    [InlineData(typeof(JsonObject))]
-    [InlineData(typeof(JObject))]
-    [InlineData(typeof(JsonArray))]
-    [InlineData(typeof(JArray))]
-    public void Test_Serialization_roundtrip(Type type)
+    [Test]
+    [DisplayName("roundtrip: $type")]
+    [Arguments(typeof(JsonObject))]
+    [Arguments(typeof(JObject))]
+    [Arguments(typeof(JsonArray))]
+    [Arguments(typeof(JArray))]
+    public async Task Test_Serialization_roundtrip(Type type)
     {
         var dict = GetContent(type);
         var jsonSerialized = SerializeUsingPayloadSerializer(dict);
@@ -44,15 +45,16 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         var result = transformationModel["Content"].ToString()!;
         var expected = GetExpected(type);
 
-        CompareJsonsObjects(expected, result);
+        await CompareJsonObjectsAsync(expected, result);
     }
 
-    [Theory(DisplayName = "read")]
-    [InlineData(typeof(JsonObject), "JsonObjectIsland", "JsonObjectWithoutType")]
-    [InlineData(typeof(JObject), "JObjectIsland", "JObjectWithoutType")]
-    [InlineData(typeof(JsonArray), "JsonArrayIsland", "JsonArrayWithoutType")]
-    [InlineData(typeof(JArray), "JArrayIsland", "JArrayWithoutType")]
-    public void Test_Serialization_read(Type type, string fileName, string compareFileName)
+    [Test]
+    [DisplayName("read: $type")]
+    [Arguments(typeof(JsonObject), "JsonObjectIsland", "JsonObjectWithoutType")]
+    [Arguments(typeof(JObject), "JObjectIsland", "JObjectWithoutType")]
+    [Arguments(typeof(JsonArray), "JsonArrayIsland", "JsonArrayWithoutType")]
+    [Arguments(typeof(JArray), "JArrayIsland", "JArrayWithoutType")]
+    public async Task Test_Serialization_read(Type type, string fileName, string compareFileName)
     {
         var jsonContent = File.ReadAllText(@$"Serialization/JsonSerialization/{fileName}.json");
 
@@ -70,11 +72,11 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
 
         var expected = File.ReadAllText(@$"Serialization/JsonSerialization/{compareFileName}.json");
 
-        CompareJsonsObjects(expected, result);
+        await CompareJsonObjectsAsync(expected, result);
     }
 
-    [Fact]
-    public void RoundtripComplexEnumerableObject()
+    [Test]
+    public async Task RoundtripComplexEnumerableObject()
     {
         var dict = new Dictionary<string, object>
         {
@@ -91,11 +93,11 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         var jsonSerialized = SerializeUsingPayloadSerializer(dict);
         var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
         var result = transformationModel["Content"];
-        Assert.Equal(typeof(List<TestObject>), result.GetType());
+        await Assert.That(result.GetType()).IsEqualTo(typeof(List<TestObject>));
     }
 
-    [Fact]
-    public void RoundtripPrimitiveCollections()
+    [Test]
+    public async Task RoundtripPrimitiveCollections()
     {
         var dict = new Dictionary<string, object>
         {
@@ -109,11 +111,11 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         var jsonSerialized = SerializeUsingPayloadSerializer(dict);
         var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
         var result = transformationModel["Content"];
-        Assert.Equal(typeof(List<Guid>), result.GetType());
+        await Assert.That(result.GetType()).IsEqualTo(typeof(List<Guid>));
     }
 
-    [Fact]
-    public void RoundtripPrimitiveArrays()
+    [Test]
+    public async Task RoundtripPrimitiveArrays()
     {
         var dict = new Dictionary<string, object>
         {
@@ -127,7 +129,7 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         var jsonSerialized = SerializeUsingPayloadSerializer(dict);
         var transformationModel = DeSerializeDictionaryUsingPayloadSerializer(jsonSerialized);
         var result = transformationModel["Content"];
-        Assert.Equal(typeof(Guid[]), result.GetType());
+        await Assert.That(result.GetType()).IsEqualTo(typeof(Guid[]));
     }
 
     private string SerializeUsingPayloadSerializer(object obj)
@@ -142,12 +144,12 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
         return payloadSerializer.Deserialize<IDictionary<string, object>>(jsonString);
     }
 
-    private void CompareJsonsObjects(string expected, string actual)
+    private static async Task CompareJsonObjectsAsync(string expected, string actual)
     {
         var jsonActual = NormalizeNewlines(JsonNode.Parse(actual!)?.ToString());
         var jsonExpected = NormalizeNewlines(JsonNode.Parse(expected!)?.ToString());
 
-        Assert.Equal(jsonExpected, jsonActual);
+        await Assert.That(jsonActual).IsEqualTo(jsonExpected);
     }
 
     private IDictionary<string, object> GetContent(Type type)
@@ -181,6 +183,8 @@ public class SerializationTests(ITestOutputHelper testOutputHelper)
     }
 
     private static string? NormalizeNewlines(string? input) => input?.Replace("\r\n", "\n").Replace("\\r\\n", "\\n");
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }
 
 public class TestObject

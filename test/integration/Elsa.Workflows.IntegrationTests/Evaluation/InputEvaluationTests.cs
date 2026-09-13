@@ -1,16 +1,16 @@
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
-using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
-public class InputEvaluationTests
+public class InputEvaluationTests : EvaluationTestBase
 {
-    [Theory(DisplayName = "Evaluates literal input values correctly")]
-    [InlineData("Literal Value")]
-    [InlineData("")]
-    [InlineData("Special chars: !@#$%")]
+    [Test]
+    [DisplayName("Evaluates literal input values correctly: $inputValue")]
+    [Arguments("Literal Value")]
+    [Arguments("")]
+    [Arguments("Special chars: !@#$%")]
     public async Task EvaluatesLiteralInput(string inputValue)
     {
         // Arrange
@@ -21,11 +21,12 @@ public class InputEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.True(context.ActivityState.ContainsKey("Text"));
-        Assert.Equal(inputValue, context.ActivityState["Text"]);
+        await Assert.That(context.ActivityState.ContainsKey("Text")).IsTrue();
+        await Assert.That(context.ActivityState["Text"]).IsEqualTo(inputValue);
     }
 
-    [Fact(DisplayName = "Evaluates delegate input expressions")]
+    [Test]
+    [DisplayName("Evaluates delegate input expressions")]
     public async Task EvaluatesDelegateInput()
     {
         // Arrange
@@ -37,10 +38,11 @@ public class InputEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Equal("TRANSFORMED_Original", context.ActivityState["Text"]);
+        await Assert.That(context.ActivityState["Text"]).IsEqualTo("TRANSFORMED_Original");
     }
 
-    [Fact(DisplayName = "Handles null input gracefully")]
+    [Test]
+    [DisplayName("Handles null input gracefully")]
     public async Task HandlesNullInput()
     {
         // Arrange
@@ -51,10 +53,11 @@ public class InputEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.Null(context.ActivityState["Text"]);
+        await Assert.That(context.ActivityState["Text"]).IsNull();
     }
 
-    [Fact(DisplayName = "Stores evaluated value in activity state")]
+    [Test]
+    [DisplayName("Stores evaluated value in activity state")]
     public async Task StoresEvaluatedValueInActivityState()
     {
         // Arrange
@@ -66,8 +69,8 @@ public class InputEvaluationTests
         await context.EvaluateInputPropertiesAsync();
 
         // Assert
-        Assert.NotNull(writeLine.Text);
-        Assert.True(context.ActivityState.ContainsKey("Text"));
-        Assert.Equal(expectedValue, context.ActivityState["Text"]);
+        await Assert.That(writeLine.Text).IsNotNull();
+        await Assert.That(context.ActivityState.ContainsKey("Text")).IsTrue();
+        await Assert.That(context.ActivityState["Text"]).IsEqualTo(expectedValue);
     }
 }

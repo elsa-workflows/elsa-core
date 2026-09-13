@@ -1,22 +1,22 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ImportAndExecute;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .Build();
     }
 
-    [Theory(DisplayName = "Workflow imported from file should execute successfully.")]
-    [MemberData(memberName: nameof(GetSpecimen))]
+    [Test]
+    [DisplayName("Workflow imported from file should execute successfully: $workflowFileName")]
+    [MethodDataSource(nameof(GetSpecimen))]
     public async Task Test1(string workflowFileName, string[] expectedOutput)
     {
         // Populate registries.
@@ -31,15 +31,14 @@ public class Tests
         // Assert.
         var lines = _capturingTextWriter.Lines.ToList();
 
-        Assert.Equal(expectedOutput, lines);
+        await Assert.That(lines).IsEquivalentTo(expectedOutput, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
     
-    public static TheoryData<string, string[]> GetSpecimen()
+    public static IEnumerable<Func<(string WorkflowFileName, string[] ExpectedOutput)>> GetSpecimen()
     {
-        return new TheoryData<string, string[]>
-        {
-            { "writeline.json", new[] { "Dummy Text" } },
-            { "implicit-loop.json", new[] { "Do something", "Retry", "Do something", "Done" } }
-        };
+        yield return static () => ("writeline.json", ["Dummy Text"]);
+        yield return static () => ("implicit-loop.json", ["Do something", "Retry", "Do something", "Done"]);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

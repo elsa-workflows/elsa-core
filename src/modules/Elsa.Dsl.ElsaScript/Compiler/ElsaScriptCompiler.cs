@@ -525,7 +525,10 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
         // Filter constructors that:
         // 1. Have the same number of required Input<T> parameters as positional arguments (excluding optional params)
         // 2. All non-optional parameters are Input<T> types
-        var matchingConstructors = new List<(System.Reflection.ConstructorInfo ctor, System.Reflection.ParameterInfo[] inputParams)>();
+        var matchingConstructors = new List<(
+            System.Reflection.ConstructorInfo ctor,
+            System.Reflection.ParameterInfo[] parameters,
+            System.Reflection.ParameterInfo[] inputParams)>();
 
         foreach (var ctor in constructors)
         {
@@ -544,7 +547,7 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
             // Check if the number of required Input<T> params matches our positional args
             if (inputParams.Length == positionalArgs.Count)
             {
-                matchingConstructors.Add((ctor, inputParams));
+                matchingConstructors.Add((ctor, parameters, inputParams));
             }
         }
 
@@ -562,11 +565,10 @@ public class ElsaScriptCompiler(IActivityRegistryLookupService activityRegistryL
                 $"Please use named arguments to disambiguate.");
         }
 
-        var (selectedCtor, selectedInputParams) = matchingConstructors[0];
+        var (selectedCtor, allParams, selectedInputParams) = matchingConstructors[0];
 
         // Build the constructor arguments
         var ctorArgs = new List<object?>();
-        var allParams = selectedCtor.GetParameters();
 
         foreach (var param in allParams)
         {

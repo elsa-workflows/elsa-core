@@ -14,19 +14,19 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
+using TUnit.Core.Interfaces;
 
 namespace Elsa.Alterations.IntegrationTests;
 
-public sealed class RetrySequenceTests : IAsyncLifetime
+public sealed class RetrySequenceTests : IAsyncInitializer, IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _output = new();
     private readonly RetryProbe _probe = new();
 
-    public RetrySequenceTests(ITestOutputHelper output)
+    public RetrySequenceTests()
     {
-        _services = new TestApplicationBuilder(output)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_output)
             .ConfigureServices(services => services.AddSingleton(_probe))
             .ConfigureElsa(elsa => elsa.UseAlterations())
@@ -37,11 +37,11 @@ public sealed class RetrySequenceTests : IAsyncLifetime
     }
 
     public Task InitializeAsync() => _services.PopulateRegistriesAsync();
-    public async Task DisposeAsync() => await ((IAsyncDisposable)_services).DisposeAsync();
+    public ValueTask DisposeAsync() => ((IAsyncDisposable)_services).DisposeAsync();
 
-    [Theory]
-    [InlineData(nameof(RetrySequenceWorkflow))]
-    [InlineData(nameof(RetryStandaloneSequenceWorkflow))]
+    [Test]
+    [Arguments(nameof(RetrySequenceWorkflow))]
+    [Arguments(nameof(RetryStandaloneSequenceWorkflow))]
     public async Task RetriedChildCompletesItsSequenceAndPreservesTheNextBookmark(string definitionId)
     {
         var runtime = _services.GetRequiredService<IWorkflowRuntime>();
@@ -52,43 +52,45 @@ public sealed class RetrySequenceTests : IAsyncLifetime
         });
         var firstRun = await client.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var faultedState = await client.ExportStateAsync();
-        var incident = Assert.Single(faultedState.Incidents);
-        Assert.Equal("Retry", incident.ActivityId);
-        var faultedContext = Assert.Single(faultedState.ActivityExecutionContexts, x => x.Status == ActivityStatus.Faulted);
+        var incident = await Assert.That(faultedState.Incidents).HasSingleItem();
+        await Assert.That(incident.ActivityId).IsEqualTo("Retry");
+        var faultedContext = await Assert.That(faultedState.ActivityExecutionContexts).HasSingleItem(x => x.Status == ActivityStatus.Faulted);
         var sequenceContextId = faultedContext.ParentContextId;
-        Assert.Equal(1, _probe.Attempts);
-        Assert.Empty(_output.Lines);
+        await Assert.That(_probe.Attempts).IsEqualTo(1);
+        await Assert.That(_output.Lines).IsEmpty();
 
         var alterations = new IAlteration[] { new ScheduleActivity { ActivityInstanceId = faultedContext.Id } };
         var results = await _services.GetRequiredService<IAlterationRunner>().RunAsync([firstRun.WorkflowInstanceId], alterations);
-        Assert.True(Assert.Single(results).IsSuccessful);
+        var alterationResult = await Assert.That(results).HasSingleItem();
+        await Assert.That(alterationResult.IsSuccessful).IsTrue();
 
         var alteredState = await client.ExportStateAsync();
         var callbacks = alteredState.CompletionCallbacks
             .Where(x => x.ChildNodeId == faultedContext.ScheduledActivityNodeId)
             .ToList();
-        Assert.NotEmpty(callbacks);
-        Assert.All(callbacks, callback => Assert.Equal(sequenceContextId, callback.OwnerInstanceId));
+        await Assert.That(callbacks).IsNotEmpty();
+        foreach (var callback in callbacks)
+            await Assert.That(callback.OwnerInstanceId).IsEqualTo(sequenceContextId);
 
         await client.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var retriedState = await client.ExportStateAsync();
-        var retryBookmark = Assert.Single(retriedState.Bookmarks);
-        Assert.Equal(faultedContext.Id, retryBookmark.ActivityInstanceId);
-        Assert.Equal(2, _probe.Attempts);
+        var retryBookmark = await Assert.That(retriedState.Bookmarks).HasSingleItem();
+        await Assert.That(retryBookmark.ActivityInstanceId).IsEqualTo(faultedContext.Id);
+        await Assert.That(_probe.Attempts).IsEqualTo(2);
 
         var afterRetry = await client.RunInstanceAsync(new() { BookmarkId = retryBookmark.Id });
         var nextState = await client.ExportStateAsync();
-        var nextBookmark = Assert.Single(nextState.Bookmarks);
-        Assert.Equal(WorkflowStatus.Running, afterRetry.Status);
-        Assert.Equal(["Sequence finished"], _output.Lines);
-        Assert.Equal(faultedState.Incidents.Count, nextState.Incidents.Count);
-        Assert.NotEqual(retryBookmark.ActivityInstanceId, nextBookmark.ActivityInstanceId);
+        var nextBookmark = await Assert.That(nextState.Bookmarks).HasSingleItem();
+        await Assert.That(afterRetry.Status).IsEqualTo(WorkflowStatus.Running);
+        await Assert.That(_output.Lines).IsEquivalentTo(["Sequence finished"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(nextState.Incidents.Count).IsEqualTo(faultedState.Incidents.Count);
+        await Assert.That(nextBookmark.ActivityInstanceId).IsNotEqualTo(retryBookmark.ActivityInstanceId);
 
         var finalRun = await client.RunInstanceAsync(new() { BookmarkId = nextBookmark.Id });
-        Assert.Equal(WorkflowStatus.Finished, finalRun.Status);
-        Assert.Equal(["Sequence finished", "Done"], _output.Lines);
-        Assert.Equal(2, _probe.Attempts);
-        Assert.Empty((await client.ExportStateAsync()).Bookmarks);
+        await Assert.That(finalRun.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(_output.Lines).IsEquivalentTo(["Sequence finished", "Done"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(_probe.Attempts).IsEqualTo(2);
+        await Assert.That((await client.ExportStateAsync()).Bookmarks).IsEmpty();
     }
 
     public sealed class RetryProbe

@@ -1,13 +1,12 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
-using Xunit;
 
 namespace Elsa.Testing.Shared;
 
 /// <summary>
 /// Provides assertion methods for <see cref="RunWorkflowResult"/> to facilitate Journal-based testing.
-/// These methods integrate with xUnit's assertion framework.
+/// These methods are independent of any test framework.
 /// </summary>
 [PublicAPI]
 public static class RunWorkflowResultAssertions
@@ -21,8 +20,7 @@ public static class RunWorkflowResultAssertions
         /// <param name="activity">The activity that should have been executed.</param>
         public void AssertActivityExecuted(IActivity activity)
         {
-            var context = result.GetActivityContext(activity);
-            Assert.NotNull(context);
+            _ = TestAssert.NotNull(result.GetActivityContext(activity), $"Activity '{activity.Id}' was not executed.");
         }
 
         /// <summary>
@@ -32,7 +30,7 @@ public static class RunWorkflowResultAssertions
         public void AssertActivityNotExecuted(IActivity activity)
         {
             var context = result.GetActivityContext(activity);
-            Assert.Null(context);
+            TestAssert.Null(context, $"Activity '{activity.Id}' was executed unexpectedly.");
         }
 
         /// <summary>
@@ -41,9 +39,8 @@ public static class RunWorkflowResultAssertions
         /// <param name="activity">The activity that should have completed.</param>
         public void AssertActivityCompleted(IActivity activity)
         {
-            var context = result.GetActivityContext(activity);
-            Assert.NotNull(context);
-            Assert.Equal(ActivityStatus.Completed, context.Status);
+            var context = TestAssert.NotNull(result.GetActivityContext(activity), $"Activity '{activity.Id}' was not executed.");
+            TestAssert.Equal(ActivityStatus.Completed, context.Status, $"Activity '{activity.Id}' did not complete.");
         }
 
         /// <summary>
@@ -53,9 +50,8 @@ public static class RunWorkflowResultAssertions
         /// <param name="expectedStatus">The expected status.</param>
         public void AssertActivityStatus(IActivity activity, ActivityStatus expectedStatus)
         {
-            var context = result.GetActivityContext(activity);
-            Assert.NotNull(context);
-            Assert.Equal(expectedStatus, context.Status);
+            var context = TestAssert.NotNull(result.GetActivityContext(activity), $"Activity '{activity.Id}' was not executed.");
+            TestAssert.Equal(expectedStatus, context.Status, $"Activity '{activity.Id}' has an unexpected status.");
         }
 
         /// <summary>
@@ -96,7 +92,7 @@ public static class RunWorkflowResultAssertions
         public void AssertActivityExecutionCount(IActivity activity, int expectedCount)
         {
             var actualCount = result.GetExecutionCount(activity);
-            Assert.Equal(expectedCount, actualCount);
+            TestAssert.Equal(expectedCount, actualCount, $"Activity '{activity.Id}' has an unexpected execution count.");
         }
 
         /// <summary>
@@ -104,8 +100,8 @@ public static class RunWorkflowResultAssertions
         /// </summary>
         public void AssertWorkflowCompleted()
         {
-            Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-            Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+            TestAssert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status, "The workflow has an unexpected status.");
+            TestAssert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus, "The workflow has an unexpected sub-status.");
         }
 
         /// <summary>
@@ -115,8 +111,8 @@ public static class RunWorkflowResultAssertions
         /// <param name="expectedSubStatus">The expected workflow substatus.</param>
         public void AssertWorkflowStatus(WorkflowStatus expectedStatus, WorkflowSubStatus expectedSubStatus)
         {
-            Assert.Equal(expectedStatus, result.WorkflowState.Status);
-            Assert.Equal(expectedSubStatus, result.WorkflowState.SubStatus);
+            TestAssert.Equal(expectedStatus, result.WorkflowState.Status, "The workflow has an unexpected status.");
+            TestAssert.Equal(expectedSubStatus, result.WorkflowState.SubStatus, "The workflow has an unexpected sub-status.");
         }
     }
 }

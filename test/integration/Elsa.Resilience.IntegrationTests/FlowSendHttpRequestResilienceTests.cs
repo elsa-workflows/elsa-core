@@ -7,16 +7,15 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Resilience.IntegrationTests;
 
-public class FlowSendHttpRequestResilienceTests
+public class FlowSendHttpRequestResilienceTests : IAsyncDisposable
 {
     private readonly WorkflowTestFixture _fixture;
     private readonly TestRetryAttemptRecorder _recorder = new();
 
-    public FlowSendHttpRequestResilienceTests(ITestOutputHelper output)
+    public FlowSendHttpRequestResilienceTests()
     {
         var handler = new SequentialStatusHandler([HttpStatusCode.TooManyRequests, HttpStatusCode.ServiceUnavailable, HttpStatusCode.OK]);
 
@@ -31,7 +30,7 @@ public class FlowSendHttpRequestResilienceTests
             })
             .Build();
 
-        _fixture = new WorkflowTestFixture(output)
+        _fixture = new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput)
             .ConfigureServices(s =>
             {
                 s.AddSingleton<IConfiguration>(configuration);
@@ -50,7 +49,10 @@ public class FlowSendHttpRequestResilienceTests
             });
     }
 
-    [Fact(DisplayName = "FlowSendHttpRequest retries using selected resilience strategy")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("FlowSendHttpRequest retries using selected resilience strategy")]
     public async Task InvokesResilienceStrategy()
     {
         var activity = new FlowSendHttpRequest
@@ -71,10 +73,9 @@ public class FlowSendHttpRequestResilienceTests
         var result = await _fixture.RunActivityAsync(activity);
         var statusCode = result.GetActivityOutput<int>(activity, nameof(SendHttpRequestBase.StatusCode));
 
-        Assert.Equal(200, statusCode);
-        Assert.Equal(2, _recorder.Attempts.Count);
-        Assert.Collection(_recorder.Attempts,
-            first => Assert.Equal(0, first.AttemptNumber),
-            second => Assert.Equal(1, second.AttemptNumber));
+        await Assert.That(statusCode).IsEqualTo(200);
+        await Assert.That(_recorder.Attempts.Select(x => x.AttemptNumber)).IsEquivalentTo(
+            [0, 1],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 }

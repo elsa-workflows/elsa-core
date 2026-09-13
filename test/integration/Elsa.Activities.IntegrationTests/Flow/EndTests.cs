@@ -2,47 +2,58 @@ using Elsa.Activities.IntegrationTests.Flow.Workflows;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Flow;
 
 /// <summary>
 /// Integration tests for the <see cref="End"/> activity.
 /// </summary>
-public class EndTests(ITestOutputHelper testOutputHelper)
+public class EndTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(testOutputHelper)
+    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput)
         .AddWorkflow<EndInSequenceWorkflow>()
         .AddWorkflow<EndInFlowchartWorkflow>();
 
-    [Fact(DisplayName = "End terminates sequence execution")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("End terminates sequence execution")]
     public async Task End_TerminatesSequenceExecution()
     {
         // Act
         var workflowState = await _fixture.RunWorkflowAsync(EndInSequenceWorkflow.DefinitionId);
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Contains("Before End", lines);
-        Assert.DoesNotContain("After End", lines);
+        await Assert.That(lines).Contains("Before End");
+
+        await Assert.That(lines).DoesNotContain("After End");
+
     }
 
-    [Fact(DisplayName = "End in flowchart terminates flowchart immediately")]
+    [Test]
+    [DisplayName("End in flowchart terminates flowchart immediately")]
     public async Task End_InFlowchart_TerminatesFlowchartImmediately()
     {
         // Act
         var workflowState = await _fixture.RunWorkflowAsync(EndInFlowchartWorkflow.DefinitionId);
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Contains("Start", lines);
-        Assert.Contains("Path A executed", lines);
+        await Assert.That(lines).Contains("Start");
+
+        await Assert.That(lines).Contains("Path A executed");
+
         // End is a terminal node - it terminates the flowchart immediately
         // Path B should not execute because End completes the flowchart
-        Assert.DoesNotContain("Path B executed", lines);
+        await Assert.That(lines).DoesNotContain("Path B executed");
+
         // The outer sequence continues after the flowchart completes
-        Assert.Contains("After flowchart", lines);
+        await Assert.That(lines).Contains("After flowchart");
+
     }
 }

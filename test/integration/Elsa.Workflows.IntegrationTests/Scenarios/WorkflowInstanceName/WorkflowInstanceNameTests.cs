@@ -5,19 +5,18 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowInstanceName;
 
-public class WorkflowInstanceNameTests
+public class WorkflowInstanceNameTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IWorkflowRuntime _workflowRuntime;
 
-    public WorkflowInstanceNameTests(ITestOutputHelper testOutputHelper)
+    public WorkflowInstanceNameTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .AddWorkflow<NamedWorkflow>()
             .Build();
@@ -25,7 +24,8 @@ public class WorkflowInstanceNameTests
         _workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
     }
 
-    [Fact(DisplayName = "Setting a workflow instance name keeps the workflow instance name when the workflow is executed")]
+    [Test]
+    [DisplayName("Setting a workflow instance name keeps the workflow instance name when the workflow is executed")]
     public async Task SuspendedCancelTest()
     {
         await _services.PopulateRegistriesAsync();
@@ -40,7 +40,9 @@ public class WorkflowInstanceNameTests
         await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
         var workflowState = await workflowClient.ExportStateAsync();
 
-        Assert.Equal([desiredName], _capturingTextWriter.Lines);
-        Assert.Equal(desiredName, workflowState.Name);
+        await Assert.That(_capturingTextWriter.Lines).IsEquivalentTo([desiredName], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(workflowState.Name).IsEqualTo(desiredName);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

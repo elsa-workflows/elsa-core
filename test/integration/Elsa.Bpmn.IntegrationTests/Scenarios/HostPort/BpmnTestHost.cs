@@ -10,14 +10,13 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
 /// <summary>
 /// Runs a BPMN scope through <see cref="IWorkflowRunner"/> and lets a test finish blocked work by activity id.
 /// </summary>
-public sealed class BpmnTestHost
+public sealed class BpmnTestHost : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IWorkflowRunner _workflowRunner;
@@ -27,15 +26,23 @@ public sealed class BpmnTestHost
     private WorkflowState? _state;
     private RunWorkflowResult? _result;
 
-    public BpmnTestHost(ITestOutputHelper testOutputHelper)
+    public BpmnTestHost(TextWriter testOutput)
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(testOutput)
             .ConfigureElsa(elsa => elsa.UseBpmn())
             .AddActivitiesFrom<BpmnTestWork>()
             .Build();
 
         _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
         _workflowBuilderFactory = _services.GetRequiredService<IWorkflowBuilderFactory>();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
     }
 
     /// <summary>What the stand-in work activities recorded.</summary>

@@ -5,20 +5,20 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Dsl.ElsaScript.IntegrationTests;
 
 /// <summary>
 /// Integration tests for the ElsaScript compiler.
 /// </summary>
-public class CompilerTests
+public class CompilerTests : IAsyncDisposable
 {
     private readonly IElsaScriptCompiler _compiler;
+    private readonly IServiceProvider _services;
 
-    public CompilerTests(ITestOutputHelper testOutputHelper)
+    public CompilerTests()
     {
-        var services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa =>
             {
                 elsa.UseElsaScript();
@@ -26,10 +26,19 @@ public class CompilerTests
             })
             .Build();
 
-        _compiler = services.GetRequiredService<IElsaScriptCompiler>();
+        _compiler = _services.GetRequiredService<IElsaScriptCompiler>();
     }
 
-    [Fact(DisplayName = "Compiler can compile a simple workflow from source")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("Compiler can compile a simple workflow from source")]
     public async Task CompileAsync_WithSimpleWorkflowSource_ShouldCreateWorkflowWithCorrectName()
     {
         // Arrange
@@ -45,12 +54,16 @@ workflow HelloWorld {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert - verify the workflow is correctly compiled
-        Assert.NotNull(workflow);
-        Assert.Equal("HelloWorld", workflow.Name);
-        Assert.NotNull(workflow.Root);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
+
+        await Assert.That(workflow.Name).IsEqualTo("HelloWorld");
+
+        await Assert.That(workflow.Root).IsNotNull();
+
     }
 
-    [Fact(DisplayName = "Compiler can compile workflow with variable declarations")]
+    [Test]
+    [DisplayName("Compiler can compile workflow with variable declarations")]
     public async Task CompileAsync_WithVariableDeclarations_ShouldCreateWorkflowWithAllVariables()
     {
         // Arrange
@@ -67,16 +80,23 @@ workflow VariableTest {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert - verify variables are compiled correctly
-        Assert.NotNull(workflow);
-        Assert.Equal("VariableTest", workflow.Name);
-        Assert.Equal(3, workflow.Variables.Count);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
 
-        Assert.Contains(workflow.Variables, v => v.Name == "message");
-        Assert.Contains(workflow.Variables, v => v.Name == "count");
-        Assert.Contains(workflow.Variables, v => v.Name == "pi");
+        await Assert.That(workflow.Name).IsEqualTo("VariableTest");
+
+        await Assert.That(workflow.Variables.Count).IsEqualTo(3);
+
+
+        await Assert.That(workflow.Variables).Contains(v => v.Name == "message");
+
+        await Assert.That(workflow.Variables).Contains(v => v.Name == "count");
+
+        await Assert.That(workflow.Variables).Contains(v => v.Name == "pi");
+
     }
 
-    [Fact(DisplayName = "Compiler can compile workflow without workflow keyword")]
+    [Test]
+    [DisplayName("Compiler can compile workflow without workflow keyword")]
     public async Task CompileAsync_WithoutWorkflowKeyword_ShouldCreateWorkflow()
     {
         // Arrange
@@ -86,11 +106,14 @@ workflow VariableTest {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.NotNull(workflow.Root);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
+
+        await Assert.That(workflow.Root).IsNotNull();
+
     }
 
-    [Fact(DisplayName = "Compiler can compile complex workflow with variables, listen statements, and expressions")]
+    [Test]
+    [DisplayName("Compiler can compile complex workflow with variables, listen statements, and expressions")]
     public async Task CompileAsync_WithComplexWorkflow_ShouldCreateWorkflowWithCorrectStructure()
     {
         // Arrange
@@ -108,59 +131,89 @@ workflow HelloWorldHttpDsl {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("HelloWorldHttpDsl", workflow.Name);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
+
+        await Assert.That(workflow.Name).IsEqualTo("HelloWorldHttpDsl");
+
 
         // Verify workflow has the message variable
-        Assert.Single(workflow.Variables);
+        await Assert.That(workflow.Variables).HasSingleItem();
+
         var messageVar = workflow.Variables.First();
-        Assert.Equal("message", messageVar.Name);
-        Assert.Equal("Hello World from DSL via Expressions!", messageVar.Value);
+        await Assert.That(messageVar.Name).IsEqualTo("message");
+
+        await Assert.That(messageVar.Value).IsEqualTo("Hello World from DSL via Expressions!");
+
 
         // Verify root is a Sequence with 3 activities (HttpEndpoint, WriteLine, WriteHttpResponse)
-        var sequence = Assert.IsType<Sequence>(workflow.Root);
-        Assert.Equal(3, sequence.Activities.Count);
+        var sequenceValue = workflow.Root;
+        await Assert.That(sequenceValue).IsOfType(typeof(Sequence));
+        var sequence = (Sequence)sequenceValue!;
+        await Assert.That(sequence.Activities.Count).IsEqualTo(3);
+
 
         // Verify HttpEndpoint activity (from listen statement)
         var httpEndpoint = sequence.Activities.ElementAt(0);
-        Assert.Equal("Elsa.HttpEndpoint", httpEndpoint.Type);
+        await Assert.That(httpEndpoint.Type).IsEqualTo("Elsa.HttpEndpoint");
+
 
         // Verify HttpEndpoint can start workflow (CanStartWorkflow property should be true)
         var canStartWorkflowProp = httpEndpoint.GetType().GetProperty("CanStartWorkflow");
-        Assert.NotNull(canStartWorkflowProp);
+        canStartWorkflowProp = (await Assert.That(canStartWorkflowProp).IsNotNull())!;
+
         var canStartWorkflow = (bool)canStartWorkflowProp.GetValue(httpEndpoint)!;
-        Assert.True(canStartWorkflow);
+        await Assert.That(canStartWorkflow).IsTrue();
+
 
         // Verify WriteLine activity with JavaScript expression
         var writeLine = sequence.Activities.ElementAt(1);
-        Assert.Equal("Elsa.WriteLine", writeLine.Type);
+        await Assert.That(writeLine.Type).IsEqualTo("Elsa.WriteLine");
+
 
         var textProp = writeLine.GetType().GetProperty("Text");
-        Assert.NotNull(textProp);
-        var textInput = Assert.IsType<Input<string>>(textProp.GetValue(writeLine));
+        textProp = (await Assert.That(textProp).IsNotNull())!;
+
+        var textInputValue = textProp.GetValue(writeLine);
+
+        await Assert.That(textInputValue).IsOfType(typeof(Input<string>));
+
+        var textInput = (Input<string>)textInputValue!;
 
         // Verify it's a JavaScript expression
         var expression = textInput.Expression;
-        Assert.NotNull(expression);
-        Assert.Equal("JavaScript", expression.Type);
-        Assert.Contains("Message:", expression.Value?.ToString());
-        Assert.Contains("message", expression.Value?.ToString());
+        expression = (await Assert.That(expression).IsNotNull())!;
+
+        await Assert.That(expression.Type).IsEqualTo("JavaScript");
+
+        await Assert.That(expression.Value?.ToString()).Contains("Message:", StringComparison.CurrentCulture);
+
+        await Assert.That(expression.Value?.ToString()).Contains("message", StringComparison.CurrentCulture);
+
 
         // Verify WriteHttpResponse activity with variable reference
         var writeHttpResponse = sequence.Activities.ElementAt(2);
-        Assert.Equal("Elsa.WriteHttpResponse", writeHttpResponse.Type);
+        await Assert.That(writeHttpResponse.Type).IsEqualTo("Elsa.WriteHttpResponse");
+
 
         var contentProp = writeHttpResponse.GetType().GetProperty("Content");
-        Assert.NotNull(contentProp);
-        var contentInput = Assert.IsType<Input<object>>(contentProp.GetValue(writeHttpResponse));
+        contentProp = (await Assert.That(contentProp).IsNotNull())!;
+
+        var contentInputValue = contentProp.GetValue(writeHttpResponse);
+
+        await Assert.That(contentInputValue).IsOfType(typeof(Input<object>));
+
+        var contentInput = (Input<object>)contentInputValue!;
 
         // Verify it references the message variable
         var memoryBlockReference = contentInput.MemoryBlockReference();
-        Assert.NotNull(memoryBlockReference);
-        Assert.Equal(messageVar.Id, memoryBlockReference.Id);
+        memoryBlockReference = (await Assert.That(memoryBlockReference).IsNotNull())!;
+
+        await Assert.That(memoryBlockReference.Id).IsEqualTo(messageVar.Id);
+
     }
 
-    [Fact(DisplayName = "Compiler can compile for loop with 'to' keyword (exclusive)")]
+    [Test]
+    [DisplayName("Compiler can compile for loop with 'to' keyword (exclusive)")]
     public async Task CompileAsync_WithForLoopExclusive_ShouldCreateForActivity()
     {
         // Arrange
@@ -178,35 +231,48 @@ workflow ForLoopTest {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("ForLoopTest", workflow.Name);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
+
+        await Assert.That(workflow.Name).IsEqualTo("ForLoopTest");
+
 
         // Verify the For activity is created
-        var forActivity = Assert.IsType<For>(workflow.Root);
-        Assert.NotNull(forActivity);
+        var forActivityValue = workflow.Root;
+        await Assert.That(forActivityValue).IsOfType(typeof(For));
+        var forActivity = (For)forActivityValue!;
+        await Assert.That(forActivity).IsNotNull();
+
 
         // Verify Start, End, Step values
-        Assert.NotNull(forActivity.Start);
-        Assert.NotNull(forActivity.End);
-        Assert.NotNull(forActivity.Step);
+        await Assert.That(forActivity.Start).IsNotNull();
+
+        await Assert.That(forActivity.End).IsNotNull();
+
+        await Assert.That(forActivity.Step).IsNotNull();
+
 
         // Verify OuterBoundInclusive is false (exclusive 'to')
-        Assert.NotNull(forActivity.OuterBoundInclusive);
-        var outerBoundInput = forActivity.OuterBoundInclusive;
+        var outerBoundInput = (await Assert.That(forActivity.OuterBoundInclusive).IsNotNull())!;
         var outerBoundExpr = outerBoundInput.Expression;
-        Assert.NotNull(outerBoundExpr);
-        Assert.False((bool?)outerBoundExpr.Value);
+        outerBoundExpr = (await Assert.That(outerBoundExpr).IsNotNull())!;
+
+        await Assert.That((bool?)outerBoundExpr.Value).IsFalse();
+
 
         // Verify loop variable exists
-        Assert.Single(workflow.Variables);
+        await Assert.That(workflow.Variables).HasSingleItem();
+
         var loopVar = workflow.Variables.First();
-        Assert.Equal("i", loopVar.Name);
+        await Assert.That(loopVar.Name).IsEqualTo("i");
+
 
         // Verify body exists
-        Assert.NotNull(forActivity.Body);
+        await Assert.That(forActivity.Body).IsNotNull();
+
     }
 
-    [Fact(DisplayName = "Compiler can compile for loop with 'through' keyword (inclusive)")]
+    [Test]
+    [DisplayName("Compiler can compile for loop with 'through' keyword (inclusive)")]
     public async Task CompileAsync_WithForLoopInclusive_ShouldCreateForActivity()
     {
         // Arrange
@@ -224,27 +290,36 @@ workflow ForLoopInclusiveTest {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.Equal("ForLoopInclusiveTest", workflow.Name);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
+
+        await Assert.That(workflow.Name).IsEqualTo("ForLoopInclusiveTest");
+
 
         // Verify the For activity is created
-        var forActivity = Assert.IsType<For>(workflow.Root);
-        Assert.NotNull(forActivity);
+        var forActivityValue = workflow.Root;
+        await Assert.That(forActivityValue).IsOfType(typeof(For));
+        var forActivity = (For)forActivityValue!;
+        await Assert.That(forActivity).IsNotNull();
+
 
         // Verify OuterBoundInclusive is true (inclusive 'through')
-        Assert.NotNull(forActivity.OuterBoundInclusive);
-        var outerBoundInput = forActivity.OuterBoundInclusive;
+        var outerBoundInput = (await Assert.That(forActivity.OuterBoundInclusive).IsNotNull())!;
         var outerBoundExpr = outerBoundInput.Expression;
-        Assert.NotNull(outerBoundExpr);
-        Assert.True((bool?)outerBoundExpr.Value);
+        outerBoundExpr = (await Assert.That(outerBoundExpr).IsNotNull())!;
+
+        await Assert.That((bool?)outerBoundExpr.Value).IsTrue();
+
 
         // Verify loop variable exists
-        Assert.Single(workflow.Variables);
+        await Assert.That(workflow.Variables).HasSingleItem();
+
         var loopVar = workflow.Variables.First();
-        Assert.Equal("i", loopVar.Name);
+        await Assert.That(loopVar.Name).IsEqualTo("i");
+
     }
 
-    [Fact(DisplayName = "Compiler can compile workflow with metadata")]
+    [Test]
+    [DisplayName("Compiler can compile workflow with metadata")]
     public async Task CompileAsync_WithWorkflowMetadata_ShouldCreateWorkflowWithCorrectMetadata()
     {
         // Arrange
@@ -268,25 +343,34 @@ workflow HelloWorldDsl(
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
+
 
         // Check identity
-        Assert.Equal("hello-world-dsl", workflow.Identity.DefinitionId);
-        Assert.Equal(2, workflow.Identity.Version);
-        Assert.Equal("hello-world-dsl-v1", workflow.Identity.Id);
+        await Assert.That(workflow.Identity.DefinitionId).IsEqualTo("hello-world-dsl");
+
+        await Assert.That(workflow.Identity.Version).IsEqualTo(2);
+
+        await Assert.That(workflow.Identity.Id).IsEqualTo("hello-world-dsl-v1");
+
 
         // Check metadata
-        Assert.Equal("Hello World DSL", workflow.WorkflowMetadata.Name);
-        Assert.Equal("Demonstrates ElsaScript with metadata", workflow.WorkflowMetadata.Description);
+        await Assert.That(workflow.WorkflowMetadata.Name).IsEqualTo("Hello World DSL");
+
+        await Assert.That(workflow.WorkflowMetadata.Description).IsEqualTo("Demonstrates ElsaScript with metadata");
+
 
         // Check options
-        Assert.True(workflow.Options.UsableAsActivity);
+        await Assert.That(workflow.Options.UsableAsActivity).IsTrue();
+
 
         // Check root activity
-        Assert.NotNull(workflow.Root);
+        await Assert.That(workflow.Root).IsNotNull();
+
     }
 
-    [Fact(DisplayName = "Compiler can compile empty flowchart")]
+    [Test]
+    [DisplayName("Compiler can compile empty flowchart")]
     public async Task CompileAsync_WithEmptyFlowchart_ShouldCreateFlowchartActivity()
     {
         // Arrange
@@ -300,13 +384,17 @@ workflow FlowchartTest {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.NotNull(workflow.Root);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
 
-        Assert.IsType<Workflows.Activities.Flowchart.Activities.Flowchart>(workflow.Root);
+        await Assert.That(workflow.Root).IsNotNull();
+
+
+        await Assert.That(workflow.Root).IsOfType(typeof(Workflows.Activities.Flowchart.Activities.Flowchart));
+
     }
 
-    [Fact(DisplayName = "Compiler can compile flowchart with node and connection")]
+    [Test]
+    [DisplayName("Compiler can compile flowchart with node and connection")]
     public async Task CompileAsync_WithFlowchartNodeAndConnection_ShouldCreateFlowchartWithCorrectStructure()
     {
         // Arrange
@@ -324,22 +412,34 @@ workflow FlowchartTest {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.NotNull(workflow.Root);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
 
-        var flowchart = Assert.IsType<Workflows.Activities.Flowchart.Activities.Flowchart>(workflow.Root);
+        await Assert.That(workflow.Root).IsNotNull();
+
+
+        var flowchartValue = workflow.Root;
+
+
+        await Assert.That(flowchartValue).IsOfType(typeof(Workflows.Activities.Flowchart.Activities.Flowchart));
+
+
+        var flowchart = (Workflows.Activities.Flowchart.Activities.Flowchart)flowchartValue!;
 
         // Check that flowchart has 2 activities
-        Assert.Equal(2, flowchart.Activities.Count);
+        await Assert.That(flowchart.Activities.Count).IsEqualTo(2);
+
 
         // Check connections
-        Assert.Single(flowchart.Connections);
+        await Assert.That(flowchart.Connections).HasSingleItem();
+
 
         // Check entry point is set
-        Assert.NotNull(flowchart.Start);
+        await Assert.That(flowchart.Start).IsNotNull();
+
     }
 
-    [Fact(DisplayName = "Compiler can compile flowchart with block node")]
+    [Test]
+    [DisplayName("Compiler can compile flowchart with block node")]
     public async Task CompileAsync_WithFlowchartBlockNode_ShouldCreateSequenceActivity()
     {
         // Arrange
@@ -359,22 +459,35 @@ workflow FlowchartWithBlock {
         var workflow = await _compiler.CompileAsync(source);
 
         // Assert
-        Assert.NotNull(workflow);
-        Assert.NotNull(workflow.Root);
+        workflow = (await Assert.That(workflow).IsNotNull())!;
 
-        var flowchart = Assert.IsType<Workflows.Activities.Flowchart.Activities.Flowchart>(workflow.Root);
+        await Assert.That(workflow.Root).IsNotNull();
+
+
+        var flowchartValue = workflow.Root;
+
+
+        await Assert.That(flowchartValue).IsOfType(typeof(Workflows.Activities.Flowchart.Activities.Flowchart));
+
+
+        var flowchart = (Workflows.Activities.Flowchart.Activities.Flowchart)flowchartValue!;
 
         // Should have one activity
-        Assert.Single(flowchart.Activities);
+        await Assert.That(flowchart.Activities).HasSingleItem();
+
 
         // The activity should be a Sequence (from the block)
-        var sequenceActivity = Assert.IsType<Sequence>(flowchart.Activities.First());
+        var sequenceActivityValue = flowchart.Activities.First();
+        await Assert.That(sequenceActivityValue).IsOfType(typeof(Sequence));
+        var sequenceActivity = (Sequence)sequenceActivityValue!;
 
         // Sequence should have 2 activities
-        Assert.Equal(2, sequenceActivity.Activities.Count);
+        await Assert.That(sequenceActivity.Activities.Count).IsEqualTo(2);
+
     }
 
-    [Fact(DisplayName = "Compiler resets default expression language between compilations")]
+    [Test]
+    [DisplayName("Compiler resets default expression language between compilations")]
     public async Task CompileAsync_WithSecondWorkflowAfterLiquid_ShouldResetToJavaScript()
     {
         // Arrange - First workflow sets Liquid as default
@@ -398,18 +511,25 @@ workflow SecondWorkflow {
         var secondWorkflow = await _compiler.CompileAsync(secondSource);
 
         // Assert - Verify first workflow used Liquid
-        Assert.NotNull(firstWorkflow);
+        firstWorkflow = (await Assert.That(firstWorkflow).IsNotNull())!;
+
         var firstWriteLine = firstWorkflow.Root;
         var firstTextProp = firstWriteLine.GetType().GetProperty("Text");
-        var firstTextInput = Assert.IsType<Input<string>>(firstTextProp!.GetValue(firstWriteLine));
-        Assert.Equal("Liquid", firstTextInput.Expression?.Type);
+        var firstTextInputValue = firstTextProp!.GetValue(firstWriteLine);
+        await Assert.That(firstTextInputValue).IsOfType(typeof(Input<string>));
+        var firstTextInput = (Input<string>)firstTextInputValue!;
+        await Assert.That(firstTextInput.Expression?.Type).IsEqualTo("Liquid");
+
 
         // Assert - Verify second workflow uses JavaScript (not leaked Liquid)
-        Assert.NotNull(secondWorkflow);
+        secondWorkflow = (await Assert.That(secondWorkflow).IsNotNull())!;
+
         var secondWriteLine = secondWorkflow.Root;
         var secondTextProp = secondWriteLine.GetType().GetProperty("Text");
-        var secondTextInput = Assert.IsType<Input<string>>(secondTextProp!.GetValue(secondWriteLine));
-        Assert.Equal("JavaScript", secondTextInput.Expression?.Type);
+        var secondTextInputValue = secondTextProp!.GetValue(secondWriteLine);
+        await Assert.That(secondTextInputValue).IsOfType(typeof(Input<string>));
+        var secondTextInput = (Input<string>)secondTextInputValue!;
+        await Assert.That(secondTextInput.Expression?.Type).IsEqualTo("JavaScript");
+
     }
 }
-

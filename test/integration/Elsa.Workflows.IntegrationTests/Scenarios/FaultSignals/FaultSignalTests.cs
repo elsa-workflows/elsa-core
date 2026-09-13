@@ -9,7 +9,6 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 using Elsa.Workflows.Signals;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.FaultSignals;
 
@@ -17,12 +16,13 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.FaultSignals;
 /// Integration tests for <see cref="FaultSignal"/>: a container's opportunity to claim a child's fault before it
 /// becomes a workflow-global incident.
 /// </summary>
-public class FaultSignalTests(ITestOutputHelper testOutputHelper)
+public class FaultSignalTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
     private readonly Fault _faultingActivity = Fault.Create("Whoops!", "Test", "Test");
 
-    [Fact(DisplayName = "A container that handles the signal suppresses the incident strategy")]
+    [Test]
+    [DisplayName("A container that handles the signal suppresses the incident strategy")]
     public async Task HandledFault_DoesNotFaultTheWorkflow()
     {
         // Arrange
@@ -32,20 +32,21 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert
-        Assert.Equal(1, container.FaultsSeen);
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(container.FaultsSeen).IsEqualTo(1);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
 
         // A fault a container claimed is not an incident. Plenty of code reads a non-empty Incidents as "this workflow
         // failed" without looking further - the HTTP endpoint fault handler among them - so leaving one here would
         // answer a caller with a fault response for a workflow that caught its error and finished normally. The
         // execution log still records the failure for anyone reading the journal.
-        Assert.Empty(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
     }
 
-    [Theory(DisplayName = "A fault nobody handles is left to the incident strategy, exactly as before")]
-    [InlineData(typeof(FaultStrategy), WorkflowSubStatus.Faulted)]
-    [InlineData(typeof(ContinueWithIncidentsStrategy), WorkflowSubStatus.Suspended)]
+    [Test]
+    [DisplayName("A fault nobody handles is left to the incident strategy, exactly as before: $incidentStrategyType")]
+    [Arguments(typeof(FaultStrategy), WorkflowSubStatus.Faulted)]
+    [Arguments(typeof(ContinueWithIncidentsStrategy), WorkflowSubStatus.Suspended)]
     public async Task UnhandledFault_LeavesIncidentStrategyInCharge(Type incidentStrategyType, WorkflowSubStatus expectedSubStatus)
     {
         // Arrange: a plain container, with no FaultSignal handler anywhere in the chain.
@@ -61,13 +62,14 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container, incidentStrategyType);
 
         // Assert
-        Assert.Equal(expectedSubStatus, result.WorkflowState.SubStatus);
-        Assert.Single(result.WorkflowState.Incidents);
-        Assert.Equal(ActivityStatus.Faulted, result.GetActivityStatus(_faultingActivity));
-        AssertFaultCounts(result, expected: 1);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(expectedSubStatus);
+        await Assert.That(result.WorkflowState.Incidents).HasSingleItem();
+        await Assert.That(result.GetActivityStatus(_faultingActivity)).IsEqualTo(ActivityStatus.Faulted);
+        await AssertFaultCountsAsync(result, expected: 1);
     }
 
-    [Fact(DisplayName = "A fault the inner container declines keeps bubbling to the outer one")]
+    [Test]
+    [DisplayName("A fault the inner container declines keeps bubbling to the outer one")]
     public async Task DeclinedFault_ReachesTheNextAncestor()
     {
         // Arrange
@@ -78,12 +80,13 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(outer);
 
         // Assert
-        Assert.Equal(1, inner.FaultsSeen);
-        Assert.Equal(1, outer.FaultsSeen);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(inner.FaultsSeen).IsEqualTo(1);
+        await Assert.That(outer.FaultsSeen).IsEqualTo(1);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact(DisplayName = "The faulting activity receives its own fault before any ancestor does")]
+    [Test]
+    [DisplayName("The faulting activity receives its own fault before any ancestor does")]
     public async Task FaultingActivity_ReceivesItsOwnSignalFirst()
     {
         // Pinning the channel's self-plus-ancestors dispatch, which this signal reuses rather than varying. It lets a
@@ -98,20 +101,21 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container, typeof(FaultStrategy));
 
         // Assert: the activity claimed its own fault, so the walk never reached the container.
-        Assert.Equal(0, container.FaultsSeen);
-        Assert.NotEqual(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        await Assert.That(container.FaultsSeen).IsEqualTo(0);
+        await Assert.That(result.WorkflowState.SubStatus).IsNotEqualTo(WorkflowSubStatus.Faulted);
 
         // The activity claimed the fault itself, so it is not an incident either, and the fault bookkeeping was still
         // recovered exactly once.
-        Assert.Empty(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
 
-        var faultedContext = result.GetActivityContext(faultingActivity);
-        Assert.NotNull(faultedContext);
-        Assert.Equal(0, faultedContext.AggregateFaultCount);
-        Assert.All(faultedContext.GetAncestors(), x => Assert.Equal(0, x.AggregateFaultCount));
+        var faultedContext = await Assert.That(result.GetActivityContext(faultingActivity)).IsNotNull();
+        await Assert.That(faultedContext.AggregateFaultCount).IsEqualTo(0);
+        foreach (var ancestor in faultedContext.GetAncestors())
+            await Assert.That(ancestor.AggregateFaultCount).IsEqualTo(0);
     }
 
-    [Fact(DisplayName = "A handled fault restores the fault count on the faulting context and every ancestor")]
+    [Test]
+    [DisplayName("A handled fault restores the fault count on the faulting context and every ancestor")]
     public async Task HandledFault_RestoresFaultCounts()
     {
         // Arrange
@@ -121,10 +125,11 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert
-        AssertFaultCounts(result, expected: 0);
+        await AssertFaultCountsAsync(result, expected: 0);
     }
 
-    [Fact(DisplayName = "A handler that also recovers from the fault drives ancestor fault counts negative")]
+    [Test]
+    [DisplayName("A handler that also recovers from the fault drives ancestor fault counts negative")]
     public async Task HandlerThatAlsoRecoversFromFault_CorruptsAncestorFaultCounts()
     {
         // Asserting the documented consequence of violating the contract rather than leaving it accidental: recovery
@@ -143,16 +148,17 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert
-        var faultedContext = result.GetActivityContext(_faultingActivity);
-        Assert.NotNull(faultedContext);
+        var faultedContext = await Assert.That(result.GetActivityContext(_faultingActivity)).IsNotNull();
 
         var ancestors = faultedContext.GetAncestors().ToList();
-        Assert.NotEmpty(ancestors);
-        Assert.Equal(0, faultedContext.AggregateFaultCount);
-        Assert.All(ancestors, x => Assert.Equal(-1, x.AggregateFaultCount));
+        await Assert.That(ancestors).IsNotEmpty();
+        await Assert.That(faultedContext.AggregateFaultCount).IsEqualTo(0);
+        foreach (var ancestor in ancestors)
+            await Assert.That(ancestor.AggregateFaultCount).IsEqualTo(-1);
     }
 
-    [Fact(DisplayName = "A handler can complete the faulted child with a substitute result")]
+    [Test]
+    [DisplayName("A handler can complete the faulted child with a substitute result")]
     public async Task HandlerThatCompletesChildWithSubstituteResult_ResumesTheContainer()
     {
         // Arrange
@@ -178,13 +184,14 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert: completing the child fires the container's completion callback, so sequencing resumes.
-        Assert.Equal(ActivityStatus.Completed, result.GetActivityStatus(_faultingActivity));
-        Assert.Equal(new[] { "after" }, _fixture.CapturingTextWriter.Lines);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        AssertFaultCounts(result, expected: 0);
+        await Assert.That(result.GetActivityStatus(_faultingActivity)).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(_fixture.CapturingTextWriter.Lines).IsEquivalentTo(new[] { "after" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+        await AssertFaultCountsAsync(result, expected: 0);
     }
 
-    [Fact(DisplayName = "A handler that cancels the faulted child leaves it Canceled, not Running")]
+    [Test]
+    [DisplayName("A handler that cancels the faulted child leaves it Canceled, not Running")]
     public async Task HandlerThatCancelsChild_LeavesItCanceled()
     {
         // Arrange
@@ -194,10 +201,11 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert
-        Assert.Equal(ActivityStatus.Canceled, result.GetActivityStatus(_faultingActivity));
+        await Assert.That(result.GetActivityStatus(_faultingActivity)).IsEqualTo(ActivityStatus.Canceled);
     }
 
-    [Fact(DisplayName = "A handler that terminalizes nothing leaves the child Running and the workflow suspended")]
+    [Test]
+    [DisplayName("A handler that terminalizes nothing leaves the child Running and the workflow suspended")]
     public async Task HandlerThatTerminalizesNothing_DegradesRatherThanHangs()
     {
         // The handler's bug, documented: recovery transitions the faulted child back to Running, and a handler that
@@ -215,12 +223,13 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert
-        Assert.Equal(ActivityStatus.Running, result.GetActivityStatus(_faultingActivity));
-        Assert.Equal(WorkflowStatus.Running, result.WorkflowState.Status);
-        Assert.Equal(WorkflowSubStatus.Suspended, result.WorkflowState.SubStatus);
+        await Assert.That(result.GetActivityStatus(_faultingActivity)).IsEqualTo(ActivityStatus.Running);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Running);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Suspended);
     }
 
-    [Fact(DisplayName = "A completing container sweeps a child the handler failed to terminalize")]
+    [Test]
+    [DisplayName("A completing container sweeps a child the handler failed to terminalize")]
     public async Task HandlerThatTerminalizesNothing_IsBackstoppedByTheCompletingContainer()
     {
         // The backstop, not the mechanism: CompleteActivityAsync cancels non-completed children on the way out.
@@ -236,13 +245,14 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, result.GetActivityStatus(container));
-        Assert.Equal(ActivityStatus.Canceled, result.GetActivityStatus(_faultingActivity));
+        await Assert.That(result.GetActivityStatus(container)).IsEqualTo(ActivityStatus.Completed);
+        await Assert.That(result.GetActivityStatus(_faultingActivity)).IsEqualTo(ActivityStatus.Canceled);
     }
 
-    [Theory(DisplayName = "A handler that throws is treated as not having handled the fault")]
-    [InlineData(false)]
-    [InlineData(true)]
+    [Test]
+    [DisplayName("A handler that throws is treated as not having handled the fault: $stopPropagationFirst")]
+    [Arguments(false)]
+    [Arguments(true)]
     public async Task HandlerThatThrows_FallsThroughToTheIncidentStrategy(bool stopPropagationFirst)
     {
         // The signal is sent from inside the catch that exists to stop exceptions escaping the activity pipeline, so a
@@ -263,20 +273,21 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container, typeof(FaultStrategy));
 
         // Assert: the fault is unhandled, so it lands exactly where it would with no handler at all.
-        Assert.Equal(1, container.FaultsSeen);
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
-        Assert.Equal(ActivityStatus.Faulted, result.GetActivityStatus(_faultingActivity));
+        await Assert.That(container.FaultsSeen).IsEqualTo(1);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
+        await Assert.That(result.GetActivityStatus(_faultingActivity)).IsEqualTo(ActivityStatus.Faulted);
 
         // The original fault is the incident, not the handler's failure: recovery never ran, so nothing removed it.
         // Asserted on identity rather than message text, because the incident carries the thrown exception's message
         // and a broken handler must not be able to substitute its own.
-        var incident = Assert.Single(result.WorkflowState.Incidents);
-        Assert.Equal(_faultingActivity.Id, incident.ActivityId);
-        Assert.DoesNotContain("The handler is broken", incident.Message, StringComparison.Ordinal);
-        AssertFaultCounts(result, expected: 1);
+        var incident = await Assert.That(result.WorkflowState.Incidents).HasSingleItem();
+        await Assert.That(incident.ActivityId).IsEqualTo(_faultingActivity.Id);
+        await Assert.That(incident.Message).DoesNotContain("The handler is broken", StringComparison.Ordinal);
+        await AssertFaultCountsAsync(result, expected: 1);
     }
 
-    [Fact(DisplayName = "Cancellation from a handler propagates instead of becoming an incident")]
+    [Test]
+    [DisplayName("Cancellation from a handler propagates instead of becoming an incident")]
     public async Task HandlerThatCancels_PropagatesRatherThanFaulting()
     {
         // The guard above deliberately does not cover OperationCanceledException. Cancellation means the host is tearing
@@ -293,10 +304,11 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
 
         // Assert: the workflow-level middleware cancelled the run, so it ends Cancelled rather than Faulted. Swallowing
         // the cancellation here would instead hand the fault to FaultStrategy and finish Faulted.
-        Assert.Equal(WorkflowSubStatus.Cancelled, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Cancelled);
     }
 
-    [Fact(DisplayName = "A handled fault still leaves the failure in the execution log")]
+    [Test]
+    [DisplayName("A handled fault still leaves the failure in the execution log")]
     public async Task HandledFault_StillRecordsTheFailureInTheJournal()
     {
         // The whole justification for dropping the incident is that the journal keeps the evidence, so that claim is
@@ -311,7 +323,7 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         var result = await RunAsync(container);
 
         // Assert: no incident, but the failure is still on the record.
-        Assert.Empty(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
 
         var journal = await _fixture.Services.GetRequiredService<IWorkflowExecutionLogStore>().FindManyAsync(new()
         {
@@ -320,8 +332,8 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
             EventName = "Faulted"
         }, PageArgs.All);
 
-        var entry = Assert.Single(journal.Items);
-        Assert.Equal(_faultingActivity.Id, entry.ActivityId);
+        var entry = await Assert.That(journal.Items).HasSingleItem();
+        await Assert.That(entry.ActivityId).IsEqualTo(_faultingActivity.Id);
     }
 
     /// <summary>
@@ -354,14 +366,16 @@ public class FaultSignalTests(ITestOutputHelper testOutputHelper)
         }));
     }
 
-    private void AssertFaultCounts(RunWorkflowResult result, int expected)
+    private async Task AssertFaultCountsAsync(RunWorkflowResult result, int expected)
     {
-        var faultedContext = result.GetActivityContext(_faultingActivity);
-        Assert.NotNull(faultedContext);
+        var faultedContext = await Assert.That(result.GetActivityContext(_faultingActivity)).IsNotNull();
 
         var ancestors = faultedContext.GetAncestors().ToList();
-        Assert.NotEmpty(ancestors);
-        Assert.Equal(expected, faultedContext.AggregateFaultCount);
-        Assert.All(ancestors, x => Assert.Equal(expected, x.AggregateFaultCount));
+        await Assert.That(ancestors).IsNotEmpty();
+        await Assert.That(faultedContext.AggregateFaultCount).IsEqualTo(expected);
+        foreach (var ancestor in ancestors)
+            await Assert.That(ancestor.AggregateFaultCount).IsEqualTo(expected);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_fixture);
 }

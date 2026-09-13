@@ -1,10 +1,12 @@
-﻿using Elsa.Extensions;
+﻿using System.Runtime.ExceptionServices;
+using Elsa.Extensions;
 using Elsa.Features.Services;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Contracts;
+using Elsa.Workflows.Runtime.Middleware.Workflows;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,27 +23,38 @@ public static class DispatchWorkflowExtensions
         string? instanceId = null,
         TimeSpan? timeout = null)
     {
-        var semaphore = new SemaphoreSlim(0, 1);
-        WorkflowStateCommitted? workflowFinishedRecord = null;
+        var workflowFinished = new TaskCompletionSource<(WorkflowStateCommitted Notification, Task CycleDisposed)>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var effectiveTimeout = timeout ?? TimeSpan.FromSeconds(30);
+        var effectiveInstanceId = instanceId ?? Guid.NewGuid().ToString();
 
-        var host = Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
+        var hostBuilder = new HostBuilder();
+        hostBuilder.ConfigureServices(services =>
+        {
+            configureServices?.Invoke(services);
+
+            // Capture the terminal state and the exact execution cycle that owns its commit.
+            services.AddNotificationHandler<WorkflowFinishedAction, WorkflowStateCommitted>(sp => new(notification =>
             {
-                configureServices?.Invoke(services);
+                if (notification.WorkflowExecutionContext.Status != WorkflowStatus.Finished ||
+                    notification.WorkflowExecutionContext.Id != effectiveInstanceId)
+                    return;
 
-                // This notification handler will capture the WorkflowFinished record (to be returned) and release the semaphore.
-                services.AddNotificationHandler<WorkflowFinishedAction, WorkflowStateCommitted>(sp => new(notification =>
-                {
-                    if (notification.WorkflowExecutionContext.Status != WorkflowStatus.Finished)
-                        return;
+                var cycleDisposed = notification.WorkflowExecutionContext.TransientProperties.TryGetValue(
+                    ExecutionCycleTrackingMiddleware.ExecutionCycleHandleKey,
+                    out var value) && value is ExecutionCycleHandle handle
+                        ? handle.Disposed
+                        : Task.CompletedTask;
 
-                    workflowFinishedRecord = notification;
-                    semaphore.Release();
-                }));
+                workflowFinished.TrySetResult((notification, cycleDisposed));
+            }));
 
-                services.AddElsa(elsa => configureElsa?.Invoke(elsa));
-            })
-            .Build();
+            services.AddElsa(elsa => configureElsa?.Invoke(elsa));
+        });
+        var host = hostBuilder.Build();
+
+        WorkflowStateCommitted? result = null;
+        Exception? dispatchException = null;
+        var completionTimedOut = false;
 
         try
         {
@@ -64,19 +77,96 @@ public static class DispatchWorkflowExtensions
             var dispatchWorkflowResponse = await workflowDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest
             {
                 DefinitionVersionId = workflow.DefinitionHandle.DefinitionVersionId!,
-                InstanceId = instanceId ?? Guid.NewGuid().ToString(),
+                InstanceId = effectiveInstanceId,
             });
             dispatchWorkflowResponse.ThrowIfFailed();
 
             // Wait for the workflow to complete, and then return the WorkflowFinished notification.
-            var signaled = await semaphore.WaitAsync(timeout ?? TimeSpan.FromSeconds(50000));
-            return signaled ? workflowFinishedRecord : null;
+            using var completionTimeout = new CancellationTokenSource(effectiveTimeout);
+            (WorkflowStateCommitted Notification, Task CycleDisposed)? workflowFinishedRecord = null;
+            try
+            {
+                workflowFinishedRecord = await workflowFinished.Task.WaitAsync(completionTimeout.Token);
+            }
+            catch (OperationCanceledException) when (completionTimeout.IsCancellationRequested)
+            {
+                completionTimedOut = true;
+            }
+
+            if (!completionTimedOut)
+            {
+                var completedWorkflow = workflowFinishedRecord!.Value;
+
+                // WorkflowStateCommitted is published from inside the commit handler. Wait until that exact execution-cycle
+                // handle is released after the commit before stopping the host; otherwise graceful shutdown can cancel the
+                // commit that produced this notification. Waiting on the captured handle avoids unrelated cycles.
+                try
+                {
+                    await completedWorkflow.CycleDisposed.WaitAsync(completionTimeout.Token);
+                }
+                catch (OperationCanceledException exception) when (completionTimeout.IsCancellationRequested)
+                {
+                    throw new TimeoutException("The workflow finished, but its execution cycle did not drain before the timeout.", exception);
+                }
+
+                result = completedWorkflow.Notification;
+            }
         }
-        finally
+        catch (Exception exception)
         {
-            // Stop the host.
-            await host.StopAsync(CancellationToken.None);
+            dispatchException = exception;
         }
+
+        var cleanupExceptions = new List<Exception>();
+        try
+        {
+            using var stopTimeout = new CancellationTokenSource(effectiveTimeout);
+            await host.StopAsync(stopTimeout.Token);
+        }
+        catch (Exception exception)
+        {
+            cleanupExceptions.Add(exception);
+        }
+
+        try
+        {
+            if (host is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync();
+            }
+            else
+            {
+                host.Dispose();
+            }
+        }
+        catch (Exception exception)
+        {
+            cleanupExceptions.Add(exception);
+        }
+
+        if (dispatchException != null && cleanupExceptions.Count > 0)
+        {
+            throw new AggregateException(
+                "Workflow dispatch and host cleanup both failed.",
+                new[] { dispatchException }.Concat(cleanupExceptions));
+        }
+
+        if (dispatchException != null)
+        {
+            ExceptionDispatchInfo.Capture(dispatchException).Throw();
+        }
+
+        if (cleanupExceptions.Count == 1)
+        {
+            ExceptionDispatchInfo.Capture(cleanupExceptions[0]).Throw();
+        }
+
+        if (cleanupExceptions.Count > 1)
+        {
+            throw new AggregateException("Multiple host cleanup operations failed.", cleanupExceptions);
+        }
+
+        return result;
     }
 
     class WorkflowFinishedAction(Action<WorkflowStateCommitted> action) : INotificationHandler<WorkflowStateCommitted>

@@ -1,22 +1,22 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ParentChildOutputMapping;
 
 /// <summary>
 /// Tests for mapping an activity's output directly to the workflow's output definition.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).WithCapturingTextWriter(_capturingTextWriter).Build();
     }
 
-    [Fact(DisplayName = "Parent workflow receives output from child workflow.")]
+    [Test]
+    [DisplayName("Parent workflow receives output from child workflow.")]
     public async Task Test1()
     {
         // Populate registries.
@@ -35,10 +35,11 @@ public class Tests
 
         // Assert expected output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Result: 9" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Result: 9" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
     
-    [Fact(DisplayName = "Multiple parent/child workflows receive output from child workflows even when using same output names.")]
+    [Test]
+    [DisplayName("Multiple parent/child workflows receive output from child workflows even when using same output names.")]
     public async Task Test2()
     {
         // Populate registries.
@@ -57,10 +58,11 @@ public class Tests
 
         // Assert expected output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "FooBar" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "FooBar" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
     
-    [Fact(DisplayName = "Parent workflow receives output from child workflow when using SetOutput activity.")]
+    [Test]
+    [DisplayName("Parent workflow receives output from child workflow when using SetOutput activity.")]
     public async Task Test3()
     {
         // Populate registries.
@@ -79,6 +81,8 @@ public class Tests
 
         // Assert expected output.
         var lines = _capturingTextWriter.Lines.ToList();
-        Assert.Equal(new[] { "Foo" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Foo" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

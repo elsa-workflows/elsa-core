@@ -1,6 +1,5 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Attributes;
-using Xunit;
 
 namespace Elsa.Testing.Shared;
 
@@ -32,12 +31,12 @@ public static class ActivityTestFixtureExtensions
         var activityAttribute = activityType.GetCustomAttributes(typeof(ActivityAttribute), false)
             .Cast<ActivityAttribute>().FirstOrDefault();
 
-        Assert.NotNull(activityAttribute);
-        Assert.Equal(expectedNamespace, activityAttribute.Namespace);
-        Assert.Equal(expectedKind, activityAttribute.Kind);
+        activityAttribute = TestAssert.NotNull(activityAttribute, $"Activity '{activityType.FullName}' has no {nameof(ActivityAttribute)}.");
+        TestAssert.Equal(expectedNamespace, activityAttribute.Namespace, "The activity namespace does not match.");
+        TestAssert.Equal(expectedKind, activityAttribute.Kind, "The activity kind does not match.");
 
-        if (expectedCategory != null) Assert.Equal(expectedCategory, activityAttribute.Category);
-        if (expectedDescription != null) Assert.Equal(expectedDescription, activityAttribute.Description);
-        if (expectedDisplayName != null) Assert.Equal(expectedDisplayName, activityAttribute.DisplayName);
+        if (expectedCategory != null) TestAssert.Equal(expectedCategory, activityAttribute.Category, "The activity category does not match.");
+        if (expectedDescription != null) TestAssert.Equal(expectedDescription, activityAttribute.Description, "The activity description does not match.");
+        if (expectedDisplayName != null) TestAssert.Equal(expectedDisplayName, activityAttribute.DisplayName, "The activity display name does not match.");
     }
 }

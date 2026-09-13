@@ -7,16 +7,16 @@ using Elsa.Workflows.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using static Elsa.Workflows.IntegrationTests.Evaluation.EvaluationTestHelpers;
 
 namespace Elsa.Workflows.IntegrationTests.Evaluation;
 
-public class InputEvaluationErrorTests
+public class InputEvaluationErrorTests : EvaluationTestBase
 {
-    [Theory(DisplayName = "Wraps evaluation exceptions in InputEvaluationException")]
-    [InlineData(typeof(InvalidOperationException), "Expression evaluation failed")]
-    [InlineData(typeof(ArgumentException), "Detailed inner error message")]
-    [InlineData(typeof(TimeoutException), "Expression evaluation timed out")]
+    [Test]
+    [DisplayName("Wraps evaluation exceptions in InputEvaluationException: $exceptionType")]
+    [Arguments(typeof(InvalidOperationException), "Expression evaluation failed")]
+    [Arguments(typeof(ArgumentException), "Detailed inner error message")]
+    [Arguments(typeof(TimeoutException), "Expression evaluation timed out")]
     public async Task WrapsEvaluationExceptions(Type exceptionType, string errorMessage)
     {
         // Arrange
@@ -25,17 +25,20 @@ public class InputEvaluationErrorTests
         var context = await CreateContextWithMockEvaluatorAsync(writeLine, exception);
 
         // Act & Assert
-        var wrappedException = await Assert.ThrowsAsync<InputEvaluationException>(
+        var wrappedException = await Assert.ThrowsExactlyAsync<InputEvaluationException>(
             async () => await context.EvaluateInputPropertiesAsync());
 
-        Assert.Equal("Text", wrappedException.InputName);
-        Assert.Contains("Failed to evaluate activity input 'Text'", wrappedException.Message);
-        Assert.IsType(exceptionType, wrappedException.InnerException);
-        Assert.Equal(errorMessage, wrappedException.InnerException.Message);
-        Assert.NotNull(wrappedException.InnerException.StackTrace);
+        await Assert.That(wrappedException!.InputName).IsEqualTo("Text");
+        await Assert.That(wrappedException.Message).Contains("Failed to evaluate activity input 'Text'", StringComparison.CurrentCulture);
+        await Assert.That(wrappedException.InnerException).IsNotNull();
+        var innerException = wrappedException.InnerException!;
+        await Assert.That(innerException).IsOfType(exceptionType);
+        await Assert.That(innerException.Message).IsEqualTo(errorMessage);
+        await Assert.That(innerException.StackTrace).IsNotNull();
     }
 
-    [Fact(DisplayName = "Handles empty expression gracefully without throwing")]
+    [Test]
+    [DisplayName("Handles empty expression gracefully without throwing")]
     public async Task HandlesEmptyExpressionGracefully()
     {
         // Arrange
@@ -43,14 +46,21 @@ public class InputEvaluationErrorTests
         var context = await CreateContextAsync(writeLine);
 
         // Act
-        var exception = await Record.ExceptionAsync(
-            async () => await context.EvaluateInputPropertiesAsync());
+        Exception? exception = null;
+        try
+        {
+            await context.EvaluateInputPropertiesAsync();
+        }
+        catch (Exception e)
+        {
+            exception = e;
+        }
 
         // Assert
-        Assert.Null(exception);
+        await Assert.That(exception).IsNull();
     }
     
-    private static async Task<ActivityExecutionContext> CreateContextWithMockEvaluatorAsync(
+    private async Task<ActivityExecutionContext> CreateContextWithMockEvaluatorAsync(
         WriteLine writeLine,
         Exception thrownException)
     {
@@ -78,6 +88,6 @@ public class InputEvaluationErrorTests
                 services.AddSingleton(mockProvider);
             });
 
-        return await fixture.BuildAsync();
+        return await OwnAsync(fixture);
     }
 }

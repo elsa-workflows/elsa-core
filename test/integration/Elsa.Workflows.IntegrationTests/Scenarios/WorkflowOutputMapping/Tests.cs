@@ -1,22 +1,22 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowOutputMapping;
 
 /// <summary>
 /// Tests for mapping an activity's output directly to the workflow's output definition.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).WithCapturingTextWriter(_capturingTextWriter).Build();
     }
 
-    [Fact(DisplayName = "Activity output mapped to workflow output definition is part of workflow instance output dictionary.")]
+    [Test]
+    [DisplayName("Activity output mapped to workflow output definition is part of workflow instance output dictionary.")]
     public async Task Test1()
     {
         // Populate registries.
@@ -31,7 +31,9 @@ public class Tests
 
         // Assert expected output.
         var outputs = workflowState.Output;
-        Assert.Contains("Output1", outputs.Keys);
-        Assert.Equal("Foo", outputs["Output1"]);
+        await Assert.That(outputs.Keys).Contains("Output1");
+        await Assert.That(outputs["Output1"]).IsEqualTo("Foo");
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

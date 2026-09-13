@@ -9,19 +9,18 @@ using Elsa.Workflows.Management.Enums;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Alterations.IntegrationTests;
 
-public class WorkflowInstanceFinderTimestampFilterTests : IDisposable
+public class WorkflowInstanceFinderTimestampFilterTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IWorkflowInstanceFinder _workflowInstanceFinder;
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
 
-    public WorkflowInstanceFinderTimestampFilterTests(ITestOutputHelper testOutputHelper)
+    public WorkflowInstanceFinderTimestampFilterTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseAlterations())
             .Build();
         
@@ -29,12 +28,15 @@ public class WorkflowInstanceFinderTimestampFilterTests : IDisposable
         _workflowInstanceStore = _services.GetRequiredService<IWorkflowInstanceStore>();
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        (_services as IDisposable)?.Dispose();
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
     }
 
-    [Fact]
+    [Test]
     public async Task FindAsync_WithAllowedTimestampColumn_FiltersWorkflowInstances()
     {
         var timestamp = new DateTimeOffset(2026, 5, 20, 10, 0, 0, TimeSpan.Zero);
@@ -54,17 +56,17 @@ public class WorkflowInstanceFinderTimestampFilterTests : IDisposable
             ]
         });
 
-        var workflowInstanceId = Assert.Single(result);
-        Assert.Equal("matching", workflowInstanceId);
+        var workflowInstanceId = await Assert.That(result).HasSingleItem();
+        await Assert.That(workflowInstanceId).IsEqualTo("matching");
     }
 
-    [Fact]
+    [Test]
     public async Task FindAsync_WithInjectedTimestampColumn_RejectsColumn()
     {
         var timestamp = new DateTimeOffset(2026, 5, 20, 10, 0, 0, TimeSpan.Zero);
         await _workflowInstanceStore.AddAsync(CreateWorkflowInstance("matching", timestamp));
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => _workflowInstanceFinder.FindAsync(new()
+        var exception = await Assert.ThrowsExactlyAsync<ArgumentException>(() => _workflowInstanceFinder.FindAsync(new()
         {
             TimestampFilters =
             [
@@ -77,7 +79,7 @@ public class WorkflowInstanceFinderTimestampFilterTests : IDisposable
             ]
         }));
 
-        Assert.Contains("Invalid timestamp filter column", exception.Message);
+        await Assert.That(exception!.Message).Contains("Invalid timestamp filter column", StringComparison.CurrentCulture);
     }
 
     private static WorkflowInstance CreateWorkflowInstance(string id, DateTimeOffset createdAt)

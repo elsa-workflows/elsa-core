@@ -1,5 +1,5 @@
 using System.Net;
-using Elsa.Activities.UnitTests.Http.Helpers;
+using Elsa.Activities.IntegrationTests.Http.Helpers;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Http;
@@ -12,20 +12,20 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Http;
 
-public class SendHttpRequestSecretExpressionTests(ITestOutputHelper testOutputHelper)
+public class SendHttpRequestSecretExpressionTests
 {
     private const string SecretName = "api:authorization";
     private const string SecretValue = "Bearer resolved-token";
 
-    [Fact(DisplayName = "SendHttpRequest resolves Authorization from Secret expression without persisting the secret")]
+    [Test]
+    [DisplayName("SendHttpRequest resolves Authorization from Secret expression without persisting the secret")]
     public async Task ResolvesAuthorizationSecretExpressionWithoutPersistingSecret()
     {
         var capturedRequests = new List<HttpRequestMessage>();
-        var fixture = CreateFixture(CreateCapturingHandler(capturedRequests));
+        await using var fixture = CreateFixture(CreateCapturingHandler(capturedRequests));
         var activity = new SendHttpRequest
         {
             Url = new(new Uri("https://api.example.com/secure")),
@@ -37,25 +37,32 @@ public class SendHttpRequestSecretExpressionTests(ITestOutputHelper testOutputHe
         await fixture.BuildAsync();
 
         var workflowJson = fixture.Services.GetRequiredService<IWorkflowSerializer>().Serialize(Workflow.FromActivity(activity));
-        Assert.Contains(SecretName, workflowJson);
-        Assert.DoesNotContain(SecretValue, workflowJson);
+        await Assert.That(workflowJson).Contains(SecretName, StringComparison.CurrentCulture);
+
+        await Assert.That(workflowJson).DoesNotContain(SecretValue, StringComparison.CurrentCulture);
+
 
         var result = await fixture.RunActivityAsync(activity);
 
-        var capturedRequest = Assert.Single(capturedRequests);
-        Assert.NotNull(capturedRequest.Headers.Authorization);
-        Assert.Equal(SecretValue, capturedRequest.Headers.Authorization.ToString());
+        var capturedRequest = (await Assert.That(capturedRequests).HasSingleItem())!;
 
-        var activityContext = Assert.Single(result.Journal.ActivityExecutionContexts, x => x.Activity == activity);
-        Assert.False(activityContext.ActivityState.ContainsKey(nameof(SendHttpRequestBase.Authorization)));
+        var authorization = (await Assert.That(capturedRequest.Headers.Authorization).IsNotNull())!;
+        await Assert.That(authorization.ToString()).IsEqualTo(SecretValue);
+
+
+        var activityContext = (await Assert.That(result.Journal.ActivityExecutionContexts).HasSingleItem(x => x.Activity == activity))!;
+
+        await Assert.That(activityContext.ActivityState.ContainsKey(nameof(SendHttpRequestBase.Authorization))).IsFalse();
+
 
         var workflowStateJson = fixture.Services.GetRequiredService<IWorkflowStateSerializer>().Serialize(result.WorkflowState);
-        Assert.DoesNotContain(SecretValue, workflowStateJson);
+        await Assert.That(workflowStateJson).DoesNotContain(SecretValue, StringComparison.CurrentCulture);
+
     }
 
     private WorkflowTestFixture CreateFixture(HttpMessageHandler handler)
     {
-        return new WorkflowTestFixture(testOutputHelper)
+        return new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput)
             .ConfigureServices(services =>
             {
                 services.AddSingleton<ISecretResolver>(new TestSecretResolver());
@@ -76,16 +83,18 @@ public class SendHttpRequestSecretExpressionTests(ITestOutputHelper testOutputHe
 
     private class TestSecretResolver : ISecretResolver
     {
-        public Task<string> ResolveAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<string> ResolveAsync(string name, CancellationToken cancellationToken = default)
         {
-            Assert.Equal(SecretName, name);
-            return Task.FromResult(SecretValue);
+            await Assert.That(name).IsEqualTo(SecretName);
+
+            return SecretValue;
         }
 
-        public Task<string> ResolveAsync(SecretReference reference, CancellationToken cancellationToken = default)
+        public async Task<string> ResolveAsync(SecretReference reference, CancellationToken cancellationToken = default)
         {
-            Assert.Equal(new SecretReference(SecretName, SecretTypeNames.Text, "production"), reference);
-            return Task.FromResult(SecretValue);
+            await Assert.That(reference).IsEqualTo(new SecretReference(SecretName, SecretTypeNames.Text, "production"));
+
+            return SecretValue;
         }
     }
 }

@@ -1,6 +1,5 @@
 using Elsa.Workflows;
 using Elsa.Workflows.IncidentStrategies;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -22,11 +21,14 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 /// teardown this host cannot honour from being buried under work that carried on regardless.
 /// </para>
 /// </remarks>
-public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
+public class BpmnCompensationTests : IAsyncDisposable
 {
-    private readonly BpmnTestHost _host = new(testOutputHelper);
+    private readonly BpmnTestHost _host = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "A compensate end event replays every registered handler, in reverse registration order")]
+    public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    [Test]
+    [DisplayName("A compensate end event replays every registered handler, in reverse registration order")]
     public async Task CompensatedBookings_ReplaysEveryHandlerInReverseRegistrationOrder()
     {
         // The whole log, not a set of Contains assertions: "all three handlers ran" is also true of a replay that
@@ -37,18 +39,21 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(BpmnTestProcesses.CompensatedBookings(_host.Log), typeof(FaultStrategy));
 
         // Assert
-        Assert.Equal(
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(
             [
                 "executed:bookFlight", "executed:bookHotel", "executed:bookCar",
                 "executed:undoCar", "executed:undoHotel", "executed:undoFlight"
             ],
-            _host.Log.Entries);
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A compensate throw event naming an activityRef replays only that activity's handler")]
+    [Test]
+    [DisplayName("A compensate throw event naming an activityRef replays only that activity's handler")]
     public async Task TargetedCompensation_ReplaysOnlyTheNamedActivitysHandler()
     {
         // This is also where "a compensation handler is never scheduled from flow" is observable: undoFlight and
@@ -59,18 +64,21 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(BpmnTestProcesses.TargetedCompensation(_host.Log), typeof(FaultStrategy));
 
         // Assert: only the named activity's handler ran, and the throw then routed its outbound flow.
-        Assert.Equal(
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(
             [
                 "executed:bookFlight", "executed:bookHotel", "executed:bookCar",
                 "executed:undoHotel", "executed:after"
             ],
-            _host.Log.Entries);
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A compensation run torn down mid-replay releases the log entries it claimed and never ran")]
+    [Test]
+    [DisplayName("A compensation run torn down mid-replay releases the log entries it claimed and never ran")]
     public async Task CompensationRunCancelledMidReplay_ReleasesTheEntriesItNeverRan()
     {
         // The quiet failure this pins: an entry claimed by a run that was torn down before it ran stays Claimed, which
@@ -82,8 +90,10 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         // reverse. releaseSeat is the head and blocks; refundCard is claimed and has not started.
         await _host.RunAsync(BpmnTestProcesses.CompensationRunCancelledMidReplay(_host.Log), typeof(FaultStrategy));
 
-        Assert.Equal(1, _host.Log.Occurrences("executed:releaseSeat"));
-        Assert.DoesNotContain("executed:refundCard", _host.Log.Entries);
+        await Assert.That(_host.Log.Occurrences("executed:releaseSeat")).IsEqualTo(1);
+
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:refundCard");
+
 
         // Act: the other branch cancels the transaction, which stops the replay's coordinating token.
         await _host.FinishWorkAsync("fraudCheck");
@@ -102,12 +112,15 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         // So all three of these are the fix, and each fails differently if it regresses: the handler runs twice
         // (release), the first run is torn down (teardown), and the slot is left holding exactly one record
         // (the invariant).
-        Assert.Equal(2, _host.Log.Occurrences("executed:releaseSeat"));
-        Assert.Contains("cancelled:releaseSeat", _host.Log.Entries);
+        await Assert.That(_host.Log.Occurrences("executed:releaseSeat")).IsEqualTo(2);
+
+        await Assert.That(_host.Log.Entries).Contains("cancelled:releaseSeat");
+
 
         var releaseSeatBindingRef = BpmnTestProcesses.BindingRef("releaseSeat");
         var releaseSeatLiveRecords = _host.LiveWorkOf("sub").Count(record => record.BindingRef == releaseSeatBindingRef);
-        Assert.Equal(1, releaseSeatLiveRecords);
+        await Assert.That(releaseSeatLiveRecords).IsEqualTo(1);
+
 
         // And the invariant holds at the moment that matters, not just once the dust settles. 0.2.0 states the
         // at-most-one-live-unit-per-slot rule as holding after a command batch is applied in full and in order,
@@ -115,23 +128,30 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         // supersedes. This snapshot is taken inside the replacement's own execution -- overwritten on each start, so
         // it is the second one -- and a host that applied the batch out of order, or keyed its ledger by slot rather
         // than by handle, would be holding two records here even though the count above settles at one.
-        Assert.Equal([releaseSeatBindingRef], _host.Log.Snapshot("liveWork@releaseSeat"));
+        await Assert.That(_host.Log.Snapshot("liveWork@releaseSeat")).IsEquivalentTo([releaseSeatBindingRef], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
 
         // And the entry that was claimed but never ran is reached once that head handler finishes: the other half.
         var result = await _host.FinishWorkAsync("releaseSeat");
 
-        Assert.Equal(1, _host.Log.Occurrences("executed:refundCard"));
+        await Assert.That(_host.Log.Occurrences("executed:refundCard")).IsEqualTo(1);
+
 
         // The transaction still completes Cancelled, so the enclosing scope takes the boundary path and not the
         // ordinary sequence flow.
-        Assert.Contains("executed:unwind", _host.Log.Entries);
-        Assert.DoesNotContain("executed:after", _host.Log.Entries);
+        await Assert.That(_host.Log.Entries).Contains("executed:unwind");
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:after");
+
+
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A transaction completing Cancelled with no cancel boundary attached faults, rather than completing quietly")]
+    [Test]
+    [DisplayName("A transaction completing Cancelled with no cancel boundary attached faults, rather than completing quietly")]
     public async Task CancelledTransactionWithoutCancelBoundary_Faults()
     {
         // The conservative direction, and the interpreter takes it: graph validation cannot see into the nested
@@ -143,15 +163,20 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(BpmnTestProcesses.CancelledTransactionWithoutCancelBoundary(_host.Log), typeof(FaultStrategy));
 
         // Assert
-        Assert.DoesNotContain("executed:after", _host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:after");
 
-        var incident = Assert.Single(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
 
-        Assert.Contains("bpmn.transaction.cancelled-unhandled", incident.Exception!.Message);
+
+        var incident = (await Assert.That(result.WorkflowState.Incidents).HasSingleItem())!;
+
+
+        await Assert.That(incident.Exception!.Message).Contains("bpmn.transaction.cancelled-unhandled", StringComparison.CurrentCulture);
+
     }
 
-    [Fact(DisplayName = "A subprocess replays its own compensation log, and the enclosing scope replays the subprocess itself")]
+    [Test]
+    [DisplayName("A subprocess replays its own compensation log, and the enclosing scope replays the subprocess itself")]
     public async Task CompensationInsideSubprocess_ReplaysEachScopesOwnLog()
     {
         // Two logs, one per scope. The body's two handlers run in its own reverse order before it completes, and the
@@ -163,15 +188,17 @@ public class BpmnCompensationTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(BpmnTestProcesses.CompensationInsideSubprocess(_host.Log), typeof(FaultStrategy));
 
         // Assert
-        Assert.Equal(
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(
             [
                 "executed:subCharge", "executed:subShip",
                 "executed:subRecall", "executed:subRefund",
                 "executed:undoSub"
             ],
-            _host.Log.Entries);
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 }

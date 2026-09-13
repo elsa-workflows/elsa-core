@@ -4,15 +4,23 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
-public class ToJsonTests(ITestOutputHelper testOutputHelper)
+public class ToJsonTests : IAsyncDisposable
 {
-    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
 
-    [Fact(DisplayName = "Serialize large unicode string using JavaScript's toJson function")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("Serialize large unicode string using JavaScript's toJson function")]
     public async Task Test1()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -21,10 +29,11 @@ public class ToJsonTests(ITestOutputHelper testOutputHelper)
         var expressionExecutionContext = new ExpressionExecutionContext(_serviceProvider, new MemoryRegister());
         var result = (string)(await javaScriptEvaluator.EvaluateAsync(script, typeof(string), expressionExecutionContext))!;
         var serializedText = JsonDocument.Parse(result).RootElement.GetProperty("text").GetString();
-        Assert.Equal(unicodeString, serializedText);
+        await Assert.That(serializedText).IsEqualTo(unicodeString);
     }
 
-    [Fact(DisplayName = "Serialize large unicode string using JavaScript's toJson function from a workflow variable")]
+    [Test]
+    [DisplayName("Serialize large unicode string using JavaScript's toJson function from a workflow variable")]
     public async Task Test2()
     {
         var javaScriptEvaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
@@ -39,6 +48,6 @@ public class ToJsonTests(ITestOutputHelper testOutputHelper)
         var script = "toJson(getPayload())";
         var result = (string)(await javaScriptEvaluator.EvaluateAsync(script, typeof(string), expressionExecutionContext))!;
         var serializedText = JsonDocument.Parse(result).RootElement.GetProperty("Text").GetString();
-        Assert.Equal(unicodeString, serializedText);
+        await Assert.That(serializedText).IsEqualTo(unicodeString);
     }
 }

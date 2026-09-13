@@ -1,22 +1,22 @@
 using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.CompositesAndOutcomes;
 
-public class ExplicitJoinWaitAnyTests
+public class ExplicitJoinWaitAnyTests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public ExplicitJoinWaitAnyTests(ITestOutputHelper testOutputHelper)
+    public ExplicitJoinWaitAnyTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .WithWorkflowsFromDirectory("Scenarios", "CompositesAndOutcomes", "Workflows")
             .Build();
     }
 
-    [Fact(DisplayName = "Complete activity must not cascade.")]
+    [Test]
+    [DisplayName("Complete activity must not cascade.")]
     public async Task Test1()
     {
         // Populate registries.
@@ -28,9 +28,11 @@ public class ExplicitJoinWaitAnyTests
         // Assert expected output.
         var lines = _capturingTextWriter.Lines.ToList();
         var expectedLinesArray = new[] { "Start", "End" };
-        Assert.Equal(expectedLinesArray, lines);
+        await Assert.That(lines).IsEquivalentTo(expectedLinesArray, TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         // Assert expected workflow status.
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

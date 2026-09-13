@@ -1,50 +1,49 @@
 using System.Text.Json;
 using Elsa.Testing.Shared;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Core;
 
-public class SerializerUnicodeEncodingTests(ITestOutputHelper testOutputHelper)
+public class SerializerUnicodeEncodingTests : IAsyncDisposable
 {
-    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
 
-    [Fact]
-    public void TestPayloadSerializer()
+    [Test]
+    public async Task TestPayloadSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<IPayloadSerializer>();
-        TestSerializer(input => serializer.Serialize(input));
+        await TestSerializer(input => serializer.Serialize(input));
     }
 
-    [Fact]
-    public void TestApiSerializer()
+    [Test]
+    public async Task TestApiSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<IApiSerializer>();
-        TestSerializer(input => serializer.Serialize(input));
+        await TestSerializer(input => serializer.Serialize(input));
     }
 
-    [Fact]
-    public void TestBookmarkPayloadSerializer()
+    [Test]
+    public async Task TestBookmarkPayloadSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<IBookmarkPayloadSerializer>();
-        TestSerializer(input => serializer.Serialize(input));
+        await TestSerializer(input => serializer.Serialize(input));
     }
 
-    [Fact]
-    public void TestSafeSerializer()
+    [Test]
+    public async Task TestSafeSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<ISafeSerializer>();
-        TestSerializer(input => serializer.Serialize(input));
+        await TestSerializer(input => serializer.Serialize(input));
     }
     
-    [Fact]
-    public void TestWorkflowStateSerializer()
+    [Test]
+    public async Task TestWorkflowStateSerializer()
     {
         var serializer = _serviceProvider.GetRequiredService<IWorkflowStateSerializer>();
-        TestSerializer(input => serializer.Serialize(input));
+        await TestSerializer(input => serializer.Serialize(input));
     }
 
-    private void TestSerializer(Func<object, string> serialize)
+    private static async Task TestSerializer(Func<object, string> serialize)
     {
         var unicodeString = UnicodeRangeGenerator.GenerateUnicodeString();
         var anonymousObject = new
@@ -53,20 +52,22 @@ public class SerializerUnicodeEncodingTests(ITestOutputHelper testOutputHelper)
         };
         var serializedJson = serialize(anonymousObject);
         var serializedStringValue = GetSerializedTextValue(serializedJson);
-        Assert.Equal(unicodeString, serializedStringValue);
+        await Assert.That(serializedStringValue).IsEqualTo(unicodeString);
     }
     
-    private string GetSerializedTextValue(string serializedJson)
+    private static string GetSerializedTextValue(string serializedJson)
     {
         var rootElement = JsonDocument.Parse(serializedJson).RootElement;
         return GetCaseInsensitiveSerializedTextValue(rootElement, "text", "Text");
     }
     
-    private string GetCaseInsensitiveSerializedTextValue(JsonElement jsonElement, params string[] propertyNames)
+    private static string GetCaseInsensitiveSerializedTextValue(JsonElement jsonElement, params string[] propertyNames)
     {
         foreach (string propertyName in propertyNames)
             if (jsonElement.TryGetProperty(propertyName, out var property))
                 return property.GetString()!;
         throw new KeyNotFoundException($"None of the following properties were found: {string.Join(", ", propertyNames)}");
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_serviceProvider);
 }

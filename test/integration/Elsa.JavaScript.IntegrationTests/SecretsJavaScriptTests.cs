@@ -9,54 +9,57 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
-public class SecretsJavaScriptTests
+public class SecretsJavaScriptTests : IAsyncDisposable
 {
     private readonly TestSecretResolver _secretResolver = new();
     private readonly WorkflowTestFixture _fixture;
 
-    public SecretsJavaScriptTests(ITestOutputHelper testOutputHelper)
+    public SecretsJavaScriptTests()
     {
-        _fixture = new(testOutputHelper);
+        _fixture = new(TestContext.Current!.Output.StandardOutput);
         _fixture
             .ConfigureServices(services => services.AddSingleton<ISecretResolver>(_secretResolver))
             .ConfigureElsa(ConfigureElsa);
     }
 
-    [Fact]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
     public async Task GetSecret_ReturnsPromiseCompatibleSecretValue()
     {
         var result = await EvaluateScriptAsync<string>("return getSecret('api:key');");
 
-        Assert.Equal("secret-value", result);
-        Assert.Equal(["api:key"], _secretResolver.ResolvedNames);
+        await Assert.That(result).IsEqualTo("secret-value");
+        await Assert.That(_secretResolver.ResolvedNames).IsEquivalentTo(
+            ["api:key"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact]
+    [Test]
     public async Task GetSecret_ComposesWithThen()
     {
         var result = await EvaluateScriptAsync<string>("return getSecret('api:key').then(value => value + '-suffix');");
 
-        Assert.Equal("secret-value-suffix", result);
+        await Assert.That(result).IsEqualTo("secret-value-suffix");
     }
 
-    [Fact]
+    [Test]
     public async Task GetSecret_ComposesWithAsyncIife()
     {
         var result = await EvaluateScriptAsync<string>("return (async () => await getSecret('api:key'))();");
 
-        Assert.Equal("secret-value", result);
+        await Assert.That(result).IsEqualTo("secret-value");
     }
 
-    [Fact]
+    [Test]
     public async Task TypeDefinitions_DocumentGetSecretAsPromiseOfString()
     {
         var typeDefinitions = await GenerateTypeDefinitionsAsync();
 
-        Assert.Contains("declare function getSecret(name: string): Promise<string>;", typeDefinitions);
+        await Assert.That(typeDefinitions).Contains("declare function getSecret(name: string): Promise<string>;", StringComparison.CurrentCulture);
     }
 
     private static void ConfigureElsa(IModule module)

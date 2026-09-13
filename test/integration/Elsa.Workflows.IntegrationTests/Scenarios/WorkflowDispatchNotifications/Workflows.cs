@@ -4,7 +4,7 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowDispatchNotification
 
 public class SimpleWorkflow : WorkflowBase
 {
-    public static string DefinitionId = "SimpleWorkflow";
+    public const string DefinitionId = "SimpleWorkflow";
     
     protected override void Build(IWorkflowBuilder builder)
     {

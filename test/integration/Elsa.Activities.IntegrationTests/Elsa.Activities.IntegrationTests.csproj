@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Workflows.Core]*</Include>
         <Threshold>25</Threshold>
     </PropertyGroup>
@@ -11,7 +12,6 @@
       <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Secrets\Elsa.Secrets.csproj" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
-      <ProjectReference Include="..\..\unit\Elsa.Activities.UnitTests\Elsa.Activities.UnitTests.csproj" />
     </ItemGroup>
     
 </Project>

@@ -1,7 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.IncidentStrategies;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -9,11 +8,14 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 /// The invariants the interpreter relies on its host to uphold. Each of these is a rule a host can break while every
 /// process still appears to run, which is exactly why they are pinned separately from the processes.
 /// </summary>
-public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
+public class BpmnHostInvariantTests : IAsyncDisposable
 {
-    private readonly BpmnTestHost _host = new(testOutputHelper);
+    private readonly BpmnTestHost _host = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "Commands are applied in the order returned")]
+    public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    [Test]
+    [DisplayName("Commands are applied in the order returned")]
     public async Task Commands_AreAppliedInTheOrderReturned()
     {
         // An interrupting boundary event returns the boundary path's StartWork *before* the teardown that retires the
@@ -27,10 +29,12 @@ public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("timeout");
 
         // Assert
-        Assert.Contains("onTimeout", _host.Log.Snapshot("scheduled@cancel:task"));
+        await Assert.That(_host.Log.Snapshot("scheduled@cancel:task")).Contains("onTimeout");
+
     }
 
-    [Fact(DisplayName = "Completed work is gone from LiveWork")]
+    [Test]
+    [DisplayName("Completed work is gone from LiveWork")]
     public async Task CompletedWork_IsRemovedFromLiveWork()
     {
         // The next activity the evaluation schedules reads the scope's ledger, which is the sole source of
@@ -53,20 +57,24 @@ public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("timeout");
 
         // Assert
-        Assert.Equal([BpmnTestProcesses.BindingRef("onTimeout")], _host.Log.Snapshot("liveWork@onTimeout"));
+        await Assert.That(_host.Log.Snapshot("liveWork@onTimeout")).IsEquivalentTo([BpmnTestProcesses.BindingRef("onTimeout")], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
     }
 
-    [Fact(DisplayName = "Faulted work is gone from LiveWork")]
+    [Test]
+    [DisplayName("Faulted work is gone from LiveWork")]
     public async Task FaultedWork_IsRemovedFromLiveWork()
     {
         // Act
         await _host.RunAsync(BpmnTestProcesses.ErrorBoundaryCaught(_host.Log), typeof(FaultStrategy));
 
         // Assert: only the boundary path's work is live by the time it runs; the failed work is not.
-        Assert.Equal([BpmnTestProcesses.BindingRef("recover")], _host.Log.Snapshot("liveWork@recover"));
+        await Assert.That(_host.Log.Snapshot("liveWork@recover")).IsEquivalentTo([BpmnTestProcesses.BindingRef("recover")], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
     }
 
-    [Fact(DisplayName = "Signalling work is still in LiveWork when the interpreter is asked about the signal")]
+    [Test]
+    [DisplayName("Signalling work is still in LiveWork when the interpreter is asked about the signal")]
     public async Task SignallingWork_StaysInLiveWork()
     {
         // A signal is not terminal: the escalating subprocess keeps running. Removing it would make the interpreter
@@ -80,11 +88,14 @@ public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("subWork");
 
         // Assert: the boundary path ran, and the subprocess that raised the escalation was still live when it did.
-        Assert.Contains("executed:notify", _host.Log.Entries);
-        Assert.Contains(BpmnTestProcesses.BindingRef("sub"), _host.Log.Snapshot("liveWork@notify"));
+        await Assert.That(_host.Log.Entries).Contains("executed:notify");
+
+        await Assert.That(_host.Log.Snapshot("liveWork@notify")).Contains(BpmnTestProcesses.BindingRef("sub"));
+
     }
 
-    [Fact(DisplayName = "A parent evaluation raised mid-apply is queued and drained, not recursed")]
+    [Test]
+    [DisplayName("A parent evaluation raised mid-apply is queued and drained, not recursed")]
     public async Task ParentEvaluationRaisedMidApply_IsQueuedNotRecursed()
     {
         // The subprocess's evaluation returns [SignalEnclosingScope, StartWork(subMore)]. Delivering the signal reaches
@@ -103,12 +114,13 @@ public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("subWork");
 
         // Assert
-        Assert.True(
-            _host.Log.PositionOf("executed:subMore") < _host.Log.PositionOf("executed:notify"),
-            $"Expected the subprocess to finish applying its command list before the parent's escalation path was scheduled, but the log was: {string.Join(", ", _host.Log.Entries)}.");
+        await Assert.That(_host.Log.PositionOf("executed:subMore") < _host.Log.PositionOf("executed:notify"))
+            .IsTrue()
+            .Because($"Expected the subprocess to finish applying its command list before the parent's escalation path was scheduled, but the log was: {string.Join(", ", _host.Log.Entries)}.");
     }
 
-    [Fact(DisplayName = "Concurrent instances of one binding are told apart by their iteration id")]
+    [Test]
+    [DisplayName("Concurrent instances of one binding are told apart by their iteration id")]
     public async Task ConcurrentInstancesOfOneBinding_AreToldApartByIterationId()
     {
         // The interpreter re-finds a parked token from (binding ref, iteration id) alone, so a scope may never hold two
@@ -120,29 +132,39 @@ public class BpmnHostInvariantTests(ITestOutputHelper testOutputHelper)
 
         // Assert: two live instances, distinguished only by the iteration id.
         var liveWork = _host.LiveWorkOf("scope");
-        Assert.Equal(2, liveWork.Count);
-        Assert.All(liveWork, work => Assert.Equal(BpmnTestProcesses.BindingRef("each"), work.BindingRef));
-        Assert.Equal(2, liveWork.Select(work => work.IterationId).Distinct().Count());
-        Assert.DoesNotContain(liveWork, work => work.IterationId is null);
+        await Assert.That(liveWork.Count).IsEqualTo(2);
+
+        foreach (var work in liveWork)
+            await Assert.That(work.BindingRef).IsEqualTo(BpmnTestProcesses.BindingRef("each"));
+        await Assert.That(liveWork.Select(work => work.IterationId).Distinct().Count()).IsEqualTo(2);
+
+        await Assert.That(liveWork).DoesNotContain(work => work.IterationId is null);
+
 
         // Act: finish both instances.
         await _host.FinishWorkAsync("each");
         var result = await _host.FinishWorkAsync("each");
 
         // Assert
-        Assert.Equal(2, _host.Log.Occurrences("executed:each"));
-        Assert.Equal(1, _host.Log.Occurrences("executed:after"));
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Occurrences("executed:each")).IsEqualTo(2);
+
+        await Assert.That(_host.Log.Occurrences("executed:after")).IsEqualTo(1);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A scope completes because the interpreter said so")]
+    [Test]
+    [DisplayName("A scope completes because the interpreter said so")]
     public async Task Scope_CompletesOnTheInterpretersContinuation()
     {
         // Act
         var result = await _host.RunAsync(BpmnTestProcesses.LinearTask(_host.Log));
 
         // Assert
-        Assert.Equal(ActivityStatus.Completed, result.Journal.ActivityExecutionContexts.First(x => x.Activity.Id == "scope").Status);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.Journal.ActivityExecutionContexts.First(x => x.Activity.Id == "scope").Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 }

@@ -4,7 +4,6 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
@@ -12,17 +11,20 @@ namespace Elsa.JavaScript.IntegrationTests;
 /// Tests for JintJavaScriptEvaluator to ensure all custom functions remain available.
 /// These tests protect against accidental renaming or removal of JavaScript functions.
 /// </summary>
-public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
+public class JintJavaScriptEvaluatorTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Theory(DisplayName = "Common workflow functions should be available")]
-    [InlineData("getWorkflowDefinitionId")]
-    [InlineData("getWorkflowDefinitionVersionId")]
-    [InlineData("getWorkflowDefinitionVersion")]
-    [InlineData("getWorkflowInstanceId")]
-    [InlineData("getCorrelationId")]
-    [InlineData("getWorkflowInstanceName")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("Common workflow functions should be available: $functionName")]
+    [Arguments("getWorkflowDefinitionId")]
+    [Arguments("getWorkflowDefinitionVersionId")]
+    [Arguments("getWorkflowDefinitionVersion")]
+    [Arguments("getWorkflowInstanceId")]
+    [Arguments("getCorrelationId")]
+    [Arguments("getWorkflowInstanceName")]
     public async Task Common_Workflow_Functions_Should_Be_Available(string functionName)
     {
         // Arrange
@@ -34,13 +36,14 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - function should exist (not 'undefined')
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Theory(DisplayName = "Workflow mutator functions should be available")]
-    [InlineData("setCorrelationId")]
-    [InlineData("setWorkflowInstanceName")]
-    [InlineData("setVariable")]
+    [Test]
+    [DisplayName("Workflow mutator functions should be available: $functionName")]
+    [Arguments("setCorrelationId")]
+    [Arguments("setWorkflowInstanceName")]
+    [Arguments("setVariable")]
     public async Task Workflow_Mutator_Functions_Should_Be_Available(string functionName)
     {
         // Arrange
@@ -52,14 +55,15 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - function should exist (not 'undefined')
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Theory(DisplayName = "Variable and input/output accessor functions should be available")]
-    [InlineData("getVariable")]
-    [InlineData("getInput")]
-    [InlineData("getOutputFrom")]
-    [InlineData("getLastResult")]
+    [Test]
+    [DisplayName("Variable and input/output accessor functions should be available: $functionName")]
+    [Arguments("getVariable")]
+    [Arguments("getInput")]
+    [Arguments("getOutputFrom")]
+    [Arguments("getLastResult")]
     public async Task Variable_And_IO_Functions_Should_Be_Available(string functionName)
     {
         // Arrange
@@ -71,12 +75,13 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - function should exist (not 'undefined')
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Theory(DisplayName = "String utility functions should be available")]
-    [InlineData("isNullOrWhiteSpace")]
-    [InlineData("isNullOrEmpty")]
+    [Test]
+    [DisplayName("String utility functions should be available: $functionName")]
+    [Arguments("isNullOrWhiteSpace")]
+    [Arguments("isNullOrEmpty")]
     public async Task String_Utility_Functions_Should_Be_Available(string functionName)
     {
         // Arrange
@@ -88,16 +93,17 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - function should exist (not 'undefined')
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Theory(DisplayName = "GUID functions should be available")]
-    [InlineData("parseGuid")]
-    [InlineData("newGuid")]
-    [InlineData("newGuidString")]
-    [InlineData("newShortGuid")]
-    [InlineData("getGuidString")] // Deprecated but should still exist
-    [InlineData("getShortGuid")] // Deprecated but should still exist
+    [Test]
+    [DisplayName("GUID functions should be available: $functionName")]
+    [Arguments("parseGuid")]
+    [Arguments("newGuid")]
+    [Arguments("newGuidString")]
+    [Arguments("newShortGuid")]
+    [Arguments("getGuidString")] // Deprecated but should still exist
+    [Arguments("getShortGuid")] // Deprecated but should still exist
     public async Task GUID_Functions_Should_Be_Available(string functionName)
     {
         // Arrange
@@ -109,19 +115,20 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - function should exist (not 'undefined')
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Theory(DisplayName = "Encoding and serialization functions should be available")]
-    [InlineData("toJson")]
-    [InlineData("bytesToString")]
-    [InlineData("bytesFromString")]
-    [InlineData("bytesToBase64")]
-    [InlineData("bytesFromBase64")]
-    [InlineData("stringToBase64")]
-    [InlineData("stringFromBase64")]
-    [InlineData("streamToBytes")]
-    [InlineData("streamToBase64")]
+    [Test]
+    [DisplayName("Encoding and serialization functions should be available: $functionName")]
+    [Arguments("toJson")]
+    [Arguments("bytesToString")]
+    [Arguments("bytesFromString")]
+    [Arguments("bytesToBase64")]
+    [Arguments("bytesFromBase64")]
+    [Arguments("stringToBase64")]
+    [Arguments("stringFromBase64")]
+    [Arguments("streamToBytes")]
+    [Arguments("streamToBase64")]
     public async Task Encoding_Functions_Should_Be_Available(string functionName)
     {
         // Arrange
@@ -133,10 +140,11 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - function should exist (not 'undefined')
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Fact(DisplayName = "Variable accessors should be created for workflow variables")]
+    [Test]
+    [DisplayName("Variable accessors should be created for workflow variables")]
     public async Task Variable_Accessors_Should_Be_Created()
     {
         // Arrange
@@ -151,10 +159,11 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - getter function should be created for the variable
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
-    [Fact(DisplayName = "Variable setter accessors should be created for workflow variables")]
+    [Test]
+    [DisplayName("Variable setter accessors should be created for workflow variables")]
     public async Task Variable_Setter_Accessors_Should_Be_Created()
     {
         // Arrange
@@ -169,7 +178,7 @@ public class JintJavaScriptEvaluatorTests(ITestOutputHelper testOutputHelper)
         var result = await evaluator.EvaluateAsync(script, typeof(string), context) as string;
 
         // Assert - setter function should be created for the variable
-        Assert.Equal("function", result);
+        await Assert.That(result).IsEqualTo("function");
     }
 
     private async Task<ExpressionExecutionContext> CreateExpressionExecutionContextAsync(Variable[]? variables = null)

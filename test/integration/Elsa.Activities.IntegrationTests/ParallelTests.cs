@@ -1,16 +1,18 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Xunit.Abstractions;
 using Parallel = Elsa.Workflows.Activities.Parallel;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class ParallelTests(ITestOutputHelper testOutputHelper)
+public class ParallelTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "Parallel executes all child activities and completes")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("Parallel executes all child activities and completes")]
     public async Task Parallel_ExecutesAllChildren_AndCompletes()
     {
         // Arrange
@@ -27,15 +29,22 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var journal = result.Journal;
         var parallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is Parallel);
 
-        Assert.NotNull(parallelContext);
-        Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Equal(3, _fixture.CapturingTextWriter.Lines.Count);
-        Assert.Contains("Activity 1", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("Activity 2", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("Activity 3", _fixture.CapturingTextWriter.Lines);
+        parallelContext = (await Assert.That(parallelContext).IsNotNull())!;
+
+        await Assert.That(parallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines.Count).IsEqualTo(3);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Activity 1");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Activity 2");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Activity 3");
+
     }
 
-    [Fact(DisplayName = "Parallel completes when empty")]
+    [Test]
+    [DisplayName("Parallel completes when empty")]
     public async Task Parallel_Completes_WhenEmpty()
     {
         // Arrange
@@ -48,12 +57,16 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var journal = result.Journal;
         var parallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is Parallel);
 
-        Assert.NotNull(parallelContext);
-        Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Empty(_fixture.CapturingTextWriter.Lines);
+        parallelContext = (await Assert.That(parallelContext).IsNotNull())!;
+
+        await Assert.That(parallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).IsEmpty();
+
     }
 
-    [Fact(DisplayName = "Parallel executes single child activity and completes")]
+    [Test]
+    [DisplayName("Parallel executes single child activity and completes")]
     public async Task Parallel_ExecutesSingleChild_AndCompletes()
     {
         // Arrange
@@ -68,13 +81,18 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var journal = result.Journal;
         var parallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is Parallel);
 
-        Assert.NotNull(parallelContext);
-        Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Single(_fixture.CapturingTextWriter.Lines);
-        Assert.Equal("Single Activity", _fixture.CapturingTextWriter.Lines.Single());
+        parallelContext = (await Assert.That(parallelContext).IsNotNull())!;
+
+        await Assert.That(parallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).HasSingleItem();
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines.Single()).IsEqualTo("Single Activity");
+
     }
 
-    [Fact(DisplayName = "Parallel executes multiple different activity types")]
+    [Test]
+    [DisplayName("Parallel executes multiple different activity types")]
     public async Task Parallel_ExecutesMixedActivityTypes_AndCompletes()
     {
         // Arrange
@@ -91,14 +109,20 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var journal = result.Journal;
         var parallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is Parallel);
 
-        Assert.NotNull(parallelContext);
-        Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Equal(2, _fixture.CapturingTextWriter.Lines.Count);
-        Assert.Contains("First", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("Second", _fixture.CapturingTextWriter.Lines);
+        parallelContext = (await Assert.That(parallelContext).IsNotNull())!;
+
+        await Assert.That(parallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines.Count).IsEqualTo(2);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("First");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Second");
+
     }
 
-    [Fact(DisplayName = "Parallel completes only after all children complete")]
+    [Test]
+    [DisplayName("Parallel completes only after all children complete")]
     public async Task Parallel_CompletesOnlyAfterAllChildrenComplete()
     {
         // Arrange
@@ -116,12 +140,16 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var journal = result.Journal;
         var parallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is Parallel);
 
-        Assert.NotNull(parallelContext);
-        Assert.Equal(ActivityStatus.Completed, parallelContext.Status);
-        Assert.Equal(4, _fixture.CapturingTextWriter.Lines.Count);
+        parallelContext = (await Assert.That(parallelContext).IsNotNull())!;
+
+        await Assert.That(parallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines.Count).IsEqualTo(4);
+
     }
 
-    [Fact(DisplayName = "Parallel executes nested Parallel activities")]
+    [Test]
+    [DisplayName("Parallel executes nested Parallel activities")]
     public async Task Parallel_ExecutesNestedParallel_AndCompletes()
     {
         // Arrange
@@ -144,18 +172,28 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var outerParallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity == outerParallel);
         var innerParallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity == innerParallel);
 
-        Assert.NotNull(outerParallelContext);
-        Assert.NotNull(innerParallelContext);
-        Assert.Equal(ActivityStatus.Completed, outerParallelContext.Status);
-        Assert.Equal(ActivityStatus.Completed, innerParallelContext.Status);
-        Assert.Equal(4, _fixture.CapturingTextWriter.Lines.Count);
-        Assert.Contains("Outer 1", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("Outer 2", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("Inner 1", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("Inner 2", _fixture.CapturingTextWriter.Lines);
+        outerParallelContext = (await Assert.That(outerParallelContext).IsNotNull())!;
+
+        innerParallelContext = (await Assert.That(innerParallelContext).IsNotNull())!;
+
+        await Assert.That(outerParallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(innerParallelContext.Status).IsEqualTo(ActivityStatus.Completed);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines.Count).IsEqualTo(4);
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Outer 1");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Outer 2");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Inner 1");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Inner 2");
+
     }
 
-    [Fact(DisplayName = "Parallel remains in Running state when a child activity faults")]
+    [Test]
+    [DisplayName("Parallel remains in Running state when a child activity faults")]
     public async Task Parallel_RemainsRunning_WhenChildFaults()
     {
         // Arrange
@@ -172,11 +210,16 @@ public class ParallelTests(ITestOutputHelper testOutputHelper)
         var journal = result.Journal;
         var parallelContext = journal.ActivityExecutionContexts.FirstOrDefault(x => x.Activity is Parallel);
 
-        Assert.NotNull(parallelContext);
-        Assert.Equal(ActivityStatus.Running, parallelContext.Status);
-        Assert.Equal(1, parallelContext.AggregateFaultCount);
+        parallelContext = (await Assert.That(parallelContext).IsNotNull())!;
+
+        await Assert.That(parallelContext.Status).IsEqualTo(ActivityStatus.Running);
+
+        await Assert.That(parallelContext.AggregateFaultCount).IsEqualTo(1);
+
         // The non-faulted activities should still execute
-        Assert.Contains("Before Fault", _fixture.CapturingTextWriter.Lines);
-        Assert.Contains("After Fault", _fixture.CapturingTextWriter.Lines);
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("Before Fault");
+
+        await Assert.That(_fixture.CapturingTextWriter.Lines).Contains("After Fault");
+
     }
 }

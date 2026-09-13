@@ -3,8 +3,6 @@ using Elsa.Expressions.Models;
 using Elsa.Testing.Shared;
 using Jint;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using Xunit.Abstractions;
 
 namespace Elsa.JavaScript.IntegrationTests;
 
@@ -12,37 +10,53 @@ namespace Elsa.JavaScript.IntegrationTests;
 /// Pins how CLR arrays cross into JavaScript: a script sees a copy, so mutating it does not reach back into
 /// the workflow's own data, and the value round-trips as an <c>object[]</c>.
 /// </summary>
-public class ArrayConversionTests
+public class ArrayConversionTests : IAsyncDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IJavaScriptEvaluator _evaluator;
 
-    public ArrayConversionTests(ITestOutputHelper testOutputHelper)
+    public ArrayConversionTests()
     {
-        _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+        _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
         _evaluator = _serviceProvider.GetRequiredService<IJavaScriptEvaluator>();
     }
 
-    [Fact(DisplayName = "Sorting a CLR array from a script does not mutate the original array")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_serviceProvider is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("Sorting a CLR array from a script does not mutate the original array")]
     public async Task SortingAnArrayDoesNotMutateTheOriginal()
     {
         var numbers = new[] { 8.0, 4.0, 2.0 };
 
         var result = await EvaluateAsync<object>("numbers.sort((a, b) => a - b); return numbers;", engine => engine.SetValue("numbers", numbers));
 
-        Assert.Equal([2.0, 4.0, 8.0], Assert.IsType<object[]>(result).Cast<double>());
-        Assert.Equal([8.0, 4.0, 2.0], numbers);
+        await Assert.That(result).IsOfType(typeof(object[]));
+        await Assert.That(((object[])result!).Cast<double>()).IsEquivalentTo(
+            [2.0, 4.0, 8.0],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(numbers).IsEquivalentTo(
+            [8.0, 4.0, 2.0],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "A CLR array is readable from a script")]
+    [Test]
+    [DisplayName("A CLR array is readable from a script")]
     public async Task ArraysAreReadable()
     {
         var numbers = new[] { 8.0, 4.0, 2.0 };
 
-        Assert.Equal("14", await EvaluateAsync<string>("return '' + numbers.reduce((a, b) => a + b, 0);", engine => engine.SetValue("numbers", numbers)));
+        await Assert.That(await EvaluateAsync<string>("return '' + numbers.reduce((a, b) => a + b, 0);", engine => engine.SetValue("numbers", numbers))).IsEqualTo("14");
     }
 
-    [Fact(DisplayName = "A CLR array crosses into a script through the copy lane, not the live view")]
+    [Test]
+    [DisplayName("A CLR array crosses into a script through the copy lane, not the live view")]
     public async Task ArraysCrossThroughTheCopyLane()
     {
         // The tests above assert the behaviour a copy produces, which a live view happens to match for a value
@@ -59,11 +73,12 @@ public class ArrayConversionTests
 
         var diagnostics = engine!.Advanced.GetInteropConversionDiagnostics();
 
-        Assert.Equal(0L, diagnostics.ArrayLiveViewConversions);
-        Assert.True(diagnostics.ArrayCopyConversions > 0, "the array should have crossed through the copy lane");
+        await Assert.That(diagnostics.ArrayLiveViewConversions).IsEqualTo(0L);
+        await Assert.That(diagnostics.ArrayCopyConversions > 0).IsTrue().Because("the array should have crossed through the copy lane");
     }
 
-    [Fact(DisplayName = "An expression that touches no CLR array converts none")]
+    [Test]
+    [DisplayName("An expression that touches no CLR array converts none")]
     public async Task ExpressionsWithoutArraysConvertNothing()
     {
         // Elsa converts collection-valued workflow variables itself, in ObjectConverterHelper, so an ordinary
@@ -75,8 +90,8 @@ public class ArrayConversionTests
 
         var diagnostics = engine!.Advanced.GetInteropConversionDiagnostics();
 
-        Assert.Equal(0L, diagnostics.ArrayLiveViewConversions);
-        Assert.Equal(0L, diagnostics.ArrayCopyConversions);
+        await Assert.That(diagnostics.ArrayLiveViewConversions).IsEqualTo(0L);
+        await Assert.That(diagnostics.ArrayCopyConversions).IsEqualTo(0L);
     }
 
     private async Task<T?> EvaluateAsync<T>(string script, Action<Engine> configureEngine)

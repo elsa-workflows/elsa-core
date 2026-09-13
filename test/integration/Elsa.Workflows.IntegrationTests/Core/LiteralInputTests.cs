@@ -4,25 +4,25 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Core;
 
 /// <summary>
 /// Tests for ActivityExecutionContext handling of Literal inputs in real scenarios
 /// </summary>
-public class LiteralInputTests
+public class LiteralInputTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IWorkflowRunner _workflowRunner;
 
-    public LiteralInputTests(ITestOutputHelper testOutputHelper)
+    public LiteralInputTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
         _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "Activity should be able to access Input created with Literal")]
+    [Test]
+    [DisplayName("Activity should be able to access Input created with Literal")]
     public async Task ActivityShouldAccessLiteralInput()
     {
         // Arrange - Create a custom activity that uses another activity with literal input
@@ -35,10 +35,11 @@ public class LiteralInputTests
 
         // Act & Assert - Should not throw
         var result = await _workflowRunner.RunAsync(workflow);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact(DisplayName = "ActivityExecutionContext.TryGet should return true and value for Literal")]
+    [Test]
+    [DisplayName("ActivityExecutionContext.TryGet should return true and value for Literal")]
     public async Task TryGet_ShouldHandleLiteralDirectly()
     {
         // Arrange - Create a workflow and activity execution context
@@ -61,11 +62,12 @@ public class LiteralInputTests
         var success = activityExecutionContext.TryGet(blockReference, out var actualValue);
         
         // Assert - Should succeed and return the literal's value
-        Assert.True(success, "TryGet should return true for Literal references");
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(success).IsTrue().Because("TryGet should return true for Literal references");
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
 
-    [Fact(DisplayName = "ActivityExecutionContext.Get with Input<T> containing Literal should work")]
+    [Test]
+    [DisplayName("ActivityExecutionContext.Get with Input<T> containing Literal should work")]
     public async Task Get_ShouldWorkWithInputContainingLiteral()
     {
         // Arrange
@@ -88,8 +90,10 @@ public class LiteralInputTests
         var actualValue = activityExecutionContext.Get(input);
         
         // Assert
-        Assert.Equal(expectedValue, actualValue);
+        await Assert.That(actualValue).IsEqualTo(expectedValue);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }
 
 /// <summary>

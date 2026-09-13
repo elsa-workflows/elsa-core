@@ -4,23 +4,31 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests;
 
-public class SetVariableTests
+public class SetVariableTests : IAsyncDisposable
 {
     private readonly IWorkflowRunner _workflowRunner;
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public SetVariableTests(ITestOutputHelper testOutputHelper)
+    public SetVariableTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).WithCapturingTextWriter(_capturingTextWriter).Build();
         _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "SetVariable sets variable in nearest scope when multiple variables with same name exist")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("SetVariable sets variable in nearest scope when multiple variables with same name exist")]
     public async Task SetVariable_SetsVariableInNearestScope_WhenMultipleVariablesWithSameNameExist()
     {
         await _services.PopulateRegistriesAsync();
@@ -28,7 +36,8 @@ public class SetVariableTests
         var lines = _capturingTextWriter.Lines.ToList();
 
         // The sequence-level variable should be set to "Sequence Value"
-        Assert.Equal(new[] { "Sequence Value" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Sequence Value" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
     }
 }
 

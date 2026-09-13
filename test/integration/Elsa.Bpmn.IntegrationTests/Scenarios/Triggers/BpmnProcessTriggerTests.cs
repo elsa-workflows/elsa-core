@@ -11,7 +11,6 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Stimuli;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.Triggers;
 
@@ -20,35 +19,62 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.Triggers;
 /// workflow's root -- and register nothing when the scope is nested, directly or through an intermediate
 /// <c>Flowchart</c>, no matter what <see cref="BpmnProcess.IsRootScope"/> itself says.
 /// </summary>
-public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
+public class BpmnProcessTriggerTests : IAsyncDisposable
 {
-    private readonly IServiceProvider _services = new TestApplicationBuilder(testOutputHelper)
+    private readonly IServiceProvider _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
         .ConfigureElsa(elsa => elsa.UseBpmn())
         .Build();
 
-    [Fact(DisplayName = "A message start event registers exactly one trigger, on the resolved name")]
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
+
+    [Test]
+    [DisplayName("A message start event registers exactly one trigger, on the resolved name")]
     public async Task MessageStartEvent_RegistersOneTriggerOnName()
     {
         var process = RootScope("message-start", Message("OrderPlaced"));
 
-        var trigger = Assert.Single(await IndexAsync(process));
+        var trigger = (await Assert.That(await IndexAsync(process)).HasSingleItem())!;
 
-        var payload = Assert.IsType<EventStimulus>(trigger.Payload);
-        Assert.Equal("OrderPlaced", payload.EventName);
+
+        var payloadValue = trigger.Payload;
+
+
+        await Assert.That(payloadValue).IsOfType(typeof(EventStimulus));
+
+
+        var payload = (EventStimulus)payloadValue!;
+        await Assert.That(payload.EventName).IsEqualTo("OrderPlaced");
+
     }
 
-    [Fact(DisplayName = "A signal start event registers exactly one trigger, on the resolved name")]
+    [Test]
+    [DisplayName("A signal start event registers exactly one trigger, on the resolved name")]
     public async Task SignalStartEvent_RegistersOneTriggerOnName()
     {
         var process = RootScope("signal-start", Signal("Cancelled"));
 
-        var trigger = Assert.Single(await IndexAsync(process));
+        var trigger = (await Assert.That(await IndexAsync(process)).HasSingleItem())!;
 
-        var payload = Assert.IsType<EventStimulus>(trigger.Payload);
-        Assert.Equal("Cancelled", payload.EventName);
+
+        var payloadValue = trigger.Payload;
+
+
+        await Assert.That(payloadValue).IsOfType(typeof(EventStimulus));
+
+
+        var payload = (EventStimulus)payloadValue!;
+        await Assert.That(payload.EventName).IsEqualTo("Cancelled");
+
     }
 
-    [Fact(DisplayName = "A message start and a signal start with the same name correlate identically")]
+    [Test]
+    [DisplayName("A message start and a signal start with the same name correlate identically")]
     public async Task MessageAndSignalStartEvents_WithTheSameName_CorrelateIdentically()
     {
         // Correlation is on the resolved name alone -- the library's rule, not ours -- which is what makes a
@@ -57,43 +83,68 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         var messageProcess = RootScope("message-start", Message("Approved"));
         var signalProcess = RootScope("signal-start", Signal("Approved"));
 
-        var messageTrigger = Assert.Single(await IndexAsync(messageProcess));
-        var signalTrigger = Assert.Single(await IndexAsync(signalProcess));
+        var messageTrigger = (await Assert.That(await IndexAsync(messageProcess)).HasSingleItem())!;
 
-        Assert.Equal(messageTrigger.Name, signalTrigger.Name);
-        Assert.Equal(messageTrigger.Hash, signalTrigger.Hash);
+        var signalTrigger = (await Assert.That(await IndexAsync(signalProcess)).HasSingleItem())!;
+
+
+        await Assert.That(signalTrigger.Name).IsEqualTo(messageTrigger.Name);
+
+        await Assert.That(signalTrigger.Hash).IsEqualTo(messageTrigger.Hash);
+
     }
 
-    [Fact(DisplayName = "A recurring interval timer start registers through Elsa.Scheduling's own Timer path")]
+    [Test]
+    [DisplayName("A recurring interval timer start registers through Elsa.Scheduling's own Timer path")]
     public async Task RecurringIntervalTimerStart_RegistersThroughTheSchedulingPath()
     {
         var process = RootScope("timer-start", TimerInterval("PT1H"));
 
-        var trigger = Assert.Single(await IndexAsync(process));
+        var trigger = (await Assert.That(await IndexAsync(process)).HasSingleItem())!;
+
 
         // Elsa.Scheduling's DefaultTriggerScheduler discovers a Timer trigger purely by this name -- reusing it,
         // rather than a BPMN-specific one, is what puts a recurring BPMN timer start through the same scheduling
         // path as Elsa.Scheduling's own Timer activity, unmodified.
-        Assert.Equal(SchedulingStimulusNames.Timer, trigger.Name);
+        await Assert.That(trigger.Name).IsEqualTo(SchedulingStimulusNames.Timer);
 
-        var payload = Assert.IsType<TimerTriggerPayload>(trigger.Payload);
-        Assert.Equal(TimeSpan.FromHours(1), payload.Interval);
+
+        var payloadValue = trigger.Payload;
+
+
+        await Assert.That(payloadValue).IsOfType(typeof(TimerTriggerPayload));
+
+
+        var payload = (TimerTriggerPayload)payloadValue!;
+        await Assert.That(payload.Interval).IsEqualTo(TimeSpan.FromHours(1));
+
     }
 
-    [Fact(DisplayName = "A recurring cron timer start registers through Elsa.Scheduling's own Cron path")]
+    [Test]
+    [DisplayName("A recurring cron timer start registers through Elsa.Scheduling's own Cron path")]
     public async Task RecurringCronTimerStart_RegistersThroughTheSchedulingPath()
     {
         var process = RootScope("cron-start", TimerCron("0 0 * * *"));
 
-        var trigger = Assert.Single(await IndexAsync(process));
+        var trigger = (await Assert.That(await IndexAsync(process)).HasSingleItem())!;
 
-        Assert.Equal(SchedulingStimulusNames.Cron, trigger.Name);
 
-        var payload = Assert.IsType<CronTriggerPayload>(trigger.Payload);
-        Assert.Equal("0 0 * * *", payload.CronExpression);
+        await Assert.That(trigger.Name).IsEqualTo(SchedulingStimulusNames.Cron);
+
+
+        var payloadValue = trigger.Payload;
+
+
+        await Assert.That(payloadValue).IsOfType(typeof(CronTriggerPayload));
+
+
+        var payload = (CronTriggerPayload)payloadValue!;
+        await Assert.That(payload.CronExpression).IsEqualTo("0 0 * * *");
+
     }
 
-    [Fact(DisplayName = "A message start and a recurring timer start on the same process both register, each independently matchable on its own name")]
+    [Test]
+    [DisplayName("A message start and a recurring timer start on the same process both register, each independently matchable on its own name")]
     public async Task MessageStartAndRecurringTimerStart_BothRegisterIndependently()
     {
         // Before NamedTriggerPayload, TriggerIndexingContext.TriggerName was a single field the indexer read once
@@ -105,16 +156,23 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         var triggers = await IndexAsync(process);
         var hasher = _services.GetRequiredService<IStimulusHasher>();
 
-        var messageTrigger = Assert.Single(triggers, trigger => trigger.Payload is EventStimulus);
-        Assert.Equal(RuntimeStimulusNames.Event, messageTrigger.Name);
-        Assert.Equal(hasher.Hash(RuntimeStimulusNames.Event, messageTrigger.Payload), messageTrigger.Hash);
+        var messageTrigger = (await Assert.That(triggers).HasSingleItem(trigger => trigger.Payload is EventStimulus))!;
 
-        var timerTrigger = Assert.Single(triggers, trigger => trigger.Payload is TimerTriggerPayload);
-        Assert.Equal(SchedulingStimulusNames.Timer, timerTrigger.Name);
-        Assert.Equal(hasher.Hash(SchedulingStimulusNames.Timer, timerTrigger.Payload), timerTrigger.Hash);
+        await Assert.That(messageTrigger.Name).IsEqualTo(RuntimeStimulusNames.Event);
+
+        await Assert.That(messageTrigger.Hash).IsEqualTo(hasher.Hash(RuntimeStimulusNames.Event, messageTrigger.Payload));
+
+
+        var timerTrigger = (await Assert.That(triggers).HasSingleItem(trigger => trigger.Payload is TimerTriggerPayload))!;
+
+        await Assert.That(timerTrigger.Name).IsEqualTo(SchedulingStimulusNames.Timer);
+
+        await Assert.That(timerTrigger.Hash).IsEqualTo(hasher.Hash(SchedulingStimulusNames.Timer, timerTrigger.Payload));
+
     }
 
-    [Fact(DisplayName = "Two start events resolving the same message name collapse to one trigger, without swallowing a genuinely distinct one")]
+    [Test]
+    [DisplayName("Two start events resolving the same message name collapse to one trigger, without swallowing a genuinely distinct one")]
     public async Task DuplicateStartEvents_CollapseToOneTrigger_WithoutSwallowingDistinctOnes()
     {
         // Duplicate name twice, and a third, distinct name once: StimulusSender starts the workflow once per
@@ -126,13 +184,16 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
 
         var triggers = await GetRawTriggersAsync(process);
 
-        Assert.Equal(2, triggers.Count);
+        await Assert.That(triggers.Count).IsEqualTo(2);
+
 
         var eventNames = triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>().Select(stimulus => stimulus.EventName).OrderBy(name => name).ToList();
-        Assert.Equal(new[] { "OrderCancelled", "OrderPlaced" }, eventNames);
+        await Assert.That(eventNames).IsEquivalentTo(new[] { "OrderCancelled", "OrderPlaced" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
     }
 
-    [Fact(DisplayName = "A malformed timer interval is refused for its own start event; every other valid start event on the process still registers")]
+    [Test]
+    [DisplayName("A malformed timer interval is refused for its own start event; every other valid start event on the process still registers")]
     public async Task MalformedTimerInterval_RefusesOnlyItsOwnStartEvent()
     {
         // TriggerIndexer.TryGetTriggerDataAsync catches around the whole GetTriggerPayloadsAsync call, so an
@@ -141,15 +202,19 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
 
         var triggers = await IndexAsync(process);
 
-        Assert.DoesNotContain(triggers, trigger => trigger.Payload is TimerTriggerPayload);
+        await Assert.That(triggers).DoesNotContain(trigger => trigger.Payload is TimerTriggerPayload);
 
-        var payload = Assert.Single(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>());
-        Assert.Equal("OrderPlaced", payload.EventName);
+
+        var payload = (await Assert.That(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>()).HasSingleItem())!;
+
+        await Assert.That(payload.EventName).IsEqualTo("OrderPlaced");
+
     }
 
-    [Theory(DisplayName = "A non-positive timer interval is refused for its own start event; every other valid start event on the process still registers")]
-    [InlineData("PT0S")]
-    [InlineData("-PT1S")]
+    [Test]
+    [DisplayName("A non-positive timer interval is refused for its own start event; every other valid start event on the process still registers ($isoInterval)")]
+    [Arguments("PT0S")]
+    [Arguments("-PT1S")]
     public async Task NonPositiveTimerInterval_RefusesOnlyItsOwnStartEvent(string isoInterval)
     {
         // XmlConvert.ToTimeSpan parses both PT0S and a negative duration without complaint. Elsa.Scheduling's
@@ -159,13 +224,17 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
 
         var triggers = await IndexAsync(process);
 
-        Assert.DoesNotContain(triggers, trigger => trigger.Payload is TimerTriggerPayload);
+        await Assert.That(triggers).DoesNotContain(trigger => trigger.Payload is TimerTriggerPayload);
 
-        var payload = Assert.Single(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>());
-        Assert.Equal("OrderPlaced", payload.EventName);
+
+        var payload = (await Assert.That(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>()).HasSingleItem())!;
+
+        await Assert.That(payload.EventName).IsEqualTo("OrderPlaced");
+
     }
 
-    [Fact(DisplayName = "A sub-resolution timer interval is refused for its own start event; every other valid start event on the process still registers")]
+    [Test]
+    [DisplayName("A sub-resolution timer interval is refused for its own start event; every other valid start event on the process still registers")]
     public async Task SubResolutionTimerInterval_RefusesOnlyItsOwnStartEvent()
     {
         // PT0.0000001S parses to a single tick -- positive, so it passes the non-positive check, but far below the
@@ -176,26 +245,42 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
 
         var triggers = await IndexAsync(process);
 
-        Assert.DoesNotContain(triggers, trigger => trigger.Payload is TimerTriggerPayload);
+        await Assert.That(triggers).DoesNotContain(trigger => trigger.Payload is TimerTriggerPayload);
 
-        var payload = Assert.Single(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>());
-        Assert.Equal("OrderPlaced", payload.EventName);
+
+        var payload = (await Assert.That(triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>()).HasSingleItem())!;
+
+        await Assert.That(payload.EventName).IsEqualTo("OrderPlaced");
+
     }
 
-    [Fact(DisplayName = "A timer interval exactly at the resolution floor registers")]
+    [Test]
+    [DisplayName("A timer interval exactly at the resolution floor registers")]
     public async Task TimerIntervalAtTheResolutionFloor_Registers()
     {
         // Pinned at exactly the floor -- not comfortably above it -- so this test would fail against any floor set
         // higher than the real one, and could not pass by coincidence against a floor set lower.
         var process = RootScope("floor-timer", TimerInterval("PT0.001S"));
 
-        var trigger = Assert.Single(await IndexAsync(process));
+        // Inspect the raw trigger here rather than publishing the indexed-trigger notification. Publishing a
+        // deliberately 1ms recurring trigger arms a real timer, which can race this test's service-provider
+        // teardown before the assertion has even finished.
+        var trigger = (await Assert.That(await GetRawTriggersAsync(process)).HasSingleItem())!;
 
-        var payload = Assert.IsType<TimerTriggerPayload>(trigger.Payload);
-        Assert.Equal(TimeSpan.FromMilliseconds(1), payload.Interval);
+
+        var payloadValue = trigger.Payload;
+
+
+        await Assert.That(payloadValue).IsOfType(typeof(TimerTriggerPayload));
+
+
+        var payload = (TimerTriggerPayload)payloadValue!;
+        await Assert.That(payload.Interval).IsEqualTo(TimeSpan.FromMilliseconds(1));
+
     }
 
-    [Fact(DisplayName = "A root scope whose start events are all plain registers no trigger, not even a placeholder")]
+    [Test]
+    [DisplayName("A root scope whose start events are all plain registers no trigger, not even a placeholder")]
     public async Task PlainStartRootScope_RegistersNoTrigger()
     {
         // A plain start is how a process is started directly, through the workflow execution API, never by a
@@ -203,10 +288,12 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         // ValidateWorkflowRequestHandler iterates, and a null-payload row in it is what refused publication (#8078).
         var process = RootScope("plain-start");
 
-        Assert.Empty(await GetRawTriggersAsync(process));
+        await Assert.That(await GetRawTriggersAsync(process)).IsEmpty();
+
     }
 
-    [Fact(DisplayName = "A plain start beside a message start does not stop the message start from registering")]
+    [Test]
+    [DisplayName("A plain start beside a message start does not stop the message start from registering")]
     public async Task PlainStartBesideMessageStart_MessageStillRegisters()
     {
         // Only a scope with no event-defined start at all declines; one plain start among others must not.
@@ -223,13 +310,22 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
                 .Build()
         };
 
-        var trigger = Assert.Single(await GetRawTriggersAsync(process));
+        var trigger = (await Assert.That(await GetRawTriggersAsync(process)).HasSingleItem())!;
 
-        var payload = Assert.IsType<EventStimulus>(trigger.Payload);
-        Assert.Equal("OrderPlaced", payload.EventName);
+
+        var payloadValue = trigger.Payload;
+
+
+        await Assert.That(payloadValue).IsOfType(typeof(EventStimulus));
+
+
+        var payload = (EventStimulus)payloadValue!;
+        await Assert.That(payload.EventName).IsEqualTo("OrderPlaced");
+
     }
 
-    [Fact(DisplayName = "A root scope whose only event-defined start registers nothing keeps the placeholder row publish validation reports")]
+    [Test]
+    [DisplayName("A root scope whose only event-defined start registers nothing keeps the placeholder row publish validation reports")]
     public async Task RootScopeWhoseOnlyEventDefinedStartIsRefused_KeepsThePlaceholderRow()
     {
         // The direction that could be mistaken for success: a start event declaring a timer this scope refuses to
@@ -237,12 +333,15 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         // with a timer that never fires.
         var process = RootScope("refused-timer-only", TimerInterval("not-an-iso-8601-duration"));
 
-        var trigger = Assert.Single(await GetRawTriggersAsync(process));
+        var trigger = (await Assert.That(await GetRawTriggersAsync(process)).HasSingleItem())!;
 
-        Assert.Null(trigger.Payload);
+
+        await Assert.That(trigger.Payload).IsNull();
+
     }
 
-    [Fact(DisplayName = "A BPMN-nested plain-start scope keeps its placeholder row, whatever its own flag says")]
+    [Test]
+    [DisplayName("A BPMN-nested plain-start scope keeps its placeholder row, whatever its own flag says")]
     public async Task BpmnNestedPlainStartScope_KeepsThePlaceholderRow()
     {
         // #8078 changes root position only. A nested scope is opted out by the graph check before the plain-start
@@ -253,10 +352,11 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         var outer = RootScope("outer", Message("OuterOnly"));
         outer.Activities.Add(nested);
 
-        AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(await IndexAsync(outer), nested.Id);
+        await AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(await IndexAsync(outer), nested.Id);
     }
 
-    [Fact(DisplayName = "A BPMN-nested scope registers no triggers, whatever its own flag says")]
+    [Test]
+    [DisplayName("A BPMN-nested scope registers no triggers, whatever its own flag says")]
     public async Task BpmnNestedScope_RegistersNoTriggers()
     {
         // The flag is set wrong on purpose: only the graph -- not the flag -- is allowed to decide this.
@@ -270,13 +370,16 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
 
         // The outer scope's own start event is the only name that ever reaches the trigger store.
         var payloads = triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>().ToList();
-        var payload = Assert.Single(payloads);
-        Assert.Equal("OuterOnly", payload.EventName);
+        var payload = (await Assert.That(payloads).HasSingleItem())!;
 
-        AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(triggers, nested.Id);
+        await Assert.That(payload.EventName).IsEqualTo("OuterOnly");
+
+
+        await AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(triggers, nested.Id);
     }
 
-    [Fact(DisplayName = "A scope nested through an intermediate Flowchart registers no triggers")]
+    [Test]
+    [DisplayName("A scope nested through an intermediate Flowchart registers no triggers")]
     public async Task ScopeNestedThroughAnIntermediateFlowchart_RegistersNoTriggers()
     {
         // This is the gap #7926's applier-level refusal cannot see: it only ever inspects work bound directly to
@@ -297,10 +400,12 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         var triggers = await IndexAsync(outer);
 
         var payloads = triggers.Select(trigger => trigger.Payload).OfType<EventStimulus>().ToList();
-        var payload = Assert.Single(payloads);
-        Assert.Equal("OuterOnly", payload.EventName);
+        var payload = (await Assert.That(payloads).HasSingleItem())!;
 
-        AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(triggers, nested.Id);
+        await Assert.That(payload.EventName).IsEqualTo("OuterOnly");
+
+
+        await AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(triggers, nested.Id);
     }
 
     private async Task<IReadOnlyCollection<StoredTrigger>> IndexAsync(IActivity root)
@@ -308,8 +413,16 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
         var workflow = await BuildWorkflowAsync(root);
         var indexer = _services.GetRequiredService<ITriggerIndexer>();
         var result = await indexer.IndexTriggersAsync(workflow);
+        var addedTriggers = result.AddedTriggers.ToList();
 
-        return result.AddedTriggers.ToList();
+        // IndexTriggersAsync publishes WorkflowTriggersIndexed, so scheduling triggers are armed before it
+        // returns. These tests only inspect the indexed records; release any schedules they created while the
+        // provider is still alive instead of leaving timers behind for test teardown.
+        var scheduler = _services.GetRequiredService<IScheduler>();
+        foreach (var trigger in addedTriggers)
+            await scheduler.ClearScheduleAsync(trigger.Id);
+
+        return addedTriggers;
     }
 
     /// <summary>
@@ -349,10 +462,12 @@ public class BpmnProcessTriggerTests(ITestOutputHelper testOutputHelper)
     /// event-defined start (#8078); a nested scope's opt-out is decided by the graph before that point and is left as
     /// it was. That placeholder is inert -- nothing external can ever address a <c>null</c> payload.
     /// </summary>
-    private static void AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(IReadOnlyCollection<StoredTrigger> triggers, string nestedScopeActivityId)
+    private static async Task AssertNestedScopeContributedOnlyTheUnavoidablePlaceholderRow(IReadOnlyCollection<StoredTrigger> triggers, string nestedScopeActivityId)
     {
-        var nestedScopeTrigger = Assert.Single(triggers, trigger => trigger.ActivityId == nestedScopeActivityId);
-        Assert.Null(nestedScopeTrigger.Payload);
+        var nestedScopeTrigger = (await Assert.That(triggers).HasSingleItem(trigger => trigger.ActivityId == nestedScopeActivityId))!;
+
+        await Assert.That(nestedScopeTrigger.Payload).IsNull();
+
     }
 
     /// <summary>A scope marked as the workflow's own entry point.</summary>

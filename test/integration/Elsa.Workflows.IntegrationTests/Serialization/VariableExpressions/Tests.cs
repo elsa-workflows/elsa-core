@@ -4,15 +4,15 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.VariableExpressions;
 
 /// <summary>
 /// Contains tests for variable expressions serialization.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
+    private readonly IServiceProvider _services;
     private readonly IWorkflowSerializer _workflowSerializer;
     private readonly IWorkflowBuilder _workflowBuilder;
     private readonly IWorkflowRunner _workflowRunner;
@@ -20,19 +20,20 @@ public class Tests
     /// <summary>
     /// Initializes a new instance of the <see cref="Tests"/> class.
     /// </summary>
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        var serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
-        _workflowSerializer = serviceProvider.GetRequiredService<IWorkflowSerializer>();
-        IWorkflowBuilderFactory workflowBuilderFactory = serviceProvider.GetRequiredService<IWorkflowBuilderFactory>();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
+        _workflowSerializer = _services.GetRequiredService<IWorkflowSerializer>();
+        IWorkflowBuilderFactory workflowBuilderFactory = _services.GetRequiredService<IWorkflowBuilderFactory>();
         _workflowBuilder = workflowBuilderFactory.CreateBuilder();
-        _workflowRunner = serviceProvider.GetRequiredService<IWorkflowRunner>();
+        _workflowRunner = _services.GetRequiredService<IWorkflowRunner>();
     }
     
     /// <summary>
     /// Variable types remain intact after serialization.
     /// </summary>
-    [Fact(DisplayName = "Variable types remain intact after serialization")]
+    [Test]
+    [DisplayName("Variable types remain intact after serialization")]
     public async Task Test1()
     {
         var workflow = await _workflowBuilder.BuildWorkflowAsync<SampleWorkflow>();
@@ -41,9 +42,11 @@ public class Tests
         var rehydratedWriteLine1 = (WriteLine)((Sequence)deserializedWorkflow.Root).Activities.ElementAt(0);
         var rehydratedNumberActivity1 = (NumberActivity)((Sequence)deserializedWorkflow.Root).Activities.ElementAt(2);
 
-        Assert.IsType<Variable<string>>(rehydratedWriteLine1.Text.Expression!.Value);
-        Assert.IsType<Variable<int>>(rehydratedNumberActivity1.Number.Expression!.Value);
+        await Assert.That(rehydratedWriteLine1.Text.Expression!.Value).IsOfType(typeof(Variable<string>));
+        await Assert.That(rehydratedNumberActivity1.Number.Expression!.Value).IsOfType(typeof(Variable<int>));
 
         await _workflowRunner.RunAsync(workflow);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

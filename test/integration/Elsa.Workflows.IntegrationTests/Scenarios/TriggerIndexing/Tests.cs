@@ -7,11 +7,10 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.TriggerIndexing;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly ITriggerIndexer _triggerIndexer;
@@ -19,9 +18,9 @@ public class Tests
     private readonly IWorkflowDefinitionStore _workflowDefinitionStore;
     private readonly Dictionary<string, Workflow> _workflowRegistry = new();
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).ConfigureServices(services =>
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).ConfigureServices(services =>
         {
             services.AddSingleton<IWorkflowMaterializer, FailingMaterializer>();
             services.AddSingleton<IWorkflowMaterializer>(_ => new WorkingMaterializer(_workflowRegistry));
@@ -33,8 +32,9 @@ public class Tests
         _workflowDefinitionStore = _services.GetRequiredService<IWorkflowDefinitionStore>();
     }
 
-    [Theory(DisplayName = "DeleteTriggersAsync handles workflow materialization failures correctly")]
-    [MemberData(nameof(GetTriggerDeletionTestData))]
+    [Test]
+    [DisplayName("DeleteTriggersAsync handles workflow materialization failures correctly: $scenario")]
+    [MethodDataSource(nameof(GetTriggerDeletionTestData))]
     public async Task DeleteTriggersAsync_HandlesWorkflowFailures(TriggerDeletionTestScenario scenario)
     {
         // Arrange
@@ -59,12 +59,10 @@ public class Tests
         await AssertRemainingTriggers(scenario.ExpectedRemainingTriggerIds);
     }
 
-    public static IEnumerable<object[]> GetTriggerDeletionTestData()
+    public static IEnumerable<Func<TriggerDeletionTestScenario>> GetTriggerDeletionTestData()
     {
         // Scenario 1: All workflows fail to load - all triggers should remain
-        yield return
-        [
-            new TriggerDeletionTestScenario
+        yield return static () => new TriggerDeletionTestScenario
             {
                 DisplayName = "All workflows fail to load",
                 Workflows =
@@ -74,13 +72,10 @@ public class Tests
                     new("workflow3", "def3", "Json", ShouldSucceed: false)
                 ],
                 ExpectedRemainingTriggerIds = ["trigger1", "trigger2", "trigger3"]
-            }
-        ];
+            };
 
         // Scenario 2: One workflow fails, others succeed - only the failing workflow's trigger remains
-        yield return
-        [
-            new TriggerDeletionTestScenario
+        yield return static () => new TriggerDeletionTestScenario
             {
                 DisplayName = "One workflow fails, others succeed",
                 Workflows =
@@ -90,14 +85,13 @@ public class Tests
                     new("workflow3", "def3", WorkingMaterializer.MaterializerName, ShouldSucceed: true)
                 ],
                 ExpectedRemainingTriggerIds = ["trigger2"]
-            }
-        ];
+            };
     }
 
     private async Task AssertRemainingTriggers(string[] expectedTriggerIds)
     {
         var remainingTriggerIds = await GetRemainingTriggerIdsAsync();
-        Assert.Equal(expectedTriggerIds.OrderBy(id => id), remainingTriggerIds);
+        await Assert.That(remainingTriggerIds).IsEquivalentTo(expectedTriggerIds.OrderBy(id => id), TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private async Task SaveWorkflowsAndTriggersAsync(WorkflowDefinition[] workflows, StoredTrigger[] triggers)
@@ -109,7 +103,7 @@ public class Tests
             await _triggerStore.SaveAsync(trigger);
 
         var allTriggers = await _triggerStore.FindManyAsync(new());
-        Assert.Equal(triggers.Length, allTriggers.Count());
+        await Assert.That(allTriggers.Count()).IsEqualTo(triggers.Length);
     }
 
 
@@ -137,4 +131,6 @@ public class Tests
         var remainingTriggers = await _triggerStore.FindManyAsync(new());
         return remainingTriggers.Select(t => t.Id).OrderBy(id => id).ToArray();
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

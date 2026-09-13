@@ -8,14 +8,13 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.WorkflowCancellation;
 
 /// <summary>
 /// Represents a class containing unit tests for the DefaultRuntime class.
 /// </summary>
-public class DefaultRuntimeTests
+public class DefaultRuntimeTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly CapturingTextWriter _capturingTextWriter = new();
@@ -24,9 +23,9 @@ public class DefaultRuntimeTests
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultRuntimeTests"/> class.
     /// </summary>
-    public DefaultRuntimeTests(ITestOutputHelper testOutputHelper)
+    public DefaultRuntimeTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .AddWorkflow<BulkSuspendedWorkflow>()
             .AddWorkflow<ResumeDispatchWorkflow>()
@@ -52,7 +51,8 @@ public class DefaultRuntimeTests
         _workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
     }
 
-    [Fact(DisplayName = "Cancelling a suspended workflow")]
+    [Test]
+    [DisplayName("Cancelling a suspended workflow")]
     public async Task SuspendedCancelTest()
     {
         await _services.PopulateRegistriesAsync();
@@ -65,14 +65,16 @@ public class DefaultRuntimeTests
         });
         var runWorkflowInstanceResponse = await workflowClient.RunInstanceAsync(RunWorkflowInstanceRequest.Empty);
 
-        Assert.Equal(WorkflowStatus.Running, runWorkflowInstanceResponse.Status);
-        Assert.Equal(WorkflowSubStatus.Suspended, runWorkflowInstanceResponse.SubStatus);
+        await Assert.That(runWorkflowInstanceResponse.Status).IsEqualTo(WorkflowStatus.Running);
+        await Assert.That(runWorkflowInstanceResponse.SubStatus).IsEqualTo(WorkflowSubStatus.Suspended);
 
         await workflowClient.CancelAsync();
         var lastWorkflowState = await workflowClient.ExportStateAsync();
 
-        Assert.Equal(WorkflowStatus.Finished, lastWorkflowState!.Status);
-        Assert.Equal(WorkflowSubStatus.Cancelled, lastWorkflowState.SubStatus);
-        Assert.Empty(_capturingTextWriter.Lines);
+        await Assert.That(lastWorkflowState!.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(lastWorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Cancelled);
+        await Assert.That(_capturingTextWriter.Lines).IsEmpty();
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

@@ -5,14 +5,13 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.DependencyWorkflowsPublishing;
 
 /// <summary>
 /// Contains tests for the "DependencyWorkflowsPublishing" scenario.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
@@ -23,9 +22,9 @@ public class Tests
     /// <summary>
     /// Initializes a new instance of the <see cref="Tests"/> class.
     /// </summary>
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .WithWorkflowsFromDirectory("Scenarios", "DependencyWorkflowsPublishing", "Workflows")
             .Build();
@@ -38,7 +37,8 @@ public class Tests
     /// <summary>
     /// When a dependency workflow is published, all consuming workflows are updated to point to the new version of the dependency.
     /// </summary>
-    [Fact(DisplayName = "When a dependency workflow is published, all consuming workflows are updated to point to the new version of the dependency.")]
+    [Test]
+    [DisplayName("When a dependency workflow is published, all consuming workflows are updated to point to the new version of the dependency.")]
     public async Task Test1()
     {
         await _services.PopulateRegistriesAsync();
@@ -47,9 +47,9 @@ public class Tests
         var childActivityV1 = await GetChildActivityAsync(parentDefinition);
 
         // Assert initial state.
-        Assert.Equal(1, childDefinitionV1.Version);
-        Assert.False(parentDefinition.IsPublished);
-        Assert.Equal(1, childActivityV1.Version);
+        await Assert.That(childDefinitionV1.Version).IsEqualTo(1);
+        await Assert.That(parentDefinition.IsPublished).IsFalse();
+        await Assert.That(childActivityV1.Version).IsEqualTo(1);
 
         // Create a new draft for the child workflow and publish it.
         var childDefinitionV2 = (await _workflowDefinitionPublisher.GetDraftAsync(childDefinitionV1.DefinitionId, VersionOptions.Published))!;
@@ -58,7 +58,7 @@ public class Tests
         // Assert that the parent workflow now points to the new version of the child workflow.
         parentDefinition = await _services.GetWorkflowDefinitionAsync("parent", VersionOptions.Latest);
         var childActivityV2 = await GetChildActivityAsync(parentDefinition);
-        Assert.Equal(2, childActivityV2.Version);
+        await Assert.That(childActivityV2.Version).IsEqualTo(2);
     }
 
     private async Task<WorkflowDefinitionActivity> GetChildActivityAsync(WorkflowDefinition parent)
@@ -68,4 +68,6 @@ public class Tests
         var flattenedList = graph.Flatten().ToList();
         return (WorkflowDefinitionActivity)flattenedList.Single(x => x.Activity is WorkflowDefinitionActivity { WorkflowDefinitionId: "child" }).Activity;
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

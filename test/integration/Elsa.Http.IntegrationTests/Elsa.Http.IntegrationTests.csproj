@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Http]*</Include>
         <Threshold>1</Threshold>
     </PropertyGroup>
@@ -12,4 +13,3 @@
     </ItemGroup>
 
 </Project>
-

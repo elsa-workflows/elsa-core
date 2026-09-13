@@ -3,20 +3,19 @@ using Elsa.Http.IntegrationTests.Helpers;
 using Elsa.Testing.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Http.IntegrationTests.Activities;
 
 /// <summary>
 /// Integration tests for HTTP response activities when HTTP context is lost.
 /// </summary>
-public class HttpContextLossTests
+public class HttpContextLossTests : IAsyncDisposable
 {
     private readonly WorkflowTestFixture _fixture;
 
-    public HttpContextLossTests(ITestOutputHelper testOutputHelper)
+    public HttpContextLossTests()
     {
-        _fixture = new WorkflowTestFixture(testOutputHelper)
+        _fixture = new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput)
             .ConfigureServices(services =>
             {
                 // Register a null HTTP context accessor to simulate context loss
@@ -24,7 +23,10 @@ public class HttpContextLossTests
             });
     }
 
-    [Fact(DisplayName = "WriteHttpResponse should record incident when HTTP context is null")]
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
+
+    [Test]
+    [DisplayName("WriteHttpResponse should record incident when HTTP context is null")]
     public async Task WriteHttpResponse_WithNoHttpContext_ShouldRecordIncident()
     {
         // Act
@@ -32,14 +34,18 @@ public class HttpContextLossTests
 
         // Assert
         // Verify an incident was recorded
-        Assert.NotEmpty(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.Incidents).IsNotEmpty();
+
         
         var incident = result.WorkflowState.Incidents.First();
-        Assert.Contains("HTTP context was lost", incident.Message);
-        Assert.Contains("background processing, virtual actor, or after a workflow transition", incident.Message);
+        await Assert.That(incident.Message).Contains("HTTP context was lost", StringComparison.CurrentCulture);
+
+        await Assert.That(incident.Message).Contains("background processing, virtual actor, or after a workflow transition", StringComparison.CurrentCulture);
+
     }
 
-    [Fact(DisplayName = "WriteFileHttpResponse should record incident when HTTP context is null")]
+    [Test]
+    [DisplayName("WriteFileHttpResponse should record incident when HTTP context is null")]
     public async Task WriteFileHttpResponse_WithNoHttpContext_ShouldRecordIncident()
     {
         // Act
@@ -47,11 +53,13 @@ public class HttpContextLossTests
 
         // Assert
         // Verify an incident was recorded
-        Assert.NotEmpty(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.Incidents).IsNotEmpty();
+
         
         var incident = result.WorkflowState.Incidents.First();
-        Assert.Contains("HTTP context was lost", incident.Message);
-        Assert.Contains("background processing, virtual actor, or after a workflow transition", incident.Message);
+        await Assert.That(incident.Message).Contains("HTTP context was lost", StringComparison.CurrentCulture);
+
+        await Assert.That(incident.Message).Contains("background processing, virtual actor, or after a workflow transition", StringComparison.CurrentCulture);
+
     }
 }
-

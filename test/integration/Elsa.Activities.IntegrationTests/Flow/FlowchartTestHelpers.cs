@@ -5,7 +5,6 @@ using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
-using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Flow;
 
@@ -14,12 +13,20 @@ namespace Elsa.Activities.IntegrationTests.Flow;
 /// </summary>
 public static class FlowchartTestHelpers
 {
-    public static IServiceProvider CreateServiceProvider(ITestOutputHelper testOutputHelper, CapturingTextWriter? capturingTextWriter = null)
+    public static IServiceProvider CreateServiceProvider(TextWriter testOutput, CapturingTextWriter? capturingTextWriter = null)
     {
-        var builder = new TestApplicationBuilder(testOutputHelper);
+        var builder = new TestApplicationBuilder(testOutput);
         if (capturingTextWriter != null)
             builder.WithCapturingTextWriter(capturingTextWriter);
         return builder.Build();
+    }
+
+    public static async ValueTask DisposeServiceProviderAsync(IServiceProvider services)
+    {
+        if (services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (services is IDisposable disposable)
+            disposable.Dispose();
     }
 
     public static async Task<RunWorkflowResult> RunFlowchartAsync(IServiceProvider services, Flowchart flowchart, FlowchartExecutionMode? executionMode = null)
@@ -28,7 +35,9 @@ public static class FlowchartTestHelpers
             ? new RunWorkflowOptions().WithFlowchartExecutionMode(executionMode.Value)
             : null;
 
-        return await services.RunActivityAsync(flowchart, options);
+        return options == null
+            ? await services.RunActivityAsync(flowchart)
+            : await services.RunActivityAsync(flowchart, options);
     }
 
     public static Connection CreateConnection(IActivity source, IActivity target, string? outcome = "Done")

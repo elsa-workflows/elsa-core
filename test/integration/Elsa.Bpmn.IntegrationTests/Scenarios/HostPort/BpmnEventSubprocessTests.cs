@@ -2,7 +2,6 @@ using Bpmn.Semantics;
 using Elsa.Workflows;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Models;
-using Xunit.Abstractions;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -27,11 +26,14 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 /// host cannot honour from being buried under work that carried on regardless.
 /// </para>
 /// </remarks>
-public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
+public class BpmnEventSubprocessTests : IAsyncDisposable
 {
-    private readonly BpmnTestHost _host = new(testOutputHelper);
+    private readonly BpmnTestHost _host = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "A dormant error-triggered event subprocess catches a fault in its scope and routes to its body")]
+    public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    [Test]
+    [DisplayName("A dormant error-triggered event subprocess catches a fault in its scope and routes to its body")]
     public async Task ErrorEventSubprocess_CatchesTheFaultAndRunsItsBody()
     {
         // The whole log, not a Contains: "the body ran" is also true of a process that carried on down the sequence
@@ -43,17 +45,22 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(BpmnTestProcesses.ErrorEventSubprocess(_host.Log), typeof(FaultStrategy));
 
         // Assert
-        Assert.Equal(["executed:risky", "cancelled:risky", "executed:handleError"], _host.Log.Entries);
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(["executed:risky", "cancelled:risky", "executed:handleError"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
 
         // The disposition was Caught, so the scope claimed the fault and terminalized the failed work itself.
-        Assert.Equal(ActivityStatus.Canceled, StatusOf(result, "risky"));
+        await Assert.That(StatusOf(result, "risky")).IsEqualTo(ActivityStatus.Canceled);
+
 
         // And a fault a container claimed is not an incident.
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A dormant escalation-triggered event subprocess catches an escalation raised in a nested scope")]
+    [Test]
+    [DisplayName("A dormant escalation-triggered event subprocess catches an escalation raised in a nested scope")]
     public async Task EscalationEventSubprocess_CatchesTheEscalationOutOfTheNestedScope()
     {
         // The scope-level catcher, not a boundary event on the subprocess: the escalation crosses the scope boundary
@@ -68,21 +75,28 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("subWork");
 
         // Assert: the event subprocess body ran...
-        Assert.Contains("executed:handleEscalation", _host.Log.Entries);
+        await Assert.That(_host.Log.Entries).Contains("executed:handleEscalation");
+
 
         // ...and the escalating subprocess carried on past the throw rather than being torn down.
-        Assert.Contains("executed:subMore", _host.Log.Entries);
-        Assert.DoesNotContain("cancelled:subMore", _host.Log.Entries);
+        await Assert.That(_host.Log.Entries).Contains("executed:subMore");
+
+        await Assert.That(_host.Log.Entries).DoesNotContain("cancelled:subMore");
+
 
         // And the subprocess still completes normally, so the main path continues.
         var result = await _host.FinishWorkAsync("subMore");
 
-        Assert.Contains("executed:after", _host.Log.Entries);
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).Contains("executed:after");
+
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A message-triggered event subprocess arms its listener at scope start and runs its body when the trigger fires")]
+    [Test]
+    [DisplayName("A message-triggered event subprocess arms its listener at scope start and runs its body when the trigger fires")]
     public async Task MessageEventSubprocess_ArmsItsListenerAtScopeStartAndRunsItsBodyWhenFired()
     {
         // Armed *at scope start* is the claim, so it is asserted before the trigger fires and not inferred from the
@@ -93,26 +107,32 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         await _host.RunAsync(BpmnTestProcesses.MessageEventSubprocess(_host.Log), typeof(FaultStrategy));
 
         // Assert: armed, and nothing has fired.
-        Assert.Equal(
+        await Assert.That(_host.Log.Snapshot("liveWork@work")).IsEquivalentTo(
             [BpmnTestProcesses.BindingRef("nudgeListener"), BpmnTestProcesses.BindingRef("work")],
-            _host.Log.Snapshot("liveWork@work"));
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
-        Assert.DoesNotContain("executed:handleNudge", _host.Log.Entries);
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:handleNudge");
+
 
         // Act: the trigger fires while the scope's own work is still running.
         await _host.FinishWorkAsync("nudgeListener");
 
         // Assert: the body ran, and the scope's own work is untouched -- non-interrupting means exactly that.
-        Assert.Equal(1, _host.Log.Occurrences("executed:handleNudge"));
-        Assert.DoesNotContain("cancelled:work", _host.Log.Entries);
+        await Assert.That(_host.Log.Occurrences("executed:handleNudge")).IsEqualTo(1);
+
+        await Assert.That(_host.Log.Entries).DoesNotContain("cancelled:work");
+
 
         var result = await _host.FinishWorkAsync("work");
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A scope completing with its listener still armed retires it, and the armed work does not survive")]
+    [Test]
+    [DisplayName("A scope completing with its listener still armed retires it, and the armed work does not survive")]
     public async Task MessageEventSubprocess_RetiresTheStillArmedListenerWhenTheScopeCompletes()
     {
         // The quiet failure this pins: a listener left armed is a live child activity holding a bookmark on a scope
@@ -123,7 +143,8 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         // Arrange
         await _host.RunAsync(BpmnTestProcesses.MessageEventSubprocess(_host.Log), typeof(FaultStrategy));
 
-        Assert.Contains(BpmnTestProcesses.BindingRef("nudgeListener"), _host.LiveWorkOf("scope").Select(work => work.BindingRef));
+        await Assert.That(_host.LiveWorkOf("scope").Select(work => work.BindingRef)).Contains(BpmnTestProcesses.BindingRef("nudgeListener"));
+
 
         // Act: the scope's own work completes, which is the last thing keeping the scope open.
         var result = await _host.FinishWorkAsync("work");
@@ -135,16 +156,23 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         // even if the retirement command were dropped on the floor; what would not is the scope's own record of what
         // it still has running. NestedMessageEventSubprocess_... below is the same retirement where the workflow
         // outlives the scope, which is where the rest of it stops being free.
-        Assert.Contains("cancelled:nudgeListener", _host.Log.Entries);
-        Assert.DoesNotContain("executed:handleNudge", _host.Log.Entries);
-        Assert.Empty(_host.LiveWorkOf("scope"));
-        Assert.Empty(result.WorkflowState.Bookmarks);
+        await Assert.That(_host.Log.Entries).Contains("cancelled:nudgeListener");
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:handleNudge");
+
+        await Assert.That(_host.LiveWorkOf("scope")).IsEmpty();
+
+        await Assert.That(result.WorkflowState.Bookmarks).IsEmpty();
+
+
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A nested scope completing with its listener still armed retires it while the workflow carries on")]
+    [Test]
+    [DisplayName("A nested scope completing with its listener still armed retires it while the workflow carries on")]
     public async Task NestedMessageEventSubprocess_RetiresTheStillArmedListenerWhenTheNestedScopeCompletes()
     {
         // The same retirement, in the only shape where it is the scope's doing rather than the workflow's: the
@@ -154,25 +182,34 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         // Arrange
         await _host.RunAsync(BpmnTestProcesses.NestedMessageEventSubprocess(_host.Log), typeof(FaultStrategy));
 
-        Assert.Contains(BpmnTestProcesses.BindingRef("nudgeListener"), _host.LiveWorkOf("sub").Select(work => work.BindingRef));
+        await Assert.That(_host.LiveWorkOf("sub").Select(work => work.BindingRef)).Contains(BpmnTestProcesses.BindingRef("nudgeListener"));
+
 
         // Act: the subprocess's own work completes, which is the last thing keeping the nested scope open.
         var result = await _host.FinishWorkAsync("subWork");
 
         // Assert: the nested scope retired its listener and completed, and the enclosing scope carried on.
-        Assert.Contains("cancelled:nudgeListener", _host.Log.Entries);
-        Assert.DoesNotContain("executed:handleNudge", _host.Log.Entries);
-        Assert.Empty(_host.LiveWorkOf("sub"));
-        Assert.Contains("executed:after", _host.Log.Entries);
+        await Assert.That(_host.Log.Entries).Contains("cancelled:nudgeListener");
+
+        await Assert.That(_host.Log.Entries).DoesNotContain("executed:handleNudge");
+
+        await Assert.That(_host.LiveWorkOf("sub")).IsEmpty();
+
+        await Assert.That(_host.Log.Entries).Contains("executed:after");
+
 
         // Nothing is left for a stimulus to resume into.
-        Assert.Empty(result.WorkflowState.Bookmarks);
+        await Assert.That(result.WorkflowState.Bookmarks).IsEmpty();
 
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "A re-armed non-interrupting listener fires again cleanly, holding one live slot at a time")]
+    [Test]
+    [DisplayName("A re-armed non-interrupting listener fires again cleanly, holding one live slot at a time")]
     public async Task NonInterruptingListener_ReArmsWithoutCollidingWithTheSlotItJustVacated()
     {
         // The interpreter re-finds a parked token from (binding ref, iteration id) alone, and a re-armed listener
@@ -190,27 +227,36 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         await _host.FinishWorkAsync("nudgeListener");
 
         // Assert: the body ran, and exactly one listener is armed -- not the fresh one alongside the finished one.
-        Assert.Equal(1, _host.Log.Occurrences("executed:handleNudge"));
-        Assert.Equal(1, LiveListenerRecords());
+        await Assert.That(_host.Log.Occurrences("executed:handleNudge")).IsEqualTo(1);
+
+        await Assert.That(LiveListenerRecords()).IsEqualTo(1);
+
 
         // Act: ...and again, onto the slot the first fire vacated.
         await _host.FinishWorkAsync("nudgeListener");
 
         // Assert: a second, complete run of the body, and still exactly one armed listener.
-        Assert.Equal(2, _host.Log.Occurrences("executed:handleNudge"));
-        Assert.Equal(1, LiveListenerRecords());
+        await Assert.That(_host.Log.Occurrences("executed:handleNudge")).IsEqualTo(2);
+
+        await Assert.That(LiveListenerRecords()).IsEqualTo(1);
+
 
         var result = await _host.FinishWorkAsync("work");
 
         // The scope retires that last listener and finishes, which a scope holding a stale second record could not do
         // cleanly: the teardown would resolve the wrong record and leave the other bookmark behind.
-        Assert.Contains("cancelled:nudgeListener", _host.Log.Entries);
-        Assert.Empty(result.WorkflowState.Bookmarks);
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).Contains("cancelled:nudgeListener");
+
+        await Assert.That(result.WorkflowState.Bookmarks).IsEmpty();
+
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
     }
 
-    [Fact(DisplayName = "An event subprocess body is seeded at the start event named on the hint, and nothing else inherits it")]
+    [Test]
+    [DisplayName("An event subprocess body is seeded at the start event named on the hint, and nothing else inherits it")]
     public async Task EventSubprocessBody_IsSeededAtTheHintedStartEvent()
     {
         // Both directions of the hint, in one process, and each fails loudly rather than quietly.
@@ -225,9 +271,12 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         var result = await _host.RunAsync(BpmnTestProcesses.EventSubprocessBodyWithNestedSubprocess(_host.Log), typeof(FaultStrategy));
 
         // Assert
-        Assert.Equal(["executed:risky", "cancelled:risky", "executed:handleError", "executed:innerOnly"], _host.Log.Entries);
-        Assert.Empty(result.WorkflowState.Incidents);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).IsEquivalentTo(["executed:risky", "cancelled:risky", "executed:handleError", "executed:innerOnly"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        await Assert.That(result.WorkflowState.Incidents).IsEmpty();
+
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+
 
         // The dictionary the hint arrives in belongs to the scope and is fixed for its lifetime. Read after the body
         // has started and finished work of its own, it still says what the StartWork that created the scope said: a
@@ -235,25 +284,31 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         // damage would only surface the next time a body was seeded.
         var correlation = _host.InvocationCorrelationOf("evtSub");
 
-        Assert.Equal("errStart", correlation[BpmnInterpreter.StartElementIdCorrelationKey]);
-        Assert.Equal(BpmnInterpreter.EventSubprocessBodySchedulingCause, correlation[BpmnInterpreter.SchedulingCauseCorrelationKey]);
+        await Assert.That(correlation[BpmnInterpreter.StartElementIdCorrelationKey]).IsEqualTo("errStart");
+
+        await Assert.That(correlation[BpmnInterpreter.SchedulingCauseCorrelationKey]).IsEqualTo(BpmnInterpreter.EventSubprocessBodySchedulingCause);
+
     }
 
-    [Fact(DisplayName = "An event subprocess body declaring more than one start event is refused")]
+    [Test]
+    [DisplayName("An event subprocess body declaring more than one start event is refused")]
     public Task EventSubprocessBodyWithTwoStartEvents_IsRefused() =>
         AssertRefusedAsync(BpmnTestProcesses.EventSubprocessBodyWithTwoStartEvents(_host.Log), "body must declare exactly one start event");
 
-    [Fact(DisplayName = "A second error-triggered event subprocess in one scope is refused")]
+    [Test]
+    [DisplayName("A second error-triggered event subprocess in one scope is refused")]
     public Task TwoErrorEventSubprocesses_AreRefused() =>
         AssertRefusedAsync(BpmnTestProcesses.TwoErrorEventSubprocesses(_host.Log), "more than one error event subprocess");
 
-    [Fact(DisplayName = "A second code-less catch-all escalation-triggered event subprocess in one scope is refused")]
+    [Test]
+    [DisplayName("A second code-less catch-all escalation-triggered event subprocess in one scope is refused")]
     public Task TwoCatchAllEscalationEventSubprocesses_AreRefused() =>
         AssertRefusedAsync(
             BpmnTestProcesses.TwoCatchAllEscalationEventSubprocesses(_host.Log),
             "more than one code-less catch-all escalation event subprocess");
 
-    [Fact(DisplayName = "A non-interrupting error-triggered event subprocess is refused")]
+    [Test]
+    [DisplayName("A non-interrupting error-triggered event subprocess is refused")]
     public Task NonInterruptingErrorEventSubprocess_IsRefused() =>
         AssertRefusedAsync(BpmnTestProcesses.NonInterruptingErrorEventSubprocess(_host.Log), "must be interrupting");
 
@@ -269,12 +324,16 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
     {
         var result = await _host.RunAsync(process, typeof(FaultStrategy));
 
-        Assert.Empty(_host.Log.Entries);
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        await Assert.That(_host.Log.Entries).IsEmpty();
 
-        var incident = Assert.Single(result.WorkflowState.Incidents);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
 
-        Assert.Contains(expectedMessageFragment, incident.Exception!.Message);
+
+        var incident = (await Assert.That(result.WorkflowState.Incidents).HasSingleItem())!;
+
+
+        await Assert.That(incident.Exception!.Message).Contains(expectedMessageFragment, StringComparison.CurrentCulture);
+
     }
 
     private int LiveListenerRecords() =>

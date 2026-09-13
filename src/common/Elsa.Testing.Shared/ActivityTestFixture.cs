@@ -23,9 +23,11 @@ namespace Elsa.Testing.Shared;
 /// A test fixture for unit testing activities in isolation.
 /// Provides a fluent API to configure services, variables, and execution context.
 /// </summary>
-public class ActivityTestFixture
+public class ActivityTestFixture : IAsyncDisposable
 {
     private Action<ActivityExecutionContext>? _configureContextAction;
+    private readonly List<ServiceProvider> _serviceProviders = [];
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ActivityTestFixture"/> class.
@@ -107,30 +109,73 @@ public class ActivityTestFixture
     /// </summary>
     public async Task<ActivityExecutionContext> BuildAsync()
     {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(ActivityTestFixture));
+
         var serviceProvider = Services.BuildServiceProvider();
-        var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
-        var workflowGraphBuilder = serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
+        try
+        {
+            var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+            var workflowGraphBuilder = serviceProvider.GetRequiredService<IWorkflowGraphBuilder>();
 
-        await activityRegistry.RegisterAsync(Activity.GetType());
+            await activityRegistry.RegisterAsync(Activity.GetType());
 
-        var workflow = Workflow.FromActivity(Activity);
-        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
+            var workflow = Workflow.FromActivity(Activity);
+            var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow);
 
-        // Create workflow execution context using the static factory method
-        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
-            serviceProvider,
-            workflowGraph,
-            $"test-instance-{Guid.NewGuid()}",
-            CancellationToken.None
-        );
+            // Create workflow execution context using the static factory method
+            var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+                serviceProvider,
+                workflowGraph,
+                $"test-instance-{Guid.NewGuid()}",
+                CancellationToken.None
+            );
 
-        // Create ActivityExecutionContext for the actual activity we want to test
-        var context = await workflowExecutionContext.CreateActivityExecutionContextAsync(Activity);
+            // Create ActivityExecutionContext for the actual activity we want to test
+            var context = await workflowExecutionContext.CreateActivityExecutionContextAsync(Activity);
 
-        // Apply any context configuration action
-        _configureContextAction?.Invoke(context);
+            // Apply any context configuration action
+            _configureContextAction?.Invoke(context);
+            _serviceProviders.Add(serviceProvider);
 
-        return context;
+            return context;
+        }
+        catch
+        {
+            await serviceProvider.DisposeAsync();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Disposes the service providers owned by contexts built by this fixture.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        List<Exception>? disposalExceptions = null;
+
+        for (var i = _serviceProviders.Count - 1; i >= 0; i--)
+        {
+            try
+            {
+                await _serviceProviders[i].DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                (disposalExceptions ??= []).Add(exception);
+            }
+        }
+
+        _serviceProviders.Clear();
+
+        if (disposalExceptions != null)
+        {
+            throw new AggregateException("One or more activity test service providers failed to dispose.", disposalExceptions);
+        }
     }
 
     /// <summary>

@@ -1,23 +1,23 @@
 ﻿using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ImportAndPublish;
 
-public class ImportAndPublishTimerTests
+public class ImportAndPublishTimerTests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public ImportAndPublishTimerTests(ITestOutputHelper testOutputHelper)
+    public ImportAndPublishTimerTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .Build();
     }
 
-    [Fact(DisplayName = "Timer workflow imported from file should publish successfully.")]
+    [Test]
+    [DisplayName("Timer workflow imported from file should publish successfully.")]
     public async Task ImportAndPublish_ShouldSucceed_WithGoodTimerWithoutValidator()
     {
         // Populate registries.
@@ -28,10 +28,21 @@ public class ImportAndPublishTimerTests
 
         // Publish.
         IWorkflowDefinitionPublisher workflowDefinitionPublisher = _services.GetRequiredService<IWorkflowDefinitionPublisher>();
-        var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
+        try
+        {
+            var result = await workflowDefinitionPublisher.PublishAsync(workflowDefinition);
 
-        // Assert.
-        Assert.True(result.Succeeded);
-        Assert.Empty(result.ValidationErrors);
+            // Assert.
+            await Assert.That(result.Succeeded).IsTrue();
+            await Assert.That(result.ValidationErrors).IsEmpty();
+        }
+        finally
+        {
+            // Publishing arms a real recurring timer. Retracting exercises the normal unscheduling path before
+            // this test disposes the provider that timer would otherwise retain.
+            await workflowDefinitionPublisher.RetractAsync(workflowDefinition.DefinitionId);
+        }
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

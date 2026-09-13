@@ -4,15 +4,15 @@ using Elsa.Workflows.Activities.Flowchart.Extensions;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.JoinBehaviors;
 
-public class ParallelJoinCompletesTests(ITestOutputHelper testOutputHelper)
+public class ParallelJoinCompletesTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "The ParallelForEach activity completes when its Body contains a Join activity")]
+    [Test]
+    [DisplayName("The ParallelForEach activity completes when its Body contains a Join activity")]
     public async Task Test1()
     {
         // Import workflow.
@@ -30,6 +30,8 @@ public class ParallelJoinCompletesTests(ITestOutputHelper testOutputHelper)
             EventName = "Completed"
         }, PageArgs.All);
 
-        Assert.Single(journal.Items);
+        await Assert.That(journal.Items).HasSingleItem();
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_fixture);
 }

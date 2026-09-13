@@ -6,22 +6,21 @@ using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.ContainerSerialization;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly IActivitySerializer _activitySerializer;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
         _activitySerializer = _services.GetService<IActivitySerializer>()!;
     }
 
-    [Fact]
+    [Test]
     public async Task SerializeFlowchartContainerTest()
     {
         await _services.PopulateRegistriesAsync();
@@ -89,10 +88,10 @@ public class Tests
 
         // Assert
 
-        ValidateContainer(container, deserializedContainer);
+        await ValidateContainerAsync(container, deserializedContainer);
     }
 
-    [Fact]
+    [Test]
     public async Task SerializeSequenceContainerTest()
     {
         await _services.PopulateRegistriesAsync();
@@ -137,10 +136,10 @@ public class Tests
 
         // Assert
 
-        ValidateContainer(container, deserializedContainer);
+        await ValidateContainerAsync(container, deserializedContainer);
     }
 
-    [Fact]
+    [Test]
     public async Task SerializeParallelContainerTest()
     {
         await _services.PopulateRegistriesAsync();
@@ -186,18 +185,17 @@ public class Tests
 
         // Assert
 
-        ValidateContainer(container, deserializedContainer);
+        await ValidateContainerAsync(container, deserializedContainer);
     }
 
-    private static void ValidateContainer(Container container, Container? deserializedContainer)
+    private static async Task ValidateContainerAsync(Container container, Container? deserializedContainer)
     {
-        if (deserializedContainer == null)
-            throw new ArgumentNullException(nameof(deserializedContainer));
+        var actual = await Assert.That(deserializedContainer).IsNotNull();
 
-        // Assert.Equivalent has trouble with the Behavior.Owner reference - since these aren't serialzied anyway, ignore them
-        deserializedContainer.Behaviors.Clear();
+        // Structural equivalency has trouble with the Behavior.Owner reference - since these aren't serialized anyway, ignore them.
+        actual.Behaviors.Clear();
         container.Behaviors.Clear();
-        foreach (var activity1 in deserializedContainer.Activities)
+        foreach (var activity1 in actual.Activities)
         {
             var activity = (Activity)activity1;
             activity.Behaviors.Clear();
@@ -208,8 +206,8 @@ public class Tests
             activity.Behaviors.Clear();
         }
 
-        // strict:false here allows "actual" to have extra public members that aren't part of "expected", and collection
-        // comparison allows "actual" to have more data in it than is present in "expected".
-        Assert.Equivalent(container, deserializedContainer, strict: false);
+        await Assert.That(actual).IsEquivalentTo(container, strict: false);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

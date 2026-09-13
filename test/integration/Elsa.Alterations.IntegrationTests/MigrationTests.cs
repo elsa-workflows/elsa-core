@@ -6,14 +6,13 @@ using Elsa.Extensions;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Alterations.IntegrationTests;
 
 /// <summary>
 /// Contains tests for migration.
 /// </summary>
-public class MigrationTests
+public class MigrationTests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
@@ -23,9 +22,9 @@ public class MigrationTests
     /// <summary>
     /// Initializes a new instance of the <see cref="MigrationTests"/> class.
     /// </summary>
-    public MigrationTests(ITestOutputHelper testOutputHelper)
+    public MigrationTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(elsa => elsa.UseAlterations())
             .Build();
@@ -33,10 +32,19 @@ public class MigrationTests
         _workflowInstanceStore = _services.GetRequiredService<IWorkflowInstanceStore>();
     }
 
+    public async ValueTask DisposeAsync()
+    {
+        if (_services is IAsyncDisposable asyncDisposable)
+            await asyncDisposable.DisposeAsync();
+        else if (_services is IDisposable disposable)
+            disposable.Dispose();
+    }
+
     /// <summary>
     /// This method tests the migration from version 1 to version 2.
     /// </summary>
-    [Fact(DisplayName = "Migrating from version 1 to 2 succeeds")]
+    [Test]
+    [DisplayName("Migrating from version 1 to 2 succeeds")]
     public async Task Test1()
     {
         // Populate registries.
@@ -64,10 +72,10 @@ public class MigrationTests
         var migrationResult = await _alterationRunner.RunAsync(instanceIds, alterations);
         
         // Assert success.
-        Assert.True(migrationResult.All(x => x.IsSuccessful));
+        await Assert.That(migrationResult.All(x => x.IsSuccessful)).IsTrue();
         
         // Assert that the workflow instance is now at version 2.
         var workflowState2 = await _workflowInstanceStore.FindAsync(workflowState.Id);
-        Assert.Equal(2, workflowState2!.Version);
+        await Assert.That(workflowState2!.Version).IsEqualTo(2);
     }
 }

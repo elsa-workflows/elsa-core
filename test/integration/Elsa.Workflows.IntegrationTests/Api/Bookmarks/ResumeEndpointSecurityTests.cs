@@ -28,7 +28,7 @@ public class ResumeEndpointSecurityTests
             });
     }
 
-    [Fact]
+    [Test]
     public async Task Get_WithInvalidToken_DoesNotParseQueryInput()
     {
         var input = Uri.EscapeDataString("{not-json");
@@ -37,16 +37,16 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         _payloadSerializer.Received(0).Deserialize<IDictionary<string, object>>(Arg.Any<string>());
         _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory]
-    [InlineData("GET", "?async=true&in=%7Bnot-json", null)]
-    [InlineData("POST", "?async=true", """{"input":{"value":"ignored"}}""")]
+    [Test]
+    [Arguments("GET", "?async=true&in=%7Bnot-json", null)]
+    [Arguments("POST", "?async=true", """{"input":{"value":"ignored"}}""")]
     public async Task Request_WithMissingToken_DoesNotParseInput(string method, string queryString, string? body)
     {
         var context = CreateHttpContext(method, queryString, body);
@@ -54,14 +54,14 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
         _payloadSerializer.Received(0).Deserialize<IDictionary<string, object>>(Arg.Any<string>());
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task Post_WithInvalidToken_DoesNotParseBodyInput()
     {
         var context = CreateHttpContext(HttpMethods.Post, "?t=invalid", """{"input":{"value":"ignored"}}""");
@@ -69,14 +69,14 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
         _payloadSerializer.Received(0).Deserialize<IDictionary<string, object>>(Arg.Any<string>());
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task Post_WithJsonNullBody_ReturnsBadRequest()
     {
         var context = CreateHttpContext(HttpMethods.Post, "?t=valid", "null");
@@ -86,12 +86,12 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task Get_WithArgumentExceptionWhileParsingInput_ReturnsBadRequest()
     {
         var context = CreateHttpContext(HttpMethods.Get, "?t=valid&in=%7B%7D");
@@ -101,12 +101,12 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task Post_WithArgumentExceptionWhileParsingInput_ReturnsBadRequest()
     {
         var context = CreateHttpContext(HttpMethods.Post, "?t=valid", "{}");
@@ -116,14 +116,14 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
+    [Test]
+    [Arguments(true)]
+    [Arguments(false)]
     public async Task Post_WithTooLargeBody_ReturnsBadRequest(bool includeContentLength)
     {
         var body = new string('a', MaxRequestBodySize + 1);
@@ -133,7 +133,7 @@ public class ResumeEndpointSecurityTests
 
         await sut.HandleAsync(CancellationToken.None);
 
-        Assert.Equal((int)HttpStatusCode.BadRequest, context.Response.StatusCode);
+        await Assert.That(context.Response.StatusCode).IsEqualTo((int)HttpStatusCode.BadRequest);
         _apiSerializer.Received(0).Deserialize<Request>(Arg.Any<string>());
         await _workflowResumer.DidNotReceive().ResumeAsync(Arg.Any<ResumeBookmarkRequest>(), Arg.Any<CancellationToken>());
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());

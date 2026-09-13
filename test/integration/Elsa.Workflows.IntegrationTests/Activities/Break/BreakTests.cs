@@ -1,6 +1,5 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.IntegrationTests.Activities.Workflows;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Activities;
 
@@ -8,11 +7,12 @@ namespace Elsa.Workflows.IntegrationTests.Activities;
 /// Integration tests for the <see cref="Workflows.Activities.Break"/> activity.
 /// Tests Break behavior across different looping constructs (ForEach, For, While, Fork).
 /// </summary>
-public class BreakTests(ITestOutputHelper testOutputHelper)
+public class BreakTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new(testOutputHelper);
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    [Fact(DisplayName = "Break exits ForEach loop")]
+    [Test]
+    [DisplayName("Break exits ForEach loop")]
     public async Task Break_ExitsForEachLoop()
     {
         // Act
@@ -20,10 +20,11 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "Start", "C#", "End" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Start", "C#", "End" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Break exits only immediate loop in nested ForEach")]
+    [Test]
+    [DisplayName("Break exits only immediate loop in nested ForEach")]
     public async Task Break_ExitsOnlyImmediateLoopInNestedForEach()
     {
         // Act
@@ -31,10 +32,11 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "C#", "Classes", "Rust", "Classes", "Go", "Classes" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "C#", "Classes", "Rust", "Classes", "Go", "Classes" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Break exits For loop")]
+    [Test]
+    [DisplayName("Break exits For loop")]
     public async Task Break_ExitsForLoop()
     {
         // Act
@@ -42,10 +44,11 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "Start", "0", "1", "End" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Start", "0", "1", "End" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Break exits While loop")]
+    [Test]
+    [DisplayName("Break exits While loop")]
     public async Task Break_ExitsWhileLoop()
     {
         // Act
@@ -53,6 +56,8 @@ public class BreakTests(ITestOutputHelper testOutputHelper)
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
 
         // Assert
-        Assert.Equal(new[] { "Start", "1", "2", "End" }, lines);
+        await Assert.That(lines).IsEquivalentTo(new[] { "Start", "1", "2", "End" }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_fixture);
 }

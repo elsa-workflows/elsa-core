@@ -5,7 +5,6 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 
@@ -14,21 +13,22 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 /// The HTTP layer is exercised separately by component tests (Elsa.Workflows.ComponentTests); these tests focus on the
 /// audit-publishing logic that lives inside the endpoint handlers.
 /// </summary>
-public class AdminPauseResumeIntegrationTests
+public class AdminPauseResumeIntegrationTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
     private readonly RecordingNotificationSender _recorder;
 
-    public AdminPauseResumeIntegrationTests(ITestOutputHelper testOutputHelper)
+    public AdminPauseResumeIntegrationTests()
     {
         _recorder = new RecordingNotificationSender();
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseWorkflowRuntime())
             .ConfigureServices(s => s.AddSingleton<INotificationSender>(_recorder))
             .Build();
     }
 
-    [Fact(DisplayName = "PauseAsync followed by repeated PauseAsync calls converges on the same state")]
+    [Test]
+    [DisplayName("PauseAsync followed by repeated PauseAsync calls converges on the same state")]
     public async Task PauseIsIdempotent()
     {
         var signal = _services.GetRequiredService<IQuiescenceSignal>();
@@ -36,11 +36,12 @@ public class AdminPauseResumeIntegrationTests
         var first = await signal.PauseAsync("maintenance", "op@example.com", CancellationToken.None);
         var second = await signal.PauseAsync("maintenance", "op@example.com", CancellationToken.None);
 
-        Assert.True(first.Reason.HasFlag(QuiescenceReason.AdministrativePause));
-        Assert.Equal(first.PausedAt, second.PausedAt);
+        await Assert.That(first.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsTrue();
+        await Assert.That(second.PausedAt).IsEqualTo(first.PausedAt);
     }
 
-    [Fact(DisplayName = "ResumeAsync clears AdministrativePause; second call is a no-op")]
+    [Test]
+    [DisplayName("ResumeAsync clears AdministrativePause; second call is a no-op")]
     public async Task ResumeIsIdempotent()
     {
         var signal = _services.GetRequiredService<IQuiescenceSignal>();
@@ -49,11 +50,12 @@ public class AdminPauseResumeIntegrationTests
         var first = await signal.ResumeAsync("op@example.com", CancellationToken.None);
         var second = await signal.ResumeAsync("op@example.com", CancellationToken.None);
 
-        Assert.False(first.Reason.HasFlag(QuiescenceReason.AdministrativePause));
-        Assert.Equal(QuiescenceReason.None, second.Reason);
+        await Assert.That(first.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsFalse();
+        await Assert.That(second.Reason).IsEqualTo(QuiescenceReason.None);
     }
 
-    [Fact(DisplayName = "ResumeAsync during drain is a no-op (returns state with Drain still set)")]
+    [Test]
+    [DisplayName("ResumeAsync during drain is a no-op (returns state with Drain still set)")]
     public async Task ResumeDuringDrainIsNoOp()
     {
         var signal = _services.GetRequiredService<IQuiescenceSignal>();
@@ -62,30 +64,32 @@ public class AdminPauseResumeIntegrationTests
 
         var state = await signal.ResumeAsync(null, CancellationToken.None);
 
-        Assert.True(state.Reason.HasFlag(QuiescenceReason.Drain));
-        Assert.True(state.Reason.HasFlag(QuiescenceReason.AdministrativePause));
+        await Assert.That(state.Reason.HasFlag(QuiescenceReason.Drain)).IsTrue();
+        await Assert.That(state.Reason.HasFlag(QuiescenceReason.AdministrativePause)).IsTrue();
     }
 
-    [Fact(DisplayName = "Internal bookmark-queue ingress source surfaces in registry snapshot")]
-    public void InternalIngressSourceVisible()
+    [Test]
+    [DisplayName("Internal bookmark-queue ingress source surfaces in registry snapshot")]
+    public async Task InternalIngressSourceVisible()
     {
         var registry = _services.GetRequiredService<IIngressSourceRegistry>();
         var sources = registry.Snapshot();
-        Assert.Contains(sources, s => s.Name == "internal.bookmark-queue-worker");
+        await Assert.That(sources).Contains(s => s.Name == "internal.bookmark-queue-worker");
     }
 
-    [Fact(DisplayName = "Internal ingress source reports Paused state when the runtime is paused")]
+    [Test]
+    [DisplayName("Internal ingress source reports Paused state when the runtime is paused")]
     public async Task InternalIngressReflectsSignal()
     {
         var registry = _services.GetRequiredService<IIngressSourceRegistry>();
         var signal = _services.GetRequiredService<IQuiescenceSignal>();
         var internalSource = registry.Sources.First(s => s.Name == "internal.bookmark-queue-worker");
 
-        Assert.Equal(IngressSourceState.Running, internalSource.CurrentState);
+        await Assert.That(internalSource.CurrentState).IsEqualTo(IngressSourceState.Running);
 
         await signal.PauseAsync(null, null, CancellationToken.None);
 
-        Assert.Equal(IngressSourceState.Paused, internalSource.CurrentState);
+        await Assert.That(internalSource.CurrentState).IsEqualTo(IngressSourceState.Paused);
     }
 
     /// <summary>Captures published mediator notifications for assertion.</summary>
@@ -105,4 +109,6 @@ public class AdminPauseResumeIntegrationTests
             return Task.CompletedTask;
         }
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

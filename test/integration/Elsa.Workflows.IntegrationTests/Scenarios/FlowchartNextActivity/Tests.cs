@@ -7,23 +7,24 @@ using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity.Workflows;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Options;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.FlowchartNextActivity;
 
-public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
+public class FlowchartNextActivityTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(testOutputHelper).AddActivitiesFrom<FlowchartNextActivityTests>();
+    private readonly WorkflowTestFixture _fixture = new WorkflowTestFixture(TestContext.Current!.Output.StandardOutput).AddActivitiesFrom<FlowchartNextActivityTests>();
 
-    [Fact(DisplayName = "Flowchart only schedules next activity connected to outcome of previous activity.")]
+    [Test]
+    [DisplayName("Flowchart only schedules next activity connected to outcome of previous activity.")]
     public async Task FlowchartOnlySchedulesNextConnectedActivity()
     {
         await _fixture.RunWorkflowAsync<FlowchartWorkflow>();
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(["Line 1"], lines);
+        await Assert.That(lines).IsEquivalentTo(["Line 1"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Flowchart with backward connections and a dangling activity")]
+    [Test]
+    [DisplayName("Flowchart with backward connections and a dangling activity")]
     public async Task BackwardConnectionTest()
     {
         var workflow = new TestWorkflow(workflowBuilder =>
@@ -104,14 +105,15 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
 
         var result = await _fixture.RunWorkflowAsync(workflow);
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[]
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+        await Assert.That(lines).IsEquivalentTo(new[]
         {
             "A", "B", "D", "E", "A", "B", "E", "E", "F"
-        }, lines);
+        }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Flowchart with an invalid backward connection (counter-based mode only)")]
+    [Test]
+    [DisplayName("Flowchart with an invalid backward connection (counter-based mode only)")]
     public async Task InvalidBackwardConnectionTest()
     {
         // This test is only valid for counter-based mode
@@ -169,19 +171,20 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
         var options = new RunWorkflowOptions().WithCounterBasedFlowchart();
         var result = await _fixture.RunWorkflowAsync(workflow, options);
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
-        Assert.Single(result.WorkflowState.Incidents);
-        Assert.Equal("Invalid backward connection: Every path from the source ('WriteLineE') must go through the target ('WriteLineC') when tracing back to the start.", result.WorkflowState.Incidents.First().Message);
-        Assert.Equal(new[]
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
+        await Assert.That(result.WorkflowState.Incidents).HasSingleItem();
+        await Assert.That(result.WorkflowState.Incidents.First().Message).IsEqualTo("Invalid backward connection: Every path from the source ('WriteLineE') must go through the target ('WriteLineC') when tracing back to the start.");
+        await Assert.That(lines).IsEquivalentTo(new[]
         {
             "A", "B", "C", "D", "E"
-        }, lines);
+        }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory(DisplayName = "Flowchart with a Join activity executed multiple times")]
-    [InlineData(FlowJoinMode.WaitAll)]
-    [InlineData(FlowJoinMode.WaitAllActive)]
-    [InlineData(FlowJoinMode.WaitAny)]
+    [Test]
+    [DisplayName("Flowchart with a Join activity executed multiple times: $joinMode")]
+    [Arguments(FlowJoinMode.WaitAll)]
+    [Arguments(FlowJoinMode.WaitAllActive)]
+    [Arguments(FlowJoinMode.WaitAny)]
     public async Task JoinLoopTest(FlowJoinMode joinMode)
     {
         var workflow = new TestWorkflow(workflowBuilder =>
@@ -249,17 +252,18 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
 
         var result = await _fixture.RunWorkflowAsync(workflow);
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[]
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+        await Assert.That(lines).IsEquivalentTo(new[]
         {
             "A", "B", "C", "D", "A", "B", "C", "D", "A", "B", "C", "D"
-        }, lines);
+        }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory(DisplayName = "Flowchart with a Join activity executed multiple times, bug 6479")]
-    [InlineData(FlowJoinMode.WaitAll)]
-    [InlineData(FlowJoinMode.WaitAllActive)]
-    [InlineData(FlowJoinMode.WaitAny)]
+    [Test]
+    [DisplayName("Flowchart with a Join activity executed multiple times, bug 6479: $joinMode")]
+    [Arguments(FlowJoinMode.WaitAll)]
+    [Arguments(FlowJoinMode.WaitAllActive)]
+    [Arguments(FlowJoinMode.WaitAny)]
     public async Task JoinLoopBug6479Test(FlowJoinMode joinMode)
     {
         var workflow = new TestWorkflow(workflowBuilder =>
@@ -320,38 +324,15 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
 
         var result = await _fixture.RunWorkflowAsync(workflow);
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(new[]
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+        await Assert.That(lines).IsEquivalentTo(new[]
         {
             "A", "A", "A", "B"
-        }, lines);
+        }, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Theory(DisplayName = "Flowchart Join behaves correctly (counter-based mode)")]
-    [InlineData(false, FlowJoinMode.WaitAll, new[]
-    {
-        "A", "B", "C", "D", "F"
-    })] // "E" is not scheduled because join has an unfollowed inbound connection
-    [InlineData(false, FlowJoinMode.WaitAllActive, new[]
-    {
-        "A", "B", "C", "D", "E", "F"
-    })] // "E" gets scheduled by join with an unfollowed inbound connection
-    [InlineData(false, FlowJoinMode.WaitAny, new[]
-    {
-        "A", "B", "C", "D", "E", "F"
-    })] // "E" only scheduled once
-    [InlineData(true, FlowJoinMode.WaitAll, new[]
-    {
-        "A", "B", "C", "E", "F"
-    })] // all Join inbound connections followed, "E" gets scheduled
-    [InlineData(true, FlowJoinMode.WaitAllActive, new[]
-    {
-        "A", "B", "C", "E", "F"
-    })] // all Join inbound connections followed, "E" gets scheduled
-    [InlineData(true, FlowJoinMode.WaitAny, new[]
-    {
-        "A", "B", "C", "E", "F"
-    })] // "E" only scheduled once
+    [Test]
+    [MethodDataSource(nameof(CounterBasedJoinCases))]
     //           Start
     //          /  |  \
     //         /   |   \
@@ -446,7 +427,31 @@ public class FlowchartNextActivityTests(ITestOutputHelper testOutputHelper)
         var options = new RunWorkflowOptions().WithCounterBasedFlowchart();
         var result = await _fixture.RunWorkflowAsync(workflow, options);
         var lines = _fixture.CapturingTextWriter.Lines.ToList();
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
-        Assert.Equal(expectedLines, lines);
+        await Assert.That(result.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
+        await Assert.That(lines).IsEquivalentTo(expectedLines, TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
+
+    public static IEnumerable<TestDataRow<Func<(bool DecisionResult, FlowJoinMode JoinMode, string[] ExpectedLines)>>> CounterBasedJoinCases()
+    {
+        yield return new(
+            static () => (false, FlowJoinMode.WaitAll, ["A", "B", "C", "D", "F"]),
+            DisplayName: "Flowchart Join behaves correctly (counter-based mode): decisionResult=False, joinMode=WaitAll");
+        yield return new(
+            static () => (false, FlowJoinMode.WaitAllActive, ["A", "B", "C", "D", "E", "F"]),
+            DisplayName: "Flowchart Join behaves correctly (counter-based mode): decisionResult=False, joinMode=WaitAllActive");
+        yield return new(
+            static () => (false, FlowJoinMode.WaitAny, ["A", "B", "C", "D", "E", "F"]),
+            DisplayName: "Flowchart Join behaves correctly (counter-based mode): decisionResult=False, joinMode=WaitAny");
+        yield return new(
+            static () => (true, FlowJoinMode.WaitAll, ["A", "B", "C", "E", "F"]),
+            DisplayName: "Flowchart Join behaves correctly (counter-based mode): decisionResult=True, joinMode=WaitAll");
+        yield return new(
+            static () => (true, FlowJoinMode.WaitAllActive, ["A", "B", "C", "E", "F"]),
+            DisplayName: "Flowchart Join behaves correctly (counter-based mode): decisionResult=True, joinMode=WaitAllActive");
+        yield return new(
+            static () => (true, FlowJoinMode.WaitAny, ["A", "B", "C", "E", "F"]),
+            DisplayName: "Flowchart Join behaves correctly (counter-based mode): decisionResult=True, joinMode=WaitAny");
+    }
+
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
 }

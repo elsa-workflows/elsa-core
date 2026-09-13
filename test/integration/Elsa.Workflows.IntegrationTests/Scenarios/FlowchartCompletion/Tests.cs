@@ -1,28 +1,28 @@
 ﻿using Elsa.Testing.Shared;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.FlowchartCompletion;
 
 /// <summary>
 /// Tests for the flowchart completion feature using various workflow setups.
 /// </summary>
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
 
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper).WithCapturingTextWriter(_capturingTextWriter).Build();
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).WithCapturingTextWriter(_capturingTextWriter).Build();
     }
 
-    [Theory(DisplayName = "Workflows should complete successfully.")]
-    [InlineData("workflow1.json")]
-    [InlineData("workflow2.json")]
-    [InlineData("workflow3.json")]
-    [InlineData("workflow4.json")]
-    [InlineData("workflow5.json")]
-    [InlineData("workflow6.json")]
+    [Test]
+    [DisplayName("Workflows should complete successfully: $workflowFileName")]
+    [Arguments("workflow1.json")]
+    [Arguments("workflow2.json")]
+    [Arguments("workflow3.json")]
+    [Arguments("workflow4.json")]
+    [Arguments("workflow5.json")]
+    [Arguments("workflow6.json")]
     public async Task Test1(string workflowFileName)
     {
         // Populate registries.
@@ -36,6 +36,8 @@ public class Tests
         var workflowState = await _services.RunWorkflowUntilEndAsync(workflowDefinition.DefinitionId);
         
         // Assert that the workflow has completed.
-        Assert.Equal(WorkflowStatus.Finished, workflowState.Status);
+        await Assert.That(workflowState.Status).IsEqualTo(WorkflowStatus.Finished);
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

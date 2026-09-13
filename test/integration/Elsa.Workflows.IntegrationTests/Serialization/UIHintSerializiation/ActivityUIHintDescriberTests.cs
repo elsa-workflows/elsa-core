@@ -3,11 +3,10 @@ using Elsa.Testing.Shared;
 using Elsa.Workflows.UIHints;
 using Elsa.Workflows.UIHints.Dropdown;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Serialization.UIHintSerializiation;
 
-public class Tests
+public class Tests : IAsyncDisposable
 {
     private readonly CapturingTextWriter _capturingTextWriter = new();
     private readonly IServiceProvider _services;
@@ -15,9 +14,9 @@ public class Tests
     /// <summary>
     /// Initializes a new instance of the <see cref="MigrationTests"/> class.
     /// </summary>
-    public Tests(ITestOutputHelper testOutputHelper)
+    public Tests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .WithCapturingTextWriter(_capturingTextWriter)
             .ConfigureElsa(elsa =>
             {
@@ -26,7 +25,8 @@ public class Tests
             .Build();
     }
 
-    [Fact(DisplayName = "Enum input types get a dropdown UIHint by default")]
+    [Test]
+    [DisplayName("Enum input types get a dropdown UIHint by default")]
     public async Task Test1()
     {
         var activityDescriber = _services.GetRequiredService<IActivityDescriber>();
@@ -34,10 +34,11 @@ public class Tests
         var description = await activityDescriber.DescribeActivityAsync(typeof(TestActivity));
 
         var inputDescription = description.Inputs.First();
-        Assert.Equal(InputUIHints.DropDown, inputDescription.UIHint);
+        await Assert.That(inputDescription.UIHint).IsEqualTo(InputUIHints.DropDown);
     }
 
-    [Fact(DisplayName = "Enum input types get a dropdown UIHint by default")]
+    [Test]
+    [DisplayName("Enum input types get a dropdown UIHint by default")]
     public async Task Test2()
     {
         var activityDescriber = _services.GetRequiredService<IActivityDescriber>();
@@ -45,14 +46,20 @@ public class Tests
         var description = await activityDescriber.DescribeActivityAsync(typeof(TestActivity));
 
         var inputDescription = description.Inputs.First();
-        Assert.True(inputDescription.UISpecifications!.ContainsKey(InputUIHints.DropDown));
-        Assert.True(inputDescription.UISpecifications[InputUIHints.DropDown] is DropDownProps);
+        await Assert.That(inputDescription.UISpecifications!.ContainsKey(InputUIHints.DropDown)).IsTrue();
+        await Assert.That(inputDescription.UISpecifications[InputUIHints.DropDown] is DropDownProps).IsTrue();
         var dropDownProperties = (DropDownProps) inputDescription.UISpecifications[InputUIHints.DropDown];
 
-        Assert.Collection(dropDownProperties.SelectList!.Items,
-            item => { Assert.Equal("OptionsAreNice", item.Text); Assert.Equal("OptionsAreNice", item.Value); },
-            item => { Assert.Equal("ToHave", item.Text); Assert.Equal("ToHave", item.Value); },
-            item => { Assert.Equal("IfYouCanChooseThem", item.Text); Assert.Equal("IfYouCanChooseThem", item.Value); });
+        var items = dropDownProperties.SelectList!.Items.ToList();
+        await Assert.That(items.Count).IsEqualTo(3);
+        await Assert.That(items[0].Text).IsEqualTo("OptionsAreNice");
+        await Assert.That(items[0].Value).IsEqualTo("OptionsAreNice");
+        await Assert.That(items[1].Text).IsEqualTo("ToHave");
+        await Assert.That(items[1].Value).IsEqualTo("ToHave");
+        await Assert.That(items[2].Text).IsEqualTo("IfYouCanChooseThem");
+        await Assert.That(items[2].Value).IsEqualTo("IfYouCanChooseThem");
     }
 
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

@@ -1,15 +1,15 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Core;
 
-public class ScheduleActivityExecutionContextTests(ITestOutputHelper testOutputHelper)
+public class ScheduleActivityExecutionContextTests : IAsyncDisposable
 {
-    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(testOutputHelper).Build();
+    private readonly IServiceProvider _serviceProvider = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
 
-    [Fact(DisplayName = "Scheduling an activity that is not part of the workflow should throw an exception")]
+    [Test]
+    [DisplayName("Scheduling an activity that is not part of the workflow should throw an exception")]
     public async Task ScheduleActivityAsync_WithActivityNotPartOfWorkflow_ShouldThrowException()
     {
         await _serviceProvider.PopulateRegistriesAsync();
@@ -24,6 +24,8 @@ public class ScheduleActivityExecutionContextTests(ITestOutputHelper testOutputH
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(_serviceProvider, workflowGraph, "test", CancellationToken.None);
         var activityExecutionContext = await workflowExecutionContext.CreateActivityExecutionContextAsync(writeLineA);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => activityExecutionContext.ScheduleActivityAsync(writeLineB).AsTask());
+        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => activityExecutionContext.ScheduleActivityAsync(writeLineB).AsTask());
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_serviceProvider);
 }

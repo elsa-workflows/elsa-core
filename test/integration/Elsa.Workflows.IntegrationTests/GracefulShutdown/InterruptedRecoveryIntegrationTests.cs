@@ -6,7 +6,6 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 
@@ -15,21 +14,22 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 /// (Phase 5 / US3). The scanner runs against the real <see cref="IWorkflowInstanceStore"/> — backed by the in-memory
 /// store in this test setup — and exercises the same code path as production.
 /// </summary>
-public class InterruptedRecoveryIntegrationTests
+public class InterruptedRecoveryIntegrationTests : IAsyncDisposable
 {
     private readonly IServiceProvider _services;
 
-    public InterruptedRecoveryIntegrationTests(ITestOutputHelper testOutputHelper)
+    public InterruptedRecoveryIntegrationTests()
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
             .ConfigureElsa(elsa => elsa.UseWorkflowRuntime())
             .Build();
     }
 
-    [Theory(DisplayName = "ScanAndRequeueAsync requeues 100% of Interrupted instances (SC-003)")]
-    [InlineData(1)]
-    [InlineData(10)]
-    [InlineData(100)]
+    [Test]
+    [DisplayName("ScanAndRequeueAsync requeues 100% of Interrupted instances (SC-003): $count")]
+    [Arguments(1)]
+    [Arguments(10)]
+    [Arguments(100)]
     public async Task RequeuesAllInterruptedInstances(int count)
     {
         var fakeRestarter = new RecordingRestarter();
@@ -40,11 +40,12 @@ public class InterruptedRecoveryIntegrationTests
         var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
         var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal(count, requeued);
-        Assert.Equal(count, fakeRestarter.RestartedIds.Count);
+        await Assert.That(requeued).IsEqualTo(count);
+        await Assert.That(fakeRestarter.RestartedIds.Count).IsEqualTo(count);
     }
 
-    [Fact(DisplayName = "Scan ignores instances NOT in Interrupted sub-status (T071 — filter purity)")]
+    [Test]
+    [DisplayName("Scan ignores instances NOT in Interrupted sub-status (T071 — filter purity)")]
     public async Task FilterPurity()
     {
         var fakeRestarter = new RecordingRestarter();
@@ -61,11 +62,13 @@ public class InterruptedRecoveryIntegrationTests
         var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
         var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal(3, requeued);
-        Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("interrupted-", id));
+        await Assert.That(requeued).IsEqualTo(3);
+        foreach (var id in fakeRestarter.RestartedIds)
+            await Assert.That(id).StartsWith("interrupted-", StringComparison.CurrentCulture);
     }
 
-    [Fact(DisplayName = "Scan does NOT touch IsExecuting=true instances (T069 — disjoint from RestartInterruptedWorkflowsTask)")]
+    [Test]
+    [DisplayName("Scan does NOT touch IsExecuting=true instances (T069 — disjoint from RestartInterruptedWorkflowsTask)")]
     public async Task DisjointFromTimeoutBasedRecovery()
     {
         var fakeRestarter = new RecordingRestarter();
@@ -81,12 +84,13 @@ public class InterruptedRecoveryIntegrationTests
         var scanner = ActivatorUtilities.CreateInstance<Elsa.Workflows.Runtime.Services.InterruptedRecoveryScanner>(scope.ServiceProvider, fakeRestarter);
         var requeued = await scanner.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Equal(2, requeued);
-        Assert.All(fakeRestarter.RestartedIds, id => Assert.StartsWith("graceful-", id));
+        await Assert.That(requeued).IsEqualTo(2);
+        foreach (var id in fakeRestarter.RestartedIds)
+            await Assert.That(id).StartsWith("graceful-", StringComparison.CurrentCulture);
 
         // The 'ungraceful-' instances remain in the store, untouched, available for the timeout-based task.
         var stillExecuting = await instanceStore.FindManyAsync(new WorkflowInstanceFilter { IsExecuting = true }, CancellationToken.None);
-        Assert.Equal(2, stillExecuting.Count());
+        await Assert.That(stillExecuting.Count()).IsEqualTo(2);
     }
 
     private static async Task SeedInstancesAsync(IWorkflowInstanceStore store, int count, WorkflowSubStatus subStatus, bool isExecuting, string idPrefix = "instance-")
@@ -127,4 +131,6 @@ public class InterruptedRecoveryIntegrationTests
             return Task.CompletedTask;
         }
     }
+
+    public ValueTask DisposeAsync() => TestResourceDisposal.DisposeAsync(_services);
 }

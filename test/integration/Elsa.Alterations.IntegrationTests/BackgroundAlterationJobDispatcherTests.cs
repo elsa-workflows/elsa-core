@@ -9,7 +9,7 @@ using NSubstitute;
 
 namespace Elsa.Alterations.IntegrationTests;
 
-public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
+public class BackgroundAlterationJobDispatcherTests : IAsyncDisposable
 {
     private readonly List<Func<CancellationToken, Task>> _queuedCallbacks = [];
     private readonly DefaultTenantAccessor _tenantAccessor;
@@ -39,11 +39,9 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
         _serviceProvider = services.BuildServiceProvider(validateScopes: true);
     }
 
-    public Task InitializeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => _serviceProvider.DisposeAsync();
 
-    public async Task DisposeAsync() => await _serviceProvider.DisposeAsync();
-
-    [Fact]
+    [Test]
     public async Task DispatchAsync_WhenQueuedWorkRunsAfterDispatchScopeEnds_PreservesTenant()
     {
         const string jobId = "alteration-job";
@@ -53,7 +51,7 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
         await DispatchAndRunUnderWorkerTenantAsync(jobId, dispatchingTenant, workerTenant, callback => callback(CancellationToken.None));
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_WhenRunnerThrows_StillRestoresWorkerTenant()
     {
         const string jobId = "alteration-job";
@@ -65,24 +63,24 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
             jobId,
             dispatchingTenant,
             workerTenant,
-            callback => Assert.ThrowsAsync<InvalidOperationException>(() => callback(CancellationToken.None)));
+            async callback => await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => callback(CancellationToken.None)));
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_WhenNoTenantIsPushedAtDispatchTime_UsesDefaultTenant()
     {
         const string jobId = "alteration-job";
 
         await DispatchAsync(jobId, tenant: null);
 
-        var callback = Assert.Single(_queuedCallbacks);
+        var callback = await Assert.That(_queuedCallbacks).HasSingleItem();
         await callback(CancellationToken.None);
 
         // With no tenant pushed at dispatch time, DefaultTenantScopeFactory.CreateScope(null) pushes a null
         // tenant onto the accessor. DefaultTenantAccessor.TenantId then falls back to Tenant.DefaultTenantId
         // (an empty string) rather than null, so that is the value the runner observes.
-        Assert.Equal(Tenant.DefaultTenantId, _runner.GetObservedTenantId(jobId));
-        Assert.Null(_tenantAccessor.Tenant);
+        await Assert.That(_runner.GetObservedTenantId(jobId)).IsEqualTo(Tenant.DefaultTenantId);
+        await Assert.That(_tenantAccessor.Tenant).IsNull();
     }
 
     /// <summary>
@@ -100,18 +98,18 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
     {
         await DispatchAsync(jobId, dispatchingTenant);
 
-        var callback = Assert.Single(_queuedCallbacks);
+        var callback = await Assert.That(_queuedCallbacks).HasSingleItem();
         using (_tenantAccessor.PushContext(workerTenant))
         {
             await runCallbackAsync(callback);
-            Assert.Same(workerTenant, _tenantAccessor.Tenant);
+            await Assert.That(_tenantAccessor.Tenant).IsSameReferenceAs(workerTenant);
         }
 
-        Assert.Equal(dispatchingTenant.Id, _runner.GetObservedTenantId(jobId));
-        Assert.Null(_tenantAccessor.Tenant);
+        await Assert.That(_runner.GetObservedTenantId(jobId)).IsEqualTo(dispatchingTenant.Id);
+        await Assert.That(_tenantAccessor.Tenant).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task DispatchAsync_WhenConcurrentJobsBelongToDifferentTenants_TenantsAreNotExchanged()
     {
         const string jobAId = "alteration-job-a";
@@ -122,14 +120,14 @@ public class BackgroundAlterationJobDispatcherTests : IAsyncLifetime
         await DispatchAsync(jobAId, tenantA);
         await DispatchAsync(jobBId, tenantB);
 
-        Assert.Equal(2, _queuedCallbacks.Count);
+        await Assert.That(_queuedCallbacks.Count).IsEqualTo(2);
         var callbackA = _queuedCallbacks[0];
         var callbackB = _queuedCallbacks[1];
 
         await Task.WhenAll(callbackA(CancellationToken.None), callbackB(CancellationToken.None));
 
-        Assert.Equal(tenantA.Id, _runner.GetObservedTenantId(jobAId));
-        Assert.Equal(tenantB.Id, _runner.GetObservedTenantId(jobBId));
+        await Assert.That(_runner.GetObservedTenantId(jobAId)).IsEqualTo(tenantA.Id);
+        await Assert.That(_runner.GetObservedTenantId(jobBId)).IsEqualTo(tenantB.Id);
     }
 
     private async Task DispatchAsync(string jobId, Tenant? tenant)
