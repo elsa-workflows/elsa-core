@@ -16,7 +16,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIRuntimeGroundingToolTests
 {
-    [Fact(DisplayName = "Runtime grounding tools return redacted incident evidence")]
+    [Test]
+    [DisplayName("Runtime grounding tools return redacted incident evidence")]
     public async Task RuntimeGroundingToolsReturnRedactedIncidentEvidence()
     {
         var instance = new WorkflowInstance
@@ -51,10 +52,10 @@ public class AIRuntimeGroundingToolTests
             Arguments = new JsonObject { ["definitionId"] = "workflow-1" }
         });
 
-        Assert.Equal(1, result.Data["returned"]!.GetValue<int>());
+        await Assert.That(result.Data["returned"]!.GetValue<int>()).IsEqualTo(1);
         var incident = result.Data["items"]!.AsArray()[0]!.AsObject();
-        Assert.Equal("instance-1", incident["workflowInstanceId"]!.GetValue<string>());
-        Assert.DoesNotContain("secret", result.Data.ToJsonString(), StringComparison.OrdinalIgnoreCase);
+        await Assert.That(incident["workflowInstanceId"]!.GetValue<string>()).IsEqualTo("instance-1");
+        await Assert.That(result.Data.ToJsonString()).DoesNotContain("secret", StringComparison.OrdinalIgnoreCase);
     }
 
     private class TestWorkflowInstanceStore(params WorkflowInstance[] instances) : IWorkflowInstanceStore

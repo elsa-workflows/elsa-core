@@ -10,126 +10,137 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AICapabilitiesEndpointTests
 {
-    [Fact(DisplayName = "Capabilities endpoint advertises Weaver MVP capabilities")]
+    [Test]
+    [DisplayName("Capabilities endpoint advertises Weaver MVP capabilities")]
     public async Task CapabilitiesEndpointAdvertisesWeaverMvpCapabilities()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions { ConversationPersistenceEnabled = true }),
             [new TestAIProvider()],
             [new TestConversationStore()],
             [new TestProposalStore()],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.True(response.Streaming);
-        Assert.True(response.ConversationPersistence);
-        Assert.True(response.ProposalReview);
-        Assert.Contains("WorkflowDefinition", response.SupportedAttachmentKinds);
-        Assert.Contains("WorkflowInstance", response.SupportedAttachmentKinds);
-        Assert.Contains("Activity", response.SupportedAttachmentKinds);
-        Assert.Contains("DiagnosticsScope", response.SupportedAttachmentKinds);
-        Assert.Contains("TimeRange", response.SupportedAttachmentKinds);
-        Assert.Contains(response.Grounding, x => x.Family == "activities");
-        Assert.Contains(response.Grounding, x => x.Family == "workflows");
-        Assert.Contains(response.Grounding, x => x.Family == "proposals");
-        Assert.Contains(response.Grounding, x => x.Family == "runtime");
+        await Assert.That(response.Streaming).IsTrue();
+        await Assert.That(response.ConversationPersistence).IsTrue();
+        await Assert.That(response.ProposalReview).IsTrue();
+        await Assert.That(response.SupportedAttachmentKinds).Contains("WorkflowDefinition");
+        await Assert.That(response.SupportedAttachmentKinds).Contains("WorkflowInstance");
+        await Assert.That(response.SupportedAttachmentKinds).Contains("Activity");
+        await Assert.That(response.SupportedAttachmentKinds).Contains("DiagnosticsScope");
+        await Assert.That(response.SupportedAttachmentKinds).Contains("TimeRange");
+        await Assert.That(response.Grounding).Contains(x => x.Family == "activities");
+        await Assert.That(response.Grounding).Contains(x => x.Family == "workflows");
+        await Assert.That(response.Grounding).Contains(x => x.Family == "proposals");
+        await Assert.That(response.Grounding).Contains(x => x.Family == "runtime");
     }
 
-    [Fact(DisplayName = "Capabilities endpoint hides unavailable capabilities")]
+    [Test]
+    [DisplayName("Capabilities endpoint hides unavailable capabilities")]
     public async Task CapabilitiesEndpointHidesUnavailableCapabilities()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions { StreamingEnabled = false, ConversationPersistenceEnabled = true }),
             [new TestAIProvider()],
             [new TestConversationStore()],
             [],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.False(response.Streaming);
-        Assert.True(response.ConversationPersistence);
-        Assert.False(response.ProposalReview);
+        await Assert.That(response.Streaming).IsFalse();
+        await Assert.That(response.ConversationPersistence).IsTrue();
+        await Assert.That(response.ProposalReview).IsFalse();
     }
 
-    [Fact(DisplayName = "Capabilities endpoint hides streaming when multiple providers need a default")]
+    [Test]
+    [DisplayName("Capabilities endpoint hides streaming when multiple providers need a default")]
     public async Task CapabilitiesEndpointHidesStreamingWhenMultipleProvidersNeedADefault()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions()),
             [new TestAIProvider("provider-1"), new TestAIProvider("provider-2")],
             [new TestConversationStore()],
             [],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.False(response.Streaming);
+        await Assert.That(response.Streaming).IsFalse();
     }
 
-    [Fact(DisplayName = "Capabilities endpoint advertises streaming when configured default provider resolves")]
+    [Test]
+    [DisplayName("Capabilities endpoint advertises streaming when configured default provider resolves")]
     public async Task CapabilitiesEndpointAdvertisesStreamingWhenConfiguredDefaultProviderResolves()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions { DefaultProviderName = "provider-2" }),
             [new TestAIProvider("provider-1"), new TestAIProvider("provider-2")],
             [new TestConversationStore()],
             [],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.True(response.Streaming);
+        await Assert.That(response.Streaming).IsTrue();
     }
 
-    [Fact(DisplayName = "Capabilities endpoint advertises registered durable conversation persistence")]
+    [Test]
+    [DisplayName("Capabilities endpoint advertises registered durable conversation persistence")]
     public async Task CapabilitiesEndpointAdvertisesRegisteredDurableConversationPersistence()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions()),
             [new TestAIProvider()],
             [new TestConversationStore()],
             [],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.True(response.ConversationPersistence);
+        await Assert.That(response.ConversationPersistence).IsTrue();
     }
 
-    [Fact(DisplayName = "Capabilities endpoint does not advertise in-memory conversation persistence")]
+    [Test]
+    [DisplayName("Capabilities endpoint does not advertise in-memory conversation persistence")]
     public async Task CapabilitiesEndpointDoesNotAdvertiseInMemoryConversationPersistence()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions { ConversationPersistenceEnabled = true }),
             [new TestAIProvider()],
             [new InMemoryAIConversationStore()],
             [new TestProposalStore()],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.False(response.ConversationPersistence);
+        await Assert.That(response.ConversationPersistence).IsFalse();
     }
 
-    [Fact(DisplayName = "Capabilities endpoint does not advertise disabled conversation persistence")]
+    [Test]
+    [DisplayName("Capabilities endpoint does not advertise disabled conversation persistence")]
     public async Task CapabilitiesEndpointDoesNotAdvertiseDisabledConversationPersistence()
     {
+        using var scopeProvider = new ServiceCollection().BuildServiceProvider();
         var endpoint = new Endpoint(
             MicrosoftOptions.Create(new AIHostOptions { ConversationPersistenceEnabled = false }),
             [new TestAIProvider()],
             [new TestConversationStore()],
             [new TestProposalStore()],
-            CreateScopeFactory());
+            scopeProvider.GetRequiredService<IServiceScopeFactory>());
 
         var response = await endpoint.ExecuteAsync(CancellationToken.None);
 
-        Assert.False(response.ConversationPersistence);
+        await Assert.That(response.ConversationPersistence).IsFalse();
     }
-
-    private static IServiceScopeFactory CreateScopeFactory() =>
-        new ServiceCollection().BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
 
     private class TestAIProvider(string name = "test") : IAIProvider
     {

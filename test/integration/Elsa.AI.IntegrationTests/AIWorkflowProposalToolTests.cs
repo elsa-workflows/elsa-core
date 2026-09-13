@@ -9,7 +9,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIWorkflowProposalToolTests
 {
-    [Fact(DisplayName = "Proposal tool writes reviewable proposal only")]
+    [Test]
+    [DisplayName("Proposal tool writes reviewable proposal only")]
     public async Task ProposalToolWritesReviewableProposalOnly()
     {
         var proposalStore = new CapturingProposalStore();
@@ -38,11 +39,11 @@ public class AIWorkflowProposalToolTests
             }
         });
 
-        Assert.Equal(AIToolInvocationStatus.Completed, result.Status);
-        var proposal = Assert.Single(proposalStore.Proposals);
-        Assert.Equal(AIProposalKind.WorkflowCreate, proposal.Kind);
-        Assert.Equal("conversation-1", proposal.ConversationId);
-        Assert.NotEqual(AIProposalStatus.Applied, proposal.Status);
+        await Assert.That(result.Status).IsEqualTo(AIToolInvocationStatus.Completed);
+        var proposal = (await Assert.That(proposalStore.Proposals).HasSingleItem())!;
+        await Assert.That(proposal.Kind).IsEqualTo(AIProposalKind.WorkflowCreate);
+        await Assert.That(proposal.ConversationId).IsEqualTo("conversation-1");
+        await Assert.That(proposal.Status).IsNotEqualTo(AIProposalStatus.Applied);
     }
 
     private class CapturingProposalStore : IAIProposalStore

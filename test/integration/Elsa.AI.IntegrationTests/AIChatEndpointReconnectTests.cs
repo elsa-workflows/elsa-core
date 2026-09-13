@@ -12,7 +12,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIChatEndpointReconnectTests
 {
-    [Fact(DisplayName = "Chat endpoint marks the actual reconnect conversation as connected")]
+    [Test]
+    [DisplayName("Chat endpoint marks the actual reconnect conversation as connected")]
     public async Task ChatEndpointMarksTheActualReconnectConversationAsConnected()
     {
         var sessionManager = new AIStreamSessionManager();
@@ -37,11 +38,12 @@ public class AIChatEndpointReconnectTests
             Message = "Reconnect"
         }, CancellationToken.None);
 
-        Assert.True(sessionManager.CanReconnect("foreign-conversation"));
-        Assert.False(sessionManager.CanReconnect("actual-conversation"));
+        await Assert.That(sessionManager.CanReconnect("foreign-conversation")).IsTrue();
+        await Assert.That(sessionManager.CanReconnect("actual-conversation")).IsFalse();
     }
 
-    [Fact(DisplayName = "Chat endpoint releases reconnect reservation when no stream starts")]
+    [Test]
+    [DisplayName("Chat endpoint releases reconnect reservation when no stream starts")]
     public async Task ChatEndpointReleasesReconnectReservationWhenNoStreamStarts()
     {
         var sessionManager = new AIStreamSessionManager();
@@ -65,10 +67,11 @@ public class AIChatEndpointReconnectTests
             Message = "Reconnect"
         }, CancellationToken.None);
 
-        Assert.True(sessionManager.CanReconnect("conversation-1"));
+        await Assert.That(sessionManager.CanReconnect("conversation-1")).IsTrue();
     }
 
-    [Fact(DisplayName = "Chat endpoint resolves tenant from tenant accessor")]
+    [Test]
+    [DisplayName("Chat endpoint resolves tenant from tenant accessor")]
     public async Task ChatEndpointResolvesTenantFromTenantAccessor()
     {
         var tenantAccessor = new DefaultTenantAccessor();
@@ -97,10 +100,11 @@ public class AIChatEndpointReconnectTests
             Message = "Reconnect"
         }, CancellationToken.None);
 
-        Assert.Equal("tenant-1", orchestrator.Request!.TenantId);
+        await Assert.That(orchestrator.Request!.TenantId).IsEqualTo("tenant-1");
     }
 
-    [Fact(DisplayName = "Chat endpoint clears unknown requested agents")]
+    [Test]
+    [DisplayName("Chat endpoint clears unknown requested agents")]
     public async Task ChatEndpointClearsUnknownRequestedAgents()
     {
         var orchestrator = new CapturingRequestOrchestrator();
@@ -124,10 +128,11 @@ public class AIChatEndpointReconnectTests
             Message = "Use a privileged tool"
         }, CancellationToken.None);
 
-        Assert.Null(orchestrator.Request!.Agent);
+        await Assert.That(orchestrator.Request!.Agent).IsNull();
     }
 
-    [Fact(DisplayName = "Chat endpoint forwards known requested agents")]
+    [Test]
+    [DisplayName("Chat endpoint forwards known requested agents")]
     public async Task ChatEndpointForwardsKnownRequestedAgents()
     {
         var orchestrator = new CapturingRequestOrchestrator();
@@ -151,10 +156,11 @@ public class AIChatEndpointReconnectTests
             Message = "Use authoring tools"
         }, CancellationToken.None);
 
-        Assert.Equal("workflow-author", orchestrator.Request!.Agent);
+        await Assert.That(orchestrator.Request!.Agent).IsEqualTo("workflow-author");
     }
 
-    [Fact(DisplayName = "Chat endpoint clears client supplied provider names")]
+    [Test]
+    [DisplayName("Chat endpoint clears client supplied provider names")]
     public async Task ChatEndpointClearsClientSuppliedProviderNames()
     {
         var orchestrator = new CapturingRequestOrchestrator();
@@ -178,10 +184,11 @@ public class AIChatEndpointReconnectTests
             Message = "Use a specific provider"
         }, CancellationToken.None);
 
-        Assert.Null(orchestrator.Request!.ProviderName);
+        await Assert.That(orchestrator.Request!.ProviderName).IsNull();
     }
 
-    [Fact(DisplayName = "Chat endpoint normalizes explicit null request values")]
+    [Test]
+    [DisplayName("Chat endpoint normalizes explicit null request values")]
     public async Task ChatEndpointNormalizesExplicitNullRequestValues()
     {
         var orchestrator = new CapturingRequestOrchestrator();
@@ -205,11 +212,12 @@ public class AIChatEndpointReconnectTests
             Attachments = null!
         }, CancellationToken.None);
 
-        Assert.Equal("", orchestrator.Request!.Message);
-        Assert.Empty(orchestrator.Request.Attachments);
+        await Assert.That(orchestrator.Request!.Message).IsEqualTo("");
+        await Assert.That(orchestrator.Request.Attachments).IsEmpty();
     }
 
-    [Fact(DisplayName = "Chat endpoint generates conversation ID for blank values")]
+    [Test]
+    [DisplayName("Chat endpoint generates conversation ID for blank values")]
     public async Task ChatEndpointGeneratesConversationIdForBlankValues()
     {
         var orchestrator = new CapturingRequestOrchestrator();
@@ -232,8 +240,8 @@ public class AIChatEndpointReconnectTests
             Message = "Start a conversation"
         }, CancellationToken.None);
 
-        Assert.False(string.IsNullOrWhiteSpace(orchestrator.Request!.ConversationId));
-        Assert.NotEqual(" ", orchestrator.Request.ConversationId);
+        await Assert.That(string.IsNullOrWhiteSpace(orchestrator.Request!.ConversationId)).IsFalse();
+        await Assert.That(orchestrator.Request.ConversationId).IsNotEqualTo(" ");
     }
 
     private static void SetHttpContext(ChatEndpoint endpoint, HttpContext httpContext)

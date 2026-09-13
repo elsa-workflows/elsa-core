@@ -11,7 +11,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIActivityGroundingToolTests
 {
-    [Fact(DisplayName = "Activity grounding tools search and return installed descriptors")]
+    [Test]
+    [DisplayName("Activity grounding tools search and return installed descriptors")]
     public async Task ActivityGroundingToolsSearchAndReturnInstalledDescriptors()
     {
         var services = new ServiceCollection();
@@ -39,11 +40,11 @@ public class AIActivityGroundingToolTests
             Arguments = new JsonObject { ["query"] = "http", ["trigger"] = true }
         });
 
-        Assert.Equal(AIToolInvocationStatus.Completed, result.Status);
-        Assert.Equal(1, result.Data["returned"]!.GetValue<int>());
+        await Assert.That(result.Status).IsEqualTo(AIToolInvocationStatus.Completed);
+        await Assert.That(result.Data["returned"]!.GetValue<int>()).IsEqualTo(1);
         var item = result.Data["items"]!.AsArray()[0]!.AsObject();
-        Assert.Equal("Elsa.Http.HttpEndpoint", item["type"]!.GetValue<string>());
-        Assert.True(item["isTrigger"]!.GetValue<bool>());
+        await Assert.That(item["type"]!.GetValue<string>()).IsEqualTo("Elsa.Http.HttpEndpoint");
+        await Assert.That(item["isTrigger"]!.GetValue<bool>()).IsTrue();
     }
 
     private class TestActivityRegistry(params ActivityDescriptor[] descriptors) : IActivityRegistry

@@ -15,7 +15,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIToolsEndpointTests
 {
-    [Fact(DisplayName = "Tools endpoint returns enabled registry results")]
+    [Test]
+    [DisplayName("Tools endpoint returns enabled registry results")]
     public async Task ToolsEndpointReturnsEnabledRegistryResults()
     {
         var services = new ServiceCollection();
@@ -25,12 +26,13 @@ public class AIToolsEndpointTests
 
         var tools = await endpoint.ExecuteAsync(new Request(), CancellationToken.None);
 
-        Assert.Contains(tools, x => x.Name == "activities.search");
-        Assert.Contains(tools, x => x.Name == "workflows.search");
-        Assert.Contains(tools, x => x.Name == "instances.search");
+        await Assert.That(tools).Contains(x => x.Name == "activities.search");
+        await Assert.That(tools).Contains(x => x.Name == "workflows.search");
+        await Assert.That(tools).Contains(x => x.Name == "instances.search");
     }
 
-    [Fact(DisplayName = "Tools endpoint forwards agent scope to registry")]
+    [Test]
+    [DisplayName("Tools endpoint forwards agent scope to registry")]
     public async Task ToolsEndpointForwardsAgentScopeToRegistry()
     {
         var services = new ServiceCollection();
@@ -43,27 +45,29 @@ public class AIToolsEndpointTests
 
         var tools = await endpoint.ExecuteAsync(new Request { Agent = "workflow-author" }, CancellationToken.None);
 
-        Assert.Contains(tools, tool => tool.Name == "workflow.author");
-        Assert.DoesNotContain(tools, tool => tool.Name == "workflow.editor");
+        await Assert.That(tools).Contains(tool => tool.Name == "workflow.author");
+        await Assert.That(tools).DoesNotContain(tool => tool.Name == "workflow.editor");
     }
 
-    [Fact(DisplayName = "Tool registry caches definitions across list calls")]
+    [Test]
+    [DisplayName("Tool registry caches definitions across list calls")]
     public async Task ToolRegistryCachesDefinitionsAcrossListCalls()
     {
-        CountingTool.Reset();
+        var constructionCounter = new ConstructionCounter();
         var services = new ServiceCollection();
         services.AddAIHostServices();
-        services.AddTransient<IAITool>(_ => CountingTool.Create());
+        services.AddTransient<IAITool>(_ => new CountingTool(constructionCounter));
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IAIToolRegistry>();
 
         await registry.ListAsync(new AIToolQuery(), CancellationToken.None);
         await registry.ListAsync(new AIToolQuery(), CancellationToken.None);
 
-        Assert.Equal(1, CountingTool.ConstructorCount);
+        await Assert.That(constructionCounter.Count).IsEqualTo(1);
     }
 
-    [Fact(DisplayName = "Tools endpoint lists built-in grounding tools")]
+    [Test]
+    [DisplayName("Tools endpoint lists built-in grounding tools")]
     public async Task ToolsEndpointListsBuiltInGroundingTools()
     {
         var services = new ServiceCollection();
@@ -73,11 +77,11 @@ public class AIToolsEndpointTests
 
         var tools = await endpoint.ExecuteAsync(new Request(), CancellationToken.None);
 
-        Assert.Contains(tools, tool => tool.Name == "activities.getDescriptor");
-        Assert.Contains(tools, tool => tool.Name == "workflows.getDefinitionGraph");
-        Assert.Contains(tools, tool => tool.Name == "workflows.validateDraft");
-        Assert.Contains(tools, tool => tool.Name == "incidents.search");
-        Assert.Contains(tools, tool => tool.Name == "workflows.proposeCreate" && !tool.IsEnabled);
+        await Assert.That(tools).Contains(tool => tool.Name == "activities.getDescriptor");
+        await Assert.That(tools).Contains(tool => tool.Name == "workflows.getDefinitionGraph");
+        await Assert.That(tools).Contains(tool => tool.Name == "workflows.validateDraft");
+        await Assert.That(tools).Contains(tool => tool.Name == "incidents.search");
+        await Assert.That(tools).Contains(tool => tool.Name == "workflows.proposeCreate" && !tool.IsEnabled);
     }
 
     private class WorkflowAuthorTool : IAITool
@@ -116,21 +120,18 @@ public class AIToolsEndpointTests
         }
     }
 
+    private sealed class ConstructionCounter
+    {
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
+
+        public void Increment() => Interlocked.Increment(ref _count);
+    }
+
     private class CountingTool : IAITool
     {
-        private static int _constructorCount;
-
-        public static int ConstructorCount => _constructorCount;
-
-        private CountingTool()
-        {
-        }
-
-        public static CountingTool Create()
-        {
-            Interlocked.Increment(ref _constructorCount);
-            return new CountingTool();
-        }
+        public CountingTool(ConstructionCounter counter) => counter.Increment();
 
         public AIToolDefinition Definition { get; } = new()
         {
@@ -143,11 +144,6 @@ public class AIToolsEndpointTests
 
         public void Dispose()
         {
-        }
-
-        public static void Reset()
-        {
-            Interlocked.Exchange(ref _constructorCount, 0);
         }
     }
 

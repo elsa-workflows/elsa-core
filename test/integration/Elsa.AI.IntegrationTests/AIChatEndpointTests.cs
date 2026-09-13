@@ -10,7 +10,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIChatEndpointTests
 {
-    [Fact(DisplayName = "Chat orchestration emits conversation and assistant events")]
+    [Test]
+    [DisplayName("Chat orchestration emits conversation and assistant events")]
     public async Task ChatOrchestrationEmitsConversationAndAssistantEvents()
     {
         var services = new ServiceCollection();
@@ -26,12 +27,13 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        Assert.Contains(events, x => x.Type == "conversation.started");
-        Assert.Contains(events, x => x.Type == "assistant.delta");
-        Assert.Contains(events, x => x.Type == "conversation.completed");
+        await Assert.That(events).Contains(x => x.Type == "conversation.started");
+        await Assert.That(events).Contains(x => x.Type == "assistant.delta");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
     }
 
-    [Fact(DisplayName = "Chat orchestration emits completion after provider sequence")]
+    [Test]
+    [DisplayName("Chat orchestration emits completion after provider sequence")]
     public async Task ChatOrchestrationEmitsCompletionAfterProviderSequence()
     {
         var services = new ServiceCollection();
@@ -48,11 +50,12 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var completion = Assert.Single(events, x => x.Type == "conversation.completed");
-        Assert.Equal(4, completion.Sequence);
+        var completion = (await Assert.That(events).HasSingleItem(x => x.Type == "conversation.completed"))!;
+        await Assert.That(completion.Sequence).IsEqualTo(4);
     }
 
-    [Fact(DisplayName = "Chat orchestration routes to requested provider")]
+    [Test]
+    [DisplayName("Chat orchestration routes to requested provider")]
     public async Task ChatOrchestrationRoutesToRequestedProvider()
     {
         var services = new ServiceCollection();
@@ -71,11 +74,12 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var delta = Assert.Single(events, x => x.Type == "assistant.delta");
-        Assert.Equal("second", delta.Data["provider"]!.GetValue<string>());
+        var delta = (await Assert.That(events).HasSingleItem(x => x.Type == "assistant.delta"))!;
+        await Assert.That(delta.Data["provider"]!.GetValue<string>()).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Chat orchestration routes an agent to its configured provider")]
+    [Test]
+    [DisplayName("Chat orchestration routes an agent to its configured provider")]
     public async Task ChatOrchestrationRoutesAgentToConfiguredProvider()
     {
         var services = new ServiceCollection();
@@ -106,11 +110,12 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var delta = Assert.Single(events, x => x.Type == "assistant.delta");
-        Assert.Equal("second", delta.Data["provider"]!.GetValue<string>());
+        var delta = (await Assert.That(events).HasSingleItem(x => x.Type == "assistant.delta"))!;
+        await Assert.That(delta.Data["provider"]!.GetValue<string>()).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Chat orchestration ignores disabled configured providers")]
+    [Test]
+    [DisplayName("Chat orchestration ignores disabled configured providers")]
     public async Task ChatOrchestrationIgnoresDisabledConfiguredProviders()
     {
         var services = new ServiceCollection();
@@ -139,11 +144,12 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var delta = Assert.Single(events, x => x.Type == "assistant.delta");
-        Assert.Equal("Weaver is ready, but no AI provider is configured.", delta.Data["content"]!.GetValue<string>());
+        var delta = (await Assert.That(events).HasSingleItem(x => x.Type == "assistant.delta"))!;
+        await Assert.That(delta.Data["content"]!.GetValue<string>()).IsEqualTo("Weaver is ready, but no AI provider is configured.");
     }
 
-    [Fact(DisplayName = "Chat orchestration passes selected provider configuration")]
+    [Test]
+    [DisplayName("Chat orchestration passes selected provider configuration")]
     public async Task ChatOrchestrationPassesSelectedProviderConfiguration()
     {
         var capturingProvider = new CapturingTurnProvider();
@@ -176,17 +182,18 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var sessionRequest = Assert.Single(capturingProvider.SessionRequests);
-        var turnRequest = Assert.Single(capturingProvider.Requests);
-        Assert.Equal("provider-session-" + sessionRequest.ConversationId, turnRequest.ProviderSessionId);
-        Assert.Equal("configured", sessionRequest.ProviderConfiguration!.Name);
-        Assert.Equal(capturingProvider.Name, turnRequest.ProviderConfiguration!.Provider);
-        Assert.Equal("model-1", turnRequest.ProviderConfiguration.Model);
-        Assert.Equal("secret-1", turnRequest.ProviderConfiguration.ApiKeySecretName);
-        Assert.Equal("https://example.local", turnRequest.ProviderConfiguration.Endpoint);
+        var sessionRequest = (await Assert.That(capturingProvider.SessionRequests).HasSingleItem())!;
+        var turnRequest = (await Assert.That(capturingProvider.Requests).HasSingleItem())!;
+        await Assert.That(turnRequest.ProviderSessionId).IsEqualTo("provider-session-" + sessionRequest.ConversationId);
+        await Assert.That(sessionRequest.ProviderConfiguration!.Name).IsEqualTo("configured");
+        await Assert.That(turnRequest.ProviderConfiguration!.Provider).IsEqualTo(capturingProvider.Name);
+        await Assert.That(turnRequest.ProviderConfiguration.Model).IsEqualTo("model-1");
+        await Assert.That(turnRequest.ProviderConfiguration.ApiKeySecretName).IsEqualTo("secret-1");
+        await Assert.That(turnRequest.ProviderConfiguration.Endpoint).IsEqualTo("https://example.local");
     }
 
-    [Fact(DisplayName = "Chat orchestration records start and completion audit events")]
+    [Test]
+    [DisplayName("Chat orchestration records start and completion audit events")]
     public async Task ChatOrchestrationRecordsStartAndCompletionAuditEvents()
     {
         var auditSink = new CapturingAuditSink();
@@ -208,19 +215,17 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        Assert.Collection(
-            auditSink.Events,
-            started =>
-            {
-                Assert.Equal("chat.started", started.Type);
-                Assert.Equal("conversation-1", started.ConversationId);
-                Assert.Equal("tenant-1", started.TenantId);
-                Assert.Equal("user-1", started.ActorId);
-            },
-            completed => Assert.Equal("chat.completed", completed.Type));
+        await Assert.That(auditSink.Events).Count().IsEqualTo(2);
+        var started = auditSink.Events[0];
+        await Assert.That(started.Type).IsEqualTo("chat.started");
+        await Assert.That(started.ConversationId).IsEqualTo("conversation-1");
+        await Assert.That(started.TenantId).IsEqualTo("tenant-1");
+        await Assert.That(started.ActorId).IsEqualTo("user-1");
+        await Assert.That(auditSink.Events[1].Type).IsEqualTo("chat.completed");
     }
 
-    [Fact(DisplayName = "Chat orchestration continues when audit sink fails")]
+    [Test]
+    [DisplayName("Chat orchestration continues when audit sink fails")]
     public async Task ChatOrchestrationContinuesWhenAuditSinkFails()
     {
         var services = new ServiceCollection();
@@ -238,10 +243,11 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        Assert.Contains(events, x => x.Type == "conversation.completed");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
     }
 
-    [Fact(DisplayName = "Chat orchestration continues when conversation persistence fails")]
+    [Test]
+    [DisplayName("Chat orchestration continues when conversation persistence fails")]
     public async Task ChatOrchestrationContinuesWhenConversationPersistenceFails()
     {
         var services = new ServiceCollection();
@@ -260,12 +266,13 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        Assert.Contains(events, x => x.Type == "conversation.started");
-        Assert.Contains(events, x => x.Type == "assistant.delta");
-        Assert.Contains(events, x => x.Type == "conversation.completed");
+        await Assert.That(events).Contains(x => x.Type == "conversation.started");
+        await Assert.That(events).Contains(x => x.Type == "assistant.delta");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
     }
 
-    [Fact(DisplayName = "Chat orchestration skips conversation store when persistence is disabled")]
+    [Test]
+    [DisplayName("Chat orchestration skips conversation store when persistence is disabled")]
     public async Task ChatOrchestrationSkipsConversationStoreWhenPersistenceIsDisabled()
     {
         var conversationStore = new TrackingConversationStore();
@@ -285,12 +292,13 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        Assert.Contains(events, x => x.Type == "conversation.completed");
-        Assert.Equal(0, conversationStore.FindCount);
-        Assert.Equal(0, conversationStore.SaveCount);
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
+        await Assert.That(conversationStore.FindCount).IsEqualTo(0);
+        await Assert.That(conversationStore.SaveCount).IsEqualTo(0);
     }
 
-    [Fact(DisplayName = "Chat orchestration emits terminal events when conversation lookup fails")]
+    [Test]
+    [DisplayName("Chat orchestration emits terminal events when conversation lookup fails")]
     public async Task ChatOrchestrationEmitsTerminalEventsWhenConversationLookupFails()
     {
         var services = new ServiceCollection();
@@ -309,13 +317,14 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        Assert.Contains(events, x => x.Type == "conversation.started");
-        Assert.Contains(events, x => x.Type == "conversation.error");
-        Assert.Contains(events, x => x.Type == "conversation.completed");
+        await Assert.That(events).Contains(x => x.Type == "conversation.started");
+        await Assert.That(events).Contains(x => x.Type == "conversation.error");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
     }
 
 
-    [Fact(DisplayName = "Chat orchestration emits terminal events when context resolution fails")]
+    [Test]
+    [DisplayName("Chat orchestration emits terminal events when context resolution fails")]
     public async Task ChatOrchestrationEmitsTerminalEventsWhenContextResolutionFails()
     {
         var services = new ServiceCollection();
@@ -337,13 +346,14 @@ public class AIChatEndpointTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.Contains(events, x => x.Type == "conversation.started");
-        Assert.Contains(events, x => x.Type == "conversation.error");
-        Assert.Contains(events, x => x.Type == "conversation.completed");
-        Assert.Equal(AIConversationStatus.Failed, conversation!.Status);
+        await Assert.That(events).Contains(x => x.Type == "conversation.started");
+        await Assert.That(events).Contains(x => x.Type == "conversation.error");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
+        await Assert.That(conversation!.Status).IsEqualTo(AIConversationStatus.Failed);
     }
 
-    [Fact(DisplayName = "Chat orchestration emits terminal events when provider session creation fails")]
+    [Test]
+    [DisplayName("Chat orchestration emits terminal events when provider session creation fails")]
     public async Task ChatOrchestrationEmitsTerminalEventsWhenProviderSessionCreationFails()
     {
         var auditSink = new CapturingAuditSink();
@@ -367,14 +377,15 @@ public class AIChatEndpointTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.Contains(events, x => x.Type == "conversation.started");
-        Assert.Contains(events, x => x.Type == "conversation.error");
-        Assert.Contains(events, x => x.Type == "conversation.completed");
-        Assert.Equal(AIConversationStatus.Failed, conversation!.Status);
-        Assert.Contains(auditSink.Events, x => x.Type == "chat.failed");
+        await Assert.That(events).Contains(x => x.Type == "conversation.started");
+        await Assert.That(events).Contains(x => x.Type == "conversation.error");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
+        await Assert.That(conversation!.Status).IsEqualTo(AIConversationStatus.Failed);
+        await Assert.That(auditSink.Events).Contains(x => x.Type == "chat.failed");
     }
 
-    [Fact(DisplayName = "Chat orchestration emits terminal events when provider turn fails")]
+    [Test]
+    [DisplayName("Chat orchestration emits terminal events when provider turn fails")]
     public async Task ChatOrchestrationEmitsTerminalEventsWhenProviderTurnFails()
     {
         var auditSink = new CapturingAuditSink();
@@ -398,14 +409,15 @@ public class AIChatEndpointTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.Contains(events, x => x.Type == "conversation.started");
-        Assert.Contains(events, x => x.Type == "conversation.error");
-        Assert.Contains(events, x => x.Type == "conversation.completed");
-        Assert.Equal(AIConversationStatus.Failed, conversation!.Status);
-        Assert.Contains(auditSink.Events, x => x.Type == "chat.failed");
+        await Assert.That(events).Contains(x => x.Type == "conversation.started");
+        await Assert.That(events).Contains(x => x.Type == "conversation.error");
+        await Assert.That(events).Contains(x => x.Type == "conversation.completed");
+        await Assert.That(conversation!.Status).IsEqualTo(AIConversationStatus.Failed);
+        await Assert.That(auditSink.Events).Contains(x => x.Type == "chat.failed");
     }
 
-    [Fact(DisplayName = "Chat orchestration executes provider tool calls")]
+    [Test]
+    [DisplayName("Chat orchestration executes provider tool calls")]
     public async Task ChatOrchestrationExecutesProviderToolCalls()
     {
         var services = new ServiceCollection();
@@ -424,13 +436,14 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var toolResult = Assert.Single(events, x => x.Type == "tool.result");
-        Assert.Equal("echo", toolResult.Data["toolName"]!.GetValue<string>());
-        Assert.Equal(AIToolInvocationStatus.Completed.ToString(), toolResult.Data["status"]!.GetValue<string>());
-        Assert.Equal("Echoed", toolResult.Data["summary"]!.GetValue<string>());
+        var toolResult = (await Assert.That(events).HasSingleItem(x => x.Type == "tool.result"))!;
+        await Assert.That(toolResult.Data["toolName"]!.GetValue<string>()).IsEqualTo("echo");
+        await Assert.That(toolResult.Data["status"]!.GetValue<string>()).IsEqualTo(AIToolInvocationStatus.Completed.ToString());
+        await Assert.That(toolResult.Data["summary"]!.GetValue<string>()).IsEqualTo("Echoed");
     }
 
-    [Fact(DisplayName = "Chat orchestration sends only enabled tools to providers")]
+    [Test]
+    [DisplayName("Chat orchestration sends only enabled tools to providers")]
     public async Task ChatOrchestrationSendsOnlyEnabledToolsToProviders()
     {
         var provider = new CapturingTurnProvider();
@@ -452,11 +465,12 @@ public class AIChatEndpointTests
         }
 
         var tools = provider.Requests.Single().Tools;
-        Assert.DoesNotContain(tools, x => x.Name == "disabled-echo");
-        Assert.Contains(tools, x => x.Name == "activities.search");
+        await Assert.That(tools).DoesNotContain(x => x.Name == "disabled-echo");
+        await Assert.That(tools).Contains(x => x.Name == "activities.search");
     }
 
-    [Fact(DisplayName = "Chat orchestration audits unresolved tool calls")]
+    [Test]
+    [DisplayName("Chat orchestration audits unresolved tool calls")]
     public async Task ChatOrchestrationAuditsUnresolvedToolCalls()
     {
         var auditSink = new CapturingAuditSink();
@@ -478,12 +492,13 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var toolAudit = Assert.Single(auditSink.Events, x => x.Type == "tool.failed");
-        Assert.Equal("tool-call-1", toolAudit.ToolInvocationId);
-        Assert.Equal("echo", toolAudit.Data["toolName"]!.GetValue<string>());
+        var toolAudit = (await Assert.That(auditSink.Events).HasSingleItem(x => x.Type == "tool.failed"))!;
+        await Assert.That(toolAudit.ToolInvocationId).IsEqualTo("tool-call-1");
+        await Assert.That(toolAudit.Data["toolName"]!.GetValue<string>()).IsEqualTo("echo");
     }
 
-    [Fact(DisplayName = "Chat orchestration records tool audit timestamps around execution")]
+    [Test]
+    [DisplayName("Chat orchestration records tool audit timestamps around execution")]
     public async Task ChatOrchestrationRecordsToolAuditTimestampsAroundExecution()
     {
         var auditSink = new CapturingAuditSink();
@@ -506,13 +521,14 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var invoked = Assert.Single(auditSink.Events, x => x.Type == "tool.invoked");
-        var completed = Assert.Single(auditSink.Events, x => x.Type == "tool.completed");
+        var invoked = (await Assert.That(auditSink.Events).HasSingleItem(x => x.Type == "tool.invoked"))!;
+        var completed = (await Assert.That(auditSink.Events).HasSingleItem(x => x.Type == "tool.completed"))!;
 
-        Assert.True(invoked.Timestamp < completed.Timestamp);
+        await Assert.That(invoked.Timestamp < completed.Timestamp).IsTrue();
     }
 
-    [Fact(DisplayName = "Chat orchestration redacts tool exception messages from stream events")]
+    [Test]
+    [DisplayName("Chat orchestration redacts tool exception messages from stream events")]
     public async Task ChatOrchestrationRedactsToolExceptionMessagesFromStreamEvents()
     {
         var services = new ServiceCollection();
@@ -531,12 +547,13 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var toolResult = Assert.Single(events, x => x.Type == "tool.result");
-        Assert.Equal(AIToolInvocationStatus.Failed.ToString(), toolResult.Data["status"]!.GetValue<string>());
-        Assert.Equal("Tool execution failed.", toolResult.Data["error"]!.GetValue<string>());
+        var toolResult = (await Assert.That(events).HasSingleItem(x => x.Type == "tool.result"))!;
+        await Assert.That(toolResult.Data["status"]!.GetValue<string>()).IsEqualTo(AIToolInvocationStatus.Failed.ToString());
+        await Assert.That(toolResult.Data["error"]!.GetValue<string>()).IsEqualTo("Tool execution failed.");
     }
 
-    [Fact(DisplayName = "Chat orchestration lets providers own tool continuation")]
+    [Test]
+    [DisplayName("Chat orchestration lets providers own tool continuation")]
     public async Task ChatOrchestrationLetsProvidersOwnToolContinuation()
     {
         var provider = new ToolCallAIProvider();
@@ -556,13 +573,14 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var request = Assert.Single(provider.Requests);
+        var request = (await Assert.That(provider.Requests).HasSingleItem())!;
 
-        Assert.DoesNotContain(request.Messages, x => x.Role == AIMessageRole.Tool);
-        Assert.Contains(events, x => x.Type == "assistant.delta" && x.Data["content"]!.GetValue<string>() == "Used Echoed");
+        await Assert.That(request.Messages).DoesNotContain(x => x.Role == AIMessageRole.Tool);
+        await Assert.That(events).Contains(x => x.Type == "assistant.delta" && x.Data["content"]!.GetValue<string>() == "Used Echoed");
     }
 
-    [Fact(DisplayName = "Chat orchestration persists conversation state")]
+    [Test]
+    [DisplayName("Chat orchestration persists conversation state")]
     public async Task ChatOrchestrationPersistsConversationState()
     {
         var services = new ServiceCollection();
@@ -583,14 +601,15 @@ public class AIChatEndpointTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.NotNull(conversation);
-        Assert.Equal(AIConversationStatus.Completed, conversation.Status);
-        Assert.NotNull(conversation.RetentionExpiresAt);
-        Assert.True(conversation.Messages.Single(x => x.Role == AIMessageRole.User).StreamSequence > 0);
-        Assert.Contains(conversation.Messages, x => x.Role == AIMessageRole.User && x.Content == "Explain this workflow");
+        conversation = (await Assert.That(conversation).IsNotNull())!;
+        await Assert.That(conversation.Status).IsEqualTo(AIConversationStatus.Completed);
+        await Assert.That(conversation.RetentionExpiresAt).IsNotNull();
+        await Assert.That(conversation.Messages.Single(x => x.Role == AIMessageRole.User).StreamSequence > 0).IsTrue();
+        await Assert.That(conversation.Messages).Contains(x => x.Role == AIMessageRole.User && x.Content == "Explain this workflow");
     }
 
-    [Fact(DisplayName = "Chat orchestration preserves conversation title")]
+    [Test]
+    [DisplayName("Chat orchestration preserves conversation title")]
     public async Task ChatOrchestrationPreservesConversationTitle()
     {
         var now = DateTimeOffset.UtcNow;
@@ -621,10 +640,11 @@ public class AIChatEndpointTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.Equal("Workflow assistant", conversation!.Title);
+        await Assert.That(conversation!.Title).IsEqualTo("Workflow assistant");
     }
 
-    [Fact(DisplayName = "Chat orchestration creates provider sessions")]
+    [Test]
+    [DisplayName("Chat orchestration creates provider sessions")]
     public async Task ChatOrchestrationCreatesProviderSessions()
     {
         var provider = new CapturingTurnProvider();
@@ -645,14 +665,15 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var sessionRequest = Assert.Single(provider.SessionRequests);
+        var sessionRequest = (await Assert.That(provider.SessionRequests).HasSingleItem())!;
         var conversation = await store.FindAsync("conversation-1");
 
-        Assert.Equal("conversation-1", sessionRequest.ConversationId);
-        Assert.Equal("provider-session-conversation-1", conversation!.ProviderSessionId);
+        await Assert.That(sessionRequest.ConversationId).IsEqualTo("conversation-1");
+        await Assert.That(conversation!.ProviderSessionId).IsEqualTo("provider-session-conversation-1");
     }
 
-    [Fact(DisplayName = "Chat orchestration persists generated provider session IDs")]
+    [Test]
+    [DisplayName("Chat orchestration persists generated provider session IDs")]
     public async Task ChatOrchestrationPersistsGeneratedProviderSessionIds()
     {
         var provider = new DefaultSessionHandleProvider();
@@ -682,10 +703,11 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        Assert.Single(provider.SessionRequests);
+        await Assert.That(provider.SessionRequests).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Chat orchestration forwards persisted message history")]
+    [Test]
+    [DisplayName("Chat orchestration forwards persisted message history")]
     public async Task ChatOrchestrationForwardsPersistedMessageHistory()
     {
         var provider = new CapturingTurnProvider();
@@ -717,13 +739,14 @@ public class AIChatEndpointTests
 
         var secondRequest = provider.Requests.Last();
 
-        Assert.Equal("Second", secondRequest.Message);
-        Assert.Contains(secondRequest.Messages, x => x.Role == AIMessageRole.User && x.Content == "First");
-        Assert.Contains(secondRequest.Messages, x => x.Role == AIMessageRole.Assistant);
-        Assert.DoesNotContain(secondRequest.Messages, x => x.Role == AIMessageRole.User && x.Content == "Second");
+        await Assert.That(secondRequest.Message).IsEqualTo("Second");
+        await Assert.That(secondRequest.Messages).Contains(x => x.Role == AIMessageRole.User && x.Content == "First");
+        await Assert.That(secondRequest.Messages).Contains(x => x.Role == AIMessageRole.Assistant);
+        await Assert.That(secondRequest.Messages).DoesNotContain(x => x.Role == AIMessageRole.User && x.Content == "Second");
     }
 
-    [Fact(DisplayName = "Chat orchestration does not duplicate reconnect user messages")]
+    [Test]
+    [DisplayName("Chat orchestration does not duplicate reconnect user messages")]
     public async Task ChatOrchestrationDoesNotDuplicateReconnectUserMessages()
     {
         var services = new ServiceCollection();
@@ -766,10 +789,11 @@ public class AIChatEndpointTests
         var conversation = await store.FindAsync("conversation-1");
         var userMessages = conversation!.Messages.Where(x => x.Role == AIMessageRole.User && x.Content == "Retry me").ToList();
 
-        Assert.Single(userMessages);
+        await Assert.That(userMessages).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Chat orchestration completes failed reconnects without duplicating user messages")]
+    [Test]
+    [DisplayName("Chat orchestration completes failed reconnects without duplicating user messages")]
     public async Task ChatOrchestrationCompletesFailedReconnectsWithoutDuplicatingUserMessages()
     {
         var services = new ServiceCollection();
@@ -819,18 +843,15 @@ public class AIChatEndpointTests
         var conversation = await store.FindAsync("conversation-failed");
         var userMessages = conversation!.Messages.Where(x => x.Role == AIMessageRole.User && x.Content == "Retry me").ToList();
 
-        Assert.Collection(
-            events,
-            streamEvent =>
-            {
-                Assert.Equal("conversation.error", streamEvent.Type);
-                Assert.Equal("Weaver could not prepare AI context or tools for this request.", streamEvent.Data["content"]!.GetValue<string>());
-            },
-            streamEvent => Assert.Equal("conversation.completed", streamEvent.Type));
-        Assert.Single(userMessages);
+        await Assert.That(events).Count().IsEqualTo(2);
+        await Assert.That(events[0].Type).IsEqualTo("conversation.error");
+        await Assert.That(events[0].Data["content"]!.GetValue<string>()).IsEqualTo("Weaver could not prepare AI context or tools for this request.");
+        await Assert.That(events[1].Type).IsEqualTo("conversation.completed");
+        await Assert.That(userMessages).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Chat orchestration continues reconnect sequences after persisted messages")]
+    [Test]
+    [DisplayName("Chat orchestration continues reconnect sequences after persisted messages")]
     public async Task ChatOrchestrationContinuesReconnectSequencesAfterPersistedMessages()
     {
         var services = new ServiceCollection();
@@ -870,13 +891,14 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var startedEvent = Assert.Single(events, x => x.Type == "conversation.started");
-        var assistantEvent = Assert.Single(events, x => x.Type == "assistant.delta");
-        Assert.Equal(4, startedEvent.Sequence);
-        Assert.Equal(5, assistantEvent.Sequence);
+        var startedEvent = (await Assert.That(events).HasSingleItem(x => x.Type == "conversation.started"))!;
+        var assistantEvent = (await Assert.That(events).HasSingleItem(x => x.Type == "assistant.delta"))!;
+        await Assert.That(startedEvent.Sequence).IsEqualTo(4);
+        await Assert.That(assistantEvent.Sequence).IsEqualTo(5);
     }
 
-    [Fact(DisplayName = "Chat orchestration starts a new conversation when reconnect history is unavailable")]
+    [Test]
+    [DisplayName("Chat orchestration starts a new conversation when reconnect history is unavailable")]
     public async Task ChatOrchestrationStartsNewConversationWhenReconnectHistoryIsUnavailable()
     {
         var services = new ServiceCollection();
@@ -894,13 +916,14 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var startedEvent = Assert.Single(events, x => x.Type == "conversation.started");
+        var startedEvent = (await Assert.That(events).HasSingleItem(x => x.Type == "conversation.started"))!;
 
-        Assert.NotEqual("missing-conversation", startedEvent.ConversationId);
-        Assert.Equal(0, startedEvent.Sequence);
+        await Assert.That(startedEvent.ConversationId).IsNotEqualTo("missing-conversation");
+        await Assert.That(startedEvent.Sequence).IsEqualTo(0);
     }
 
-    [Fact(DisplayName = "Chat orchestration does not replay completed conversations on reconnect")]
+    [Test]
+    [DisplayName("Chat orchestration does not replay completed conversations on reconnect")]
     public async Task ChatOrchestrationDoesNotReplayCompletedConversationsOnReconnect()
     {
         var turnProvider = new CapturingTurnProvider();
@@ -953,15 +976,16 @@ public class AIChatEndpointTests
 
         var conversation = await store.FindAsync("conversation-1");
 
-        var completedEvent = Assert.Single(events);
-        Assert.Equal("conversation.completed", completedEvent.Type);
-        Assert.Empty(turnProvider.SessionRequests);
-        Assert.Empty(turnProvider.Requests);
-        Assert.Equal(AIConversationStatus.Completed, conversation!.Status);
-        Assert.Equal(2, conversation.Messages.Count);
+        var completedEvent = (await Assert.That(events).HasSingleItem())!;
+        await Assert.That(completedEvent.Type).IsEqualTo("conversation.completed");
+        await Assert.That(turnProvider.SessionRequests).IsEmpty();
+        await Assert.That(turnProvider.Requests).IsEmpty();
+        await Assert.That(conversation!.Status).IsEqualTo(AIConversationStatus.Completed);
+        await Assert.That(conversation.Messages.Count).IsEqualTo(2);
     }
 
-    [Fact(DisplayName = "Chat orchestration sends persisted history on reconnect")]
+    [Test]
+    [DisplayName("Chat orchestration sends persisted history on reconnect")]
     public async Task ChatOrchestrationSendsPersistedHistoryOnReconnect()
     {
         var provider = new CapturingTurnProvider();
@@ -1035,20 +1059,21 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var reconnectRequest = Assert.Single(provider.Requests);
-        var restoredToolMessage = Assert.Single(reconnectRequest.Messages, x => x.Role == AIMessageRole.Tool);
+        var reconnectRequest = (await Assert.That(provider.Requests).HasSingleItem())!;
+        var restoredToolMessage = (await Assert.That(reconnectRequest.Messages).HasSingleItem(x => x.Role == AIMessageRole.Tool))!;
         var completedConversation = await store.FindAsync("conversation-1");
 
-        Assert.Equal("", reconnectRequest.Message);
-        Assert.Equal("tool-call-1", restoredToolMessage.Metadata["toolCallId"]!.GetValue<string>());
-        Assert.Equal("echo", restoredToolMessage.Metadata["toolName"]!.GetValue<string>());
-        Assert.Equal("Echoed", restoredToolMessage.Content);
-        Assert.Single(completedConversation!.Messages, x => x.Role == AIMessageRole.User && x.Content == "Use a tool");
-        Assert.Single(completedConversation.Messages, x => x.Role == AIMessageRole.Tool);
-        Assert.Equal(AIConversationStatus.Completed, completedConversation.Status);
+        await Assert.That(reconnectRequest.Message).IsEqualTo("");
+        await Assert.That(restoredToolMessage.Metadata["toolCallId"]!.GetValue<string>()).IsEqualTo("tool-call-1");
+        await Assert.That(restoredToolMessage.Metadata["toolName"]!.GetValue<string>()).IsEqualTo("echo");
+        await Assert.That(restoredToolMessage.Content).IsEqualTo("Echoed");
+        await Assert.That(completedConversation!.Messages).HasSingleItem(x => x.Role == AIMessageRole.User && x.Content == "Use a tool");
+        await Assert.That(completedConversation.Messages).HasSingleItem(x => x.Role == AIMessageRole.Tool);
+        await Assert.That(completedConversation.Status).IsEqualTo(AIConversationStatus.Completed);
     }
 
-    [Fact(DisplayName = "Chat orchestration does not load foreign tenant conversation history")]
+    [Test]
+    [DisplayName("Chat orchestration does not load foreign tenant conversation history")]
     public async Task ChatOrchestrationDoesNotLoadForeignTenantConversationHistory()
     {
         var provider = new CapturingTurnProvider();
@@ -1091,15 +1116,16 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var request = Assert.Single(provider.Requests);
+        var request = (await Assert.That(provider.Requests).HasSingleItem())!;
         var original = await store.FindAsync("conversation-1");
 
-        Assert.DoesNotContain(request.Messages, x => x.Content == "Tenant A secret");
-        Assert.Equal("tenant-a", original!.TenantId);
-        Assert.Single(original.Messages);
+        await Assert.That(request.Messages).DoesNotContain(x => x.Content == "Tenant A secret");
+        await Assert.That(original!.TenantId).IsEqualTo("tenant-a");
+        await Assert.That(original.Messages).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Chat orchestration does not load foreign user conversation history")]
+    [Test]
+    [DisplayName("Chat orchestration does not load foreign user conversation history")]
     public async Task ChatOrchestrationDoesNotLoadForeignUserConversationHistory()
     {
         var provider = new CapturingTurnProvider();
@@ -1142,15 +1168,16 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var request = Assert.Single(provider.Requests);
+        var request = (await Assert.That(provider.Requests).HasSingleItem())!;
         var original = await store.FindAsync("conversation-1");
 
-        Assert.DoesNotContain(request.Messages, x => x.Content == "User A secret");
-        Assert.Equal("user-a", original!.UserId);
-        Assert.Single(original.Messages);
+        await Assert.That(request.Messages).DoesNotContain(x => x.Content == "User A secret");
+        await Assert.That(original!.UserId).IsEqualTo("user-a");
+        await Assert.That(original.Messages).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Chat orchestration limits resolved context payloads")]
+    [Test]
+    [DisplayName("Chat orchestration limits resolved context payloads")]
     public async Task ChatOrchestrationLimitsResolvedContextPayloads()
     {
         var provider = new CapturingTurnProvider();
@@ -1171,15 +1198,16 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var context = Assert.Single(provider.Requests.Single().Context);
+        var context = (await Assert.That(provider.Requests.Single().Context).HasSingleItem())!;
 
-        Assert.Equal(64, context.Summary.Length);
-        Assert.True(context.Data["truncated"]!.GetValue<bool>());
-        Assert.Equal(64, context.Data["maxBytes"]!.GetValue<int>());
-        Assert.True(context.Metadata["truncated"]!.GetValue<bool>());
+        await Assert.That(context.Summary.Length).IsEqualTo(64);
+        await Assert.That(context.Data["truncated"]!.GetValue<bool>()).IsTrue();
+        await Assert.That(context.Data["maxBytes"]!.GetValue<int>()).IsEqualTo(64);
+        await Assert.That(context.Metadata["truncated"]!.GetValue<bool>()).IsTrue();
     }
 
-    [Fact(DisplayName = "Chat orchestration truncates multibyte context to the byte limit")]
+    [Test]
+    [DisplayName("Chat orchestration truncates multibyte context to the byte limit")]
     public async Task ChatOrchestrationTruncatesMultibyteContextToTheByteLimit()
     {
         var provider = new CapturingTurnProvider();
@@ -1200,13 +1228,14 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var context = Assert.Single(provider.Requests.Single().Context);
+        var context = (await Assert.That(provider.Requests.Single().Context).HasSingleItem())!;
 
-        Assert.True(Encoding.UTF8.GetByteCount(context.Summary) <= 64);
-        Assert.True(context.Summary.Length > 16);
+        await Assert.That(Encoding.UTF8.GetByteCount(context.Summary) <= 64).IsTrue();
+        await Assert.That(context.Summary.Length > 16).IsTrue();
     }
 
-    [Fact(DisplayName = "Chat orchestration does not split surrogate pairs when truncating context")]
+    [Test]
+    [DisplayName("Chat orchestration does not split surrogate pairs when truncating context")]
     public async Task ChatOrchestrationDoesNotSplitSurrogatePairsWhenTruncatingContext()
     {
         var provider = new CapturingTurnProvider();
@@ -1227,13 +1256,14 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var context = Assert.Single(provider.Requests.Single().Context);
+        var context = (await Assert.That(provider.Requests.Single().Context).HasSingleItem())!;
 
-        Assert.False(context.Summary.Length > 0 && char.IsHighSurrogate(context.Summary[^1]));
-        Assert.True(Encoding.UTF8.GetByteCount(context.Summary) <= 3);
+        await Assert.That(context.Summary.Length > 0 && char.IsHighSurrogate(context.Summary[^1])).IsFalse();
+        await Assert.That(Encoding.UTF8.GetByteCount(context.Summary) <= 3).IsTrue();
     }
 
-    [Fact(DisplayName = "Chat orchestration applies one total resolved context budget")]
+    [Test]
+    [DisplayName("Chat orchestration applies one total resolved context budget")]
     public async Task ChatOrchestrationAppliesOneTotalResolvedContextBudget()
     {
         var provider = new CapturingTurnProvider();
@@ -1258,10 +1288,11 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        Assert.Single(provider.Requests.Single().Context);
+        await Assert.That(provider.Requests.Single().Context).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Chat orchestration keeps smaller contexts after an oversized context")]
+    [Test]
+    [DisplayName("Chat orchestration keeps smaller contexts after an oversized context")]
     public async Task ChatOrchestrationKeepsSmallerContextsAfterOversizedContext()
     {
         var provider = new CapturingTurnProvider();
@@ -1289,13 +1320,13 @@ public class AIChatEndpointTests
 
         var contexts = provider.Requests.Single().Context.ToList();
 
-        Assert.Collection(
-            contexts,
-            first => Assert.Equal("small-1", first.ReferenceId),
-            second => Assert.Equal("small-2", second.ReferenceId));
+        await Assert.That(contexts).Count().IsEqualTo(2);
+        await Assert.That(contexts[0].ReferenceId).IsEqualTo("small-1");
+        await Assert.That(contexts[1].ReferenceId).IsEqualTo("small-2");
     }
 
-    [Fact(DisplayName = "Chat orchestration treats non-positive context byte limit as unlimited")]
+    [Test]
+    [DisplayName("Chat orchestration treats non-positive context byte limit as unlimited")]
     public async Task ChatOrchestrationTreatsNonPositiveContextByteLimitAsUnlimited()
     {
         var provider = new CapturingTurnProvider();
@@ -1316,13 +1347,14 @@ public class AIChatEndpointTests
             // Intentionally drain the stream to completion.
         }
 
-        var context = Assert.Single(provider.Requests.Single().Context);
+        var context = (await Assert.That(provider.Requests.Single().Context).HasSingleItem())!;
 
-        Assert.Equal(512, context.Summary.Length);
-        Assert.False(context.Data.ContainsKey("truncated"));
+        await Assert.That(context.Summary.Length).IsEqualTo(512);
+        await Assert.That(context.Data.ContainsKey("truncated")).IsFalse();
     }
 
-    [Fact(DisplayName = "Chat orchestration limits tool result payloads")]
+    [Test]
+    [DisplayName("Chat orchestration limits tool result payloads")]
     public async Task ChatOrchestrationLimitsToolResultPayloads()
     {
         var services = new ServiceCollection();
@@ -1341,15 +1373,16 @@ public class AIChatEndpointTests
                        }))
             events.Add(streamEvent);
 
-        var toolResult = Assert.Single(events, x => x.Type == "tool.result");
+        var toolResult = (await Assert.That(events).HasSingleItem(x => x.Type == "tool.result"))!;
         var data = toolResult.Data["data"]!.AsObject();
 
-        Assert.Equal(64, toolResult.Data["summary"]!.GetValue<string>().Length);
-        Assert.True(data["truncated"]!.GetValue<bool>());
-        Assert.Equal(64, data["maxBytes"]!.GetValue<int>());
+        await Assert.That(toolResult.Data["summary"]!.GetValue<string>().Length).IsEqualTo(64);
+        await Assert.That(data["truncated"]!.GetValue<bool>()).IsTrue();
+        await Assert.That(data["maxBytes"]!.GetValue<int>()).IsEqualTo(64);
     }
 
-    [Fact(DisplayName = "Chat orchestration persists provider-emitted tool results")]
+    [Test]
+    [DisplayName("Chat orchestration persists provider-emitted tool results")]
     public async Task ChatOrchestrationPersistsProviderEmittedToolResults()
     {
         var services = new ServiceCollection();
@@ -1371,11 +1404,11 @@ public class AIChatEndpointTests
         }
 
         var conversation = await store.FindAsync("conversation-1");
-        var toolMessage = Assert.Single(conversation!.Messages, x => x.Role == AIMessageRole.Tool);
+        var toolMessage = (await Assert.That(conversation!.Messages).HasSingleItem(x => x.Role == AIMessageRole.Tool))!;
 
-        Assert.Equal("tool-call-1", toolMessage.Metadata["toolCallId"]!.GetValue<string>());
-        Assert.Equal("echo", toolMessage.Metadata["toolName"]!.GetValue<string>());
-        Assert.Equal("Echoed", toolMessage.Content);
+        await Assert.That(toolMessage.Metadata["toolCallId"]!.GetValue<string>()).IsEqualTo("tool-call-1");
+        await Assert.That(toolMessage.Metadata["toolName"]!.GetValue<string>()).IsEqualTo("echo");
+        await Assert.That(toolMessage.Content).IsEqualTo("Echoed");
     }
 
     private class SequencedAIProvider : IAIProvider

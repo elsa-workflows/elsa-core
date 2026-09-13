@@ -9,8 +9,9 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIPersistenceLifetimeTests
 {
-    [Fact(DisplayName = "EF Core conversation persistence resolves with scope validation enabled")]
-    public void EFCoreConversationPersistenceResolvesWithScopeValidationEnabled()
+    [Test]
+    [DisplayName("EF Core conversation persistence resolves with scope validation enabled")]
+    public async Task EFCoreConversationPersistenceResolvesWithScopeValidationEnabled()
     {
         var services = new ServiceCollection();
         using var connection = new SqliteConnection("DataSource=:memory:");
@@ -26,7 +27,7 @@ public class AIPersistenceLifetimeTests
         using var scope = provider.CreateScope();
         scope.ServiceProvider.GetRequiredService<AIDbContext>().Database.EnsureCreated();
 
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<IAIOrchestrator>());
-        Assert.NotNull(scope.ServiceProvider.GetRequiredService<IAIConversationStore>());
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIOrchestrator>()).IsNotNull();
+        await Assert.That(scope.ServiceProvider.GetRequiredService<IAIConversationStore>()).IsNotNull();
     }
 }

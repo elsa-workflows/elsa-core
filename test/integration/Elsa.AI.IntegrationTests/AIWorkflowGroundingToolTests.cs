@@ -13,7 +13,8 @@ namespace Elsa.AI.IntegrationTests;
 
 public class AIWorkflowGroundingToolTests
 {
-    [Fact(DisplayName = "Workflow grounding tools search and return graph summaries")]
+    [Test]
+    [DisplayName("Workflow grounding tools search and return graph summaries")]
     public async Task WorkflowGroundingToolsSearchAndReturnGraphSummaries()
     {
         var definition = new WorkflowDefinition
@@ -49,10 +50,10 @@ public class AIWorkflowGroundingToolTests
             Arguments = new JsonObject { ["id"] = "version-1" }
         });
 
-        Assert.Equal(1, searchResult.Data["returned"]!.GetValue<int>());
+        await Assert.That(searchResult.Data["returned"]!.GetValue<int>()).IsEqualTo(1);
         var graph = graphResult.Data["items"]!.AsArray()[0]!.AsObject();
-        Assert.Equal(1, graph["activityCount"]!.GetValue<int>());
-        Assert.Equal("Elsa.Http.HttpEndpoint", graph["activityTypes"]!.AsArray()[0]!.GetValue<string>());
+        await Assert.That(graph["activityCount"]!.GetValue<int>()).IsEqualTo(1);
+        await Assert.That(graph["activityTypes"]!.AsArray()[0]!.GetValue<string>()).IsEqualTo("Elsa.Http.HttpEndpoint");
     }
 
     private class TestWorkflowDefinitionStore(params WorkflowDefinition[] definitions) : IWorkflowDefinitionStore
