@@ -9,22 +9,22 @@ namespace Elsa.Diagnostics.OpenTelemetry.IntegrationTests;
 
 public class OpenTelemetryAuthorizationTests
 {
-    [Theory]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Resources.Endpoint")]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Traces.Endpoint")]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Trace.Endpoint")]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Metrics.Endpoint")]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Logs.Endpoint")]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Storage.Endpoint")]
-    [InlineData("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.CollectorConfiguration.Endpoint")]
-    public void RestEndpoints_RequireOpenTelemetryReadPermission(string endpointTypeName)
+    [Test]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Resources.Endpoint")]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Traces.Endpoint")]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Trace.Endpoint")]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Metrics.Endpoint")]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Logs.Endpoint")]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.Storage.Endpoint")]
+    [Arguments("Elsa.Diagnostics.OpenTelemetry.Endpoints.OpenTelemetry.CollectorConfiguration.Endpoint")]
+    public async Task RestEndpoints_RequireOpenTelemetryReadPermission(string endpointTypeName)
     {
-        var permissions = GetConfiguredPermissions(endpointTypeName);
+        var permissions = await GetConfiguredPermissionsAsync(endpointTypeName);
 
-        Assert.Contains("diagnostics/opentelemetry:view", permissions);
+        await Assert.That(permissions).Contains("diagnostics/opentelemetry:view");
     }
 
-    private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
+    private static async Task<IReadOnlyCollection<string>> GetConfiguredPermissionsAsync(string endpointTypeName)
     {
         var endpointType = typeof(OpenTelemetryFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
         var endpoint = Activator.CreateInstance(endpointType, new TestOpenTelemetryProvider())!;
@@ -41,7 +41,7 @@ public class OpenTelemetryAuthorizationTests
         // read back from the registry that records it.
         var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(endpointType);
 
-        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+        await Assert.That(permission.HasValue).IsTrue().Because($"{endpointTypeName} declares no permission.");
 
         return [permission!.Value.ToString()];
     }

@@ -1,112 +1,76 @@
-using System.Buffers.Binary;
 using System.Net;
 using System.Text;
 using Elsa.Diagnostics.OpenTelemetry.Contracts;
-using Elsa.Diagnostics.OpenTelemetry.Extensions;
 using Elsa.Diagnostics.OpenTelemetry.Models;
 using Elsa.Diagnostics.OpenTelemetry.Options;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.OpenTelemetry.IntegrationTests;
 
-public class OtlpHttpIngestionTests : IAsyncLifetime
+public class OtlpHttpIngestionTests : OpenTelemetryWebApplicationTest
 {
     private static readonly byte[] TraceId = Convert.FromHexString("00112233445566778899aabbccddeeff");
     private static readonly byte[] SpanId = Convert.FromHexString("0011223344556677");
     private static readonly byte[] ChildSpanId = Convert.FromHexString("8899aabbccddeeff");
     private static readonly DateTimeOffset Timestamp = new(2026, 5, 26, 10, 0, 0, TimeSpan.Zero);
 
-    private WebApplication? _app;
-    private HttpClient _httpClient = null!;
-
-    public async Task InitializeAsync()
-    {
-        var builder = WebApplication.CreateSlimBuilder();
-        builder.WebHost.UseTestServer();
-        builder.Services.AddOpenTelemetryDiagnosticsServices(options =>
-        {
-            options.AllowUnauthenticatedLoopback = true;
-            options.HttpEndpointPath = "/elsa/otlp/v1";
-        });
-
-        _app = builder.Build();
-        _app.Use((context, next) =>
-        {
-            context.Connection.RemoteIpAddress = IPAddress.Loopback;
-            return next();
-        });
-        _app.MapOpenTelemetryHttpProtobufCollector();
-
-        await _app.StartAsync();
-        _httpClient = _app.GetTestClient();
-    }
-
-    public async Task DisposeAsync()
-    {
-        _httpClient.Dispose();
-
-        if (_app == null)
-            return;
-
-        await _app.StopAsync();
-        await _app.DisposeAsync();
-    }
-
-    [Fact]
+    [Test]
     public async Task PostTraces_WhenPayloadIsValid_StoresQueryableTrace()
     {
+        using var client = Factory.CreateClient();
         using var content = new ByteArrayContent(CreateTracePayload());
         content.Headers.ContentType = new("application/x-protobuf");
 
-        var response = await _httpClient.PostAsync("/elsa/otlp/v1/traces", content);
+        using var response = await client.PostAsync("/elsa/otlp/v1/traces", content);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
-        var provider = _app!.Services.GetRequiredService<IOpenTelemetryProvider>();
+        var provider = Services.GetRequiredService<IOpenTelemetryProvider>();
         var result = await provider.GetTracesAsync(new OpenTelemetryTraceFilter { TraceId = "00112233445566778899aabbccddeeff" });
-        var trace = Assert.Single(result.Items);
+        var trace = await Assert.That(result.Items).HasSingleItem();
 
-        Assert.Equal("Workflow/Approve", trace.Name);
-        Assert.Equal("wf-1", Assert.Single(trace.WorkflowInstanceIds));
+        await Assert.That(trace.Name).IsEqualTo("Workflow/Approve");
+        var workflowInstanceId = await Assert.That(trace.WorkflowInstanceIds).HasSingleItem();
+        await Assert.That(workflowInstanceId).IsEqualTo("wf-1");
 
-        var detail = await provider.GetTraceAsync(trace.TraceId);
+        var detail = await Assert.That(await provider.GetTraceAsync(trace.TraceId)).IsNotNull();
 
-        Assert.NotNull(detail);
-        Assert.Equal(2, detail.Spans.Count);
+        await Assert.That(detail.Spans.Count).IsEqualTo(2);
 
-        var rootSpan = Assert.Single(detail.Spans, x => x.SpanId == "0011223344556677");
-        Assert.Equal("order-workflow", rootSpan.Attributes["workflow.definition.id"]);
-        Assert.Equal("wf-1", rootSpan.Attributes["workflow.instance.id"]);
+        var rootSpan = await Assert.That(detail.Spans).HasSingleItem(x => x.SpanId == "0011223344556677");
+        await Assert.That(rootSpan.Attributes["workflow.definition.id"]).IsEqualTo("order-workflow");
+        await Assert.That(rootSpan.Attributes["workflow.instance.id"]).IsEqualTo("wf-1");
 
-        var activitySpan = Assert.Single(detail.Spans, x => x.SpanId == "8899aabbccddeeff");
-        Assert.Equal("0011223344556677", activitySpan.ParentSpanId);
-        Assert.Equal("approve-task", activitySpan.Attributes["activity.id"]);
-        Assert.Equal("node-approve", activitySpan.Attributes["activity.node.id"]);
+        var activitySpan = await Assert.That(detail.Spans).HasSingleItem(x => x.SpanId == "8899aabbccddeeff");
+        await Assert.That(activitySpan.ParentSpanId).IsEqualTo("0011223344556677");
+        await Assert.That(activitySpan.Attributes["activity.id"]).IsEqualTo("approve-task");
+        await Assert.That(activitySpan.Attributes["activity.node.id"]).IsEqualTo("node-approve");
     }
 
-    [Fact]
+    [Test]
     public async Task PostTraces_WhenPayloadExceedsConfiguredLimit_ReturnsPayloadTooLarge()
     {
-        _app!.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenTelemetryDiagnosticsOptions>>().Value.MaxHttpRequestBodySize = 1;
+        Services.GetRequiredService<IOptions<OpenTelemetryDiagnosticsOptions>>().Value.MaxHttpRequestBodySize = 1;
+        using var client = Factory.CreateClient();
         using var content = new ByteArrayContent(CreateTracePayload());
         content.Headers.ContentType = new("application/x-protobuf");
 
-        var response = await _httpClient.PostAsync("/elsa/otlp/v1/traces", content);
+        using var response = await client.PostAsync("/elsa/otlp/v1/traces", content);
 
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.RequestEntityTooLarge);
     }
 
-    [Fact]
+    [Test]
     public async Task PostTraces_WhenPayloadIsTruncated_ReturnsBadRequest()
     {
+        using var client = Factory.CreateClient();
         using var content = new ByteArrayContent([0x0a, 0x04, 0x08]);
         content.Headers.ContentType = new("application/x-protobuf");
 
-        var response = await _httpClient.PostAsync("/elsa/otlp/v1/traces", content);
+        using var response = await client.PostAsync("/elsa/otlp/v1/traces", content);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     private static byte[] CreateTracePayload()

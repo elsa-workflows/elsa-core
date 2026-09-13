@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using Elsa.Diagnostics.OpenTelemetry.Contracts;
 using Elsa.Diagnostics.OpenTelemetry.Models;
@@ -10,7 +11,6 @@ using FastEndpoints.Security;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit.Sdk;
 using OptionsFactory = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.OpenTelemetry.IntegrationTests;
@@ -19,46 +19,47 @@ public class OpenTelemetryHubTests
 {
     private readonly DateTimeOffset _now = new(2026, 5, 26, 10, 0, 0, TimeSpan.Zero);
 
-    [Fact]
+    [Test]
     public async Task SubscribeAsync_WhenUserLacksPermission_DeniesAccess()
     {
-        var hub = CreateHub(new TestLiveFeed(), "diagnostics/opentelemetry:write");
+        using var harness = CreateHub(new TestLiveFeed(), "diagnostics/opentelemetry:write");
 
-        await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(new()));
+        await Assert.ThrowsExactlyAsync<HubException>(() => harness.Hub.SubscribeAsync(new()));
     }
 
-    [Theory]
-    [InlineData("diagnostics/opentelemetry:view")]
-    [InlineData(PermissionNames.All)]
-    [InlineData("*:view")]
+    [Test]
+    [Arguments("diagnostics/opentelemetry:view")]
+    [Arguments(PermissionNames.All)]
+    [Arguments("*:view")]
     public async Task SubscribeAsync_WhenUserCanRead_ForwardsItemsToCaller(string permission)
     {
         var liveFeed = new TestLiveFeed(new OpenTelemetryStreamItem { Trace = Trace("trace-1") });
         var caller = new CapturingOpenTelemetryClient();
-        var hub = CreateHub(liveFeed, permission, caller);
+        using var harness = CreateHub(liveFeed, permission, caller);
 
-        await hub.SubscribeAsync(new OpenTelemetryTraceFilter { TraceId = "trace-1" });
+        await harness.Hub.SubscribeAsync(new OpenTelemetryTraceFilter { TraceId = "trace-1" });
 
-        await AssertEventuallyAsync(() =>
-        {
-            Assert.Equal("trace-1", Assert.Single(caller.Items).Trace?.TraceId);
-            Assert.Equal("trace-1", liveFeed.Filter?.TraceId);
-        });
+        await Assert.That(() => caller.Count)
+            .Eventually(
+                count => count.IsEqualTo(1),
+                timeout: TimeSpan.FromSeconds(3),
+                pollingInterval: TimeSpan.FromMilliseconds(25));
+        await AssertForwardedSubscriptionAsync(caller, liveFeed);
     }
 
-    [Fact]
+    [Test]
     public async Task SubscribeAsync_WhenFilterTimeRangeIsInvalid_RejectsFilter()
     {
-        var hub = CreateHub(new TestLiveFeed(), "diagnostics/opentelemetry:view");
+        using var harness = CreateHub(new TestLiveFeed(), "diagnostics/opentelemetry:view");
 
-        await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(new OpenTelemetryTraceFilter
+        await Assert.ThrowsExactlyAsync<HubException>(() => harness.Hub.SubscribeAsync(new OpenTelemetryTraceFilter
         {
             From = _now.AddMinutes(1),
             To = _now
         }));
     }
 
-    [Fact]
+    [Test]
     public async Task LiveFeed_WhenTraceFilterIsSet_OnlyPublishesMatchingTraces()
     {
         var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions()));
@@ -68,11 +69,11 @@ public class OpenTelemetryHubTests
 
         await liveFeed.PublishAsync(new OpenTelemetryBatch([], [Trace("trace-skip"), Trace("trace-keep")], [], [], [], []), timeout.Token);
 
-        Assert.True(await next);
-        Assert.Equal("trace-keep", enumerator.Current.Trace?.TraceId);
+        await Assert.That(await next).IsTrue();
+        await Assert.That(enumerator.Current.Trace?.TraceId).IsEqualTo("trace-keep");
     }
 
-    [Fact]
+    [Test]
     public async Task LiveFeed_WhenServiceNameFilterIsSet_OnlyPublishesMatchingResourcesAndTraces()
     {
         var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions()));
@@ -85,22 +86,21 @@ public class OpenTelemetryHubTests
             [Trace("trace-skip", ["resource-skip"])],
             [], [], [], []), timeout.Token);
 
-        var completed = await Task.WhenAny(next, Task.Delay(TimeSpan.FromMilliseconds(150), timeout.Token));
-        Assert.NotSame(next, completed);
-
+        // This accepted batch is a FIFO sentinel. PublishAsync filters and writes synchronously, so if either
+        // rejected item leaked into the channel it must be observed before resource-keep.
         await liveFeed.PublishAsync(new OpenTelemetryBatch(
             [Resource("resource-keep", "api")],
             [Trace("trace-keep", ["resource-keep"])],
             [], [], [], []), timeout.Token);
 
-        Assert.True(await next);
-        Assert.Equal("resource-keep", enumerator.Current.Resource?.Id);
+        await Assert.That(await next).IsTrue();
+        await Assert.That(enumerator.Current.Resource?.Id).IsEqualTo("resource-keep");
 
-        Assert.True(await enumerator.MoveNextAsync());
-        Assert.Equal("trace-keep", enumerator.Current.Trace?.TraceId);
+        await Assert.That(await enumerator.MoveNextAsync()).IsTrue();
+        await Assert.That(enumerator.Current.Trace?.TraceId).IsEqualTo("trace-keep");
     }
 
-    [Fact]
+    [Test]
     public async Task LiveFeed_WhenResourceFilterIsSet_FiltersLogsAndMetricPoints()
     {
         var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions()));
@@ -116,14 +116,14 @@ public class OpenTelemetryHubTests
             [MetricPoint("point-skip", "resource-skip"), MetricPoint("point-keep", "resource-keep")],
             [Log("log-skip", "resource-skip"), Log("log-keep", "resource-keep")]), timeout.Token);
 
-        Assert.True(await first);
-        Assert.Equal("log-keep", enumerator.Current.Log?.Id);
+        await Assert.That(await first).IsTrue();
+        await Assert.That(enumerator.Current.Log?.Id).IsEqualTo("log-keep");
 
-        Assert.True(await enumerator.MoveNextAsync());
-        Assert.Equal("point-keep", enumerator.Current.MetricPoint?.Id);
+        await Assert.That(await enumerator.MoveNextAsync()).IsTrue();
+        await Assert.That(enumerator.Current.MetricPoint?.Id).IsEqualTo("point-keep");
     }
 
-    [Fact]
+    [Test]
     public async Task LiveFeed_WhenSubscriberQueueOverflows_PublishesDroppedItemSummary()
     {
         var liveFeed = new InMemoryOpenTelemetryLiveFeed(OptionsFactory.Create(new OpenTelemetryDiagnosticsOptions { SubscriberChannelCapacity = 1 }));
@@ -133,7 +133,7 @@ public class OpenTelemetryHubTests
 
         await liveFeed.PublishAsync(new OpenTelemetryBatch([], [Trace("trace-1"), Trace("trace-2"), Trace("trace-3")], [], [], [], []), timeout.Token);
 
-        Assert.True(await first);
+        await Assert.That(await first).IsTrue();
 
         OpenTelemetryStreamItem? summary = enumerator.Current.DroppedItems != null ? enumerator.Current : null;
         for (var i = 0; summary == null && i < 5 && await enumerator.MoveNextAsync(); i++)
@@ -142,24 +142,26 @@ public class OpenTelemetryHubTests
                 summary = enumerator.Current;
         }
 
-        Assert.NotNull(summary);
-        var nonNullSummary = summary!;
-        Assert.Equal(OpenTelemetrySignalType.Trace, nonNullSummary.DroppedItems!.SignalType);
-        Assert.Equal("SubscriberQueueFull", nonNullSummary.DroppedItems.Reason);
-        Assert.True(nonNullSummary.DroppedItems.Count > 0);
+        var nonNullSummary = await Assert.That(summary).IsNotNull();
+        var droppedItems = await Assert.That(nonNullSummary.DroppedItems).IsNotNull();
+        await Assert.That(droppedItems.SignalType).IsEqualTo(OpenTelemetrySignalType.Trace);
+        await Assert.That(droppedItems.Reason).IsEqualTo("SubscriberQueueFull");
+        await Assert.That(droppedItems.Count).IsGreaterThan(0L);
     }
 
-    private OpenTelemetryHub CreateHub(IOpenTelemetryLiveFeed liveFeed, string permission, IOpenTelemetryClient? caller = null)
+    private HubTestHarness CreateHub(IOpenTelemetryLiveFeed liveFeed, string permission, IOpenTelemetryClient? caller = null)
     {
         caller ??= new CapturingOpenTelemetryClient();
         var hubContext = new TestHubContext(caller);
         var subscriptionManager = new OpenTelemetrySubscriptionManager(liveFeed, hubContext, NullLogger<OpenTelemetrySubscriptionManager>.Instance);
 
-        return new OpenTelemetryHub(subscriptionManager)
+        var hub = new OpenTelemetryHub(subscriptionManager)
         {
             Context = new TestHubCallerContext(CreateUser(permission)),
             Clients = new TestHubCallerClients(caller)
         };
+
+        return new HubTestHarness(hub, subscriptionManager);
     }
 
     private ClaimsPrincipal CreateUser(string permission)
@@ -213,11 +215,14 @@ public class OpenTelemetryHubTests
 
     private class CapturingOpenTelemetryClient : IOpenTelemetryClient
     {
-        public List<OpenTelemetryStreamItem> Items { get; } = [];
+        private readonly ConcurrentQueue<OpenTelemetryStreamItem> _items = new();
+
+        public int Count => _items.Count;
+        public IReadOnlyCollection<OpenTelemetryStreamItem> Items => _items.ToArray();
 
         public Task ReceiveAsync(OpenTelemetryStreamItem item)
         {
-            Items.Add(item);
+            _items.Enqueue(item);
             return Task.CompletedTask;
         }
     }
@@ -265,27 +270,18 @@ public class OpenTelemetryHubTests
         public Task RemoveFromGroupAsync(string connectionId, string groupName, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
-    private static async Task AssertEventuallyAsync(Action assertion)
+    private static async Task AssertForwardedSubscriptionAsync(CapturingOpenTelemetryClient caller, TestLiveFeed liveFeed)
     {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
-        Exception? lastException = null;
+        var item = await Assert.That(caller.Items).HasSingleItem();
+        await Assert.That(item.Trace?.TraceId).IsEqualTo("trace-1");
+        await Assert.That(liveFeed.Filter?.TraceId).IsEqualTo("trace-1");
+    }
 
-        while (DateTimeOffset.UtcNow < deadline)
-        {
-            try
-            {
-                assertion();
-                return;
-            }
-            catch (XunitException e)
-            {
-                lastException = e;
-                await Task.Delay(25);
-            }
-        }
+    private sealed class HubTestHarness(OpenTelemetryHub hub, OpenTelemetrySubscriptionManager subscriptionManager) : IDisposable
+    {
+        public OpenTelemetryHub Hub { get; } = hub;
 
-        if (lastException != null)
-            throw lastException;
+        public void Dispose() => subscriptionManager.Dispose();
     }
 
     private class TestHubCallerContext(ClaimsPrincipal user) : HubCallerContext

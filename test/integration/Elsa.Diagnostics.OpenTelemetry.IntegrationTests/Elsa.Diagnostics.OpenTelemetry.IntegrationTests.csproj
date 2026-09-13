@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Diagnostics.OpenTelemetry]*</Include>
         <Threshold>0</Threshold>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="TUnit.AspNetCore" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Integration\Elsa.Testing.Shared.Integration.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.OpenTelemetry\Elsa.Diagnostics.OpenTelemetry.csproj" />
     </ItemGroup>
