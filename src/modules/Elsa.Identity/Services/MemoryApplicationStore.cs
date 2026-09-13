@@ -32,9 +32,14 @@ public class MemoryApplicationStore : IApplicationStore
     /// <inheritdoc />
     public Task SaveAsync(Application application, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(application);
         lock (_store.Sync)
+        {
+            ApplyCurrentTenant(application);
+            MemoryIdentityUniqueness.EnsureAvailable(_store, application, x => x.Name, "name");
+            MemoryIdentityUniqueness.EnsureAvailable(_store, application, x => x.ClientId, "client id");
             _store.Save(application, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 

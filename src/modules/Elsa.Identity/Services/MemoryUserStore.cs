@@ -32,9 +32,13 @@ public class MemoryUserStore : IUserStore
     /// <inheritdoc />
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(user);
         lock (_store.Sync)
+        {
+            ApplyCurrentTenant(user);
+            MemoryIdentityUniqueness.EnsureAvailable(_store, user, x => x.Name, "name");
             _store.Save(user, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 

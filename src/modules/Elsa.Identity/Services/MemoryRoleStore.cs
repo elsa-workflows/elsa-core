@@ -26,7 +26,7 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, GetStorageKey);
+        Save(role);
         return Task.CompletedTask;
     }
 
@@ -55,8 +55,17 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public Task SaveAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, GetStorageKey);
+        Save(role);
         return Task.CompletedTask;
+    }
+
+    private void Save(Role role)
+    {
+        lock (_store.Sync)
+        {
+            MemoryIdentityUniqueness.EnsureAvailable(_store, role, x => x.Name, "name");
+            _store.Save(role, GetStorageKey);
+        }
     }
 
     /// <inheritdoc />
