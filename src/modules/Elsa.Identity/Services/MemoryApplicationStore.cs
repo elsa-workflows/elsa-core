@@ -32,9 +32,14 @@ public class MemoryApplicationStore : IApplicationStore
     /// <inheritdoc />
     public Task SaveAsync(Application application, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(application);
         lock (_store.Sync)
+        {
+            ApplyCurrentTenant(application);
+            MemoryIdentityUniqueness.EnsureAvailable(_store, application, x => x.Name, "name");
+            MemoryIdentityUniqueness.EnsureAvailable(_store, application, x => x.ClientId, "client id");
             _store.Save(application, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -53,7 +58,7 @@ public class MemoryApplicationStore : IApplicationStore
     /// <inheritdoc />
     public Task<Application?> FindAsync(ApplicationFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         return Task.FromResult(result);
     }
 
@@ -69,4 +74,18 @@ public class MemoryApplicationStore : IApplicationStore
 
         entity.TenantId ??= _tenantAccessor.TenantId;
     }
+
+    private static Application Clone(Application application) =>
+        new()
+        {
+            Id = application.Id,
+            Name = application.Name,
+            ClientId = application.ClientId,
+            TenantId = application.TenantId,
+            HashedApiKey = application.HashedApiKey,
+            HashedApiKeySalt = application.HashedApiKeySalt,
+            HashedClientSecret = application.HashedClientSecret,
+            HashedClientSecretSalt = application.HashedClientSecretSalt,
+            Roles = application.Roles.ToList()
+        };
 }

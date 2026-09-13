@@ -26,7 +26,7 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, GetStorageKey);
+        Save(role);
         return Task.CompletedTask;
     }
 
@@ -55,21 +55,30 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public Task SaveAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, GetStorageKey);
+        Save(role);
         return Task.CompletedTask;
+    }
+
+    private void Save(Role role)
+    {
+        lock (_store.Sync)
+        {
+            MemoryIdentityUniqueness.EnsureAvailable(_store, role, x => x.Name, "name");
+            _store.Save(role, GetStorageKey);
+        }
     }
 
     /// <inheritdoc />
     public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
     
@@ -86,6 +95,15 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
 
         return filter.Apply(queryable);
     }
+
+    private static Role Clone(Role role) =>
+        new()
+        {
+            Id = role.Id,
+            Name = role.Name,
+            TenantId = role.TenantId,
+            Permissions = role.Permissions.ToList()
+        };
 
     private static string GetStorageKey(Role role) => GetStorageKey(role.TenantId, role.Id);
 

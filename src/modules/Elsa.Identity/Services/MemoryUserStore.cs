@@ -32,9 +32,13 @@ public class MemoryUserStore : IUserStore
     /// <inheritdoc />
     public Task SaveAsync(User user, CancellationToken cancellationToken = default)
     {
-        ApplyCurrentTenant(user);
         lock (_store.Sync)
+        {
+            ApplyCurrentTenant(user);
+            MemoryIdentityUniqueness.EnsureAvailable(_store, user, x => x.Name, "name");
             _store.Save(user, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -53,14 +57,14 @@ public class MemoryUserStore : IUserStore
     /// <inheritdoc />
     public Task<IEnumerable<User>> FindManyAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).ToList();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).ToList();
         return Task.FromResult<IEnumerable<User>>(result);
     }
 
     /// <inheritdoc />
     public Task<User?> FindAsync(UserFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         return Task.FromResult(result);
     }
 
@@ -76,4 +80,15 @@ public class MemoryUserStore : IUserStore
 
         entity.TenantId ??= _tenantAccessor.TenantId;
     }
+
+    private static User Clone(User user) =>
+        new()
+        {
+            Id = user.Id,
+            Name = user.Name,
+            TenantId = user.TenantId,
+            HashedPassword = user.HashedPassword,
+            HashedPasswordSalt = user.HashedPasswordSalt,
+            Roles = user.Roles.ToList()
+        };
 }
