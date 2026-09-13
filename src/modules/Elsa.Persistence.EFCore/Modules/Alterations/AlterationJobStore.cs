@@ -3,7 +3,11 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
+using Elsa.Alterations.Core.Stores;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Alterations;
@@ -14,18 +18,26 @@ namespace Elsa.Persistence.EFCore.Modules.Alterations;
 public class EFCoreAlterationJobStore : IAlterationJobStore
 {
     private readonly EntityStore<AlterationsElsaDbContext, AlterationJob> _store;
+    private readonly bool _tenantEnabled;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store)
+    public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store, IOptions<TenantsOptions> tenantsOptions)
     {
         _store = store;
+        _tenantEnabled = tenantsOptions.Value.IsEnabled;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(AlterationJob record, CancellationToken cancellationToken = default)
     {
+        if (!_tenantEnabled)
+        {
+            await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+            return;
+        }
+
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         await UpsertAsync(dbContext, record, cancellationToken);
     }
@@ -33,17 +45,25 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<AlterationJob> jobs, CancellationToken cancellationToken = default)
     {
-        var list = jobs.ToList();
+        if (!_tenantEnabled)
+        {
+            await _store.SaveManyAsync(jobs, OnSaveAsync, cancellationToken);
+            return;
+        }
+
+        var list = jobs.OrderBy(job => job.Id, StringComparer.Ordinal).ToList();
         if (list.Count == 0)
             return;
 
-        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
+        await _store.ExecuteSqlServerWriteWithRetryAsync(async (dbContext, ct) =>
+        {
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
 
-        foreach (var job in list)
-            await UpsertAsync(dbContext, job, cancellationToken);
+            foreach (var job in list)
+                await UpsertAsync(dbContext, job, ct);
 
-        await transaction.CommitAsync(cancellationToken);
+            await transaction.CommitAsync(ct);
+        }, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -76,7 +96,6 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
         AlterationTenantOwnedUpsert.StampTenantId(record, ambientTenantId);
         OnSave(dbContext, record);
 
-        var tenantId = record.TenantId;
         var planId = record.PlanId;
         var workflowInstanceId = record.WorkflowInstanceId;
         var status = record.Status;
@@ -85,27 +104,42 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
         var completedAt = record.CompletedAt;
         var serializedLog = dbContext.Entry(record).Property<string>("SerializedLog").CurrentValue;
 
-        var updated = await dbContext.Set<AlterationJob>()
+        var query = dbContext.Set<AlterationJob>()
             .IgnoreQueryFilters()
-            .Where(AlterationTenantOwnedUpsert.OwnedId<AlterationJob>(record.Id, record.TenantId, ambientTenantId))
-            .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(job => job.TenantId, tenantId)
-                    .SetProperty(job => job.PlanId, planId)
-                    .SetProperty(job => job.WorkflowInstanceId, workflowInstanceId)
-                    .SetProperty(job => job.Status, status)
-                    .SetProperty(job => job.CreatedAt, createdAt)
-                    .SetProperty(job => job.StartedAt, startedAt)
-                    .SetProperty(job => job.CompletedAt, completedAt)
-                    .SetProperty(job => EF.Property<string>(job, "SerializedLog"), serializedLog),
-                cancellationToken);
+            .Where(AlterationTenantOwnedUpsert.OwnedId<AlterationJob>(record.Id, record.TenantId, ambientTenantId));
+        Action<UpdateSettersBuilder<AlterationJob>> setters = setters => setters
+            .SetProperty(job => job.PlanId, planId)
+            .SetProperty(job => job.WorkflowInstanceId, workflowInstanceId)
+            .SetProperty(job => job.Status, status)
+            .SetProperty(job => job.CreatedAt, createdAt)
+            .SetProperty(job => job.StartedAt, startedAt)
+            .SetProperty(job => job.CompletedAt, completedAt)
+            .SetProperty(job => EF.Property<string>(job, "SerializedLog"), serializedLog);
+
+        var updated = await query.ExecuteUpdateAsync(setters, cancellationToken);
 
         if (updated == 0)
-            await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, isPlan: false, cancellationToken);
+        {
+            var inserted = await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken);
+            if (!inserted)
+            {
+                var retried = await query.ExecuteUpdateAsync(setters, cancellationToken);
+
+                if (retried == 0)
+                    throw AlterationStoreConflict.HiddenJobId(record.Id);
+            }
+        }
     }
 
     private static void OnSave(AlterationsElsaDbContext elsaDbContext, AlterationJob entity)
     {
         elsaDbContext.Entry(entity).Property("SerializedLog").CurrentValue = JsonSerializer.Serialize(entity.Log);
+    }
+
+    private static ValueTask OnSaveAsync(AlterationsElsaDbContext dbContext, AlterationJob entity, CancellationToken cancellationToken)
+    {
+        OnSave(dbContext, entity);
+        return default;
     }
 
     private static ValueTask OnLoadAsync(AlterationsElsaDbContext elsaDbContext, AlterationJob? entity, CancellationToken cancellationToken)

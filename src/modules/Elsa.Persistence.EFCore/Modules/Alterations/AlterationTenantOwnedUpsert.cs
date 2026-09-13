@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using Elsa.Alterations.Core.Stores;
 using Elsa.Common.Entities;
 using Elsa.Common.Multitenancy;
 using Microsoft.EntityFrameworkCore;
@@ -40,10 +39,9 @@ internal static class AlterationTenantOwnedUpsert
                 || (entity.TenantId == null && ambientTenantId == Tenant.DefaultTenantId))));
     }
 
-    public static async Task InsertIfAbsentAsync<TEntity>(
+    public static async Task<bool> InsertIfAbsentAsync<TEntity>(
         AlterationsElsaDbContext dbContext,
         TEntity entity,
-        bool isPlan,
         CancellationToken cancellationToken)
         where TEntity : Entity
     {
@@ -56,9 +54,9 @@ internal static class AlterationTenantOwnedUpsert
         catch (DbUpdateException exception) when (DbExceptionClassifier.IsDuplicateKey(exception))
         {
             dbContext.Entry(entity).State = EntityState.Detached;
-            throw isPlan
-                ? AlterationStoreConflict.HiddenPlanId(entity.Id)
-                : AlterationStoreConflict.HiddenJobId(entity.Id);
+            return false;
         }
+
+        return true;
     }
 }

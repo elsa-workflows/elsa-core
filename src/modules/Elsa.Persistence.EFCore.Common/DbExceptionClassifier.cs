@@ -54,8 +54,16 @@ internal static class DbExceptionClassifier
         if (typeName.Contains("MySql", StringComparison.OrdinalIgnoreCase) && errorNumbers.Contains(1062))
             return true;
 
-        if (typeName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) && errorNumbers.Any(number => number is 19 or 1555 or 2067))
-            return true;
+        if (typeName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            // Microsoft.Data.Sqlite exposes the extended result code when it is
+            // available. It must take precedence over the base code: a base 19
+            // can describe a non-duplicate constraint such as NOT NULL.
+            if (HasProperty(exception, "SqliteExtendedErrorCode"))
+                return GetIntProperty(exception, "SqliteExtendedErrorCode") is 1555 or 2067;
+
+            return GetIntProperty(exception, "SqliteErrorCode") == 19;
+        }
 
         if (typeName.Contains("Oracle", StringComparison.OrdinalIgnoreCase) && errorNumbers.Contains(1))
             return true;
@@ -113,6 +121,8 @@ internal static class DbExceptionClassifier
             _ => null
         };
     }
+
+    private static bool HasProperty(object source, string name) => source.GetType().GetProperty(name) is not null;
 
     private static string? GetStringProperty(object source, string name)
     {

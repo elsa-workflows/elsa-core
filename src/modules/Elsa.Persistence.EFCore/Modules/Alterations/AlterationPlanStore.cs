@@ -4,7 +4,11 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
+using Elsa.Alterations.Core.Stores;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Persistence.EFCore.Modules.Alterations;
 
@@ -15,25 +19,35 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
 {
     private readonly EntityStore<AlterationsElsaDbContext, AlterationPlan> _store;
     private readonly IAlterationSerializer _alterationSerializer;
+    private readonly bool _tenantEnabled;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreAlterationPlanStore(EntityStore<AlterationsElsaDbContext, AlterationPlan> store, IAlterationSerializer alterationSerializer)
+    public EFCoreAlterationPlanStore(
+        EntityStore<AlterationsElsaDbContext, AlterationPlan> store,
+        IAlterationSerializer alterationSerializer,
+        IOptions<TenantsOptions> tenantsOptions)
     {
         _store = store;
         _alterationSerializer = alterationSerializer;
+        _tenantEnabled = tenantsOptions.Value.IsEnabled;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(AlterationPlan record, CancellationToken cancellationToken = default)
     {
+        if (!_tenantEnabled)
+        {
+            await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
+            return;
+        }
+
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         var ambientTenantId = AlterationTenantOwnedUpsert.AmbientTenantId(dbContext);
         AlterationTenantOwnedUpsert.StampTenantId(record, ambientTenantId);
         OnSave(dbContext, record);
 
-        var tenantId = record.TenantId;
         var status = record.Status;
         var createdAt = record.CreatedAt;
         var startedAt = record.StartedAt;
@@ -41,21 +55,30 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
         var serializedAlterations = dbContext.Entry(record).Property<string>("SerializedAlterations").CurrentValue;
         var serializedFilter = dbContext.Entry(record).Property<string>("SerializedWorkflowInstanceFilter").CurrentValue;
 
-        var updated = await dbContext.Set<AlterationPlan>()
+        var query = dbContext.Set<AlterationPlan>()
             .IgnoreQueryFilters()
-            .Where(AlterationTenantOwnedUpsert.OwnedId<AlterationPlan>(record.Id, record.TenantId, ambientTenantId))
-            .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(plan => plan.TenantId, tenantId)
-                    .SetProperty(plan => plan.Status, status)
-                    .SetProperty(plan => plan.CreatedAt, createdAt)
-                    .SetProperty(plan => plan.StartedAt, startedAt)
-                    .SetProperty(plan => plan.CompletedAt, completedAt)
-                    .SetProperty(plan => EF.Property<string>(plan, "SerializedAlterations"), serializedAlterations)
-                    .SetProperty(plan => EF.Property<string>(plan, "SerializedWorkflowInstanceFilter"), serializedFilter),
-                cancellationToken);
+            .Where(AlterationTenantOwnedUpsert.OwnedId<AlterationPlan>(record.Id, record.TenantId, ambientTenantId));
+        Action<UpdateSettersBuilder<AlterationPlan>> setters = setters => setters
+            .SetProperty(plan => plan.Status, status)
+            .SetProperty(plan => plan.CreatedAt, createdAt)
+            .SetProperty(plan => plan.StartedAt, startedAt)
+            .SetProperty(plan => plan.CompletedAt, completedAt)
+            .SetProperty(plan => EF.Property<string>(plan, "SerializedAlterations"), serializedAlterations)
+            .SetProperty(plan => EF.Property<string>(plan, "SerializedWorkflowInstanceFilter"), serializedFilter);
+
+        var updated = await query.ExecuteUpdateAsync(setters, cancellationToken);
 
         if (updated == 0)
-            await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, isPlan: true, cancellationToken);
+        {
+            var inserted = await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken);
+            if (!inserted)
+            {
+                var retried = await query.ExecuteUpdateAsync(setters, cancellationToken);
+
+                if (retried == 0)
+                    throw AlterationStoreConflict.HiddenPlanId(record.Id);
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -75,6 +98,12 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
     {
         elsaDbContext.Entry(entity).Property("SerializedAlterations").CurrentValue = _alterationSerializer.SerializeMany(entity.Alterations);
         elsaDbContext.Entry(entity).Property("SerializedWorkflowInstanceFilter").CurrentValue = JsonSerializer.Serialize(entity.WorkflowInstanceFilter);
+    }
+
+    private ValueTask OnSaveAsync(AlterationsElsaDbContext dbContext, AlterationPlan entity, CancellationToken cancellationToken)
+    {
+        OnSave(dbContext, entity);
+        return default;
     }
 
     [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]

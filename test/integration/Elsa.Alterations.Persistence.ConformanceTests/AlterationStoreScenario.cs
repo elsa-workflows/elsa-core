@@ -13,6 +13,7 @@ using Elsa.Tenants.Options;
 using Elsa.Testing.Shared.Multitenancy;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Persistence.ConformanceTests;
@@ -56,17 +57,31 @@ public sealed class AlterationStoreScenario(
     public static Task<AlterationStoreScenario> CreateSqliteAsync(string tenantId) =>
         CreateSqliteAsync(tenantId, Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db"), ownsDatabaseFile: true);
 
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(
+        string tenantId,
+        bool tenantsEnabled,
+        DbCommandInterceptor? commandInterceptor = null) =>
+        CreateSqliteAsync(
+            tenantId,
+            Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db"),
+            ownsDatabaseFile: true,
+            tenantsEnabled,
+            commandInterceptor);
+
     /// <summary>
     /// Two EF/SQLite hosts that share a file and keep separate ambient tenants so concurrent
     /// Save/SaveMany calls do not mutate a single <see cref="ITenantAccessor"/>.
     /// </summary>
-    public static async Task<SqliteOwnershipPair> CreateSqlitePairAsync(string firstTenantId, string secondTenantId)
+    public static async Task<SqliteOwnershipPair> CreateSqlitePairAsync(
+        string firstTenantId,
+        string secondTenantId,
+        DbCommandInterceptor? commandInterceptor = null)
     {
         var databasePath = Path.Join(Path.GetTempPath(), $"elsa-alterations-ownership-{Guid.NewGuid():N}.db");
-        var first = await CreateSqliteAsync(firstTenantId, databasePath, ownsDatabaseFile: false);
+        var first = await CreateSqliteAsync(firstTenantId, databasePath, ownsDatabaseFile: false, commandInterceptor: commandInterceptor);
         try
         {
-            var second = await CreateSqliteAsync(secondTenantId, databasePath, ownsDatabaseFile: false);
+            var second = await CreateSqliteAsync(secondTenantId, databasePath, ownsDatabaseFile: false, commandInterceptor: commandInterceptor);
             return new SqliteOwnershipPair(first, second, databasePath);
         }
         catch
@@ -76,10 +91,20 @@ public sealed class AlterationStoreScenario(
         }
     }
 
-    public static Task<AlterationStoreScenario> CreateSqliteAsync(string tenantId, string databasePath, bool ownsDatabaseFile) =>
-        CreateSqliteHostAsync(tenantId, databasePath, ownsDatabaseFile);
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(
+        string tenantId,
+        string databasePath,
+        bool ownsDatabaseFile,
+        bool tenantsEnabled = true,
+        DbCommandInterceptor? commandInterceptor = null) =>
+        CreateSqliteHostAsync(tenantId, databasePath, ownsDatabaseFile, tenantsEnabled, commandInterceptor);
 
-    private static async Task<AlterationStoreScenario> CreateSqliteHostAsync(string tenantId, string databasePath, bool ownsDatabaseFile)
+    private static async Task<AlterationStoreScenario> CreateSqliteHostAsync(
+        string tenantId,
+        string databasePath,
+        bool ownsDatabaseFile,
+        bool tenantsEnabled,
+        DbCommandInterceptor? commandInterceptor)
     {
         var tenantAccessor = new TestTenantAccessor(tenantId);
         ServiceProvider? services = null;
@@ -92,12 +117,17 @@ public sealed class AlterationStoreScenario(
                 .AddLogging()
                 .AddSingleton<ITenantAccessor>(tenantAccessor)
                 .AddSingleton<IAlterationSerializer, ConformanceAlterationSerializer>()
-                .Configure<TenantsOptions>(options => options.IsEnabled = true)
+                .Configure<TenantsOptions>(options => options.IsEnabled = tenantsEnabled)
                 .AddScoped<IEntitySavingHandler, ApplyTenantId>()
                 .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
                 .AddSqliteEntityModelCreatingHandlers()
                 .AddDbContextFactory<AlterationsElsaDbContext>((_, builder) =>
-                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath};Default Timeout=30"))
+                {
+                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath};Default Timeout=30");
+                    builder.EnableServiceProviderCaching(false);
+                    if (commandInterceptor is not null)
+                        builder.AddInterceptors(commandInterceptor);
+                })
                 .Decorate<IDbContextFactory<AlterationsElsaDbContext>, TenantAwareDbContextFactory<AlterationsElsaDbContext>>()
                 .AddScoped<EntityStore<AlterationsElsaDbContext, AlterationPlan>>()
                 .AddScoped<EntityStore<AlterationsElsaDbContext, AlterationJob>>()

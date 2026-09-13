@@ -1,8 +1,10 @@
+using System.Data.Common;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
 using Elsa.Common.Multitenancy;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Alterations.Persistence.ConformanceTests;
@@ -75,6 +77,18 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
         await scenario.Plans.SaveAsync(Plan("plan-a", "tenant-a", AlterationPlanStatus.Pending, "before"));
 
         await scenario.Plans.SaveAsync(Plan("plan-a", "tenant-a", AlterationPlanStatus.Completed, "after"));
+
+        var found = await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-a" });
+        AssertUnchangedPlan(found, "tenant-a", AlterationPlanStatus.Completed, "after");
+    }
+
+    [Fact]
+    public async Task SaveAsync_WhenIncomingPlanTenantDiffers_PreservesExistingTenantId()
+    {
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
+        await scenario.Plans.SaveAsync(Plan("plan-a", "tenant-a", AlterationPlanStatus.Pending, "before"));
+
+        await scenario.Plans.SaveAsync(Plan("plan-a", "tenant-b", AlterationPlanStatus.Completed, "after"));
 
         var found = await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "plan-a" });
         AssertUnchangedPlan(found, "tenant-a", AlterationPlanStatus.Completed, "after");
@@ -191,6 +205,72 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     }
 
     [Fact]
+    public async Task SaveManyAsync_WhenIncomingJobTenantDiffers_PreservesExistingTenantId()
+    {
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
+        await scenario.Jobs.SaveAsync(Job("job-a", "tenant-a", AlterationJobStatus.Pending, "before"));
+
+        await scenario.Jobs.SaveManyAsync([Job("job-a", "tenant-b", AlterationJobStatus.Completed, "after")]);
+
+        var found = await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "job-a" });
+        AssertUnchangedJob(found, "tenant-a", AlterationJobStatus.Completed, "after");
+    }
+
+    [Fact]
+    public async Task SaveAsync_WhenTenancyIsDisabled_UpdatesNamedAndAgnosticPlansThroughLegacyStore()
+    {
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync("tenant-b", tenantsEnabled: false);
+        await scenario.Plans.SaveAsync(Plan("named", "tenant-a", AlterationPlanStatus.Pending, "before"));
+        await scenario.Plans.SaveAsync(Plan("agnostic", Tenant.AgnosticTenantId, AlterationPlanStatus.Pending, "before"));
+
+        await scenario.Plans.SaveAsync(Plan("named", "tenant-a", AlterationPlanStatus.Completed, "after"));
+        await scenario.Plans.SaveAsync(Plan("agnostic", Tenant.AgnosticTenantId, AlterationPlanStatus.Completed, "after"));
+
+        AssertUnchangedPlan(await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "named" }), "tenant-a", AlterationPlanStatus.Completed, "after");
+        AssertUnchangedPlan(await scenario.Plans.FindAsync(new AlterationPlanFilter { Id = "agnostic" }), Tenant.AgnosticTenantId, AlterationPlanStatus.Completed, "after");
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenTenancyIsDisabled_UpdatesNamedAndAgnosticJobsThroughLegacyStore()
+    {
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync("tenant-b", tenantsEnabled: false);
+        await scenario.Jobs.SaveAsync(Job("named", "tenant-a", AlterationJobStatus.Pending, "before"));
+        await scenario.Jobs.SaveAsync(Job("agnostic", Tenant.AgnosticTenantId, AlterationJobStatus.Pending, "before"));
+
+        await scenario.Jobs.SaveManyAsync(
+        [
+            Job("named", "tenant-a", AlterationJobStatus.Completed, "after"),
+            Job("agnostic", Tenant.AgnosticTenantId, AlterationJobStatus.Completed, "after")
+        ]);
+
+        AssertUnchangedJob(await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "named" }), "tenant-a", AlterationJobStatus.Completed, "after");
+        AssertUnchangedJob(await scenario.Jobs.FindAsync(new AlterationJobFilter { Id = "agnostic" }), Tenant.AgnosticTenantId, AlterationJobStatus.Completed, "after");
+    }
+
+    [Fact]
+    public async Task SaveAsync_ConcurrentSameTenantPlanId_BothWritersSucceedAndOnePayloadWins()
+    {
+        var gate = new GateFirstAlterationUpdates("AlterationPlans");
+        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync("tenant-a", "tenant-a", gate);
+        gate.Arm();
+
+        var results = await Task.WhenAll(
+            Capture(() => pair.First.Plans.SaveAsync(Plan("race", "tenant-a", AlterationPlanStatus.Running, "from-a"))),
+            Capture(() => pair.Second.Plans.SaveAsync(Plan("race", "tenant-a", AlterationPlanStatus.Completed, "from-b"))));
+
+        Assert.All(results, Assert.Null);
+        Assert.Equal(3, gate.MatchedCommandCount);
+
+        using (pair.First.UseTenant("tenant-a"))
+        {
+            var found = await pair.First.Plans.FindAsync(new AlterationPlanFilter { Id = "race" });
+            Assert.NotNull(found);
+            Assert.Equal("tenant-a", found.TenantId);
+            Assert.Contains(Payload(found), new[] { "from-a", "from-b" });
+        }
+    }
+
+    [Fact]
     public async Task SaveManyAsync_WhenBatchCollides_RollsBackEarlierInserts()
     {
         await using var owner = await AlterationStoreScenario.CreateSqliteAsync("tenant-a");
@@ -214,7 +294,9 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     [Fact]
     public async Task SaveAsync_ConcurrentNamedTenantsOnEmptyPlanId_OneOwnerKeepsPayload()
     {
-        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync("tenant-a", "tenant-b");
+        var gate = new GateFirstAlterationUpdates("AlterationPlans");
+        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync("tenant-a", "tenant-b", gate);
+        gate.Arm();
 
         var results = await Task.WhenAll(
             Capture(() => pair.First.Plans.SaveAsync(Plan("race", "tenant-a", AlterationPlanStatus.Running, "from-a"))),
@@ -222,6 +304,7 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
 
         Assert.Equal(1, results.Count(ex => ex is null));
         Assert.Equal(1, results.Count(ex => ex is InvalidOperationException));
+        Assert.Equal(3, gate.MatchedCommandCount);
 
         var winnerIsA = results[0] is null;
         using (pair.First.UseTenant(winnerIsA ? "tenant-a" : "tenant-b"))
@@ -238,14 +321,17 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     [Fact]
     public async Task SaveAsync_ConcurrentNamedVersusAgnosticOnExistingStarPlan_PreservesStarPayload()
     {
-        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync(Tenant.AgnosticTenantId, "tenant-b");
+        var gate = new GateFirstAlterationUpdates("AlterationPlans");
+        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync(Tenant.AgnosticTenantId, "tenant-b", gate);
         await pair.First.Plans.SaveAsync(Plan("shared", Tenant.AgnosticTenantId, AlterationPlanStatus.Running, "original"));
+        gate.Arm();
 
         var results = await Task.WhenAll(
             Capture(() => pair.First.Plans.SaveAsync(Plan("shared", Tenant.AgnosticTenantId, AlterationPlanStatus.Failed, "agnostic-update"))),
             Capture(() => pair.Second.Plans.SaveAsync(Plan("shared", "tenant-b", AlterationPlanStatus.Completed, "stolen"))));
 
         Assert.IsType<InvalidOperationException>(results[1]);
+        Assert.Equal(3, gate.MatchedCommandCount);
 
         using (pair.First.UseTenant(Tenant.AgnosticTenantId))
         {
@@ -384,4 +470,44 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
         };
 
     private static readonly DateTimeOffset CreatedAt = new(2026, 9, 13, 12, 0, 0, TimeSpan.Zero);
+}
+
+/// <summary>
+/// Releases the first two relevant alteration UPDATE commands after they complete, so
+/// competing SaveAsync calls reach their INSERT/retry paths together. The gate is armed
+/// explicitly after any setup writes so only the concurrent operation is coordinated.
+/// </summary>
+public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInterceptor
+{
+    private readonly TaskCompletionSource<bool> _bothReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _armed;
+    private int _matchedCommandCount;
+
+    public int MatchedCommandCount => Volatile.Read(ref _matchedCommandCount);
+
+    public void Arm() => Volatile.Write(ref _armed, 1);
+
+    public override async ValueTask<int> NonQueryExecutedAsync(
+        DbCommand command,
+        CommandExecutedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        if (!command.CommandText.Contains($"UPDATE \"{tableName}\"", StringComparison.OrdinalIgnoreCase))
+            return result;
+
+        if (Volatile.Read(ref _armed) == 0)
+            return result;
+
+        var commandNumber = Interlocked.Increment(ref _matchedCommandCount);
+        if (commandNumber <= 2)
+        {
+            if (commandNumber == 2)
+                _bothReached.TrySetResult(true);
+
+            await _bothReached.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
+        }
+
+        return result;
+    }
 }
