@@ -39,6 +39,11 @@ internal static class BpmnImportErrorResponses
             await BpmnErrorResponse.SendAsync(httpResponse, NotFoundResponseFor(exception), cancellationToken);
             return null;
         }
+        catch (BpmnDocumentPreconditionFailedException exception)
+        {
+            await BpmnErrorResponse.SendAsync(httpResponse, PreconditionFailedResponseFor(exception), cancellationToken);
+            return null;
+        }
         catch (BpmnInterchangeException exception)
         {
             addError(exception.Message);
@@ -83,6 +88,13 @@ internal static class BpmnImportErrorResponses
     /// </summary>
     internal static BpmnErrorResponse NotFoundResponseFor(BpmnDefinitionNotFoundException exception) =>
         BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.DocumentNotFound, StatusCodes.Status404NotFound);
+
+    /// <summary>
+    /// The <see cref="BpmnErrorCodes.DocumentPreconditionFailed"/> response for a lost compare-and-swap —
+    /// the same code and status the PUT already sends when <c>If-Match</c> is stale on arrival.
+    /// </summary>
+    internal static BpmnErrorResponse PreconditionFailedResponseFor(BpmnDocumentPreconditionFailedException exception) =>
+        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.DocumentPreconditionFailed, StatusCodes.Status412PreconditionFailed);
 
     /// <summary>The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>.</summary>
     internal static BpmnErrorResponse BindingInvalidResponseFor(BpmnBindingException exception) =>

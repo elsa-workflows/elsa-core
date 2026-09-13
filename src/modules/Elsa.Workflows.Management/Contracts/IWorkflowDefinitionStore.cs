@@ -123,6 +123,46 @@ public interface IWorkflowDefinitionStore
     Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Compare-and-swap the latest definition matching <paramref name="filter"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Loads the matching row, and only if <paramref name="matchesExpected"/> is true applies
+    /// <paramref name="update"/> to that just-loaded row and saves the result. The load, the match,
+    /// the update and the save are one critical section (memory) or one conditional write (EF:
+    /// <c>ExecuteUpdate</c> against the loaded snapshot). A lost race returns
+    /// <see cref="WorkflowDefinitionUpdateOutcome.Conflict"/> — it does not wait.
+    /// </para>
+    /// <para>
+    /// <paramref name="update"/> sees the definition as stored at the moment of the swap, so
+    /// metadata copied from it (name, variables, options, custom properties) is current — not a
+    /// snapshot taken by the caller before this call. Treat that argument as read-only and return
+    /// a new or cloned definition; mutating it in place can tear a shared in-memory instance.
+    /// </para>
+    /// <para>
+    /// When <paramref name="update"/> returns a definition with a different <c>Id</c> (a new draft
+    /// of a published version), the previously latest row is unmarked in the same step.
+    /// </para>
+    /// <para>
+    /// Persistence providers outside this repository (Mongo, Dapper, Event Sourcing) must implement
+    /// this the same way before the BPMN document <c>PUT</c> is concurrency-safe on those stores.
+    /// Until they do, that endpoint's atomic precondition is not available there.
+    /// </para>
+    /// </remarks>
+    /// <param name="filter">Typically the latest version of one definition id.</param>
+    /// <param name="matchesExpected">
+    /// True when the loaded row is still the snapshot the caller is allowed to overwrite
+    /// (for the document <c>PUT</c>, the current ETag still equals <c>If-Match</c>).
+    /// </param>
+    /// <param name="update">Builds the definition to save from the just-loaded row.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds the specified set of <see cref="WorkflowDefinition"/> objects to te persistence store.
     /// </summary>
     /// <param name="definitions">The workflow definitions.</param>

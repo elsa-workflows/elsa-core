@@ -100,6 +100,21 @@ public class CachingWorkflowDefinitionStore(IWorkflowDefinitionStore decoratedSt
     }
 
     /// <inheritdoc />
+    public async Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await decoratedStore.TryUpdateLatestAsync(filter, matchesExpected, update, cancellationToken);
+
+        if (result.Outcome == WorkflowDefinitionUpdateOutcome.Updated)
+            await cacheManager.TriggerTokenAsync(CacheInvalidationTokenKey, cancellationToken);
+
+        return result;
+    }
+
+    /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         await decoratedStore.SaveManyAsync(definitions, cancellationToken);

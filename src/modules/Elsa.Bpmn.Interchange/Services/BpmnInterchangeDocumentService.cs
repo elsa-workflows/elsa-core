@@ -5,12 +5,16 @@ using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.Interchange.Binding;
+using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Exceptions;
+using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Extensions;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Mappers;
+using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 
@@ -91,7 +95,11 @@ public sealed class BpmnInterchangeDocumentService(
     BpmnWorkBinder binder,
     IWorkflowDefinitionImporter importer,
     IWorkflowDefinitionStore store,
-    VariableDefinitionMapper variableDefinitionMapper)
+    VariableDefinitionMapper variableDefinitionMapper,
+    IActivitySerializer activitySerializer,
+    IIdentityGenerator identityGenerator,
+    ISystemClock systemClock,
+    IWorkflowDefinitionCacheManager workflowDefinitionCacheManager)
 {
     /// <summary>The workflow definition custom property the original BPMN XML is carried under, for <see cref="Export(WorkflowDefinition)"/>.</summary>
     public const string SourceXmlCustomPropertyKey = "Bpmn:SourceXml";
@@ -190,7 +198,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
-        ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, cancellationToken);
+        ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
 
     /// <summary>
     /// The shared import logic behind both the public <see cref="ImportAsync"/> and <see cref="ImportDocumentAsync"/>:
@@ -208,10 +216,16 @@ public sealed class BpmnInterchangeDocumentService(
     /// inputs, outputs, outcomes, options, tool version, read-only flag and custom properties are carried onto the
     /// imported definition as-is, and only the bound activity graph and the <see cref="SourceXmlCustomPropertyKey"/>,
     /// <see cref="SourceVersionCustomPropertyKey"/>, <see cref="SourceProcessIdCustomPropertyKey"/> and
-    /// <see cref="SourceGraphHashCustomPropertyKey"/> custom properties this method owns change. This is what
-    /// <see cref="ImportDocumentAsync"/> passes so the document PUT
-    /// edits the BPMN document without silently resetting the rest of the definition; left <c>null</c> for a
-    /// whole-definition import, where the model built from the document alone is the intended contract.
+    /// <see cref="SourceGraphHashCustomPropertyKey"/> custom properties this method owns change. Left <c>null</c>
+    /// for a whole-definition import and for a document edit, where metadata is read inside the compare-and-swap.
+    /// </param>
+    /// <param name="expectedETag">
+    /// When <paramref name="compareAndSwap"/> is true, the <c>If-Match</c> value the save must still equal, or
+    /// <c>null</c> to accept any current content while still reading metadata inside the swap.
+    /// </param>
+    /// <param name="compareAndSwap">
+    /// True for a document edit: persist through <see cref="IWorkflowDefinitionStore.TryUpdateLatestAsync"/> so
+    /// the precondition and the metadata-preserving save are one step.
     /// </param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
@@ -223,6 +237,8 @@ public sealed class BpmnInterchangeDocumentService(
         string? name,
         string? processId,
         WorkflowDefinition? preserveMetadataFrom,
+        string? expectedETag,
+        bool compareAndSwap,
         CancellationToken cancellationToken)
     {
         var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
@@ -265,6 +281,11 @@ public sealed class BpmnInterchangeDocumentService(
             model.CustomProperties = new Dictionary<string, object>(preserveMetadataFrom.CustomProperties);
         }
 
+        if (compareAndSwap)
+        {
+            return await PersistDocumentEditAsync(xml, definitionId!, process, rootDefinition, result.Analysis, expectedETag, cancellationToken);
+        }
+
         var importResult = await importer.ImportAsync(new SaveWorkflowDefinitionRequest { Model = model, Publish = false }, cancellationToken);
 
         // The definition's final Version is only known once the importer/publisher has assigned and persisted it —
@@ -283,6 +304,93 @@ public sealed class BpmnInterchangeDocumentService(
         }
 
         return new BpmnDocumentImportResult(importResult, result.Analysis);
+    }
+
+    /// <summary>
+    /// The document-edit persist: load the latest row, accept it only if <paramref name="expectedETag"/> still
+    /// names it, copy metadata from that row, apply the bound graph and the BPMN source properties, and save —
+    /// one compare-and-swap. A lost race is <see cref="BpmnDocumentPreconditionFailedException"/>.
+    /// </summary>
+    private async Task<BpmnDocumentImportResult> PersistDocumentEditAsync(
+        string xml,
+        string definitionId,
+        BpmnProcess process,
+        BpmnProcessDefinition rootDefinition,
+        BpmnImportAnalysis analysis,
+        string? expectedETag,
+        CancellationToken cancellationToken)
+    {
+        var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
+        var result = await store.TryUpdateLatestAsync(
+            filter,
+            current => expectedETag is null || string.Equals(BpmnDocumentETag.From(current), expectedETag, StringComparison.Ordinal),
+            current => ApplyDocumentEdit(current, process, xml, rootDefinition),
+            cancellationToken);
+
+        if (result.Outcome == WorkflowDefinitionUpdateOutcome.NotFound)
+        {
+            throw new BpmnDefinitionNotFoundException(
+                $"Workflow definition '{definitionId}' does not exist, so its BPMN document cannot be edited.");
+        }
+
+        if (result.Outcome == WorkflowDefinitionUpdateOutcome.Conflict)
+        {
+            throw new BpmnDocumentPreconditionFailedException(
+                "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.");
+        }
+
+        await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);
+        return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
+    }
+
+    /// <summary>
+    /// Builds the definition the compare-and-swap will save from the just-loaded <paramref name="current"/>:
+    /// metadata comes from that row; only the bound graph and the BPMN source properties this service owns change.
+    /// </summary>
+    private WorkflowDefinition ApplyDocumentEdit(
+        WorkflowDefinition current,
+        BpmnProcess process,
+        string xml,
+        BpmnProcessDefinition rootDefinition)
+    {
+        var draft = current.IsPublished ? NewDraftFrom(current) : current.ShallowClone();
+        var stringData = activitySerializer.Serialize(process);
+
+        draft.StringData = stringData;
+        draft.MaterializerName = JsonWorkflowMaterializer.MaterializerName;
+        draft.Name = current.Name;
+        draft.Description = current.Description;
+        draft.Variables = current.Variables;
+        draft.Inputs = current.Inputs;
+        draft.Outputs = current.Outputs;
+        draft.Outcomes = current.Outcomes;
+        draft.Options = current.Options;
+        draft.ToolVersion = current.ToolVersion;
+        draft.IsReadonly = current.IsReadonly;
+        draft.CustomProperties = new Dictionary<string, object>(current.CustomProperties)
+        {
+            [SourceXmlCustomPropertyKey] = xml,
+            [SourceVersionCustomPropertyKey] = draft.Version,
+            [SourceProcessIdCustomPropertyKey] = rootDefinition.ProcessId,
+            [SourceGraphHashCustomPropertyKey] = BpmnContentHash.OfGraph(stringData)
+        };
+
+        return draft;
+    }
+
+    /// <summary>
+    /// The unpublished draft <see cref="Elsa.Workflows.Management.IWorkflowDefinitionPublisher.GetDraftAsync"/> would
+    /// return for a published latest row, without a store read: new id, next version, not published.
+    /// </summary>
+    private WorkflowDefinition NewDraftFrom(WorkflowDefinition published)
+    {
+        var draft = published.ShallowClone();
+        draft.Id = identityGenerator.GenerateId();
+        draft.Version = published.Version + 1;
+        draft.CreatedAt = systemClock.UtcNow;
+        draft.IsLatest = true;
+        draft.IsPublished = false;
+        return draft;
     }
 
     /// <summary>
@@ -349,8 +457,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// Unlike a whole-definition import, this edits the BPMN <em>document</em> of an existing definition: the caller
     /// is changing a binding, not replacing the definition. So <paramref name="definitionId"/>'s current metadata —
     /// name, description, variables, inputs, outputs, outcomes, options, tool version, read-only flag and custom
-    /// properties other than the ones this service owns — is carried onto the result unchanged; see the shared
-    /// import logic's <c>preserveMetadataFrom</c> parameter, which this passes the existing definition to. Only the activity graph
+    /// properties other than the ones this service owns — is read inside the same compare-and-swap as the save,
+    /// not from the lookup that restores nested scopes. Only the activity graph
     /// and the <see cref="SourceXmlCustomPropertyKey"/>/<see cref="SourceVersionCustomPropertyKey"/>/
     /// <see cref="SourceProcessIdCustomPropertyKey"/>/<see cref="SourceGraphHashCustomPropertyKey"/> custom properties move.
     /// <para>
@@ -375,6 +483,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// See <see cref="SourceProcessIdCustomPropertyKey"/> for where a caller re-importing an existing definition
     /// finds the value that was used the first time.
     /// </param>
+    /// <param name="expectedETag">
+    /// The <c>If-Match</c> value the document PUT already checked. When set, the same compare-and-swap that
+    /// reads metadata and saves also refuses with <see cref="BpmnDocumentPreconditionFailedException"/> if the
+    /// stored content that ETag covers has moved. When omitted, the swap still reads metadata from the just-loaded
+    /// row so a metadata-only save cannot be reverted, but any content is accepted.
+    /// </param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="Exceptions.BpmnDefinitionNotFoundException">
     /// The workflow definition to edit no longer exists — e.g. it was deleted between the PUT endpoint's own
@@ -382,13 +496,21 @@ public sealed class BpmnInterchangeDocumentService(
     /// whole-definition import path, which would silently create a definition under <paramref name="definitionId"/>
     /// with reset metadata instead of reporting that this PUT's target disappeared.
     /// </exception>
+    /// <exception cref="BpmnDocumentPreconditionFailedException">
+    /// <paramref name="expectedETag"/> no longer matches the stored definition — another writer saved first.
+    /// </exception>
     /// <exception cref="BpmnInterchangeException">
     /// The document declares more than one process and <paramref name="processId"/> does not pick one, or it declares a
     /// subprocess element that has a stored body but no bindingRef to write that body back under.
     /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
-    public async Task<BpmnDocumentImportResult> ImportDocumentAsync(BpmnDefinitions document, string definitionId, string? processId, CancellationToken cancellationToken)
+    public async Task<BpmnDocumentImportResult> ImportDocumentAsync(
+        BpmnDefinitions document,
+        string definitionId,
+        string? processId,
+        CancellationToken cancellationToken,
+        string? expectedETag = null)
     {
         var filter = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter();
         var existingDefinition = await store.FindAsync(filter, cancellationToken);
@@ -414,7 +536,7 @@ public sealed class BpmnInterchangeDocumentService(
         EnsureElementIdsUnique(document.Processes, bindingsToCarryAcross);
 
         var xml = writer.Write(document, bindingsToCarryAcross);
-        return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: existingDefinition, cancellationToken);
+        return await ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: null, expectedETag, compareAndSwap: true, cancellationToken);
     }
 
     /// <summary>

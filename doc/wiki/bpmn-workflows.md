@@ -147,11 +147,16 @@ whole-definition import and resets them from the document, same as it always has
 - **Missing, or the wildcard `*`** — `428 Precondition Required`. Neither says which revision the caller is
   replacing (`*` matches whatever is stored), so the endpoint refuses rather than overwrite blindly, before doing any
   import work or persisting anything.
-- **Anything other than exactly the definition's current `ETag`** — `412 Precondition Failed`, checked before any
-  import work and before anything is persisted. The comparison is exact: a weak (`W/`) tag or a list of tags never
-  matches. The definition was written since the caller last read it; `GET` the document again and reapply the edit.
+- **Anything other than exactly the definition's current `ETag`** — `412 Precondition Failed`. The comparison is
+  exact: a weak (`W/`) tag or a list of tags never matches. Checked once on arrival so a stale client is refused
+  before import work runs, and again in the same compare-and-swap that reads the definition's non-BPMN metadata and
+  saves — a write that lands in that window is also `412`, not a silent overwrite. The definition was written since
+  the caller last read it; `GET` the document again and reapply the edit.
 - **Exactly the current `ETag`** — the request proceeds exactly as before, and the response carries the `ETag` of
-  the draft as this `PUT` stored it.
+  the draft as this `PUT` stored it. Metadata (name, variables, options, …) is taken from the row at save time, so a
+  metadata-only save in that window is carried forward rather than reverted. The swap is implemented on the
+  in-memory and EF Core definition stores (`IWorkflowDefinitionStore.TryUpdateLatestAsync`). Mongo, Dapper and
+  Event Sourcing providers need the same method before this endpoint is concurrency-safe on those stores.
 
 ### The document endpoints and the JSON payload format
 

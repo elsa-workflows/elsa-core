@@ -12,6 +12,13 @@ namespace Elsa.Workflows.Management.Stores;
 /// </summary>
 public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store) : IWorkflowDefinitionStore
 {
+    /// <summary>
+    /// Shared by <see cref="SaveAsync"/> / <see cref="SaveManyAsync"/> / <see cref="DeleteAsync"/> and
+    /// <see cref="TryUpdateLatestAsync"/> so a compare-and-swap's load, match and write are one critical
+    /// section against any other save of the same in-memory set.
+    /// </summary>
+    private readonly object _sync = new();
+
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
@@ -96,23 +103,60 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
-        store.Save(definition, GetId);
+        lock (_sync)
+            store.Save(definition, GetId);
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
-        store.SaveMany(definitions, GetId);
+        lock (_sync)
+            store.SaveMany(definitions, GetId);
+
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+        WorkflowDefinitionFilter filter,
+        Func<WorkflowDefinition, bool> matchesExpected,
+        Func<WorkflowDefinition, WorkflowDefinition> update,
+        CancellationToken cancellationToken = default)
+    {
+        lock (_sync)
+        {
+            var current = store.Query(query => Filter(query, filter)).FirstOrDefault();
+
+            if (current == null)
+                return Task.FromResult(WorkflowDefinitionUpdateResult.NotFound());
+
+            if (!matchesExpected(current))
+                return Task.FromResult(WorkflowDefinitionUpdateResult.Conflict());
+
+            var next = update(current);
+
+            if (next.Id != current.Id)
+            {
+                current.IsLatest = false;
+                store.Save(current, GetId);
+            }
+
+            store.Save(next, GetId);
+            return Task.FromResult(WorkflowDefinitionUpdateResult.Updated(next));
+        }
     }
 
     /// <inheritdoc />
     public Task<long> DeleteAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
-        store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
-        return Task.FromResult(workflowDefinitionIds.LongCount());
+        lock (_sync)
+        {
+            var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
+            store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
+            return Task.FromResult(workflowDefinitionIds.LongCount());
+        }
     }
 
     /// <inheritdoc />

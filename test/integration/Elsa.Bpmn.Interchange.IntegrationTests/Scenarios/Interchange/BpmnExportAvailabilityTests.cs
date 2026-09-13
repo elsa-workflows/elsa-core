@@ -374,6 +374,13 @@ public class BpmnExportAvailabilityTests(ITestOutputHelper testOutputHelper) : B
         public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("Simulated save failure for testing atomic BPMN import.");
 
+        public Task<WorkflowDefinitionUpdateResult> TryUpdateLatestAsync(
+            WorkflowDefinitionFilter filter,
+            Func<WorkflowDefinition, bool> matchesExpected,
+            Func<WorkflowDefinition, WorkflowDefinition> update,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Simulated save failure for testing atomic BPMN import.");
+
         public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<WorkflowDefinition?> FindAsync<TOrderBy>(WorkflowDefinitionFilter filter, WorkflowDefinitionOrder<TOrderBy> order, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<Page<WorkflowDefinition>> FindManyAsync(WorkflowDefinitionFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default) => throw new NotSupportedException();
