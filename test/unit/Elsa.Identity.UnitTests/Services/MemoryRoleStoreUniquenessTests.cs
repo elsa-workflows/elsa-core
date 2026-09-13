@@ -111,13 +111,16 @@ public class MemoryRoleStoreUniquenessTests
         var roleTaggedAsOwner = CreateRole("shared-role", "Tenant A replacement", "tenant-a");
         await Assert.ThrowsAsync<InvalidOperationException>(() => tenantB.SaveAsync(roleTaggedAsOwner));
 
+        var roleRehomedFromTenantA = CreateRole("shared-role", "Rehomed role", "tenant-b");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => tenantA.SaveAsync(roleRehomedFromTenantA));
+
         var unchanged = await tenantA.FindAsync(new RoleFilter { Id = "shared-role" });
         Assert.Equal("Tenant A role", unchanged!.Name);
         Assert.Equal("tenant-a", unchanged.TenantId);
     }
 
-    [Fact(DisplayName = "SaveAsync does not let a named tenant replace an agnostic role")]
-    public async Task SaveAsync_WhenAgnosticRoleIsVisibleToNamedTenant_ThrowsWithoutOverwriting()
+    [Fact(DisplayName = "SaveAsync allows a named tenant to update a visible agnostic role")]
+    public async Task SaveAsync_WhenAgnosticRoleIsVisibleToNamedTenant_UpdatesExistingRole()
     {
         var backing = new MemoryStore<Role>();
         var agnostic = new MemoryRoleStore(backing, new TestTenantAccessor(Tenant.AgnosticTenantId));
@@ -125,15 +128,11 @@ public class MemoryRoleStoreUniquenessTests
 
         await agnostic.SaveAsync(CreateRole("shared-role", "Shared role", Tenant.AgnosticTenantId));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            tenantA.SaveAsync(CreateRole("shared-role", "Updated shared role", Tenant.AgnosticTenantId)));
+        await tenantA.SaveAsync(CreateRole("shared-role", "Updated shared role", Tenant.AgnosticTenantId));
 
         var stored = await agnostic.FindAsync(new RoleFilter { Id = "shared-role" });
-        Assert.Equal("Shared role", stored!.Name);
+        Assert.Equal("Updated shared role", stored!.Name);
         Assert.Equal(Tenant.AgnosticTenantId, stored.TenantId);
-        Assert.Equal("Shared role", (await tenantA.FindAsync(new RoleFilter { Id = "shared-role" }))!.Name);
-
-        await agnostic.SaveAsync(CreateRole("shared-role", "Updated shared role", Tenant.AgnosticTenantId));
         Assert.Equal("Updated shared role", (await tenantA.FindAsync(new RoleFilter { Id = "shared-role" }))!.Name);
     }
 

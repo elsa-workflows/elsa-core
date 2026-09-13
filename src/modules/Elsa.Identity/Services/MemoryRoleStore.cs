@@ -84,7 +84,7 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     private void EnsureIdIsAvailable(Role role)
     {
         var existing = _store.Find(x => x.Id == role.Id);
-        if (existing is not null && !CanReplace(existing))
+        if (existing is not null && !CanReplace(existing, role))
         {
             throw new InvalidOperationException(
                 $"A role already exists with ID '{role.Id}' in tenant '{existing.TenantId}'.");
@@ -92,13 +92,13 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     }
 
     /// <summary>
-    /// <c>*</c> is visible to every tenant, but only an agnostic writer may replace it. Named tenants may upsert
-    /// their own visible rows, matching the durable store's query-filtered ID lookup.
+    /// A role may be replaced only when its existing row is visible to the ambient tenant and the incoming role
+    /// retains that row's tenant marker. This matches the durable store's query-filtered ID lookup while preventing
+    /// a caller from re-homing a globally keyed row by changing its <c>TenantId</c>.
     /// </summary>
-    private bool CanReplace(Role existing) =>
-        existing.TenantId == Tenant.AgnosticTenantId
-            ? _tenantAccessor.TenantId == Tenant.AgnosticTenantId
-            : TenantVisibility.IsVisible(existing.TenantId, _tenantAccessor.TenantId);
+    private bool CanReplace(Role existing, Role replacement) =>
+        string.Equals(existing.TenantId, replacement.TenantId, StringComparison.Ordinal) &&
+        TenantVisibility.IsVisible(existing.TenantId, _tenantAccessor.TenantId);
 
     /// <inheritdoc />
     public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
