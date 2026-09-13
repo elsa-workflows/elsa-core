@@ -294,6 +294,24 @@ public class ExecutionCycleRegistryTests
         Assert.True(handle.Disposed.IsCompletedSuccessfully);
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle.TryCancel propagates fatal CTS callback exceptions wrapped in an aggregate")]
+    public void TryCancelPropagatesFatalCtsCallbackExceptions()
+    {
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None);
+        using var registration = handle.CancellationToken.Register(() => throw new OutOfMemoryException("fatal callback failure"));
+
+        var exception = Assert.Throws<AggregateException>(() => handle.TryCancel());
+
+        Assert.Contains(exception.Flatten().InnerExceptions, inner => inner is OutOfMemoryException);
+        handle.Dispose();
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle.Disposed completes when the handle is disposed")]
     public async Task DisposedTaskCompletesOnDispose()
     {

@@ -50,6 +50,22 @@ public class DrainOrchestratorWaitTests : DrainOrchestratorTestsBase
         await LogStore.Received(1).AddAsync(Arg.Is<Entities.WorkflowExecutionLogRecord>(r => r.EventName == WorkflowInterruptedPayload.WorkflowInterruptedEventName), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "Force drain propagates fatal CTS callback exceptions wrapped in an aggregate")]
+    public async Task ForceDrainPropagatesFatalCtsCallbackExceptions()
+    {
+        using var handle = new ExecutionCycleHandle(Guid.NewGuid(), "instance-fatal-callback", ingressSourceName: null, startedAt: DateTimeOffset.UtcNow, linkedToken: CancellationToken.None);
+        using var registration = handle.CancellationToken.Register(() => throw new OutOfMemoryException("fatal callback failure"));
+        ExecutionCycleRegistry.ActiveCount.Returns(1);
+        ExecutionCycleRegistry.ListActiveCycles().Returns(new[] { handle });
+        InstanceStore.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(RunningInstance("instance-fatal-callback")));
+
+        var sut = BuildSut();
+        var exception = await Assert.ThrowsAsync<AggregateException>(() => sut.DrainAsync(DrainTrigger.OperatorForce).AsTask());
+
+        Assert.Contains(exception.Flatten().InnerExceptions, inner => inner is OutOfMemoryException);
+    }
+
     [Fact(DisplayName = "Persistence failure during drain produces Reason=PersistenceFailure in payload")]
     public async Task PersistenceFailureRecordsReason()
     {

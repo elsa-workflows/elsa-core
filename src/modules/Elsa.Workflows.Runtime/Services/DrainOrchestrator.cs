@@ -152,7 +152,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration, outcome.ExecutionCyclesForceCancelledCount);
             return outcome;
         }
-        catch (Exception ex) when (!ex.IsFatal())
+        catch (Exception ex) when (!IsFatalException(ex))
         {
             // The "drain already in progress / completed" InvalidOperationExceptions are thrown OUTSIDE this
             // try block (during the lock-protected setup), so they bubble out without triggering this handler.
@@ -411,7 +411,7 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
                 cancelledInstanceIds.Add(handle.WorkflowInstanceId);
                 if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
             }
-            catch (Exception ex) when (!ex.IsFatal())
+            catch (Exception ex) when (!IsFatalException(ex))
             {
                 _logger.LogError(ex, "Failed to cancel execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
             }
@@ -611,4 +611,8 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
 
         return true;
     }
+
+    private static bool IsFatalException(Exception exception) =>
+        exception.IsFatal()
+        || exception is AggregateException aggregateException && aggregateException.Flatten().InnerExceptions.Any(inner => inner.IsFatal());
 }
