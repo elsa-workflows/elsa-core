@@ -39,15 +39,14 @@ namespace Elsa.ExternalAuthentication.Services;
 /// replacement role, however, is still performed through the ambient tenant's role services, so when the
 /// deletion target is agnostic the replacement role must itself be agnostic; a tenant-scoped replacement is
 /// rejected rather than being authorized in one tenant and written into every tenant's connections.
-/// In EF Core persistence a role's primary key is its ID alone, so a role ID is unique across all tenants there
-/// and an agnostic/tenant-scoped collision cannot exist. Only <c>MemoryRoleStore</c> can hold two roles that
-/// share an ID (its storage key includes the tenant); resolving a role ID against it can then be genuinely
-/// ambiguous. That ambiguity is never resolved by guessing: widening a tenant-scoped deletion would expose
-/// another tenant's references, and narrowing an agnostic deletion would leave an agnostic role's references
-/// dangling. It fails closed instead. The same collision makes a replacement candidate ambiguous too: a
-/// replacement ID that resolves to more than one role (an ambient match and an agnostic match, under
-/// <c>MemoryRoleStore</c>) is rejected as not agnostic rather than guessed at, so it is reported as
-/// <c>replacement_role_unavailable_or_unauthorized</c> instead of surfacing as an exception.
+/// In EF Core persistence and <c>MemoryRoleStore</c>, a role's key is its ID alone, so a role ID is unique across
+/// all tenants and an agnostic/tenant-scoped collision cannot exist. A custom <see cref="IRoleStore"/> can still
+/// violate that invariant, so resolving a role ID against it can be genuinely ambiguous. That ambiguity is never
+/// resolved by guessing: widening a tenant-scoped deletion would expose another tenant's references, and narrowing
+/// an agnostic deletion would leave an agnostic role's references dangling. It fails closed instead. The same
+/// defensive rule applies to a replacement candidate: an ID that resolves to more than one role is rejected as not
+/// agnostic rather than guessed at, so it is reported as <c>replacement_role_unavailable_or_unauthorized</c>
+/// instead of surfacing as an exception.
 /// </remarks>
 public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     IIdentityProviderConnectionStore store,
@@ -262,13 +261,13 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     /// <summary>
     /// Resolves the tenant context for the role being deleted: the role's own <c>TenantId</c>
     /// (<see cref="Tenant.AgnosticTenantId"/> normalized when the role is tenant-agnostic, in which case its
-    /// tenant context is every tenant). In EF Core persistence a role ID is unique across all tenants (the
-    /// <c>Roles</c> table keys on <c>Id</c> alone), so this lookup resolves to at most one role there. Only
-    /// <c>MemoryRoleStore</c> can hold two roles that share an ID because its storage key includes the tenant;
-    /// if the ID resolves to more than one role, which tenant's role the coordinator's own delete actually
-    /// targets is already ambiguous, and this method cannot make the operation consistent by guessing in either
-    /// direction -- widening would expose another tenant's references for what may be a tenant-scoped deletion,
-    /// and narrowing would leave an agnostic role's references dangling. It fails closed instead.
+    /// tenant context is every tenant). In EF Core persistence and <c>MemoryRoleStore</c>, a role ID is unique
+    /// across all tenants (the <c>Roles</c> table and in-memory store both key on <c>Id</c> alone), so this lookup
+    /// resolves to at most one role there. If a custom store violates that invariant and the ID resolves to more
+    /// than one role, which tenant's role the coordinator's own delete actually targets is already ambiguous, and
+    /// this method cannot make the operation consistent by guessing in either direction -- widening would expose
+    /// another tenant's references for what may be a tenant-scoped deletion, and narrowing would leave an agnostic
+    /// role's references dangling. It fails closed instead.
     /// A missing store or no matching role falls back to the ambient tenant on <see cref="ITenantAccessor"/>,
     /// which is the only case where the ambient tenant is trusted: the role cannot be resolved at all, so there
     /// is no resolved tenant to prefer over it.
@@ -288,10 +287,10 @@ public sealed class ExternalAuthenticationRoleDeletionDependencyContributor(
     /// <summary>
     /// Resolves whether a candidate role ID (typically a replacement role) is itself tenant-agnostic. Unlike
     /// <see cref="ResolveRoleTenantIdAsync"/>, an ambiguous candidate -- a role ID that resolves to more than one
-    /// role, which only <c>MemoryRoleStore</c> can produce -- is not the coordinator's own deletion target, so
-    /// there is no operation to fail closed on by throwing; it is instead treated the same as an unresolved
-    /// candidate and reported as not agnostic, since there is no single resolved role to trust as safe to write
-    /// into every tenant's connections.
+    /// role, which a custom store can produce despite the global ID invariant of the built-in stores -- is not the
+    /// coordinator's own deletion target, so there is no operation to fail closed on by throwing; it is instead
+    /// treated the same as an unresolved candidate and reported as not agnostic, since there is no single resolved
+    /// role to trust as safe to write into every tenant's connections.
     /// </summary>
     private async ValueTask<bool> IsAgnosticRoleAsync(string? roleId, CancellationToken cancellationToken)
     {

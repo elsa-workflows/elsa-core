@@ -23,16 +23,18 @@ public class RoleManagerTests
     [Fact]
     public async Task CreateListUpdateAndDeleteAreIsolatedForRolesWithTheSameNameAcrossTenants()
     {
-        var roleA = await _manager.CreateRoleAsync("Operators", ["tenant-a:permission"]);
+        var roleA = await _manager.CreateRoleAsync("Operators", ["tenant-a:permission"], "operators-a");
 
         Assert.Equal("tenant-a", roleA.Role.TenantId);
         Assert.Single(await _roleStore.FindManyAsync(new() { TenantId = "tenant-a" }));
 
+        var roleBId = string.Empty;
         using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
         {
-            var roleB = await _manager.CreateRoleAsync("Operators", ["tenant-b:permission"]);
+            var roleB = await _manager.CreateRoleAsync("Operators", ["tenant-b:permission"], "operators-b");
+            roleBId = roleB.Role.Id;
 
-            Assert.Equal(roleA.Role.Id, roleB.Role.Id);
+            Assert.NotEqual(roleA.Role.Id, roleB.Role.Id);
             Assert.Equal("tenant-b", roleB.Role.TenantId);
             Assert.Equal(["tenant-b:permission"], roleB.Role.Permissions);
 
@@ -60,7 +62,7 @@ public class RoleManagerTests
 
         using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
         {
-            var remainingTenantBRole = await _roleStore.FindAsync(new() { Id = roleA.Role.Id });
+            var remainingTenantBRole = await _roleStore.FindAsync(new() { Id = roleBId });
             Assert.NotNull(remainingTenantBRole);
             Assert.Equal("Operators B", remainingTenantBRole.Name);
         }

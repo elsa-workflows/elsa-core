@@ -26,15 +26,24 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        Save(role);
+        lock (_store.Sync)
+        {
+            MemoryIdentityUniqueness.EnsureAvailable(_store, role, x => x.Name, "name");
+            _store.Add(role, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var roles = _store.Query(query => Filter(query, filter)).ToList();
-        _store.DeleteMany(roles, GetStorageKey);
+        lock (_store.Sync)
+        {
+            var roles = _store.Query(query => Filter(query, filter)).ToList();
+            _store.DeleteMany(roles, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -46,10 +55,13 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// </remarks>
     public Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default)
     {
-        var role = _store.Query(query => Filter(query, new RoleFilter { Id = roleId })).FirstOrDefault();
-        var deleted = role is not null && _store.Delete(GetStorageKey(role));
+        lock (_store.Sync)
+        {
+            var role = _store.Query(query => Filter(query, new RoleFilter { Id = roleId })).FirstOrDefault();
+            var deleted = role is not null && _store.Delete(role.Id);
 
-        return Task.FromResult(deleted);
+            return Task.FromResult(deleted);
+        }
     }
 
     /// <inheritdoc />
@@ -63,10 +75,30 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     {
         lock (_store.Sync)
         {
+            EnsureIdIsAvailable(role);
             MemoryIdentityUniqueness.EnsureAvailable(_store, role, x => x.Name, "name");
-            _store.Save(role, GetStorageKey);
+            _store.Save(role, x => x.Id);
         }
     }
+
+    private void EnsureIdIsAvailable(Role role)
+    {
+        var existing = _store.Find(x => x.Id == role.Id);
+        if (existing is not null && !CanReplace(existing))
+        {
+            throw new InvalidOperationException(
+                $"A role already exists with ID '{role.Id}' in tenant '{existing.TenantId}'.");
+        }
+    }
+
+    /// <summary>
+    /// <c>*</c> is visible to every tenant, but only an agnostic writer may replace it. Named tenants may upsert
+    /// their own visible rows, matching the durable store's query-filtered ID lookup.
+    /// </summary>
+    private bool CanReplace(Role existing) =>
+        existing.TenantId == Tenant.AgnosticTenantId
+            ? _tenantAccessor.TenantId == Tenant.AgnosticTenantId
+            : TenantVisibility.IsVisible(existing.TenantId, _tenantAccessor.TenantId);
 
     /// <inheritdoc />
     public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
@@ -104,9 +136,4 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
             TenantId = role.TenantId,
             Permissions = role.Permissions.ToList()
         };
-
-    private static string GetStorageKey(Role role) => GetStorageKey(role.TenantId, role.Id);
-
-    private static string GetStorageKey(string? tenantId, string roleId) =>
-        $"{tenantId?.Length ?? -1}:{tenantId}{roleId.Length}:{roleId}";
 }
