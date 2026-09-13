@@ -167,7 +167,7 @@ public sealed class EFCoreConnectionRegistryVersionStore(ExternalAuthenticationD
                 .Select(x => (long?)x.Version)
                 .SingleOrDefaultAsync(cancellationToken);
 
-            if (current is null)
+            if (current is not long currentVersion)
             {
                 dbContext.ExternalAuthenticationRegistryVersions.Add(new ExternalAuthenticationRegistryVersion { Id = SingletonId, Version = 2 });
                 try
@@ -187,9 +187,9 @@ public sealed class EFCoreConnectionRegistryVersionStore(ExternalAuthenticationD
                 continue;
             }
 
-            var next = current.Value + 1;
+            var next = currentVersion + 1;
             var changed = await dbContext.ExternalAuthenticationRegistryVersions
-                .Where(x => x.Id == SingletonId && x.Version == current.Value)
+                .Where(x => x.Id == SingletonId && x.Version == currentVersion)
                 .ExecuteUpdateAsync(x => x.SetProperty(y => y.Version, next), cancellationToken);
             if (changed == 1)
                 return next;

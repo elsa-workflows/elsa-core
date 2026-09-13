@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
@@ -17,6 +18,7 @@ using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Workflows;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -214,12 +216,18 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         var initial = await scenario.RegistryVersionStore.GetVersionAsync();
         Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
 
+        var seeded = await scenario.RegistryVersionStore.AdvanceAsync();
+        Assert.Equal(initial + 1, seeded);
+        Assert.False(await scenario.RegistryVersionStore.IsCurrentAsync(initial));
+        Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(seeded));
+
         var concurrentAdvances = await RunConcurrentlyAsync(
             () => scenario.RegistryVersionStore.AdvanceAsync(),
             () => scenario.RegistryVersionStore.AdvanceAsync());
+        await scenario.RegistryVersionAdvanceRaceReady.WaitAsync(TimeSpan.FromSeconds(10));
         Assert.Equal(2, concurrentAdvances.Distinct().Count());
         var afterConcurrent = await scenario.RegistryVersionStore.GetVersionAsync();
-        Assert.Equal(initial + concurrentAdvances.Length, afterConcurrent);
+        Assert.Equal(seeded + concurrentAdvances.Length, afterConcurrent);
         Assert.True(await scenario.RegistryVersionStore.IsCurrentAsync(afterConcurrent));
 
         var advanced = await scenario.RegistryVersionStore.AdvanceAsync();
@@ -353,6 +361,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     IExternalIdentityProvisioner identityProvisioner,
     IConnectionRegistryVersionStore registryVersionStore,
     Func<Func<Task>, Task> assertRefreshTokenConflictAsync,
+    Task registryVersionAdvanceRaceReady,
     Func<ValueTask> disposeAsync) : IAsyncDisposable
 {
     public ConformanceClock Clock { get; } = clock;
@@ -363,6 +372,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     public IIdentityProviderConnectionStore ConnectionStore { get; } = connectionStore;
     public IExternalIdentityProvisioner IdentityProvisioner { get; } = identityProvisioner;
     public IConnectionRegistryVersionStore RegistryVersionStore { get; } = registryVersionStore;
+    public Task RegistryVersionAdvanceRaceReady { get; } = registryVersionAdvanceRaceReady;
     public Task AssertRefreshTokenConflictAsync(Func<Task> operation) => assertRefreshTokenConflictAsync(operation);
 
     public ValueTask DisposeAsync() => disposeAsync();
@@ -391,6 +401,7 @@ public sealed class ExternalAuthenticationStoreScenario(
             provisioner,
             new InMemoryConnectionRegistryVersionStore(),
             AssertInMemoryRefreshTokenConflictAsync,
+            Task.CompletedTask,
             () =>
             {
                 hasher.Dispose();
@@ -402,6 +413,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-authentication-conformance-{Guid.NewGuid():N}.db");
         var hasher = new HmacExternalAuthenticationHandleHasher();
+        var registryVersionAdvanceRaceInterceptor = new RegistryVersionAdvanceRaceInterceptor();
         ServiceProvider? services = null;
         var clock = new ConformanceClock();
 
@@ -410,6 +422,7 @@ public sealed class ExternalAuthenticationStoreScenario(
             var optionsBuilder = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>();
             optionsBuilder.UseElsaDbContextOptions(null);
             optionsBuilder.UseSqlite($"Data Source={databasePath};Default Timeout=30", sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName));
+            optionsBuilder.AddInterceptors(registryVersionAdvanceRaceInterceptor);
             var options = optionsBuilder.Options;
             services = new ServiceCollection()
                 .AddSingleton<IDbContextFactory<ExternalAuthenticationElsaDbContext>>(serviceProvider => new TestDbContextFactory(options, serviceProvider))
@@ -440,6 +453,7 @@ public sealed class ExternalAuthenticationStoreScenario(
                 provisioner,
                 new EFCoreConnectionRegistryVersionStore(leaseFactory),
                 AssertSqliteRefreshTokenConflictAsync,
+                registryVersionAdvanceRaceInterceptor.BothUpdatesReached,
                 async () =>
                 {
                     hasher.Dispose();
@@ -475,6 +489,35 @@ public sealed class ExternalAuthenticationStoreScenario(
         Assert.Equal(19, sqliteException.SqliteErrorCode);
         Assert.Contains("UNIQUE constraint failed", sqliteException.Message, StringComparison.Ordinal);
         Assert.Contains("ExternalAuthenticationSessionRefreshTokens.Hash", sqliteException.Message, StringComparison.Ordinal);
+    }
+
+    private sealed class RegistryVersionAdvanceRaceInterceptor : DbCommandInterceptor
+    {
+        private readonly TaskCompletionSource _bothUpdatesReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _updateCount;
+
+        public Task BothUpdatesReached => _bothUpdatesReached.Task;
+
+        public override async ValueTask<int> NonQueryExecutedAsync(
+            DbCommand command,
+            CommandExecutedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!command.CommandText.Contains("UPDATE \"ExternalAuthenticationRegistryVersions\"", StringComparison.Ordinal))
+                return result;
+
+            var updateNumber = Interlocked.Increment(ref _updateCount);
+            if (updateNumber <= 2)
+            {
+                if (updateNumber == 2)
+                    _bothUpdatesReached.TrySetResult();
+
+                await _bothUpdatesReached.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            }
+
+            return result;
+        }
     }
 
     private static async Task<(MemoryUserStore Users, StoreBasedUserProvider Provider)> CreateUsersAsync()
