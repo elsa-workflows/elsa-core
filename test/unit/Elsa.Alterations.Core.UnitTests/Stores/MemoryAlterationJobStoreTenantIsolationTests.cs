@@ -189,6 +189,39 @@ public class MemoryAlterationJobStoreTenantIsolationTests
         Assert.Equal("tenant-a", found.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync preserves the stored TenantId on an accepted update")]
+    public async Task SaveAsync_WhenIncomingTenantDiffers_PreservesExistingTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Job("job-a", "tenant-a"));
+        var updated = Job("job-a", "tenant-b");
+        updated.Status = AlterationJobStatus.Completed;
+
+        await store.SaveAsync(updated);
+
+        var found = await store.FindAsync(new AlterationJobFilter { Id = "job-a" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationJobStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveManyAsync preserves the stored TenantId for repeated accepted updates")]
+    public async Task SaveManyAsync_WhenRepeatedIdIncomingTenantsDiffer_PreservesExistingTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Job("job-a", "tenant-a"));
+        var first = Job("job-a", "tenant-b");
+        var second = Job("job-a", "tenant-c");
+        second.Status = AlterationJobStatus.Completed;
+
+        await store.SaveManyAsync([first, second]);
+
+        var found = await store.FindAsync(new AlterationJobFilter { Id = "job-a" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationJobStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {

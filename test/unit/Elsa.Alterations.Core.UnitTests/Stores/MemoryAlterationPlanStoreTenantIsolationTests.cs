@@ -133,6 +133,22 @@ public class MemoryAlterationPlanStoreTenantIsolationTests
         Assert.Equal("tenant-a", found.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync preserves the stored TenantId on an accepted update")]
+    public async Task SaveAsync_WhenIncomingTenantDiffers_PreservesExistingTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Plan("plan-a", "tenant-a"));
+        var updated = Plan("plan-a", "tenant-b");
+        updated.Status = AlterationPlanStatus.Completed;
+
+        await store.SaveAsync(updated);
+
+        var found = await store.FindAsync(new AlterationPlanFilter { Id = "plan-a" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationPlanStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync stamps the ambient tenant when TenantId is unset")]
     public async Task SaveAsync_WhenTenantIdUnset_StampsAmbientTenant()
     {

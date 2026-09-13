@@ -102,8 +102,14 @@ public class MemoryAlterationJobStore : IAlterationJobStore
     {
         var existing = _store.Find(x => x.Id == job.Id);
 
-        if (existing is not null && !CanReplace(existing))
+        if (existing is null)
+            return;
+
+        if (!CanReplace(existing))
             throw AlterationStoreConflict.HiddenJobId(job.Id);
+
+        // An accepted update may change the payload, but it must not rehome the row.
+        job.TenantId = existing.TenantId;
     }
 
     /// <summary>
