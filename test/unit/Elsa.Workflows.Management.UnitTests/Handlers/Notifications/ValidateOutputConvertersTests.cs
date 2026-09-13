@@ -10,7 +10,7 @@ namespace Elsa.Workflows.Management.UnitTests.Handlers.Notifications;
 
 public class ValidateOutputConvertersTests
 {
-    [Fact]
+    [Test]
     public async Task HandleAsync_WhenConverterHasNoDestination_AddsValidationError()
     {
         var fixture = new Fixture();
@@ -18,22 +18,22 @@ public class ValidateOutputConvertersTests
 
         var errors = await fixture.ValidateAsync();
 
-        var error = Assert.Single(errors);
-        Assert.Equal(fixture.Activity.Id, error.ActivityId);
-        Assert.Contains("only be configured", error.Message);
+        var error = await Assert.That(errors).HasSingleItem();
+        await Assert.That(error.ActivityId).IsEqualTo(fixture.Activity.Id);
+        await Assert.That(error.Message).Contains("only be configured").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_WhenConverterIsUnknown_AddsValidationError()
     {
         var fixture = new Fixture();
 
         var errors = await fixture.ValidateAsync();
 
-        Assert.Contains(errors, x => x.Message.Contains("is not registered"));
+        await Assert.That(errors).Contains(x => x.Message.Contains("is not registered", StringComparison.CurrentCulture));
     }
 
-    [Fact]
+    [Test]
     public async Task HandleAsync_WhenBindingAndSettingsAreValid_AddsNoValidationErrors()
     {
         var fixture = new Fixture();
@@ -43,7 +43,7 @@ public class ValidateOutputConvertersTests
 
         var errors = await fixture.ValidateAsync();
 
-        Assert.Empty(errors);
+        await Assert.That(errors).IsEmpty();
     }
 
     private sealed class Fixture

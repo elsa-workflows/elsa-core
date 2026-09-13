@@ -23,11 +23,11 @@ public class WorkflowInstanceFilterTimestampTests
         }.AsQueryable();
     }
 
-    [Theory]
-    [InlineData(nameof(WorkflowInstance.CreatedAt))]
-    [InlineData(nameof(WorkflowInstance.UpdatedAt))]
-    [InlineData(nameof(WorkflowInstance.FinishedAt))]
-    public void Apply_WithAllowedTimestampColumn_FiltersByTimestamp(string column)
+    [Test]
+    [Arguments(nameof(WorkflowInstance.CreatedAt))]
+    [Arguments(nameof(WorkflowInstance.UpdatedAt))]
+    [Arguments(nameof(WorkflowInstance.FinishedAt))]
+    public async Task Apply_WithAllowedTimestampColumn_FiltersByTimestamp(string column)
     {
         var filter = new WorkflowInstanceFilter
         {
@@ -44,12 +44,12 @@ public class WorkflowInstanceFilterTimestampTests
 
         var result = filter.Apply(_workflowInstances).ToList();
 
-        var workflowInstance = Assert.Single(result);
-        Assert.Equal("matching", workflowInstance.Id);
+        var workflowInstance = await Assert.That(result).HasSingleItem();
+        await Assert.That(workflowInstance.Id).IsEqualTo("matching");
     }
 
-    [Fact]
-    public void Apply_WithInjectedTimestampColumn_RejectsColumnBeforeDynamicLinqParsesIt()
+    [Test]
+    public async Task Apply_WithInjectedTimestampColumn_RejectsColumnBeforeDynamicLinqParsesIt()
     {
         var filter = new WorkflowInstanceFilter
         {
@@ -64,31 +64,31 @@ public class WorkflowInstanceFilterTimestampTests
             ]
         };
 
-        var exception = Assert.Throws<ArgumentException>(() => filter.Apply(_workflowInstances).ToList());
+        var exception = Assert.ThrowsExactly<ArgumentException>(() => filter.Apply(_workflowInstances).ToList());
 
-        Assert.Contains("Invalid timestamp filter column", exception.Message);
-        Assert.DoesNotContain("CreatedAt == @0", exception.Message);
+        await Assert.That(exception.Message).Contains("Invalid timestamp filter column").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).DoesNotContain("CreatedAt == @0").WithComparison(StringComparison.CurrentCulture);
         foreach (var column in WorkflowInstanceFilter.AllowedTimestampFilterColumns)
-            Assert.Contains(column, exception.Message);
-        Assert.Equal($"{nameof(WorkflowInstanceFilter.TimestampFilters)}.Column", exception.ParamName);
+            await Assert.That(exception.Message).Contains(column).WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.ParamName).IsEqualTo($"{nameof(WorkflowInstanceFilter.TimestampFilters)}.Column");
     }
 
-    [Fact]
-    public void Apply_WithNullTimestampFilter_ThrowsClearArgumentException()
+    [Test]
+    public async Task Apply_WithNullTimestampFilter_ThrowsClearArgumentException()
     {
         var filter = new WorkflowInstanceFilter
         {
             TimestampFilters = [null!]
         };
 
-        var exception = Assert.Throws<ArgumentException>(() => filter.Apply(_workflowInstances).ToList());
+        var exception = Assert.ThrowsExactly<ArgumentException>(() => filter.Apply(_workflowInstances).ToList());
 
-        Assert.Contains("Timestamp filter must be specified.", exception.Message);
-        Assert.Equal(nameof(WorkflowInstanceFilter.TimestampFilters), exception.ParamName);
+        await Assert.That(exception.Message).Contains("Timestamp filter must be specified.").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.ParamName).IsEqualTo(nameof(WorkflowInstanceFilter.TimestampFilters));
     }
 
-    [Fact]
-    public void ValidateTimestampFilters_WithMissingColumn_ReturnsClearValidationError()
+    [Test]
+    public async Task ValidateTimestampFilters_WithMissingColumn_ReturnsClearValidationError()
     {
         var errors = WorkflowInstanceFilter.ValidateTimestampFilters(
         [
@@ -100,17 +100,17 @@ public class WorkflowInstanceFilterTimestampTests
             }
         ]).ToList();
 
-        var error = Assert.Single(errors);
-        Assert.Equal("Timestamp filter at index 0: Timestamp filter column must be specified.", error);
+        var error = await Assert.That(errors).HasSingleItem();
+        await Assert.That(error).IsEqualTo("Timestamp filter at index 0: Timestamp filter column must be specified.");
     }
 
-    [Fact]
-    public void ValidateTimestampFilters_WithNullFilter_ReturnsClearValidationError()
+    [Test]
+    public async Task ValidateTimestampFilters_WithNullFilter_ReturnsClearValidationError()
     {
         var errors = WorkflowInstanceFilter.ValidateTimestampFilters([null!]).ToList();
 
-        var error = Assert.Single(errors);
-        Assert.Equal("Timestamp filter at index 0 must be specified.", error);
+        var error = await Assert.That(errors).HasSingleItem();
+        await Assert.That(error).IsEqualTo("Timestamp filter at index 0 must be specified.");
     }
 
     private DateTimeOffset GetMatchingTimestamp(string column) => column switch

@@ -21,7 +21,7 @@ public class WorkflowDefinitionExporterRegressionTests
     private readonly IWorkflowDefinitionService _workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
     private readonly IWorkflowReferenceGraphBuilder _workflowReferenceGraphBuilder = Substitute.For<IWorkflowReferenceGraphBuilder>();
 
-    [Fact]
+    [Test]
     public async Task ExportManyAsync_WithSlashInWorkflowName_CreatesFlatZipEntry()
     {
         var definition = new WorkflowDefinition
@@ -43,19 +43,17 @@ public class WorkflowDefinitionExporterRegressionTests
             .Returns(Task.FromResult(CreateWorkflowGraph()));
 
         var sut = CreateExporter();
-        var result = await sut.ExportManyAsync([definition.Id]);
-
-        Assert.NotNull(result);
-        Assert.Equal("workflow-definitions.zip", result.FileName);
+        var result = await Assert.That(await sut.ExportManyAsync([definition.Id])).IsNotNull();
+        await Assert.That(result.FileName).IsEqualTo("workflow-definitions.zip");
 
         using var zipStream = new MemoryStream(result.Data);
         await using var zipArchive = new ZipArchive(zipStream, ZipArchiveMode.Read);
-        var entry = Assert.Single(zipArchive.Entries);
+        var entry = await Assert.That(zipArchive.Entries).HasSingleItem();
 
-        Assert.Equal(entry.Name, entry.FullName);
-        Assert.DoesNotContain('/', entry.FullName);
-        Assert.DoesNotContain('\\', entry.FullName);
-        Assert.Equal("workflow-definition-folder-child-slash-name-workflow-slash-name-workflow-v1.json", entry.FullName);
+        await Assert.That(entry.FullName).IsEqualTo(entry.Name);
+        await Assert.That(entry.FullName).DoesNotContain('/');
+        await Assert.That(entry.FullName).DoesNotContain('\\');
+        await Assert.That(entry.FullName).IsEqualTo("workflow-definition-folder-child-slash-name-workflow-slash-name-workflow-v1.json");
     }
 
     private WorkflowDefinitionExporter CreateExporter()

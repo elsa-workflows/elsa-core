@@ -15,7 +15,8 @@ namespace Elsa.Workflows.Management.UnitTests.Stores;
 /// </summary>
 public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
 {
-    [Fact(DisplayName = "A matching latest row is updated and the callback sees that just-loaded row")]
+    [Test]
+    [DisplayName("A matching latest row is updated and the callback sees that just-loaded row")]
     public async Task TryUpdateLatestAsync_WhenTheRowMatches_SavesTheUpdateBuiltFromTheLoadedRow()
     {
         var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
@@ -33,16 +34,17 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
                 return next;
             });
 
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
-        Assert.Equal("graph-v2", result.Definition!.StringData);
-        Assert.Equal("Original-kept", result.Definition.Name);
+        await Assert.That(result.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.Updated);
+        await Assert.That(result.Definition!.StringData).IsEqualTo("graph-v2");
+        await Assert.That(result.Definition.Name).IsEqualTo("Original-kept");
 
         var stored = await store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("graph-v2", stored!.StringData);
-        Assert.Equal("Original-kept", stored.Name);
+        await Assert.That(stored!.StringData).IsEqualTo("graph-v2");
+        await Assert.That(stored.Name).IsEqualTo("Original-kept");
     }
 
-    [Fact(DisplayName = "A match that fails is Conflict and the stored row is unchanged")]
+    [Test]
+    [DisplayName("A match that fails is Conflict and the stored row is unchanged")]
     public async Task TryUpdateLatestAsync_WhenTheRowDoesNotMatch_ReturnsConflictAndWritesNothing()
     {
         var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
@@ -58,15 +60,16 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
                 return next;
             });
 
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, result.Outcome);
-        Assert.Null(result.Definition);
+        await Assert.That(result.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.Conflict);
+        await Assert.That(result.Definition).IsNull();
 
         var stored = await store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("graph-v2", stored!.StringData);
-        Assert.Equal("Original", stored.Name);
+        await Assert.That(stored!.StringData).IsEqualTo("graph-v2");
+        await Assert.That(stored.Name).IsEqualTo("Original");
     }
 
-    [Fact(DisplayName = "A missing definition is NotFound")]
+    [Test]
+    [DisplayName("A missing definition is NotFound")]
     public async Task TryUpdateLatestAsync_WhenNothingMatchesTheFilter_ReturnsNotFound()
     {
         var store = new MemoryWorkflowDefinitionStore(new MemoryStore<WorkflowDefinition>());
@@ -76,10 +79,11 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
             _ => true,
             current => current);
 
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.NotFound, result.Outcome);
+        await Assert.That(result.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.NotFound);
     }
 
-    [Fact(DisplayName = "Two scoped wrappers share the backing-store lock: the loser is Conflict and the winner's graph stays")]
+    [Test]
+    [DisplayName("Two scoped wrappers share the backing-store lock: the loser is Conflict and the winner's graph stays")]
     public async Task TryUpdateLatestAsync_WhenTwoWrappersShareTheBackingStore_LoserIsConflictAndWinnerGraphStays()
     {
         var backing = new MemoryStore<WorkflowDefinition>();
@@ -87,8 +91,11 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
         var writerB = new MemoryWorkflowDefinitionStore(backing);
         await writerA.SaveAsync(Definition("def-1", "id-1", name: "Original", stringData: "graph-v1"));
 
+        var timeout = TimeSpan.FromSeconds(5);
         var firstHoldsLock = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondAttempting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondCompleted = new TaskCompletionSource<WorkflowDefinitionUpdateResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         var first = Task.Run(() => writerA.TryUpdateLatestAsync(
             LatestOf("def-1"),
@@ -102,36 +109,68 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
                 return next;
             }));
 
-        await firstHoldsLock.Task;
-
-        var second = Task.Run(() => writerB.TryUpdateLatestAsync(
-            LatestOf("def-1"),
-            loaded => loaded.StringData == "graph-v1",
-            loaded =>
+        var secondThread = new Thread(() =>
+        {
+            try
             {
-                var next = loaded.ShallowClone();
-                next.StringData = "stale-overwrite";
-                return next;
-            }));
+                secondAttempting.TrySetResult();
+                var result = writerB.TryUpdateLatestAsync(
+                        LatestOf("def-1"),
+                        loaded => loaded.StringData == "graph-v1",
+                        loaded =>
+                        {
+                            var next = loaded.ShallowClone();
+                            next.StringData = "stale-overwrite";
+                            return next;
+                        })
+                    .GetAwaiter()
+                    .GetResult();
+                secondCompleted.TrySetResult(result);
+            }
+            catch (Exception exception)
+            {
+                secondCompleted.TrySetException(exception);
+            }
+        })
+        {
+            IsBackground = true,
+            Name = "workflow-definition-cas-writer-b"
+        };
 
-        // Writer B must still be waiting on the shared lock. A per-wrapper lock would have
-        // already written the stale graph and completed as Updated.
-        await Task.Delay(100);
-        Assert.False(second.IsCompleted);
+        var observedWaiting = false;
+        try
+        {
+            await firstHoldsLock.Task.WaitAsync(timeout);
+            secondThread.Start();
+            await secondAttempting.Task.WaitAsync(timeout);
+            observedWaiting = SpinWait.SpinUntil(
+                () => (secondThread.ThreadState & ThreadState.WaitSleepJoin) != 0,
+                timeout);
+        }
+        finally
+        {
+            // Never strand either writer if an observation or assertion fails.
+            releaseFirst.TrySetResult();
+        }
 
-        releaseFirst.TrySetResult();
+        var firstResult = await first.WaitAsync(timeout);
+        var secondResult = await secondCompleted.Task.WaitAsync(timeout);
+        var secondExited = secondThread.Join(timeout);
 
-        var firstResult = await first;
-        var secondResult = await second;
+        await Assert.That(observedWaiting).IsTrue()
+            .Because("Writer B did not block while writer A held the shared backing-store monitor.");
+        await Assert.That(secondExited).IsTrue()
+            .Because("Writer B did not exit after the shared monitor was released.");
 
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, firstResult.Outcome);
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, secondResult.Outcome);
+        await Assert.That(firstResult.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.Updated);
+        await Assert.That(secondResult.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.Conflict);
 
         var stored = await writerA.FindAsync(LatestOf("def-1"));
-        Assert.Equal("winner-graph", stored!.StringData);
+        await Assert.That(stored!.StringData).IsEqualTo("winner-graph");
     }
 
-    [Fact(DisplayName = "A loaded row that is no longer IsLatest is Conflict and writes nothing")]
+    [Test]
+    [DisplayName("A loaded row that is no longer IsLatest is Conflict and writes nothing")]
     public async Task TryUpdateLatestAsync_WhenTheLoadedRowIsNoLongerLatest_ReturnsConflictAndWritesNothing()
     {
         var backing = new MemoryStore<WorkflowDefinition>();
@@ -153,7 +192,7 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
                 return draft;
             });
 
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, winner.Outcome);
+        await Assert.That(winner.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.Updated);
 
         var loser = await store.TryUpdateLatestAsync(
             new WorkflowDefinitionFilter { Id = published.Id },
@@ -168,12 +207,12 @@ public class MemoryWorkflowDefinitionStoreCompareAndSwapTests
                 return draft;
             });
 
-        Assert.Equal(WorkflowDefinitionUpdateOutcome.Conflict, loser.Outcome);
-        Assert.Null(loser.Definition);
+        await Assert.That(loser.Outcome).IsEqualTo(WorkflowDefinitionUpdateOutcome.Conflict);
+        await Assert.That(loser.Definition).IsNull();
 
         var stored = await store.FindAsync(LatestOf("def-1"));
-        Assert.Equal("id-2", stored!.Id);
-        Assert.Equal("winner-draft", stored.StringData);
+        await Assert.That(stored!.Id).IsEqualTo("id-2");
+        await Assert.That(stored.StringData).IsEqualTo("winner-draft");
     }
 
     private static WorkflowDefinitionFilter LatestOf(string definitionId) =>

@@ -18,7 +18,7 @@ public class WorkflowDefinitionServiceTests
     private readonly IMaterializerRegistry _materializerRegistry = Substitute.For<IMaterializerRegistry>();
     private readonly ILogger<WorkflowDefinitionService> _logger = Substitute.For<ILogger<WorkflowDefinitionService>>();
 
-    [Fact]
+    [Test]
     public async Task MaterializeWorkflowAsync_WithValidMaterializer_ReturnsMaterializedGraph()
     {
         // Arrange
@@ -31,10 +31,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.MaterializeWorkflowAsync(definition);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task MaterializeWorkflowAsync_WithMissingMaterializer_ThrowsException()
     {
         // Arrange
@@ -44,10 +44,10 @@ public class WorkflowDefinitionServiceTests
         var service = CreateService();
 
         // Act & Assert
-        await Assert.ThrowsAsync<WorkflowMaterializerNotFoundException>(() => service.MaterializeWorkflowAsync(definition));
+        await Assert.ThrowsExactlyAsync<WorkflowMaterializerNotFoundException>(() => service.MaterializeWorkflowAsync(definition));
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByDefinitionIdAndVersionOptions_ReturnsDefinition()
     {
         // Arrange
@@ -61,13 +61,13 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         await _workflowDefinitionStore.Received(1).FindAsync(
             Arg.Any<WorkflowDefinitionFilter>(),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByDefinitionVersionId_ReturnsDefinition()
     {
         // Arrange
@@ -82,13 +82,13 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync("version-id-1");
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         await _workflowDefinitionStore.Received(1).FindAsync(
             Arg.Is<WorkflowDefinitionFilter>(f => f.Id == "version-id-1"),
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByHandle_ReturnsDefinition()
     {
         // Arrange
@@ -103,11 +103,11 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync(handle);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         await _workflowDefinitionStore.Received(1).FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByFilter_ReturnsDefinition()
     {
         // Arrange
@@ -121,11 +121,11 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync(filter);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         await _workflowDefinitionStore.Received(1).FindAsync(filter, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_WithAvailableMaterializer_ReturnsGraph()
     {
         // Arrange
@@ -138,10 +138,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_WithUnavailableMaterializer_ReturnsNull()
     {
         // Arrange
@@ -154,10 +154,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_WhenDefinitionNotFound_ReturnsNull()
     {
         // Arrange
@@ -170,10 +170,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByDefinitionVersionId_ReturnsGraph()
     {
         // Arrange
@@ -187,10 +187,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync("version-id-1");
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByHandle_ReturnsGraph()
     {
         // Arrange
@@ -214,10 +214,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync(handle);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByFilter_ReturnsGraph()
     {
         // Arrange
@@ -240,10 +240,10 @@ public class WorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync(filter);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphsAsync_WithMultipleDefinitions_ReturnsAllGraphs()
     {
         // Arrange
@@ -274,12 +274,12 @@ public class WorkflowDefinitionServiceTests
 
         // Assert
         var graphs = result.ToList();
-        Assert.Equal(2, graphs.Count);
-        Assert.Contains(graph1, graphs);
-        Assert.Contains(graph2, graphs);
+        await Assert.That(graphs.Count).IsEqualTo(2);
+        await Assert.That(graphs).Contains(graph1);
+        await Assert.That(graphs).Contains(graph2);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_WithAvailableMaterializer_ReturnsSuccessResult()
     {
         // Arrange
@@ -302,12 +302,12 @@ public class WorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        var nonNullResult = await Assert.That(result).IsNotNull();
+        await Assert.That(nonNullResult.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(nonNullResult.WorkflowGraph).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_WithUnavailableMaterializer_ReturnsResultWithNullGraph()
     {
         // Arrange
@@ -320,12 +320,12 @@ public class WorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Null(result.WorkflowGraph);
+        var nonNullResult = await Assert.That(result).IsNotNull();
+        await Assert.That(nonNullResult.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(nonNullResult.WorkflowGraph).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_WhenDefinitionNotFound_ReturnsEmptyResult()
     {
         // Arrange
@@ -338,12 +338,12 @@ public class WorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Null(result.WorkflowDefinition);
-        Assert.Null(result.WorkflowGraph);
+        var nonNullResult = await Assert.That(result).IsNotNull();
+        await Assert.That(nonNullResult.WorkflowDefinition).IsNull();
+        await Assert.That(nonNullResult.WorkflowGraph).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByDefinitionVersionId_ReturnsResult()
     {
         // Arrange
@@ -357,12 +357,12 @@ public class WorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync("version-id-1");
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        var nonNullResult = await Assert.That(result).IsNotNull();
+        await Assert.That(nonNullResult.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(nonNullResult.WorkflowGraph).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByHandle_ReturnsResult()
     {
         // Arrange
@@ -386,12 +386,12 @@ public class WorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync(handle);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        var nonNullResult = await Assert.That(result).IsNotNull();
+        await Assert.That(nonNullResult.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(nonNullResult.WorkflowGraph).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByFilter_ReturnsResult()
     {
         // Arrange
@@ -414,12 +414,12 @@ public class WorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync(filter);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        var nonNullResult = await Assert.That(result).IsNotNull();
+        await Assert.That(nonNullResult.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(nonNullResult.WorkflowGraph).IsSameReferenceAs(workflowGraph);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphsAsync_WithMultipleDefinitions_ReturnsAllResults()
     {
         // Arrange
@@ -449,15 +449,15 @@ public class WorkflowDefinitionServiceTests
 
         // Assert
         var results = result.ToList();
-        Assert.Equal(2, results.Count);
+        await Assert.That(results.Count).IsEqualTo(2);
 
         var result1 = results.First(r => r.WorkflowDefinition?.DefinitionId == "def-1");
-        Assert.Same(definition1, result1.WorkflowDefinition);
-        Assert.Same(graph1, result1.WorkflowGraph);
+        await Assert.That(result1.WorkflowDefinition).IsSameReferenceAs(definition1);
+        await Assert.That(result1.WorkflowGraph).IsSameReferenceAs(graph1);
 
         var result2 = results.First(r => r.WorkflowDefinition?.DefinitionId == "def-2");
-        Assert.Same(definition2, result2.WorkflowDefinition);
-        Assert.Null(result2.WorkflowGraph);
+        await Assert.That(result2.WorkflowDefinition).IsSameReferenceAs(definition2);
+        await Assert.That(result2.WorkflowGraph).IsNull();
     }
 
     private WorkflowDefinitionService CreateService()

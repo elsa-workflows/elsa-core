@@ -30,7 +30,7 @@ public class CachingWorkflowDefinitionServiceTests
         SetupCacheManager();
     }
 
-    [Fact]
+    [Test]
     public async Task MaterializeWorkflowAsync_DelegatesToDecoratedService()
     {
         // Arrange
@@ -43,11 +43,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.MaterializeWorkflowAsync(definition);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
         await _decoratedService.Received(1).MaterializeWorkflowAsync(definition, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByDefinitionIdAndVersionOptions_CreatesCacheKey()
     {
         // Arrange
@@ -60,11 +60,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByDefinitionVersionId_CreatesCacheKey()
     {
         // Arrange
@@ -78,11 +78,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync(DefaultVersionId);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultVersionId);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByHandle_ConvertsTFilterAndDelegates()
     {
         // Arrange
@@ -100,11 +100,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync(handle);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         await _decoratedService.Received(1).FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowDefinitionAsync_ByFilter_CreatesCacheKey()
     {
         // Arrange
@@ -121,11 +121,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowDefinitionAsync(filter);
 
         // Assert
-        Assert.Same(definition, result);
+        await Assert.That(result).IsSameReferenceAs(definition);
         _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_CreatesCacheKey()
     {
         // Arrange
@@ -142,11 +142,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync("def-1", VersionOptions.Published);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey("def-1", VersionOptions.Published);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByDefinitionVersionId_CreatesCacheKey()
     {
         // Arrange
@@ -162,11 +162,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync("version-id-1");
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey("version-id-1");
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByHandle_ConvertsTFilterAndResolvesDefinitionAndGraph()
     {
         // Arrange
@@ -185,11 +185,11 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync(handle);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
         await _decoratedService.Received(1).FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByFilter_ResolvesDefinitionFirstAndCachesGraph()
     {
         // Arrange
@@ -208,12 +208,12 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync(filter);
 
         // Assert
-        Assert.Same(workflowGraph, result);
+        await Assert.That(result).IsSameReferenceAs(workflowGraph);
         _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphAsync_ByFilter_WithUnavailableMaterializer_ReturnsNull()
     {
         // Arrange
@@ -231,12 +231,12 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.FindWorkflowGraphAsync(filter);
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
         _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
         await _decoratedService.DidNotReceive().MaterializeWorkflowAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphsAsync_WithMultipleDefinitions_CachesEachGraph()
     {
         // Arrange
@@ -260,14 +260,14 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         var graphs = result.ToList();
-        Assert.Equal(2, graphs.Count);
-        Assert.Contains(graph1, graphs);
-        Assert.Contains(graph2, graphs);
+        await Assert.That(graphs.Count).IsEqualTo(2);
+        await Assert.That(graphs).Contains(graph1);
+        await Assert.That(graphs).Contains(graph2);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey("id-1");
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey("id-2");
     }
 
-    [Fact]
+    [Test]
     public async Task FindWorkflowGraphsAsync_SkipsDefinitionsWithUnavailableMaterializer()
     {
         // Arrange
@@ -294,12 +294,12 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         var graphs = result.ToList();
-        Assert.Single(graphs);
-        Assert.Same(graph1, graphs[0]);
+        await Assert.That(graphs).HasSingleItem();
+        await Assert.That(graphs[0]).IsSameReferenceAs(graph1);
         await _decoratedService.DidNotReceive().MaterializeWorkflowAsync(definition2, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByDefinitionIdAndVersionOptions_ResolvesDefinitionAndGraph()
     {
         // Arrange
@@ -317,13 +317,13 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync(DefaultDefinitionId, VersionOptions.Published);
 
         // Assert
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        await Assert.That(result.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(result.WorkflowGraph).IsSameReferenceAs(workflowGraph);
         _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByDefinitionVersionId_ResolvesDefinitionAndGraph()
     {
         // Arrange
@@ -341,13 +341,13 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync(DefaultVersionId);
 
         // Assert
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        await Assert.That(result.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(result.WorkflowGraph).IsSameReferenceAs(workflowGraph);
         _cacheManager.Received(1).CreateWorkflowDefinitionVersionCacheKey(DefaultVersionId);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByHandle_ConvertsTFilterAndResolvesDefinitionAndGraph()
     {
         // Arrange
@@ -366,12 +366,12 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync(handle);
 
         // Assert
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        await Assert.That(result.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(result.WorkflowGraph).IsSameReferenceAs(workflowGraph);
         await _decoratedService.Received(1).FindWorkflowDefinitionAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphAsync_ByFilter_ResolvesDefinitionAndGraph()
     {
         // Arrange
@@ -390,13 +390,13 @@ public class CachingWorkflowDefinitionServiceTests
         var result = await service.TryFindWorkflowGraphAsync(filter);
 
         // Assert
-        Assert.Same(definition, result.WorkflowDefinition);
-        Assert.Same(workflowGraph, result.WorkflowGraph);
+        await Assert.That(result.WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(result.WorkflowGraph).IsSameReferenceAs(workflowGraph);
         _cacheManager.Received(1).CreateWorkflowDefinitionFilterCacheKey(filter);
         _cacheManager.Received(1).CreateWorkflowVersionCacheKey(DefaultVersionId);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphsAsync_WithAvailableMaterializer_CachesGraph()
     {
         // Arrange
@@ -415,12 +415,12 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         var results = result.ToList();
-        Assert.Single(results);
-        Assert.Same(definition, results[0].WorkflowDefinition);
-        Assert.Same(graph, results[0].WorkflowGraph);
+        await Assert.That(results).HasSingleItem();
+        await Assert.That(results[0].WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(results[0].WorkflowGraph).IsSameReferenceAs(graph);
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphsAsync_WithUnavailableMaterializer_ReturnsNullGraph()
     {
         // Arrange
@@ -439,13 +439,13 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         var results = result.ToList();
-        Assert.Single(results);
-        Assert.Same(definition, results[0].WorkflowDefinition);
-        Assert.Null(results[0].WorkflowGraph);
+        await Assert.That(results).HasSingleItem();
+        await Assert.That(results[0].WorkflowDefinition).IsSameReferenceAs(definition);
+        await Assert.That(results[0].WorkflowGraph).IsNull();
         await _decoratedService.DidNotReceive().MaterializeWorkflowAsync(Arg.Any<WorkflowDefinition>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task TryFindWorkflowGraphsAsync_WithMixedMaterializers_HandlesEachCorrectly()
     {
         // Arrange
@@ -473,15 +473,15 @@ public class CachingWorkflowDefinitionServiceTests
 
         // Assert
         var results = result.ToList();
-        Assert.Equal(2, results.Count);
+        await Assert.That(results.Count).IsEqualTo(2);
 
         var result1 = results.First(r => r.WorkflowDefinition?.DefinitionId == "def-1");
-        Assert.Same(definition1, result1.WorkflowDefinition);
-        Assert.Same(graph1, result1.WorkflowGraph);
+        await Assert.That(result1.WorkflowDefinition).IsSameReferenceAs(definition1);
+        await Assert.That(result1.WorkflowGraph).IsSameReferenceAs(graph1);
 
         var result2 = results.First(r => r.WorkflowDefinition?.DefinitionId == "def-2");
-        Assert.Same(definition2, result2.WorkflowDefinition);
-        Assert.Null(result2.WorkflowGraph);
+        await Assert.That(result2.WorkflowDefinition).IsSameReferenceAs(definition2);
+        await Assert.That(result2.WorkflowGraph).IsNull();
     }
 
     private CachingWorkflowDefinitionService CreateService()

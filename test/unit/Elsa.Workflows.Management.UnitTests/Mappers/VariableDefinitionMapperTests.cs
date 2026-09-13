@@ -24,18 +24,18 @@ public class VariableDefinitionMapperTests
         _mapper = CreateMapper(_workflowJsonTypeOptions);
     }
 
-    [Fact]
-    public void Map_DoesNotResolveUnregisteredClrTypeName()
+    [Test]
+    public async Task Map_DoesNotResolveUnregisteredClrTypeName()
     {
         var definition = new VariableDefinition("id", "payload", typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), false, null, null);
 
         var variable = _mapper.Map(definition);
 
-        Assert.Null(variable);
+        await Assert.That(variable).IsNull();
     }
 
-    [Fact]
-    public void Map_ResolvesRegisteredLegacyClrTypeName()
+    [Test]
+    public async Task Map_ResolvesRegisteredLegacyClrTypeName()
     {
         var workflowJsonTypeOptions = new SerializationTypeOptions();
         workflowJsonTypeOptions.RegisterTypeAlias(typeof(UnregisteredPayload), nameof(UnregisteredPayload));
@@ -45,21 +45,22 @@ public class VariableDefinitionMapperTests
 
         var variable = mapper.Map(definition);
 
-        Assert.IsType<Variable<UnregisteredPayload>>(variable);
+        await Assert.That(variable).IsOfType(typeof(Variable<UnregisteredPayload>));
+        _ = (Variable<UnregisteredPayload>)variable!;
     }
 
-    [Fact]
-    public void Map_WritesUnregisteredVariableTypeAsClrTypeName()
+    [Test]
+    public async Task Map_WritesUnregisteredVariableTypeAsClrTypeName()
     {
         var variable = new Variable<UnregisteredPayload>("payload", new());
 
         var definition = _mapper.Map(variable);
 
-        Assert.Equal(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName(), definition.TypeName);
+        await Assert.That(definition.TypeName).IsEqualTo(typeof(UnregisteredPayload).GetSimpleAssemblyQualifiedName());
     }
 
-    [Fact]
-    public void Map_WritesRegisteredVariableTypeAsAlias()
+    [Test]
+    public async Task Map_WritesRegisteredVariableTypeAsAlias()
     {
         var workflowJsonTypeOptions = new SerializationTypeOptions();
         workflowJsonTypeOptions.RegisterTypeAlias(typeof(UnregisteredPayload), nameof(UnregisteredPayload));
@@ -68,7 +69,7 @@ public class VariableDefinitionMapperTests
 
         var definition = mapper.Map(variable);
 
-        Assert.Equal(nameof(UnregisteredPayload), definition.TypeName);
+        await Assert.That(definition.TypeName).IsEqualTo(nameof(UnregisteredPayload));
     }
 
     private VariableDefinitionMapper CreateMapper(SerializationTypeOptions workflowJsonTypeOptions)

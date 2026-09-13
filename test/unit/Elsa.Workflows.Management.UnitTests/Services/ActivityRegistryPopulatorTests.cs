@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Management.UnitTests.Services;
 
 public class ActivityRegistryPopulatorTests
 {
-    [Fact]
+    [Test]
     public async Task EnsureRegistryPopulatedAsync_InitializesAgnosticProvidersOnceAcrossScopedPopulators_AndRefreshesTenantSensitiveProvidersPerPass()
     {
         // Arrange
@@ -28,11 +28,11 @@ public class ActivityRegistryPopulatorTests
         await secondScopePopulator.EnsureRegistryPopulatedAsync();
 
         // Assert
-        Assert.Equal(1, agnosticProviderCallCount.Value);
-        Assert.Equal(2, tenantSensitiveProviderCallCount.Value);
+        await Assert.That(agnosticProviderCallCount.Value).IsEqualTo(1);
+        await Assert.That(tenantSensitiveProviderCallCount.Value).IsEqualTo(2);
     }
 
-    [Fact]
+    [Test]
     public async Task PopulateRegistryAsync_ForceRefreshesAllProvidersOnEveryPass()
     {
         // Arrange
@@ -47,16 +47,16 @@ public class ActivityRegistryPopulatorTests
         await populator.PopulateRegistryAsync();
 
         // Assert
-        Assert.Equal(2, agnosticProviderCallCount.Value);
-        Assert.Equal(2, tenantSensitiveProviderCallCount.Value);
+        await Assert.That(agnosticProviderCallCount.Value).IsEqualTo(2);
+        await Assert.That(tenantSensitiveProviderCallCount.Value).IsEqualTo(2);
     }
 
-    [Fact]
-    public void BuiltInTenantAgnosticProviders_OptIntoOncePerRegistryPopulation()
+    [Test]
+    public async Task BuiltInTenantAgnosticProviders_OptIntoOncePerRegistryPopulation()
     {
-        Assert.True(typeof(ITenantAgnosticActivityProvider).IsAssignableFrom(typeof(TypedActivityProvider)));
-        Assert.True(typeof(ITenantAgnosticActivityProvider).IsAssignableFrom(typeof(HostMethodActivityProvider)));
-        Assert.False(typeof(ITenantAgnosticActivityProvider).IsAssignableFrom(typeof(WorkflowDefinitionActivityProvider)));
+        await Assert.That(typeof(ITenantAgnosticActivityProvider).IsAssignableFrom(typeof(TypedActivityProvider))).IsTrue();
+        await Assert.That(typeof(ITenantAgnosticActivityProvider).IsAssignableFrom(typeof(HostMethodActivityProvider))).IsTrue();
+        await Assert.That(typeof(ITenantAgnosticActivityProvider).IsAssignableFrom(typeof(WorkflowDefinitionActivityProvider))).IsFalse();
     }
 
     private static ActivityRegistry CreateRegistry()

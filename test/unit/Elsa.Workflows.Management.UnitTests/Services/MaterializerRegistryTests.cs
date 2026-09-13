@@ -6,8 +6,8 @@ namespace Elsa.Workflows.Management.UnitTests.Services;
 
 public class MaterializerRegistryTests
 {
-    [Fact]
-    public void GetMaterializers_Should_Return_All_Materializers()
+    [Test]
+    public async Task GetMaterializers_Should_Return_All_Materializers()
     {
         // Arrange
         var materializer1 = CreateMaterializer("materializer1");
@@ -18,13 +18,13 @@ public class MaterializerRegistryTests
         var result = registry.GetMaterializers().ToList();
 
         // Assert
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, m => m.Name == "materializer1");
-        Assert.Contains(result, m => m.Name == "materializer2");
+        await Assert.That(result.Count).IsEqualTo(2);
+        await Assert.That(result).Contains(m => m.Name == "materializer1");
+        await Assert.That(result).Contains(m => m.Name == "materializer2");
     }
 
-    [Fact]
-    public void GetMaterializer_Should_Return_Materializer_By_Name()
+    [Test]
+    public async Task GetMaterializer_Should_Return_Materializer_By_Name()
     {
         // Arrange
         var materializer1 = CreateMaterializer("test-materializer");
@@ -35,15 +35,15 @@ public class MaterializerRegistryTests
         var result = registry.GetMaterializer("test-materializer");
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("test-materializer", result.Name);
+        var materializer = await Assert.That(result).IsNotNull();
+        await Assert.That(materializer.Name).IsEqualTo("test-materializer");
     }
 
-    [Theory]
-    [InlineData("non-existent")]
-    [InlineData("")]
-    [InlineData("wrong-name")]
-    public void GetMaterializer_Should_Return_Null_When_Not_Found(string name)
+    [Test]
+    [Arguments("non-existent")]
+    [Arguments("")]
+    [Arguments("wrong-name")]
+    public async Task GetMaterializer_Should_Return_Null_When_Not_Found(string name)
     {
         // Arrange
         var materializer = CreateMaterializer("existing-materializer");
@@ -53,11 +53,11 @@ public class MaterializerRegistryTests
         var result = registry.GetMaterializer(name);
 
         // Assert
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact]
-    public void IsMaterializerAvailable_Should_Return_True_When_Materializer_Exists()
+    [Test]
+    public async Task IsMaterializerAvailable_Should_Return_True_When_Materializer_Exists()
     {
         // Arrange
         var materializer = CreateMaterializer("available-materializer");
@@ -67,14 +67,14 @@ public class MaterializerRegistryTests
         var result = registry.IsMaterializerAvailable("available-materializer");
 
         // Assert
-        Assert.True(result);
+        await Assert.That(result).IsTrue();
     }
 
-    [Theory]
-    [InlineData("not-available")]
-    [InlineData("")]
-    [InlineData("wrong-name")]
-    public void IsMaterializerAvailable_Should_Return_False_When_Materializer_Does_Not_Exist(string name)
+    [Test]
+    [Arguments("not-available")]
+    [Arguments("")]
+    [Arguments("wrong-name")]
+    public async Task IsMaterializerAvailable_Should_Return_False_When_Materializer_Does_Not_Exist(string name)
     {
         // Arrange
         var materializer = CreateMaterializer("existing-materializer");
@@ -84,11 +84,11 @@ public class MaterializerRegistryTests
         var result = registry.IsMaterializerAvailable(name);
 
         // Assert
-        Assert.False(result);
+        await Assert.That(result).IsFalse();
     }
 
-    [Fact]
-    public void Should_Handle_Empty_Materializer_Collection()
+    [Test]
+    public async Task Should_Handle_Empty_Materializer_Collection()
     {
         // Arrange
         var registry = CreateRegistry();
@@ -99,13 +99,13 @@ public class MaterializerRegistryTests
         var isAvailable = registry.IsMaterializerAvailable("any-name");
 
         // Assert
-        Assert.Empty(allMaterializers);
-        Assert.Null(foundMaterializer);
-        Assert.False(isAvailable);
+        await Assert.That(allMaterializers).IsEmpty();
+        await Assert.That(foundMaterializer).IsNull();
+        await Assert.That(isAvailable).IsFalse();
     }
 
-    [Fact]
-    public void Should_Cache_Materializers_On_First_Access()
+    [Test]
+    public async Task Should_Cache_Materializers_On_First_Access()
     {
         // Arrange
         var callCount = 0;
@@ -124,15 +124,15 @@ public class MaterializerRegistryTests
         var fourth = registry.IsMaterializerAvailable("test");
 
         // Assert
-        Assert.Single(first);
-        Assert.Single(second);
-        Assert.NotNull(third);
-        Assert.True(fourth);
-        Assert.Equal(1, callCount); // Factory should only be called once
+        await Assert.That(first).HasSingleItem();
+        await Assert.That(second).HasSingleItem();
+        await Assert.That(third).IsNotNull();
+        await Assert.That(fourth).IsTrue();
+        await Assert.That(callCount).IsEqualTo(1); // Factory should only be called once
     }
 
-    [Fact]
-    public void GetMaterializers_Should_Allow_Multiple_Enumerations()
+    [Test]
+    public async Task GetMaterializers_Should_Allow_Multiple_Enumerations()
     {
         // Arrange
         var materializer1 = CreateMaterializer("mat1");
@@ -144,13 +144,13 @@ public class MaterializerRegistryTests
         var second = registry.GetMaterializers().ToList();
 
         // Assert
-        Assert.Equal(2, first.Count);
-        Assert.Equal(2, second.Count);
-        Assert.Equal(first.Count, second.Count);
+        await Assert.That(first.Count).IsEqualTo(2);
+        await Assert.That(second.Count).IsEqualTo(2);
+        await Assert.That(second.Count).IsEqualTo(first.Count);
     }
 
-    [Fact]
-    public void GetMaterializer_Should_Return_First_When_Multiple_Materializers_With_Same_Name()
+    [Test]
+    public async Task GetMaterializer_Should_Return_First_When_Multiple_Materializers_With_Same_Name()
     {
         // Arrange - FirstOrDefault returns the first match
         var materializer1 = CreateMaterializer("duplicate-name");
@@ -161,8 +161,8 @@ public class MaterializerRegistryTests
         var result = registry.GetMaterializer("duplicate-name");
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Same(materializer1, result); // FirstOrDefault returns the first match
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result).IsSameReferenceAs(materializer1); // FirstOrDefault returns the first match
     }
 
     private static IWorkflowMaterializer CreateMaterializer(string name)
