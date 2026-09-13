@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Elsa.Common;
+using Elsa.Common.Codecs;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Persistence.EFCore;
@@ -32,6 +34,8 @@ public sealed class WorkflowStoreScenario(
     ITriggerStore triggers,
     IBookmarkStore bookmarks,
     IBookmarkQueueDeadLetterStore deadLetters,
+    IActivityExecutionStore activityExecutions,
+    IWorkflowExecutionLogStore executionLogs,
     Func<Func<Task>, Task> assertUniquenessConflictAsync,
     Func<ValueTask> disposeAsync) : IAsyncDisposable
 {
@@ -40,6 +44,8 @@ public sealed class WorkflowStoreScenario(
     public ITriggerStore Triggers { get; } = triggers;
     public IBookmarkStore Bookmarks { get; } = bookmarks;
     public IBookmarkQueueDeadLetterStore DeadLetters { get; } = deadLetters;
+    public IActivityExecutionStore ActivityExecutions { get; } = activityExecutions;
+    public IWorkflowExecutionLogStore ExecutionLogs { get; } = executionLogs;
 
     public IDisposable UseTenant(string tenantId) =>
         TenantAccessor.PushContext(tenantId == Tenant.DefaultTenantId
@@ -59,6 +65,8 @@ public sealed class WorkflowStoreScenario(
             new MemoryTriggerStore(new MemoryStore<StoredTrigger>(), tenantAccessor),
             new MemoryBookmarkStore(new MemoryStore<StoredBookmark>(), tenantAccessor),
             new MemoryBookmarkQueueDeadLetterStore(new MemoryStore<BookmarkQueueDeadLetterItem>()),
+            new MemoryActivityExecutionStore(new MemoryStore<ActivityExecutionRecord>()),
+            new MemoryWorkflowExecutionLogStore(new MemoryStore<WorkflowExecutionLogRecord>()),
             operation => Assert.ThrowsAsync<InvalidOperationException>(operation),
             () => ValueTask.CompletedTask));
     }
@@ -78,6 +86,8 @@ public sealed class WorkflowStoreScenario(
                 .AddLogging()
                 .AddSingleton<ITenantAccessor>(tenantAccessor)
                 .AddSingleton<IPayloadSerializer, ConformancePayloadSerializer>()
+                .AddSingleton<ISafeSerializer, ConformanceSafeSerializer>()
+                .AddSingleton<ICompressionCodecResolver>(_ => new CompressionCodecResolver([new None()]))
                 .Configure<TenantsOptions>(options => options.IsEnabled = true)
                 .AddScoped<IEntitySavingHandler, ApplyTenantId>()
                 .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
@@ -92,10 +102,14 @@ public sealed class WorkflowStoreScenario(
                 .AddScoped<EntityStore<RuntimeElsaDbContext, StoredTrigger>>()
                 .AddScoped<Store<RuntimeElsaDbContext, StoredBookmark>>()
                 .AddScoped<Store<RuntimeElsaDbContext, BookmarkQueueDeadLetterItem>>()
+                .AddScoped<EntityStore<RuntimeElsaDbContext, ActivityExecutionRecord>>()
+                .AddScoped<EntityStore<RuntimeElsaDbContext, WorkflowExecutionLogRecord>>()
                 .AddScoped<EFCoreWorkflowDefinitionStore>()
                 .AddScoped<EFCoreTriggerStore>()
                 .AddScoped<EFCoreBookmarkStore>()
                 .AddScoped<EFBookmarkQueueDeadLetterStore>()
+                .AddScoped<EFCoreActivityExecutionStore>()
+                .AddScoped<EFCoreWorkflowExecutionLogStore>()
                 .BuildServiceProvider();
 
             await using (var management = await services.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
@@ -112,6 +126,8 @@ public sealed class WorkflowStoreScenario(
                 scoped.GetRequiredService<EFCoreTriggerStore>(),
                 scoped.GetRequiredService<EFCoreBookmarkStore>(),
                 scoped.GetRequiredService<EFBookmarkQueueDeadLetterStore>(),
+                scoped.GetRequiredService<EFCoreActivityExecutionStore>(),
+                scoped.GetRequiredService<EFCoreWorkflowExecutionLogStore>(),
                 AssertSqliteUniquenessConflictAsync,
                 async () =>
                 {
@@ -163,6 +179,33 @@ public sealed class WorkflowStoreScenario(
         public object Deserialize(JsonElement serializedData) => serializedData.Deserialize<object>(Options)!;
         public T Deserialize<T>(string serializedData) => JsonSerializer.Deserialize<T>(serializedData, Options)!;
         public T Deserialize<T>(JsonElement serializedData) => serializedData.Deserialize<T>(Options)!;
+        public JsonSerializerOptions GetOptions() => Options;
+    }
+
+    private sealed class ConformanceSafeSerializer : ISafeSerializer
+    {
+        private static readonly JsonSerializerOptions Options = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
+
+        public ValueTask<string> SerializeAsync(object? value, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(Serialize(value));
+
+        public ValueTask<JsonElement> SerializeToElementAsync(object? value, CancellationToken cancellationToken = default) =>
+            new(SerializeToElement(value));
+
+        public ValueTask<T> DeserializeAsync<T>(string json, CancellationToken cancellationToken = default) =>
+            new(Deserialize<T>(json));
+
+        public ValueTask<T> DeserializeAsync<T>(JsonElement element, CancellationToken cancellationToken = default) =>
+            new(Deserialize<T>(element));
+
+        public string Serialize(object? value) => JsonSerializer.Serialize(value, Options);
+        public JsonElement SerializeToElement(object? value) => JsonSerializer.SerializeToElement(value, Options);
+        public T Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, Options)!;
+        public T Deserialize<T>(JsonElement element) => element.Deserialize<T>(Options)!;
         public JsonSerializerOptions GetOptions() => Options;
     }
 }

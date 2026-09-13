@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Workflows;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Entities;
@@ -219,6 +220,81 @@ public abstract class WorkflowStoreConformanceTests
         Assert.Contains(all, x => x.Id == "dl-4");
     }
 
+    [Fact]
+    public async Task BookmarkActivityExecutionAndExecutionLogFindsHonorFiltersAndIdUpsert()
+    {
+        await using var scenario = await CreateScenarioAsync();
+
+        await scenario.Bookmarks.SaveAsync(Bookmark("bm-1", hash: "hash-http", workflowInstanceId: "instance-1"));
+        await scenario.Bookmarks.SaveAsync(Bookmark("bm-2", hash: "hash-timer", workflowInstanceId: "instance-1"));
+        await scenario.Bookmarks.SaveAsync(Bookmark("bm-3", hash: "hash-http", workflowInstanceId: "instance-2"));
+
+        Assert.Equal("bm-1", (await scenario.Bookmarks.FindAsync(new BookmarkFilter { BookmarkId = "bm-1" }))!.Id);
+        Assert.Equal("bm-2", (await scenario.Bookmarks.FindAsync(new BookmarkFilter { Hash = "hash-timer" }))!.Id);
+        Assert.Null(await scenario.Bookmarks.FindAsync(new BookmarkFilter { BookmarkId = "missing" }));
+
+        var instanceBookmarks = (await scenario.Bookmarks.FindManyAsync(new BookmarkFilter { WorkflowInstanceId = "instance-1" })).ToList();
+        Assert.Equal(2, instanceBookmarks.Count);
+        Assert.Contains(instanceBookmarks, x => x.Id == "bm-1");
+        Assert.Contains(instanceBookmarks, x => x.Id == "bm-2");
+
+        var hashed = (await scenario.Bookmarks.FindManyAsync(new BookmarkFilter { Hash = "hash-http" })).ToList();
+        Assert.Equal(2, hashed.Count);
+
+        var firstPage = await scenario.Bookmarks.FindManyAsync(new BookmarkFilter { WorkflowInstanceId = "instance-1" }, PageArgs.FromRange(0, 1));
+        Assert.Equal(2, firstPage.TotalCount);
+        Assert.Single(firstPage.Items);
+
+        await scenario.Bookmarks.SaveAsync(Bookmark("bm-1", hash: "hash-updated", workflowInstanceId: "instance-1"));
+        Assert.Equal("hash-updated", (await scenario.Bookmarks.FindAsync(new BookmarkFilter { BookmarkId = "bm-1" }))!.Hash);
+
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution("ae-1", "instance-1", "activity-a", ActivityStatus.Running));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution("ae-2", "instance-1", "activity-b", ActivityStatus.Completed, completedAt: StartedAt.AddMinutes(1)));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution("ae-3", "instance-2", "activity-a", ActivityStatus.Running));
+
+        Assert.Equal("ae-1", (await scenario.ActivityExecutions.FindAsync(new ActivityExecutionRecordFilter { Id = "ae-1" }))!.Id);
+        Assert.Null(await scenario.ActivityExecutions.FindAsync(new ActivityExecutionRecordFilter { Id = "missing" }));
+
+        var instanceActivities = (await scenario.ActivityExecutions.FindManyAsync(new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1" })).ToList();
+        Assert.Equal(2, instanceActivities.Count);
+        Assert.Equal(2, await scenario.ActivityExecutions.CountAsync(new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1" }));
+        Assert.Equal("ae-1", Assert.Single(await scenario.ActivityExecutions.FindManyAsync(new ActivityExecutionRecordFilter { ActivityId = "activity-a", WorkflowInstanceId = "instance-1" })).Id);
+        Assert.Equal("ae-2", Assert.Single(await scenario.ActivityExecutions.FindManyAsync(new ActivityExecutionRecordFilter { Status = ActivityStatus.Completed })).Id);
+
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution("ae-1", "instance-1", "activity-a", ActivityStatus.Completed, completedAt: StartedAt.AddMinutes(2)));
+        Assert.Equal(ActivityStatus.Completed, (await scenario.ActivityExecutions.FindAsync(new ActivityExecutionRecordFilter { Id = "ae-1" }))!.Status);
+
+        Assert.Equal(2, await scenario.ActivityExecutions.DeleteManyAsync(new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1" }));
+        Assert.Equal("ae-3", Assert.Single(await scenario.ActivityExecutions.FindManyAsync(new ActivityExecutionRecordFilter())).Id);
+
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-1", "instance-1", "activity-a", "Started"));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-2", "instance-1", "activity-b", "Completed"));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-3", "instance-2", "activity-a", "Started"));
+
+        Assert.Equal("el-1", (await scenario.ExecutionLogs.FindAsync(new WorkflowExecutionLogRecordFilter { Id = "el-1" }))!.Id);
+        Assert.Null(await scenario.ExecutionLogs.FindAsync(new WorkflowExecutionLogRecordFilter { Id = "missing" }));
+
+        var instanceLogs = await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = "instance-1" }, PageArgs.FromRange(0, 10));
+        Assert.Equal(2, instanceLogs.TotalCount);
+        Assert.Equal(2, instanceLogs.Items.Count);
+
+        var firstLogPage = await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = "instance-1" }, PageArgs.FromRange(0, 1));
+        Assert.Equal(2, firstLogPage.TotalCount);
+        Assert.Single(firstLogPage.Items);
+
+        Assert.Equal("el-2", (await scenario.ExecutionLogs.FindAsync(new WorkflowExecutionLogRecordFilter { EventName = "Completed" }))!.Id);
+        Assert.Equal("el-2", Assert.Single((await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter { ActivityId = "activity-b" }, PageArgs.All)).Items).Id);
+
+        var excluded = await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = "instance-1", ExcludeActivityType = "Elsa.WriteLine" }, PageArgs.All);
+        Assert.Equal(2, excluded.TotalCount);
+
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-1", "instance-1", "activity-a", "Resumed"));
+        Assert.Equal("Resumed", (await scenario.ExecutionLogs.FindAsync(new WorkflowExecutionLogRecordFilter { Id = "el-1" }))!.EventName);
+
+        Assert.Equal(2, await scenario.ExecutionLogs.DeleteManyAsync(new WorkflowExecutionLogRecordFilter { WorkflowInstanceId = "instance-1" }));
+        Assert.Equal("el-3", Assert.Single((await scenario.ExecutionLogs.FindManyAsync(new WorkflowExecutionLogRecordFilter(), PageArgs.All)).Items).Id);
+    }
+
     private static async Task SeedMixedTriggersAsync(WorkflowStoreScenario scenario)
     {
         await scenario.Triggers.SaveAsync(Trigger("id-a", hash: "hash-a", tenantId: "tenant-a"));
@@ -271,14 +347,65 @@ public abstract class WorkflowStoreConformanceTests
             CreatedAt = new DateTimeOffset(2026, 9, 13, 12, 0, 0, TimeSpan.Zero)
         };
 
-    private static StoredBookmark Bookmark(string id, string? tenantId) =>
+    private static readonly DateTimeOffset StartedAt = new(2026, 9, 13, 12, 0, 0, TimeSpan.Zero);
+
+    private static StoredBookmark Bookmark(
+        string id,
+        string? tenantId = "tenant-a",
+        string? hash = null,
+        string workflowInstanceId = "instance-1") =>
         new()
         {
             Id = id,
             TenantId = tenantId,
-            Hash = id,
-            WorkflowInstanceId = "instance-1",
-            Name = "Elsa.HttpEndpoint"
+            Hash = hash ?? id,
+            WorkflowInstanceId = workflowInstanceId,
+            Name = "Elsa.HttpEndpoint",
+            CreatedAt = StartedAt
+        };
+
+    private static ActivityExecutionRecord ActivityExecution(
+        string id,
+        string workflowInstanceId,
+        string activityId,
+        ActivityStatus status,
+        DateTimeOffset? completedAt = null) =>
+        new()
+        {
+            Id = id,
+            TenantId = "tenant-a",
+            WorkflowInstanceId = workflowInstanceId,
+            ActivityId = activityId,
+            ActivityNodeId = $"node-{activityId}",
+            ActivityType = "Elsa.WriteLine",
+            ActivityTypeVersion = 1,
+            ActivityName = activityId,
+            Status = status,
+            StartedAt = StartedAt,
+            CompletedAt = completedAt
+        };
+
+    private static WorkflowExecutionLogRecord ExecutionLog(
+        string id,
+        string workflowInstanceId,
+        string activityId,
+        string eventName) =>
+        new()
+        {
+            Id = id,
+            TenantId = "tenant-a",
+            WorkflowDefinitionId = "workflow-1",
+            WorkflowDefinitionVersionId = "v1",
+            WorkflowInstanceId = workflowInstanceId,
+            WorkflowVersion = 1,
+            ActivityInstanceId = $"ai-{id}",
+            ActivityId = activityId,
+            ActivityType = "Elsa.WriteLine",
+            ActivityTypeVersion = 1,
+            ActivityNodeId = $"node-{activityId}",
+            Timestamp = StartedAt,
+            Sequence = 0,
+            EventName = eventName
         };
 
     private static BookmarkQueueDeadLetterItem DeadLetter(string id, string originalQueueItemId) =>
