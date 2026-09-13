@@ -212,6 +212,96 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
     }
 
     [ConformanceFact]
+    public async Task AvailableScopeShowsASnapshotMemberOnlyWhenTheTaskUsesSnapshotMode()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+        var other = Subject("other");
+
+        var snapshotVisible = CreateTask(title: "Snapshot member");
+        snapshotVisible.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        snapshotVisible.SnapshotMembers = [alice];
+        snapshotVisible.CandidateUsers = [other];
+        await Repository.AddProjectionAsync(snapshotVisible);
+
+        var liveHidden = CreateTask(title: "Live ignores leftover snapshot members");
+        liveHidden.MembershipResolutionMode = UserTaskMembershipResolutionMode.Live;
+        liveHidden.SnapshotMembers = [alice];
+        liveHidden.CandidateUsers = [other];
+        await Repository.AddProjectionAsync(liveHidden);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice));
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal(snapshotVisible.Id, Assert.Single(page.Items).Id);
+    }
+
+    [ConformanceFact]
+    public async Task AvailableScopeShowsALiveCandidateOnlyWhenTheTaskUsesLiveMode()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+        var other = Subject("other");
+
+        var liveVisible = CreateTask(title: "Live candidate");
+        liveVisible.MembershipResolutionMode = UserTaskMembershipResolutionMode.Live;
+        liveVisible.CandidateUsers = [alice];
+        liveVisible.SnapshotMembers = [other];
+        await Repository.AddProjectionAsync(liveVisible);
+
+        var snapshotHidden = CreateTask(title: "Snapshot ignores leftover live candidates");
+        snapshotHidden.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        snapshotHidden.CandidateUsers = [alice];
+        snapshotHidden.SnapshotMembers = [other];
+        await Repository.AddProjectionAsync(snapshotHidden);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice));
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal(liveVisible.Id, Assert.Single(page.Items).Id);
+    }
+
+    [ConformanceFact]
+    public async Task AvailableScopeDoesNotTreatSnapshotGroupsAsLiveMembership()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+        var reviewers = Group("reviewers");
+
+        var snapshot = CreateTask(title: "Snapshot group without enumerated member");
+        snapshot.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        snapshot.CandidateGroups = [reviewers];
+        snapshot.SnapshotGroups = [reviewers];
+        await Repository.AddProjectionAsync(snapshot);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice) with
+        {
+            Scope = new(TenantId, alice, [reviewers], Kind: UserTaskQueryScopeKind.Available)
+        });
+
+        Assert.Empty(page.Items);
+        Assert.Equal(0, page.TotalCount);
+    }
+
+    [ConformanceFact]
+    public async Task AvailableScopeStillAppliesExclusionsBeforeSnapshotMembership()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+
+        var excluded = CreateTask(title: "Excluded snapshot member");
+        excluded.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        excluded.SnapshotMembers = [alice];
+        excluded.ExcludedUsers = [alice];
+        await Repository.AddProjectionAsync(excluded);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice));
+
+        Assert.Empty(page.Items);
+        Assert.Equal(0, page.TotalCount);
+    }
+
+    [ConformanceFact]
     public async Task AScopeFromAnotherTenantMatchesNothingEvenWhenTheQueryNamesThisOne()
     {
         await ActivateAsync();

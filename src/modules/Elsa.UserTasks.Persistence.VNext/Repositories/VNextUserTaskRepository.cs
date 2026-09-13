@@ -257,8 +257,10 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
     {
         if (task.ExcludedUsers.Any(x => x.Matches(subject)))
             return false;
+        // SnapshotGroups are the original group refs. Eligibility is the expanded SnapshotMembers,
+        // matching DefaultUserTaskAccessPolicy.IsCandidate and InMemory IsEligible.
         if (task.MembershipResolutionMode == UserTaskMembershipResolutionMode.Snapshot)
-            return task.SnapshotMembers.Any(x => x.Matches(subject)) || task.SnapshotGroups.Any(x => groups.Any(x.Matches));
+            return task.SnapshotMembers.Any(x => x.Matches(subject));
         return task.CandidateUsers.Any(x => x.Matches(subject)) || task.CandidateGroups.Any(x => groups.Any(x.Matches));
     }
 
