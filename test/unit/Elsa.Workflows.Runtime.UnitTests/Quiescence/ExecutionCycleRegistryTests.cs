@@ -173,9 +173,8 @@ public class ExecutionCycleRegistryTests
 
         Assert.True(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5)));
         await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.True(handle.Disposed.IsCompletedSuccessfully);
-
         Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
     }
 
     [Fact(DisplayName = "ExecutionCycleHandle defers CTS disposal while linked-token cancellation is in progress")]
