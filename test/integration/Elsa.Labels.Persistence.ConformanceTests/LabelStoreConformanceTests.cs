@@ -243,6 +243,26 @@ public abstract class LabelStoreConformanceTests
         var agnostic = Label("label-star-2", "Star2", Tenant.AgnosticTenantId);
         await scenario.Labels.SaveAsync(agnostic);
         Assert.Equal(Tenant.AgnosticTenantId, agnostic.TenantId);
+
+        var stampedNamedLabel = Label("label-named-stamp", "NamedStamp", tenantId: null);
+        await scenario.Labels.SaveAsync(stampedNamedLabel);
+        Assert.Equal("tenant-a", stampedNamedLabel.TenantId);
+        Assert.Equal("tenant-a", (await scenario.Labels.FindByIdAsync("label-named-stamp"))!.TenantId);
+
+        var stampedNamedLabelBatch = new[] { Label("label-named-batch", "NamedBatch", tenantId: null) };
+        await scenario.Labels.SaveManyAsync(stampedNamedLabelBatch);
+        Assert.Equal("tenant-a", stampedNamedLabelBatch[0].TenantId);
+        Assert.Equal("tenant-a", (await scenario.Labels.FindByIdAsync("label-named-batch"))!.TenantId);
+
+        var stampedNamedAssociation = Association("assoc-named-stamp", "orange", "order", "order:1", tenantId: null);
+        await scenario.Associations.SaveAsync(stampedNamedAssociation);
+        Assert.Equal("tenant-a", stampedNamedAssociation.TenantId);
+        Assert.Equal("assoc-named-stamp", Assert.Single(await scenario.AssociationQuery.FindByLabelIdsAsync(["orange"])).Id);
+
+        var stampedNamedAssociationBatch = new[] { Association("assoc-named-batch", "purple", "order", "order:1", tenantId: null) };
+        await scenario.Associations.SaveManyAsync(stampedNamedAssociationBatch);
+        Assert.Equal("tenant-a", stampedNamedAssociationBatch[0].TenantId);
+        Assert.Equal("assoc-named-batch", Assert.Single(await scenario.AssociationQuery.FindByLabelIdsAsync(["purple"])).Id);
     }
 
     [Fact]
