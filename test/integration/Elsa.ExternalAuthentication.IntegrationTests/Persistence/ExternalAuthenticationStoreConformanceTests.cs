@@ -108,7 +108,7 @@ public abstract class ExternalAuthenticationStoreConformanceTests
 
         var transaction = CreateTransaction("concurrent-state", expiresAt);
         await scenario.StateStore.PutAsync("ExternalSignIn", transaction.HandleHash, transaction, expiresAt);
-        var stateResults = await RunConcurrentlyAsync(
+        var stateResults = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.StateTake,
             () => scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash),
             () => scenario.StateStore.TryTakeAsync<BrokerTransaction>("ExternalSignIn", transaction.HandleHash));
         Assert.Single(stateResults.OfType<TakeResult<BrokerTransaction>.Taken>());
@@ -116,7 +116,7 @@ public abstract class ExternalAuthenticationStoreConformanceTests
 
         var grant = CreateGrant("concurrent-grant", expiresAt);
         await scenario.GrantStore.SaveAsync(grant);
-        var grantResults = await RunConcurrentlyAsync(
+        var grantResults = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.AuthorizationGrantTake,
             () => scenario.GrantStore.TryTakeAsync(grant.CodeHash),
             () => scenario.GrantStore.TryTakeAsync(grant.CodeHash));
         Assert.Single(grantResults.OfType<TakeResult<AuthorizationGrant>.Taken>());
@@ -124,7 +124,7 @@ public abstract class ExternalAuthenticationStoreConformanceTests
 
         var preview = CreatePreview("concurrent-preview", "administrator-a", expiresAt);
         await scenario.PreviewStore.SaveAsync(preview);
-        var previewResults = await RunConcurrentlyAsync(
+        var previewResults = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.PreviewTake,
             () => scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId),
             () => scenario.PreviewStore.TryTakeAsync(preview.HandleHash, preview.AdministratorId));
         Assert.Single(previewResults.OfType<TakeResult<PreviewResult>.Taken>());
@@ -181,7 +181,7 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         await using var scenario = await CreateScenarioAsync();
         var request = new ProvisioningRequest("tenant-a", "contoso", Identity("subject-race"), null, "user-a");
 
-        var results = await RunConcurrentlyAsync(
+        var results = await RunConcurrentlyAsync(scenario, ConformanceRacePoint.IdentityLinkCreate,
             () => scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(request),
             () => scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(request));
 
@@ -197,6 +197,9 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         await using var scenario = await CreateScenarioAsync();
         var old = (await scenario.IdentityProvisioner.CreateLinkOrGetExistingAsync(new ProvisioningRequest("tenant-a", "contoso", Identity("subject-old"), null, "user-a"))).Link;
 
+        // The SQLite implementation holds a deferred read transaction until the guarded delete. Pausing both callers
+        // after their reads creates a lock-up rather than a useful interleaving, so this case keeps the provider's
+        // file-backed busy timeout and exercises the guarded DELETE ... WHERE Id decision point directly.
         var results = await RunConcurrentlyAsync(
             () => scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-a"))),
             () => scenario.IdentityProvisioner.ReplaceAsync(new ExternalIdentityLinkReplaceRequest("tenant-a", old.Id, "user-a", "contoso", Identity("subject-b"))));
@@ -247,6 +250,41 @@ public abstract class ExternalAuthenticationStoreConformanceTests
         };
         start.SetResult();
         return await Task.WhenAll(tasks);
+    }
+
+    private static async Task<T[]> RunConcurrentlyAsync<T>(
+        ExternalAuthenticationStoreScenario scenario,
+        ConformanceRacePoint racePoint,
+        Func<ValueTask<T>> first,
+        Func<ValueTask<T>> second)
+    {
+        var race = scenario.Races.Arm(racePoint);
+        var operations = RunConcurrentlyAsync(first, second);
+
+        try
+        {
+            await race.BothParticipantsReached.WaitAsync(TimeSpan.FromSeconds(10));
+            race.Release();
+            return await operations;
+        }
+        catch
+        {
+            race.Release();
+            try
+            {
+                await operations;
+            }
+            catch
+            {
+                // Preserve the coordination failure as the test result.
+            }
+
+            throw;
+        }
+        finally
+        {
+            scenario.Races.Disarm(race);
+        }
     }
 
     private static async Task<T> RunAfterStartAsync<T>(Task start, Func<ValueTask<T>> operation)
@@ -351,6 +389,14 @@ public sealed class SqliteExternalAuthenticationStoreConformanceTests : External
     protected override Task<ExternalAuthenticationStoreScenario> CreateScenarioAsync() => ExternalAuthenticationStoreScenario.CreateSqliteAsync();
 }
 
+public enum ConformanceRacePoint
+{
+    StateTake,
+    AuthorizationGrantTake,
+    PreviewTake,
+    IdentityLinkCreate
+}
+
 public sealed class ExternalAuthenticationStoreScenario(
     ConformanceClock clock,
     IExternalAuthenticationStateStore stateStore,
@@ -361,6 +407,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     IExternalIdentityProvisioner identityProvisioner,
     IConnectionRegistryVersionStore registryVersionStore,
     Func<Func<Task>, Task> assertRefreshTokenConflictAsync,
+    ExternalAuthenticationStoreScenario.ConformanceRaceCoordinator races,
     Task registryVersionAdvanceRaceReady,
     Func<ValueTask> disposeAsync) : IAsyncDisposable
 {
@@ -372,6 +419,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     public IIdentityProviderConnectionStore ConnectionStore { get; } = connectionStore;
     public IExternalIdentityProvisioner IdentityProvisioner { get; } = identityProvisioner;
     public IConnectionRegistryVersionStore RegistryVersionStore { get; } = registryVersionStore;
+    internal ConformanceRaceCoordinator Races { get; } = races;
     public Task RegistryVersionAdvanceRaceReady { get; } = registryVersionAdvanceRaceReady;
     public Task AssertRefreshTokenConflictAsync(Func<Task> operation) => assertRefreshTokenConflictAsync(operation);
 
@@ -382,6 +430,7 @@ public sealed class ExternalAuthenticationStoreScenario(
         var clock = new ConformanceClock();
         var (users, userProvider) = await CreateUsersAsync();
         var hasher = new HmacExternalAuthenticationHandleHasher();
+        var races = new ConformanceRaceCoordinator(false);
         var provisioner = new InMemoryExternalIdentityProvisioner(
             users,
             userProvider,
@@ -401,6 +450,7 @@ public sealed class ExternalAuthenticationStoreScenario(
             provisioner,
             new InMemoryConnectionRegistryVersionStore(),
             AssertInMemoryRefreshTokenConflictAsync,
+            races,
             Task.CompletedTask,
             () =>
             {
@@ -413,6 +463,7 @@ public sealed class ExternalAuthenticationStoreScenario(
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-external-authentication-conformance-{Guid.NewGuid():N}.db");
         var hasher = new HmacExternalAuthenticationHandleHasher();
+        var races = new ConformanceRaceCoordinator(true);
         var registryVersionAdvanceRaceInterceptor = new RegistryVersionAdvanceRaceInterceptor();
         ServiceProvider? services = null;
         var clock = new ConformanceClock();
@@ -422,6 +473,7 @@ public sealed class ExternalAuthenticationStoreScenario(
             var optionsBuilder = new DbContextOptionsBuilder<ExternalAuthenticationElsaDbContext>();
             optionsBuilder.UseElsaDbContextOptions(null);
             optionsBuilder.UseSqlite($"Data Source={databasePath};Default Timeout=30", sqlite => sqlite.MigrationsAssembly(typeof(Elsa.ExternalAuthentication.Persistence.EFCore.Sqlite.ExternalAuthenticationDbContextFactory).Assembly.FullName));
+            optionsBuilder.AddInterceptors(races);
             optionsBuilder.AddInterceptors(registryVersionAdvanceRaceInterceptor);
             var options = optionsBuilder.Options;
             services = new ServiceCollection()
@@ -453,6 +505,7 @@ public sealed class ExternalAuthenticationStoreScenario(
                 provisioner,
                 new EFCoreConnectionRegistryVersionStore(leaseFactory),
                 AssertSqliteRefreshTokenConflictAsync,
+                races,
                 registryVersionAdvanceRaceInterceptor.BothUpdatesReached,
                 async () =>
                 {
@@ -489,6 +542,83 @@ public sealed class ExternalAuthenticationStoreScenario(
         Assert.Equal(19, sqliteException.SqliteErrorCode);
         Assert.Contains("UNIQUE constraint failed", sqliteException.Message, StringComparison.Ordinal);
         Assert.Contains("ExternalAuthenticationSessionRefreshTokens.Hash", sqliteException.Message, StringComparison.Ordinal);
+    }
+
+    // SQLite uses command boundaries to hold both callers before mutation. The in-memory implementations complete
+    // synchronously while holding their private lock, so there is no safe public boundary at which a test can pause
+    // both callers without changing production code; its completed handle still exercises the same shared outcomes.
+    public sealed class ConformanceRaceCoordinator(bool interceptCommands) : DbCommandInterceptor
+    {
+        private ConformanceRaceHandle? _activeRace;
+
+        public ConformanceRaceHandle Arm(ConformanceRacePoint point)
+        {
+            var race = interceptCommands ? new ConformanceRaceHandle(point) : ConformanceRaceHandle.Completed(point);
+            if (interceptCommands && Interlocked.CompareExchange(ref _activeRace, race, null) is not null)
+                throw new InvalidOperationException("A conformance race is already active.");
+
+            return race;
+        }
+
+        public void Disarm(ConformanceRaceHandle race) => Interlocked.CompareExchange(ref _activeRace, null, race);
+
+        public override async ValueTask<DbDataReader> ReaderExecutedAsync(
+            DbCommand command,
+            CommandExecutedEventData eventData,
+            DbDataReader result,
+            CancellationToken cancellationToken = default)
+        {
+            var race = Volatile.Read(ref _activeRace);
+            if (race is not null && race.Matches(command.CommandText))
+                await race.ParticipantReachedAsync(cancellationToken);
+
+            return result;
+        }
+    }
+
+    public sealed class ConformanceRaceHandle(ConformanceRacePoint point, bool completed = false)
+    {
+        private readonly TaskCompletionSource _bothParticipantsReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly bool _completed = completed;
+        private int _participantCount;
+
+        public ConformanceRacePoint Point { get; } = point;
+        public Task BothParticipantsReached => _completed ? Task.CompletedTask : _bothParticipantsReached.Task;
+
+        public static ConformanceRaceHandle Completed(ConformanceRacePoint point) => new(point, true);
+
+        public async ValueTask ParticipantReachedAsync(CancellationToken cancellationToken)
+        {
+            if (_completed)
+                return;
+
+            var participantNumber = Interlocked.Increment(ref _participantCount);
+            if (participantNumber == 2)
+                _bothParticipantsReached.TrySetResult();
+
+            if (participantNumber <= 2)
+                await _release.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+        }
+
+        public void Release()
+        {
+            if (!_completed)
+                _release.TrySetResult();
+        }
+
+        public bool Matches(string commandText) => Point switch
+        {
+            ConformanceRacePoint.StateTake => IsSelectFrom(commandText, "ExternalAuthenticationBrokerTransactions"),
+            ConformanceRacePoint.AuthorizationGrantTake => IsSelectFrom(commandText, "ExternalAuthenticationAuthorizationGrants"),
+            ConformanceRacePoint.PreviewTake => IsSelectFrom(commandText, "ExternalAuthenticationPreviewResults"),
+            ConformanceRacePoint.IdentityLinkCreate => IsSelectFrom(commandText, "ExternalIdentityLinks"),
+            _ => false
+        };
+
+        private static bool IsSelectFrom(string commandText, string tableName) =>
+            commandText.Contains("SELECT", StringComparison.Ordinal) &&
+            commandText.Contains($"FROM \"{tableName}\"", StringComparison.Ordinal);
     }
 
     private sealed class RegistryVersionAdvanceRaceInterceptor : DbCommandInterceptor
