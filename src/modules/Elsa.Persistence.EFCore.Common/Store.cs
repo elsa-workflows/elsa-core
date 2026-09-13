@@ -238,6 +238,31 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         await handler.HandleAsync(context);
     }
 
+    /// <summary>
+    /// Executes a database operation and passes failures through the configured database
+    /// exception handler.
+    /// </summary>
+    /// <typeparam name="TResult">The operation result type.</typeparam>
+    /// <param name="operation">The database operation to execute.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="shouldHandle">A predicate that excludes exceptions which are not database failures.</param>
+    /// <returns>The result returned by <paramref name="operation"/>.</returns>
+    internal async Task<TResult> ExecuteWithDbExceptionHandlingAsync<TResult>(
+        Func<Task<TResult>> operation,
+        CancellationToken cancellationToken = default,
+        Func<Exception, bool>? shouldHandle = null)
+    {
+        try
+        {
+            return await operation();
+        }
+        catch (Exception exception) when (shouldHandle is null || shouldHandle(exception))
+        {
+            await HandleDbExceptionAsync(exception, cancellationToken);
+            throw;
+        }
+    }
+
     internal async Task ExecuteSqlServerWriteWithRetryAsync(
         Func<TDbContext, CancellationToken, Task> operation,
         CancellationToken cancellationToken)

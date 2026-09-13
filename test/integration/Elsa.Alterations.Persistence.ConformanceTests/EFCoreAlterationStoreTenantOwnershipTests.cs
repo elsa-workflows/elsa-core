@@ -4,6 +4,8 @@ using Elsa.Alterations.Core.Enums;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Persistence.EFCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 
@@ -248,6 +250,80 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     }
 
     [Fact]
+    public async Task SaveAsync_WhenDirectPlanUpdateFails_InvokesDbExceptionHandler()
+    {
+        var handler = new RecordingDbExceptionHandler();
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync(
+            "tenant-a",
+            tenantsEnabled: true,
+            commandInterceptor: new ThrowOnAlterationCommand("UPDATE \"AlterationPlans\""),
+            dbExceptionHandler: handler);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => scenario.Plans.SaveAsync(Plan(
+            "handler-plan",
+            "tenant-a",
+            AlterationPlanStatus.Pending,
+            "payload")));
+
+        Assert.Same(exception, handler.Exception);
+    }
+
+    [Fact]
+    public async Task SaveAsync_WhenDirectJobInsertFails_InvokesDbExceptionHandler()
+    {
+        var handler = new RecordingDbExceptionHandler();
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync(
+            "tenant-a",
+            tenantsEnabled: true,
+            commandInterceptor: new ThrowOnAlterationCommand("INSERT INTO \"AlterationJobs\""),
+            dbExceptionHandler: handler);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => scenario.Jobs.SaveAsync(Job(
+            "handler-job",
+            "tenant-a",
+            AlterationJobStatus.Pending,
+            "payload")));
+
+        Assert.Same(exception, handler.Exception);
+    }
+
+    [Fact]
+    public async Task SaveManyAsync_WhenDirectJobUpdateFails_InvokesDbExceptionHandlerAfterRetryBoundary()
+    {
+        var handler = new RecordingDbExceptionHandler();
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync(
+            "tenant-a",
+            tenantsEnabled: true,
+            commandInterceptor: new ThrowOnAlterationCommand("UPDATE \"AlterationJobs\""),
+            dbExceptionHandler: handler);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => scenario.Jobs.SaveManyAsync([
+            Job("handler-batch", "tenant-a", AlterationJobStatus.Pending, "payload")
+        ]));
+
+        Assert.Same(exception, handler.Exception);
+    }
+
+    [Fact]
+    public async Task SaveAsync_WhenPlanIdIsHidden_DoesNotSendOwnershipConflictToDbExceptionHandler()
+    {
+        var handler = new RecordingDbExceptionHandler();
+        await using var scenario = await AlterationStoreScenario.CreateSqliteAsync(
+            "tenant-a",
+            tenantsEnabled: true,
+            dbExceptionHandler: handler);
+        await scenario.Plans.SaveAsync(Plan("handler-conflict", "tenant-a", AlterationPlanStatus.Pending, "owner"));
+
+        using (scenario.UseTenant("tenant-b"))
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scenario.Plans.SaveAsync(
+                Plan("handler-conflict", "tenant-b", AlterationPlanStatus.Completed, "hidden")));
+        }
+
+        Assert.Null(handler.Exception);
+    }
+
+    [Fact]
     public async Task SaveAsync_ConcurrentSameTenantPlanId_BothWritersSucceedAndOnePayloadWins()
     {
         var gate = new GateFirstAlterationUpdates("AlterationPlans");
@@ -349,7 +425,12 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
     [Fact]
     public async Task SaveManyAsync_ConcurrentNamedTenantsOnEmptyJobId_OneOwnerKeepsPayload()
     {
-        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync("tenant-a", "tenant-b");
+        var gate = new GateFirstAlterationTransactions();
+        await using var pair = await AlterationStoreScenario.CreateSqlitePairAsync(
+            "tenant-a",
+            "tenant-b",
+            transactionInterceptor: gate);
+        gate.Arm();
 
         var results = await Task.WhenAll(
             Capture(() => pair.First.Jobs.SaveManyAsync([Job("race", "tenant-a", AlterationJobStatus.Running, "from-a")])),
@@ -357,6 +438,7 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
 
         Assert.Equal(1, results.Count(ex => ex is null));
         Assert.Equal(1, results.Count(ex => ex is InvalidOperationException));
+        Assert.Equal(2, gate.MatchedTransactionCount);
 
         var winnerIsA = results[0] is null;
         using (pair.First.UseTenant(winnerIsA ? "tenant-a" : "tenant-b"))
@@ -473,9 +555,9 @@ public sealed class EFCoreAlterationStoreTenantOwnershipTests
 }
 
 /// <summary>
-/// Releases the first two relevant alteration UPDATE commands after they complete, so
-/// competing SaveAsync calls reach their INSERT/retry paths together. The gate is armed
-/// explicitly after any setup writes so only the concurrent operation is coordinated.
+/// Releases the first two relevant alteration UPDATE commands after they complete, so competing
+/// Save calls reach their INSERT/retry paths together. The gate is armed explicitly after any
+/// setup writes so only the concurrent operation is coordinated.
 /// </summary>
 public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInterceptor
 {
@@ -493,12 +575,18 @@ public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInte
         int result,
         CancellationToken cancellationToken = default)
     {
-        if (!command.CommandText.Contains($"UPDATE \"{tableName}\"", StringComparison.OrdinalIgnoreCase))
+        if (!IsArmedAlterationUpdate(command))
             return result;
 
-        if (Volatile.Read(ref _armed) == 0)
-            return result;
+        await CoordinateAsync(cancellationToken);
+        return result;
+    }
 
+    private bool IsArmedAlterationUpdate(DbCommand command) =>
+        Volatile.Read(ref _armed) != 0 && command.CommandText.Contains($"UPDATE \"{tableName}\"", StringComparison.OrdinalIgnoreCase);
+
+    private async Task CoordinateAsync(CancellationToken cancellationToken)
+    {
         var commandNumber = Interlocked.Increment(ref _matchedCommandCount);
         if (commandNumber <= 2)
         {
@@ -507,7 +595,79 @@ public sealed class GateFirstAlterationUpdates(string tableName) : DbCommandInte
 
             await _bothReached.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
         }
+    }
+}
+
+public sealed class GateFirstAlterationTransactions : DbTransactionInterceptor
+{
+    private readonly TaskCompletionSource<bool> _bothReached = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private int _armed;
+    private int _matchedTransactionCount;
+
+    public int MatchedTransactionCount => Volatile.Read(ref _matchedTransactionCount);
+
+    public void Arm() => Volatile.Write(ref _armed, 1);
+
+    public override async ValueTask<InterceptionResult<DbTransaction>> TransactionStartingAsync(
+        DbConnection connection,
+        TransactionStartingEventData eventData,
+        InterceptionResult<DbTransaction> result,
+        CancellationToken cancellationToken = default)
+    {
+        if (Volatile.Read(ref _armed) != 0)
+        {
+            var transactionNumber = Interlocked.Increment(ref _matchedTransactionCount);
+            if (transactionNumber <= 2)
+            {
+                if (transactionNumber == 2)
+                    _bothReached.TrySetResult(true);
+
+                await _bothReached.Task.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
+            }
+        }
 
         return result;
+    }
+}
+
+public sealed class ThrowOnAlterationCommand(string commandFragment) : DbCommandInterceptor
+{
+    private void ThrowIfMatched(DbCommand command)
+    {
+        if (command.CommandText.Contains(commandFragment, StringComparison.OrdinalIgnoreCase))
+            throw new DbUpdateException("Forced alteration persistence failure.");
+    }
+
+    public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfMatched(command);
+
+        return ValueTask.FromResult(result);
+    }
+
+    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfMatched(command);
+
+        return ValueTask.FromResult(result);
+    }
+}
+
+public sealed class RecordingDbExceptionHandler : IDbExceptionHandler
+{
+    public Exception? Exception { get; private set; }
+
+    public Task HandleAsync(DbUpdateExceptionContext context)
+    {
+        Exception = context.Exception;
+        return Task.CompletedTask;
     }
 }

@@ -60,13 +60,17 @@ public sealed class AlterationStoreScenario(
     public static Task<AlterationStoreScenario> CreateSqliteAsync(
         string tenantId,
         bool tenantsEnabled,
-        DbCommandInterceptor? commandInterceptor = null) =>
+        DbCommandInterceptor? commandInterceptor = null,
+        IDbExceptionHandler? dbExceptionHandler = null,
+        DbTransactionInterceptor? transactionInterceptor = null) =>
         CreateSqliteAsync(
             tenantId,
             Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db"),
             ownsDatabaseFile: true,
             tenantsEnabled,
-            commandInterceptor);
+            commandInterceptor,
+            dbExceptionHandler,
+            transactionInterceptor);
 
     /// <summary>
     /// Two EF/SQLite hosts that share a file and keep separate ambient tenants so concurrent
@@ -75,13 +79,24 @@ public sealed class AlterationStoreScenario(
     public static async Task<SqliteOwnershipPair> CreateSqlitePairAsync(
         string firstTenantId,
         string secondTenantId,
-        DbCommandInterceptor? commandInterceptor = null)
+        DbCommandInterceptor? commandInterceptor = null,
+        DbTransactionInterceptor? transactionInterceptor = null)
     {
         var databasePath = Path.Join(Path.GetTempPath(), $"elsa-alterations-ownership-{Guid.NewGuid():N}.db");
-        var first = await CreateSqliteAsync(firstTenantId, databasePath, ownsDatabaseFile: false, commandInterceptor: commandInterceptor);
+        var first = await CreateSqliteAsync(
+            firstTenantId,
+            databasePath,
+            ownsDatabaseFile: false,
+            commandInterceptor: commandInterceptor,
+            transactionInterceptor: transactionInterceptor);
         try
         {
-            var second = await CreateSqliteAsync(secondTenantId, databasePath, ownsDatabaseFile: false, commandInterceptor: commandInterceptor);
+            var second = await CreateSqliteAsync(
+                secondTenantId,
+                databasePath,
+                ownsDatabaseFile: false,
+                commandInterceptor: commandInterceptor,
+                transactionInterceptor: transactionInterceptor);
             return new SqliteOwnershipPair(first, second, databasePath);
         }
         catch
@@ -96,15 +111,19 @@ public sealed class AlterationStoreScenario(
         string databasePath,
         bool ownsDatabaseFile,
         bool tenantsEnabled = true,
-        DbCommandInterceptor? commandInterceptor = null) =>
-        CreateSqliteHostAsync(tenantId, databasePath, ownsDatabaseFile, tenantsEnabled, commandInterceptor);
+        DbCommandInterceptor? commandInterceptor = null,
+        IDbExceptionHandler? dbExceptionHandler = null,
+        DbTransactionInterceptor? transactionInterceptor = null) =>
+        CreateSqliteHostAsync(tenantId, databasePath, ownsDatabaseFile, tenantsEnabled, commandInterceptor, dbExceptionHandler, transactionInterceptor);
 
     private static async Task<AlterationStoreScenario> CreateSqliteHostAsync(
         string tenantId,
         string databasePath,
         bool ownsDatabaseFile,
         bool tenantsEnabled,
-        DbCommandInterceptor? commandInterceptor)
+        DbCommandInterceptor? commandInterceptor,
+        IDbExceptionHandler? dbExceptionHandler,
+        DbTransactionInterceptor? transactionInterceptor)
     {
         var tenantAccessor = new TestTenantAccessor(tenantId);
         ServiceProvider? services = null;
@@ -113,7 +132,7 @@ public sealed class AlterationStoreScenario(
         try
         {
             var migrationsAssembly = typeof(AlterationsDbContextFactories).Assembly;
-            services = new ServiceCollection()
+            var serviceCollection = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<ITenantAccessor>(tenantAccessor)
                 .AddSingleton<IAlterationSerializer, ConformanceAlterationSerializer>()
@@ -127,13 +146,19 @@ public sealed class AlterationStoreScenario(
                     builder.EnableServiceProviderCaching(false);
                     if (commandInterceptor is not null)
                         builder.AddInterceptors(commandInterceptor);
+                    if (transactionInterceptor is not null)
+                        builder.AddInterceptors(transactionInterceptor);
                 })
                 .Decorate<IDbContextFactory<AlterationsElsaDbContext>, TenantAwareDbContextFactory<AlterationsElsaDbContext>>()
                 .AddScoped<EntityStore<AlterationsElsaDbContext, AlterationPlan>>()
                 .AddScoped<EntityStore<AlterationsElsaDbContext, AlterationJob>>()
                 .AddScoped<EFCoreAlterationPlanStore>()
-                .AddScoped<EFCoreAlterationJobStore>()
-                .BuildServiceProvider();
+                .AddScoped<EFCoreAlterationJobStore>();
+
+            if (dbExceptionHandler is not null)
+                serviceCollection.AddSingleton(dbExceptionHandler);
+
+            services = serviceCollection.BuildServiceProvider();
 
             await using (var dbContext = await services.GetRequiredService<IDbContextFactory<AlterationsElsaDbContext>>().CreateDbContextAsync())
                 await dbContext.Database.EnsureCreatedAsync();

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
@@ -6,6 +7,7 @@ using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Open.Linq.AsyncExtensions;
 
@@ -22,6 +24,16 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
     /// <summary>
     /// Constructor.
     /// </summary>
+    public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store)
+        : this(store, Options.Create(new TenantsOptions()))
+    {
+    }
+
+    /// <summary>
+    /// Constructor used by dependency injection. Direct construction through the legacy
+    /// overload keeps tenancy-aware upsert disabled for compatibility.
+    /// </summary>
+    [ActivatorUtilitiesConstructor]
     public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store, IOptions<TenantsOptions> tenantsOptions)
     {
         _store = store;
@@ -54,15 +66,22 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
         if (list.Count == 0)
             return;
 
-        await _store.ExecuteSqlServerWriteWithRetryAsync(async (dbContext, ct) =>
-        {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
+        await _store.ExecuteWithDbExceptionHandlingAsync(
+            async () =>
+            {
+                await _store.ExecuteSqlServerWriteWithRetryAsync(async (dbContext, ct) =>
+                {
+                    await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
 
-            foreach (var job in list)
-                await UpsertAsync(dbContext, job, ct);
+                    foreach (var job in list)
+                        await UpsertAsync(dbContext, job, ct, handleDbExceptions: false);
 
-            await transaction.CommitAsync(ct);
-        }, cancellationToken);
+                    await transaction.CommitAsync(ct);
+                }, cancellationToken);
+                return true;
+            },
+            cancellationToken,
+            IsDatabaseException);
     }
 
     /// <inheritdoc />
@@ -89,7 +108,11 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
         return await _store.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
     }
 
-    private static async Task UpsertAsync(AlterationsElsaDbContext dbContext, AlterationJob record, CancellationToken cancellationToken)
+    private async Task UpsertAsync(
+        AlterationsElsaDbContext dbContext,
+        AlterationJob record,
+        CancellationToken cancellationToken,
+        bool handleDbExceptions = true)
     {
         var ambientTenantId = AlterationTenantOwnedUpsert.AmbientTenantId(dbContext);
         AlterationTenantOwnedUpsert.StampTenantId(record, ambientTenantId);
@@ -119,14 +142,20 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
                 .SetProperty(job => EF.Property<string>(job, "SerializedLog"), serializedLog),
             cancellationToken);
 
-        var updated = await UpdateOwnedAsync();
+        Task<TResult> ExecuteWriteAsync<TResult>(Func<Task<TResult>> operation) =>
+            handleDbExceptions
+                ? _store.ExecuteWithDbExceptionHandlingAsync(operation, cancellationToken)
+                : operation();
+
+        var updated = await ExecuteWriteAsync(UpdateOwnedAsync);
 
         if (updated == 0)
         {
-            var inserted = await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken);
+            var inserted = await ExecuteWriteAsync(
+                () => AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken));
             if (!inserted)
             {
-                var retried = await UpdateOwnedAsync();
+                var retried = await ExecuteWriteAsync(UpdateOwnedAsync);
 
                 if (retried == 0)
                     throw AlterationStoreConflict.HiddenJobId(record.Id);
@@ -157,4 +186,7 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
     }
 
     private static IQueryable<AlterationJob> Filter(IQueryable<AlterationJob> queryable, AlterationJobFilter filter) => filter.Apply(queryable);
+
+    private static bool IsDatabaseException(Exception exception) =>
+        exception is DbException or DbUpdateException || exception.InnerException is DbException;
 }

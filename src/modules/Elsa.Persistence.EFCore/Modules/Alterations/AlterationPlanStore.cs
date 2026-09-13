@@ -7,6 +7,7 @@ using Elsa.Alterations.Core.Models;
 using Elsa.Alterations.Core.Stores;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Persistence.EFCore.Modules.Alterations;
@@ -23,6 +24,18 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
     /// <summary>
     /// Constructor.
     /// </summary>
+    public EFCoreAlterationPlanStore(
+        EntityStore<AlterationsElsaDbContext, AlterationPlan> store,
+        IAlterationSerializer alterationSerializer)
+        : this(store, alterationSerializer, Options.Create(new TenantsOptions()))
+    {
+    }
+
+    /// <summary>
+    /// Constructor used by dependency injection. Direct construction through the legacy
+    /// overload keeps tenancy-aware upsert disabled for compatibility.
+    /// </summary>
+    [ActivatorUtilitiesConstructor]
     public EFCoreAlterationPlanStore(
         EntityStore<AlterationsElsaDbContext, AlterationPlan> store,
         IAlterationSerializer alterationSerializer,
@@ -69,14 +82,16 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
                 .SetProperty(plan => EF.Property<string>(plan, "SerializedWorkflowInstanceFilter"), serializedFilter),
             cancellationToken);
 
-        var updated = await UpdateOwnedAsync();
+        var updated = await _store.ExecuteWithDbExceptionHandlingAsync(UpdateOwnedAsync, cancellationToken);
 
         if (updated == 0)
         {
-            var inserted = await AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken);
+            var inserted = await _store.ExecuteWithDbExceptionHandlingAsync(
+                () => AlterationTenantOwnedUpsert.InsertIfAbsentAsync(dbContext, record, cancellationToken),
+                cancellationToken);
             if (!inserted)
             {
-                var retried = await UpdateOwnedAsync();
+                var retried = await _store.ExecuteWithDbExceptionHandlingAsync(UpdateOwnedAsync, cancellationToken);
 
                 if (retried == 0)
                     throw AlterationStoreConflict.HiddenPlanId(record.Id);
