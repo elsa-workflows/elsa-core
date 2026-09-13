@@ -54,6 +54,40 @@ public class TenantVisibilityTests
         Assert.Equal(2, visible.Count);
     }
 
+    [Theory]
+    [InlineData("tenant-a", "tenant-a", true)]
+    [InlineData("tenant-a", "tenant-b", false)]
+    [InlineData(Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, true)]
+    [InlineData(Tenant.AgnosticTenantId, "tenant-a", false)]
+    [InlineData(Tenant.AgnosticTenantId, Tenant.DefaultTenantId, false)]
+    [InlineData(null, Tenant.DefaultTenantId, true)]
+    [InlineData(null, "tenant-a", false)]
+    [InlineData(Tenant.DefaultTenantId, Tenant.DefaultTenantId, true)]
+    public void CanReplace_MatchesMemoryAlterationOwnership(string? existingTenantId, string writerTenantId, bool expected)
+    {
+        Assert.Equal(expected, TenantVisibility.CanReplace(existingTenantId, writerTenantId));
+    }
+
+    [Theory]
+    [InlineData("tenant-a", "tenant-a", "tenant-a", true)]
+    [InlineData("tenant-a", "tenant-b", "tenant-b", false)]
+    [InlineData("tenant-a", "tenant-a", "tenant-b", false)]
+    [InlineData(Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, true)]
+    [InlineData(Tenant.AgnosticTenantId, Tenant.AgnosticTenantId, "tenant-a", false)]
+    [InlineData(Tenant.AgnosticTenantId, "tenant-a", "tenant-a", false)]
+    [InlineData(Tenant.AgnosticTenantId, "tenant-a", Tenant.AgnosticTenantId, false)]
+    [InlineData(null, Tenant.DefaultTenantId, Tenant.DefaultTenantId, true)]
+    [InlineData(null, "tenant-a", "tenant-a", false)]
+    [InlineData(null, Tenant.DefaultTenantId, "tenant-a", false)]
+    public void CanReplaceOwnedRow_GatesNamedRowsOnAmbientNotForgedSource(
+        string? existingTenantId,
+        string? sourceTenantId,
+        string ambientTenantId,
+        bool expected)
+    {
+        Assert.Equal(expected, TenantVisibility.CanReplaceOwnedRow(existingTenantId, sourceTenantId, ambientTenantId));
+    }
+
     [Fact]
     public void WhereVisibleToTenant_WhenAmbientIsDefault_IncludesNullTenantId()
     {

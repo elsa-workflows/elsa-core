@@ -19,8 +19,8 @@ namespace Elsa.Persistence.EFCore;
 [PublicAPI]
 public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextFactory, IServiceProvider serviceProvider) where TDbContext : DbContext where TEntity : class, new()
 {
-    private const int SqlServerBulkWriteMaxRetryCount = 3;
-    private static readonly TimeSpan SqlServerBulkWriteBaseDelay = TimeSpan.FromMilliseconds(50);
+    private const int SqlServerWriteMaxRetryCount = 3;
+    private static readonly TimeSpan SqlServerWriteBaseDelay = TimeSpan.FromMilliseconds(50);
 
     // ReSharper disable once StaticMemberInGenericType
     // Justification: This is a static member that is used to ensure that only one thread can access the database for TEntity at a time.
@@ -93,7 +93,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             if (entityList.Count == 0)
                 return;
 
-            await ExecuteBulkWriteWithSqlServerRetryAsync(async (dbContext, ct) =>
+            await ExecuteSqlServerWriteWithRetryAsync(async (dbContext, ct) =>
             {
                 if (onSaving != null)
                 {
@@ -190,7 +190,7 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
 
             var tenantId = serviceProvider.GetRequiredService<ITenantAccessor>().TenantId;
 
-            await ExecuteBulkWriteWithSqlServerRetryAsync(async (dbContext, ct) =>
+            await ExecuteSqlServerWriteWithRetryAsync(async (dbContext, ct) =>
             {
                 if (onSaving != null)
                 {
@@ -238,7 +238,32 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         await handler.HandleAsync(context);
     }
 
-    private async Task ExecuteBulkWriteWithSqlServerRetryAsync(
+    /// <summary>
+    /// Executes a database operation and passes failures through the configured database
+    /// exception handler.
+    /// </summary>
+    /// <typeparam name="TResult">The operation result type.</typeparam>
+    /// <param name="operation">The database operation to execute.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="shouldHandle">A predicate that excludes exceptions which are not database failures.</param>
+    /// <returns>The result returned by <paramref name="operation"/>.</returns>
+    internal async Task<TResult> ExecuteWithDbExceptionHandlingAsync<TResult>(
+        Func<Task<TResult>> operation,
+        CancellationToken cancellationToken = default,
+        Func<Exception, bool>? shouldHandle = null)
+    {
+        try
+        {
+            return await operation();
+        }
+        catch (Exception exception) when (shouldHandle is null || shouldHandle(exception))
+        {
+            await HandleDbExceptionAsync(exception, cancellationToken);
+            throw;
+        }
+    }
+
+    internal async Task ExecuteSqlServerWriteWithRetryAsync(
         Func<TDbContext, CancellationToken, Task> operation,
         CancellationToken cancellationToken)
     {
@@ -255,9 +280,9 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
             }
             catch (Exception ex)
             {
-                if (ShouldRetrySqlServerBulkWrite(providerName, ex, attempt, cancellationToken))
+                if (ShouldRetrySqlServerWrite(providerName, ex, attempt, cancellationToken))
                 {
-                    await Task.Delay(GetSqlServerBulkWriteRetryDelay(attempt), cancellationToken);
+                    await Task.Delay(GetSqlServerWriteRetryDelay(attempt), cancellationToken);
                     continue;
                 }
 
@@ -266,15 +291,15 @@ public class Store<TDbContext, TEntity>(IDbContextFactory<TDbContext> dbContextF
         }
     }
 
-    private static bool ShouldRetrySqlServerBulkWrite(string providerName, Exception exception, int attempt, CancellationToken cancellationToken)
+    private static bool ShouldRetrySqlServerWrite(string providerName, Exception exception, int attempt, CancellationToken cancellationToken)
     {
-        return attempt < SqlServerBulkWriteMaxRetryCount
+        return attempt < SqlServerWriteMaxRetryCount
                && !cancellationToken.IsCancellationRequested
                && exception is not OperationCanceledException
                && DbExceptionClassifier.IsSqlServerTransient(providerName, exception);
     }
 
-    private static TimeSpan GetSqlServerBulkWriteRetryDelay(int attempt) => TimeSpan.FromMilliseconds(SqlServerBulkWriteBaseDelay.TotalMilliseconds * (attempt + 1));
+    private static TimeSpan GetSqlServerWriteRetryDelay(int attempt) => TimeSpan.FromMilliseconds(SqlServerWriteBaseDelay.TotalMilliseconds * (attempt + 1));
 
     /// <summary>
     /// Updates the entity.

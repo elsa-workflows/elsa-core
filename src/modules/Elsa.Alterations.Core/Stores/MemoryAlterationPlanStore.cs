@@ -65,27 +65,19 @@ public class MemoryAlterationPlanStore : IAlterationPlanStore
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
-    private bool IsVisible(Entity entity) => TenantVisibility.IsVisible(entity.TenantId, CurrentTenantId);
-
     private void EnsureIdAvailable(AlterationPlan plan)
     {
         var existing = _store.Find(x => x.Id == plan.Id);
 
         if (existing is not null && !CanReplace(existing))
-        {
-            throw new InvalidOperationException(
-                $"An alteration plan with ID '{plan.Id}' already exists and is not visible to the current tenant.");
-        }
+            throw AlterationStoreConflict.HiddenPlanId(plan.Id);
     }
 
     /// <summary>
     /// <c>*</c> is visible to every tenant, but only an agnostic writer may replace it.
     /// Named tenants may upsert their own visible rows.
     /// </summary>
-    private bool CanReplace(Entity existing) =>
-        existing.TenantId == Tenant.AgnosticTenantId
-            ? CurrentTenantId == Tenant.AgnosticTenantId
-            : IsVisible(existing);
+    private bool CanReplace(Entity existing) => TenantVisibility.CanReplace(existing.TenantId, CurrentTenantId);
 
     private void ApplyCurrentTenant(Entity entity)
     {

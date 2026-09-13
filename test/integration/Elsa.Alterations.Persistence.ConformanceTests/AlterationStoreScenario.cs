@@ -13,6 +13,7 @@ using Elsa.Tenants.Options;
 using Elsa.Testing.Shared.Multitenancy;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Alterations.Persistence.ConformanceTests;
@@ -50,32 +51,114 @@ public sealed class AlterationStoreScenario(
             () => ValueTask.CompletedTask));
     }
 
-    public static async Task<AlterationStoreScenario> CreateSqliteAsync()
+    public static Task<AlterationStoreScenario> CreateSqliteAsync() =>
+        CreateSqliteAsync("tenant-a");
+
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(string tenantId) =>
+        CreateSqliteAsync(tenantId, Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db"), ownsDatabaseFile: true);
+
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(
+        string tenantId,
+        bool tenantsEnabled,
+        DbCommandInterceptor? commandInterceptor = null,
+        IDbExceptionHandler? dbExceptionHandler = null,
+        DbTransactionInterceptor? transactionInterceptor = null) =>
+        CreateSqliteAsync(
+            tenantId,
+            Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db"),
+            ownsDatabaseFile: true,
+            tenantsEnabled,
+            commandInterceptor,
+            dbExceptionHandler,
+            transactionInterceptor);
+
+    /// <summary>
+    /// Two EF/SQLite hosts that share a file and keep separate ambient tenants so concurrent
+    /// Save/SaveMany calls do not mutate a single <see cref="ITenantAccessor"/>.
+    /// </summary>
+    public static async Task<SqliteOwnershipPair> CreateSqlitePairAsync(
+        string firstTenantId,
+        string secondTenantId,
+        DbCommandInterceptor? commandInterceptor = null,
+        DbTransactionInterceptor? transactionInterceptor = null)
     {
-        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-alterations-conformance-{Guid.NewGuid():N}.db");
-        var tenantAccessor = new TestTenantAccessor("tenant-a");
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-alterations-ownership-{Guid.NewGuid():N}.db");
+        var first = await CreateSqliteAsync(
+            firstTenantId,
+            databasePath,
+            ownsDatabaseFile: false,
+            commandInterceptor: commandInterceptor,
+            transactionInterceptor: transactionInterceptor);
+        try
+        {
+            var second = await CreateSqliteAsync(
+                secondTenantId,
+                databasePath,
+                ownsDatabaseFile: false,
+                commandInterceptor: commandInterceptor,
+                transactionInterceptor: transactionInterceptor);
+            return new SqliteOwnershipPair(first, second, databasePath);
+        }
+        catch
+        {
+            await first.DisposeAsync();
+            throw;
+        }
+    }
+
+    public static Task<AlterationStoreScenario> CreateSqliteAsync(
+        string tenantId,
+        string databasePath,
+        bool ownsDatabaseFile,
+        bool tenantsEnabled = true,
+        DbCommandInterceptor? commandInterceptor = null,
+        IDbExceptionHandler? dbExceptionHandler = null,
+        DbTransactionInterceptor? transactionInterceptor = null) =>
+        CreateSqliteHostAsync(tenantId, databasePath, ownsDatabaseFile, tenantsEnabled, commandInterceptor, dbExceptionHandler, transactionInterceptor);
+
+    private static async Task<AlterationStoreScenario> CreateSqliteHostAsync(
+        string tenantId,
+        string databasePath,
+        bool ownsDatabaseFile,
+        bool tenantsEnabled,
+        DbCommandInterceptor? commandInterceptor,
+        IDbExceptionHandler? dbExceptionHandler,
+        DbTransactionInterceptor? transactionInterceptor)
+    {
+        var tenantAccessor = new TestTenantAccessor(tenantId);
         ServiceProvider? services = null;
         IServiceScope? scope = null;
 
         try
         {
             var migrationsAssembly = typeof(AlterationsDbContextFactories).Assembly;
-            services = new ServiceCollection()
+            var serviceCollection = new ServiceCollection()
                 .AddLogging()
                 .AddSingleton<ITenantAccessor>(tenantAccessor)
                 .AddSingleton<IAlterationSerializer, ConformanceAlterationSerializer>()
-                .Configure<TenantsOptions>(options => options.IsEnabled = true)
+                .Configure<TenantsOptions>(options => options.IsEnabled = tenantsEnabled)
                 .AddScoped<IEntitySavingHandler, ApplyTenantId>()
                 .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
                 .AddSqliteEntityModelCreatingHandlers()
                 .AddDbContextFactory<AlterationsElsaDbContext>((_, builder) =>
-                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath};Default Timeout=30"))
+                {
+                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath};Default Timeout=30");
+                    builder.EnableServiceProviderCaching(false);
+                    if (commandInterceptor is not null)
+                        builder.AddInterceptors(commandInterceptor);
+                    if (transactionInterceptor is not null)
+                        builder.AddInterceptors(transactionInterceptor);
+                })
                 .Decorate<IDbContextFactory<AlterationsElsaDbContext>, TenantAwareDbContextFactory<AlterationsElsaDbContext>>()
                 .AddScoped<EntityStore<AlterationsElsaDbContext, AlterationPlan>>()
                 .AddScoped<EntityStore<AlterationsElsaDbContext, AlterationJob>>()
                 .AddScoped<EFCoreAlterationPlanStore>()
-                .AddScoped<EFCoreAlterationJobStore>()
-                .BuildServiceProvider();
+                .AddScoped<EFCoreAlterationJobStore>();
+
+            if (dbExceptionHandler is not null)
+                serviceCollection.AddSingleton(dbExceptionHandler);
+
+            services = serviceCollection.BuildServiceProvider();
 
             await using (var dbContext = await services.GetRequiredService<IDbContextFactory<AlterationsElsaDbContext>>().CreateDbContextAsync())
                 await dbContext.Database.EnsureCreatedAsync();
@@ -91,8 +174,11 @@ public sealed class AlterationStoreScenario(
                 {
                     scope.Dispose();
                     await services.DisposeAsync();
-                    SqliteConnection.ClearAllPools();
-                    File.Delete(databasePath);
+                    if (ownsDatabaseFile)
+                    {
+                        SqliteConnection.ClearAllPools();
+                        File.Delete(databasePath);
+                    }
                 });
         }
         catch
@@ -100,8 +186,12 @@ public sealed class AlterationStoreScenario(
             scope?.Dispose();
             if (services is not null)
                 await services.DisposeAsync();
-            SqliteConnection.ClearAllPools();
-            File.Delete(databasePath);
+            if (ownsDatabaseFile)
+            {
+                SqliteConnection.ClearAllPools();
+                File.Delete(databasePath);
+            }
+
             throw;
         }
     }
@@ -120,6 +210,24 @@ public sealed class AlterationStoreScenario(
 
         public IEnumerable<IAlteration> DeserializeMany(string json) =>
             JsonSerializer.Deserialize<TestAlteration[]>(json)!;
+    }
+}
+
+/// <summary>
+/// Two SQLite alteration-store hosts that share one database file.
+/// </summary>
+public sealed class SqliteOwnershipPair(AlterationStoreScenario first, AlterationStoreScenario second, string databasePath) : IAsyncDisposable
+{
+    public AlterationStoreScenario First { get; } = first;
+    public AlterationStoreScenario Second { get; } = second;
+    public string DatabasePath { get; } = databasePath;
+
+    public async ValueTask DisposeAsync()
+    {
+        await First.DisposeAsync();
+        await Second.DisposeAsync();
+        SqliteConnection.ClearAllPools();
+        File.Delete(DatabasePath);
     }
 }
 
