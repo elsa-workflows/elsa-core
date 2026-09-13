@@ -1,6 +1,7 @@
-using System.Net;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using TUnit.AspNetCore;
 
 namespace Elsa.Hosts.SmokeTests;
 
@@ -14,7 +15,7 @@ namespace Elsa.Hosts.SmokeTests;
 /// or a feature registered in one and not the other, passes every test and fails only when a host starts.
 /// Three such bugs in #7980 were found by running these two hosts by hand.
 /// <para>
-/// Each host is booted through <see cref="WebApplicationFactory{TEntryPoint}"/>, which runs the real
+/// Each host is booted through <see cref="TestWebApplicationFactory{TEntryPoint}"/>, which runs the real
 /// <c>Program</c> with its full feature registration. Assembling a service collection here instead would
 /// reproduce exactly the blind spot these tests exist to close.
 /// </para>
@@ -27,32 +28,38 @@ namespace Elsa.Hosts.SmokeTests;
 /// feature system a host uses, the observable result has to be the same.
 /// </para>
 /// </remarks>
-public abstract class HostSmokeTests<TEntryPoint>(HostFixture<TEntryPoint> host) : IClassFixture<HostFixture<TEntryPoint>>
+public abstract class HostSmokeTests<TFactory, TEntryPoint> : WebApplicationTest<TFactory, TEntryPoint>, IAsyncDisposable
+    where TFactory : HostWebApplicationFactory<TEntryPoint>, new()
     where TEntryPoint : class
 {
+    private string? _testRoot;
+    private IReadOnlyDictionary<string, string?>? _testConfiguration;
+    private bool _entryPointProcessStateCaptured;
+
     /// <summary>
     /// Routes this host is expected to serve behind a permission. Each names a different module, so the
     /// set doubles as an inventory of what this host's feature system is supposed to have registered.
     /// </summary>
     protected abstract IReadOnlyCollection<string> GatedRoutes { get; }
 
-    [Fact]
-    public void HostStarts()
+    [Test]
+    public async Task HostStarts()
     {
-        // Touching Services forces the host to be built, which is where a feature that fails to register or
-        // an option that fails validation throws.
-        Assert.NotNull(host.Services);
+        // TUnit.AspNetCore materializes the server before entering the test, which is where a feature that
+        // fails to register or an option that fails validation throws.
+        await Assert.That(Services).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task EveryGatedRouteChallengesInsteadOfFailing()
     {
-        using var client = host.CreateClient();
+        using var client = Factory.CreateClient();
         var problems = new List<string>();
 
         foreach (var route in GatedRoutes)
         {
-            var status = (int)(await client.GetAsync(route)).StatusCode;
+            using var response = await client.GetAsync(route);
+            var status = (int)response.StatusCode;
 
             // Each way this can go wrong is a distinct bug, so they are named rather than collapsed into one
             // "expected 401" message that leaves the reader to work out which failure they are looking at.
@@ -71,17 +78,129 @@ public abstract class HostSmokeTests<TEntryPoint>(HostFixture<TEntryPoint> host)
 
         // Every route is reported at once: when a feature system stops registering a group of modules, one
         // failure per run turns a single cause into a queue of identical-looking investigations.
-        Assert.True(problems.Count == 0, $"{problems.Count} of {GatedRoutes.Count} gated route(s) did not challenge:{Environment.NewLine}{string.Join(Environment.NewLine, problems)}");
+        await Assert.That(problems).IsEmpty()
+            .Because($"{problems.Count} of {GatedRoutes.Count} gated route(s) did not challenge:{Environment.NewLine}{string.Join(Environment.NewLine, problems)}");
+    }
+
+    protected string TestRoot => _testRoot ?? throw new InvalidOperationException("The per-test host root has not been initialized.");
+
+    protected string GetConnectionString(string fileName) => $"Data Source={Path.Join(TestRoot, fileName)};Pooling=False";
+
+    protected string CreateDirectory(string name)
+    {
+        var path = Path.Join(TestRoot, name);
+        Directory.CreateDirectory(path);
+        return path;
+    }
+
+    protected abstract IReadOnlyDictionary<string, string?> CreateTestConfiguration();
+
+    protected virtual void CaptureEntryPointProcessState()
+    {
+    }
+
+    protected virtual ValueTask RestoreEntryPointProcessStateAsync() => ValueTask.CompletedTask;
+
+    protected override async Task SetupAsync()
+    {
+        _testRoot = Path.GetFullPath(Path.Join(Path.GetTempPath(), $"elsa-hosts-smoke-{Guid.NewGuid():N}"));
+        Directory.CreateDirectory(_testRoot);
+        CaptureEntryPointProcessState();
+        _entryPointProcessStateCaptured = true;
+        _testConfiguration = CreateTestConfiguration();
+        GlobalFactory.SetStartupConfiguration(_testConfiguration);
+        await base.SetupAsync();
+    }
+
+    protected override void ConfigureTestOptions(WebApplicationTestOptions options)
+    {
+        options.AutoConfigureOpenTelemetry = false;
+        options.AutoPropagateHttpClientFactory = false;
+    }
+
+    protected override void ConfigureTestConfiguration(IConfigurationBuilder config) =>
+        config.AddInMemoryCollection(_testConfiguration ?? throw new InvalidOperationException("The per-test host configuration has not been initialized."));
+
+    /// <remarks>
+    /// TUnit disposes the test instance after inherited <c>After(Test)</c> hooks, so the application factory
+    /// and its SQLite connections are gone before this invocation-owned directory is removed.
+    /// </remarks>
+    public async ValueTask DisposeAsync()
+    {
+        Exception? cleanupException = null;
+
+        try
+        {
+            if (_entryPointProcessStateCaptured)
+            {
+                await RestoreEntryPointProcessStateAsync();
+                _entryPointProcessStateCaptured = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            cleanupException = ex;
+        }
+
+        try
+        {
+            if (_testRoot is not null && Directory.Exists(_testRoot))
+                Directory.Delete(_testRoot, true);
+        }
+        catch (Exception ex)
+        {
+            cleanupException = cleanupException is null ? ex : new AggregateException(cleanupException, ex);
+        }
+
+        if (cleanupException is not null)
+            throw cleanupException;
     }
 }
 
-/// <summary>Boots a host once per test class.</summary>
-public class HostFixture<TEntryPoint> : WebApplicationFactory<TEntryPoint> where TEntryPoint : class
+/// <summary>Runs a real top-level host while preserving TUnit.AspNetCore's host customization.</summary>
+public abstract class HostWebApplicationFactory<TEntryPoint> : TestWebApplicationFactory<TEntryPoint> where TEntryPoint : class
 {
+    private static readonly IReadOnlyDictionary<string, string?> ReloadConfiguration = new Dictionary<string, string?>
+    {
+        ["HostBuilder:reloadConfigOnChange"] = "false"
+    };
+
+    private IReadOnlyDictionary<string, string?> _startupConfiguration = new Dictionary<string, string?>();
+
+    internal void SetStartupConfiguration(IReadOnlyDictionary<string, string?> configuration) => _startupConfiguration = configuration;
+
+    protected override void ConfigureStartupConfiguration(IConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureStartupConfiguration(configurationBuilder);
+        configurationBuilder.AddInMemoryCollection(_startupConfiguration);
+        configurationBuilder.AddInMemoryCollection(ReloadConfiguration);
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        base.ConfigureWebHost(builder);
+
         // Both hosts refuse to start outside Development while the signing key is a known default. That is
         // the guard working as intended, so the test satisfies it rather than configuring around it.
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(Environments.Development);
     }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        // These are host-configuration values, not a deferred application-configuration callback. For a
+        // minimal top-level Program, WebApplicationFactory turns them into command-line arguments before
+        // invoking the entry point, so startup code sees the isolated paths before registering Nuplane feeds.
+        builder.ConfigureHostConfiguration(configurationBuilder =>
+        {
+            configurationBuilder.AddInMemoryCollection(_startupConfiguration);
+            configurationBuilder.AddInMemoryCollection(ReloadConfiguration);
+        });
+
+        return base.CreateHost(builder);
+    }
+}
+
+internal static class HostSmokeTestConstraints
+{
+    public const string EntryPointProcessState = "ElsaHostsEntryPointProcessState";
 }

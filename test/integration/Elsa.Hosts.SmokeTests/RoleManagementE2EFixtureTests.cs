@@ -8,8 +8,8 @@ namespace Elsa.Hosts.SmokeTests;
 
 public class RoleManagementE2EFixtureTests
 {
-    [Fact]
-    public void DisabledConfigurationLeavesServicesUnchanged()
+    [Test]
+    public async Task DisabledConfigurationLeavesServicesUnchanged()
     {
         var services = new ServiceCollection();
         services.AddSingleton<ExistingService>();
@@ -17,12 +17,14 @@ public class RoleManagementE2EFixtureTests
 
         services.AddRoleManagementE2EFixtures(new ConfigurationBuilder().Build());
 
-        Assert.Equal(before, services);
-        Assert.DoesNotContain(services, x => x.ServiceType == typeof(IPermissionDescriptorProvider));
+        await Assert.That(services)
+            .IsEquivalentTo(before, TUnit.Assertions.Enums.CollectionOrdering.Matching)
+            .Using((actual, expected) => ReferenceEquals(actual, expected));
+        await Assert.That(services).DoesNotContain(x => x.ServiceType == typeof(IPermissionDescriptorProvider));
     }
 
-    [Fact]
-    public void EnabledConfigurationContributesOneUnverifiedDescriptor()
+    [Test]
+    public async Task EnabledConfigurationContributesOneUnverifiedDescriptor()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -38,11 +40,11 @@ public class RoleManagementE2EFixtureTests
         var providers = serviceProvider.GetServices<IPermissionDescriptorProvider>().ToArray();
         var descriptors = providers.SelectMany(x => x.GetDescriptors()).ToArray();
 
-        Assert.Single(providers);
-        var descriptor = Assert.Single(descriptors);
-        Assert.Equal("e2e/role-management/unverified", descriptor.Resource);
-        Assert.False(descriptor.Verified);
-        Assert.Equal([CoreVerbs.View], descriptor.SupportedVerbs);
+        await Assert.That(providers).HasSingleItem();
+        var descriptor = (await Assert.That(descriptors).HasSingleItem())!;
+        await Assert.That(descriptor.Resource).IsEqualTo("e2e/role-management/unverified");
+        await Assert.That(descriptor.Verified).IsFalse();
+        await Assert.That(descriptor.SupportedVerbs).IsEquivalentTo([CoreVerbs.View], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     private sealed class ExistingService;

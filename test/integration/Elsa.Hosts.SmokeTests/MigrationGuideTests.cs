@@ -23,31 +23,34 @@ namespace Elsa.Hosts.SmokeTests;
 /// </remarks>
 public class MigrationGuideTests
 {
-    [Fact]
-    public void EveryReplacementInTheMappingTableIsAWellFormedPermission()
+    [Test]
+    public async Task EveryReplacementInTheMappingTableIsAWellFormedPermission()
     {
-        var malformed = ReadReplacements()
+        var malformed = (await ReadReplacementsAsync())
             .Where(x => !Permission.TryParse(x, out _))
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.True(malformed.Length == 0, $"The guide tells operators to write {malformed.Length} value(s) that are not well-formed permissions, so nobody can hold them: {string.Join(", ", malformed)}.");
+        await Assert.That(malformed).IsEmpty()
+            .Because($"The guide tells operators to write {malformed.Length} value(s) that are not well-formed permissions, so nobody can hold them: {string.Join(", ", malformed)}.");
     }
 
-    [Fact]
-    public void EveryReplacementInTheMappingTableIsAdvertisedByTheCatalog()
+    [Test]
+    public async Task EveryReplacementInTheMappingTableIsAdvertisedByTheCatalog()
     {
         var catalog = BuildCatalog();
 
         // A catalog that came up empty would pass every check below without testing anything.
-        Assert.True(catalog.Count > 20, $"Only {catalog.Count} resource(s) were discovered; the catalog is not being built and this test would pass vacuously.");
+        await Assert.That(catalog.Count).IsGreaterThan(20)
+            .Because($"Only {catalog.Count} resource(s) were discovered; the catalog is not being built and this test would pass vacuously.");
 
-        var unadvertised = ReadReplacements()
+        var unadvertised = (await ReadReplacementsAsync())
             .Where(x => Permission.TryParse(x, out var permission) && !permission.HasWildcard && !IsAdvertised(catalog, permission))
             .OrderBy(x => x, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.True(unadvertised.Length == 0, $"{unadvertised.Length} replacement(s) name a resource or verb no module advertises, so a role rewritten as the guide says would not authorize anything: {string.Join(", ", unadvertised)}.");
+        await Assert.That(unadvertised).IsEmpty()
+            .Because($"{unadvertised.Length} replacement(s) name a resource or verb no module advertises, so a role rewritten as the guide says would not authorize anything: {string.Join(", ", unadvertised)}.");
     }
 
     private static bool IsAdvertised(IReadOnlyDictionary<string, IReadOnlyCollection<string>> catalog, Permission permission) =>
@@ -78,7 +81,7 @@ public class MigrationGuideTests
     {
         try
         {
-            return Assembly.LoadFrom(path);
+            return System.Reflection.Assembly.LoadFrom(path);
         }
         catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or FileNotFoundException)
         {
@@ -107,12 +110,13 @@ public class MigrationGuideTests
     /// totals still looked plausible. A skipped row is an unchecked permission, which is the one outcome this
     /// test exists to prevent, so it is made loud rather than merely unlikely.
     /// </remarks>
-    private static IReadOnlyCollection<string> ReadReplacements()
+    private static async Task<IReadOnlyCollection<string>> ReadReplacementsAsync()
     {
         var guide = FindGuide();
         var lines = File.ReadAllLines(guide);
         var start = Array.FindIndex(lines, x => x.Trim().StartsWith("## Full mapping", StringComparison.Ordinal));
-        Assert.True(start >= 0, $"No '## Full mapping' section in {guide}. If the section was renamed, this test is looking in the wrong place rather than passing vacuously.");
+        await Assert.That(start).IsGreaterThanOrEqualTo(0)
+            .Because($"No '## Full mapping' section in {guide}. If the section was renamed, this test is looking in the wrong place rather than passing vacuously.");
 
         var rows = lines.Skip(start + 1)
             .TakeWhile(x => !x.Trim().StartsWith("## ", StringComparison.Ordinal))
@@ -140,10 +144,12 @@ public class MigrationGuideTests
                 emptyRows.Add(row[1].Trim());
         }
 
-        Assert.True(emptyRows.Count == 0, $"{emptyRows.Count} mapping row(s) yielded no replacement and do not say the permission was removed, so what they document is going unchecked: {string.Join(", ", emptyRows)}.");
+        await Assert.That(emptyRows).IsEmpty()
+            .Because($"{emptyRows.Count} mapping row(s) yielded no replacement and do not say the permission was removed, so what they document is going unchecked: {string.Join(", ", emptyRows)}.");
 
         // A parser that silently matches nothing passes forever.
-        Assert.True(rows.Length > 20, $"Only {rows.Length} mapping row(s) parsed out of the table; the format has changed and this test is no longer reading it.");
+        await Assert.That(rows.Length).IsGreaterThan(20)
+            .Because($"Only {rows.Length} mapping row(s) parsed out of the table; the format has changed and this test is no longer reading it.");
         return replacements.Distinct(StringComparer.Ordinal).ToArray();
     }
 

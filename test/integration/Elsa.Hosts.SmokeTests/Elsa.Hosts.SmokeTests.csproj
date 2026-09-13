@@ -3,6 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="CollectCoverage">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <!-- Coverage is off here, for two reasons. This project references both hosts, so every module
              either host pulls in would land in its denominator and shift the aggregate report without
              adding a line of real coverage: startup touches a thin slice of a very large surface. And
@@ -14,6 +15,7 @@
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" />
+        <PackageReference Include="TUnit.AspNetCore" />
     </ItemGroup>
 
     <ItemGroup>
