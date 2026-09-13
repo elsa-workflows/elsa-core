@@ -452,7 +452,14 @@ public sealed class DrainOrchestrator : IDrainOrchestrator
             }
             catch (TimeoutException)
             {
-                _logger.LogWarning("Execution cycle {ExecutionCycleId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                if (recoveryHandleIds.Contains(handle.Id))
+                {
+                    _logger.LogWarning("Retained active-snapshot recovery candidate {ExecutionCycleId} (instance={InstanceId}) did not dispose within {Timeout}; Interrupted recovery persistence is skipped unless it settles before the recovery check.", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                }
+                else
+                {
+                    _logger.LogWarning("Execution cycle {ExecutionCycleId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                }
             }
             catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
         });
