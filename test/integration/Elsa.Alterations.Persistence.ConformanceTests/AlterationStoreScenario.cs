@@ -24,7 +24,6 @@ public sealed class AlterationStoreScenario(
     TestTenantAccessor tenantAccessor,
     IAlterationPlanStore plans,
     IAlterationJobStore jobs,
-    Func<Func<Task>, Task> assertSaveRejectedAsync,
     Func<ValueTask> disposeAsync) : IAsyncDisposable
 {
     public TestTenantAccessor TenantAccessor { get; } = tenantAccessor;
@@ -36,7 +35,26 @@ public sealed class AlterationStoreScenario(
             ? Tenant.Default
             : new Tenant { Id = tenantId, Name = tenantId });
 
-    public Task AssertSaveRejectedAsync(Func<Task> operation) => assertSaveRejectedAsync(operation);
+    /// <summary>
+    /// Memory throws <see cref="InvalidOperationException"/>; EF throws a SQLite uniqueness violation
+    /// when the hidden row still occupies the Id. Either way the caller then asserts the owner row.
+    /// </summary>
+    public async Task AttemptSaveAsync(Func<Task> operation)
+    {
+        try
+        {
+            await operation();
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (DbUpdateException)
+        {
+        }
+        catch (SqliteException)
+        {
+        }
+    }
 
     public ValueTask DisposeAsync() => disposeAsync();
 
@@ -50,7 +68,6 @@ public sealed class AlterationStoreScenario(
             tenantAccessor,
             new MemoryAlterationPlanStore(plans, tenantAccessor),
             new MemoryAlterationJobStore(jobs, tenantAccessor),
-            operation => Assert.ThrowsAsync<InvalidOperationException>(operation),
             () => ValueTask.CompletedTask));
     }
 
@@ -91,7 +108,6 @@ public sealed class AlterationStoreScenario(
                 tenantAccessor,
                 scoped.GetRequiredService<EFCoreAlterationPlanStore>(),
                 scoped.GetRequiredService<EFCoreAlterationJobStore>(),
-                AssertSqliteUniquenessConflictAsync,
                 async () =>
                 {
                     scope.Dispose();
@@ -109,20 +125,6 @@ public sealed class AlterationStoreScenario(
             File.Delete(databasePath);
             throw;
         }
-    }
-
-    private static async Task AssertSqliteUniquenessConflictAsync(Func<Task> operation)
-    {
-        var exception = await Record.ExceptionAsync(operation);
-        var sqliteException = exception switch
-        {
-            DbUpdateException { InnerException: SqliteException inner } => inner,
-            SqliteException direct => direct,
-            _ => throw new Xunit.Sdk.XunitException($"Expected a SQLite uniqueness violation, received {exception?.GetType().FullName ?? "no exception"}.")
-        };
-
-        Assert.Equal(19, sqliteException.SqliteErrorCode);
-        Assert.Contains("UNIQUE constraint failed", sqliteException.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

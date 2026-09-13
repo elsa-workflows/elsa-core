@@ -3,6 +3,7 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
+using Elsa.Common.Multitenancy;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Alterations;
@@ -13,25 +14,33 @@ namespace Elsa.Persistence.EFCore.Modules.Alterations;
 public class EFCoreAlterationJobStore : IAlterationJobStore
 {
     private readonly EntityStore<AlterationsElsaDbContext, AlterationJob> _store;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store)
+    public EFCoreAlterationJobStore(EntityStore<AlterationsElsaDbContext, AlterationJob> store, ITenantAccessor? tenantAccessor = null)
     {
         _store = store;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(AlterationJob record, CancellationToken cancellationToken = default)
     {
+        await AlterationTenantWriteGuard.EnsureCanReplaceAsync(_store, record, _tenantAccessor, "alteration job", cancellationToken);
         await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />
     public async Task SaveManyAsync(IEnumerable<AlterationJob> jobs, CancellationToken cancellationToken = default)
     {
-        await _store.SaveManyAsync(jobs, OnSaveAsync, cancellationToken);
+        var list = jobs.ToList();
+
+        foreach (var job in list)
+            await AlterationTenantWriteGuard.EnsureCanReplaceAsync(_store, job, _tenantAccessor, "alteration job", cancellationToken);
+
+        await _store.SaveManyAsync(list, OnSaveAsync, cancellationToken);
     }
 
     /// <inheritdoc />

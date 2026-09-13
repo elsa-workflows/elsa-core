@@ -4,6 +4,7 @@ using Elsa.Alterations.Core.Contracts;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Filters;
 using Elsa.Alterations.Core.Models;
+using Elsa.Common.Multitenancy;
 
 namespace Elsa.Persistence.EFCore.Modules.Alterations;
 
@@ -14,19 +15,25 @@ public class EFCoreAlterationPlanStore : IAlterationPlanStore
 {
     private readonly EntityStore<AlterationsElsaDbContext, AlterationPlan> _store;
     private readonly IAlterationSerializer _alterationSerializer;
+    private readonly ITenantAccessor? _tenantAccessor;
 
     /// <summary>
     /// Constructor.
     /// </summary>
-    public EFCoreAlterationPlanStore(EntityStore<AlterationsElsaDbContext, AlterationPlan> store, IAlterationSerializer alterationSerializer)
+    public EFCoreAlterationPlanStore(
+        EntityStore<AlterationsElsaDbContext, AlterationPlan> store,
+        IAlterationSerializer alterationSerializer,
+        ITenantAccessor? tenantAccessor = null)
     {
         _store = store;
         _alterationSerializer = alterationSerializer;
+        _tenantAccessor = tenantAccessor;
     }
 
     /// <inheritdoc />
     public async Task SaveAsync(AlterationPlan record, CancellationToken cancellationToken = default)
     {
+        await AlterationTenantWriteGuard.EnsureCanReplaceAsync(_store, record, _tenantAccessor, "alteration plan", cancellationToken);
         await _store.SaveAsync(record, OnSaveAsync, cancellationToken);
     }
 
