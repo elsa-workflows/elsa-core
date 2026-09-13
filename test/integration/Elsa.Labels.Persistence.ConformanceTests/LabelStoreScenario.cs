@@ -60,7 +60,7 @@ public sealed class LabelStoreScenario(
 
     public static async Task<LabelStoreScenario> CreateSqliteAsync()
     {
-        var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-labels-conformance-{Guid.NewGuid():N}.db");
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-labels-conformance-{Guid.NewGuid():N}.db");
         var tenantAccessor = new TestTenantAccessor("tenant-a");
         ServiceProvider? services = null;
         IServiceScope? scope = null;
