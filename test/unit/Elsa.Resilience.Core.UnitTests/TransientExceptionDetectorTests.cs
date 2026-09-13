@@ -1,41 +1,46 @@
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
 public class TransientExceptionDetectorTests
 {
-    [Fact(DisplayName = "Service with no registered strategies should return false for any exception")]
-    public void IsTransient_NoDetectors_ReturnsFalse()
+    [Test]
+    [DisplayName("Service with no registered strategies should return false for any exception")]
+    public async Task IsTransient_NoDetectors_ReturnsFalse()
     {
         var detector = CreateDetector();
         var exception = new Exception("test");
 
-        Assert.False(detector.IsTransient(exception));
+        await Assert.That(detector.IsTransient(exception)).IsFalse();
     }
 
-    [Fact(DisplayName = "Service should return true when any strategy detects the exception as transient")]
-    public void IsTransient_DetectorReturnsTrue_ReturnsTrue()
+    [Test]
+    [DisplayName("Service should return true when any strategy detects the exception as transient")]
+    public async Task IsTransient_DetectorReturnsTrue_ReturnsTrue()
     {
         var exception = new Exception("test");
         var strategy = CreateStrategy((exception, true));
         var detector = CreateDetector(strategy);
 
-        Assert.True(detector.IsTransient(exception));
+        await Assert.That(detector.IsTransient(exception)).IsTrue();
     }
 
-    [Fact(DisplayName = "Service with multiple strategies should return true if any one detects as transient")]
-    public void IsTransient_MultipleDetectorsOneReturnsTrue_ReturnsTrue()
+    [Test]
+    [DisplayName("Service with multiple strategies should return true if any one detects as transient")]
+    public async Task IsTransient_MultipleDetectorsOneReturnsTrue_ReturnsTrue()
     {
         var exception = new Exception("test");
         var strategy1 = CreateStrategy((exception, false));
         var strategy2 = CreateStrategy((exception, true));
         var detector = CreateDetector(strategy1, strategy2);
 
-        Assert.True(detector.IsTransient(exception));
+        await Assert.That(detector.IsTransient(exception)).IsTrue();
     }
 
-    [Fact(DisplayName = "Service should return false when all strategies detect the exception as non-transient")]
-    public void IsTransient_AllDetectorsReturnFalse_ReturnsFalse()
+    [Test]
+    [DisplayName("Service should return false when all strategies detect the exception as non-transient")]
+    public async Task IsTransient_AllDetectorsReturnFalse_ReturnsFalse()
     {
         var exception = new Exception("test");
         var strategy1 = Substitute.For<ITransientExceptionStrategy>();
@@ -44,24 +49,26 @@ public class TransientExceptionDetectorTests
         strategy2.IsTransient(Arg.Any<Exception>()).Returns(false);
         var detector = CreateDetector(strategy1, strategy2);
 
-        Assert.False(detector.IsTransient(exception));
+        await Assert.That(detector.IsTransient(exception)).IsFalse();
     }
 
-    [Theory(DisplayName = "Service should walk the inner exception chain to find transient exceptions")]
-    [MemberData(nameof(InnerExceptionChainTestCases))]
-    public void IsTransient_InnerExceptionChainHasTransient_ReturnsTrue(Exception exception, Exception transientException)
+    [Test]
+    [DisplayName("Service should walk the inner exception chain '$exception' to find '$transientException'")]
+    [MethodDataSource(nameof(InnerExceptionChainTestCases))]
+    public async Task IsTransient_InnerExceptionChainHasTransient_ReturnsTrue(Exception exception, Exception transientException)
     {
         var strategy = Substitute.For<ITransientExceptionStrategy>();
         strategy.IsTransient(transientException).Returns(true);
         strategy.IsTransient(Arg.Is<Exception>(e => e != transientException)).Returns(false);
         var detector = CreateDetector(strategy);
 
-        Assert.True(detector.IsTransient(exception));
+        await Assert.That(detector.IsTransient(exception)).IsTrue();
     }
 
-    [Theory(DisplayName = "Service should inspect AggregateException inner exceptions")]
-    [MemberData(nameof(AggregateExceptionTestCases))]
-    public void IsTransient_AggregateException_ChecksInnerExceptions(
+    [Test]
+    [DisplayName("Service should inspect '$aggregateException' and return $expectedResult")]
+    [MethodDataSource(nameof(AggregateExceptionTestCases))]
+    public async Task IsTransient_AggregateException_ChecksInnerExceptions(
         AggregateException aggregateException,
         Action<ITransientExceptionStrategy> configureDetector,
         bool expectedResult)
@@ -70,11 +77,12 @@ public class TransientExceptionDetectorTests
         configureDetector(strategy);
         var detector = CreateDetector(strategy);
 
-        Assert.Equal(expectedResult, detector.IsTransient(aggregateException));
+        await Assert.That(detector.IsTransient(aggregateException)).IsEqualTo(expectedResult);
     }
 
-    [Fact(DisplayName = "AggregateException with mixed inner exceptions should be transient if any inner is transient")]
-    public void IsTransient_AggregateExceptionWithMultipleInnerOneTransient_ReturnsTrue()
+    [Test]
+    [DisplayName("AggregateException with mixed inner exceptions should be transient if any inner is transient")]
+    public async Task IsTransient_AggregateExceptionWithMultipleInnerOneTransient_ReturnsTrue()
     {
         var transientException = new TimeoutException("timeout");
         var nonTransientException = new InvalidOperationException("invalid");
@@ -86,7 +94,7 @@ public class TransientExceptionDetectorTests
             (transientException, true));
         var detector = CreateDetector(strategy);
 
-        Assert.True(detector.IsTransient(aggregateException));
+        await Assert.That(detector.IsTransient(aggregateException)).IsTrue();
     }
 
     public static IEnumerable<object[]> InnerExceptionChainTestCases

@@ -6,54 +6,60 @@ using Elsa.Testing.Shared.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Options;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
 public class ActivityExecutionExtensionsTests
 {
-    [Fact(DisplayName = "Retries-attempted flag should read as false before anything sets it")]
+    [Test]
+    [DisplayName("Retries-attempted flag should read as false before anything sets it")]
     public async Task GetRetriesAttemptedFlag_NeverSet_ReturnsFalse()
     {
         var context = await ContextFactory.CreateAsync(new WriteLine("test"));
 
-        Assert.False(context.GetRetriesAttemptedFlag());
+        await Assert.That(context.GetRetriesAttemptedFlag()).IsFalse();
     }
 
-    [Fact(DisplayName = "Setting the retries-attempted flag should make it readable on the same context")]
+    [Test]
+    [DisplayName("Setting the retries-attempted flag should make it readable on the same context")]
     public async Task SetRetriesAttemptedFlag_SetsFlagOnContext()
     {
         var context = await ContextFactory.CreateAsync(new WriteLine("test"));
 
         context.SetRetriesAttemptedFlag();
 
-        Assert.True(context.GetRetriesAttemptedFlag());
+        await Assert.That(context.GetRetriesAttemptedFlag()).IsTrue();
     }
 
-    [Fact(DisplayName = "Setting the retries-attempted flag should propagate all the way up the ancestor chain")]
+    [Test]
+    [DisplayName("Setting the retries-attempted flag should propagate all the way up the ancestor chain")]
     public async Task SetRetriesAttemptedFlag_PropagatesToAllAncestors()
     {
         var (root, middle, leaf) = await CreateThreeLevelChainAsync();
 
         leaf.SetRetriesAttemptedFlag();
 
-        Assert.True(leaf.GetRetriesAttemptedFlag());
-        Assert.True(middle.GetRetriesAttemptedFlag());
-        Assert.True(root.GetRetriesAttemptedFlag());
+        await Assert.That(leaf.GetRetriesAttemptedFlag()).IsTrue();
+        await Assert.That(middle.GetRetriesAttemptedFlag()).IsTrue();
+        await Assert.That(root.GetRetriesAttemptedFlag()).IsTrue();
     }
 
-    [Fact(DisplayName = "Setting the retries-attempted flag should not propagate down to descendants")]
+    [Test]
+    [DisplayName("Setting the retries-attempted flag should not propagate down to descendants")]
     public async Task SetRetriesAttemptedFlag_DoesNotPropagateToDescendants()
     {
         var (root, middle, leaf) = await CreateThreeLevelChainAsync();
 
         middle.SetRetriesAttemptedFlag();
 
-        Assert.True(root.GetRetriesAttemptedFlag());
-        Assert.True(middle.GetRetriesAttemptedFlag());
-        Assert.False(leaf.GetRetriesAttemptedFlag());
+        await Assert.That(root.GetRetriesAttemptedFlag()).IsTrue();
+        await Assert.That(middle.GetRetriesAttemptedFlag()).IsTrue();
+        await Assert.That(leaf.GetRetriesAttemptedFlag()).IsFalse();
     }
 
-    [Fact(DisplayName = "Setting the resilience strategy should store the model as an activity property")]
+    [Test]
+    [DisplayName("Setting the resilience strategy should store the model as an activity property")]
     public async Task SetResilienceStrategy_StoresModelAsProperty()
     {
         var context = await ContextFactory.CreateAsync(new WriteLine("test"));
@@ -62,7 +68,7 @@ public class ActivityExecutionExtensionsTests
         context.SetResilienceStrategy(model);
 
         var stored = context.GetProperty<JsonNode>("ResilienceStrategy");
-        Assert.Same(model, stored);
+        await Assert.That(stored).IsSameReferenceAs(model);
     }
 
     private static async Task<(ActivityExecutionContext Root, ActivityExecutionContext Middle, ActivityExecutionContext Leaf)> CreateThreeLevelChainAsync()

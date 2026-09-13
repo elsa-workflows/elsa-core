@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Elsa.Resilience.Core.UnitTests;
 
 public class ResilienceCategoryAttributeTests
@@ -5,23 +7,25 @@ public class ResilienceCategoryAttributeTests
     [ResilienceCategory("HTTP")]
     private class CategorizedActivity;
 
-    [Fact(DisplayName = "Resilience category should be discoverable through reflection")]
-    public void Category_IsReadableFromCustomAttributes()
+    [Test]
+    [DisplayName("Resilience category should be discoverable through reflection")]
+    public async Task Category_IsReadableFromCustomAttributes()
     {
         var attribute = typeof(CategorizedActivity).GetCustomAttributes(typeof(ResilienceCategoryAttribute), false)
             .Cast<ResilienceCategoryAttribute>()
             .Single();
 
-        Assert.Equal("HTTP", attribute.Category);
+        await Assert.That(attribute.Category).IsEqualTo("HTTP");
     }
 
-    [Fact(DisplayName = "Resilience category should only be applicable to classes")]
-    public void AttributeUsage_TargetsClassesOnly()
+    [Test]
+    [DisplayName("Resilience category should only be applicable to classes")]
+    public async Task AttributeUsage_TargetsClassesOnly()
     {
         var usage = typeof(ResilienceCategoryAttribute).GetCustomAttributes(typeof(AttributeUsageAttribute), false)
             .Cast<AttributeUsageAttribute>()
             .Single();
 
-        Assert.Equal(AttributeTargets.Class, usage.ValidOn);
+        await Assert.That(usage.ValidOn).IsEqualTo(AttributeTargets.Class);
     }
 }

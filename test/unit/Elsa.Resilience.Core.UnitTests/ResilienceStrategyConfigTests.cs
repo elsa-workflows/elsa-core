@@ -1,13 +1,15 @@
 using System.Text.Json.Nodes;
 using Elsa.Expressions.Models;
 using Elsa.Resilience.Models;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
 public class ResilienceStrategyConfigTests
 {
-    [Fact(DisplayName = "Config in identifier mode should round-trip through a JSON node")]
-    public void SerializeToNode_IdentifierMode_RoundTrips()
+    [Test]
+    [DisplayName("Config in identifier mode should round-trip through a JSON node")]
+    public async Task SerializeToNode_IdentifierMode_RoundTrips()
     {
         var config = new ResilienceStrategyConfig
         {
@@ -17,14 +19,15 @@ public class ResilienceStrategyConfigTests
 
         var result = ResilienceStrategyConfig.Deserialize(config.SerializeToNode());
 
-        Assert.NotNull(result);
-        Assert.Equal(ResilienceStrategyConfigMode.Identifier, result.Mode);
-        Assert.Equal("my-strategy", result.StrategyId);
-        Assert.Null(result.Expression);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Mode).IsEqualTo(ResilienceStrategyConfigMode.Identifier);
+        await Assert.That(result.StrategyId).IsEqualTo("my-strategy");
+        await Assert.That(result.Expression).IsNull();
     }
 
-    [Fact(DisplayName = "Config in expression mode should round-trip its expression through a JSON node")]
-    public void SerializeToNode_ExpressionMode_RoundTripsExpression()
+    [Test]
+    [DisplayName("Config in expression mode should round-trip its expression through a JSON node")]
+    public async Task SerializeToNode_ExpressionMode_RoundTripsExpression()
     {
         var config = new ResilienceStrategyConfig
         {
@@ -34,24 +37,26 @@ public class ResilienceStrategyConfigTests
 
         var result = ResilienceStrategyConfig.Deserialize(config.SerializeToNode());
 
-        Assert.NotNull(result);
-        Assert.Equal(ResilienceStrategyConfigMode.Expression, result.Mode);
-        Assert.NotNull(result.Expression);
-        Assert.Equal("JavaScript", result.Expression.Type);
-        Assert.Equal("getStrategy()", result.Expression.Value?.ToString());
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Mode).IsEqualTo(ResilienceStrategyConfigMode.Expression);
+        await Assert.That(result.Expression).IsNotNull();
+        await Assert.That(result.Expression.Type).IsEqualTo("JavaScript");
+        await Assert.That(result.Expression.Value?.ToString()).IsEqualTo("getStrategy()");
     }
 
-    [Fact(DisplayName = "Deserializing a null node should return null")]
-    public void Deserialize_NullNode_ReturnsNull()
+    [Test]
+    [DisplayName("Deserializing a null node should return null")]
+    public async Task Deserialize_NullNode_ReturnsNull()
     {
-        Assert.Null(ResilienceStrategyConfig.Deserialize(null));
+        await Assert.That(ResilienceStrategyConfig.Deserialize(null)).IsNull();
     }
 
-    [Fact(DisplayName = "Deserializing an unknown mode should fail rather than silently defaulting")]
-    public void Deserialize_UnknownMode_Throws()
+    [Test]
+    [DisplayName("Deserializing an unknown mode should fail rather than silently defaulting")]
+    public async Task Deserialize_UnknownMode_Throws()
     {
         var node = JsonNode.Parse("""{"mode":"NotAMode"}""");
 
-        Assert.ThrowsAny<Exception>(() => ResilienceStrategyConfig.Deserialize(node));
+        await Assert.That(() => ResilienceStrategyConfig.Deserialize(node)).Throws<Exception>();
     }
 }

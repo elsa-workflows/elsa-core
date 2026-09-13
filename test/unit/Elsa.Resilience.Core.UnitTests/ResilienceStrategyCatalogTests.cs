@@ -1,6 +1,7 @@
 using Elsa.Resilience.Core.UnitTests.TestHelpers;
 using NSubstitute;
 using Open.Linq.AsyncExtensions;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
@@ -8,16 +9,18 @@ public class ResilienceStrategyCatalogTests
 {
     private static ResilienceStrategyCatalog CreateCatalog(params IResilienceStrategySource[] sources) => new(sources);
 
-    [Fact(DisplayName = "Catalog with no sources should return empty list")]
+    [Test]
+    [DisplayName("Catalog with no sources should return empty list")]
     public async Task ListAsync_NoProviders_ReturnsEmptyList()
     {
         var catalog = CreateCatalog();
         var result = await catalog.ListAsync();
 
-        Assert.Empty(result);
+        await Assert.That(result).IsEmpty();
     }
 
-    [Fact(DisplayName = "Catalog should return all strategies from a single source")]
+    [Test]
+    [DisplayName("Catalog should return all strategies from a single source")]
     public async Task ListAsync_SingleProviderWithStrategies_ReturnsStrategies()
     {
         var strategies = new[]
@@ -29,13 +32,13 @@ public class ResilienceStrategyCatalogTests
         var catalog = CreateCatalog(provider);
 
         var result = await catalog.ListAsync();
-
-        Assert.Collection(result,
-            s => Assert.Equal("strategy1", s.Id),
-            s => Assert.Equal("strategy2", s.Id));
+        await Assert.That(result.Select(x => x.Id)).IsEquivalentTo(
+            ["strategy1", "strategy2"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "Catalog should combine strategies from multiple sources")]
+    [Test]
+    [DisplayName("Catalog should combine strategies from multiple sources")]
     public async Task ListAsync_MultipleProviders_CombinesAllStrategies()
     {
         var provider1 = TestDataFactory.CreateStrategySource(
@@ -47,15 +50,16 @@ public class ResilienceStrategyCatalogTests
 
         var result = await catalog.ListAsync().ToList();
 
-        Assert.Equal(3, result.Count);
-        Assert.Contains(result, s => s.Id == "strategy1");
-        Assert.Contains(result, s => s.Id == "strategy2");
-        Assert.Contains(result, s => s.Id == "strategy3");
+        await Assert.That(result.Count).IsEqualTo(3);
+        await Assert.That(result).Contains(s => s.Id == "strategy1");
+        await Assert.That(result).Contains(s => s.Id == "strategy2");
+        await Assert.That(result).Contains(s => s.Id == "strategy3");
     }
 
-    [Theory(DisplayName = "Catalog should retrieve strategy by ID or return null if not found")]
-    [InlineData("test-id", "Test Strategy", true)]
-    [InlineData("non-existent", null, false)]
+    [Test]
+    [DisplayName("Catalog should retrieve strategy '$searchId' or return null if not found")]
+    [Arguments("test-id", "Test Strategy", true)]
+    [Arguments("non-existent", null, false)]
     public async Task GetAsync_WithStrategyId_ReturnsExpectedResult(string searchId, string? expectedDisplayName, bool shouldExist)
     {
         var strategy = TestDataFactory.CreateStrategy("test-id", "Test Strategy");
@@ -66,17 +70,18 @@ public class ResilienceStrategyCatalogTests
 
         if (shouldExist)
         {
-            Assert.NotNull(result);
-            Assert.Equal(searchId, result.Id);
-            Assert.Equal(expectedDisplayName, result.DisplayName);
+            await Assert.That(result).IsNotNull();
+            await Assert.That(result.Id).IsEqualTo(searchId);
+            await Assert.That(result.DisplayName).IsEqualTo(expectedDisplayName);
         }
         else
         {
-            Assert.Null(result);
+            await Assert.That(result).IsNull();
         }
     }
 
-    [Fact(DisplayName = "Catalog should search all sources to find a strategy")]
+    [Test]
+    [DisplayName("Catalog should search all sources to find a strategy")]
     public async Task GetAsync_MultipleProvidersStrategyInSecond_ReturnsStrategy()
     {
         var provider1 = TestDataFactory.CreateStrategySource(TestDataFactory.CreateStrategy("strategy1", "Strategy 1"));
@@ -85,11 +90,12 @@ public class ResilienceStrategyCatalogTests
 
         var result = await catalog.GetAsync("strategy2");
 
-        Assert.NotNull(result);
-        Assert.Equal("strategy2", result.Id);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Id).IsEqualTo("strategy2");
     }
 
-    [Fact(DisplayName = "Catalog should cache strategy list after first retrieval")]
+    [Test]
+    [DisplayName("Catalog should cache strategy list after first retrieval")]
     public async Task ListAsync_CalledMultipleTimes_CachesResult()
     {
         var strategy = TestDataFactory.CreateStrategy("test", "Test");
@@ -103,7 +109,8 @@ public class ResilienceStrategyCatalogTests
         await provider.Received(1).GetStrategiesAsync(Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "GetAsync should use cached list when available")]
+    [Test]
+    [DisplayName("GetAsync should use cached list when available")]
     public async Task GetAsync_CalledAfterList_UsesCachedResult()
     {
         var strategy = TestDataFactory.CreateStrategy("test", "Test");

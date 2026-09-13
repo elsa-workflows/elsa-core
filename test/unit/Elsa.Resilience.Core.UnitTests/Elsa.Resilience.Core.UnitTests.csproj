@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
+        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Resilience.Core]*</Include>
         <Threshold>90</Threshold>
     </PropertyGroup>

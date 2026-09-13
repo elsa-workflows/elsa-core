@@ -5,6 +5,7 @@ using Elsa.Resilience.Models;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Serialization;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
@@ -22,14 +23,16 @@ public class ResilienceStrategyConfigEvaluatorTests
         _evaluator = new(_catalog, _expressionEvaluator, serializer);
     }
 
-    [Fact(DisplayName = "Evaluator should return null when config is null")]
+    [Test]
+    [DisplayName("Evaluator should return null when config is null")]
     public async Task EvaluateAsync_NullConfig_ReturnsNull()
     {
         var result = await _evaluator.EvaluateAsync(null, _context);
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
 
-    [Fact(DisplayName = "Evaluator in identifier mode should resolve strategy from catalog")]
+    [Test]
+    [DisplayName("Evaluator in identifier mode should resolve strategy from catalog")]
     public async Task EvaluateAsync_IdentifierMode_WithValidId_ReturnsStrategyFromCatalog()
     {
         var strategy = TestDataFactory.CreateStrategy("test-strategy", "Test Strategy");
@@ -38,37 +41,40 @@ public class ResilienceStrategyConfigEvaluatorTests
 
         var result = await _evaluator.EvaluateAsync(config, _context);
 
-        Assert.NotNull(result);
-        Assert.Equal("test-strategy", result.Id);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Id).IsEqualTo("test-strategy");
         await _catalog.Received(1).GetAsync("test-strategy", Arg.Any<CancellationToken>());
     }
 
-    [Theory(DisplayName = "Evaluator in identifier mode should return null for invalid strategy IDs")]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
+    [Test]
+    [DisplayName("Evaluator in identifier mode should return null for invalid strategy ID '$strategyId'")]
+    [Arguments("")]
+    [Arguments("   ")]
+    [Arguments(null)]
     public async Task EvaluateAsync_IdentifierMode_WithInvalidId_ReturnsNull(string? strategyId)
     {
         var config = CreateConfig(ResilienceStrategyConfigMode.Identifier, strategyId);
 
         var result = await _evaluator.EvaluateAsync(config, _context);
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
         await _catalog.DidNotReceive().GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Evaluator in expression mode should return null when expression is null")]
+    [Test]
+    [DisplayName("Evaluator in expression mode should return null when expression is null")]
     public async Task EvaluateAsync_ExpressionMode_WithNullExpression_ReturnsNull()
     {
         var config = CreateConfig(ResilienceStrategyConfigMode.Expression);
 
         var result = await _evaluator.EvaluateAsync(config, _context);
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
         await _expressionEvaluator.DidNotReceive().EvaluateAsync<object>(Arg.Any<Expression>(), Arg.Any<ExpressionExecutionContext>(), Arg.Any<ExpressionEvaluatorOptions>());
     }
 
-    [Fact(DisplayName = "Evaluator in expression mode should resolve string IDs from catalog")]
+    [Test]
+    [DisplayName("Evaluator in expression mode should resolve string IDs from catalog")]
     public async Task EvaluateAsync_ExpressionMode_ReturnsStringId_ResolvesFromCatalog()
     {
         var expression = new Expression("C#", "\"test-strategy\"");
@@ -79,12 +85,13 @@ public class ResilienceStrategyConfigEvaluatorTests
 
         var result = await _evaluator.EvaluateAsync(config, _context);
 
-        Assert.NotNull(result);
-        Assert.Equal("test-strategy", result.Id);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Id).IsEqualTo("test-strategy");
         await _catalog.Received(1).GetAsync("test-strategy", Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "Evaluator in expression mode should return strategy objects directly")]
+    [Test]
+    [DisplayName("Evaluator in expression mode should return strategy objects directly")]
     public async Task EvaluateAsync_ExpressionMode_ReturnsStrategyObject_ReturnsStrategyDirectly()
     {
         var expression = new Expression("C#", "strategy");
@@ -94,14 +101,15 @@ public class ResilienceStrategyConfigEvaluatorTests
 
         var result = await _evaluator.EvaluateAsync(config, _context);
 
-        Assert.NotNull(result);
-        Assert.Same(strategy, result);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result).IsSameReferenceAs(strategy);
         await _catalog.DidNotReceive().GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
-    [Theory(DisplayName = "Evaluator in expression mode should return null for unexpected result types")]
-    [InlineData("null", null)]
-    [InlineData("42", 42)]
+    [Test]
+    [DisplayName("Evaluator expression '$expressionCode' should return null for an unexpected result type")]
+    [Arguments("null", null)]
+    [Arguments("42", 42)]
     public async Task EvaluateAsync_ExpressionMode_ReturnsUnexpectedType_ReturnsNull(string expressionCode, object? expressionResult)
     {
         var expression = new Expression("C#", expressionCode);
@@ -110,7 +118,7 @@ public class ResilienceStrategyConfigEvaluatorTests
 
         var result = await _evaluator.EvaluateAsync(config, _context);
 
-        Assert.Null(result);
+        await Assert.That(result).IsNull();
     }
     
     private ResilienceStrategyConfig CreateConfig(ResilienceStrategyConfigMode mode, string? strategyId = null, Expression? expression = null)

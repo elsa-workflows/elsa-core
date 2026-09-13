@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
@@ -6,7 +7,7 @@ public class DefaultTransientExceptionStrategyTests
 {
     private readonly DefaultTransientExceptionStrategy _strategy = new();
 
-    public static TheoryData<Type> TransientExceptionTypes =>
+    public static IEnumerable<Type> TransientExceptionTypes =>
     [
         typeof(HttpRequestException),
         typeof(TimeoutException),
@@ -16,7 +17,7 @@ public class DefaultTransientExceptionStrategyTests
         typeof(EndOfStreamException)
     ];
 
-    public static TheoryData<string> TransientMessagePatterns =>
+    public static IEnumerable<string> TransientMessagePatterns =>
     [
         "timeout",
         "timed out",
@@ -35,53 +36,58 @@ public class DefaultTransientExceptionStrategyTests
         "Connection Reset"
     ];
 
-    public static TheoryData<string> NonTransientMessagePatterns =>
+    public static IEnumerable<string> NonTransientMessagePatterns =>
     [
         "Some random error",
         "Invalid operation",
         "Null reference"
     ];
 
-    [Theory(DisplayName = "Known transient exception types should be detected as transient")]
-    [MemberData(nameof(TransientExceptionTypes))]
-    public void IsTransient_KnownTransientExceptionType_ReturnsTrue(Type exceptionType)
+    [Test]
+    [DisplayName("Known transient exception type $exceptionType should be detected as transient")]
+    [MethodDataSource(nameof(TransientExceptionTypes))]
+    public async Task IsTransient_KnownTransientExceptionType_ReturnsTrue(Type exceptionType)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType)!;
-        Assert.True(_strategy.IsTransient(exception));
+        await Assert.That(_strategy.IsTransient(exception)).IsTrue();
     }
 
-    [Theory(DisplayName = "Exceptions with transient message patterns should be detected as transient")]
-    [MemberData(nameof(TransientMessagePatterns))]
-    public void IsTransient_ExceptionWithTransientMessagePattern_ReturnsTrue(string message)
+    [Test]
+    [DisplayName("Exception message '$message' should be detected as transient")]
+    [MethodDataSource(nameof(TransientMessagePatterns))]
+    public async Task IsTransient_ExceptionWithTransientMessagePattern_ReturnsTrue(string message)
     {
         var exception = new Exception(message);
-        Assert.True(_strategy.IsTransient(exception));
+        await Assert.That(_strategy.IsTransient(exception)).IsTrue();
     }
 
-    [Theory(DisplayName = "Exceptions with non-transient messages should not be detected as transient")]
-    [MemberData(nameof(NonTransientMessagePatterns))]
-    public void IsTransient_ExceptionWithNonTransientMessage_ReturnsFalse(string message)
+    [Test]
+    [DisplayName("Exception message '$message' should not be detected as transient")]
+    [MethodDataSource(nameof(NonTransientMessagePatterns))]
+    public async Task IsTransient_ExceptionWithNonTransientMessage_ReturnsFalse(string message)
     {
         var exception = new Exception(message);
-        Assert.False(_strategy.IsTransient(exception));
+        await Assert.That(_strategy.IsTransient(exception)).IsFalse();
     }
 
-    [Theory(DisplayName = "Non-transient exception types should not be detected as transient regardless of message")]
-    [InlineData(typeof(InvalidOperationException), "Some error")]
-    [InlineData(typeof(ArgumentException), "Invalid argument")]
-    [InlineData(typeof(NullReferenceException), "Object reference not set")]
-    public void IsTransient_NonTransientExceptionType_ReturnsFalse(Type exceptionType, string message)
+    [Test]
+    [DisplayName("Non-transient exception type $exceptionType with '$message' should not be detected as transient")]
+    [Arguments(typeof(InvalidOperationException), "Some error")]
+    [Arguments(typeof(ArgumentException), "Invalid argument")]
+    [Arguments(typeof(NullReferenceException), "Object reference not set")]
+    public async Task IsTransient_NonTransientExceptionType_ReturnsFalse(Type exceptionType, string message)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType, message)!;
-        Assert.False(_strategy.IsTransient(exception));
+        await Assert.That(_strategy.IsTransient(exception)).IsFalse();
     }
 
-    [Theory(DisplayName = "Exceptions with empty messages should be detected based on type only")]
-    [InlineData(typeof(TimeoutException), true)]
-    [InlineData(typeof(InvalidOperationException), false)]
-    public void IsTransient_ExceptionWithEmptyMessage_ChecksTypeOnly(Type exceptionType, bool expectedResult)
+    [Test]
+    [DisplayName("Exception type $exceptionType with an empty message should yield $expectedResult")]
+    [Arguments(typeof(TimeoutException), true)]
+    [Arguments(typeof(InvalidOperationException), false)]
+    public async Task IsTransient_ExceptionWithEmptyMessage_ChecksTypeOnly(Type exceptionType, bool expectedResult)
     {
         var exception = (Exception)Activator.CreateInstance(exceptionType, "")!;
-        Assert.Equal(expectedResult, _strategy.IsTransient(exception));
+        await Assert.That(_strategy.IsTransient(exception)).IsEqualTo(expectedResult);
     }
 }

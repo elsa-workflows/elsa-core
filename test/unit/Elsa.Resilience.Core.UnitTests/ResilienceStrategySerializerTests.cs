@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Resilience.Core.UnitTests.TestHelpers;
 using Elsa.Resilience.Options;
 using Elsa.Resilience.Serialization;
+using System.Threading.Tasks;
 
 namespace Elsa.Resilience.Core.UnitTests;
 
@@ -19,17 +20,19 @@ public class ResilienceStrategySerializerTests
         return new(options);
     }
 
-    [Fact(DisplayName = "Serializer should write a type discriminator named after the strategy type")]
-    public void Serialize_RegisteredStrategy_WritesTypeDiscriminator()
+    [Test]
+    [DisplayName("Serializer should write a type discriminator named after the strategy type")]
+    public async Task Serialize_RegisteredStrategy_WritesTypeDiscriminator()
     {
         var json = _serializer.Serialize(new TestRetryStrategy());
 
         using var document = JsonDocument.Parse(json);
-        Assert.Equal(nameof(TestRetryStrategy), document.RootElement.GetProperty("$type").GetString());
+        await Assert.That(document.RootElement.GetProperty("$type").GetString()).IsEqualTo(nameof(TestRetryStrategy));
     }
 
-    [Fact(DisplayName = "Serializer should write property names in camel case")]
-    public void Serialize_RegisteredStrategy_UsesCamelCasePropertyNames()
+    [Test]
+    [DisplayName("Serializer should write property names in camel case")]
+    public async Task Serialize_RegisteredStrategy_UsesCamelCasePropertyNames()
     {
         var json = _serializer.Serialize(new TestRetryStrategy
         {
@@ -38,12 +41,13 @@ public class ResilienceStrategySerializerTests
         });
 
         using var document = JsonDocument.Parse(json);
-        Assert.Equal("my-strategy", document.RootElement.GetProperty("id").GetString());
-        Assert.Equal(7, document.RootElement.GetProperty("maxRetryAttempts").GetInt32());
+        await Assert.That(document.RootElement.GetProperty("id").GetString()).IsEqualTo("my-strategy");
+        await Assert.That(document.RootElement.GetProperty("maxRetryAttempts").GetInt32()).IsEqualTo(7);
     }
 
-    [Fact(DisplayName = "Serializer should write enums as strings")]
-    public void Serialize_StrategyWithEnum_WritesEnumAsString()
+    [Test]
+    [DisplayName("Serializer should write enums as strings")]
+    public async Task Serialize_StrategyWithEnum_WritesEnumAsString()
     {
         var json = _serializer.Serialize(new TestNoopStrategy
         {
@@ -51,11 +55,12 @@ public class ResilienceStrategySerializerTests
         });
 
         using var document = JsonDocument.Parse(json);
-        Assert.Equal(nameof(TestStrategyFlavor.Fancy), document.RootElement.GetProperty("flavor").GetString());
+        await Assert.That(document.RootElement.GetProperty("flavor").GetString()).IsEqualTo(nameof(TestStrategyFlavor.Fancy));
     }
 
-    [Fact(DisplayName = "Serializer should round-trip a strategy back into its concrete type")]
-    public void Deserialize_SerializedStrategy_ReturnsConcreteType()
+    [Test]
+    [DisplayName("Serializer should round-trip a strategy back into its concrete type")]
+    public async Task Deserialize_SerializedStrategy_ReturnsConcreteType()
     {
         var json = _serializer.Serialize(new TestRetryStrategy
         {
@@ -64,36 +69,45 @@ public class ResilienceStrategySerializerTests
             MaxRetryAttempts = 4
         });
 
-        var strategy = Assert.IsType<TestRetryStrategy>(_serializer.Deserialize(json));
+        var result = _serializer.Deserialize(json);
+        await Assert.That(result).IsOfType(typeof(TestRetryStrategy));
+        var strategy = (TestRetryStrategy)result;
 
-        Assert.Equal("round-trip", strategy.Id);
-        Assert.Equal("Round Trip", strategy.DisplayName);
-        Assert.Equal(4, strategy.MaxRetryAttempts);
+        await Assert.That(strategy.Id).IsEqualTo("round-trip");
+        await Assert.That(strategy.DisplayName).IsEqualTo("Round Trip");
+        await Assert.That(strategy.MaxRetryAttempts).IsEqualTo(4);
     }
 
-    [Fact(DisplayName = "Serializer should read property names case-insensitively")]
-    public void Deserialize_PascalCasePropertyNames_ReadsValues()
+    [Test]
+    [DisplayName("Serializer should read property names case-insensitively")]
+    public async Task Deserialize_PascalCasePropertyNames_ReadsValues()
     {
         var json = $$"""{"$type":"{{nameof(TestRetryStrategy)}}","Id":"pascal","MaxRetryAttempts":3}""";
 
-        var strategy = Assert.IsType<TestRetryStrategy>(_serializer.Deserialize(json));
+        var result = _serializer.Deserialize(json);
+        await Assert.That(result).IsOfType(typeof(TestRetryStrategy));
+        var strategy = (TestRetryStrategy)result;
 
-        Assert.Equal("pascal", strategy.Id);
-        Assert.Equal(3, strategy.MaxRetryAttempts);
+        await Assert.That(strategy.Id).IsEqualTo("pascal");
+        await Assert.That(strategy.MaxRetryAttempts).IsEqualTo(3);
     }
 
-    [Fact(DisplayName = "Serializer should read numbers written as strings")]
-    public void Deserialize_NumberAsString_ReadsNumber()
+    [Test]
+    [DisplayName("Serializer should read numbers written as strings")]
+    public async Task Deserialize_NumberAsString_ReadsNumber()
     {
         var json = $$"""{"$type":"{{nameof(TestRetryStrategy)}}","maxRetryAttempts":"5"}""";
 
-        var strategy = Assert.IsType<TestRetryStrategy>(_serializer.Deserialize(json));
+        var result = _serializer.Deserialize(json);
+        await Assert.That(result).IsOfType(typeof(TestRetryStrategy));
+        var strategy = (TestRetryStrategy)result;
 
-        Assert.Equal(5, strategy.MaxRetryAttempts);
+        await Assert.That(strategy.MaxRetryAttempts).IsEqualTo(5);
     }
 
-    [Fact(DisplayName = "Serializer should round-trip a heterogeneous list of strategies")]
-    public void SerializeMany_MixedStrategies_RoundTripsEachConcreteType()
+    [Test]
+    [DisplayName("Serializer should round-trip a heterogeneous list of strategies")]
+    public async Task SerializeMany_MixedStrategies_RoundTripsEachConcreteType()
     {
         var json = _serializer.SerializeMany([
             new TestRetryStrategy { Id = "first" },
@@ -101,17 +115,21 @@ public class ResilienceStrategySerializerTests
         ]);
 
         var strategies = _serializer.DeserializeMany(json).ToList();
-
-        Assert.Collection(strategies,
-            s => Assert.Equal("first", Assert.IsType<TestRetryStrategy>(s).Id),
-            s => Assert.Equal("second", Assert.IsType<TestNoopStrategy>(s).Id));
+        await Assert.That(strategies).Count().IsEqualTo(2);
+        await Assert.That(strategies[0]).IsOfType(typeof(TestRetryStrategy));
+        await Assert.That(strategies[1]).IsOfType(typeof(TestNoopStrategy));
+        var first = (TestRetryStrategy)strategies[0];
+        var second = (TestNoopStrategy)strategies[1];
+        await Assert.That(first.Id).IsEqualTo("first");
+        await Assert.That(second.Id).IsEqualTo("second");
     }
 
-    [Fact(DisplayName = "Serializer should reject strategy types that were not registered")]
+    [Test]
+    [DisplayName("Serializer should reject strategy types that were not registered")]
     public void Serialize_UnregisteredStrategy_Throws()
     {
         var serializer = CreateSerializer(typeof(TestNoopStrategy));
 
-        Assert.Throws<NotSupportedException>(() => serializer.Serialize(new TestRetryStrategy()));
+        Assert.ThrowsExactly<NotSupportedException>(() => serializer.Serialize(new TestRetryStrategy()));
     }
 }
