@@ -224,7 +224,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// </param>
     /// <param name="expectedETag">
     /// When <paramref name="compareAndSwap"/> is true, the <c>If-Match</c> value the save must still equal, or
-    /// <c>null</c> to accept any current content while still reading metadata inside the swap.
+    /// <c>null</c> to accept any ETag while still refusing if the prepared draft's snapshot has moved.
     /// </param>
     /// <param name="compareAndSwap">
     /// True for a document edit: persist through <see cref="IWorkflowDefinitionStore.TryUpdateLatestAsync"/> so
@@ -492,9 +492,9 @@ public sealed class BpmnInterchangeDocumentService(
     /// Unlike a whole-definition import, this edits the BPMN <em>document</em> of an existing definition: the caller
     /// is changing a binding, not replacing the definition. So <paramref name="definitionId"/>'s current metadata —
     /// name, description, variables, inputs, outputs, outcomes, options, tool version, read-only flag and custom
-    /// properties other than the ones this service owns — is read inside the same compare-and-swap as the save,
-    /// not from the lookup that restores nested scopes. Only the activity graph
-    /// and the <see cref="SourceXmlCustomPropertyKey"/>/<see cref="SourceVersionCustomPropertyKey"/>/
+    /// properties other than the ones this service owns — is copied onto the prepared draft and the compare-and-swap
+    /// refuses if that snapshot has moved, rather than being taken from the lookup that restores nested scopes. Only
+    /// the activity graph and the <see cref="SourceXmlCustomPropertyKey"/>/<see cref="SourceVersionCustomPropertyKey"/>/
     /// <see cref="SourceProcessIdCustomPropertyKey"/>/<see cref="SourceGraphHashCustomPropertyKey"/> custom properties move.
     /// <para>
     /// Nested scopes come from the stored source, not from <paramref name="document"/>, which cannot carry them (see
@@ -519,10 +519,10 @@ public sealed class BpmnInterchangeDocumentService(
     /// finds the value that was used the first time.
     /// </param>
     /// <param name="expectedETag">
-    /// The <c>If-Match</c> value the document PUT already checked. When set, the same compare-and-swap that
-    /// reads metadata and saves also refuses with <see cref="BpmnDocumentPreconditionFailedException"/> if the
-    /// stored content that ETag covers has moved. When omitted, the swap still reads metadata from the just-loaded
-    /// row so a metadata-only save cannot be reverted, but any content is accepted.
+    /// The <c>If-Match</c> value the document PUT already checked. When set, the compare-and-swap that persists
+    /// the prepared draft also refuses with <see cref="BpmnDocumentPreconditionFailedException"/> if the stored
+    /// content that ETag covers — or the name/description snapshot the draft was built from — has moved. When
+    /// omitted, any ETag is accepted but a moved metadata snapshot is still refused.
     /// </param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="Exceptions.BpmnDefinitionNotFoundException">
