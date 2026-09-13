@@ -4,11 +4,11 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
 public class ConsoleLogsHubTests
 {
-    [Fact]
-    public void Hub_ExposesSubscriptionMethods()
+    [Test]
+    public async Task Hub_ExposesSubscriptionMethods()
     {
-        Assert.NotNull(typeof(ElsaConsoleLogsHub).GetMethod(nameof(ElsaConsoleLogsHub.SubscribeAsync)));
-        Assert.NotNull(typeof(ElsaConsoleLogsHub).GetMethod(nameof(ElsaConsoleLogsHub.UpdateFilterAsync)));
-        Assert.NotNull(typeof(ElsaConsoleLogsHub).GetMethod(nameof(ElsaConsoleLogsHub.UnsubscribeAsync)));
+        await Assert.That(typeof(ElsaConsoleLogsHub).GetMethod(nameof(ElsaConsoleLogsHub.SubscribeAsync))).IsNotNull();
+        await Assert.That(typeof(ElsaConsoleLogsHub).GetMethod(nameof(ElsaConsoleLogsHub.UpdateFilterAsync))).IsNotNull();
+        await Assert.That(typeof(ElsaConsoleLogsHub).GetMethod(nameof(ElsaConsoleLogsHub.UnsubscribeAsync))).IsNotNull();
     }
 }

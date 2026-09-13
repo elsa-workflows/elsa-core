@@ -9,13 +9,13 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
 public class ConsoleLogsHubSourceStatusTests
 {
-    [Fact]
-    public void ClientContract_ExposesSourceChangeMethod()
+    [Test]
+    public async Task ClientContract_ExposesSourceChangeMethod()
     {
-        Assert.NotNull(typeof(IElsaConsoleLogsClient).GetMethod(nameof(IElsaConsoleLogsClient.ReceiveSourceChangedAsync)));
+        await Assert.That(typeof(IElsaConsoleLogsClient).GetMethod(nameof(IElsaConsoleLogsClient.ReceiveSourceChangedAsync))).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task PushedSubscription_ForwardsSourceChangeFromConsoleLines()
     {
         var source = new ConsoleLogSource { Id = "source-1", DisplayName = "Source 1" };
@@ -27,10 +27,10 @@ public class ConsoleLogsHubSourceStatusTests
 
         await manager.SubscribeAsync("connection-1", new ElsaConsoleLogFilter(), CancellationToken.None);
 
-        Assert.Same(source, await client.SourceChanged.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        await Assert.That(await client.SourceChanged.Task.WaitAsync(TimeSpan.FromSeconds(5))).IsSameReferenceAs(source);
     }
 
-    [Fact]
+    [Test]
     public async Task PushedSubscription_ForwardsSourceChangeFromRegistry()
     {
         var source = new ConsoleLogSource { Id = "source-1", DisplayName = "Source 1" };
@@ -43,7 +43,7 @@ public class ConsoleLogsHubSourceStatusTests
         await manager.SubscribeAsync("connection-1", new ElsaConsoleLogFilter { SourceId = source.Id }, CancellationToken.None);
         sourceRegistry.Raise(source);
 
-        Assert.Same(source, await client.SourceChanged.Task.WaitAsync(TimeSpan.FromSeconds(5)));
+        await Assert.That(await client.SourceChanged.Task.WaitAsync(TimeSpan.FromSeconds(5))).IsSameReferenceAs(source);
     }
 
     private sealed class SingleLineProvider(ConsoleLogLine line) : IConsoleLogProvider

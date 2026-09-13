@@ -18,44 +18,47 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
 public class ConsoleLogsAuthorizationTests
 {
-    [Fact]
+    [Test]
     public async Task HubSubscribe_WithoutConsoleLogsPermission_DeniesAccess()
     {
-        var hub = CreateHub("diagnostics/console-logs:write");
+        using var hubScope = CreateHub("diagnostics/console-logs:write");
+        var hub = hubScope.Hub;
 
-        await Assert.ThrowsAsync<HubException>(() => hub.SubscribeAsync(new()));
+        await Assert.ThrowsExactlyAsync<HubException>(() => hub.SubscribeAsync(new()));
     }
 
-    [Fact]
+    [Test]
     public async Task HubUpdateFilter_WithoutConsoleLogsPermission_DeniesAccess()
     {
-        var hub = CreateHub("diagnostics/console-logs:write");
+        using var hubScope = CreateHub("diagnostics/console-logs:write");
+        var hub = hubScope.Hub;
 
-        await Assert.ThrowsAsync<HubException>(() => hub.UpdateFilterAsync(new()));
+        await Assert.ThrowsExactlyAsync<HubException>(() => hub.UpdateFilterAsync(new()));
     }
 
-    [Theory]
-    [InlineData("diagnostics/console-logs:view")]
-    [InlineData(PermissionNames.All)]
-    [InlineData("*:view")]
+    [Test]
+    [Arguments("diagnostics/console-logs:view")]
+    [Arguments(PermissionNames.All)]
+    [Arguments("*:view")]
     public async Task HubSubscribe_WithConsoleLogsPermission_AllowsAccess(string permission)
     {
-        var hub = CreateHub(permission);
+        using var hubScope = CreateHub(permission);
+        var hub = hubScope.Hub;
 
         await hub.SubscribeAsync(new());
     }
 
-    [Theory]
-    [InlineData("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint")]
-    [InlineData("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Sources.Endpoint")]
-    public void RestEndpoints_RequireConsoleLogsPermission(string endpointTypeName)
+    [Test]
+    [Arguments("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint")]
+    [Arguments("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Sources.Endpoint")]
+    public async Task RestEndpoints_RequireConsoleLogsPermission(string endpointTypeName)
     {
-        var permissions = GetConfiguredPermissions(endpointTypeName);
+        var permissions = await GetConfiguredPermissionsAsync(endpointTypeName);
 
-        Assert.Contains("diagnostics/console-logs:view", permissions);
+        await Assert.That(permissions).Contains("diagnostics/console-logs:view");
     }
 
-    [Fact]
+    [Test]
     public async Task RecentEndpoint_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
@@ -69,17 +72,18 @@ public class ConsoleLogsAuthorizationTests
             """);
 
         var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
-        await Assert.IsAssignableFrom<Task>(result);
+        await Assert.That(result).IsAssignableTo<Task>();
+        await (Task)result!;
 
-        Assert.NotNull(provider.LastFilter);
-        var metadata = provider.LastFilter.Metadata;
-        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
-        Assert.Equal("workflow-instance-a", workflowInstanceId);
+        var filter = (await Assert.That(provider.LastFilter).IsNotNull())!;
+        var metadata = filter.Metadata;
+        await Assert.That(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId)).IsTrue();
+        await Assert.That(workflowInstanceId).IsEqualTo("workflow-instance-a");
     }
 
-    [Theory]
-    [InlineData("stdout", ConsoleStream.Stdout)]
-    [InlineData("stderr", ConsoleStream.Stderr)]
+    [Test]
+    [Arguments("stdout", ConsoleStream.Stdout)]
+    [Arguments("stderr", ConsoleStream.Stderr)]
     public async Task RecentEndpoint_MapsLowercaseStreamFilter(string stream, ConsoleStream expected)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
@@ -93,16 +97,17 @@ public class ConsoleLogsAuthorizationTests
             """);
 
         var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
-        await Assert.IsAssignableFrom<Task>(result);
+        await Assert.That(result).IsAssignableTo<Task>();
+        await (Task)result!;
 
-        Assert.NotNull(provider.LastFilter);
-        Assert.Equal(expected, provider.LastFilter.Stream);
+        var filter = (await Assert.That(provider.LastFilter).IsNotNull())!;
+        await Assert.That(filter.Stream).IsEqualTo(expected);
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("all")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("all")]
     public async Task RecentEndpoint_MapsAllStreamFilterToNull(string? stream)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
@@ -117,13 +122,14 @@ public class ConsoleLogsAuthorizationTests
             """);
 
         var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
-        await Assert.IsAssignableFrom<Task>(result);
+        await Assert.That(result).IsAssignableTo<Task>();
+        await (Task)result!;
 
-        Assert.NotNull(provider.LastFilter);
-        Assert.Null(provider.LastFilter.Stream);
+        var filter = (await Assert.That(provider.LastFilter).IsNotNull())!;
+        await Assert.That(filter.Stream).IsNull();
     }
 
-    [Fact]
+    [Test]
     public async Task RecentEndpoint_MapsActivityFiltersToMetadataFilter()
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
@@ -140,13 +146,14 @@ public class ConsoleLogsAuthorizationTests
             """);
 
         var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
-        await Assert.IsAssignableFrom<Task>(result);
+        await Assert.That(result).IsAssignableTo<Task>();
+        await (Task)result!;
 
-        Assert.NotNull(provider.LastFilter);
-        AssertActivityMetadata(provider.LastFilter.Metadata);
+        var filter = (await Assert.That(provider.LastFilter).IsNotNull())!;
+        await AssertActivityMetadataAsync(filter.Metadata);
     }
 
-    [Fact]
+    [Test]
     public async Task RecentEndpoint_WhenJsonRequestHasUnknownEmptyBody_UsesEmptyFilter()
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType("Elsa.Diagnostics.ConsoleLogs.Endpoints.ConsoleLogs.Recent.Endpoint", throwOnError: true)!;
@@ -155,34 +162,37 @@ public class ConsoleLogsAuthorizationTests
         SetJsonRequest(endpointType, endpoint, "", includeContentLength: false);
 
         var result = endpointType.GetMethod("ExecuteAsync", [typeof(CancellationToken)])!.Invoke(endpoint, [CancellationToken.None]);
-        await Assert.IsAssignableFrom<Task>(result);
+        await Assert.That(result).IsAssignableTo<Task>();
+        await (Task)result!;
 
-        Assert.NotNull(provider.LastFilter);
-        Assert.Empty(provider.LastFilter.Metadata);
+        var filter = (await Assert.That(provider.LastFilter).IsNotNull())!;
+        await Assert.That(filter.Metadata).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task HubStream_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
-        var hub = CreateHub(provider, "diagnostics/console-logs:view");
+        using var hubScope = CreateHub(provider, "diagnostics/console-logs:view");
+        var hub = hubScope.Hub;
 
         await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" }, CancellationToken.None))
         {
             // Intentionally consume the stream to trigger provider subscription/filter mapping side effects.
         }
 
-        Assert.NotNull(provider.LastSubscriptionFilter);
-        var metadata = provider.LastSubscriptionFilter.Metadata;
-        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
-        Assert.Equal("workflow-instance-a", workflowInstanceId);
+        var filter = (await Assert.That(provider.LastSubscriptionFilter).IsNotNull())!;
+        var metadata = filter.Metadata;
+        await Assert.That(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId)).IsTrue();
+        await Assert.That(workflowInstanceId).IsEqualTo("workflow-instance-a");
     }
 
-    [Fact]
+    [Test]
     public async Task HubStream_MapsActivityFiltersToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
-        var hub = CreateHub(provider, "diagnostics/console-logs:view");
+        using var hubScope = CreateHub(provider, "diagnostics/console-logs:view");
+        var hub = hubScope.Hub;
 
         await foreach (var _ in hub.StreamAsync(new ElsaConsoleLogFilter
                        {
@@ -194,32 +204,33 @@ public class ConsoleLogsAuthorizationTests
         {
         }
 
-        Assert.NotNull(provider.LastSubscriptionFilter);
-        AssertActivityMetadata(provider.LastSubscriptionFilter.Metadata);
+        var filter = (await Assert.That(provider.LastSubscriptionFilter).IsNotNull())!;
+        await AssertActivityMetadataAsync(filter.Metadata);
     }
 
-    [Fact]
+    [Test]
     public async Task HubSubscribe_MapsWorkflowInstanceIdToMetadataFilter()
     {
         var provider = new TestConsoleLogProvider();
-        var hub = CreateHub(provider, "diagnostics/console-logs:view");
+        using var hubScope = CreateHub(provider, "diagnostics/console-logs:view");
+        var hub = hubScope.Hub;
 
         await hub.SubscribeAsync(new ElsaConsoleLogFilter { WorkflowInstanceId = "workflow-instance-a" });
         var filter = await provider.WaitForSubscriptionFilterAsync();
 
         var metadata = filter.Metadata;
-        Assert.True(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId));
-        Assert.Equal("workflow-instance-a", workflowInstanceId);
+        await Assert.That(metadata.TryGetValue(ConsoleLogMetadataKeys.WorkflowInstanceId, out var workflowInstanceId)).IsTrue();
+        await Assert.That(workflowInstanceId).IsEqualTo("workflow-instance-a");
 
         await hub.UnsubscribeAsync();
     }
 
-    private static void AssertActivityMetadata(IReadOnlyDictionary<string, string> metadata)
+    private static async Task AssertActivityMetadataAsync(IReadOnlyDictionary<string, string> metadata)
     {
-        Assert.Equal("workflow-instance-a", metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]);
-        Assert.Equal("activity-instance-a", metadata[ConsoleLogMetadataKeys.ActivityInstanceId]);
-        Assert.Equal("activity-a", metadata[ConsoleLogMetadataKeys.ActivityId]);
-        Assert.Equal("node-a", metadata[ConsoleLogMetadataKeys.ActivityNodeId]);
+        await Assert.That(metadata[ConsoleLogMetadataKeys.WorkflowInstanceId]).IsEqualTo("workflow-instance-a");
+        await Assert.That(metadata[ConsoleLogMetadataKeys.ActivityInstanceId]).IsEqualTo("activity-instance-a");
+        await Assert.That(metadata[ConsoleLogMetadataKeys.ActivityId]).IsEqualTo("activity-a");
+        await Assert.That(metadata[ConsoleLogMetadataKeys.ActivityNodeId]).IsEqualTo("node-a");
     }
 
     private static void SetJsonRequest(Type endpointType, object endpoint, string json, bool includeContentLength = true)
@@ -236,7 +247,7 @@ public class ConsoleLogsAuthorizationTests
             .SetValue(endpoint, context);
     }
 
-    private static IReadOnlyCollection<string> GetConfiguredPermissions(string endpointTypeName)
+    private static async Task<IReadOnlyCollection<string>> GetConfiguredPermissionsAsync(string endpointTypeName)
     {
         var endpointType = typeof(ConsoleLogsFeature).Assembly.GetType(endpointTypeName, throwOnError: true)!;
         var endpoint = Activator.CreateInstance(endpointType, new TestConsoleLogProvider())!;
@@ -253,7 +264,7 @@ public class ConsoleLogsAuthorizationTests
         // read back from the registry that records it.
         var permission = Elsa.Authorization.EndpointPermissionRegistry.Find(endpointType);
 
-        Assert.True(permission.HasValue, $"{endpointTypeName} declares no permission.");
+        await Assert.That(permission.HasValue).IsTrue().Because($"{endpointTypeName} declares no permission.");
 
         return [permission!.Value.ToString()];
     }
@@ -285,21 +296,23 @@ public class ConsoleLogsAuthorizationTests
         throw new InvalidOperationException($"Unsupported endpoint type '{endpointType.FullName}'.");
     }
 
-    private static ElsaConsoleLogsHub CreateHub(params string[] permissions)
+    private static HubTestScope CreateHub(params string[] permissions)
     {
         return CreateHub(new TestConsoleLogProvider(), permissions);
     }
 
-    private static ElsaConsoleLogsHub CreateHub(TestConsoleLogProvider provider, params string[] permissions)
+    private static HubTestScope CreateHub(TestConsoleLogProvider provider, params string[] permissions)
     {
         var hubContext = new TestHubContext();
         var subscriptionManager = new ElsaConsoleLogSubscriptionManager(provider, new TestConsoleLogSourceRegistry(), hubContext, NullLogger<ElsaConsoleLogSubscriptionManager>.Instance);
         var authorizer = new ElsaConsoleLogStreamHubAuthorizer();
 
-        return new ElsaConsoleLogsHub(provider, authorizer, subscriptionManager)
+        var hub = new ElsaConsoleLogsHub(provider, authorizer, subscriptionManager)
         {
             Context = new TestHubCallerContext(CreateUser(permissions))
         };
+
+        return new HubTestScope(hub, subscriptionManager);
     }
 
     private static ClaimsPrincipal CreateUser(params string[] permissions)
@@ -311,6 +324,16 @@ public class ConsoleLogsAuthorizationTests
         var identity = new ClaimsIdentity(claims, "Test");
 
         return new ClaimsPrincipal(identity);
+    }
+
+    private sealed class HubTestScope(ElsaConsoleLogsHub hub, ElsaConsoleLogSubscriptionManager subscriptionManager) : IDisposable
+    {
+        public ElsaConsoleLogsHub Hub { get; } = hub;
+
+        public void Dispose()
+        {
+            subscriptionManager.Dispose();
+        }
     }
 
     private class TestConsoleLogProvider : IConsoleLogProvider

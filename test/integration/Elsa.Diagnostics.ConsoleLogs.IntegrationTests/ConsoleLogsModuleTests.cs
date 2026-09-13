@@ -6,16 +6,16 @@ namespace Elsa.Diagnostics.ConsoleLogs.IntegrationTests;
 
 public class ConsoleLogsModuleTests
 {
-    [Fact]
-    public void Module_UsesDiagnosticsConsoleLogsIdentity()
+    [Test]
+    public async Task Module_UsesDiagnosticsConsoleLogsIdentity()
     {
-        Assert.Equal("/elsa/hubs/diagnostics/console-logs", EndpointRouteBuilderExtensions.HubRoute);
-        Assert.Equal("diagnostics/console-logs", ConsoleLogsResourcePermissions.ConsoleLogs);
-        Assert.StartsWith("Elsa.Diagnostics.ConsoleLogs", typeof(ConsoleLogsFeature).Namespace);
+        await Assert.That(EndpointRouteBuilderExtensions.HubRoute).IsEqualTo("/elsa/hubs/diagnostics/console-logs");
+        await Assert.That(ConsoleLogsResourcePermissions.ConsoleLogs).IsEqualTo("diagnostics/console-logs");
+        await Assert.That(typeof(ConsoleLogsFeature).Namespace).StartsWith("Elsa.Diagnostics.ConsoleLogs").WithComparison(StringComparison.CurrentCulture);
     }
 
-    [Fact]
-    public void ConsoleLogsAssembly_DoesNotReferenceStructuredLogsOrExternalProviders()
+    [Test]
+    public async Task ConsoleLogsAssembly_DoesNotReferenceStructuredLogsOrExternalProviders()
     {
         var references = typeof(ConsoleLogsFeature)
             .Assembly
@@ -23,8 +23,8 @@ public class ConsoleLogsModuleTests
             .Select(x => x.Name)
             .ToList();
 
-        Assert.DoesNotContain("Elsa.Diagnostics.StructuredLogs", references);
-        Assert.DoesNotContain("Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite", references);
-        Assert.DoesNotContain("ConsoleLogStreaming.Persistence.Sqlite", references);
+        await Assert.That(references).DoesNotContain("Elsa.Diagnostics.StructuredLogs");
+        await Assert.That(references).DoesNotContain("Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite");
+        await Assert.That(references).DoesNotContain("ConsoleLogStreaming.Persistence.Sqlite");
     }
 }
