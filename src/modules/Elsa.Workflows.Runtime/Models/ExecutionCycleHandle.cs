@@ -13,6 +13,7 @@ public sealed class ExecutionCycleHandle : IDisposable
     private readonly Action<ExecutionCycleHandle>? _onDisposed;
     private readonly Action? _cancelCallback;
     private readonly TaskCompletionSource _disposedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly object _cycleCtsGate = new();
     private int _lifecycleState;
 
     private const int ActiveState = 0;
@@ -97,7 +98,11 @@ public sealed class ExecutionCycleHandle : IDisposable
         try { _cancelCallback?.Invoke(); }
         catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 
-        try { _cycleCts.Cancel(); }
+        try
+        {
+            lock (_cycleCtsGate)
+                _cycleCts.Cancel();
+        }
         catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }
 
         // Publish cancellation only after its effects complete. Dispose can transition CancellingState directly to
@@ -116,7 +121,8 @@ public sealed class ExecutionCycleHandle : IDisposable
         }
 
         _onDisposed?.Invoke(this);
-        _cycleCts.Dispose();
+        lock (_cycleCtsGate)
+            _cycleCts.Dispose();
         _disposedTcs.TrySetResult();
     }
 }

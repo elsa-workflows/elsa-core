@@ -143,6 +143,39 @@ public class ExecutionCycleRegistryTests
         Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
     }
 
+    [Fact(DisplayName = "ExecutionCycleHandle.Dispose waits for CTS cancellation and wins logically")]
+    public async Task DisposeWaitsForCtsCancellationAndWinsLogically()
+    {
+        var cancellationCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCancellationCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var disposeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None,
+            onDisposed: _ => disposeStarted.TrySetResult());
+        using var registration = handle.CancellationToken.Register(() =>
+        {
+            cancellationCallbackEntered.SetResult();
+            releaseCancellationCallback.Task.GetAwaiter().GetResult();
+        });
+
+        var cancelTask = Task.Run(handle.TryCancel);
+        await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var disposeTask = Task.Run(handle.Dispose);
+        await disposeStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(disposeTask.IsCompleted);
+
+        releaseCancellationCallback.SetResult();
+
+        Assert.False(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5)));
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(handle.Disposed.IsCompletedSuccessfully);
+    }
+
     [Fact(DisplayName = "ExecutionCycleHandle.Cancel invokes the cancel callback supplied at registration")]
     public void CancelCallbackIsInvoked()
     {
