@@ -170,10 +170,16 @@ public abstract class LabelStoreConformanceTests
             Assert.Equal("label-star", (await scenario.Labels.FindByIdAsync("label-star"))!.Id);
 
             var tenantBByVersion = (await scenario.Associations.FindByWorkflowDefinitionVersionIdAsync("order:1")).ToList();
+            Assert.Equal(2, tenantBByVersion.Count);
+            Assert.Contains(tenantBByVersion, x => x.Id == "assoc-b");
             Assert.Contains(tenantBByVersion, x => x.Id == "assoc-star");
+            Assert.DoesNotContain(tenantBByVersion, x => x.Id == "assoc-a");
 
             var tenantBByLabel = (await scenario.AssociationQuery.FindByLabelIdsAsync(["red"])).ToList();
+            Assert.Equal(2, tenantBByLabel.Count);
+            Assert.Contains(tenantBByLabel, x => x.Id == "assoc-b");
             Assert.Contains(tenantBByLabel, x => x.Id == "assoc-star");
+            Assert.DoesNotContain(tenantBByLabel, x => x.Id == "assoc-a");
         }
 
         Assert.False(await scenario.Labels.DeleteAsync("label-b"));
