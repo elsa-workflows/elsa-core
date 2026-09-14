@@ -1,9 +1,11 @@
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 
-public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect dialect)
+public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect dialect, IOptions<StructuredLogsOptions> options)
 {
     private readonly string _table = dialect.QuoteIdentifier("StructuredLogEvents");
 
@@ -20,7 +22,8 @@ public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect d
         var parameters = new Dictionary<string, object?>();
         var predicates = BuildFilterPredicates(filter, parameters);
         var where = predicates.Count == 0 ? "" : $" WHERE {string.Join(" AND ", predicates)}";
-        var limit = Math.Clamp(filter.Take ?? 100, 0, 1000);
+        var maxTake = options.Value.MaxRecentLogQuerySize;
+        var limit = Math.Clamp(filter.Take ?? maxTake, 0, maxTake);
         var sql = $"SELECT {string.Join(", ", Columns.Select(dialect.QuoteIdentifier))} FROM {_table}{where} ORDER BY {dialect.QuoteIdentifier("Timestamp")} DESC, {dialect.QuoteIdentifier("ReceivedAt")} DESC, {dialect.QuoteIdentifier("Sequence")} DESC, {dialect.QuoteIdentifier("Id")} DESC";
         sql = dialect.ApplyLimit(sql, limit);
         return new(sql, parameters);

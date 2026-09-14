@@ -1,4 +1,5 @@
 using Elsa.Diagnostics.StructuredLogs.Contracts;
+using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
@@ -17,6 +18,7 @@ public static class RelationalStructuredLogsServiceCollectionExtensions
             services.Configure(configureOptions);
 
         services.AddOptions<RelationalStructuredLogOptions>();
+        services.AddOptions<StructuredLogsOptions>();
         services.TryAddSingleton<RelationalStructuredLogMapper>();
         services.TryAddSingleton<RelationalStructuredLogSqlBuilder>();
         services.TryAddSingleton<RelationalStructuredLogStore>();

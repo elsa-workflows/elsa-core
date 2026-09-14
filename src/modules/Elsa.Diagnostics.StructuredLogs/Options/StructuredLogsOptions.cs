@@ -4,6 +4,9 @@ public class StructuredLogsOptions
 {
     public int RecentLogCapacity { get; set; } = 5_000;
     public int SubscriberChannelCapacity { get; set; } = 1_000;
+    /// <summary>
+    /// Default <c>Take</c> and upper clamp for recent-log queries on every <c>IStructuredLogStore</c> implementation.
+    /// </summary>
     public int MaxRecentLogQuerySize { get; set; } = 1_000;
     public TimeSpan SourceHeartbeatTimeout { get; set; } = TimeSpan.FromSeconds(30);
     public bool IncludeStructuredLogsInternalLogs { get; set; }
