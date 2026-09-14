@@ -185,6 +185,29 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
     }
 
     [ConformanceFact]
+    public async Task SafeSearchByTagReturnsOnlyTheMatchingTask()
+    {
+        await ActivateAsync();
+        var subject = Subject();
+
+        var tagged = CreateTask(subject, title: "Approve invoice");
+        tagged.Tags = ["priority-escalation"];
+        await Repository.AddProjectionAsync(tagged);
+
+        var other = CreateTask(subject, title: "Approve invoice");
+        other.Tags = ["routine-review"];
+        await Repository.AddProjectionAsync(other);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "priority-escalation"
+        });
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal(tagged.Id, Assert.Single(page.Items).Id);
+    }
+
+    [ConformanceFact]
     public async Task ScopeAndExclusionApplyBeforeTotalsCursorsAndPageLimits()
     {
         await ActivateAsync();

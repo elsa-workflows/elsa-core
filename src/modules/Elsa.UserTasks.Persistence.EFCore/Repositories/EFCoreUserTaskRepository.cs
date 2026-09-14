@@ -191,11 +191,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             records = records.Where(x => x.AssigneeType == query.AssigneeType);
         if (!string.IsNullOrWhiteSpace(query.AssigneeId))
             records = records.Where(x => x.AssigneeId == query.AssigneeId);
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var search = query.Search.Trim();
-            records = records.Where(x => x.Title.Contains(search) || (x.Summary != null && x.Summary.Contains(search)) || (x.Reference != null && x.Reference.Contains(search)) || (x.TaskType != null && x.TaskType.Contains(search)));
-        }
+        records = ApplySafeSearch(records, query.Search);
 
         var limit = query.Limit is > 0 ? Math.Min(query.Limit.Value, 200) : 100;
         return await records.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenByDescending(x => x.Priority).ThenBy(x => x.CreatedAt).ThenBy(x => x.Id).Take(limit).ToListAsync(cancellationToken);
@@ -269,11 +265,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             records = records.Where(x => x.WorkflowInstanceId == query.WorkflowInstanceId);
         if (!string.IsNullOrWhiteSpace(query.Reference))
             records = records.Where(x => x.Reference == query.Reference);
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var search = query.Search.Trim();
-            records = records.Where(x => x.Title.Contains(search) || (x.Summary != null && x.Summary.Contains(search)) || (x.Reference != null && x.Reference.Contains(search)) || (x.TaskType != null && x.TaskType.Contains(search)));
-        }
+        records = ApplySafeSearch(records, query.Search);
         if (query.Scope is { } requestedScope &&
             (!string.Equals(requestedScope.TenantId, query.TenantId, StringComparison.Ordinal) ||
              !string.Equals(requestedScope.Subject.TenantId, query.TenantId, StringComparison.Ordinal) ||
@@ -345,6 +337,25 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
 
             _ => records.Where(_ => false)
         };
+    }
+
+    /// <summary>
+    /// Safe search is a bounded text contains over title, summary, reference, task type, and the
+    /// serialized tags payload. Tags live in <see cref="UserTaskRecord.TagsJson"/>; there is no tag
+    /// table, so this matches InMemory substring semantics without a schema change.
+    /// </summary>
+    private static IQueryable<UserTaskRecord> ApplySafeSearch(IQueryable<UserTaskRecord> records, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return records;
+
+        var value = search.Trim();
+        return records.Where(x =>
+            x.Title.Contains(value)
+            || (x.Summary != null && x.Summary.Contains(value))
+            || (x.Reference != null && x.Reference.Contains(value))
+            || (x.TaskType != null && x.TaskType.Contains(value))
+            || x.TagsJson.Contains(value));
     }
 
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
