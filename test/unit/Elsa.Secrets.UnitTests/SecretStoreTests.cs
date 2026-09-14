@@ -175,6 +175,71 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task FileRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWithoutMutatingFile()
+    {
+        await WithFileRepositoryAsync(async (repository, path) =>
+        {
+            await repository.AddAsync(new Secret { Id = "owned-id", Name = "other:secret", DisplayName = "Other" });
+            await repository.AddAsync(new Secret
+            {
+                Id = "deleted-id",
+                Name = "smtp:password",
+                DisplayName = "Deleted password",
+                Status = SecretStatus.Deleted
+            });
+            var originalContents = await File.ReadAllTextAsync(path);
+
+            var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+            {
+                Id = "owned-id",
+                Name = "smtp:password",
+                DisplayName = "Replacement password"
+            });
+
+            Assert.False(replaced);
+            Assert.Equal(originalContents, await File.ReadAllTextAsync(path));
+
+            var secrets = await repository.ListAsync();
+            Assert.Equal(2, secrets.Count);
+            Assert.Equal(2, secrets.Select(x => x.Id).Distinct().Count());
+            var stillDeleted = await repository.GetAsync("smtp:password");
+            Assert.Equal("deleted-id", stillDeleted!.Id);
+            Assert.Equal("Deleted password", stillDeleted.DisplayName);
+            Assert.Equal(SecretStatus.Deleted, stillDeleted.Status);
+        });
+    }
+
+    [Fact]
+    public async Task InMemoryRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWithoutLosingDeletedSecret()
+    {
+        var repository = new InMemorySecretRepository();
+        await repository.AddAsync(new Secret { Id = "owned-id", Name = "other:secret", DisplayName = "Other" });
+        await repository.AddAsync(new Secret
+        {
+            Id = "deleted-id",
+            Name = "smtp:password",
+            DisplayName = "Deleted password",
+            Status = SecretStatus.Deleted
+        });
+
+        var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+        {
+            Id = "owned-id",
+            Name = "smtp:password",
+            DisplayName = "Replacement password"
+        });
+
+        Assert.False(replaced);
+
+        var stillDeleted = await repository.GetAsync("smtp:password");
+        Assert.NotNull(stillDeleted);
+        Assert.Equal("deleted-id", stillDeleted.Id);
+        Assert.Equal("Deleted password", stillDeleted.DisplayName);
+        Assert.Equal(SecretStatus.Deleted, stillDeleted.Status);
+        Assert.Equal("owned-id", (await repository.GetAsync("other:secret"))!.Id);
+    }
+
+    [Fact]
     public async Task FileRepository_RecoversFromCorruptJson()
     {
         await WithFileRepositoryAsync(async (repository, path) =>
