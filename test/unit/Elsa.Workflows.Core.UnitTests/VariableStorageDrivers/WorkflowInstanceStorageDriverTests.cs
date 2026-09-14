@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Memory;
+using Elsa.Workflows.Serialization.Converters;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
@@ -72,6 +73,41 @@ public class WorkflowInstanceStorageDriverTests
     }
 
     [Fact]
+    public async Task WriteAsync_WhenValueIsArray_StoresJsonArrayReadableWithDefaultConverter()
+    {
+        // Arrange
+        var harness = CreateHarness(new Variable<string[]>("elements", []));
+        const string id = "elementsVariable";
+
+        // Act
+        await harness.Driver.WriteAsync(id, new[] { "Element 1", "Element 2" }, harness.Context);
+        var node = GetVariables(harness.Properties)[id];
+        var actual = node.ConvertTo<string[]>();
+
+        // Assert
+        Assert.Equal(JsonValueKind.Array, node.GetValueKind());
+        Assert.Equal(["Element 1", "Element 2"], actual);
+    }
+
+    [Fact]
+    public async Task WriteAsync_WhenValueIsProjectedEnumerable_StoresJsonArrayReadableWithDefaultConverter()
+    {
+        // Arrange
+        var harness = CreateHarness(new Variable<string[]>("messages", []));
+        const string id = "messagesVariable";
+        var value = new[] { "a", "b", "c" }.Select(x => x.ToUpperInvariant());
+
+        // Act
+        await harness.Driver.WriteAsync(id, value, harness.Context);
+        var node = GetVariables(harness.Properties)[id];
+        var actual = node.ConvertTo<string[]>();
+
+        // Assert
+        Assert.Equal(JsonValueKind.Array, node.GetValueKind());
+        Assert.Equal(["A", "B", "C"], actual);
+    }
+
+    [Fact]
     public async Task ReadAsync_WhenConvertFails_DoesNotReturnUntypedJsonNode()
     {
         var harness = CreateHarness(new Variable<int>("count", 0));
@@ -114,12 +150,23 @@ public class WorkflowInstanceStorageDriverTests
         executionContext.Properties.Returns(properties);
 
         var payloadSerializer = Substitute.For<IPayloadSerializer>();
-        payloadSerializer.GetOptions().Returns(new JsonSerializerOptions());
+        payloadSerializer.GetOptions().Returns(CreatePayloadSerializerOptions());
 
         var driver = new WorkflowInstanceStorageDriver(payloadSerializer, NullLogger<WorkflowInstanceStorageDriver>.Instance);
         var context = new StorageDriverContext(executionContext, variable, CancellationToken.None);
 
         return new(driver, context, properties);
+    }
+
+    private static JsonSerializerOptions CreatePayloadSerializerOptions()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
+        options.Converters.Add(new PolymorphicObjectConverterFactory());
+        return options;
     }
 
     private static VariablesDictionary GetVariables(IDictionary<string, object> properties) =>
