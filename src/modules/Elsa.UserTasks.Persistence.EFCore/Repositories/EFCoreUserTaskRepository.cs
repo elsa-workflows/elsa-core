@@ -341,10 +341,9 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
 
     /// <summary>
     /// Safe search is a bounded text contains over title, summary, reference, task type, and tags.
-    /// Tags live in <see cref="UserTaskRecord.TagsJson"/>; there is no tag table. Tag matching is
-    /// case-insensitive like InMemory/VNext. A query that only spans the JSON string delimiter
-    /// between two tags is not treated as a tag value; punctuation that can appear inside a tag
-    /// still matches.
+    /// Tags stay in the existing <c>TagsJson</c> column as a primitive collection, so each tag is
+    /// matched individually and case-insensitively — the same semantics as InMemory/VNext, with no
+    /// tag table and no JSON-syntax false positives.
     /// </summary>
     private static IQueryable<UserTaskRecord> ApplySafeSearch(IQueryable<UserTaskRecord> records, string? search)
     {
@@ -352,25 +351,14 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             return records;
 
         var value = search.Trim();
-        if (SpansSerializedTagDelimiter(value))
-        {
-            return records.Where(x =>
-                x.Title.Contains(value)
-                || (x.Summary != null && x.Summary.Contains(value))
-                || (x.Reference != null && x.Reference.Contains(value))
-                || (x.TaskType != null && x.TaskType.Contains(value)));
-        }
-
         var tag = value.ToLower();
         return records.Where(x =>
             x.Title.Contains(value)
             || (x.Summary != null && x.Summary.Contains(value))
             || (x.Reference != null && x.Reference.Contains(value))
             || (x.TaskType != null && x.TaskType.Contains(value))
-            || x.TagsJson.ToLower().Contains(tag));
+            || x.Tags.Any(t => t.ToLower().Contains(tag)));
     }
-
-    private static bool SpansSerializedTagDelimiter(string value) => value.Contains("\",\"", StringComparison.Ordinal);
 
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
     {
@@ -529,7 +517,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         Title = record.Title,
         Summary = record.Summary,
         Reference = record.Reference,
-        Tags = Deserialize<HashSet<string>>(record.TagsJson) ?? new(StringComparer.OrdinalIgnoreCase),
+        Tags = new HashSet<string>(record.Tags ?? [], StringComparer.OrdinalIgnoreCase),
         TaskType = record.TaskType,
         Requester = ToParticipant(record.RequesterProvider, record.RequesterType, record.RequesterId, record.RequesterDisplayName, record.TenantId),
         Assignee = ToParticipant(record.AssigneeProvider, record.AssigneeType, record.AssigneeId, record.AssigneeDisplayName, record.TenantId),
@@ -583,7 +571,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         target.Summary = source.Summary;
         target.Reference = source.Reference;
         target.TaskType = source.TaskType;
-        target.TagsJson = Serialize(source.Tags);
+        target.Tags = source.Tags.ToList();
         target.RequesterProvider = source.Requester?.Provider;
         target.RequesterType = source.Requester?.Type.ToString();
         target.RequesterId = source.Requester?.Id;
@@ -635,7 +623,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         target.Summary = source.Summary;
         target.Reference = source.Reference;
         target.TaskType = source.TaskType;
-        target.TagsJson = source.TagsJson;
+        target.Tags = [..source.Tags];
         target.RequesterProvider = source.RequesterProvider;
         target.RequesterType = source.RequesterType;
         target.RequesterId = source.RequesterId;
