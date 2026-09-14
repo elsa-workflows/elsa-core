@@ -352,6 +352,9 @@ services
                     runtime.WorkflowExecutionLogStore = sp => sp.GetRequiredService<MemoryWorkflowExecutionLogStore>();
                 }
 
+                if (useQuartz)
+                    runtime.UseQuartzBackgroundActivityScheduler();
+
                 if (useCaching)
                     runtime.UseCache();
 
