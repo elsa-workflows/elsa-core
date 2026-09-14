@@ -25,6 +25,11 @@ on:
     paths:
       - '**/*'
 
+permissions:
+  checks: write
+  pull-requests: write
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.run_id }}
   cancel-in-progress: true
@@ -41,5 +46,29 @@ jobs:
       - uses: actions/checkout@v6
       - name: 'Run: Compile'
         run: ./build.cmd Compile
-      - name: 'Run: Test'
-        run: dotnet test --solution Elsa.sln --configuration Release --no-build
+      - name: 'Run: TUnit tests with coverage'
+        run: |
+          dotnet test --solution Elsa.sln \
+            --configuration Release \
+            --no-build \
+            --results-directory artifacts/test-results/pr \
+            -- \
+            --coverage \
+            --coverage-settings "$GITHUB_WORKSPACE/test/coverage.settings.xml" \
+            --coverage-output-format cobertura \
+            --report-trx
+      - name: 'Upload: TUnit test results and coverage'
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-test-results
+          path: artifacts/test-results/pr
+          if-no-files-found: warn
+      - name: 'Publish: TUnit test results'
+        if: ${{ !cancelled() && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: artifacts/test-results/pr/**/*.trx
+          check_name: TUnit Test Results
+          comment_title: TUnit Test Results
+          comment_mode: always
