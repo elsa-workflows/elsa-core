@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.UserTasks]*,[Elsa.UserTasks.Persistence.EFCore]*,[Elsa.UserTasks.Persistence.VNext]*</Include>
         <Threshold>0</Threshold>
     </PropertyGroup>

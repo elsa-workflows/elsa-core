@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Workflows.Core]*</Include>
         <Threshold>25</Threshold>
     </PropertyGroup>

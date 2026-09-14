@@ -9,7 +9,7 @@
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
-        <OutputType Condition="'$(UseTUnit)' == 'true'">Exe</OutputType>
+        <OutputType>Exe</OutputType>
         <CollectCoverage Condition="'$(CollectCoverage)' == ''">true</CollectCoverage>
         <CoverletOutputFormat Condition="'$(CoverletOutputFormat)' == ''">cobertura,lcov,opencover</CoverletOutputFormat>
         <CoverletOutput Condition="'$(CoverletOutput)' == ''">$(MSBuildThisFileDirectory)../artifacts/coverage/$(MSBuildProjectName)/coverage</CoverletOutput>
@@ -22,25 +22,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="GitHubActionsTestLogger"/>
         <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Condition="'$(UseTUnit)' != 'true'"/>
-        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Condition="'$(UseTUnit)' == 'true'"/>
+        <PackageReference Include="Microsoft.Testing.Extensions.GitHubActionsReport"/>
+        <PackageReference Include="Microsoft.Testing.Extensions.HangDump"/>
+        <PackageReference Include="Microsoft.Testing.Extensions.TrxReport"/>
         <PackageReference Include="Moq"/>
         <PackageReference Include="NSubstitute"/>
-        <PackageReference Include="coverlet.msbuild" Condition="'$(UseTUnit)' != 'true'"/>
-        <PackageReference Include="coverlet.MTP" Condition="'$(UseTUnit)' == 'true'"/>
-        <PackageReference Include="coverlet.collector" Condition="'$(UseTUnit)' != 'true'">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="xunit" Condition="'$(UseTUnit)' != 'true'"/>
-        <PackageReference Include="xunit.runner.visualstudio" Condition="'$(UseTUnit)' != 'true'" PrivateAssets="all"/>
-        <PackageReference Include="TUnit" Condition="'$(UseTUnit)' == 'true'"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Using Include="Xunit" Condition="'$(UseTUnit)' != 'true'"/>
+        <PackageReference Include="coverlet.MTP"/>
+        <PackageReference Include="TUnit"/>
     </ItemGroup>
 
 </Project>

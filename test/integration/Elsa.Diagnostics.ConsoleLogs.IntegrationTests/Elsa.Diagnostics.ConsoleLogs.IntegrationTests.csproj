@@ -4,7 +4,6 @@
         <Include>[Elsa.Diagnostics.ConsoleLogs]*</Include>
         <Threshold>0</Threshold>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-        <UseTUnit>true</UseTUnit>
     </PropertyGroup>
 
     <ItemGroup>

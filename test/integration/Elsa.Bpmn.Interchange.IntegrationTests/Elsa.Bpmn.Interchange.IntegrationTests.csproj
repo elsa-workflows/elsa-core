@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <UseTUnit>true</UseTUnit>
         <Include>[Elsa.Bpmn.Interchange]*</Include>
         <Threshold>1</Threshold>
     </PropertyGroup>

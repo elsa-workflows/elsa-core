@@ -3,7 +3,6 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <UseTUnit>true</UseTUnit>
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>

@@ -3,7 +3,6 @@
     <PropertyGroup>
         <Include>[Elsa.Tenants]*</Include>
         <Threshold>0</Threshold>
-        <UseTUnit>true</UseTUnit>
     </PropertyGroup>
 
     <ItemGroup>
