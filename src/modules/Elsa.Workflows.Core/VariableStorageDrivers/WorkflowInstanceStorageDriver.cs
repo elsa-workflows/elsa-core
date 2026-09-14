@@ -37,10 +37,8 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
             }
             catch (Exception ex) when (ex is JsonException or NotSupportedException or ObjectDisposedException)
             {
-                logger.LogWarning(ex, "Failed to serialize variable '{VariableId}' of type '{VariableType}' for workflow instance storage. The variable will be skipped.", 
+                logger.LogWarning(ex, "Failed to serialize variable '{VariableId}' of type '{VariableType}' for workflow instance storage. The stored value was left unchanged.",
                     id, value?.GetType().FullName ?? "null");
-                
-                dictionary.Remove(id);
             }
         });
         return ValueTask.CompletedTask;
@@ -59,8 +57,16 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
             SerializerOptions = payloadSerializer.GetOptions()  
         };
         var result = node.TryConvertTo(variableType, options);
-        var parsedValue = result.IsSuccess ? result.Value : node;
-        return new (parsedValue);
+        if (result.IsSuccess)
+            return new(result.Value);
+
+        logger.LogWarning(result.Exception, "Failed to convert stored variable '{VariableId}' to type '{VariableType}'. The stored value was left unread rather than returned as an untyped node.",
+            id, variableType.FullName);
+
+        if (ObjectConverter.StrictMode)
+            result.ThrowIfFailure();
+
+        return new((object?)null);
     }
 
     /// <inheritdoc />
