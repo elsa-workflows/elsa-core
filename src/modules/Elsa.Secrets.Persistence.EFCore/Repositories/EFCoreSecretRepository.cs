@@ -2,12 +2,25 @@ using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Persistence.EFCore.Repositories;
 
-public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator) : ISecretRepository
+public class EFCoreSecretRepository(
+    Store<SecretsElsaDbContext, Secret> store,
+    ISecretNameValidator secretNameValidator,
+    IOptions<TenantsOptions>? tenantsOptions = null) : ISecretRepository
 {
+    private readonly bool? _tenancyEnabled = tenantsOptions?.Value.IsEnabled;
+
+    // Keep the pre-tenancy constructor in the public binary surface.
+    public EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator)
+        : this(store, secretNameValidator, null)
+    {
+    }
+
     public async Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -45,6 +58,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
         AssignDefaultTenantId(secret, dbContext);
+        var tenancyEnabled = IsTenancyEnabled(dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
         if (existingSecret == null)
@@ -58,6 +72,12 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         if (existingSecret.Status != SecretStatus.Deleted)
             return false;
 
+        var incomingTenantId = secret.TenantId ?? dbContext.TenantId;
+        if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+            return false;
+
+        if (tenancyEnabled)
+            secret.TenantId = existingSecret.TenantId;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Secrets.Remove(existingSecret);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -76,6 +96,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
         AssignDefaultTenantId(secret, dbContext);
+        var tenancyEnabled = IsTenancyEnabled(dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
         if (existingSecret == null)
@@ -86,7 +107,11 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         }
         else
         {
-            Copy(secret, existingSecret);
+            var incomingTenantId = secret.TenantId ?? dbContext.TenantId;
+            if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+                throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+
+            Copy(secret, existingSecret, tenancyEnabled);
             SetNormalizedName(dbContext, existingSecret);
             SecretSerialization.StoreSerializedProperties(dbContext, existingSecret);
         }
@@ -94,8 +119,11 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         await SaveChangesAsync(dbContext, secret.Name, cancellationToken);
     }
 
-    private static void Copy(Secret source, Secret target)
+    private static void Copy(Secret source, Secret target, bool tenancyEnabled)
     {
+        if (!tenancyEnabled)
+            target.TenantId = source.TenantId;
+
         target.Name = source.Name;
         target.DisplayName = source.DisplayName;
         target.Description = source.Description;
@@ -115,17 +143,27 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
+    private bool IsTenancyEnabled(SecretsElsaDbContext dbContext)
+    {
+        if (_tenancyEnabled.HasValue)
+            return _tenancyEnabled.Value;
+
+        var entityType = dbContext.Model.FindEntityType(typeof(Secret));
+#if NET10_0_OR_GREATER
+        return entityType?.GetDeclaredQueryFilters().Any() == true;
+#else
+        return entityType?.FindAnnotation("QueryFilter")?.Value is not null;
+#endif
+    }
+
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)
     {
         return dbContext.Secrets.AnyAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
     // The DbUpdateException-to-name-conflict translation below relies on the (TenantId, NormalizedName)
-    // unique index, which only covers rows with a non-null TenantId (SQL Server filters null rows out of the
-    // index; SQLite/PostgreSQL/MySQL treat nulls as distinct — Oracle alone rejects null-tenant duplicates).
-    // With multitenancy disabled nothing assigns a TenantId, so this backstop never fires there and
-    // uniqueness rests solely on the FindByNameAsync/ExistsByNormalizedNameAsync pre-checks — two concurrent
-    // creates racing past the pre-check both commit. See doc/migrations/secrets-tenancy.md.
+    // unique index. Default-tenant writes are stamped with an empty TenantId before saving so the index
+    // provides the same concurrency backstop when multitenancy is disabled. See doc/migrations/secrets-tenancy.md.
     private async Task SaveChangesAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
     {
         try
