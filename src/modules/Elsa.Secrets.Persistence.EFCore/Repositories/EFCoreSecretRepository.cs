@@ -13,7 +13,7 @@ public class EFCoreSecretRepository(
     ISecretNameValidator secretNameValidator,
     IOptions<TenantsOptions>? tenantsOptions = null) : ISecretRepository
 {
-    private readonly bool _tenancyEnabled = tenantsOptions?.Value.IsEnabled == true;
+    private readonly bool? _tenancyEnabled = tenantsOptions?.Value.IsEnabled;
 
     // Keep the pre-tenancy constructor in the public binary surface.
     public EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator)
@@ -56,6 +56,7 @@ public class EFCoreSecretRepository(
     public async Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var tenancyEnabled = IsTenancyEnabled(dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
         if (existingSecret == null)
@@ -69,10 +70,11 @@ public class EFCoreSecretRepository(
         if (existingSecret.Status != SecretStatus.Deleted)
             return false;
 
-        if (_tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+        var incomingTenantId = secret.TenantId ?? dbContext.TenantId;
+        if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
             return false;
 
-        if (_tenancyEnabled)
+        if (tenancyEnabled)
             secret.TenantId = existingSecret.TenantId;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Secrets.Remove(existingSecret);
@@ -91,6 +93,7 @@ public class EFCoreSecretRepository(
     public async Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var tenancyEnabled = IsTenancyEnabled(dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
         if (existingSecret == null)
@@ -101,7 +104,8 @@ public class EFCoreSecretRepository(
         }
         else
         {
-            if (_tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+            var incomingTenantId = secret.TenantId ?? dbContext.TenantId;
+            if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
 
             Copy(secret, existingSecret);
@@ -132,6 +136,9 @@ public class EFCoreSecretRepository(
         var normalizedName = secretNameValidator.Normalize(name);
         return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
+
+    private bool IsTenancyEnabled(SecretsElsaDbContext dbContext) =>
+        _tenancyEnabled ?? dbContext.Model.FindEntityType(typeof(Secret))?.GetQueryFilter() is not null;
 
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)
     {

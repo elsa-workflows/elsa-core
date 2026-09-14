@@ -336,8 +336,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
                 {
                     Id = "replacement-id",
                     Name = "SMTP:PASSWORD",
-                    DisplayName = "Replacement agnostic secret",
-                    TenantId = Tenant.AgnosticTenantId
+                    DisplayName = "Replacement agnostic secret"
                 });
 
                 Assert.True(result);
@@ -350,7 +349,42 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         });
     }
 
-    private static async Task WithTenantAwareRepositoryAsync(Func<EFCoreSecretRepository, DefaultTenantAccessor, Task> test)
+    [Fact]
+    public async Task PreTenancyConstructor_UsesTenantFilteredModelForOwnershipChecks()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            {
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "agnostic-id",
+                    Name = "smtp:password",
+                    DisplayName = "Deleted agnostic secret",
+                    Status = SecretStatus.Deleted,
+                    TenantId = Tenant.AgnosticTenantId
+                });
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                var result = await repository.TryAddOrReplaceDeletedAsync(new Secret
+                {
+                    Id = "replacement-id",
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Forged replacement"
+                });
+
+                Assert.False(result);
+                var unchanged = await repository.GetAsync("smtp:password");
+                Assert.NotNull(unchanged);
+                Assert.Equal("agnostic-id", unchanged!.Id);
+                Assert.Equal(SecretStatus.Deleted, unchanged.Status);
+            }
+        }, useLegacyConstructor: true);
+    }
+
+    private static async Task WithTenantAwareRepositoryAsync(Func<EFCoreSecretRepository, DefaultTenantAccessor, Task> test, bool useLegacyConstructor = false)
     {
         var databasePath = Path.Join(Path.GetTempPath(), $"elsa-secrets-tenant-{Guid.NewGuid():N}.db");
         var tenantAccessor = new DefaultTenantAccessor();
@@ -374,7 +408,12 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
             await using (var dbContext = await factory.CreateDbContextAsync())
                 await dbContext.Database.MigrateAsync();
 
-            await test(scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>(), tenantAccessor);
+            var repository = useLegacyConstructor
+                ? new EFCoreSecretRepository(
+                    scope.ServiceProvider.GetRequiredService<Store<SecretsElsaDbContext, Secret>>(),
+                    scope.ServiceProvider.GetRequiredService<ISecretNameValidator>())
+                : scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
+            await test(repository, tenantAccessor);
         }
         finally
         {
