@@ -49,6 +49,9 @@ public class QuartzSqlServerFeature : IShellFeature
         RestartRequired = true)]
     public bool UseContextPooling { get; set; }
 
+    /// <summary>An optional callback to configure the <see cref="DbContextOptionsBuilder"/>.</summary>
+    public Action<DbContextOptionsBuilder>? ConfigureDbContextOptions { get; set; }
+
     public void ConfigureServices(IServiceCollection services)
     {
         if (UseContextPooling)
@@ -77,9 +80,12 @@ public class QuartzSqlServerFeature : IShellFeature
         });
     }
 
-    private void Configure(DbContextOptionsBuilder options) =>
+    private void Configure(DbContextOptionsBuilder options)
+    {
         options.UseSqlServer(ConnectionString, sql =>
             sql.MigrationsAssembly(typeof(SqlServerQuartzDbContext).Assembly.GetName().Name));
+        ConfigureDbContextOptions?.Invoke(options);
+    }
 }
 
 /// Runs EF Core migrations before the Quartz scheduler starts on shell activation.

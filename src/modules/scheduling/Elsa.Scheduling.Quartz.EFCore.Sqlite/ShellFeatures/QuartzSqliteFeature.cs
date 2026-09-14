@@ -53,6 +53,9 @@ public class QuartzSqliteFeature : IShellFeature, IPostConfigureShellServices
         RestartRequired = true)]
     public bool UseContextPooling { get; set; }
 
+    /// <summary>An optional callback to configure the <see cref="DbContextOptionsBuilder"/>.</summary>
+    public Action<DbContextOptionsBuilder>? ConfigureDbContextOptions { get; set; }
+
     public void ConfigureServices(IServiceCollection services)
     {
         if (UseContextPooling)
@@ -78,9 +81,12 @@ public class QuartzSqliteFeature : IShellFeature, IPostConfigureShellServices
         });
     }
 
-    private void Configure(DbContextOptionsBuilder options) =>
+    private void Configure(DbContextOptionsBuilder options)
+    {
         options.UseSqlite(ConnectionString, sqlite =>
             sqlite.MigrationsAssembly(typeof(SqliteQuartzDbContext).Assembly.GetName().Name));
+        ConfigureDbContextOptions?.Invoke(options);
+    }
 }
 
 /// Runs EF Core migrations before the Quartz scheduler starts on shell activation.

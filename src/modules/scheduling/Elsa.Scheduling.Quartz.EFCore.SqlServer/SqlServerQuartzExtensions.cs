@@ -17,12 +17,17 @@ public static class SqlServerQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the SQL Server job store.
     /// </summary>
-    public static QuartzFeature UseSqlServer(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true, bool useContextPooling = false)
+    /// <param name="feature">The Quartz feature to configure.</param>
+    /// <param name="connectionString">The SQL Server connection string.</param>
+    /// <param name="useClustering">Whether to enable Quartz clustering.</param>
+    /// <param name="useContextPooling">Whether to use DbContext pooling.</param>
+    /// <param name="configureDbContextOptions">An optional callback to further configure the <see cref="DbContextOptionsBuilder"/>, e.g. to apply a naming convention or set a custom migrations history table.</param>
+    public static QuartzFeature UseSqlServer(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useClustering = true, bool useContextPooling = false, Action<DbContextOptionsBuilder>? configureDbContextOptions = null)
     {
         if (useContextPooling)
-            feature.Services.AddPooledDbContextFactory<SqlServerQuartzDbContext>(options => UseSqlServer(connectionString, options));
+            feature.Services.AddPooledDbContextFactory<SqlServerQuartzDbContext>(options => UseSqlServer(connectionString, options, configureDbContextOptions));
         else
-            feature.Services.AddDbContextFactory<SqlServerQuartzDbContext>(options => UseSqlServer(connectionString, options));
+            feature.Services.AddDbContextFactory<SqlServerQuartzDbContext>(options => UseSqlServer(connectionString, options, configureDbContextOptions));
 
         feature.ConfigureQuartz += quartz =>
         {
@@ -45,9 +50,11 @@ public static class SqlServerQuartzExtensions
         return feature;
     }
 
-    private static void UseSqlServer(string connectionString, DbContextOptionsBuilder options)
+    private static void UseSqlServer(string connectionString, DbContextOptionsBuilder options, Action<DbContextOptionsBuilder>? configureDbContextOptions)
     {
         // Use SQL Server migrations.
         options.UseSqlServer(connectionString, sqlServerDbContextOptionsBuilder => { sqlServerDbContextOptionsBuilder.MigrationsAssembly(typeof(SqlServerQuartzDbContext).Assembly.GetName().Name); });
+
+        configureDbContextOptions?.Invoke(options);
     }
 }

@@ -17,12 +17,17 @@ public static class SqliteQuartzExtensions
     /// <summary>
     /// Configures the <see cref="QuartzFeature"/> to use the SQLite job store.
     /// </summary>
-    public static QuartzFeature UseSqlite(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useContextPooling = false, bool useClustering = false)
+    /// <param name="feature">The Quartz feature to configure.</param>
+    /// <param name="connectionString">The SQLite connection string.</param>
+    /// <param name="useContextPooling">Whether to use DbContext pooling.</param>
+    /// <param name="useClustering">Whether to enable Quartz clustering.</param>
+    /// <param name="configureDbContextOptions">An optional callback to further configure the <see cref="DbContextOptionsBuilder"/>, e.g. to apply a naming convention or set a custom migrations history table.</param>
+    public static QuartzFeature UseSqlite(this QuartzFeature feature, string connectionString = Constants.DefaultConnectionString, bool useContextPooling = false, bool useClustering = false, Action<DbContextOptionsBuilder>? configureDbContextOptions = null)
     {
         if (useContextPooling)
-            feature.Services.AddPooledDbContextFactory<SqliteQuartzDbContext>(options => UseSqlite(connectionString, options));
+            feature.Services.AddPooledDbContextFactory<SqliteQuartzDbContext>(options => UseSqlite(connectionString, options, configureDbContextOptions));
         else
-            feature.Services.AddDbContextFactory<SqliteQuartzDbContext>(options => UseSqlite(connectionString, options));
+            feature.Services.AddDbContextFactory<SqliteQuartzDbContext>(options => UseSqlite(connectionString, options, configureDbContextOptions));
 
         feature.ConfigureQuartz += quartz =>
         {
@@ -41,9 +46,11 @@ public static class SqliteQuartzExtensions
         return feature;
     }
 
-    private static void UseSqlite(string connectionString, DbContextOptionsBuilder options)
+    private static void UseSqlite(string connectionString, DbContextOptionsBuilder options, Action<DbContextOptionsBuilder>? configureDbContextOptions)
     {
         // Use SQLite migrations.
         options.UseSqlite(connectionString, sqlite => { sqlite.MigrationsAssembly(typeof(SqliteQuartzDbContext).Assembly.GetName().Name); });
+
+        configureDbContextOptions?.Invoke(options);
     }
 }

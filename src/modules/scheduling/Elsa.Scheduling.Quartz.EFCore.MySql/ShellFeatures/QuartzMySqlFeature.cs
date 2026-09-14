@@ -49,6 +49,9 @@ public class QuartzMySqlFeature : IShellFeature
         RestartRequired = true)]
     public bool UseContextPooling { get; set; }
 
+    /// <summary>An optional callback to configure the <see cref="DbContextOptionsBuilder"/>.</summary>
+    public Action<DbContextOptionsBuilder>? ConfigureDbContextOptions { get; set; }
+
     public void ConfigureServices(IServiceCollection services)
     {
         if (UseContextPooling)
@@ -71,9 +74,12 @@ public class QuartzMySqlFeature : IShellFeature
         });
     }
 
-    private void Configure(DbContextOptionsBuilder options) =>
+    private void Configure(DbContextOptionsBuilder options)
+    {
         options.UseMySql(ConnectionString, ServerVersion.AutoDetect(ConnectionString), mysql =>
             mysql.MigrationsAssembly(typeof(MySqlQuartzDbContext).Assembly.GetName().Name));
+        ConfigureDbContextOptions?.Invoke(options);
+    }
 }
 
 
