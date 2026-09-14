@@ -108,7 +108,7 @@ public class EFCoreSecretRepository(
             if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
 
-            Copy(secret, existingSecret);
+            Copy(secret, existingSecret, tenancyEnabled);
             SetNormalizedName(dbContext, existingSecret);
             SecretSerialization.StoreSerializedProperties(dbContext, existingSecret);
         }
@@ -116,8 +116,11 @@ public class EFCoreSecretRepository(
         await SaveChangesAsync(dbContext, secret.Name, cancellationToken);
     }
 
-    private static void Copy(Secret source, Secret target)
+    private static void Copy(Secret source, Secret target, bool tenancyEnabled)
     {
+        if (!tenancyEnabled)
+            target.TenantId = source.TenantId;
+
         target.Name = source.Name;
         target.DisplayName = source.DisplayName;
         target.Description = source.Description;

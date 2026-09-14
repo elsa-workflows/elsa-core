@@ -245,6 +245,34 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task SaveAsync_WhenTenancyIsDisabled_KeepsStoredIdButAcceptsIncomingTenant()
+    {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
+        await repository.AddAsync(new Secret
+        {
+            Id = "stored-id",
+            Name = "save:secret",
+            DisplayName = "Original",
+            TenantId = "tenant-a"
+        });
+
+        var incoming = new Secret
+        {
+            Id = "incoming-id",
+            Name = " SAVE:SECRET ",
+            DisplayName = "Updated",
+            TenantId = "tenant-b"
+        };
+        await repository.SaveAsync(incoming);
+
+        var stored = await repository.GetAsync("save:secret");
+        Assert.NotNull(stored);
+        Assert.Equal("stored-id", stored!.Id);
+        Assert.Equal("tenant-b", stored.TenantId);
+    }
+
+    [Fact]
     public async Task SaveAsync_RejectsNamedWriterUpdatingAgnosticSecretWithoutMutation()
     {
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
