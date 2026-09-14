@@ -56,7 +56,7 @@ public class RelationalStructuredLogStore(
 
     public async ValueTask<IReadOnlyCollection<StructuredLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
     {
-        var sources = sourceRegistry.List().ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
+        var sources = sourceRegistry.List().ToDictionary(x => x.Id, StringComparer.Ordinal);
 
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         await using var command = CreateCommand(connection, sqlBuilder.BuildListSources());

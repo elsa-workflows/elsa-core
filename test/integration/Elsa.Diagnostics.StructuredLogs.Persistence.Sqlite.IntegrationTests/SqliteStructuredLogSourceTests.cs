@@ -77,6 +77,37 @@ public class SqliteStructuredLogSourceTests
     }
 
     [Fact]
+    public async Task StoreWriteManyAsync_WhenFlushIsOlder_DoesNotRegressLastSeen()
+    {
+        await using var host = new SqliteStructuredLogTestHost();
+        var newer = DateTimeOffset.UtcNow;
+        var older = newer.AddMinutes(-1);
+        var store = host.Services.GetRequiredService<RelationalStructuredLogStore>();
+
+        await host.Buffer.WriteAsync(CreateLog("newer-1", 2, "pod-b", newer));
+        await store.WriteManyAsync([CreateLog("older-1", 1, "pod-b", older)]);
+
+        var source = Assert.Single(host.SourceRegistry.List(), x => x.Id == "pod-b");
+        Assert.Equal(newer, source.LastSeen);
+        Assert.Equal(StructuredLogSourceStatus.Connected, source.Status);
+    }
+
+    [Fact]
+    public async Task ListSourcesAsync_WhenRegistryHasCaseDistinctIds_KeepsBoth()
+    {
+        await using var host = new SqliteStructuredLogTestHost();
+        var seenAt = DateTimeOffset.UtcNow;
+        host.SourceRegistry.MarkSeen("pod-a", seenAt);
+        host.SourceRegistry.MarkSeen("POD-A", seenAt);
+
+        var sources = await host.Store.ListSourcesAsync();
+
+        Assert.Contains(sources, x => x.Id == "pod-a");
+        Assert.Contains(sources, x => x.Id == "POD-A");
+        Assert.Equal(2, sources.Count(x => x.Id.Equals("pod-a", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [Fact]
     public async Task StoreWriteManyAsync_MarksRegistrySeen()
     {
         await using var host = new SqliteStructuredLogTestHost();
