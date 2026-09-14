@@ -12,12 +12,14 @@ public class RelationalStructuredLogStore(
     IRelationalStructuredLogConnectionFactory connectionFactory,
     IRelationalStructuredLogDialect dialect,
     RelationalStructuredLogSqlBuilder sqlBuilder,
-    RelationalStructuredLogMapper mapper) : IStructuredLogStore
+    RelationalStructuredLogMapper mapper,
+    IStructuredLogSourceRegistry sourceRegistry) : IStructuredLogStore
 {
     public async ValueTask WriteAsync(StructuredLogEvent logEvent, CancellationToken cancellationToken = default)
     {
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         await InsertAsync(connection, mapper.Map(logEvent), null, cancellationToken);
+        sourceRegistry.MarkSeen(logEvent.SourceId, logEvent.ReceivedAt);
     }
 
     public async ValueTask WriteManyAsync(IReadOnlyCollection<StructuredLogEvent> logEvents, CancellationToken cancellationToken = default)
@@ -32,6 +34,9 @@ public class RelationalStructuredLogStore(
             await InsertAsync(connection, mapper.Map(logEvent), transaction, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+
+        foreach (var logEvent in logEvents)
+            sourceRegistry.MarkSeen(logEvent.SourceId, logEvent.ReceivedAt);
     }
 
     public async ValueTask<RecentStructuredLogsResult> QueryAsync(StructuredLogFilter filter, CancellationToken cancellationToken = default)
@@ -51,16 +56,20 @@ public class RelationalStructuredLogStore(
 
     public async ValueTask<IReadOnlyCollection<StructuredLogSource>> ListSourcesAsync(CancellationToken cancellationToken = default)
     {
+        var sources = sourceRegistry.List().ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
+
         await using var connection = await connectionFactory.OpenConnectionAsync(cancellationToken);
         await using var command = CreateCommand(connection, sqlBuilder.BuildListSources());
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        var sources = new List<StructuredLogSource>();
 
         while (await reader.ReadAsync(cancellationToken))
         {
             var sourceId = reader.GetString(reader.GetOrdinal("SourceId"));
+            if (sources.ContainsKey(sourceId))
+                continue;
+
             var lastSeen = RelationalStructuredLogMapper.ParseTimestamp(reader.GetString(reader.GetOrdinal("LastSeen")));
-            sources.Add(new()
+            sources[sourceId] = new()
             {
                 Id = sourceId,
                 DisplayName = sourceId,
@@ -68,10 +77,12 @@ public class RelationalStructuredLogStore(
                 ProcessId = 0,
                 LastSeen = lastSeen,
                 Status = StructuredLogSourceStatus.Connected
-            });
+            };
         }
 
-        return sources;
+        return sources.Values
+            .OrderBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private async ValueTask InsertAsync(DbConnection connection, RelationalStructuredLogRecord record, DbTransaction? transaction, CancellationToken cancellationToken)
