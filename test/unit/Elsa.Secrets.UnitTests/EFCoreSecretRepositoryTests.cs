@@ -216,6 +216,40 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task SaveAsync_WhenIncomingTenantDiffers_PreservesExistingTenant()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "old",
+                    Name = "smtp:password",
+                    DisplayName = "Original"
+                });
+
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "new",
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Updated",
+                    TenantId = "tenant-b"
+                });
+
+                var reloaded = await repository.GetAsync("smtp:password");
+                Assert.NotNull(reloaded);
+                Assert.Equal("old", reloaded!.Id);
+                Assert.Equal("Updated", reloaded.DisplayName);
+                Assert.Equal("tenant-a", reloaded.TenantId);
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-b"))
+                Assert.Null(await repository.GetAsync("smtp:password"));
+        });
+    }
+
+    [Fact]
     public async Task TryAddOrReplaceDeletedAsync_WhenTenancyIsDisabled_PreservesLegacyReplacementBehavior()
     {
         await using var scope = _serviceProvider.CreateAsyncScope();
