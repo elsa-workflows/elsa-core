@@ -38,7 +38,8 @@ public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) 
         {
             foreach (var variable in variables.Where(x => x.Name.IsValidVariableName()))
             {
-                var variableName = variable.Name.Pascalize();
+                var propertyName = variable.Name.Pascalize();
+                var variableName = variable.Name;
                 var variableType = variable.GetVariableType();
                 
                 // Check if the variable type is ExpandoObject
@@ -48,7 +49,7 @@ public class GenerateWorkflowVariableAccessors(IOptions<CSharpOptions> options) 
                 var displayTypeName = isExpandoObject ? "dynamic" : variableType.GetFriendlyTypeName(Brackets.Angle);
                 var retrieveTypeName = isExpandoObject ? "ExpandoObject" : displayTypeName;
                 
-                sb.AppendLine($"\tpublic {displayTypeName} {variableName}");
+                sb.AppendLine($"\tpublic {displayTypeName} {propertyName}");
                 sb.AppendLine("\t{");
                 sb.AppendLine($"\t\tget => Get<{retrieveTypeName}>(\"{variableName}\");");
                 sb.AppendLine($"\t\tset => Set(\"{variableName}\", value);");
