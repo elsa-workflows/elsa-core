@@ -116,7 +116,8 @@ public interface IWorkflowBuilder
     Variable<T> WithVariable<T>();
     
     /// <summary>
-    /// A fluent method for adding a variable to <see cref="Variables"/>.
+    /// A fluent method for adding a named variable to <see cref="Variables"/>.
+    /// The variable uses workflow instance storage by default so its value survives suspend and resume.
     /// </summary>
     Variable<T> WithVariable<T>(string name, T value);
     
