@@ -1,4 +1,5 @@
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Models;
 using MudBlazor;
 
@@ -7,13 +8,16 @@ namespace Elsa.Studio.Diagnostics.StructuredLogs.Menu;
 /// <summary>
 /// Exposes menu entries for structured logs.
 /// </summary>
-public class StructuredLogsMenu : IMenuProvider
+public class StructuredLogsMenu(IRemoteFeatureProvider remoteFeatureProvider) : IMenuProvider
 {
     /// <inheritdoc />
     public async ValueTask<IEnumerable<MenuItem>> GetMenuItemsAsync(CancellationToken cancellationToken = default)
     {
-        var menuItems = new List<MenuItem>
-        {
+        if (!await remoteFeatureProvider.IsEnabledOrDefaultAsync(Feature.RemoteFeatureName, cancellationToken))
+            return [];
+
+        IEnumerable<MenuItem> menuItems =
+        [
             new()
             {
                 Icon = Icons.Material.Filled.FormatListBulleted,
@@ -21,7 +25,7 @@ public class StructuredLogsMenu : IMenuProvider
                 Text = "Structured Logs",
                 GroupName = MenuItemGroups.Diagnostics.Name
             }
-        };
+        ];
 
         return menuItems;
     }
