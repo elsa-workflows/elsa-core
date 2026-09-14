@@ -61,6 +61,9 @@ public class SecretDefaultTenantUniquenessMigrationTests
 
     private static string FindMigration(string providerProject)
     {
+        if (Path.IsPathRooted(providerProject))
+            throw new ArgumentException("Provider project must be a relative path.", nameof(providerProject));
+
         var repoRoot = FindRepoRoot();
         var secretsDir = Path.Combine(repoRoot, "src", "modules", providerProject, "Migrations", "Secrets");
         var path = Directory.GetFiles(secretsDir, "*SecretDefaultTenantUniqueness.cs")
@@ -73,7 +76,7 @@ public class SecretDefaultTenantUniquenessMigrationTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            if (File.Exists(Path.Combine(directory.FullName, "Elsa.sln")))
+            if (File.Exists(Path.Join(directory.FullName, "Elsa.sln")))
                 return directory.FullName;
 
             directory = directory.Parent;
