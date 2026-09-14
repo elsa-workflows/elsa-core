@@ -46,7 +46,11 @@ public sealed class App : IAsyncInitializer, IAsyncDisposable
             InitialCatalog = "master",
             Pooling = false
         }.ConnectionString;
-        _catalog = new ComponentTestCatalog(CatalogName, ConnectionString, masterConnectionString);
+        _catalog = new ComponentTestCatalog(
+            CatalogName,
+            ConnectionString,
+            masterConnectionString,
+            cancellationToken => Infrastructure.RestoreDatabaseAsync(CatalogName, cancellationToken));
 
         try
         {
@@ -64,7 +68,10 @@ public sealed class App : IAsyncInitializer, IAsyncDisposable
                 lockDirectory,
                 httpFileCacheDirectory,
                 new WorkflowExecutionTracker(),
-                _catalog);
+                _catalog,
+                MigrateDatabase: false,
+                DatabaseBootstrapOnly: false,
+                DatabaseBootstrapTracker: null);
         }
         catch (Exception initializationFailure)
         {
@@ -211,7 +218,8 @@ public sealed class App : IAsyncInitializer, IAsyncDisposable
 internal sealed class ComponentTestCatalog(
     string catalogName,
     string connectionString,
-    string masterConnectionString) : IAsyncDisposable
+    string masterConnectionString,
+    Func<CancellationToken, Task> provisionAsync) : IAsyncDisposable
 {
     private readonly Lock _lifecycleLock = new();
     private Task? _provisionTask;
@@ -248,16 +256,10 @@ internal sealed class ComponentTestCatalog(
 
     private async Task ProvisionCoreAsync(CancellationToken cancellationToken)
     {
-        // Claim cleanup ownership before CREATE: a transport or cancellation failure can be
-        // ambiguous even when SQL Server has already committed the database creation.
+        // Claim cleanup ownership before provisioning: a transport or cancellation failure can
+        // be ambiguous even when SQL Server has already created or restored the database.
         Volatile.Write(ref _cleanupRequired, 1);
-
-        await using var connection = new SqlConnection(masterConnectionString);
-        await connection.OpenAsync(cancellationToken);
-        await using var command = connection.CreateCommand();
-        command.CommandText = $"CREATE DATABASE {QuoteIdentifier(catalogName)}";
-        command.CommandTimeout = 30;
-        await command.ExecuteNonQueryAsync(cancellationToken);
+        await provisionAsync(cancellationToken);
     }
 
     private async Task MigrateCoreAsync(Func<CancellationToken, Task> migrateAsync, CancellationToken cancellationToken)
@@ -309,7 +311,8 @@ internal sealed class ComponentTestCatalog(
         command.CommandText = $"""
             IF DB_ID(@catalogName) IS NOT NULL
             BEGIN
-                ALTER DATABASE {QuoteIdentifier(catalogName)} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+                IF DATABASEPROPERTYEX(@catalogName, 'Status') = N'ONLINE'
+                    ALTER DATABASE {QuoteIdentifier(catalogName)} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
                 DROP DATABASE {QuoteIdentifier(catalogName)};
             END
             """;

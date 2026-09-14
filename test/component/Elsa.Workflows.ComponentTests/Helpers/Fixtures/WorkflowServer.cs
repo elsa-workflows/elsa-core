@@ -74,18 +74,27 @@ public sealed class ComponentTestWebApplicationFactory : TestWebApplicationFacto
             .ConfigureServices(services =>
             {
                 moduleRegistryLease.Bind(services);
+                var preExistingHostedServices = hostOptions.DatabaseBootstrapOnly
+                    ? services.Where(x => x.ServiceType == typeof(IHostedService)).ToArray()
+                    : [];
 
                 try
                 {
                     services.AddSingleton(hostOptions);
-                    services.Insert(0, ServiceDescriptor.Singleton<IHostedService>(
-                        new ComponentCatalogProvisioningService(hostOptions.Catalog)));
-                    services.Insert(1, ServiceDescriptor.Singleton<IHostedService, ComponentDatabaseMigrationService>());
+                    var provisioningDescriptor = ServiceDescriptor.Singleton<IHostedService>(
+                        new ComponentCatalogProvisioningService(hostOptions.Catalog));
+                    services.Insert(0, provisioningDescriptor);
+                    ServiceDescriptor? migrationDescriptor = null;
+                    if (hostOptions.MigrateDatabase)
+                    {
+                        migrationDescriptor = ServiceDescriptor.Singleton<IHostedService, ComponentDatabaseMigrationService>();
+                        services.Insert(1, migrationDescriptor);
+                    }
                     services.Configure<HttpFileCacheOptions>(options =>
                         options.LocalCacheDirectory = hostOptions.HttpFileCacheDirectory);
 
                     var module = services.ConfigureElsa(ConfigureElsaForTesting);
-                    moduleRegistryLease.CaptureAndRegister(module);
+                    var registryCleanupDescriptor = moduleRegistryLease.CaptureAndRegister(module);
                     module.Apply();
 
                     // These component-host values must be registered after Apply because runtime
@@ -128,6 +137,26 @@ public sealed class ComponentTestWebApplicationFactory : TestWebApplicationFacto
                         .AddSingleton(serviceProvider =>
                             serviceProvider.GetRequiredService<ComponentTestHostOptions>().WorkflowExecutionTracker)
                         .Decorate<IWorkflowRunner, TrackingWorkflowRunner>();
+
+                    if (hostOptions.DatabaseBootstrapOnly)
+                    {
+                        if (migrationDescriptor is null)
+                            throw new InvalidOperationException("A database-bootstrap host must enable the component migration service.");
+
+                        var hostedServicesToKeep = preExistingHostedServices
+                            .Append(provisioningDescriptor)
+                            .Append(migrationDescriptor)
+                            .Append(registryCleanupDescriptor)
+                            .ToArray();
+
+                        for (var i = services.Count - 1; i >= 0; i--)
+                        {
+                            var descriptor = services[i];
+                            if (descriptor.ServiceType == typeof(IHostedService) &&
+                                !hostedServicesToKeep.Any(x => ReferenceEquals(x, descriptor)))
+                                services.RemoveAt(i);
+                        }
+                    }
                 }
                 catch (Exception configurationFailure)
                 {
@@ -267,7 +296,23 @@ internal sealed record ComponentTestHostOptions(
     string LockDirectory,
     string HttpFileCacheDirectory,
     WorkflowExecutionTracker WorkflowExecutionTracker,
-    ComponentTestCatalog Catalog);
+    ComponentTestCatalog Catalog,
+    bool MigrateDatabase,
+    bool DatabaseBootstrapOnly,
+    ComponentDatabaseBootstrapTracker? DatabaseBootstrapTracker);
+
+internal sealed class ComponentDatabaseBootstrapTracker
+{
+    private readonly ConcurrentDictionary<string, byte> _migrations = new(StringComparer.Ordinal);
+
+    public int MigrationCount => _migrations.Count;
+
+    public void RecordMigration(Type dbContextType)
+    {
+        if (!_migrations.TryAdd(dbContextType.Name, 0))
+            throw new InvalidOperationException($"The template migrated {dbContextType.Name} more than once.");
+    }
+}
 
 /// <summary>
 /// Creates the case catalog before Elsa's tenant activation and migration hosted services run.
@@ -281,9 +326,8 @@ internal sealed class ComponentCatalogProvisioningService(ComponentTestCatalog c
 }
 
 /// <summary>
-/// Applies each distinct component schema once per case. Elsa still activates every configured
-/// tenant, but its per-tenant migration startup tasks become no-ops instead of rechecking the
-/// same shared catalog for every tenant and duplicate management persistence feature.
+/// Applies each distinct component schema once to the session template. Restored case catalogs
+/// start with those schemas, while Elsa's per-tenant migration startup tasks remain disabled.
 /// </summary>
 internal sealed class ComponentDatabaseMigrationService(
     IServiceScopeFactory scopeFactory,
@@ -305,12 +349,13 @@ internal sealed class ComponentDatabaseMigrationService(
         await MigrateAsync<AlterationsElsaDbContext>(services, cancellationToken);
     }
 
-    private static async Task MigrateAsync<TDbContext>(IServiceProvider services, CancellationToken cancellationToken)
+    private async Task MigrateAsync<TDbContext>(IServiceProvider services, CancellationToken cancellationToken)
         where TDbContext : DbContext
     {
         var factory = services.GetRequiredService<IDbContextFactory<TDbContext>>();
         await using var dbContext = await factory.CreateDbContextAsync(cancellationToken);
         await dbContext.Database.MigrateAsync(cancellationToken);
+        hostOptions.DatabaseBootstrapTracker?.RecordMigration(typeof(TDbContext));
     }
 }
 
@@ -513,7 +558,7 @@ internal sealed class ElsaModuleRegistryLease
         }
     }
 
-    public void CaptureAndRegister(IModule module)
+    public ServiceDescriptor CaptureAndRegister(IModule module)
     {
         IServiceCollection services;
         lock (_captureLock)
@@ -532,10 +577,12 @@ internal sealed class ElsaModuleRegistryLease
             _module = module;
         }
 
-        services.Insert(0, ServiceDescriptor.Singleton<IHostedService>(serviceProvider =>
+        var descriptor = ServiceDescriptor.Singleton<IHostedService>(serviceProvider =>
             new ElsaModuleRegistryCleanupService(
                 this,
-                serviceProvider.GetRequiredService<IHostApplicationLifetime>())));
+                serviceProvider.GetRequiredService<IHostApplicationLifetime>()));
+        services.Insert(0, descriptor);
+        return descriptor;
     }
 
     public void ReleaseAfterHostStopped()

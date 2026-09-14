@@ -147,7 +147,6 @@
         <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.0.1"/>
         <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.1"/>
         <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.4.0"/>
-        <PackageVersion Include="Moq" Version="4.20.72"/>
         <PackageVersion Include="MongoDB.Driver" Version="3.9.0"/>
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>

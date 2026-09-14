@@ -1,6 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="Microsoft.Extensions.Logging"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\..\src\common\Elsa.Mediator\Elsa.Mediator.csproj"/>
     </ItemGroup>
 

@@ -13,8 +13,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
-        <PackageReference Include="Moq"/>
         <PackageReference Include="NSubstitute"/>
         <PackageReference Include="TUnit"/>
     </ItemGroup>

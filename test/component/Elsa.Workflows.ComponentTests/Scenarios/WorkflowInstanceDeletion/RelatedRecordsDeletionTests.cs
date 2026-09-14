@@ -16,11 +16,14 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowInstanceDeletion;
 /// </summary>
 public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
 {
+    private readonly HashSet<string> _createdWorkflowInstanceIds = new(StringComparer.Ordinal);
+
     private IWorkflowRuntime WorkflowRuntime => Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
     private IWorkflowInstanceStore WorkflowInstanceStore => Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
     private IBookmarkStore BookmarkStore => Scope.ServiceProvider.GetRequiredService<IBookmarkStore>();
     private IActivityExecutionStore ActivityExecutionStore => Scope.ServiceProvider.GetRequiredService<IActivityExecutionStore>();
     private IWorkflowExecutionLogStore WorkflowExecutionLogStore => Scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
+    private IExecutionCycleRegistry ExecutionCycleRegistry => Scope.ServiceProvider.GetRequiredService<IExecutionCycleRegistry>();
 
     [Test]
     [DisplayName("Delete via API endpoint should remove all related records")]
@@ -95,7 +98,23 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
                 WorkflowWithRelatedRecords.DefinitionId,
                 VersionOptions.Published)
         });
+        _createdWorkflowInstanceIds.Add(runResponse.WorkflowInstanceId);
         return runResponse.WorkflowInstanceId;
+    }
+
+    protected override async ValueTask OnDisposeAsync()
+    {
+        // Cancelling a running workflow uses a replacement execution pipeline. The deletion has
+        // already removed the instance and its related records, so that pipeline has no later
+        // commit at which its execution-cycle handle can be released. Dispose only handles for
+        // instances this test created and has proved absent, before host drain starts.
+        foreach (var handle in ExecutionCycleRegistry.ListActiveCycles()
+                     .Where(x => _createdWorkflowInstanceIds.Contains(x.WorkflowInstanceId)))
+        {
+            var workflowInstance = await WorkflowInstanceStore.FindAsync(new() { Id = handle.WorkflowInstanceId });
+            if (workflowInstance is null)
+                handle.Dispose();
+        }
     }
 
     private async Task AssertRelatedRecordsExistAsync(string workflowInstanceId)
