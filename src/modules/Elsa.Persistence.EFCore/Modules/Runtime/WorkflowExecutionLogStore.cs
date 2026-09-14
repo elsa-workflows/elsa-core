@@ -40,7 +40,7 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     /// <inheritdoc />
     public async Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.QueryAsync(queryable => Filter(queryable, filter), OnLoadAsync, cancellationToken).FirstOrDefault();
+        return await store.QueryAsync(queryable => Filter(queryable, filter).OrderByTimestampThenSequence(), OnLoadAsync, cancellationToken).FirstOrDefault();
     }
 
     /// <inheritdoc />
@@ -53,7 +53,7 @@ public class EFCoreWorkflowExecutionLogStore(EntityStore<RuntimeElsaDbContext, W
     public async Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = await store.QueryAsync(queryable => Filter(queryable, filter), cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => Filter(queryable, filter).OrderBy(x => x.Timestamp).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var results = await store.QueryAsync(queryable => Filter(queryable, filter).OrderByTimestampThenSequence().Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 

@@ -24,7 +24,8 @@ public interface IWorkflowExecutionLogStore : ILogRecordStore<WorkflowExecutionL
     Task SaveAsync(WorkflowExecutionLogRecord record, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns the first workflow execution log record matching the specified filter.
+    /// Returns the first workflow execution log record matching the specified filter,
+    /// ordered by Timestamp, Sequence, then Id ascending.
     /// </summary>
     Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default);
 
@@ -34,7 +35,8 @@ public interface IWorkflowExecutionLogStore : ILogRecordStore<WorkflowExecutionL
     Task<WorkflowExecutionLogRecord?> FindAsync<TOrderBy>(WorkflowExecutionLogRecordFilter filter, WorkflowExecutionLogRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns a set of workflow execution log records matching the specified filter.
+    /// Returns a set of workflow execution log records matching the specified filter,
+    /// ordered by Timestamp, Sequence, then Id ascending.
     /// </summary>
     Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
 

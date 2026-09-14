@@ -51,7 +51,7 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     /// <inheritdoc />
     public Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var result = _store.Query(query => Filter(query, filter).OrderByTimestampThenSequence()).FirstOrDefault();
         return Task.FromResult(result);
     }
 
@@ -66,7 +66,7 @@ public class MemoryWorkflowExecutionLogStore : IWorkflowExecutionLogStore
     public Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
-        var result = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        var result = _store.Query(query => Filter(query, filter).OrderByTimestampThenSequence().Paginate(pageArgs)).ToList();
         return Task.FromResult(Page.Of(result, count));
     }
 
