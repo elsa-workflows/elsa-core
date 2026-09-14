@@ -51,10 +51,15 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         var node = dictionary.GetValueOrDefault(id);
         var variable = context.Variable;
         var variableType = variable.GetVariableType();
+        var serializerOptions = GetSerializerOptions();
+
+        if (variableType == typeof(object))
+            return new(node?.Deserialize(typeof(object), serializerOptions));
+
         var options = new ObjectConverterOptions
         {
             DeserializeJsonObjectToObject = true,
-            SerializerOptions = GetSerializerOptions()
+            SerializerOptions = serializerOptions
         };
         var result = node.TryConvertTo(variableType, options);
         if (result.IsSuccess)
