@@ -140,8 +140,18 @@ public class EFCoreSecretRepository(
         return dbContext.Secrets.FirstOrDefaultAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
-    private bool IsTenancyEnabled(SecretsElsaDbContext dbContext) =>
-        _tenancyEnabled ?? dbContext.Model.FindEntityType(typeof(Secret))?.GetDeclaredQueryFilters().Any() == true;
+    private bool IsTenancyEnabled(SecretsElsaDbContext dbContext)
+    {
+        if (_tenancyEnabled.HasValue)
+            return _tenancyEnabled.Value;
+
+        var entityType = dbContext.Model.FindEntityType(typeof(Secret));
+#if NET10_0_OR_GREATER
+        return entityType?.GetDeclaredQueryFilters().Any() == true;
+#else
+        return entityType?.GetQueryFilter() is not null;
+#endif
+    }
 
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)
     {
