@@ -24,7 +24,7 @@ The descriptor is advisory: it decides what a client renders, never what the ser
 
 `GET /user-tasks?scope=assigned|available|history|all|needsAttention&cursor=&limit=&sort=&direction=&status=&priorityFrom=&priorityTo=&due=&from=&to=&workflowDefinitionId=&workflowInstanceId=&reference=&taskType=&search=&includeTotalCount=`
 
-Returns `{ items, nextCursor, totalCount? }`. Default/max limit: 50/200. Stable sorts: created, due, priority, title, updated, each with an ID tiebreaker.
+Returns `{ items, nextCursor, totalCount? }`. Default/max limit: 50/200. Stable sorts: created, due, priority, title, updated, each with an always-ascending ID tiebreaker.
 
 - `scope` is part of the authorization predicate, not a display filter. `all` and `needsAttention` require manager scope and answer `403` — not an empty page — for anyone else.
 - `status` is repeatable. Unknown values are dropped rather than rejected, so a stale bookmark still loads.

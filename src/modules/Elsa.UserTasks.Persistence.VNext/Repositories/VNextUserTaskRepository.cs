@@ -270,11 +270,13 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         || (task.IsOpen && task.Assignee is null)
         || task.Status is UserTaskStatus.Completing or UserTaskStatus.TimingOut or UserTaskStatus.Cancelling;
 
+    // Id is always ThenBy ascending so a page of ties is the same in both directions and across providers.
     private static IEnumerable<UserTask> ApplyOrdering(IEnumerable<UserTask> tasks, UserTaskQuery query) => query.Sort.ToLowerInvariant() switch
     {
         "priority" => query.Descending ? tasks.OrderByDescending(x => x.Priority).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Priority).ThenBy(x => x.Id),
         "title" => query.Descending ? tasks.OrderByDescending(x => x.Title).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Title).ThenBy(x => x.Id),
         "due" => query.Descending ? tasks.OrderBy(x => x.DueAt == null).ThenByDescending(x => x.DueAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
+        "updated" => query.Descending ? tasks.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id),
         _ => query.Descending ? tasks.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
     };
 
@@ -288,6 +290,7 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
             "title" => tasks.Where(x => query.Descending ? string.Compare(x.Title, value) < 0 || x.Title == value && string.Compare(x.Id, id) > 0 : string.Compare(x.Title, value) > 0 || x.Title == value && string.Compare(x.Id, id) > 0),
             "due" when value == "~null" => tasks.Where(x => x.DueAt == null && string.Compare(x.Id, id) > 0),
             "due" when DateTimeOffset.TryParse(value, out var due) => tasks.Where(x => x.DueAt == null || query.Descending && x.DueAt < due || !query.Descending && x.DueAt > due || x.DueAt == due && string.Compare(x.Id, id) > 0),
+            "updated" when DateTimeOffset.TryParse(value, out var updated) => tasks.Where(x => query.Descending ? x.UpdatedAt < updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0 : x.UpdatedAt > updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0),
             _ when DateTimeOffset.TryParse(value, out var created) => tasks.Where(x => query.Descending ? x.CreatedAt < created || x.CreatedAt == created && string.Compare(x.Id, id) > 0 : x.CreatedAt > created || x.CreatedAt == created && string.Compare(x.Id, id) > 0),
             _ => tasks
         };
@@ -300,6 +303,7 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
             "priority" => task.Priority.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "title" => task.Title,
             "due" => task.DueAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "~null",
+            "updated" => task.UpdatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             _ => task.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
         };
         return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new[] { value, task.Id }, JsonOptions)).TrimEnd('=').Replace('+', '-').Replace('/', '_');

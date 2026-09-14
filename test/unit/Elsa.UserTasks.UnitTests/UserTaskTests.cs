@@ -59,13 +59,15 @@ public class UserTaskTests
     [InlineData("priority", true)]
     [InlineData("title", false)]
     [InlineData("title", true)]
+    [InlineData("updated", false)]
+    [InlineData("updated", true)]
     public async Task Repository_CursorCoversSupportedSortsAndDirections(string sort, bool descending)
     {
         var repository = new InMemoryUserTaskRepository();
         var now = DateTimeOffset.UtcNow;
-        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "Alpha", Priority = 10, DueAt = now.AddHours(1), CreatedAt = now.AddMinutes(1) });
-        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "Beta", Priority = 50, DueAt = null, CreatedAt = now.AddMinutes(2) });
-        await repository.AddProjectionAsync(new() { Id = "task-c", TenantId = "tenant", Title = "Gamma", Priority = 90, DueAt = now.AddHours(2), CreatedAt = now.AddMinutes(3) });
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "Alpha", Priority = 10, DueAt = now.AddHours(1), CreatedAt = now.AddMinutes(1), UpdatedAt = now.AddHours(3) });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "Beta", Priority = 50, DueAt = null, CreatedAt = now.AddMinutes(2), UpdatedAt = now.AddHours(1) });
+        await repository.AddProjectionAsync(new() { Id = "task-c", TenantId = "tenant", Title = "Gamma", Priority = 90, DueAt = now.AddHours(2), CreatedAt = now.AddMinutes(3), UpdatedAt = now.AddHours(2) });
 
         var first = await repository.QueryAsync(new() { TenantId = "tenant", Limit = 2, Sort = sort, Descending = descending, IncludeTotalCount = true });
         var second = await repository.QueryAsync(new() { TenantId = "tenant", Limit = 2, Sort = sort, Descending = descending, Cursor = first.NextCursor, IncludeTotalCount = true });
@@ -74,6 +76,33 @@ public class UserTaskTests
         Assert.Equal(3, first.TotalCount);
         Assert.Equal(3, second.TotalCount);
         Assert.Equal(3, ids.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task Repository_DescendingSortUsesAscendingIdTiebreaker()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        var now = DateTimeOffset.UtcNow;
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Priority = 50, CreatedAt = now });
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Priority = 50, CreatedAt = now });
+
+        var page = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "priority", Descending = true, Limit = 10 });
+
+        Assert.Equal(["task-a", "task-b"], page.Items.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task Repository_UnknownSortCompletedUsesCreatedOrder()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        var now = DateTimeOffset.UtcNow;
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", CreatedAt = now.AddMinutes(1), CompletedAt = now.AddHours(3) });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", CreatedAt = now.AddMinutes(2), CompletedAt = now.AddHours(1) });
+
+        var created = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "created", Limit = 10 });
+        var completed = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "completed", Limit = 10 });
+
+        Assert.Equal(created.Items.Select(x => x.Id), completed.Items.Select(x => x.Id));
     }
 
     [Fact]
