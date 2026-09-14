@@ -141,7 +141,7 @@ public class EFCoreSecretRepository(
     }
 
     private bool IsTenancyEnabled(SecretsElsaDbContext dbContext) =>
-        _tenancyEnabled ?? dbContext.Model.FindEntityType(typeof(Secret))?.GetQueryFilter() is not null;
+        _tenancyEnabled ?? dbContext.Model.FindEntityType(typeof(Secret))?.GetDeclaredQueryFilters().Any() == true;
 
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)
     {
