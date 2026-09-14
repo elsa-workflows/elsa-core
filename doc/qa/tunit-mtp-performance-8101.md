@@ -8,20 +8,20 @@ Baseline commit: `bf5c9dd041e58ffafe9ccbfe1c8effec89d959ef`
 
 ## Executive result
 
-This checkpoint addresses the dominant component-test setup cost without reducing TUnit's default parallelism or sharing mutable test state:
+The accepted component architecture restores the lifetime and scheduling semantics of the former xUnit `AppCollection`: one App is shared across the TUnit test session, and every App consumer is serialized with a native keyed constraint.
 
-- SQL Server is started once per TUnit session.
-- The four component schemas are migrated once into a session template, backed up, verified, and then restored into a unique physical database for every expanded test case.
-- Each case still owns its host, service provider, scopes, clients, `DbContext` instances, files, locks, trackers, and database lifecycle.
-- The 36 host-method metadata tests now materialize one immutable descriptor snapshot per class and dispose their application host before any test body runs.
-- Three workflow-deletion tests release only their own orphaned execution-cycle handles after verifying the corresponding workflow instance is absent, removing a repeated 30-second host-drain delay.
-- Unused global `Moq` and MVC Testing references were removed. Projects using TUnit web testing continue to receive MVC Testing through `TUnit.AspNetCore`; the mediator unit tests now declare the two `Microsoft.Extensions.*` packages they actually use.
+- `AppComponentTest` receives `App` from `[ClassDataSource<App>(Shared = SharedType.PerTestSession)]`.
+- `[NotInParallel(nameof(AppComponentTest))]` serializes all 198 App-bound outcomes: 195 executed cases and three expected skips.
+- `HostMethodActivityTests` derives from `AppComponentTest`; it no longer owns a separate fixture or immutable snapshot.
+- The seven outcomes that do not consume App remain unconstrained and retain TUnit's default scheduling.
+- Per-test cleanup drains work and releases test-local scopes, clients, tenant state, mocks, signals, and subscriptions, while the App, cluster, database, and host remain session-owned.
+- There is no custom semaphore, parallel limiter, runner-wide cap, NUKE test target, or `src/**` change.
 
-Targeted validation is green, including concurrent database-isolation stress, multitenancy-provider semantics, host-method tests, deletion cleanup, and the known slow multi-pod test. A full Release solution build also succeeds with zero warnings and zero errors.
+Three complete Release component runs passed the exact 205-outcome contract: 202 passed, three expected skips, and zero failed. Native TUnit durations were 70.876, 68.798, and 74.570 seconds; external wall times recorded for the second and rollback-confirmation samples were 69.57 and 75.71 seconds. Each finalized report contains exactly one `initialize App` span and one `initialize Infrastructure` span; the rollback-confirmation report also contains all 195 expected App-test cleanup hooks, with a measured peak of one concurrent App-bound test lifecycle.
 
-At the user's request, work stopped at this reviewable checkpoint before the post-change 205-test component run and exact solution-wide PR test command. Consequently, this document does **not** claim a final full-suite speedup or final 4,417-test result. Those two commands remain the release gate described below.
+The 442.725/453.808-second unconstrained per-invocation samples and both four-slot experiments below are retained as **historical design evidence**. They compare component resource topologies and scheduling policies within the already-migrated TUnit suite; none is a TUnit-versus-xUnit framework comparison. The exact ordinary PR workflow still needs to measure the final pushed commit.
 
-TUnit remains pinned at `1.66.27`; the resolved TRX reporter remains `2.3.3`. There are no `src/` changes, test caps, limiters, `NotInParallel` annotations, or broad serialization in this checkpoint.
+TUnit remains pinned at `1.66.27`; the resolved TRX reporter remains `2.3.3`.
 
 ## Measurement environment
 
@@ -34,11 +34,33 @@ Measurements were taken with warm package/build caches on:
 - TUnit 1.66.27 using Microsoft Testing Platform
 - Europe/Minsk timezone
 
-All reported TUnit durations come from native TUnit JSON reports. External wall time and peak RSS were collected with `/usr/bin/time -l` where noted. Raw local evidence was kept under `/tmp/elsa-tunit-perf-8101-20260914`; that location is intentionally ephemeral and is not part of the commit.
+All reported TUnit durations come from native TUnit JSON reports. External wall time and peak RSS were collected with `/usr/bin/time -l` where noted. Raw local evidence is kept under ephemeral `/tmp` result directories and is not part of the commit.
 
-## Baseline
+## Current shared-App architecture
 
-Two uncontaminated, no-build, full component samples completed with the expected 205 outcomes: 202 passed and 3 intentionally skipped.
+The accepted session topology is:
+
+1. TUnit constructs one `App` for the test session and injects that same instance through the inherited `AppComponentTest` data source.
+2. That App owns one `Infrastructure`, one `Cluster`, one component database, and the normal primary host; extra pods remain lazy.
+3. The keyed `[NotInParallel(nameof(AppComponentTest))]` constraint wraps the complete lifecycle of every App-bound outcome.
+4. `HostMethodActivityTests` derives from `AppComponentTest`, so its 36 outcomes use the same App and the same serialization key rather than a separate snapshot fixture.
+5. Per-test cleanup drains workflow work and releases test-local state without disposing the shared App or cluster. TUnit disposes the session data source after its consumers complete, and `App` memoizes its disposal path.
+
+The keyed constraint is intentionally narrower than process-wide serialization. The seven non-App outcomes have no matching key and remain eligible for TUnit's default scheduling. This reproduces the former collection boundary: App consumers serialize around one fixture while unrelated tests remain independent.
+
+Validation record:
+
+| Sample | Native TUnit duration | External wall time | App initialization spans | Infrastructure initialization spans | Outcome |
+|---|---:|---:|---:|---:|---|
+| Shared App 1 | 70.876 s | not separately recorded | 1 | 1 | 202 passed, 3 skipped |
+| Shared App 2 | 68.798 s | 69.57 s | 1 | 1 | 202 passed, 3 skipped |
+| Shared App rollback confirmation | 74.570 s | 75.71 s | 1 | 1 | 202 passed, 3 skipped |
+
+A focused cohort covering host-method, dynamic-endpoint, distributed-lock-resilience, and workflow-instance-deletion paths also passed 49/49 in 40.827 seconds of console time (39.970 seconds native).
+
+## Historical unconstrained per-invocation baseline (superseded policy)
+
+Before the template/lifecycle experiments and accepted shared-App policy, two uncontaminated, no-build, unconstrained per-invocation samples completed with the expected 205 outcomes: 202 passed and 3 intentionally skipped. These measurements characterize the superseded scheduling policy and earlier setup cost, not the final implementation.
 
 | Sample | TUnit duration | External wall time | Peak RSS | Outcome |
 |---|---:|---:|---:|---|
@@ -51,7 +73,7 @@ The runner boundary is not the material cost: direct executable versus `dotnet t
 
 Representative non-component project medians were much smaller: 0.93 seconds for a 3-test unit project, 1.65 seconds for a 279-test unit project, and 4.67 seconds for a 305-test integration project. This supported prioritizing the component project.
 
-## Bottleneck analysis
+## Historical bottleneck analysis
 
 The clean 442.725-second report contained 202 executed tests. Its cumulative test lifetimes totalled 25,150,110 milliseconds because many tests ran concurrently. The cumulative time split was:
 
@@ -71,11 +93,11 @@ Three `RelatedRecordsDeletionTests` cleanups each took about 33.08 seconds. Canc
 
 The read-only reference at `/Users/dendeline/github/flexitech/projects/wfe-tree/platform_orchestrator` uses TUnit 1.61.38 and session-scoped Redis, Kafka, S3, and PostgreSQL container fixtures. Every test still obtains unique resource names, creates its own PostgreSQL database, and owns fresh host/provider/scope/client state. Cleanup removes each test's topic, keys, bucket, database, and identity resources. It does not use Respawn, transactions, parallelism caps, or `NotInParallel`.
 
-This checkpoint keeps that proven isolation boundary and changes only how the unique database is provisioned: Elsa restores a schema-only, migrated session image rather than creating an empty database and running four schema migrations for every test.
+The intermediate per-invocation implementation kept that isolation boundary and changed how each unique database was provisioned: Elsa restored a schema-only, migrated session image rather than creating an empty database and running four schema migrations for every test. The accepted implementation makes a different tradeoff by sharing the complete App and serializing every consumer, matching the former xUnit collection lifetime.
 
-## Implemented database lifecycle
+## Historical per-invocation database lifecycle (superseded)
 
-The session fixture now performs this sequence:
+The discarded per-invocation implementation performed this sequence:
 
 1. Start one SQL Server Testcontainer.
 2. Create a dedicated template catalog.
@@ -90,21 +112,21 @@ The session fixture now performs this sequence:
 
 Once SQL Server begins a restore, command cancellation is deliberately ignored so a cancelled test cannot leave a database in `RESTORING`; the SQL command retains a 120-second hard timeout. Initialization and cleanup failures are aggregated so cleanup does not hide the primary failure.
 
-No mutable host, provider, scope, client, `DbContext`, catalog, tracker, lock directory, or HTTP cache directory is shared across cases. The only reused database object is an offline backup image made after its bootstrap host has stopped.
+At that historical checkpoint, no mutable host, provider, scope, client, `DbContext`, catalog, tracker, lock directory, or HTTP cache directory was shared across cases. The only reused database object was an offline backup image made after its bootstrap host stopped. This statement does not describe the accepted shared-App topology.
 
 ## Other validated improvements
 
-### Host-method metadata
+### Historical host-method metadata optimization (superseded)
 
-The 36 host-method tests queried immutable registry metadata but formerly paid for 36 complete component hosts. A per-class fixture now creates one real host, copies only the relevant descriptors and port types into immutable records, and disposes the scope and host before test bodies execute. Tests share only the immutable value snapshot.
+The 36 host-method tests query immutable registry metadata but formerly paid for 36 complete component hosts. The intermediate design added a per-class fixture that copied descriptors into immutable records and disposed its App before the test bodies executed. The accepted shared-App design removes that fixture: `HostMethodActivityTests` derives from `AppComponentTest` and uses the session App like every other App consumer.
 
 ### Deterministic workflow-deletion teardown
 
 Each related-records test records the workflow instance IDs it created. Before normal host drain, it enumerates active execution cycles, selects only matching IDs, verifies each instance is absent from the store, and disposes only those handles. It cannot affect cycles owned by another test or a still-persisted workflow.
 
-### Multitenancy semantics
+### Historical multitenancy/template validation
 
-The existing database-backed multitenancy test now resolves the real `ITenantsProvider` from a normal per-case host. It verifies the exact provider result (`""`, `Tenant1`, `Tenant2`, `Tenant3`) and `FindAsync` semantics for `Tenant2`. This guards against accidentally replacing Elsa's real provider while constructing the bootstrap host.
+The database-backed multitenancy test resolved the real `ITenantsProvider` during the template experiment. It verified the exact provider result (`""`, `Tenant1`, `Tenant2`, `Tenant3`) and `FindAsync` semantics for `Tenant2`, guarding against accidentally replacing Elsa's real provider while constructing the bootstrap host.
 
 ### Test dependency scope
 
@@ -112,7 +134,7 @@ Static usage and restored asset-file audits found no Moq use in the test tree. N
 
 The solution build exposed that `Elsa.Mediator.UnitTests` had relied on the old transitive closure for concrete dependency-injection and logging APIs. It now declares `Microsoft.Extensions.DependencyInjection` and `Microsoft.Extensions.Logging` directly.
 
-## Targeted experiment results
+## Historical targeted experiment results
 
 | Experiment | TUnit duration | Outcome | Finding |
 |---|---:|---|---|
@@ -129,64 +151,70 @@ The solution build exposed that `Elsa.Mediator.UnitTests` had relied on the old 
 
 During the 16-case stress run all cases created the same table and primary key and waited on a 16-way barrier. Every assertion observed its own database name, exactly one row, and its own owner value. Restore median/p95/max were 907/1,197/1,197 milliseconds. The stress test itself was intentionally not committed because it was experimental scaffolding.
 
-The full solution build after dependency pruning passed with 0 warnings and 0 errors. It was repeated after removing the temporary benchmark probes and passed again in 10.51 seconds using `--no-restore`. A focused Release build of `Elsa.Mediator.UnitTests` also passed with 0 warnings and 0 errors.
+The full solution build after dependency pruning passed with 0 warnings and 0 errors. It was repeated after removing the temporary benchmark probes and passed again in 10.51 seconds using `--no-restore`. A focused Release build of `Elsa.Mediator.UnitTests` also passed with 0 warnings and 0 errors. These build and experiment timings predate the accepted shared-App policy and are retained as historical context.
 
-## Deferred release gates
+## Current validation and remaining CI measurement
 
-The following were intentionally not run after the last implementation change because the user requested a checkpoint commit:
+The accepted shared-App, keyed-serialization policy passed three complete component runs with 205 total outcomes: 202 passed, the same three expected skips, and zero failed. Native durations were 70.876, 68.798, and 74.570 seconds; recorded external wall times were 69.57 and 75.71 seconds. All three reports recorded exactly one App and one Infrastructure initialization span. The final rollback-confirmation report recorded all 195 expected App-test cleanup hooks, and an interval sweep over its App-bound root spans measured a maximum concurrency of exactly one.
 
-1. Full component project, default parallelism, expecting exactly 205 outcomes: 202 passed and 3 intentionally skipped.
-2. The exact PR command, with no added filters, caps, or runner arguments:
+The rejected invocation-isolated, native-limit-4 policy also passed 205/202/3, but took 7m12.188s native, 7m12.727s in the console summary, and 433.02 seconds externally. It preserved isolation but provided essentially the earlier per-invocation wall-time profile. A shared-App-plus-four experiment failed 14 cases through cross-test state interference, so concurrent consumers of one mutable App were discarded rather than masked.
+
+The remaining measurement is the ordinary PR workflow at the **final pushed commit**, with no custom cap or runner policy:
 
 ```bash
+./build.cmd Compile
 dotnet test --solution Elsa.sln --configuration Release --no-build
 ```
 
-The expected solution outcome remains 4,417 total: 4,270 passed and 147 intentionally skipped. That expected count is an acceptance criterion, not a post-change result in this checkpoint.
+Capture the Restore, Compile, and Test step wall times; confirm the existing 4,417-outcome solution contract; and record the component test application's duration from the same run. The 4,417 count is an acceptance criterion until this post-change CI run completes, not a result claimed for the accepted shared-App checkpoint.
 
-For CI confidence, collect multiple uncontaminated post-change full component samples after those gates pass; the current post-change subset timings are single local samples.
+Use CI run `34858013234` only as the same-workflow, earlier per-invocation scheduling comparison: it reported 4,417 outcomes, a 10:16 Test step, and a 9:34 component application. Retain upstream xUnit run `34861447592` as unmatched historical context: Restore 0:44, Compile 3:07, Test 7:30, and component 2:47. The two historical CI runs do not form a controlled framework benchmark.
 
-## Rejected approaches
+## Architecture decisions
 
-- **Shared mutable test database, Respawn, or transactions:** rejected because parallel tests can observe or reset one another's rows, background work can outlive a transaction, and database-level behavior would no longer be representative.
+- **Respawn or transaction-based reset around a shared database:** rejected because background work can outlive a transaction and database-level behavior would no longer be representative. The accepted App database is instead protected by complete lifecycle serialization.
 - **Seeded application-data template:** measured slower than the schema-only template for the HTTP cohort and risks cross-test assumptions; reverted.
-- **Parallelism limits, semaphores, limiters, or broad serialization:** rejected because they hide setup contention and violate the required default-parallel execution model.
-- **Sharing application hosts/providers/scopes/clients:** rejected. The host-method optimization shares only immutable DTO snapshots after its host has been disposed.
+- **One session App plus keyed native serialization:** selected. It restores the former xUnit fixture lifetime and collection-wide App-consumer serialization while leaving seven unrelated outcomes unconstrained.
+- **One session App plus a four-slot limiter:** rejected after 14 failures demonstrated cross-test state interference when the shared mutable graph ran concurrently.
+- **Per-invocation Apps plus a four-slot native TUnit limiter:** passed, but rejected after taking 7m12.188s native and 433.02 seconds externally; it did not recover the former fixture lifetime or setup cost.
+- **Custom semaphores, parallel limiters, and a runner-wide maximum:** rejected for the accepted policy. The native keyed constraint states the actual shared-App boundary directly.
 - **Aspire telemetry backchannel:** the component suite is an in-process `WebApplication`/TestServer setup, not an Aspire AppHost, so Aspire CLI resource/log/OTel attachment is not available. Native TUnit HTML/JSON spans and MTP diagnostics supplied the phase evidence instead.
 - **Suite-wide NativeAOT:** rejected for this change. `dotnet test` remains a managed test-host workflow, while this suite uses dynamic-code-sensitive paths including proxy generation, `WebApplicationFactory`, EF migration APIs, Roslyn/Jint, and runtime assembly loading. An AOT pilot would require a separately scoped compatibility matrix and runner design; no AOT publish result is claimed here.
 
 ## Reproduction commands
 
-Baseline/full component command shape (run without competing component sessions):
+Current full component command shape (run without competing component sessions):
 
 ```bash
-/usr/bin/time -l dotnet test \
+TUNIT_OTEL_RECEIVER=0 dotnet test \
   --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj \
   --configuration Release \
   --no-build \
-  --minimum-expected-tests 205 \
-  --results-directory /tmp/elsa-tunit-perf-8101-20260914/final-component \
-  --report-html \
-  --report-html-filename /tmp/elsa-tunit-perf-8101-20260914/final-component/component.html \
-  --diagnostic \
-  --diagnostic-output-directory /tmp/elsa-tunit-perf-8101-20260914/final-component \
-  --diagnostic-verbosity Information \
+  -- \
+  --minimum-expected-tests 202 \
+  --results-directory /tmp/elsa-8101-shared-app-component \
+  --report-trx \
+  --report-trx-filename component.trx \
+  --timeout 20m \
   --progress off \
   --ansi off \
-  --show-test-results none \
-  --show-slowest-tests 10
+  --show-test-results none
 ```
 
-Build validation performed at the checkpoint:
+The minimum is 202 because the MTP policy counts executed cases; verify the exact 205 total independently in the finalized TUnit JSON or TRX report.
+
+Build validation command shape:
 
 ```bash
-dotnet build Elsa.sln --configuration Release --verbosity minimal --no-restore
-dotnet build test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj --configuration Release
+dotnet build test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj \
+  --configuration Release \
+  --no-restore
 ```
 
-Required PR gate, still pending:
+Required ordinary PR measurement, still pending for the final pushed commit:
 
 ```bash
+./build.cmd Compile
 dotnet test --solution Elsa.sln --configuration Release --no-build
 ```
 

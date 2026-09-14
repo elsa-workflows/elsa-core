@@ -1,6 +1,6 @@
 # Issue #8101: TUnit migration research and rollout plan
 
-Status: **all 60 active test projects migrated and root MTP/CI cutover implemented; post-upstream-sync validation complete, with focused lifetime/sentinel, failure-path, and IDE checks remaining**
+Status: **all 60 active test projects migrated and root MTP/CI cutover implemented; the shared-session component App and native keyed serialization are locally verified, with the final-pushed-commit CI measurement pending**
 Recorded: 2026-09-13
 Updated: 2026-09-14
 Issue: [elsa-workflows/elsa-core#8101][s1]  
@@ -17,10 +17,12 @@ That project decision intentionally goes beyond the issue's original experiment 
 1. every active Elsa test is discovered and run by TUnit on MTP;
 2. no xUnit framework, assertion, runner, discoverer, output-helper, package, configuration, or compatibility alias remains;
 3. independent tests run concurrently by default;
-4. shared mutable resources use invocation-unique identities, while irreducible process-global hazards use narrowly scoped native TUnit constraints;
+4. mutable resources use invocation-unique identities except where a fixture lifetime is intentional; the component App uses a session lifetime with a native keyed serialization boundary, and other irreducible process-global hazards use narrowly scoped native TUnit constraints;
 5. discovery counts, intended skips, reports, coverage enforcement, diagnostics, and supported developer commands are preserved or replaced by an explicit native contract.
 
 The accepted implementation now selects MTP from the repository-root `global.json`, runs individual projects with `dotnet test --project`, and runs checked-in solution or solution-filter scopes with `dotnet test --solution`. All 60 active test projects are native TUnit projects. NUKE remains responsible for compile/package work but no longer owns a test target; PR and package workflows invoke MTP directly. Package coverage is native Cobertura, merged into one repository-wide 10% line gate, with TRX and five-minute supported mini-dump diagnostics retained.
+
+The component suite's selected resource policy is now explicit: `AppComponentTest` receives one App through `SharedType.PerTestSession`, and all 198 App-bound outcomes serialize through `[NotInParallel(nameof(AppComponentTest))]`. `HostMethodActivityTests` derives from that base rather than constructing a separate snapshot fixture. The seven outcomes outside the App path remain unconstrained. This is a project-local native TUnit constraint, not a custom semaphore, parallel limiter, or runner-wide cap.
 
 At the comparison base, the most important risks were behavioral rather than syntactic:
 
@@ -129,6 +131,8 @@ Process-global state cannot be made safe merely by choosing unique data. Tests t
 - static clocks, registries, and service locators.
 
 Issue #7965 is a concrete warning: a process-global FastEndpoints security flag raced between tests. [16][s16] The component suite also has shared SQL Server, PostgreSQL, RabbitMQ, host, and tenant lifecycle, so it must remain serialized until those resources are partitioned and its fixture lifetime is proven. Existing flake #7404 should be tracked as a baseline condition rather than silently attributed to or fixed by this spike. [17][s17]
+
+> **Current component outcome:** the preceding paragraph records the original spike guardrail. The accepted implementation shares one App for the session and serializes every App consumer with a keyed native constraint; the seven non-App outcomes remain eligible to overlap that sequence.
 
 ## Historical baseline: Elsa test architecture at `37b1a453`
 
@@ -757,7 +761,9 @@ A final native discovery audit re-listed all 54 converted executables successful
 
 The 3,771 figure assumes `ELSA_USERTASKS_TEST_SQLSERVER`, `ELSA_USERTASKS_TEST_POSTGRES`, and `ELSA_USERTASKS_TEST_ORACLE` are unset, as they were during the audit. If `k` of those optional providers is configured, the intended aggregate becomes `3,771 + 7k` discoveries, `3,645 + 49k` passes, and `126 - 42k` skips. The fixed comparison-base inventory now resolves to 54 native projects and one residual component project out of 55.
 
-#### Component migration checkpoint (2026-09-14, before root cutover)
+#### Historical component migration checkpoint (2026-09-14, before root cutover; resource policy superseded)
+
+> This subsection preserves the original 203-case per-invocation migration evidence. Its unconstrained scheduling policy and exact case count predate the upstream additions and the accepted shared-App keyed constraint; they are not the accepted final performance result.
 
 Signed code commit `8a9bc8988ff43608c82a6ba3700761adbe311406` migrates the final active project, `Elsa.Workflows.ComponentTests`, to native TUnit. The fixed comparison-base inventory therefore resolves to 55 of 55 active projects on TUnit. The new `Elsa.Workflows.ComponentTests.Host` project is a non-test dependency and is not a 56th project in that denominator. Adding the component result to the preceding targeted evidence yields 3,974 discoveries: 3,845 passed, 129 intentionally skipped, and zero failed. This remains a per-project evidence aggregation, not a claim that one monolithic command executed all 55 projects.
 
@@ -809,8 +815,8 @@ That checkpoint closed the component-project commit boundary at 55 of 55 active 
 4. **`test: migrate unit suites to native TUnit (wave 1)`** — fixture-light and representative core projects; convert attributes, data sources, lifecycle, output, and assertions. Exit: exact discovery parity, no un-awaited assertions, and ten stable default-parallel runs per representative suite.
 5. **`test: migrate unit suites to native TUnit (wave 2)`** — remaining unit projects, including data-heavy and global-state cases. Exit: all unit projects pass with native assertions; global hazards have narrow constraints and ordinary tests remain parallel.
 6. **`test: migrate integration suites to native TUnit`** — convert output/lifecycle and allocate unique databases, tenants, workflow identities, queues, files, and other mutable resources per invocation. Exit: exact case parity and repeated parallel runs with idempotent cleanup.
-7. **`test: migrate conformance and component suites to TUnit`** — completed by the earlier conformance commits and signed component commit `8a9bc8988ff43608c82a6ba3700761adbe311406`; unavailable-provider suppression, component counts/skips, native host lifetime, invocation isolation, and teardown are verified.
-8. **`test: enforce isolated parallel execution`** — complete the repository hazard audit, add isolation sentinels, use keyed constraints for genuinely shared resources and unkeyed `[NotInParallel]` only for irreducible process-global state. Exit: independent sentinels overlap, protected sentinels do not, and repeated full runs show no count drift or cross-test contamination.
+7. **`test: migrate conformance and component suites to TUnit`** — completed by the earlier conformance commits and signed component commit `8a9bc8988ff43608c82a6ba3700761adbe311406`; the current shared component lifetime/scheduling policy is recorded separately below because it supersedes that checkpoint's unconstrained policy.
+8. **`test: enforce isolated parallel execution`** — the component's shared App and keyed native serialization are implemented and locally verified. Broader sentinel validation still requires independent sentinels to overlap, protected sentinels not to overlap, and repeated full runs to show no count drift or cross-test contamination.
 9. **`ci: switch Elsa tests to MTP`** — implemented in the current worktree with repository-root runner selection, direct native CI commands, TRX, native Cobertura, an aggregate threshold gate, and hang diagnostics. The success path is verified; deliberate coverage-failure and hang-sentinel artifact checks remain.
 10. **`chore: remove the final xUnit surface`** — implemented for the active test/build configuration and developer guidance. Historical issue evidence deliberately retains xUnit terminology; fresh restored-graph and built-artifact audits are clean.
 
@@ -841,7 +847,28 @@ Before the upstream synchronization, post-cutover validation completed outside t
 
 Synchronizing upstream `main` at `507522469ba810ee8b618ebd60294823436d6820` adds five active test projects: `Elsa.Alterations.Core.UnitTests`, `Elsa.Labels.UnitTests`, `Elsa.Alterations.Persistence.ConformanceTests`, `Elsa.Labels.Persistence.ConformanceTests`, and `Elsa.Workflows.Persistence.ConformanceTests`. The active inventory is now 60 projects: 39 unit, 20 integration, and one component project. The component host remains a non-test dependency, while the performance benchmark and `test/TlsSmoke` remain outside this inventory. `Elsa.sln` and the two solution filters carry the exact 60-project split, and package CI expects 59 unit/integration Cobertura shards plus one component shard. The preceding 3,974-case and 55-shard results remain explicitly pre-sync evidence.
 
-Fresh post-sync validation completed outside the restricted sandbox. `dotnet restore Elsa.sln` evaluated all 168 solution projects successfully, restoring 22 while 146 were already current, and the Release solution build completed with zero errors. The five new projects passed focused native runs of 38, 31, 39, 12, and 16 cases respectively. The exact PR command, `dotnet test --solution Elsa.sln --configuration Release --no-build`, then passed all 4,417 discovered cases: 4,270 succeeded, 147 were intentionally skipped, and none failed. All 60 active restored test graphs resolve TUnit 1.66.27 and its intentional TRX 2.3.3 dependency, with no xUnit or `Microsoft.NET.Test.Sdk`; the filter and workflow audit confirms the 59-plus-one coverage-shard contract and the single aggregate 10% line gate.
+Fresh post-sync validation completed outside the restricted sandbox. `dotnet restore Elsa.sln` evaluated all 168 solution projects successfully, restoring 22 while 146 were already current, and the Release solution build completed with zero errors. The five new projects passed focused native runs of 38, 31, 39, 12, and 16 cases respectively. The exact PR command, `dotnet test --solution Elsa.sln --configuration Release --no-build`, then passed all 4,417 discovered cases: 4,270 succeeded, 147 were intentionally skipped, and none failed. All 60 active restored test graphs resolve TUnit 1.66.27 and its intentional TRX 2.3.3 dependency, with no xUnit or `Microsoft.NET.Test.Sdk`; the filter and workflow audit confirms the 59-plus-one coverage-shard contract and the single aggregate 10% line gate. This 4,417-case success predates the accepted shared-App change and is therefore a historical correctness baseline, not post-change validation.
+
+### Current shared component App and keyed serialization (2026-09-14)
+
+`AppComponentTest` declares `[ClassDataSource<App>(Shared = SharedType.PerTestSession)]`, so TUnit constructs one App and injects the same instance through the inherited base into every consumer. `[NotInParallel(nameof(AppComponentTest))]` wraps each consumer's complete lifecycle and restores the former xUnit `AppCollection` behavior: one fixture, with all collection-equivalent members serialized.
+
+`HostMethodActivityTests` derives from `AppComponentTest`. Its 36 outcomes use the session App and matching key instead of constructing a per-class fixture App or copying registry metadata into an immutable snapshot.
+
+The resulting scheduling boundary contains all 198 App-bound outcomes: 195 executed cases and three expected skips. The remaining seven component outcomes do not consume App and have no matching key, so they remain eligible for TUnit's unconstrained default. Per-test cleanup drains workflow work and releases test-local scopes, clients, tenant state, mocks, signals, and subscriptions without disposing the shared cluster or host; TUnit owns the session data-source teardown. No custom semaphore, parallel limiter, global runner maximum, NUKE test target, or `src/**` change implements this policy.
+
+Three complete runs of the accepted policy passed 205 total outcomes: 202 passed, the same three expected skips, and zero failed. Native durations were 70.876, 68.798, and 74.570 seconds; recorded external wall times were 69.57 and 75.71 seconds. Each finalized native report contains exactly one `initialize App` span and one `initialize Infrastructure` span; the rollback-confirmation report also contains all 195 expected App-test cleanup hooks and measured a peak of exactly one concurrent App-bound lifecycle. A focused 49-case lifetime/state cohort passed in 40.827 seconds of console time (39.970 seconds native).
+
+The rejected invocation-isolated, native-limit-4 experiment passed the same 205/202/3 outcome contract but took 7m12.188s native, 7m12.727s in the console summary, and 433.02 seconds externally. A different experiment that combined one shared App with four-way scheduling failed 14 cases through cross-test state interference. Together, those results support the accepted collection-equivalent lifetime and serialization; neither four-way experiment is current configuration.
+
+After the local gate passes and the final commit is pushed, run the ordinary PR workflow without a custom runner cap:
+
+```bash
+./build.cmd Compile
+dotnet test --solution Elsa.sln --configuration Release --no-build
+```
+
+Capture the Restore, Compile, and Test step wall times, the 4,417-outcome solution result, and the component test application's duration. Compare CI run `34858013234` only as same-workflow topology/policy evidence: its earlier per-invocation policy reported 4,417 outcomes, a 10:16 Test step, and a 9:34 component application. Upstream xUnit run `34861447592` remains unmatched historical context (Restore 0:44, Compile 3:07, Test 7:30, component 2:47), not a controlled framework comparison.
 
 ## Final migration checklist
 
@@ -852,8 +879,9 @@ Checked items have either the rollout evidence recorded above or completed cutov
 - [x] Skip reasons and display identities match or have reviewed mappings.
 - [x] Ten consecutive default-parallel unit-pilot runs pass without count drift.
 - [x] Ten consecutive default-parallel integration-pilot runs pass without count drift.
-- [ ] Shared fixture initialization/disposal counts match intended lifetime.
-- [x] Mutable databases, queues, topics, keys, files, workflows, and tenants are isolated per invocation.
+- [x] Component App lifetime matches the selected policy: one `SharedType.PerTestSession` App, including host-method consumers, with session-owned disposal.
+- [x] The 198 App-bound outcomes use the matching native keyed serialization constraint; the seven independent outcomes remain unconstrained.
+- [x] Mutable resources are invocation-isolated where practical; the deliberately shared component App/database/host graph is protected by complete lifecycle serialization and test-local reset/cleanup.
 - [x] Process-global tests are exclusive and restore state.
 - [ ] Independent parallelism sentinels overlap while constrained sentinels never overlap.
 - [x] `ITestOutputHelper` replacement preserves concurrent/failure output.
