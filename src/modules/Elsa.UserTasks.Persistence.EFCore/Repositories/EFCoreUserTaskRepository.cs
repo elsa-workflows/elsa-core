@@ -356,6 +356,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             "due" => records.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
             "priority" when query.Descending => records.OrderByDescending(x => x.Priority).ThenBy(x => x.Id),
             "priority" => records.OrderBy(x => x.Priority).ThenBy(x => x.Id),
+            // Title uses default string.Compare / column collation — same relation as InMemory and VNext.
             "title" when query.Descending => records.OrderByDescending(x => x.Title).ThenBy(x => x.Id),
             "title" => records.OrderBy(x => x.Title).ThenBy(x => x.Id),
             "updated" when query.Descending => records.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id),
