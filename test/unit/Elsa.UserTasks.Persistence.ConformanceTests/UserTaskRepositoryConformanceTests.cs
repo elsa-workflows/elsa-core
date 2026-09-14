@@ -220,6 +220,16 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         });
         Assert.Empty(jsonSyntax.Items);
         Assert.Equal(0, jsonSyntax.TotalCount);
+
+        var punctuated = CreateTask(subject, title: "Approve invoice");
+        punctuated.Tags = ["review[urgent]"];
+        await Repository.AddProjectionAsync(punctuated);
+
+        var bracket = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "review[urgent]"
+        });
+        Assert.Equal(punctuated.Id, Assert.Single(bracket.Items).Id);
     }
 
     [ConformanceFact]

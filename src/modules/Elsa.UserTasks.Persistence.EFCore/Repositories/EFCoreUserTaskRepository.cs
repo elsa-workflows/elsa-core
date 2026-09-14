@@ -342,8 +342,9 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
     /// <summary>
     /// Safe search is a bounded text contains over title, summary, reference, task type, and tags.
     /// Tags live in <see cref="UserTaskRecord.TagsJson"/>; there is no tag table. Tag matching is
-    /// case-insensitive like InMemory/VNext. JSON punctuation is not treated as tag text, so a
-    /// query that only spans array syntax cannot match.
+    /// case-insensitive like InMemory/VNext. A query that only spans the JSON string delimiter
+    /// between two tags is not treated as a tag value; punctuation that can appear inside a tag
+    /// still matches.
     /// </summary>
     private static IQueryable<UserTaskRecord> ApplySafeSearch(IQueryable<UserTaskRecord> records, string? search)
     {
@@ -351,7 +352,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             return records;
 
         var value = search.Trim();
-        if (ContainsJsonStructure(value))
+        if (SpansSerializedTagDelimiter(value))
         {
             return records.Where(x =>
                 x.Title.Contains(value)
@@ -369,7 +370,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             || x.TagsJson.ToLower().Contains(tag));
     }
 
-    private static bool ContainsJsonStructure(string value) => value.AsSpan().IndexOfAny("\"\\[]") >= 0;
+    private static bool SpansSerializedTagDelimiter(string value) => value.Contains("\",\"", StringComparison.Ordinal);
 
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
     {
