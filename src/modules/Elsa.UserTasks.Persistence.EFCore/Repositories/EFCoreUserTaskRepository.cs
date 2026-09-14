@@ -317,22 +317,25 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             UserTaskQueryScopeKind.Assigned => records.Where(task =>
                 task.AssigneeProvider == subject.Provider && task.AssigneeType == subjectType && task.AssigneeId == subject.Id),
 
+            // Same rule as DefaultUserTaskAccessPolicy.IsCandidate / InMemory IsEligible:
+            // Snapshot uses expanded members only; Live uses current candidates. SnapshotGroups
+            // are the original group refs and must not re-open live group evaluation.
             UserTaskQueryScopeKind.Available => records.Where(task =>
                 task.AssigneeId == null
                 && task.Status != UserTaskStatus.Completed && task.Status != UserTaskStatus.TimedOut && task.Status != UserTaskStatus.Cancelled
                 && !dbContext.UserTaskExclusions.Any(exclusion =>
                     exclusion.TenantId == tenantId && exclusion.TaskId == task.Id &&
                     exclusion.ParticipantType == UserTaskParticipantType.User && exclusion.Provider == subject.Provider && exclusion.ParticipantId == subject.Id)
-                && (dbContext.UserTaskCandidates.Any(candidate =>
-                        candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
-                        candidate.ParticipantType == UserTaskParticipantType.User && candidate.Provider == subject.Provider && candidate.ParticipantId == subject.Id)
-                    || (groupKeys.Length > 0 && dbContext.UserTaskCandidates.Any(candidate =>
-                        candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
-                        candidate.ParticipantType == UserTaskParticipantType.Group && groupKeys.Contains(candidate.ParticipantKey)))
-                    || dbContext.UserTaskSnapshotMembers.Any(member =>
+                && (task.MembershipResolutionMode == UserTaskMembershipResolutionMode.Snapshot
+                    ? dbContext.UserTaskSnapshotMembers.Any(member =>
                         member.TenantId == tenantId && member.TaskId == task.Id &&
-                        ((member.ParticipantType == UserTaskParticipantType.User && member.Provider == subject.Provider && member.ParticipantId == subject.Id)
-                         || (member.ParticipantType == UserTaskParticipantType.Group && groupKeys.Contains(member.ParticipantKey)))))),
+                        member.ParticipantType == UserTaskParticipantType.User && member.Provider == subject.Provider && member.ParticipantId == subject.Id)
+                    : dbContext.UserTaskCandidates.Any(candidate =>
+                            candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
+                            candidate.ParticipantType == UserTaskParticipantType.User && candidate.Provider == subject.Provider && candidate.ParticipantId == subject.Id)
+                        || (groupKeys.Length > 0 && dbContext.UserTaskCandidates.Any(candidate =>
+                            candidate.TenantId == tenantId && candidate.TaskId == task.Id &&
+                            candidate.ParticipantType == UserTaskParticipantType.Group && groupKeys.Contains(candidate.ParticipantKey))))),
 
             UserTaskQueryScopeKind.History => records.Where(task =>
                 (task.Status == UserTaskStatus.Completed || task.Status == UserTaskStatus.TimedOut || task.Status == UserTaskStatus.Cancelled)
