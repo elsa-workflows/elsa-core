@@ -59,6 +59,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         if (!TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
             return false;
 
+        secret.TenantId = existingSecret.TenantId;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Secrets.Remove(existingSecret);
         await dbContext.SaveChangesAsync(cancellationToken);

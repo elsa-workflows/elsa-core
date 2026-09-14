@@ -165,6 +165,44 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task TryAddOrReplaceDeletedAsync_WhenIncomingTenantDiffers_PreservesExistingTenant()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "old",
+                    Name = "smtp:password",
+                    DisplayName = "Deleted password",
+                    Status = SecretStatus.Deleted
+                });
+
+                var replacement = new Secret
+                {
+                    Id = "new",
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Replacement password",
+                    TenantId = "tenant-b"
+                };
+                var result = await repository.TryAddOrReplaceDeletedAsync(replacement);
+                var reloaded = await repository.GetAsync("smtp:password");
+
+                Assert.True(result);
+                Assert.Equal("tenant-a", replacement.TenantId);
+                Assert.NotNull(reloaded);
+                Assert.Equal("new", reloaded!.Id);
+                Assert.Equal("Replacement password", reloaded.DisplayName);
+                Assert.Equal("tenant-a", reloaded.TenantId);
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-b"))
+                Assert.Null(await repository.GetAsync("smtp:password"));
+        });
+    }
+
+    [Fact]
     public async Task SaveAsync_RejectsNamedWriterUpdatingAgnosticSecretWithoutMutation()
     {
         await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
