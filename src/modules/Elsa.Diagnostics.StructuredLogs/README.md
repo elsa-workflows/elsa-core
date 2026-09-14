@@ -60,6 +60,8 @@ services.AddElsa(elsa =>
 
 The core module remains storage-provider neutral. Custom stores can replace `IStructuredLogStore` while live updates continue through `IStructuredLogLiveFeed`; Studio continues to use the same REST and SignalR contracts, including source filtering, source-change notifications, and storage diagnostics.
 
+Shared store contracts (InMemory and Relational/Sqlite): `MaxRecentLogQuerySize` is the default and upper `Take`; query order is `Timestamp`, `ReceivedAt`, `SourceId`, `Sequence`, `Id`; `ListSources` prefers the in-process source registry for identity metadata and `SourceHeartbeatTimeout` → `Stale`. `QueryAsync.DroppedEvents` is the in-memory ring overflow count — relational write-queue drops are reported through storage diagnostics, not that field. Equality filters that differ only by case are not portable: InMemory is `OrdinalIgnoreCase`, SQL follows the database collation.
+
 ## Redaction
 
 Log events pass through `IStructuredLogRedactor` before they are buffered or streamed. Configure `StructuredLogsOptions` to extend the default sensitive property names and text patterns.
