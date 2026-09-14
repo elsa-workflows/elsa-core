@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -51,6 +52,23 @@ public class WorkflowInstanceStorageDriverTests
         await harness.Driver.DeleteAsync(id, harness.Context);
 
         Assert.False(GetVariables(harness.Properties).ContainsKey(id));
+    }
+
+    [Fact]
+    public async Task WriteThenRead_WhenValueHasOrdinaryDollarRefProperty_RoundTrips()
+    {
+        // Arrange
+        var harness = CreateHarness(new Variable<RefPayload>("payload", new()));
+        const string id = "payloadVariable";
+        var value = new RefPayload { Ref = "ordinary" };
+
+        // Act
+        await harness.Driver.WriteAsync(id, value, harness.Context);
+        var read = await harness.Driver.ReadAsync(id, harness.Context);
+
+        // Assert
+        var restored = Assert.IsType<RefPayload>(read);
+        Assert.Equal("ordinary", restored.Ref);
     }
 
     [Fact]
@@ -130,6 +148,12 @@ public class WorkflowInstanceStorageDriverTests
     private sealed class CyclicValue
     {
         public CyclicValue Self { get; set; } = null!;
+    }
+
+    private sealed class RefPayload
+    {
+        [JsonPropertyName("$ref")]
+        public string Ref { get; set; } = "";
     }
 }
 

@@ -32,7 +32,7 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         {
             try
             {
-                var node = JsonSerializer.SerializeToNode(value);
+                var node = JsonSerializer.SerializeToNode(value, GetSerializerOptions());
                 dictionary[id] = node!;
             }
             catch (Exception ex) when (ex is JsonException or NotSupportedException or ObjectDisposedException)
@@ -54,7 +54,7 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         var options = new ObjectConverterOptions
         {
             DeserializeJsonObjectToObject = true,
-            SerializerOptions = payloadSerializer.GetOptions().CloneForValueConversion()
+            SerializerOptions = GetSerializerOptions()
         };
         var result = node.TryConvertTo(variableType, options);
         if (result.IsSuccess)
@@ -75,6 +75,8 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         UpdateVariablesDictionary(context, dictionary => dictionary.Remove(id));
         return ValueTask.CompletedTask;
     }
+
+    private JsonSerializerOptions GetSerializerOptions() => payloadSerializer.GetOptions().Clone();
 
     private VariablesDictionary GetVariablesDictionary(StorageDriverContext context) => context.ExecutionContext.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new VariablesDictionary());
     private void SetVariablesDictionary(StorageDriverContext context, VariablesDictionary dictionary) => context.ExecutionContext.Properties[VariablesDictionaryStateKey] = dictionary;
