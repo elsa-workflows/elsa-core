@@ -361,6 +361,57 @@ public class SecretRepositoryTenantIsolationTests
     }
 
     [Fact]
+    public async Task Repositories_WhenTenancyIsDisabledPreserveIncomingTenantOnReplacement()
+    {
+        await ForEachDiRepositoryAsync(false, async (_, repository) =>
+        {
+            await repository.AddAsync(new Secret
+            {
+                Id = "save-existing",
+                Name = "save:secret",
+                DisplayName = "Original",
+                TenantId = "tenant-a"
+            });
+
+            await repository.SaveAsync(new Secret
+            {
+                Id = "save-incoming",
+                Name = "SAVE:SECRET",
+                DisplayName = "Updated",
+                TenantId = "tenant-b"
+            });
+
+            var saved = await repository.GetAsync("save:secret");
+            Assert.NotNull(saved);
+            Assert.Equal("save-existing", saved!.Id);
+            Assert.Equal("tenant-b", saved.TenantId);
+
+            await repository.AddAsync(new Secret
+            {
+                Id = "deleted-existing",
+                Name = "replace:secret",
+                DisplayName = "Deleted",
+                Status = SecretStatus.Deleted,
+                TenantId = "tenant-a"
+            });
+
+            var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+            {
+                Id = "replace-incoming",
+                Name = "REPLACE:SECRET",
+                DisplayName = "Replacement",
+                TenantId = "tenant-b"
+            });
+
+            Assert.True(replaced);
+            var replacement = await repository.GetAsync("replace:secret");
+            Assert.NotNull(replacement);
+            Assert.Equal("replace-incoming", replacement!.Id);
+            Assert.Equal("tenant-b", replacement.TenantId);
+        });
+    }
+
+    [Fact]
     public async Task FileRepository_DefaultTenantKeepsReadingLegacyNullTenantRows()
     {
         var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");

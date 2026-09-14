@@ -120,7 +120,7 @@ public class FileSecretRepository : ISecretRepository
                 if (secrets.Where((_, i) => i != index).Any(x => x.Id == secret.Id))
                     return false;
 
-                secrets[index] = ReplaceTenantOwnedSecret(secrets[index], secret);
+                secrets[index] = ReplaceTenantOwnedSecret(secrets[index], secret, tenancyEnabled);
             }
             else
             {
@@ -166,7 +166,7 @@ public class FileSecretRepository : ISecretRepository
                 if (!SecretRepositoryTenant.CanReplace(secrets[index], secret, tenantAccessor, tenancyEnabled))
                     throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
 
-                secrets[index] = ReplaceIdentityAndTenant(secrets[index], secret);
+                secrets[index] = ReplaceIdentityAndTenant(secrets[index], secret, tenancyEnabled);
             }
 
             await WriteAllUnsafeAsync(secrets, cancellationToken);
@@ -229,18 +229,23 @@ public class FileSecretRepository : ISecretRepository
     }
 
     /// <summary>
-    /// Updates the aggregate payload while retaining the row identity and tenant ownership.
+    /// Updates the aggregate payload while retaining the row identity and, when enabled, tenant ownership.
     /// </summary>
-    private static Secret ReplaceTenantOwnedSecret(Secret existing, Secret incoming)
+    private static Secret ReplaceTenantOwnedSecret(Secret existing, Secret incoming, bool tenancyEnabled)
     {
-        incoming.TenantId = existing.TenantId;
+        if (tenancyEnabled)
+            incoming.TenantId = existing.TenantId;
+
         return incoming;
     }
 
-    private static Secret ReplaceIdentityAndTenant(Secret existing, Secret incoming)
+    private static Secret ReplaceIdentityAndTenant(Secret existing, Secret incoming, bool tenancyEnabled)
     {
         incoming.Id = existing.Id;
-        incoming.TenantId = existing.TenantId;
+
+        if (tenancyEnabled)
+            incoming.TenantId = existing.TenantId;
+
         return incoming;
     }
 

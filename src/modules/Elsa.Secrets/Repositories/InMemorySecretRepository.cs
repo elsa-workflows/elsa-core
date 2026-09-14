@@ -103,7 +103,8 @@ public class InMemorySecretRepository : ISecretRepository
                     return Task.FromResult(false);
 
                 var replacement = Clone(secret);
-                replacement.TenantId = existing.TenantId;
+                if (tenancyEnabled)
+                    replacement.TenantId = existing.TenantId;
 
                 // Validate before removing the deleted row. Reusing its own ID is valid; another row's ID
                 // is a collision and must leave the deleted row untouched when validation fails.
@@ -142,7 +143,10 @@ public class InMemorySecretRepository : ISecretRepository
                 // EF updates the row found by name, retaining its primary key and tenant ownership.
                 var replacement = Clone(secret);
                 replacement.Id = existing.Id;
-                replacement.TenantId = existing.TenantId;
+
+                if (tenancyEnabled)
+                    replacement.TenantId = existing.TenantId;
+
                 _secrets[existing.Id] = replacement;
                 return Task.CompletedTask;
             }
