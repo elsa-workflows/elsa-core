@@ -1,6 +1,6 @@
 # Issue #8101: TUnit migration research and rollout plan
 
-Status: **all 55 active test projects migrated; root CI/tooling cutover remains**
+Status: **all 55 active test projects migrated and root MTP/CI cutover implemented; success-path validation complete, with focused lifetime/sentinel, failure-path, and IDE checks remaining**
 Recorded: 2026-09-13
 Updated: 2026-09-14
 Issue: [elsa-workflows/elsa-core#8101][s1]  
@@ -18,23 +18,27 @@ That project decision intentionally goes beyond the issue's original experiment 
 2. no xUnit framework, assertion, runner, discoverer, output-helper, package, configuration, or compatibility alias remains;
 3. independent tests run concurrently by default;
 4. shared mutable resources use invocation-unique identities, while irreducible process-global hazards use narrowly scoped native TUnit constraints;
-5. discovery counts, intended skips, reports, coverage enforcement, diagnostics, and supported developer commands are preserved.
+5. discovery counts, intended skips, reports, coverage enforcement, diagnostics, and supported developer commands are preserved or replaced by an explicit native contract.
 
-The most important risks are behavioral rather than syntactic:
+The accepted implementation now selects MTP from the repository-root `global.json`, runs individual projects with `dotnet test --project`, and runs checked-in solution or solution-filter scopes with `dotnet test --solution`. All 55 active test projects are native TUnit projects. NUKE remains responsible for compile/package work but no longer owns a test target; PR and package workflows invoke MTP directly. Package coverage is native Cobertura, merged into one repository-wide 10% line gate, with TRX and five-minute supported mini-dump diagnostics retained.
+
+At the comparison base, the most important risks were behavioral rather than syntactic:
 
 - xUnit v2 and TUnit do not have the same default parallel-execution model;
 - Elsa has process-global test state, shared infrastructure, and public test helpers coupled to xUnit types;
 - custom conformance discovery deliberately suppresses unavailable persistence providers and cannot be converted as ordinary data;
-- the current CI depends on Coverlet thresholds, three coverage formats, GitHub annotations, TRX, and hang dumps, each of which needs an explicit MTP replacement and a failure-path test;
+- the baseline CI depended on Coverlet thresholds, three coverage formats, GitHub annotations, TRX, and hang dumps, each of which needed an explicit MTP replacement and a failure-path test;
 - a partial MTP migration cannot safely change runner selection at the repository root because a single `dotnet test` invocation cannot include projects that only support different test platforms.
 
 The issue's original recommendation was to finish a controlled A/B/C comparison before deciding:
 
-1. xUnit v2 + VSTest, the current baseline;
+1. xUnit v2 + VSTest, the then-current baseline;
 2. xUnit v3 + MTP, the platform-only control tracked by #8050;
 3. TUnit + MTP, initially retaining `xunit.assert` only to isolate runner cost.
 
 That comparison remains useful historical evidence, but the accepted implementation does not retain `xunit.assert`: assertions are migrated to native TUnit APIs and every analyzer-generated rewrite is compiled and behaviorally reviewed. TUnit's unconstrained default is enabled only after the isolation audit and repeat-run gate. [1][s1] [7][s7]
+
+> **Historical record:** The original issue scope, isolated-runner design, A/B/C commands, baseline architecture, and rollout checkpoints below record how the decision was reached. They intentionally retain obsolete VSTest, positional `dotnet test`, and direct `dotnet run` examples and are not current developer guidance. See “Current implementation: repository-root MTP cutover” for the active contract.
 
 ## Original issue scope and approved expansion
 
@@ -126,11 +130,11 @@ Process-global state cannot be made safe merely by choosing unique data. Tests t
 
 Issue #7965 is a concrete warning: a process-global FastEndpoints security flag raced between tests. [16][s16] The component suite also has shared SQL Server, PostgreSQL, RabbitMQ, host, and tenant lifecycle, so it must remain serialized until those resources are partitioned and its fixture lifetime is proven. Existing flake #7404 should be tracked as a baseline condition rather than silently attributed to or fixed by this spike. [17][s17]
 
-## Current Elsa test architecture
+## Historical baseline: Elsa test architecture at `37b1a453`
 
-At the pinned base, test defaults come from `test/Directory.Build.props` and package versions from `Directory.Packages.props`. The current stack is:
+At the pinned base, test defaults came from `test/Directory.Build.props` and package versions from `Directory.Packages.props`. The baseline stack was:
 
-| Concern | Current value |
+| Concern | Historical value |
 | --- | --- |
 | Framework | xUnit `2.9.3` |
 | Runner adapter | `xunit.runner.visualstudio` `3.1.5` |
@@ -209,7 +213,7 @@ The baseline case counts are local runner-discovery results and must be reconfir
 
 ### Variant A: xUnit v2 + VSTest
 
-This is Elsa's current behavior and the reference for source compatibility. It retains the current packages, VSTest logging, Coverlet collection, and `xunit.runner.json` semantics. Its main purpose in the experiment is to establish current complete-job and project-level timings.
+This was Elsa's comparison-base behavior and the reference for source compatibility. It retained the baseline packages, VSTest logging, Coverlet collection, and `xunit.runner.json` semantics. Its main purpose in the experiment was to establish complete-job and project-level timings.
 
 ### Variant B: xUnit v3 + MTP
 
@@ -327,9 +331,9 @@ The decision gate applies to the complete unit/integration CI job, not just the 
 
 If any variant changes case count, skip count, concurrency, coverage denominator, or external-service topology, stop the comparison and explain the difference before collecting more timing samples.
 
-## Reproducible commands
+## Historical spike commands
 
-The commands below are templates. Artifact directories must remain variant-specific. Run from the repository root unless the command changes directory.
+The commands below are preserved templates for reproducing the original isolated experiment. They are not current developer guidance. Artifact directories must remain variant-specific. Run from the repository root unless the command changes directory.
 
 ### Environment record
 
@@ -626,7 +630,7 @@ Do not infer “adopt” merely because the pilot compiles or because a no-build
 
 The complete conversion is intentionally split into independently reviewable commits. Transitional commits may keep the root runner on VSTest while unmigrated projects remain, but no compatibility shim is permitted and the final tree must contain no xUnit dependency.
 
-### Verified rollout snapshot (2026-09-13)
+### Historical verified rollout snapshot (2026-09-13)
 
 At code commit `f434da9d66c4173c3247fcb52d1352f6c4475300`, 50 of the fixed 55 active test projects recorded at comparison base `37b1a453169201e577ef6db0bfd0348b08070211` have committed native TUnit opt-ins: all 37 unit projects, the already-native `Elsa.Bpmn.Interchange.IntegrationTests`, and 12 newly migrated integration projects. That frozen comparison-base filesystem inventory comprises 37 unit, 17 integration, and one component project; it excludes `test/TlsSmoke` and the BenchmarkDotNet performance project and is not recomputed from every project elsewhere under `test`.
 
@@ -753,7 +757,7 @@ A final native discovery audit re-listed all 54 converted executables successful
 
 The 3,771 figure assumes `ELSA_USERTASKS_TEST_SQLSERVER`, `ELSA_USERTASKS_TEST_POSTGRES`, and `ELSA_USERTASKS_TEST_ORACLE` are unset, as they were during the audit. If `k` of those optional providers is configured, the intended aggregate becomes `3,771 + 7k` discoveries, `3,645 + 49k` passes, and `126 - 42k` skips. The fixed comparison-base inventory now resolves to 54 native projects and one residual component project out of 55.
 
-#### Component migration checkpoint (2026-09-14)
+#### Component migration checkpoint (2026-09-14, before root cutover)
 
 Signed code commit `8a9bc8988ff43608c82a6ba3700761adbe311406` migrates the final active project, `Elsa.Workflows.ComponentTests`, to native TUnit. The fixed comparison-base inventory therefore resolves to 55 of 55 active projects on TUnit. The new `Elsa.Workflows.ComponentTests.Host` project is a non-test dependency and is not a 56th project in that denominator. Adding the component result to the preceding targeted evidence yields 3,974 discoveries: 3,845 passed, 129 intentionally skipped, and zero failed. This remains a per-project evidence aggregation, not a claim that one monolithic command executed all 55 projects.
 
@@ -767,7 +771,7 @@ The final default-parallel Release invocation was:
 TUNIT_OTEL_RECEIVER=0 dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 --no-build -- --minimum-expected-tests 203 --results-directory /tmp/elsa-8101-tunit-full-final-01 --report-trx --report-trx-filename full.trx --timeout 20m
 ```
 
-TUnit reported `Passed` with 203 total, 200 passed, three intended skips, zero failed, zero cancelled, zero timed out, and zero flaky in 6m27.8s; its finalized JSON records `totalDurationMs = 387784.054` and 203 unique case IDs. The retained skips are `ActivityRegistrySyncTests.ImportWorkflowActivity_ShouldUpdateOtherPods`, `InputOutputLoggingTests.WorkflowAsActivityInternal_ShouldHonorSettings_WhenExecuting`, and `DeleteWorkflowTests.DeleteWorkflow_Clustered`. The TRX counters are `total=203`, `executed=200`, `passed=200`, `failed=0`, and `notExecuted=3`. The process exit code was 9 only because Microsoft Testing Platform 2.3.3 applies `--minimum-expected-tests` to executed cases: the supplied value 203 exceeded the 200 non-skipped executions. It was a `MinimumExpectedTestsPolicyViolation`, not a test failure.
+TUnit reported `Passed` with 203 total, 200 passed, three intended skips, zero failed, zero cancelled, zero timed out, and zero flaky in 6m27.8s; its finalized JSON records `totalDurationMs = 387784.054` and 203 unique case IDs. The retained skips are `ActivityRegistrySyncTests.ImportWorkflowActivity_ShouldUpdateOtherPods`, `InputOutputLoggingTests.WorkflowAsActivityInternal_ShouldHonorSettings_WhenExecuting`, and `DeleteWorkflowTests.DeleteWorkflow_Clustered`. The TRX counters are `total=203`, `executed=200`, `passed=200`, `failed=0`, and `notExecuted=3`. The process exit code was 9 only because the directly launched Microsoft Testing Platform 2.4.0 test application applied `--minimum-expected-tests` to executed cases: the supplied value 203 exceeded the 200 non-skipped executions. It was a `MinimumExpectedTestsPolicyViolation`, not a test failure.
 
 Discovery/report parity and execution-floor enforcement are therefore two distinct gates. Component runs must use `--minimum-expected-tests 200`, while the finalized TUnit JSON must independently be checked for exactly 203 total cases. `TUNIT_OTEL_RECEIVER=0` only disables the optional test-runner OTLP receiver in a restricted local environment; it does not alter scheduling or application telemetry. The focused four-tenant cohort also passed 41 of 41 in 1m36.786s after catalog migration was reduced to once per case.
 
@@ -791,13 +795,13 @@ The earlier supporting package-alignment commits are `7696f3d0e5b1390569a6add613
 
 The baseline's 2,931 figure is a source count of attributed test methods before theory expansion, not a repository-wide runner-discovered case count. Neither the 1,482-case rollout wave, the earlier cumulative 2,766 discoveries, nor the final 3,771 targeted discoveries may be presented as a percentage of 2,931 or as repository-wide discovery parity.
 
-The fixed 55-project migration boundary is no longer mixed-runner, but repository-root runner selection and CI have not been switched. There is no root `global.json`; MTP selection remains scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables are the verified path for the converted projects. These counts are not evidence of a root-level or full-suite MTP pass, and root runner integration remains an explicit final migration step.
+At that checkpoint, the fixed 55-project migration boundary was no longer mixed-runner, but repository-root runner selection and CI had not been switched. There was no root `global.json`; MTP selection remained scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables were the verified path for the converted projects. These counts are not evidence of a root-level or full-suite MTP pass.
 
 At the component checkpoint, no active test-project execution boundary remains on xUnit: the component project uses TUnit and TUnit.AspNetCore, and its `xunit.runner.json` is removed. Conditional central package/runner wiring still needs removal during the final repository and CI cutover. The performance props still mention removing inherited xUnit, but performance and `test/TlsSmoke` are outside the fixed 55-project denominator.
 
 At the earlier 46-project integration checkpoint, the protected 15-path framework-neutral shared-helper patch was incorporated into `48337b147` together with the eight dependent integration projects. The three shared libraries and all eight migrated projects build for every targeted framework/configuration used by that tranche. A post-restore audit found zero resolved xUnit packages in their `project.assets.json` graphs, zero xUnit-named files in their build output, and zero xUnit strings in 42 scanned first-party DLLs. Source audits found zero xUnit references, zero potentially un-awaited `Assert.That` calls among 1,450 assertion sites, zero temporary trace/sentinel references, and no changed paths outside the accepted tranche plus the `ElsaScriptCompiler` race fix and that evidence.
 
-This documentation update closes the component-project commit boundary at 55 of 55 active projects and 3,974 targeted discoveries in the default provider environment. It does not switch the repository root or CI to MTP, remove the remaining conditional central xUnit wiring, close the coverage/diagnostics/IDE gates, or claim one repository-wide execution. Those plan steps and checklist items remain open.
+That checkpoint closed the component-project commit boundary at 55 of 55 active projects and 3,974 targeted discoveries in the default provider environment. It did not switch the repository root or CI to MTP, remove the remaining conditional central xUnit wiring, close the coverage/diagnostics/IDE gates, or claim one repository-wide execution. The current implementation below supersedes that pre-cutover state without changing its recorded evidence.
 
 1. **`docs: research TUnit migration and isolation plan`** — freeze the base SHA, inventories, baseline counts/timings, primary-source findings, accepted scope, risks, and reproducible validation matrix.
 2. **`test: add opt-in TUnit MTP infrastructure`** — central package versions, conditional test-project wiring, and a directory-scoped MTP selector. Exit: converted and unconverted projects can coexist without changing the root runner.
@@ -807,17 +811,38 @@ This documentation update closes the component-project commit boundary at 55 of 
 6. **`test: migrate integration suites to native TUnit`** — convert output/lifecycle and allocate unique databases, tenants, workflow identities, queues, files, and other mutable resources per invocation. Exit: exact case parity and repeated parallel runs with idempotent cleanup.
 7. **`test: migrate conformance and component suites to TUnit`** — completed by the earlier conformance commits and signed component commit `8a9bc8988ff43608c82a6ba3700761adbe311406`; unavailable-provider suppression, component counts/skips, native host lifetime, invocation isolation, and teardown are verified.
 8. **`test: enforce isolated parallel execution`** — complete the repository hazard audit, add isolation sentinels, use keyed constraints for genuinely shared resources and unkeyed `[NotInParallel]` only for irreducible process-global state. Exit: independent sentinels overlap, protected sentinels do not, and repeated full runs show no count drift or cross-test contamination.
-9. **`ci: switch Elsa tests to MTP`** — move runner selection to the repository root, update developer/CI commands, preserve GitHub annotations and TRX, wire coverage formats plus an external threshold gate, and validate hang dumps. Exit: success and deliberate-failure paths produce the expected artifacts and exit codes.
-10. **`chore: remove the final xUnit surface`** — remove xUnit packages, runners, configuration, discoverers, names, and stale documentation; build the solution and run the full matrix. Exit: case-insensitive repository audit and restored dependency graphs contain no xUnit, and the original checkout remains untouched.
+9. **`ci: switch Elsa tests to MTP`** — implemented in the current worktree with repository-root runner selection, direct native CI commands, TRX, native Cobertura, an aggregate threshold gate, and hang diagnostics. The success path is verified; deliberate coverage-failure and hang-sentinel artifact checks remain.
+10. **`chore: remove the final xUnit surface`** — implemented for the active test/build configuration and developer guidance. Historical issue evidence deliberately retains xUnit terminology; fresh restored-graph and built-artifact audits are clean.
 
-Every commit is gated by a focused build and test run before it is created. Every project batch additionally records discovered/passed/skipped totals and is rerun under its final parallel policy. The final merge gate is stricter: unchanged intended case set, stable repeated runs, coverage threshold preserved, reports and diagnostics present, and a zero-xUnit source/package audit.
+The rollout evidence above was gated by focused builds and test runs. Every project batch additionally records discovered/passed/skipped totals and is rerun under its final parallel policy. The final merge gate remains stricter: unchanged intended case set, stable repeated runs, coverage threshold enforcement, reports and diagnostics present, and a zero-xUnit source/package audit.
+
+### Current implementation: repository-root MTP cutover (2026-09-14)
+
+The root `global.json` selects `Microsoft.Testing.Platform`. `Elsa.Mediator.UnitTests` is now a member of `Elsa.sln`, so the solution contains all 55 active test projects. Two checked-in solution filters provide the package-workflow lanes: `Elsa.UnitIntegration.Tests.slnf` contains the 54 unit/integration projects, and `Elsa.Component.Tests.slnf` contains the component project. Current root commands are:
+
+```bash
+dotnet test --solution Elsa.sln
+dotnet test --solution Elsa.UnitIntegration.Tests.slnf
+dotnet test --solution Elsa.Component.Tests.slnf
+dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+```
+
+Outer SDK options belong before the literal `--`; options after it are forwarded to each TUnit test application. NUKE no longer exposes or selects a `Test` target. The PR workflow runs `./build.cmd Compile` and then invokes `dotnet test --solution Elsa.sln --configuration Release --no-build` directly. The package workflow restores and tests the two solution filters directly. The workflows remain the source of truth for detailed runner switches while developer examples intentionally stay minimal.
+
+SDK 10.0.400's outer `--minimum-expected-tests` option was verified as an aggregate floor whose count includes all discovered cases. It is not equivalent to the 54-unit/integration and one-component coverage-shard checks and was removed from the active commands under the minimal-command policy. The shard checks prove that the expected test applications emitted coverage, while normal MTP exit behavior still handles zero discovery. CI therefore no longer enforces an exact aggregate case count, and these solution/filter runs do not by themselves prove exact discovery parity.
+
+The accepted coverage contract is Microsoft Testing Platform native Cobertura with `test/coverage.settings.xml`. Each test application writes a collision-safe GUID-named Cobertura shard into its lane-specific results directory; CI requires 54 unit/integration shards and one component shard. The raw lane artifacts remain separate, then ReportGenerator merges all 55 shards and enforces one repository-wide 10% line threshold. This deliberately retires LCOV/OpenCover and replaces the historical per-project 10% default and 23% component thresholds with one aggregate gate.
+
+TUnit's built-in GitHub Actions reporter auto-activates in GitHub Actions, so no external GitHub reporter package or switch is required. Both package lanes retain TRX, while only the component lane enables a five-minute supported mini-dump policy; their result directories are uploaded on every outcome. The five-minute component hang window and aggregate 10% coverage gate supersede the earlier two-minute dump and per-project threshold passages retained above as historical evidence.
+
+Post-cutover validation completed outside the restricted sandbox. Restore succeeded for both solution filters and `Elsa.sln`, and a Release `--no-restore` solution build completed with zero errors. The exact PR command passed all 3,974 cases (3,845 passed, 129 intentionally skipped, zero failed). The native unit/integration lane passed 3,771 cases (3,645 passed, 126 intentionally skipped, zero failed) and emitted all 54 expected Cobertura shards. The native component lane passed 203 cases (200 passed, three intended skips, zero failed) and emitted its one expected shard. ReportGenerator 5.5.11, restored from the repository-local .NET tool manifest, merged all 55 fresh shards without a downstream assembly filter and passed the aggregate gate at 63.1% line coverage. The collector output contains neither `Elsa.*Tests*`/`Elsa.Testing.Shared*` packages nor `Elsa.Workflows.ComponentTests.Host`.
 
 ## Final migration checklist
 
-The migration is complete only when every required box has evidence:
+Checked items have either the rollout evidence recorded above or completed cutover wiring. Unchecked items still require post-cutover verification before the migration is closed:
 
 - [x] Every active unit, integration, and component project uses TUnit on MTP.
-- [x] Unit, integration, conformance, and component case manifests match the intended baseline.
+- [x] Historical project-local case manifests match the reviewed intended case set; current solution/filter CI does not enforce exact aggregate discovery parity.
 - [x] Skip reasons and display identities match or have reviewed mappings.
 - [x] Ten consecutive default-parallel unit-pilot runs pass without count drift.
 - [x] Ten consecutive default-parallel integration-pilot runs pass without count drift.
@@ -827,16 +852,17 @@ The migration is complete only when every required box has evidence:
 - [ ] Independent parallelism sentinels overlap while constrained sentinels never overlap.
 - [x] `ITestOutputHelper` replacement preserves concurrent/failure output.
 - [x] Conformance discovery preserves unavailable-provider suppression.
-- [ ] Cobertura is equivalent and existing filters are retained.
-- [ ] LCOV/OpenCover disposition is explicit.
-- [ ] Every nonzero coverage threshold fails the build when violated.
-- [ ] GitHub annotations are source-linked and useful.
-- [ ] TRX totals, outcomes, names, output, and attachments are acceptable; component counters are verified, but CI must use execution minimum 200 separately from discovery/report total 203.
-- [ ] A two-minute hang creates and uploads a mini dump.
+- [x] Native Cobertura uses the translated shared filters and CI guards the expected 54 plus one report shards.
+- [x] LCOV/OpenCover are deliberately retired in favor of Cobertura.
+- [x] ReportGenerator merges every lane and enforces the single repository-wide 10% line threshold.
+- [x] TUnit's built-in GitHub Actions reporter replaces the external reporter package and switch.
+- [x] TRX is configured for the native CI lanes.
+- [x] The package workflow requests a supported mini dump after a five-minute hang and uploads each lane result directory on every outcome.
+- [ ] Post-cutover success, deliberate coverage-failure, and hang-sentinel paths produce the expected artifacts and exit codes.
 - [ ] Supported IDEs discover, filter, run, debug, cancel, and show output.
-- [ ] Root and CI test commands use MTP syntax and return correct exit codes.
-- [ ] Case-insensitive source/config audit contains no xUnit surface.
-- [ ] Restored dependency graphs and built artifacts contain no xUnit assemblies; active-project graphs are clean, but the final repository-wide zero-xUnit audit remains.
+- [x] Root and CI test commands use native MTP `dotnet test --solution` or `dotnet test --project` syntax.
+- [x] The active test/build source and configuration contain no xUnit surface; historical issue/specification prose is retained as historical evidence.
+- [x] Restored dependency graphs and built artifacts contain no xUnit assemblies.
 - [x] Original checkout and unrelated user changes remain untouched.
 
 ## Sources

@@ -103,13 +103,13 @@ The `Workflows/` directory contains test workflow implementations:
 
 ```bash
 # Run all HttpEndpoint tests
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpoint*Tests*/*"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/HttpEndpoint*Tests*/*"
 
 # Run specific test categories
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointTests*/*"
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointSecurityAndEdgeCasesTests*/*"
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointRouteParametersTests*/*"
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointFileUploadTests*/*"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/HttpEndpointTests*/*"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/HttpEndpointSecurityAndEdgeCasesTests*/*"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/HttpEndpointRouteParametersTests*/*"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/HttpEndpointFileUploadTests*/*"
 ```
 
 ### Test Data and Scenarios

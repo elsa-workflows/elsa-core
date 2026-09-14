@@ -6,13 +6,11 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <!-- Keep the existing component-suite threshold while the native TUnit migration
-             changes the host topology and coverage instrumentation. -->
-        <Threshold>23</Threshold>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" />
+        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
         <PackageReference Include="TUnit.AspNetCore" />
     </ItemGroup>
 	

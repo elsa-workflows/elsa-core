@@ -58,7 +58,8 @@ Elsa Core is organized as a large multi-project .NET solution. The repo favors s
 - [Directory.Build.props](../../Directory.Build.props) contains shared MSBuild settings.
 - [src/Directory.Build.props](../../src/Directory.Build.props) multi-targets source packages for `net8.0`, `net9.0`, and `net10.0`.
 - [Directory.Packages.props](../../Directory.Packages.props) centrally manages package versions, including conditional versions for .NET 8/9 versus .NET 10.
-- [build/Build.cs](../../build/Build.cs) defines the NUKE build, test, and package targets.
+- [build/Build.cs](../../build/Build.cs) defines the NUKE build and package orchestration.
+- TUnit tests run directly through Microsoft Testing Platform with `dotnet test --solution Elsa.sln` or `dotnet test --project <path-to-test.csproj>`.
 
 ## How To Find Code Fast
 

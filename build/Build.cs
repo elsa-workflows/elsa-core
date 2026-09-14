@@ -1,21 +1,17 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Nuke.Common;
 using Nuke.Common.CI;
-using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.Git;
 using Nuke.Common.IO;
-using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
-using Nuke.Common.Tools.Coverlet;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
 using Nuke.Components;
 using Serilog;
 
 [ShutdownDotNetAfterServerBuild]
-partial class Build : NukeBuild, ITest, IPack
+partial class Build : NukeBuild, IPack
 {
     public static int Main() => Execute<Build>(x => ((ICompile)x).Compile);
 
@@ -27,7 +23,6 @@ partial class Build : NukeBuild, ITest, IPack
     AbsolutePath SourceDirectory => RootDirectory / "src";
 
     public AbsolutePath PackagesDirectory => RootDirectory / "packages";
-    public AbsolutePath TestResultDirectory => RootDirectory / "testresults";
 
     string TagVersion => GitRepository.Tags.SingleOrDefault(x => "v".StartsWith(x))?[1..];
     bool IsTaggedBuild => !string.IsNullOrWhiteSpace(TagVersion);
@@ -35,8 +30,6 @@ partial class Build : NukeBuild, ITest, IPack
     string VersionSuffix;
 
     [Parameter] string Version;
-
-    [Parameter] bool AnalyseCode;
 
     protected override void OnBuildInitialized()
     {
@@ -49,8 +42,8 @@ partial class Build : NukeBuild, ITest, IPack
             VersionSuffix = $"dev-{DateTime.UtcNow:yyyyMMdd-HHmm}";
         }
 
-        Log.Information("BUILD SETUP:\nConfiguration: {Configuration}\nVersion Suffix: {VersionSuffix}\nVersion: {Version}\nTagged Build: {IsTaggedBuild}\nAnalyse Code: {AnalyseCode}",
-            Configuration, VersionSuffix, Version, IsTaggedBuild, AnalyseCode);
+        Log.Information("BUILD SETUP:\nConfiguration: {Configuration}\nVersion Suffix: {VersionSuffix}\nVersion: {Version}\nTagged Build: {IsTaggedBuild}",
+            Configuration, VersionSuffix, Version, IsTaggedBuild);
     }
 
     Target Clean => _ => _
@@ -59,8 +52,6 @@ partial class Build : NukeBuild, ITest, IPack
         {
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
             ((IHazArtifacts)this).ArtifactsDirectory.CreateOrCleanDirectory();
-
-            TestResultDirectory.CreateOrCleanDirectory();
         });
 
     public Configure<DotNetRestoreSettings> RestoreSettings => _ => _
@@ -71,17 +62,4 @@ partial class Build : NukeBuild, ITest, IPack
         // 0  Turns off emission of all warning messages
         // 1  Displays severe warning messages
         .SetWarningLevel(IsServerBuild ? 0 : 1);
-
-    public IEnumerable<Project> TestProjects =>
-        ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
-
-    public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
-        .When(_ => GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
-        .When(_ => AnalyseCode, settings => settings
-            .SetCoverletOutputFormat(CoverletOutputFormat.opencover)
-            .EnableCollectCoverage()
-            .SetResultsDirectory(TestResultDirectory)
-            .SetCoverletOutput($"{TestResultDirectory}/opencoverCoverage.xml")
-            .AddProcessAdditionalArguments("--collect:\"XPlat Code Coverage;Format=opencover\"")
-        );
 }

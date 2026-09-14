@@ -11,7 +11,7 @@ using Nuke.Components;
         OnPullRequestBranches = ["main", "patch/*", "develop/*"],
         OnPullRequestIncludePaths = ["**/*"],
         PublishArtifacts = false,
-        InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test)],
+        InvokedTargets = [nameof(ICompile.Compile)],
         CacheKeyFiles = [],
         ConcurrencyCancelInProgress = true
     )
@@ -28,9 +28,19 @@ class CustomGitHubActionsAttribute(string name, GitHubActionsImage image, params
 
         // only need to list the ones that are missing from default image
         newSteps.Insert(0, new GitHubActionsSetupDotNetStep(["10.x"]));
+        newSteps.Add(new GitHubActionsRunTestsStep());
 
         job.Steps = newSteps.ToArray();
         return job;
+    }
+}
+
+class GitHubActionsRunTestsStep : GitHubActionsStep
+{
+    public override void Write(CustomFileWriter writer)
+    {
+        writer.WriteLine("- name: 'Run: Test'");
+        writer.WriteLine("  run: dotnet test --solution Elsa.sln --configuration Release --no-build");
     }
 }
 

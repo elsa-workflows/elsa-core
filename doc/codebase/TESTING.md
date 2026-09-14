@@ -2,19 +2,27 @@
 
 ## Test Stack and Commands
 
-- Framework: xUnit 2.9.3.
-- Assertion/mocking: xUnit assertions, NSubstitute 5.3.0, ASP.NET Core TestServer, SQLite in-memory EF Core.
+- Runner and framework: Microsoft Testing Platform with TUnit 1.66.27.
+- Assertion/mocking: TUnit assertions, NSubstitute 5.3.0, ASP.NET Core TestServer, SQLite in-memory EF Core.
 
 ```bash
-dotnet test Elsa.sln
-dotnet test test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj
-dotnet test test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj
+dotnet test --solution Elsa.sln
+dotnet test --project test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj
+dotnet test --project test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj
 ```
+
+The root `global.json` selects MTP. Outer `dotnet test` options, including
+solution/project selection, belong before the literal `--`. Options after `--`
+are forwarded to each TUnit test application.
 
 ## Test Layout
 
-- Test projects are separated under `test/unit`, `test/integration`, `test/component`, and `test/performance`.
-- Test files use `*Tests.cs`; xUnit setup uses constructors or `IAsyncLifetime`.
+- TUnit projects are separated under `test/unit`, `test/integration`, and
+  `test/component`; performance benchmarks live under `test/performance`.
+- Test files use `*Tests.cs`; tests use `[Test]`, parameterized cases use
+  `[Arguments(...)]`, and lifecycle work uses TUnit lifecycle attributes.
+- TUnit assertions are asynchronous; use patterns such as
+  `await Assert.That(actual).IsEqualTo(expected)`.
 - Shared helpers live under `src/common/Elsa.Testing.Shared*`.
 
 ## Test Scope Matrix
@@ -34,14 +42,18 @@ dotnet test test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.E
 
 ## Coverage and Quality Signals
 
-- Coverlet generates Cobertura, LCOV, and OpenCover output.
-- Default project threshold is 10% total line coverage.
-- Focused filtered runs may disable coverage; the full project run enforces the threshold.
+- The Microsoft Testing Platform coverage extension produces Cobertura output in
+  the packages workflow.
+- `test/coverage.settings.xml` supplies the shared collector configuration and
+  excludes test applications and shared test-support assemblies.
+- Coverage is merged and evaluated as a repository aggregate after the test run;
+  individual projects do not define Coverlet thresholds or output settings.
 
 ## Evidence
 
 - `test/Directory.Build.props`
+- `test/coverage.settings.xml`
+- `.github/workflows/packages.yml`
 - `test/integration/Elsa.ExternalAuthentication.IntegrationTests/Broker/BrokerSecurityTests.cs`
 - `test/integration/Elsa.ExternalAuthentication.IntegrationTests/Persistence/ExternalAuthenticationPersistenceTests.cs`
 - `test/integration/Elsa.ExternalAuthentication.IntegrationTests/Links/ExternalIdentityLinkTests.cs`
-

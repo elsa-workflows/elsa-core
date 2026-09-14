@@ -65,10 +65,10 @@ services
 ## Targeted Test Commands
 
 ```bash
-dotnet test test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj
-dotnet test test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj
-dotnet test test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj
-dotnet test test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj
+dotnet test --project test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj
+dotnet test --project test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj
+dotnet test --project test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj
+dotnet test --project test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj
 ```
 
 ## Boundary Checks

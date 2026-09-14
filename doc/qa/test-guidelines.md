@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is a practical test guideline. It tells you *what* to test, *when* to test it, and *how* to write deterministic, actionable tests using the repository's existing test helpers and patterns.
+This document is a practical test guideline. It tells you *what* to test, *when* to test it, and *how* to write deterministic, actionable tests using TUnit on Microsoft Testing Platform (MTP) together with the repository's existing test helpers.
 
 ---
 
@@ -55,8 +55,9 @@ Each test layer has distinct goals and clear boundaries — see [**Which parts o
     - Changed activity logic or created a new activity? → See [Activities](#activities)
     - Changed workflow execution? → See [Workflows execution](#workflow-execution-invoker-middleware-bookmarks)
 - [ ] Follow steps and code patterns in that section
-- [ ] Run tests locally: `dotnet test`
-- [ ] Verify no flaky behavior (run 10 times: `dotnet test --no-build -- repeat 10`)
+- [ ] Run the full suite locally: `dotnet test --solution Elsa.sln`
+- [ ] While iterating, run the narrowest project: `dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj`
+- [ ] Verify no flaky behavior by running that targeted project command 10 times with `--no-build`
 
 ---
 
@@ -100,7 +101,7 @@ This section maps Elsa aspects to the exact kinds of tests you should write, wit
 
 **Example (does not set output):**
 ```csharp
-[Fact]
+[Test]
 public async Task Should_Set_Variable_Integer()
 {
     // Arrange
@@ -114,13 +115,13 @@ public async Task Should_Set_Variable_Integer()
 
     // Assert
     var result = context.Get(variable);
-    Assert.Equal(expected, result);
+    await Assert.That(result).IsEqualTo(expected);
 }
 ```
 
 **Example (sets output using fluent configuration):**
 ```csharp
-[Fact]
+[Test]
 public async Task Should_Send_Get_Request_And_Handle_Success_Response()
 {
     // Arrange
@@ -138,13 +139,13 @@ public async Task Should_Send_Get_Request_And_Handle_Success_Response()
 
     // Assert
     var statusCodeOutput = context.GetActivityOutput(_ => sendHttpRequest.StatusCode);
-    Assert.Equal(200, statusCodeOutput);
+    await Assert.That(statusCodeOutput).IsEqualTo(200);
 }
 ```
 
 **Example (checking scheduled activities):**
 ```csharp
-[Fact]
+[Test]
 public async Task Should_Schedule_Child_Activity()
 {
     // Arrange
@@ -156,13 +157,13 @@ public async Task Should_Schedule_Child_Activity()
     var context = await fixture.ExecuteAsync();
 
     // Assert
-    Assert.True(context.HasScheduledActivity(childActivity));
+    await Assert.That(context.HasScheduledActivity(childActivity)).IsTrue();
 }
 ```
 
 **Example (checking activity outcomes):**
 ```csharp
-[Fact]
+[Test]
 public async Task Should_Return_Multiple_Outcomes()
 {
     // Arrange
@@ -176,13 +177,13 @@ public async Task Should_Return_Multiple_Outcomes()
 
     // Assert - Check all outcomes
     var outcomes = context.GetOutcomes().ToList();
-    Assert.Equal(3, outcomes.Count);
-    Assert.Contains("Branch1", outcomes);
-    Assert.Contains("Branch2", outcomes);
-    Assert.Contains("Branch3", outcomes);
+    await Assert.That(outcomes.Count).IsEqualTo(3);
+    await Assert.That(outcomes).Contains("Branch1");
+    await Assert.That(outcomes).Contains("Branch2");
+    await Assert.That(outcomes).Contains("Branch3");
 }
 
-[Fact]
+[Test]
 public async Task Should_Return_Default_Outcome()
 {
     // Arrange
@@ -192,7 +193,7 @@ public async Task Should_Return_Default_Outcome()
     var context = await new ActivityTestFixture(flowSwitch).ExecuteAsync();
 
     // Assert - Check single outcome
-    Assert.True(context.HasOutcome("Default"));
+    await Assert.That(context.HasOutcome("Default")).IsTrue();
 }
 ```
 #### **Integration tests:**
@@ -205,16 +206,14 @@ Use returned state for deterministic assertions where possible.
 
 **Example (using WorkflowTestFixture - basic):**
 ```csharp
-public class RunJavaScriptTests
+public class RunJavaScriptTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture;
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    public RunJavaScriptTests(ITestOutputHelper testOutputHelper)
-    {
-        _fixture = new WorkflowTestFixture(testOutputHelper);
-    }
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
 
-    [Fact(DisplayName = "RunJavaScript should execute and return output")]
+    [Test]
+    [DisplayName("RunJavaScript should execute and return output")]
     public async Task Should_Execute_And_Return_Output()
     {
         // Arrange
@@ -226,10 +225,11 @@ public class RunJavaScriptTests
 
         // Assert - activity produced expected output
         var output = result.GetActivityOutput<object>(activity);
-        Assert.Equal(2, output);
+        await Assert.That(output).IsEqualTo(2d);
     }
 
-    [Fact(DisplayName = "RunJavaScript should set outcomes")]
+    [Test]
+    [DisplayName("RunJavaScript should set outcomes")]
     public async Task Should_Set_Outcomes()
     {
         // Arrange
@@ -241,11 +241,12 @@ public class RunJavaScriptTests
 
         // Assert - activity produced expected outcomes
         var outcomes = _fixture.GetOutcomes(result, activity);
-        Assert.Contains("Branch1", outcomes);
-        Assert.Contains("Branch2", outcomes);
+        await Assert.That(outcomes).Contains("Branch1");
+        await Assert.That(outcomes).Contains("Branch2");
     }
 
-    [Fact(DisplayName = "RunJavaScript should fault on invalid syntax")]
+    [Test]
+    [DisplayName("RunJavaScript should fault on invalid syntax")]
     public async Task Should_Fault_On_Invalid_Syntax()
     {
         // Arrange
@@ -257,18 +258,18 @@ public class RunJavaScriptTests
 
         // Assert - activity should be in faulted state
         var status = _fixture.GetActivityStatus(result, activity);
-        Assert.Equal(ActivityStatus.Faulted, status);
+        await Assert.That(status).IsEqualTo(ActivityStatus.Faulted);
     }
 }
 ```
 
 **Example (using manual setup with IWorkflowRunner):**
 ```csharp
-[Fact]
+[Test]
 public async Task Should_Execute_Workflow()
 {
     // Arrange
-    var services = new TestApplicationBuilder(testOutputHelper).Build();
+    var services = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
     await services.PopulateRegistriesAsync();
     var runner = services.GetRequiredService<IWorkflowRunner>();
     var workflow = Workflow.FromActivity(new WriteLine("Hello"));
@@ -277,7 +278,7 @@ public async Task Should_Execute_Workflow()
     var result = await runner.RunAsync(workflow);
 
     // Assert
-    Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+    await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
 }
 ```
 
@@ -299,7 +300,7 @@ Call the workflow runner to execute a workflow object or a loaded definition. Pr
 var runner = serviceProvider.GetRequiredService<IWorkflowRunner>();
 await serviceProvider.PopulateRegistriesAsync();
 var runResult = await runner.RunAsync(workflow);
-Assert.Equal(WorkflowStatus.Finished, runResult.WorkflowInstance!.Status);
+await Assert.That(runResult.WorkflowInstance!.Status).IsEqualTo(WorkflowStatus.Finished);
 ```
 
 #### Component tests (persistence & resumption):
@@ -311,7 +312,7 @@ Assert.Equal(WorkflowStatus.Finished, runResult.WorkflowInstance!.Status);
 // assume instanceId found via RunAsync or correlation id
 await workflowTriggerService.ResumeAsync(instanceId, activityId, input, CancellationToken.None);
 var resumed = await runner.RunAsync(workflowInstance);
-Assert.Equal(WorkflowStatus.Finished, resumed.WorkflowInstance.Status);
+await Assert.That(resumed.WorkflowInstance.Status).IsEqualTo(WorkflowStatus.Finished);
 ```
 
 ---
@@ -404,7 +405,7 @@ Use `result.GetActivityOutput<T>(activity)` to retrieve the output value from an
 ```csharp
 var result = await _fixture.RunActivityAsync(activity);
 var output = result.GetActivityOutput<object>(activity);
-Assert.Equal(expectedValue, output);
+await Assert.That(output).IsEqualTo(expectedValue);
 ```
 
 ### Asserting Activity Outcomes
@@ -414,14 +415,14 @@ Use `_fixture.GetOutcomes(result, activity)` to retrieve all outcomes produced b
 ```csharp
 var result = await _fixture.RunActivityAsync(activity);
 var outcomes = _fixture.GetOutcomes(result, activity);
-Assert.Contains("ExpectedOutcome", outcomes);
+await Assert.That(outcomes).Contains("ExpectedOutcome");
 ```
 
 Or use `_fixture.HasOutcome(result, activity, outcome)` to check for a specific outcome:
 
 ```csharp
 var result = await _fixture.RunActivityAsync(activity);
-Assert.True(_fixture.HasOutcome(result, activity, "Success"));
+await Assert.That(_fixture.HasOutcome(result, activity, "Success")).IsTrue();
 ```
 
 ### Asserting Activity Status
@@ -431,7 +432,7 @@ Use `_fixture.GetActivityStatus(result, activity)` to check the execution status
 ```csharp
 var result = await _fixture.RunActivityAsync(activity);
 var status = _fixture.GetActivityStatus(result, activity);
-Assert.Equal(ActivityStatus.Faulted, status);
+await Assert.That(status).IsEqualTo(ActivityStatus.Faulted);
 ```
 
 **Available activity statuses:**
@@ -503,7 +504,7 @@ var expressionContext = await _fixture.CreateExpressionExecutionContextAsync(
 
 **Example: Testing JavaScript Expression Evaluation**
 ```csharp
-[Fact]
+[Test]
 public async Task Dynamic_Variable_Accessors_Should_Work()
 {
     // Arrange
@@ -521,7 +522,7 @@ public async Task Dynamic_Variable_Accessors_Should_Work()
     var result = await evaluator.EvaluateAsync(script, typeof(string), context);
 
     // Assert
-    Assert.Equal("updated value", result);
+    await Assert.That(result).IsEqualTo("updated value");
 }
 ```
 
@@ -544,7 +545,7 @@ public async Task Dynamic_Variable_Accessors_Should_Work()
 ### Unit test (activity) — pattern
 
 ```csharp
-[Fact]
+[Test]
 public async Task MyActivity_Test()
 {
     var activity = new ActivityToTest();
@@ -561,16 +562,13 @@ public async Task MyActivity_Test()
 
 **Recommended approach** for activity integration tests:
 ```csharp
-public class MyActivityTests
+public class MyActivityTests : IAsyncDisposable
 {
-    private readonly WorkflowTestFixture _fixture;
+    private readonly WorkflowTestFixture _fixture = new(TestContext.Current!.Output.StandardOutput);
 
-    public MyActivityTests(ITestOutputHelper testOutputHelper)
-    {
-        _fixture = new WorkflowTestFixture(testOutputHelper);
-    }
+    public ValueTask DisposeAsync() => _fixture.DisposeAsync();
 
-    [Fact]
+    [Test]
     public async Task Activity_Completes_Successfully()
     {
         // Arrange
@@ -580,7 +578,7 @@ public class MyActivityTests
         var result = await _fixture.RunActivityAsync(activity);
 
         // Assert
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowState.Status);
+        await Assert.That(result.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
     }
 }
 ```
@@ -589,10 +587,10 @@ public class MyActivityTests
 
 **Alternative approach** with manual setup (use when you need more control):
 ```csharp
-[Fact]
+[Test]
 public async Task Workflow_With_MyActivity_Completes()
 {
-    var sp = new TestApplicationBuilder(testOutput).Build();
+    var sp = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
     await sp.PopulateRegistriesAsync();
 
     var runner = sp.GetRequiredService<IWorkflowRunner>();
@@ -600,24 +598,24 @@ public async Task Workflow_With_MyActivity_Completes()
 
     var result = await runner.RunAsync(workflow);
 
-    Assert.Equal(WorkflowStatus.Finished, result.WorkflowInstance!.Status);
+    await Assert.That(result.WorkflowInstance!.Status).IsEqualTo(WorkflowStatus.Finished);
 }
 ```
 
 ### Component test
 
 ```csharp
-[Fact]
+[Test]
 public async Task Workflow_Persists_Instance_And_Journal()
 {
-    var sp = new TestApplicationBuilder(testOutput)
+    var sp = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput)
         .Build();
 
     var runner = sp.GetRequiredService<AsyncWorkflowRunner>();
     var result = await runner.RunAndAwaitWorkflowCompletionAsync(
         WorkflowDefinitionHandle.ByDefinitionId(someDefinitionId, VersionOptions.Published)
     );
-    result.WorkflowExecutionContext.Status.Should().Be(WorkflowStatus.Finished);
+    await Assert.That(result.WorkflowExecutionContext.Status).IsEqualTo(WorkflowStatus.Finished);
 }
 ```
 
@@ -626,18 +624,18 @@ public async Task Workflow_Persists_Instance_And_Journal()
 For testing workflows that complete asynchronously (e.g., with timers, external triggers), use [`AsyncWorkflowRunner`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Services/AsyncWorkflowRunner.cs):
 
 ```csharp
-[Fact]
+[Test]
 public async Task Workflow_Completes_Asynchronously()
 {
-    var sp = new TestApplicationBuilder(testOutput).Build();
+    var sp = new TestApplicationBuilder(TestContext.Current!.Output.StandardOutput).Build();
     var runner = sp.GetRequiredService<AsyncWorkflowRunner>();
 
     var result = await runner.RunAndAwaitWorkflowCompletionAsync(
         WorkflowDefinitionHandle.ByDefinitionId(workflowId, VersionOptions.Published)
     );
 
-    result.WorkflowExecutionContext.Status.Should().Be(WorkflowStatus.Finished);
-    result.ActivityExecutionRecords.Should().HaveCount(expectedCount);
+    await Assert.That(result.WorkflowExecutionContext.Status).IsEqualTo(WorkflowStatus.Finished);
+    await Assert.That(result.ActivityExecutionRecords.Count).IsEqualTo(expectedCount);
 }
 ```
 
@@ -674,7 +672,3 @@ Search the `test/` tree for examples that follow the above patterns:
 - **Unit test activity examples:** `test/unit/Elsa.Activities.UnitTests` (look for [`ActivityTestFixture`](../../src/common/Elsa.Testing.Shared/ActivityTestFixture.cs) usage)
 - **Integration workflow examples:** `test/integration/Elsa.*.IntegrationTests` (look for [`PopulateRegistriesAsync()`](../../src/common/Elsa.Testing.Shared.Integration/ServiceProviderExtensions.cs) and [`IWorkflowRunner.RunAsync`](../../src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs) usage)
 - **Component scenarios exercising persistence:** `test/component/Elsa.Workflows.ComponentTests` (look for [`AsyncWorkflowRunner`](../../test/component/Elsa.Workflows.ComponentTests/Helpers/Services/AsyncWorkflowRunner.cs) and [`IWorkflowInstanceStore`](../../src/modules/Elsa.Workflows.Management/Contracts/IWorkflowInstanceStore.cs) assertions)
-
-
-
-

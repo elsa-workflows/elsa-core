@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <Include>[Elsa.Diagnostics.StructuredLogs]*</Include>
-        <Threshold>0</Threshold>
-    </PropertyGroup>
-
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.StructuredLogs\Elsa.Diagnostics.StructuredLogs.csproj" />
     </ItemGroup>

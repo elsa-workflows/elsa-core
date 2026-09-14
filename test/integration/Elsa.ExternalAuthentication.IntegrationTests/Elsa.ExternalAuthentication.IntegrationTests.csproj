@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <Include>[Elsa.ExternalAuthentication]*</Include>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="TUnit.AspNetCore" />
     </ItemGroup>

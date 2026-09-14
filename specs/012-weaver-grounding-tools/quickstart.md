@@ -42,7 +42,7 @@ Validate that Weaver can answer questions and create proposals grounded in insta
 ## Targeted Test Commands
 
 ```bash
-dotnet test test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj
-dotnet test test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj
+dotnet test --project test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj
+dotnet test --project test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj
 dotnet build Elsa.sln -m:1
 ```

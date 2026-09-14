@@ -1,6 +1,6 @@
 # Testing Guide
 
-Elsa uses unit, integration, component, and performance tests. The best test choice depends on what boundary you are changing.
+Elsa uses TUnit on Microsoft Testing Platform (MTP) for unit, integration, and component tests. Performance benchmarks under `test/performance` use BenchmarkDotNet instead. The best test choice depends on what boundary you are changing.
 
 The detailed internal testing strategy is [doc/qa/test-guidelines.md](../qa/test-guidelines.md). This page is a wiki-sized map.
 
@@ -56,29 +56,23 @@ Run all tests with direct `dotnet` commands:
 
 ```bash
 dotnet restore Elsa.sln --ignore-failed-sources
-dotnet test Elsa.sln --no-restore
-```
-
-Run the NUKE test target after the resilient restore:
-
-```bash
-./build.sh Test
+dotnet test --solution Elsa.sln --no-restore
 ```
 
 Run targeted projects:
 
 ```bash
 dotnet restore test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
+dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
 
 dotnet restore test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --ignore-failed-sources
-dotnet test test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore
+dotnet test --project test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore
 
 dotnet restore test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --ignore-failed-sources
-dotnet test test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --no-restore
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj --no-restore
 
 dotnet restore test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --ignore-failed-sources
-dotnet test test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --no-restore
+dotnet test --project test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj --no-restore
 ```
 
 Run ElsaScript DSL tests:
@@ -144,7 +138,7 @@ Run targeted console log tests when touching `Elsa.Diagnostics.ConsoleLogs`.
 - Prefer targeted project tests while iterating.
 - Add a regression test for a bug before or alongside the fix.
 - Keep arrange/setup in constructors or small helpers when it repeats.
-- Use `IAsyncDisposable` or xUnit async lifetime patterns for async teardown.
+- Use `IAsyncDisposable` or TUnit lifecycle hooks for async teardown.
 - Avoid sleeps when a deterministic signal or store assertion is available.
 - For multi-targeting issues, consider whether all target frameworks need coverage.
 - When changing shared runtime or persistence behavior, finish with a broader build/test run if feasible.

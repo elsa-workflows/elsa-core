@@ -71,10 +71,10 @@ Uses the native TUnit component-test infrastructure:
 
 ```bash
 # Run all concurrent trigger tests
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/ConcurrentTriggerIndexingTests*/*"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/ConcurrentTriggerIndexingTests*/*"
 
 # Run specific test
-dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/ConcurrentTriggerIndexingTests*/ConcurrentIndexing_ShouldNotCreateDuplicates"
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -- --treenode-filter "/*/*/ConcurrentTriggerIndexingTests*/ConcurrentIndexing_ShouldNotCreateDuplicates"
 ```
 
 ## Test Validation

@@ -28,13 +28,17 @@ Guidance for AI coding agents working in this repository.
 ## Build And Test Commands
 
 - Build the default target: `./build.sh`
-- Run NUKE test target: `./build.sh Test`
 - Build with dotnet directly: `dotnet build Elsa.sln`
-- Run all tests directly: `dotnet test Elsa.sln`
-- Run a specific test project: `dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj`
+- Run the complete repository test suite: `dotnet test --solution Elsa.sln`
+- Run a specific test project: `dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj`
 - Run ElsaScript DSL integration tests: `./run-dsl-tests.sh`
 
-Prefer targeted `dotnet test <project>` commands while iterating, then run a broader build or test command when the change affects shared infrastructure or cross-module behavior.
+The root `global.json` selects Microsoft Testing Platform (MTP). Options for the
+outer `dotnet test` command go before the literal `--`; options after it are
+forwarded to each TUnit test application. Prefer targeted
+`dotnet test --project <csproj>` commands while iterating, then run
+`dotnet test --solution Elsa.sln` when the change affects shared infrastructure
+or cross-module behavior.
 
 ## Code Style
 
@@ -73,8 +77,13 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 
 - Place tests near the relevant existing test project rather than creating a new project by default.
 - Use the existing shared testing helpers under `src/common/Elsa.Testing.Shared*` when they fit the scenario.
+- Write tests with TUnit attributes such as `[Test]` and `[Arguments(...)]`; use
+  asynchronous assertions such as `await Assert.That(actual).IsEqualTo(expected)`.
 - For regressions, add a failing test that demonstrates the bug before or alongside the fix.
 - For multi-targeting issues, consider whether the test must run against all target frameworks or only the affected one.
+- Repository coverage uses the Microsoft Testing Platform coverage extension and
+  is evaluated as an aggregate in CI. Do not add per-project Coverlet settings or
+  thresholds.
 
 ## Dependency And Package Guidance
 

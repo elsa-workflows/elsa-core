@@ -8,7 +8,6 @@
         <Nullable>enable</Nullable>
         <IsPackable>false</IsPackable>
         <IsTestProject>false</IsTestProject>
-        <CollectCoverage>false</CollectCoverage>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
 

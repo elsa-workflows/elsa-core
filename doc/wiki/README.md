@@ -51,7 +51,7 @@ flowchart LR
 | [Diagnostics Console Logs](diagnostics-console-logs.md) | Raw stdout/stderr capture, live feed, REST/SignalR surface, and redaction. |
 | [Health Checks](health-checks.md) | Elsa runtime readiness probes, liveness/readiness mapping, and Kubernetes probe guidance. |
 | [Identity, Tenancy, And Security](identity-tenancy-security.md) | Users, applications, roles, API keys, tenant resolution, and authorization touch points. |
-| [Testing Guide](testing-guide.md) | Test project layout, fixture choices, and targeted commands. |
+| [Testing Guide](testing-guide.md) | TUnit and Microsoft Testing Platform project layout, fixture choices, and targeted commands. |
 | [Extension Guide](extension-guide.md) | How to add features, activities, expression providers, stores, endpoints, and ingress sources. |
 | [OpenTelemetry Workflow Instrumentation](opentelemetry-workflows.md) | First-party workflow and activity traces and metrics emitted through `System.Diagnostics`. |
 | [Specs And ADRs](specs-and-adrs.md) | How current specs and ADRs explain design intent. |
@@ -71,6 +71,6 @@ flowchart LR
 
 ## Contributor Workflow
 
-Use targeted reads first, then targeted tests. For most changes, start with the relevant module page, inspect the linked feature class and contracts, add or update tests in the matching `test/unit`, `test/integration`, or `test/component` project, and run the narrowest `dotnet test` command that proves the behavior.
+Use targeted reads first, then targeted tests. For most changes, start with the relevant module page, inspect the linked feature class and contracts, add or update tests in the matching `test/unit`, `test/integration`, or `test/component` project, and run `dotnet test --project <path-to-test.csproj>` for the narrowest project that proves the behavior. Use `dotnet test --solution Elsa.sln` for the full suite.
 
 When changing public behavior, update the related README, spec quickstart, or wiki page in the same PR. This repository is strongly modular, so the best changes keep ownership boundaries clear.

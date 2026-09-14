@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <IncludeTestAssembly>false</IncludeTestAssembly>
+  <CodeCoverage>
+    <ModulePaths mergeDefaults="true">
+      <Include>
+        <ModulePath>^(?:.*[\\/])?Elsa(?:\.[^\\/]*)?\.(?:dll|exe)$</ModulePath>
+      </Include>
+      <Exclude>
+        <ModulePath>^(?:.*[\\/])?[^\\/]*Elsa\.Testing\.Shared[^\\/]*\.(?:dll|exe)$</ModulePath>
+        <ModulePath>^(?:.*[\\/])?Elsa[^\\/]*Tests[^\\/]*\.(?:dll|exe)$</ModulePath>
+      </Exclude>
+    </ModulePaths>
+  </CodeCoverage>
+</Configuration>

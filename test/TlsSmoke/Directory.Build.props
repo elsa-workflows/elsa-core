@@ -4,7 +4,6 @@
 
     <PropertyGroup>
         <IsTestProject>false</IsTestProject>
-        <CollectCoverage>false</CollectCoverage>
     </PropertyGroup>
 
 </Project>

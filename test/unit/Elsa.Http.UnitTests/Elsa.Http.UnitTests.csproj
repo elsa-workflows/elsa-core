@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <Include>[Elsa.Http]*</Include>
-    </PropertyGroup>
-
     <ItemGroup>
       <PackageReference Include="TUnit.AspNetCore" />
       <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />

@@ -55,14 +55,13 @@ Elsa.Http.IntegrationTests/
 ## Running the Tests
 
 ```bash
-dotnet run --project Elsa.Http.IntegrationTests.csproj -c Release -- \
-  --output Minimal --no-ansi --progress off --timeout 5m --minimum-expected-tests 2
+dotnet test --project test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj
 ```
 
 List the native TUnit discovery manifest with:
 
 ```bash
-dotnet run --project Elsa.Http.IntegrationTests.csproj -c Release -- --list-tests
+dotnet test --project test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj --list-tests
 ```
 
 ## Test Results

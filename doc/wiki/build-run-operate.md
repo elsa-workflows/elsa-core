@@ -16,12 +16,6 @@ Default NUKE build target after restore:
 ./build.sh
 ```
 
-NUKE test target after restore:
-
-```bash
-./build.sh Test
-```
-
 Direct solution build with the same restore/no-restore pattern:
 
 ```bash
@@ -29,18 +23,18 @@ dotnet restore Elsa.sln --ignore-failed-sources
 dotnet build Elsa.sln --no-restore
 ```
 
-Direct solution tests:
+Run the TUnit suite directly through Microsoft Testing Platform:
 
 ```bash
 dotnet restore Elsa.sln --ignore-failed-sources
-dotnet test Elsa.sln --no-restore
+dotnet test --solution Elsa.sln --no-restore
 ```
 
 Targeted test project:
 
 ```bash
 dotnet restore test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --ignore-failed-sources
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
+dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --no-restore
 ```
 
 ElsaScript DSL tests:
@@ -51,7 +45,9 @@ ElsaScript DSL tests:
 
 ## Build System
 
-The NUKE build lives in [build/Build.cs](../../build/Build.cs). It defines clean, restore, compile, test, and package behavior through NUKE components. Test projects are discovered as solution projects whose names end with `Tests`.
+The NUKE build lives in [build/Build.cs](../../build/Build.cs). It defines clean, restore, compile, and package behavior through NUKE components.
+
+Tests use TUnit on Microsoft Testing Platform. Run the full suite with `dotnet test --solution Elsa.sln`, or select one test project with `dotnet test --project <path-to-test.csproj>`.
 
 Source projects multi-target `net8.0`, `net9.0`, and `net10.0` through [src/Directory.Build.props](../../src/Directory.Build.props). Central package versions are in [Directory.Packages.props](../../Directory.Packages.props), including conditional version blocks for .NET 8/9 and .NET 10.
 

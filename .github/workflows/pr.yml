@@ -39,5 +39,7 @@ jobs:
           dotnet-version: |
             10.x
       - uses: actions/checkout@v6
-      - name: 'Run: Compile, Test'
-        run: ./build.cmd Compile Test
+      - name: 'Run: Compile'
+        run: ./build.cmd Compile
+      - name: 'Run: Test'
+        run: dotnet test --solution Elsa.sln --configuration Release --no-build

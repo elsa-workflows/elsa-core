@@ -60,11 +60,11 @@ Run targeted checks after implementation:
 
 ```bash
 dotnet build src/modules/Elsa.Diagnostics.ConsoleLogs/Elsa.Diagnostics.ConsoleLogs.csproj
-dotnet test test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj
-dotnet test test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj
+dotnet test --project test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj
+dotnet test --project test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj
 ```
 
-Validation on 2026-05-18:
+Historical validation recorded on 2026-05-18 (commands are preserved as run and are not current invocation guidance):
 
 - `dotnet test test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj` passed with 23 tests.
 - `dotnet test test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj` passed with 9 tests.

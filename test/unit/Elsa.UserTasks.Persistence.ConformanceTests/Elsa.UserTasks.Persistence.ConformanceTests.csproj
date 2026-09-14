@@ -1,8 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <Include>[Elsa.UserTasks]*,[Elsa.UserTasks.Persistence.EFCore]*,[Elsa.UserTasks.Persistence.VNext]*</Include>
-        <Threshold>0</Threshold>
-    </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Data.Sqlite"/>
         <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3"/>

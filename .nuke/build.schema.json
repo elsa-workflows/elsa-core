@@ -27,8 +27,7 @@
         "Clean",
         "Compile",
         "Pack",
-        "Restore",
-        "Test"
+        "Restore"
       ]
     },
     "Verbosity": {
@@ -102,9 +101,6 @@
   "allOf": [
     {
       "properties": {
-        "AnalyseCode": {
-          "type": "boolean"
-        },
         "Configuration": {
           "type": "string",
           "enum": [

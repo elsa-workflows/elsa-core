@@ -1,9 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <Include>[Elsa.Dashboard.Api]*</Include>
-    </PropertyGroup>
-
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.ConsoleLogs.Dashboard\Elsa.Diagnostics.ConsoleLogs.Dashboard.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.StructuredLogs.Dashboard\Elsa.Diagnostics.StructuredLogs.Dashboard.csproj" />

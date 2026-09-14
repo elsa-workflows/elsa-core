@@ -29,14 +29,22 @@
 
 ## Testing Conventions
 
-- Tests live under `test/{unit,integration,component,performance}` and use xUnit.
+- Tests live under `test/{unit,integration,component}` and use TUnit on
+  Microsoft Testing Platform. Performance benchmarks live under
+  `test/performance` and use BenchmarkDotNet.
+- Mark cases with `[Test]` or `[Arguments(...)]` and await TUnit assertions, for
+  example `await Assert.That(actual).IsEqualTo(expected)`.
+- Run a focused project with `dotnet test --project <csproj>` and the complete
+  suite with `dotnet test --solution Elsa.sln`. Keep outer `dotnet test` options
+  before the literal `--` and forwarded TUnit/MTP options after it.
 - Prefer real in-memory implementations; NSubstitute is used at external or expensive boundaries.
-- Integration test coverage threshold defaults to 10% per project.
+- Microsoft coverage is collected and checked in aggregate; do not introduce
+  per-project Coverlet configuration or thresholds.
 
 ## Evidence
 
 - `.editorconfig`
 - `Directory.Build.props`
 - `test/Directory.Build.props`
+- `test/coverage.settings.xml`
 - `test/integration/Elsa.ExternalAuthentication.IntegrationTests/`
-

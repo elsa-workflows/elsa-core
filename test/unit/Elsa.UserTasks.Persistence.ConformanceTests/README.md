@@ -31,7 +31,7 @@ Availability is resolved once per run by `ConformanceProviders`, and nothing is 
 
 ```bash
 ELSA_USERTASKS_TEST_POSTGRES="Host=localhost;Database=elsa_conformance;Username=elsa;Password=elsa" \
-  dotnet run --project test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj --
+  dotnet test --project test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj
 ```
 
 The remaining variables are `ELSA_USERTASKS_TEST_SQLSERVER` and `ELSA_USERTASKS_TEST_ORACLE`.

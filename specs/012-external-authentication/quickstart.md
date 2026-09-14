@@ -352,17 +352,17 @@ See [the migration guide](../../doc/migrations/external-authentication.md) for t
 Core:
 
 ```bash
-dotnet test test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj
-dotnet test test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj
-dotnet test test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj
-dotnet test test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj
+dotnet test --project test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj
+dotnet test --project test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj
+dotnet test --project test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj
+dotnet test --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj
 dotnet build Elsa.sln
 ```
 
 Studio:
 
 ```bash
-dotnet test src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj
+dotnet test --project src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj
 dotnet build Elsa.Studio.sln
 ```
 

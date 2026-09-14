@@ -81,6 +81,6 @@ Run targeted checks after implementation:
 
 ```bash
 dotnet build src/modules/Elsa.Secrets/Elsa.Secrets.csproj
-dotnet test test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj
+dotnet test --project test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj
 dotnet build /Users/sipke/.codex/worktrees/ae40/elsa-studio/src/modules/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj
 ```

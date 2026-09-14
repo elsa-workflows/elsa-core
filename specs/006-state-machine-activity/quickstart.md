@@ -34,7 +34,7 @@ These boundaries are part of the accepted StateMachine semantics ADR and are obs
 Run the focused StateMachine tests:
 
 ```bash
-dotnet test test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj --no-restore --filter FullyQualifiedName~StateMachine
+dotnet test --project test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj --no-restore -- --treenode-filter "/*/*/StateMachineTests/*"
 ```
 
 The suite covers triggerless and eventful paths, missing and false conditions, lifecycle ordering, self-transitions, competing-trigger cancellation, identity rejection, persistence/resumption, and automatic-cycle scheduler yielding.

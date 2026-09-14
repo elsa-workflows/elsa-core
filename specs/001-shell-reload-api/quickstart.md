@@ -19,7 +19,7 @@ Implement and verify two administrative endpoints that refresh shell-backed conf
    - detailed per-shell results
    - current full-reload fallback semantics for the targeted endpoint
 5. Add a new client resource under `src/clients/Elsa.Api.Client/Resources/Shells` so first-party consumers can call both endpoints.
-6. Add component tests under `test/component/Elsa.Workflows.ComponentTests/Scenarios/RestApis/Endpoints/Shells`.
+6. Add endpoint tests under `test/unit/Elsa.Shells.Api.Tests/Endpoints`.
 
 ## Verification Scenarios
 
@@ -34,7 +34,7 @@ Implement and verify two administrative endpoints that refresh shell-backed conf
 ## Suggested Validation Commands
 
 ```bash
-dotnet test test/component/Elsa.Workflows.ComponentTests/ --filter "FullyQualifiedName~Scenarios.RestApis.Endpoints.Shells" -p:CollectCoverage=false
+dotnet test --project test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj
 ```
 
-If the component suite is too broad during iteration, run the project with a test filter targeting the new shell reload scenario names.
+The project is scoped to the shell API endpoints, including the reload and reload-all scenarios.

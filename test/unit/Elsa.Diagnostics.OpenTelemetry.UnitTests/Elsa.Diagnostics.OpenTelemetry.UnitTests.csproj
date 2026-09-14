@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <Include>[Elsa.Diagnostics.OpenTelemetry]*</Include>
-        <Threshold>0</Threshold>
-    </PropertyGroup>
-
     <ItemGroup>
         <ProjectReference Include="..\..\..\src\modules\Elsa.Diagnostics.OpenTelemetry\Elsa.Diagnostics.OpenTelemetry.csproj" />
     </ItemGroup>

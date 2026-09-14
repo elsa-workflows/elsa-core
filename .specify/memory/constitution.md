@@ -1,38 +1,31 @@
 <!--
   Sync Impact Report
   ===================
-  Version change: 1.0.1 → 1.1.0 (MINOR — materially expanded guidance under
-  existing Principle VII; adds named SRP/DRY/KISS sub-rules and an explicit
-  conciseness rule that previously was implicit.)
+  Version change: 1.1.0 → 1.2.0 (MINOR — updates the mandatory testing
+  discipline and quality-gate workflow for the repository-wide TUnit and
+  Microsoft Testing Platform migration.)
 
   Modified principles:
-    - VII. Simplicity & Focus → VII. Simplicity, SRP, DRY & KISS
-        - Existing rules retained (YAGNI, direct-over-indirect, singular-
-          purpose modules, proportional error handling).
-        - Added explicit SRP rule: classes/modules/functions have one reason
-          to change; multi-concern classes MUST be split.
-        - Added explicit DRY rule with rule-of-three guidance to prevent
-          premature abstraction of incidentally-similar code.
-        - Added explicit KISS framing of the existing simplicity rules.
-        - Added explicit conciseness rule covering design docs, plan/spec
-          artifacts, and code (one well-named function over pass-through
-          chains; comments explain WHY not WHAT).
+    - V. Testing Discipline
+        - Replaces xUnit/VSTest guidance with TUnit 1.66.27 on Microsoft
+          Testing Platform.
+        - Requires native solution/project test commands, TUnit attributes and
+          asynchronous assertions, and aggregate Microsoft coverage.
+    - Technology Stack & Constraints
+        - Separates NUKE build/package automation from the native MTP test path.
+    - Development Workflow & Quality Gates
+        - Replaces the removed NUKE Test target with direct `dotnet test` usage.
 
   Added principles: none
   Added sections: none
   Removed sections: none
 
-  Templates reviewed:
-    - .specify/templates/plan-template.md         ✅ compatible (Constitution
-      Check gate is generic; new sub-rules surface naturally during review)
-    - .specify/templates/spec-template.md         ✅ compatible
-    - .specify/templates/tasks-template.md        ✅ compatible
-    - .specify/templates/checklist-template.md    ✅ compatible
-
-  Runtime guidance reviewed:
-    - .github/copilot-instructions.md             ✅ no Principle-VII references
-    - CLAUDE.md                                   ✅ no Principle-VII references
-    - README.md                                   ✅ no Principle-VII references
+  Runtime guidance updated:
+    - AGENTS.md
+    - .github/copilot-instructions.md
+    - doc/codebase/STACK.md
+    - doc/codebase/TESTING.md
+    - doc/codebase/CONVENTIONS.md
 
   Follow-up TODOs: none
 -->
@@ -137,7 +130,12 @@ polluting activity code.
 New code MUST include tests. Tests MUST be organised by scope and follow
 established patterns.
 
-- **Framework**: xUnit with `[Fact]` and `[Theory]` attributes.
+- **Framework and runner**: TUnit 1.66.27 on Microsoft Testing Platform, as
+  selected by the root `global.json`.
+- **Test cases**: Use `[Test]` for individual cases and `[Arguments(...)]` (or
+  the appropriate TUnit data-source attribute) for parameterized cases.
+- **Assertions**: Await TUnit assertions, for example
+  `await Assert.That(actual).IsEqualTo(expected)`.
 - **Test organisation**: `test/unit/` for isolated tests, `test/integration/`
   for end-to-end scenarios, `test/component/` for feature testing.
 - **Shared fixtures**: Use `ActivityTestFixture` for unit-testing activities
@@ -146,6 +144,10 @@ established patterns.
   readability.
 - Tests MUST NOT depend on external services or network access unless
   explicitly categorised as integration tests.
+- The complete suite MUST be run with `dotnet test --solution Elsa.sln`; a
+  focused project MUST be run with `dotnet test --project <csproj>`.
+- Microsoft coverage MUST be collected and evaluated as a shared aggregate.
+  Per-project Coverlet configuration and thresholds MUST NOT be introduced.
 
 **Rationale**: The workflow engine is the critical path for all consuming
 applications. Regressions in core execution logic have outsized impact.
@@ -207,8 +209,9 @@ is harder to undo once entrenched.
 - **Language**: C# latest (`<LangVersion>latest</LangVersion>`).
 - **Nullable reference types**: Enabled globally.
 - **Implicit usings**: Enabled globally.
-- **Build system**: NUKE build automation (`build/Build.cs`); CI runs
-  `./build.cmd Compile Test Pack`.
+- **Build system**: NUKE build/package automation (`build/Build.cs`).
+- **Testing**: TUnit 1.66.27 on Microsoft Testing Platform; the root
+  `global.json` configures the runner and CI invokes `dotnet test` directly.
 - **Package management**: Central package management via
   `Directory.Packages.props`; NuGet source mapping in `NuGet.Config`.
 - **Serialization**: System.Text.Json with custom converters and type
@@ -232,12 +235,21 @@ is harder to undo once entrenched.
 # Compile (excludes studio apps)
 ./build.sh Compile
 
-# Test
-./build.sh Test
+# Complete repository test suite
+dotnet test --solution Elsa.sln
 
-# Full CI pipeline
-./build.sh Compile Test Pack
+# Focused test project
+dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+
+# Package after validation
+./build.sh Pack
 ```
+
+For MTP commands, options consumed by the outer `dotnet test` command MUST
+appear before the literal `--`; options after it are forwarded to every selected
+TUnit test application. The packages workflow collects Cobertura data with the
+Microsoft coverage extension and `test/coverage.settings.xml`, then evaluates
+the merged result as an aggregate.
 
 - NU1900/NU1801 warnings for external feeds are expected and safe to ignore.
 - Individual modules can be built with `dotnet build src/modules/{Module}/`.
@@ -276,4 +288,4 @@ and development practices in the Elsa Workflows repository.
 - **Runtime guidance**: See `.github/copilot-instructions.md` for build
   commands, troubleshooting, and CI details.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-05-01
+**Version**: 1.2.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-09-14

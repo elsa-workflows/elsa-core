@@ -1,10 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <Include>[Elsa.Diagnostics.ConsoleLogs]*</Include>
-        <Threshold>0</Threshold>
-    </PropertyGroup>
-
     <ItemGroup>
         <PackageReference Include="ConsoleLogStreaming.Core" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />

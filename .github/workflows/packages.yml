@@ -35,7 +35,7 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: 10.x
 
       - name: Show .NET info
         run: |
@@ -50,48 +50,32 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore solution
-        run: dotnet restore Elsa.sln --ignore-failed-sources
+      - name: Restore unit and integration tests
+        run: dotnet restore Elsa.UnitIntegration.Tests.slnf --ignore-failed-sources
 
-      - name: Prepare coverage directory
+      - name: Prepare test results directory
         run: |
-          rm -rf artifacts/coverage
-          mkdir -p artifacts/coverage
+          rm -rf artifacts/test-results/unit-integration
+          mkdir -p artifacts/test-results/unit-integration
 
-      - name: Run tests with coverage
+      - name: Run unit and integration tests with coverage
         run: |
           set -euo pipefail
-          dotnet --info
-          if ! dotnet --version | grep -q '^10\.'; then
-            echo "Expected .NET SDK 10.x but got $(dotnet --version)" >&2
+          dotnet test --solution Elsa.UnitIntegration.Tests.slnf \
+            --configuration Release \
+            --no-restore \
+            --results-directory artifacts/test-results/unit-integration \
+            -- \
+            --coverage \
+            --coverage-settings "$GITHUB_WORKSPACE/test/coverage.settings.xml" \
+            --coverage-output-format cobertura \
+            --report-trx
+
+          coverage_count=$(find artifacts/test-results/unit-integration -maxdepth 1 -type f -name '*.cobertura.xml' | wc -l | tr -d ' ')
+          if [[ "$coverage_count" != "54" ]]; then
+            echo "Expected 54 unit/integration coverage files, found $coverage_count." >&2
             exit 1
           fi
-
-          # Discover unit and integration test projects. Component tests run in their own job.
-          mapfile -t projects < <(
-            find test/unit test/integration \
-              -type f -name '*.csproj' -print0 2>/dev/null \
-              | xargs -0 -n1 \
-              | sort
-          )
-
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/unit or test/integration." >&2
-            exit 1
-          fi
-
-          for project in "${projects[@]}"; do
-            echo "Building test project ${project}"
-            dotnet build "$project" --configuration Release --framework net10.0
-
-            echo "Running tests with coverage for ${project}"
-            dotnet test "$project" \
-              --configuration Release \
-              --framework net10.0 \
-              --no-build \
-              --logger "GitHubActions;report-warnings=false" \
-              /p:CollectCoverage=true
-          done
 
       - name: Dump docker logs on failure
         if: failure()
@@ -104,12 +88,12 @@ jobs:
             docker logs "$container" 2>&1 | tail -100 || true
           done
 
-      - name: Upload coverage reports
+      - name: Upload unit and integration test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: unit-integration-coverage-reports
-          path: artifacts/coverage
+          name: unit-integration-test-results
+          path: artifacts/test-results/unit-integration
 
   test_component:
     name: Test component with coverage
@@ -122,7 +106,7 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: 10.x
 
       - name: Show .NET info
         run: |
@@ -137,53 +121,35 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Restore solution
-        run: dotnet restore Elsa.sln --ignore-failed-sources
+      - name: Restore component tests
+        run: dotnet restore Elsa.Component.Tests.slnf --ignore-failed-sources
 
-      - name: Prepare test artifact directories
+      - name: Prepare test results directory
         run: |
-          rm -rf artifacts/coverage artifacts/test-results
-          mkdir -p artifacts/coverage artifacts/test-results/component
+          rm -rf artifacts/test-results/component
+          mkdir -p artifacts/test-results/component
 
       - name: Run component tests with coverage and hang diagnostics
         run: |
           set -euo pipefail
-          dotnet --info
-          if ! dotnet --version | grep -q '^10\.'; then
-            echo "Expected .NET SDK 10.x but got $(dotnet --version)" >&2
+          dotnet test --solution Elsa.Component.Tests.slnf \
+            --configuration Release \
+            --no-restore \
+            --results-directory artifacts/test-results/component \
+            -- \
+            --coverage \
+            --coverage-settings "$GITHUB_WORKSPACE/test/coverage.settings.xml" \
+            --coverage-output-format cobertura \
+            --report-trx \
+            --hangdump \
+            --hangdump-timeout 5m \
+            --hangdump-type Mini
+
+          coverage_count=$(find artifacts/test-results/component -maxdepth 1 -type f -name '*.cobertura.xml' | wc -l | tr -d ' ')
+          if [[ "$coverage_count" != "1" ]]; then
+            echo "Expected one component coverage file, found $coverage_count." >&2
             exit 1
           fi
-
-          mapfile -t projects < <(
-            find test/component \
-              -type f -name '*.csproj' -print0 2>/dev/null \
-              | xargs -0 -n1 \
-              | sort
-          )
-
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/component." >&2
-            exit 1
-          fi
-
-          for project in "${projects[@]}"; do
-            echo "Building component test project ${project}"
-            dotnet build "$project" --configuration Release --framework net10.0
-
-            echo "Running component tests with coverage and hang diagnostics for ${project}"
-            dotnet test "$project" \
-              --configuration Release \
-              --framework net10.0 \
-              --no-build \
-              --logger "GitHubActions;report-warnings=false" \
-              --logger "trx" \
-              --results-directory artifacts/test-results/component \
-              --verbosity detailed \
-              --blame-hang \
-              --blame-hang-timeout 2m \
-              --blame-hang-dump-type mini \
-              /p:CollectCoverage=true
-          done
 
       - name: Dump docker logs on failure
         if: failure()
@@ -196,19 +162,12 @@ jobs:
             docker logs "$container" 2>&1 | tail -100 || true
           done
 
-      - name: Upload coverage reports
+      - name: Upload component test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: component-coverage-reports
-          path: artifacts/coverage
-
-      - name: Upload component test diagnostics
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: component-test-diagnostics
-          path: artifacts/test-results
+          name: component-test-results
+          path: artifacts/test-results/component
 
   coverage_report:
     name: Generate coverage report
@@ -225,24 +184,30 @@ jobs:
       - name: Set up .NET SDK
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.1xx
+          dotnet-version: 10.x
 
-      - name: Download coverage reports
+      - name: Download unit and integration test results
         uses: actions/download-artifact@v4
         with:
-          pattern: '*-coverage-reports'
-          path: artifacts/coverage
-          merge-multiple: true
+          name: unit-integration-test-results
+          path: artifacts/test-results/unit-integration
 
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+      - name: Download component test results
+        uses: actions/download-artifact@v4
+        with:
+          name: component-test-results
+          path: artifacts/test-results/component
+
+      - name: Restore .NET tools
+        run: dotnet tool restore --tool-manifest .config/dotnet-tools.json
 
       - name: Generate HTML coverage report
         run: |
-          reportgenerator \
-            "-reports:./artifacts/coverage/**/coverage.cobertura.xml" \
+          dotnet tool run reportgenerator \
+            "-reports:./artifacts/test-results/**/*.cobertura.xml" \
             "-targetdir:./artifacts/coverage-report" \
             "-reporttypes:Html;Cobertura;TextSummary" \
+            "--minimumCoverageThresholds:lineCoverage=10" \
             "-verbosity:Info"
 
       - name: Upload coverage reports
@@ -250,7 +215,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
-          path: artifacts/coverage
+          path: artifacts/coverage-report
 
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
@@ -263,9 +228,10 @@ jobs:
     needs:
       - test_unit_integration
       - test_component
+      - coverage_report
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.event_name != 'pull_request' && needs.coverage_report.result == 'success' }}
     steps:
       - name: Extract branch name
         run: |

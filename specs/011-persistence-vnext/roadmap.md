@@ -30,7 +30,7 @@ Acceptance criteria:
 
 Validation:
 
-- `dotnet test test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj`
+- `dotnet test --project test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj`
 
 GitHub issue mapping: [#7670](https://github.com/elsa-workflows/elsa-core/issues/7670)
 

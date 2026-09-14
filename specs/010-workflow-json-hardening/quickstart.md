@@ -6,6 +6,6 @@
 4. Run targeted tests:
 
 ```sh
-dotnet test test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --filter SerializationTypeResolverTests
-dotnet test test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj --filter WorkflowRuntimeFeatureTests
+dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj -- --treenode-filter "/*/*/SerializationTypeResolverTests/*"
+dotnet test --project test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj -- --treenode-filter "/*/*/WorkflowRuntimeFeatureTests/*"
 ```
