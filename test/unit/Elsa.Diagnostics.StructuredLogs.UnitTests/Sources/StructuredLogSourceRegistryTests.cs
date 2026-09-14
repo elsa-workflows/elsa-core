@@ -102,6 +102,35 @@ public class StructuredLogSourceRegistryTests : IDisposable
     }
 
     [Fact]
+    public void MarkSeen_WhenTimestampIsOlder_DoesNotRegressLastSeen()
+    {
+        var registry = CreateRegistry();
+        var newer = DateTimeOffset.UtcNow;
+        var older = newer.AddMinutes(-1);
+
+        registry.MarkSeen("pod-b", newer);
+        registry.MarkSeen("pod-b", older);
+
+        var source = Assert.Single(registry.List(), x => x.Id == "pod-b");
+        Assert.Equal(newer, source.LastSeen);
+        Assert.Equal(StructuredLogSourceStatus.Connected, source.Status);
+    }
+
+    [Fact]
+    public void MarkSeen_WhenTimestampIsEqual_KeepsLastSeen()
+    {
+        var registry = CreateRegistry();
+        var timestamp = DateTimeOffset.UtcNow;
+
+        registry.MarkSeen("pod-b", timestamp);
+        registry.MarkSeen("pod-b", timestamp);
+
+        var source = Assert.Single(registry.List(), x => x.Id == "pod-b");
+        Assert.Equal(timestamp, source.LastSeen);
+        Assert.Equal(StructuredLogSourceStatus.Connected, source.Status);
+    }
+
+    [Fact]
     public void List_WhenSourceHasNotBeenSeenRecently_MarksSourceAsStale()
     {
         _options.SourceHeartbeatTimeout = TimeSpan.FromSeconds(5);

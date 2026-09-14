@@ -28,6 +28,9 @@ public class StructuredLogSourceRegistry : IStructuredLogSourceRegistry
         {
             if (_sources.TryGetValue(sourceId, out var existing))
             {
+                if (existing.LastSeen is { } lastSeen && timestamp < lastSeen)
+                    return;
+
                 var updated = existing with { LastSeen = timestamp, Status = StructuredLogSourceStatus.Connected };
                 if (!_sources.TryUpdate(sourceId, updated, existing))
                     continue;

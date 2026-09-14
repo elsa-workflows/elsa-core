@@ -11,6 +11,7 @@ namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 
 public class StructuredLogWriteBuffer(
     RelationalStructuredLogStore store,
+    IStructuredLogSourceRegistry sourceRegistry,
     IOptions<RelationalStructuredLogOptions> options) : IStructuredLogStore, IStructuredLogWriteBuffer, IHostedService, IAsyncDisposable
 {
     private readonly object _lifecycleLock = new();
@@ -39,6 +40,8 @@ public class StructuredLogWriteBuffer(
             shouldSignal = _queue.Count == 0;
             _queue.Enqueue(logEvent);
         }
+
+        sourceRegistry.MarkSeen(logEvent.SourceId, logEvent.ReceivedAt);
 
         if (shouldSignal)
             _signal.Release();

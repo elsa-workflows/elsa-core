@@ -100,6 +100,17 @@ public class RelationalStructuredLogSqlBuilderTests
     }
 
     [Fact]
+    public void BuildQuery_OrdersByTimestampReceivedAtSourceIdSequenceAndIdDescending()
+    {
+        var query = _builder.BuildQuery(new());
+
+        Assert.Contains(
+            "ORDER BY [Timestamp] DESC, [ReceivedAt] DESC, [SourceId] DESC, [Sequence] DESC, [Id] DESC",
+            query.Sql,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void BuildListSources_GroupsBySourceAndOrdersBySource()
     {
         var sql = _builder.BuildListSources();
