@@ -216,9 +216,9 @@ public class SecretRepositoryTenantIsolationTests
         var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
         try
         {
-            var file = new FileSecretRepository(Options.Create(new SecretsOptions { RepositoryFilePath = path }));
+            var file = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
             await file.AddAsync(new Secret { Name = "legacy:secret", DisplayName = "Legacy" });
-            var reloaded = new FileSecretRepository(Options.Create(new SecretsOptions { RepositoryFilePath = path }));
+            var reloaded = new FileSecretRepository(Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path }));
 
             var loadedFile = await reloaded.GetAsync("legacy:secret");
             Assert.Null(loadedFile!.TenantId);
