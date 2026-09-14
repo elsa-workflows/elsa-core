@@ -93,6 +93,7 @@ public class WorkflowBuilder(IActivityVisitor activityVisitor, IIdentityGraphSer
     {
         var variable = new Variable<T>(name, value);
         Variables.Add(variable);
+        variable.WithWorkflowStorage();
         return variable;
     }
 
