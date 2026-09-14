@@ -7,8 +7,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.RestApis.Endpoints.BookmarkQue
 
 public class BookmarkQueueDeadLetterModelTests
 {
-    [Fact]
-    public void FromEntity_MapsSafeFieldsAndOmitsResumeOptions()
+    [Test]
+    public async Task FromEntity_MapsSafeFieldsAndOmitsResumeOptions()
     {
         var originalCreatedAt = new DateTimeOffset(2026, 5, 20, 10, 0, 0, TimeSpan.Zero);
         var deadLetteredAt = originalCreatedAt.AddMinutes(1);
@@ -44,29 +44,29 @@ public class BookmarkQueueDeadLetterModelTests
 
         var model = BookmarkQueueDeadLetterModel.FromEntity(item);
 
-        Assert.Equal(item.Id, model.Id);
-        Assert.Equal(item.TenantId, model.TenantId);
-        Assert.Equal(item.OriginalQueueItemId, model.OriginalQueueItemId);
-        Assert.Equal(item.WorkflowInstanceId, model.WorkflowInstanceId);
-        Assert.Equal(item.CorrelationId, model.CorrelationId);
-        Assert.Equal(item.BookmarkId, model.BookmarkId);
-        Assert.Equal(item.StimulusHash, model.StimulusHash);
-        Assert.Equal(item.ActivityInstanceId, model.ActivityInstanceId);
-        Assert.Equal(item.ActivityTypeName, model.ActivityTypeName);
-        Assert.Equal(item.OriginalCreatedAt, model.OriginalCreatedAt);
-        Assert.Equal(item.DeadLetteredAt, model.DeadLetteredAt);
-        Assert.Equal(item.Reason, model.Reason);
-        Assert.Equal(item.DeliveryAttempts, model.DeliveryAttempts);
-        Assert.Equal(item.LastAttemptedAt, model.LastAttemptedAt);
-        Assert.Equal(item.LastErrorType, model.LastErrorType);
-        Assert.Equal(item.LastErrorMessage, model.LastErrorMessage);
-        Assert.Equal(item.CanReplay, model.CanReplay);
-        Assert.Equal(item.ReplayedAt, model.ReplayedAt);
-        Assert.Equal(item.ReplayedQueueItemId, model.ReplayedQueueItemId);
-        Assert.Null(typeof(BookmarkQueueDeadLetterModel).GetProperty(nameof(BookmarkQueueDeadLetterItem.Options)));
+        await Assert.That(model.Id).IsEqualTo(item.Id);
+        await Assert.That(model.TenantId).IsEqualTo(item.TenantId);
+        await Assert.That(model.OriginalQueueItemId).IsEqualTo(item.OriginalQueueItemId);
+        await Assert.That(model.WorkflowInstanceId).IsEqualTo(item.WorkflowInstanceId);
+        await Assert.That(model.CorrelationId).IsEqualTo(item.CorrelationId);
+        await Assert.That(model.BookmarkId).IsEqualTo(item.BookmarkId);
+        await Assert.That(model.StimulusHash).IsEqualTo(item.StimulusHash);
+        await Assert.That(model.ActivityInstanceId).IsEqualTo(item.ActivityInstanceId);
+        await Assert.That(model.ActivityTypeName).IsEqualTo(item.ActivityTypeName);
+        await Assert.That(model.OriginalCreatedAt).IsEqualTo(item.OriginalCreatedAt);
+        await Assert.That(model.DeadLetteredAt).IsEqualTo(item.DeadLetteredAt);
+        await Assert.That(model.Reason).IsEqualTo(item.Reason);
+        await Assert.That(model.DeliveryAttempts).IsEqualTo(item.DeliveryAttempts);
+        await Assert.That(model.LastAttemptedAt).IsEqualTo(item.LastAttemptedAt);
+        await Assert.That(model.LastErrorType).IsEqualTo(item.LastErrorType);
+        await Assert.That(model.LastErrorMessage).IsEqualTo(item.LastErrorMessage);
+        await Assert.That(model.CanReplay).IsEqualTo(item.CanReplay);
+        await Assert.That(model.ReplayedAt).IsEqualTo(item.ReplayedAt);
+        await Assert.That(model.ReplayedQueueItemId).IsEqualTo(item.ReplayedQueueItemId);
+        await Assert.That(typeof(BookmarkQueueDeadLetterModel).GetProperty(nameof(BookmarkQueueDeadLetterItem.Options))).IsNull();
 
         var json = JsonSerializer.Serialize(model);
-        Assert.DoesNotContain("input-secret", json);
-        Assert.DoesNotContain("property-secret", json);
+        await Assert.That(json).DoesNotContain("input-secret");
+        await Assert.That(json).DoesNotContain("property-secret");
     }
 }

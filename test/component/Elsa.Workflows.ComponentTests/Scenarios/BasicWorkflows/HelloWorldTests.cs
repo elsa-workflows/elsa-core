@@ -9,13 +9,13 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.BasicWorkflows;
 
 public class HelloWorldTests(App app) : AppComponentTest(app)
 {
-    [Fact]
+    [Test]
     public async Task HelloWorldWorkflow_ShouldReturnOk()
     {
         var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
         using var response = await client.ExecuteAsync("1590068018aa4f0a");
         var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(model.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 }

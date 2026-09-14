@@ -16,31 +16,36 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Primitives.Event;
 
 public class PublishEventTests : AppComponentTest
 {
-    private readonly AsyncWorkflowRunner _workflowRunner;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly IWorkflowRuntime _workflowRuntime;
-    private readonly WorkflowEvents _workflowEvents;
+    private AsyncWorkflowRunner _workflowRunner = null!;
+    private IWorkflowInstanceStore _workflowInstanceStore = null!;
+    private IWorkflowRuntime _workflowRuntime = null!;
+    private WorkflowEvents _workflowEvents = null!;
     private static readonly JsonSerializerOptions CaseInsensitive = new() { PropertyNameCaseInsensitive = true };
 
     public PublishEventTests(App app) : base(app)
+    {
+    }
+
+    protected override ValueTask OnInitializeAsync()
     {
         _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
         _workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
         _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
         _workflowEvents = Scope.ServiceProvider.GetRequiredService<WorkflowEvents>();
+        return ValueTask.CompletedTask;
     }
 
-    [Fact]
+    [Test]
     public async Task PublishEvent_LocalEvent_CompletesWorkflow()
     {
         // Act
         var result = await _workflowRunner.RunAndAwaitWorkflowCompletionAsync(WorkflowDefinitionHandle.ByDefinitionId(PublishAndConsumeEventWorkflow.DefinitionId, VersionOptions.Published));
 
         // Assert
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact]
+    [Test]
     public async Task PublishEvent_GlobalEvent_TriggersConsumerWorkflow()
     {
         // Arrange
@@ -51,11 +56,11 @@ public class PublishEventTests : AppComponentTest
 
         // Assert - Consumer workflow was triggered and completed
         var consumerInstance = await GetSingleWorkflowInstanceAsync(ConsumerWorkflow.DefinitionId, correlationId);
-        Assert.Equal(WorkflowStatus.Finished, consumerInstance.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, consumerInstance.SubStatus);
+        await Assert.That(consumerInstance.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(consumerInstance.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact]
+    [Test]
     public async Task PublishEvent_WithPayload_TransmitsPayloadToConsumer()
     {
         // Arrange
@@ -66,12 +71,12 @@ public class PublishEventTests : AppComponentTest
 
         // Assert - Consumer workflow received the payload
         var consumerInstance = await GetSingleWorkflowInstanceAsync(ConsumerWorkflow.DefinitionId, correlationId);
-        Assert.Equal(WorkflowStatus.Finished, consumerInstance.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, consumerInstance.SubStatus);
+        await Assert.That(consumerInstance.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(consumerInstance.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
 
         // Verify the payload was captured in the output
-        Assert.True(consumerInstance.WorkflowState.Output.TryGetValue("ReceivedPayload", out var receivedPayload), "Consumer workflow should have ReceivedPayload output");
-        Assert.NotNull(receivedPayload);
+        await Assert.That(consumerInstance.WorkflowState.Output.TryGetValue("ReceivedPayload", out var receivedPayload)).IsTrue().Because("Consumer workflow should have ReceivedPayload output");
+        await Assert.That(receivedPayload).IsNotNull();
 
         // Verify the payload content. The payload's runtime representation is not stable: while it is still the
         // original CLR object its properties are PascalCase, but once it has been through the workflow state
@@ -79,7 +84,7 @@ public class PublishEventTests : AppComponentTest
         // Which one this test observes depends on whether the instance was read back from the store, so match
         // the property name case-insensitively rather than asserting one of the two representations.
         var payload = JsonSerializer.Deserialize<ReceivedEventPayload>(JsonSerializer.Serialize(receivedPayload), CaseInsensitive);
-        Assert.Equal("Shipped", payload?.Status);
+        await Assert.That(payload?.Status).IsEqualTo("Shipped");
     }
 
     private record ReceivedEventPayload(string? Status);
@@ -87,10 +92,10 @@ public class PublishEventTests : AppComponentTest
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
     {
         var tcs = new TaskCompletionSource<WorkflowInstance>();
-        var cts = new CancellationTokenSource(timeoutMs);
+        using var cts = new CancellationTokenSource(timeoutMs);
 
         // Register cancellation to fail the task on timeout
-        cts.Token.Register(() => tcs.TrySetException(new TimeoutException($"Workflow instance with DefinitionId '{definitionId}' and CorrelationId '{correlationId}' was not saved within {timeoutMs}ms")));
+        using var registration = cts.Token.Register(() => tcs.TrySetException(new TimeoutException($"Workflow instance with DefinitionId '{definitionId}' and CorrelationId '{correlationId}' was not saved within {timeoutMs}ms")));
 
         // Subscribe to the WorkflowInstanceSaved event
         // A workflow instance is saved several times over its lifetime, so only accept a terminal one: both callers
@@ -115,7 +120,7 @@ public class PublishEventTests : AppComponentTest
             }, cts.Token)).ToList();
 
             if (existingInstances.Any(x => x.Status == WorkflowStatus.Finished))
-                return Assert.Single(existingInstances);
+                return await Assert.That(existingInstances).HasSingleItem();
 
             // Wait for the event to be raised
             return await tcs.Task;
@@ -123,7 +128,6 @@ public class PublishEventTests : AppComponentTest
         finally
         {
             _workflowEvents.WorkflowInstanceSaved -= OnWorkflowInstanceSaved;
-            cts.Dispose();
         }
     }
 }

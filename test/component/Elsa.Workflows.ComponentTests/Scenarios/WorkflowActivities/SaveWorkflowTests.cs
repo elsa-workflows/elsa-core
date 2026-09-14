@@ -10,11 +10,12 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities;
 
 public class SaveWorkflowTests(App app) : AppComponentTest(app)
 {
-    [Theory(DisplayName = "Saving workflows updates ActivityRegistry")]
-    [InlineData("Save1", true, true, true, true)]
-    [InlineData("Save2", true, false, false, false)]
-    [InlineData("Save3", false, true, false, false)]
-    [InlineData("Save4", false, false, false, false)]
+    [Test]
+    [DisplayName("Saving workflows updates ActivityRegistry (name: $name, usableAsActivity: $usableAsActivity, publish: $publish, expectedInRegistry: $expectedInRegistry, isBrowsable: $isBrowsable)")]
+    [Arguments("Save1", true, true, true, true)]
+    [Arguments("Save2", true, false, false, false)]
+    [Arguments("Save3", false, true, false, false)]
+    [Arguments("Save4", false, false, false, false)]
     public async Task ActivityRegistry(string name, bool usableAsActivity, bool publish, bool expectedInRegistry, bool isBrowsable)
     {
         var activityRegistry = Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
@@ -44,12 +45,12 @@ public class SaveWorkflowTests(App app) : AppComponentTest(app)
 
         if (expectedInRegistry)
         {
-            Assert.NotNull(descriptor);
-            Assert.Equal(isBrowsable, descriptor.IsBrowsable);
+            await Assert.That(descriptor).IsNotNull();
+            await Assert.That(descriptor.IsBrowsable).IsEqualTo(isBrowsable);
         }
         else
         {
-            Assert.Null(descriptor);
+            await Assert.That(descriptor).IsNull();
         }
     }
 }

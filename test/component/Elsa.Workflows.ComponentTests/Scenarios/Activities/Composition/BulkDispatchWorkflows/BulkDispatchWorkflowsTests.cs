@@ -12,6 +12,7 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
+using TUnit.Assertions.Enums;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.BulkDispatchWorkflows;
 
@@ -22,46 +23,54 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
     private const int MaxChildWorkflowPollingIntervalMilliseconds = 1000;
     // The runtime persists this marker under the activity property name; resume handlers read the same key from WorkflowState.Properties.
     private const string WaitForCompletionPropertyName = nameof(Elsa.Workflows.Runtime.Activities.BulkDispatchWorkflows.WaitForCompletion);
-    private readonly AsyncWorkflowRunner _workflowRunner;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
+    private AsyncWorkflowRunner _workflowRunner = null!;
+    private IWorkflowInstanceStore _workflowInstanceStore = null!;
 
     public BulkDispatchWorkflowsTests(App app) : base(app)
     {
-        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
-        _workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows should wait for all child workflows to complete")]
+    protected override ValueTask OnInitializeAsync()
+    {
+        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
+        _workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        return ValueTask.CompletedTask;
+    }
+
+    [Test]
+    [DisplayName("BulkDispatchWorkflows should wait for all child workflows to complete")]
     public async Task BulkDispatchAndWait_ShouldWaitForAllChildWorkflowsToComplete()
     {
         var result = await RunWorkflowAsync(BulkDispatchAndWaitWorkflow.DefinitionId);
 
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
-        Assert.Equal(4, writeLineExecutionRecords.Count);
+        await Assert.That(writeLineExecutionRecords.Count).IsEqualTo(4);
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows should dispatch and not wait when WaitForCompletion is false")]
+    [Test]
+    [DisplayName("BulkDispatchWorkflows should dispatch and not wait when WaitForCompletion is false")]
     public async Task BulkDispatchFireAndForget_ShouldNotWaitForChildWorkflows()
     {
         var expectedChildCount = 3;
 
         var result = await RunWorkflowAsync(BulkDispatchFireAndForgetWorkflow.DefinitionId);
 
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
         var childWorkflowInstances = await WaitForChildWorkflowInstancesAsync(
             result.WorkflowExecutionContext.Id,
             SlowBulkChildWorkflow.DefinitionId,
             expectedChildCount);
 
-        Assert.Equal(expectedChildCount, childWorkflowInstances.Count);
+        await Assert.That(childWorkflowInstances.Count).IsEqualTo(expectedChildCount);
         foreach (var childWorkflowInstance in childWorkflowInstances)
         {
-            Assert.Equal(result.WorkflowExecutionContext.Id, childWorkflowInstance.ParentWorkflowInstanceId);
-            Assert.False(childWorkflowInstance.WorkflowState.Properties.ContainsKey(WaitForCompletionPropertyName));
+            await Assert.That(childWorkflowInstance.ParentWorkflowInstanceId).IsEqualTo(result.WorkflowExecutionContext.Id);
+            await Assert.That(childWorkflowInstance.WorkflowState.Properties.ContainsKey(WaitForCompletionPropertyName)).IsFalse();
         }
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows should use CorrelationIdFunction")]
+    [Test]
+    [DisplayName("BulkDispatchWorkflows should use CorrelationIdFunction")]
     public async Task BulkDispatchWithCorrelationId_ShouldUseCorrelationIdFunction()
     {
         var expectedChildCount = 3;
@@ -72,57 +81,61 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
             BulkChildWorkflow.DefinitionId,
             expectedChildCount);
 
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
 
         // Assert that all child workflows have the expected correlation IDs based on the CorrelationIdFunction
-        Assert.Equal(expectedChildCount, completedChildWorkflows.Count);
+        await Assert.That(completedChildWorkflows.Count).IsEqualTo(expectedChildCount);
 
         var expectedCorrelationIds = new[] { "correlation-1", "correlation-2", "correlation-3" };
-        var actualCorrelationIds = completedChildWorkflows.Select(c => c.CorrelationId).OrderBy(c => c).ToList();
+        var actualCorrelationIds = completedChildWorkflows.Select(c => c.CorrelationId!).OrderBy(c => c).ToList();
 
-        Assert.Equal(expectedCorrelationIds, actualCorrelationIds);
+        await Assert.That(actualCorrelationIds).IsEquivalentTo(expectedCorrelationIds, CollectionOrdering.Matching);
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows should execute ChildFaulted ports")]
+    [Test]
+    [DisplayName("BulkDispatchWorkflows should execute ChildFaulted ports")]
     public async Task BulkDispatchWithChildPorts_ShouldExecuteChildFaultedPortForFaultedWorkflows()
     {
         var result = await RunWorkflowAsync(BulkDispatchWithBulkChildPortsWorkflow.DefinitionId);
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
 
         var faultedCount = await GetWorkflowVariableAsync<int>(result, "FaultedCount");
-        Assert.Equal(3, faultedCount);
+        await Assert.That(faultedCount).IsEqualTo(3);
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows should complete immediately when Items is empty")]
+    [Test]
+    [DisplayName("BulkDispatchWorkflows should complete immediately when Items is empty")]
     public async Task BulkDispatchWithEmptyItems_ShouldCompleteImmediately()
     {
         var result = await RunWorkflowAsync(BulkDispatchEmptyItemsWorkflow.DefinitionId);
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows should throw when workflow definition not found")]
+    [Test]
+    [DisplayName("BulkDispatchWorkflows should throw when workflow definition not found")]
     public async Task BulkDispatchWithInvalidWorkflowDefinitionId_ShouldThrow()
     {
         var result = await RunWorkflowAsync(BulkDispatchInvalidDefinitionWorkflow.DefinitionId);
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
     }
 
-    [Fact(DisplayName = "BulkDispatchWorkflows child workflows should receive current item")]
+    [Test]
+    [DisplayName("BulkDispatchWorkflows child workflows should receive current item")]
     public async Task BulkDispatchWorkflows_ChildWorkflowsShouldReceiveCurrentItem()
     {
         var result = await RunWorkflowAsync(MixFruitsWorkflow.DefinitionId);
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
 
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
-        Assert.Equal(3, writeLineExecutionRecords.Count);
+        await Assert.That(writeLineExecutionRecords.Count).IsEqualTo(3);
 
         var writtenTexts = writeLineExecutionRecords
             .Select(x => x.ActivityState?[nameof(WriteLine.Text)] as string)
             .ToList();
 
-        Assert.Contains("Mixing Apple", writtenTexts);
-        Assert.Contains("Mixing Banana", writtenTexts);
-        Assert.Contains("Mixing Cherry", writtenTexts);
+        await Assert.That(writtenTexts).Contains("Mixing Apple");
+        await Assert.That(writtenTexts).Contains("Mixing Banana");
+        await Assert.That(writtenTexts).Contains("Mixing Cherry");
     }
 
     private Task<TestWorkflowExecutionResult> RunWorkflowAsync(string workflowDefinitionId)
@@ -130,9 +143,9 @@ public class BulkDispatchWorkflowsTests : AppComponentTest
         return _workflowRunner.RunAndAwaitWorkflowCompletionAsync(WorkflowDefinitionHandle.ByDefinitionId(workflowDefinitionId, VersionOptions.Published));
     }
 
-    private static void AssertWorkflowFinished(TestWorkflowExecutionResult result)
+    private static async Task AssertWorkflowFinished(TestWorkflowExecutionResult result)
     {
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
     private async Task<T?> GetWorkflowVariableAsync<T>(TestWorkflowExecutionResult result, string variableName)

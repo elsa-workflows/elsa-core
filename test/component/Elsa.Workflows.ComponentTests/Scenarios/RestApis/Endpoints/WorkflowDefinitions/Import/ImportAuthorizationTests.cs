@@ -18,30 +18,35 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.RestApis.Endpoints.WorkflowDef
 
 public class ImportAuthorizationTests : AppComponentTest
 {
-    private readonly IWorkflowDefinitionStore _store;
-    private readonly IActivitySerializer _activitySerializer;
-    private readonly IWorkflowDefinitionsApi _client;
+    private IWorkflowDefinitionStore _store = null!;
+    private IActivitySerializer _activitySerializer = null!;
+    private IWorkflowDefinitionsApi _client = null!;
 
     public ImportAuthorizationTests(App app) : base(app)
+    {
+    }
+
+    protected override ValueTask OnInitializeAsync()
     {
         _store = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
         _activitySerializer = Scope.ServiceProvider.GetRequiredService<IActivitySerializer>();
         _client = WorkflowServer.CreateApiClient<IWorkflowDefinitionsApi>();
+        return ValueTask.CompletedTask;
     }
 
-    [Fact]
+    [Test]
     public async Task ImportExistingReadOnlyDefinition_ShouldReturnForbiddenAndLeaveStorageUnchanged()
     {
         var definitionId = $"readonly-import-{Guid.NewGuid():N}";
         await SaveDefinitionAsync(definitionId, "Original", isReadonly: true);
 
-        var exception = await Assert.ThrowsAsync<ApiException>(() => _client.ImportAsync(CreateImportModel(definitionId, "Updated")));
+        var exception = (await Assert.ThrowsExactlyAsync<ApiException>(() => _client.ImportAsync(CreateImportModel(definitionId, "Updated"))))!;
 
-        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        await Assert.That(exception.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
         await AssertDefinitionUnchangedAsync(definitionId, "Original", isReadonly: true);
     }
 
-    [Fact]
+    [Test]
     public async Task ImportFilesWithReadOnlyTarget_ShouldReturnForbiddenAndLeaveStorageUnchanged()
     {
         var writableDefinitionId = $"writable-import-files-{Guid.NewGuid():N}";
@@ -57,25 +62,25 @@ public class ImportAuthorizationTests : AppComponentTest
             new(readOnlyStream, "readonly.json", "application/json")
         };
 
-        var exception = await Assert.ThrowsAsync<ApiException>(() => _client.ImportFilesAsync(files));
+        var exception = (await Assert.ThrowsExactlyAsync<ApiException>(() => _client.ImportFilesAsync(files)))!;
 
-        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        await Assert.That(exception.StatusCode).IsEqualTo(HttpStatusCode.Forbidden);
         await AssertDefinitionUnchangedAsync(writableDefinitionId, "Writable Original");
         await AssertDefinitionUnchangedAsync(readOnlyDefinitionId, "ReadOnly Original", isReadonly: true);
     }
 
-    [Fact]
+    [Test]
     public async Task ImportNewReadOnlyDefinition_ShouldSucceedAndPersistAsReadOnly()
     {
         var definitionId = $"new-readonly-import-{Guid.NewGuid():N}";
 
         var importedDefinition = await _client.ImportAsync(CreateImportModel(definitionId, "New ReadOnly", isReadonly: true));
 
-        Assert.True(importedDefinition.IsReadonly);
+        await Assert.That(importedDefinition.IsReadonly).IsTrue();
         await AssertDefinitionUnchangedAsync(definitionId, "New ReadOnly", isReadonly: true);
     }
 
-    [Fact]
+    [Test]
     public async Task ImportFilesWithNewReadOnlyDefinition_ShouldSucceedAndPersistAsReadOnly()
     {
         var definitionId = $"new-readonly-import-files-{Guid.NewGuid():N}";
@@ -88,7 +93,7 @@ public class ImportAuthorizationTests : AppComponentTest
 
         var response = await _client.ImportFilesAsync(files);
 
-        Assert.Equal(1, response.Count);
+        await Assert.That(response.Count).IsEqualTo(1);
         await AssertDefinitionUnchangedAsync(definitionId, "New ReadOnly", isReadonly: true);
     }
 
@@ -114,9 +119,9 @@ public class ImportAuthorizationTests : AppComponentTest
             DefinitionId = definitionId
         })).ToList();
 
-        var definition = Assert.Single(definitions);
-        Assert.Equal(expectedName, definition.Name);
-        Assert.Equal(isReadonly, definition.IsReadonly);
+        var definition = await Assert.That(definitions).HasSingleItem();
+        await Assert.That(definition.Name).IsEqualTo(expectedName);
+        await Assert.That(definition.IsReadonly).IsEqualTo(isReadonly);
     }
 
     private static WorkflowDefinitionModel CreateImportModel(string definitionId, string name, bool isReadonly = false)

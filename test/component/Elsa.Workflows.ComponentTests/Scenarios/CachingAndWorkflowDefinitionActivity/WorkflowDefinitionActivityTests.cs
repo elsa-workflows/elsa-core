@@ -3,7 +3,6 @@ using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit.Abstractions;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.CachingAndWorkflowDefinitionActivity;
 
@@ -11,22 +10,26 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.CachingAndWorkflowDefinitionAc
 // See https://github.com/elsa-workflows/elsa-core/issues/5314
 public class WorkflowDefinitionActivityTests : AppComponentTest
 {
-    private readonly ITestOutputHelper _testOutputHelper;
+
     private const string GrandChildDefinitionId = "29595e7b37a4836d";
 
-    private readonly IWorkflowDefinitionCacheManager _workflowDefinitionCacheManager;
-    private readonly IWorkflowInstanceStore _workflowInstanceStore;
-    private readonly HttpClient _httpWorkflowClient;
+    private IWorkflowDefinitionCacheManager _workflowDefinitionCacheManager = null!;
+    private IWorkflowInstanceStore _workflowInstanceStore = null!;
+    private HttpClient _httpWorkflowClient = null!;
 
-    public WorkflowDefinitionActivityTests(App app, ITestOutputHelper testOutputHelper) : base(app)
+    public WorkflowDefinitionActivityTests(App app) : base(app)
     {
-        _testOutputHelper = testOutputHelper;
+    }
+
+    protected override ValueTask OnInitializeAsync()
+    {
         _httpWorkflowClient = WorkflowServer.CreateHttpWorkflowClient();
         _workflowDefinitionCacheManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionCacheManager>();
         _workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        return ValueTask.CompletedTask;
     }
 
-    [Fact]
+    [Test]
     public async Task SendHttpRequest_WhileEvictingCache_ShouldNotGenerateFaults()
     {
         var requestTasks = Enumerable.Range(0, 200).Select(SendRequestAsync).ToList();
@@ -42,15 +45,24 @@ public class WorkflowDefinitionActivityTests : AppComponentTest
 
         foreach (var faultedWorkflow in faultedWorkflows)
         foreach (var incident in faultedWorkflow.WorkflowState.Incidents)
-            _testOutputHelper.WriteLine(incident.Message);
+            TestContext.Current!.Output.StandardOutput.WriteLine(incident.Message);
 
-        Assert.Equal(0, faultCount);
+        await Assert.That(faultCount).IsEqualTo(0);
     }
 
     private async Task SendRequestAsync(int index = 0)
     {
-        var requestTask = _httpWorkflowClient.PostAsync("parent", new StringContent("{}"));
+        using var content = new StringContent("{}");
+        var requestTask = _httpWorkflowClient.PostAsync("parent", content);
         var evictionTask = _workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(GrandChildDefinitionId);
-        await Task.WhenAll(requestTask, evictionTask);
+        try
+        {
+            await Task.WhenAll(requestTask, evictionTask);
+        }
+        finally
+        {
+            if (requestTask.IsCompletedSuccessfully)
+                requestTask.Result.Dispose();
+        }
     }
 }

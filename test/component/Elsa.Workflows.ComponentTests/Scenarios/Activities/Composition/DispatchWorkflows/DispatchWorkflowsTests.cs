@@ -16,26 +16,33 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.Dispatc
 
 public class DispatchWorkflowsTests : AppComponentTest
 {
-    private readonly AsyncWorkflowRunner _workflowRunner;
+    private AsyncWorkflowRunner _workflowRunner = null!;
     private const int ExpectedWriteLineCount = 2; // One from parent, one from child
     private const int ChildWorkflowTimeoutSeconds = 30;
 
     public DispatchWorkflowsTests(App app) : base(app)
     {
-        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
     }
 
-    [Fact(DisplayName = "DispatchWorkflow should wait for child workflow to complete")]
+    protected override ValueTask OnInitializeAsync()
+    {
+        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
+        return ValueTask.CompletedTask;
+    }
+
+    [Test]
+    [DisplayName("DispatchWorkflow should wait for child workflow to complete")]
     public async Task DispatchAndWaitWorkflow_ShouldWaitForChildWorkflowToComplete()
     {
         var result = await RunWorkflowAsync(DispatchAndWaitWorkflow.DefinitionId);
 
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
-        Assert.Equal(ExpectedWriteLineCount, writeLineExecutionRecords.Count);
+        await Assert.That(writeLineExecutionRecords.Count).IsEqualTo(ExpectedWriteLineCount);
     }
 
-    [Fact(DisplayName = "DispatchWorkflow should dispatch and not wait when WaitForCompletion is false")]
+    [Test]
+    [DisplayName("DispatchWorkflow should dispatch and not wait when WaitForCompletion is false")]
     public async Task DispatchFireAndForget_ShouldNotWaitForChildWorkflow()
     {
         // Run the main workflow and wait for child workflow to complete
@@ -43,33 +50,34 @@ public class DispatchWorkflowsTests : AppComponentTest
             DispatchFireAndForgetWorkflow.DefinitionId,
             SlowChildWorkflow.DefinitionId);
 
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
         var mainWorkflowCompletedAt = result.WorkflowExecutionContext.UpdatedAt;
 
         // Assert that the child workflow completed after the main workflow
-        var childContext = Assert.Single(completedChildWorkflows);
-        Assert.True(childContext.UpdatedAt > mainWorkflowCompletedAt,
-            $"Child workflow should complete after main workflow. Main: {mainWorkflowCompletedAt}, Child: {childContext.UpdatedAt}");
+        var childContext = await Assert.That(completedChildWorkflows).HasSingleItem();
+        await Assert.That(childContext.UpdatedAt > mainWorkflowCompletedAt).IsTrue().Because($"Child workflow should complete after main workflow. Main: {mainWorkflowCompletedAt}, Child: {childContext.UpdatedAt}");
     }
 
-    [Fact(DisplayName = "DispatchWorkflow should send input to child workflow")]
+    [Test]
+    [DisplayName("DispatchWorkflow should send input to child workflow")]
     public async Task DispatchWithInput_ShouldSendInputToChildWorkflow()
     {
         var result = await RunWorkflowAsync(DispatchWithInputWorkflow.DefinitionId);
 
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
         var writeLineExecutionRecords = result.ActivityExecutionRecords.Where(x => x.ActivityType == "Elsa.WriteLine").ToList();
-        Assert.Equal(ExpectedWriteLineCount, writeLineExecutionRecords.Count);
+        await Assert.That(writeLineExecutionRecords.Count).IsEqualTo(ExpectedWriteLineCount);
 
         var writtenTexts = writeLineExecutionRecords
             .Select(x => x.ActivityState?[nameof(WriteLine.Text)] as string ?? string.Empty)
             .ToList();
 
-        Assert.Contains("Received: Hello from parent!", writtenTexts);
-        Assert.Contains("Parent completed", writtenTexts);
+        await Assert.That(writtenTexts).Contains("Received: Hello from parent!");
+        await Assert.That(writtenTexts).Contains("Parent completed");
     }
 
-    [Fact(DisplayName = "DispatchWorkflow should use CorrelationId")]
+    [Test]
+    [DisplayName("DispatchWorkflow should use CorrelationId")]
     public async Task DispatchWithCorrelationId_ShouldUseCorrelationId()
     {
         // Run the main workflow and wait for child workflow to complete
@@ -77,18 +85,19 @@ public class DispatchWorkflowsTests : AppComponentTest
             DispatchWithCorrelationIdWorkflow.DefinitionId,
             ChildWorkflow.DefinitionId);
 
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
 
         // Assert that the child workflow has the expected correlation ID
-        var childContext = Assert.Single(completedChildWorkflows);
-        Assert.Equal("test-correlation-id-123", childContext.CorrelationId);
+        var childContext = await Assert.That(completedChildWorkflows).HasSingleItem();
+        await Assert.That(childContext.CorrelationId).IsEqualTo("test-correlation-id-123");
     }
 
-    [Fact(DisplayName = "DispatchWorkflow should throw when workflow definition not found")]
+    [Test]
+    [DisplayName("DispatchWorkflow should throw when workflow definition not found")]
     public async Task DispatchWithInvalidWorkflowDefinitionId_ShouldThrow()
     {
         var result = await RunWorkflowAsync(DispatchInvalidDefinitionWorkflow.DefinitionId);
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
     }
 
     private Task<TestWorkflowExecutionResult> RunWorkflowAsync(string workflowDefinitionId)
@@ -96,9 +105,9 @@ public class DispatchWorkflowsTests : AppComponentTest
         return _workflowRunner.RunAndAwaitWorkflowCompletionAsync(WorkflowDefinitionHandle.ByDefinitionId(workflowDefinitionId, VersionOptions.Published));
     }
 
-    private static void AssertWorkflowFinished(TestWorkflowExecutionResult result)
+    private static async Task AssertWorkflowFinished(TestWorkflowExecutionResult result)
     {
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
     private async Task<(TestWorkflowExecutionResult Result, List<WorkflowState> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowAsync(

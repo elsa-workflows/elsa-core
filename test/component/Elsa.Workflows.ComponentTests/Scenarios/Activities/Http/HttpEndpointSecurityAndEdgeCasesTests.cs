@@ -7,7 +7,7 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(app)
 {
-    [Fact]
+    [Test]
     public async Task HttpEndpoint_BlockedFileExtensions_RejectsBlockedFiles()
     {
         // Arrange
@@ -18,13 +18,13 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         content.Add(fileContent, "file", "malware.exe"); // .exe is in blocked extensions
 
         // Act
-        var response = await client.PostAsync("test/blocked-extensions", content);
+        using var response = await client.PostAsync("test/blocked-extensions", content);
 
         // Assert
-        Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.UnsupportedMediaType);
     }
 
-    [Fact]
+    [Test]
     public async Task HttpEndpoint_BlockedFileExtensions_AllowsNonBlockedFiles()
     {
         // Arrange
@@ -35,54 +35,54 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         content.Add(fileContent, "file", "document.txt"); // .txt is not in blocked extensions
 
         // Act
-        var response = await client.PostAsync("test/blocked-extensions", content);
+        using var response = await client.PostAsync("test/blocked-extensions", content);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("File upload successful", responseContent);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(responseContent).IsEqualTo("File upload successful");
     }
     
-    [Theory]
-    [InlineData("test/basic")]
-    [InlineData("TEST/BASIC")]
-    [InlineData("Test/Basic")]
-    [InlineData("test/BASIC")]
-    [InlineData("TEST/basic")]
+    [Test]
+    [Arguments("test/basic")]
+    [Arguments("TEST/BASIC")]
+    [Arguments("Test/Basic")]
+    [Arguments("test/BASIC")]
+    [Arguments("TEST/basic")]
     public async Task HttpEndpoint_CaseSensitiveRoutes_RespectsRouteCase(string route)
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         // Act
-        var response = await client.GetAsync(route);
+        using var response = await client.GetAsync(route);
         var content = await response.Content.ReadAsStringAsync();
 
         // Assert - ASP.NET Core routing is case-insensitive by default
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(content);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(content).IsNotNull();
     }
 
-    [Theory]
-    [InlineData("test/query-headers?name=")]
-    [InlineData("test/query-headers?name")]
-    [InlineData("test/query-headers?=value")]
-    [InlineData("test/query-headers?&&&")]
+    [Test]
+    [Arguments("test/query-headers?name=")]
+    [Arguments("test/query-headers?name")]
+    [Arguments("test/query-headers?=value")]
+    [Arguments("test/query-headers?&&&")]
     public async Task HttpEndpoint_NullAndEmptyQueryParameters_HandlesCorrectly(string url)
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         // Act
-        var response = await client.GetAsync(url);
+        using var response = await client.GetAsync(url);
         var content = await response.Content.ReadAsStringAsync();
 
         // Assert - Should handle edge cases with query parameters gracefully
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.NotNull(content);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(content).IsNotNull();
     }
 
-    [Fact]
+    [Test]
     public async Task HttpEndpoint_ZeroByteFile_ProcessesCorrectly()
     {
         // Arrange
@@ -93,12 +93,12 @@ public class HttpEndpointSecurityAndEdgeCasesTests(App app) : AppComponentTest(a
         content.Add(emptyFile, "file", "empty.txt");
 
         // Act
-        var response = await client.PostAsync("test/file-upload", content);
+        using var response = await client.PostAsync("test/file-upload", content);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("empty.txt", responseContent);
-        Assert.Contains("0 bytes", responseContent);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(responseContent).Contains("empty.txt");
+        await Assert.That(responseContent).Contains("0 bytes");
     }
 }

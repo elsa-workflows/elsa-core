@@ -11,14 +11,19 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Composition.Execute
 
 public class ExecuteWorkflowsTests : AppComponentTest
 {
-    private readonly IWorkflowRuntime _workflowRuntime;
+    private IWorkflowRuntime _workflowRuntime = null!;
 
     public ExecuteWorkflowsTests(App app) : base(app)
     {
-        _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
     }
 
-    [Fact]
+    protected override ValueTask OnInitializeAsync()
+    {
+        _workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
+        return ValueTask.CompletedTask;
+    }
+
+    [Test]
     public async Task ExecuteWorkflow_ShouldExecuteWorkflow()
     {
         var workflowClient = await _workflowRuntime.CreateClientAsync();

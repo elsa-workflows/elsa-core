@@ -10,7 +10,7 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
 {
     private const string RequestSizeLimitPath = "test/request-size-limit";
 
-    [Fact]
+    [Test]
     public async Task JsonContent_ValidJson_ReturnsEchoedJson()
     {
         // Arrange
@@ -18,42 +18,42 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
         var jsonContent = JsonSerializer.Serialize(testData);
 
         // Act
-        var response = await PostJsonContentAsync(jsonContent);
+        using var response = await PostJsonContentAsync(jsonContent);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
-        
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("application/json");
+
         // Verify JSON structure is preserved
         var parsedResponse = JsonSerializer.Deserialize<JsonElement>(responseContent);
-        Assert.True(parsedResponse.TryGetProperty("Name", out var nameProperty));
-        Assert.Equal("John", nameProperty.GetString());
+        await Assert.That(parsedResponse.TryGetProperty("Name", out var nameProperty)).IsTrue();
+        await Assert.That(nameProperty.GetString()).IsEqualTo("John");
     }
 
-    [Theory]
-    [InlineData("{ \"name\": \"John\", invalid }", HttpStatusCode.BadRequest)]
-    [InlineData("", HttpStatusCode.OK, "No content received")]
+    [Test]
+    [Arguments("{ \"name\": \"John\", invalid }", HttpStatusCode.BadRequest)]
+    [Arguments("", HttpStatusCode.OK, "No content received")]
     public async Task JsonContent_InvalidOrEmpty_ReturnsExpectedResponse(
         string jsonContent, 
         HttpStatusCode expectedStatusCode, 
         string? expectedContentFragment = null)
     {
         // Act
-        var response = await PostJsonContentAsync(jsonContent);
+        using var response = await PostJsonContentAsync(jsonContent);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.Equal(expectedStatusCode, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(expectedStatusCode);
         if (expectedContentFragment != null)
         {
-            Assert.Contains(expectedContentFragment, responseContent);
+            await Assert.That(responseContent).Contains(expectedContentFragment);
         }
     }
 
-    [Theory]
-    [InlineData("John Doe", "john@example.com", "Name: John Doe", "Email: john@example.com")]
-    [InlineData("Jane Smith", "jane@test.org", "Name: Jane Smith", "Email: jane@test.org")]
+    [Test]
+    [Arguments("John Doe", "john@example.com", "Name: John Doe", "Email: john@example.com")]
+    [Arguments("Jane Smith", "jane@test.org", "Name: Jane Smith", "Email: jane@test.org")]
     public async Task FormData_ValidData_ReturnsExtractedFields(
         string name, 
         string email, 
@@ -68,16 +68,16 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
         };
 
         // Act
-        var response = await PostFormDataAsync(formData);
+        using var response = await PostFormDataAsync(formData);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(expectedNameFragment, responseContent);
-        Assert.Contains(expectedEmailFragment, responseContent);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(responseContent).Contains(expectedNameFragment);
+        await Assert.That(responseContent).Contains(expectedEmailFragment);
     }
 
-    [Fact]
+    [Test]
     public async Task FormData_MissingFields_ReturnsUnknownValues()
     {
         // Arrange
@@ -87,53 +87,53 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
         };
 
         // Act
-        var response = await PostFormDataAsync(formData);
+        using var response = await PostFormDataAsync(formData);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, "Name: unknown", "Email: unknown");
+        await AssertOkResponseContains(response, responseContent, "Name: unknown", "Email: unknown");
     }
 
-    [Fact]
+    [Test]
     public async Task FormData_EmptyForm_ReturnsNoFormDataMessage()
     {
         // Act
-        var response = await PostEmptyFormAsync();
+        using var response = await PostEmptyFormAsync();
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, "No form data received");
+        await AssertOkResponseContains(response, responseContent, "No form data received");
     }
 
-    [Fact]
+    [Test]
     public async Task RequestSizeLimit_NoContentLengthOversizedBody_ReturnsPayloadTooLarge()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
         using var content = new NoLengthStringContent("0123456789", "text/plain");
-        Assert.Null(content.Headers.ContentLength);
+        await Assert.That(content.Headers.ContentLength).IsNull();
 
         // Act
-        var response = await client.PostAsync(RequestSizeLimitPath, content);
+        using var response = await client.PostAsync(RequestSizeLimitPath, content);
 
         // Assert
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.RequestEntityTooLarge);
     }
 
-    [Fact]
+    [Test]
     public async Task RequestSizeLimit_NoContentLengthSmallBody_ReturnsEchoedContent()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
         using var content = new NoLengthStringContent("small", "text/plain");
-        Assert.Null(content.Headers.ContentLength);
+        await Assert.That(content.Headers.ContentLength).IsNull();
 
         // Act
-        var response = await client.PostAsync(RequestSizeLimitPath, content);
+        using var response = await client.PostAsync(RequestSizeLimitPath, content);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, "small");
+        await AssertOkResponseContains(response, responseContent, "small");
     }
 
     private async Task<HttpResponseMessage> PostJsonContentAsync(string jsonContent)
@@ -157,12 +157,12 @@ public class HttpEndpointContentTests(App app) : AppComponentTest(app)
         return await client.PostAsync("test/form-data", content);
     }
 
-    private static void AssertOkResponseContains(HttpResponseMessage response, string responseContent, params string[] expectedFragments)
+    private static async Task AssertOkResponseContains(HttpResponseMessage response, string responseContent, params string[] expectedFragments)
     {
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         foreach (var fragment in expectedFragments)
         {
-            Assert.Contains(fragment, responseContent);
+            await Assert.That(responseContent).Contains(fragment);
         }
     }
 

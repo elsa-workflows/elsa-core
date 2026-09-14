@@ -16,7 +16,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Variables;
 
 public class CountdownWorkflowTests(App app) : AppComponentTest(app)
 {
-    [Fact(DisplayName = "Variable is persisted across workflow runs")]
+    [Test]
+    [DisplayName("Variable is persisted across workflow runs")]
     public async Task VariableIsPersistedAcrossWorkflowRuns()
     {
         var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
@@ -43,7 +44,7 @@ public class CountdownWorkflowTests(App app) : AppComponentTest(app)
             var rootWorkflowActivityExecutionContext = workflowState.ActivityExecutionContexts.Single(x => x.ParentContextId == null);
             var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
             var actualCounter = variables["counterVariable"].ConvertTo<int>();
-            Assert.Equal(--expectedCounter, actualCounter);
+            await Assert.That(actualCounter).IsEqualTo(--expectedCounter);
 
             var bookmark = bookmarks.Pop();
             var runRequest = new RunWorkflowInstanceRequest

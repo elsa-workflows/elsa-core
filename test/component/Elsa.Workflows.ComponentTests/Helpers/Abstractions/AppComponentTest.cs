@@ -1,88 +1,177 @@
-using System.Collections.Concurrent;
 using Elsa.Common.Multitenancy;
-using Elsa.Testing.Shared;
-using Elsa.Testing.Shared.Services;
 using Elsa.Workflows.ComponentTests.Fixtures;
+using Elsa.Workflows.ComponentTests.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Workflows.ComponentTests.Abstractions;
 
-[Collection(nameof(AppCollection))]
-public abstract class AppComponentTest : IDisposable
+/// <summary>
+/// Supplies a fresh application, catalog, DI graph, and mutable filesystem root to every expanded test invocation.
+/// </summary>
+[ClassDataSource<App>(Shared = SharedType.None)]
+public abstract class AppComponentTest : IAsyncDisposable
 {
-    protected WorkflowServer WorkflowServer { get; }
-    protected Cluster Cluster { get; }
-    protected Infrastructure Infrastructure { get; }
-    protected IServiceScope Scope { get; }
-    private readonly IDisposable _tenantScope;
-    private readonly WorkflowEvents _workflowEvents;
-    private readonly ManualResetEventSlim _allWorkflowsIdle = new(true); // starts signaled (no workflows running)
-    private readonly ConcurrentDictionary<string, byte> _runningWorkflowIds = new();
+    private readonly App _app;
+    private readonly WorkflowExecutionTracker _workflowExecutionTracker;
+    private IDisposable? _tenantScope;
+    private AsyncServiceScope? _scope;
+    private Cluster? _cluster;
+    private WorkflowServer? _workflowServer;
+    private int _disposed;
 
     protected AppComponentTest(App app)
     {
-        WorkflowServer = app.WorkflowServer;
-        Cluster = app.Cluster;
+        _app = app;
+        _workflowExecutionTracker = app.HostOptions.WorkflowExecutionTracker;
         Infrastructure = app.Infrastructure;
-        Scope = app.WorkflowServer.Services.CreateScope();
+    }
+
+    protected WorkflowServer WorkflowServer => _workflowServer
+        ?? throw new InvalidOperationException("The component-test host has not been initialized.");
+
+    protected Cluster Cluster => _cluster
+        ?? throw new InvalidOperationException("The component-test cluster has not been initialized.");
+
+    protected Infrastructure Infrastructure { get; }
+
+    protected AsyncServiceScope Scope => _scope
+        ?? throw new InvalidOperationException("The component-test service scope has not been initialized.");
+
+    [Before(Test)]
+    public async Task InitializeComponentTestAsync(TestContext testContext)
+    {
+        _cluster = await _app.StartAsync(testContext);
+        _workflowServer = _cluster.Pod1;
+        _scope = _workflowServer.Services.CreateAsyncScope();
 
         var tenantAccessor = Scope.ServiceProvider.GetRequiredService<ITenantAccessor>();
         _tenantScope = tenantAccessor.PushContext(new Tenant { Id = string.Empty, Name = "Default" });
 
-        // Subscribe to workflow lifecycle events to track in-flight workflows.
-        _workflowEvents = app.WorkflowServer.Services.GetRequiredService<WorkflowEvents>();
-        _workflowEvents.WorkflowStateCommitted += OnWorkflowStateCommitted;
+        await OnInitializeAsync();
     }
 
-    void IDisposable.Dispose()
+    // TUnit currently suppresses exceptions thrown from test-instance IAsyncDisposable cleanup.
+    // Running the same idempotent path as an After(Test) hook makes cleanup failures part of the test result.
+    [After(Test)]
+    public async Task CleanupAsync()
     {
-        // Wait for all workflows to reach terminal state before disposing scope.
-        // This prevents TaskCanceledException when workflows are still executing.
-        WaitForWorkflowsToComplete();
+        List<Exception>? failures = null;
 
-        _workflowEvents.WorkflowStateCommitted -= OnWorkflowStateCommitted;
-        _allWorkflowsIdle.Dispose();
-        _tenantScope.Dispose();
-        Scope.Dispose();
-        OnDispose();
-    }
-
-    protected virtual void OnDispose()
-    {
-    }
-
-    private void OnWorkflowStateCommitted(object? sender, WorkflowStateCommittedEventArgs e)
-    {
-        var instanceId = e.WorkflowExecutionContext.Id;
-        var status = e.WorkflowExecutionContext.Status;
-
-        if (status == WorkflowStatus.Running)
-        {
-            // Track this instance as in-flight.
-            if (_runningWorkflowIds.TryAdd(instanceId, 0) && _runningWorkflowIds.Count == 1)
-                _allWorkflowsIdle.Reset();
-        }
-        else
-        {
-            // Workflow reached a terminal state; remove it.
-            _runningWorkflowIds.TryRemove(instanceId, out _);
-
-            if (_runningWorkflowIds.IsEmpty)
-                _allWorkflowsIdle.Set();
-        }
-    }
-
-    private void WaitForWorkflowsToComplete()
-    {
         try
         {
-            // Wait up to 10 seconds for all tracked workflows to finish.
-            // If no workflows were started, the event is already signaled and this returns immediately.
-            _allWorkflowsIdle.Wait(TimeSpan.FromSeconds(10));
+            await DisposeAsync();
         }
-        catch
+        catch (Exception exception)
         {
-            // Swallow exceptions during cleanup to avoid masking test failures.
+            (failures ??= []).Add(exception);
+        }
+
+        try
+        {
+            await _app.DisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+
+        if (failures is { Count: > 0 })
+            throw new AggregateException("Failed to clean up a component-test invocation.", failures);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            return;
+
+        List<Exception>? failures = null;
+
+        try
+        {
+            await WaitForWorkflowsToCompleteAsync();
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+
+        try
+        {
+            await OnDisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+
+        try
+        {
+            _tenantScope?.Dispose();
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+        finally
+        {
+            _tenantScope = null;
+        }
+
+        if (_scope is { } scope)
+        {
+            try
+            {
+                await scope.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+            finally
+            {
+                _scope = null;
+            }
+        }
+
+        if (_cluster is not null)
+        {
+            try
+            {
+                await _cluster.DisposeAsync();
+            }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+            finally
+            {
+                _cluster = null;
+                _workflowServer = null;
+            }
+        }
+
+        if (failures is { Count: > 0 })
+            throw new AggregateException("Failed to dispose a component-test instance cleanly.", failures);
+    }
+
+    protected virtual ValueTask OnInitializeAsync() => ValueTask.CompletedTask;
+
+    protected virtual ValueTask OnDisposeAsync() => ValueTask.CompletedTask;
+
+    private async Task WaitForWorkflowsToCompleteAsync()
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            timeout.Token,
+            TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
+
+        try
+        {
+            await _workflowExecutionTracker.WaitForIdleAsync(linked.Token);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Workflow executions did not become idle within 10 seconds; {_workflowExecutionTracker.ActiveCount} runner call(s) remain active.");
         }
     }
 }

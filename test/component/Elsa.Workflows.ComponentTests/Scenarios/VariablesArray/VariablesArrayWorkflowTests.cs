@@ -11,12 +11,14 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
+using TUnit.Assertions.Enums;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.VariablesArray;
 
 public class VariablesArrayWorkflowTests(App app) : AppComponentTest(app)
 {
-    [Fact(DisplayName = "Array variable is persisted across workflow runs")]
+    [Test]
+    [DisplayName("Array variable is persisted across workflow runs")]
     public async Task VariableIsPersistedAcrossWorkflowRuns()
     {
         var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
@@ -42,7 +44,8 @@ public class VariablesArrayWorkflowTests(App app) : AppComponentTest(app)
             DefinitionId = VariableArrayWorkflow.DefinitionId
         }, default);
 
-        Assert.Equal(["Element 1", "Element 2", "Element 3"], result?.Variables.FirstOrDefault(v => v.Id == "elementsVariable")?.Value as IEnumerable<string>);
+        await Assert.That(result?.Variables.FirstOrDefault(v => v.Id == "elementsVariable")?.Value as IEnumerable<string>)
+            .IsEquivalentTo(["Element 1", "Element 2", "Element 3"], CollectionOrdering.Matching);
 
         while (bookmarks.Any())
         {
@@ -51,7 +54,7 @@ public class VariablesArrayWorkflowTests(App app) : AppComponentTest(app)
             var rootWorkflowActivityExecutionContext = workflowState.ActivityExecutionContexts.Single(x => x.ParentContextId == null);
             var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
             var actualElements = variables["elementsVariable"].ConvertTo<string[]>();
-            Assert.Equal(--expectedElementLength, actualElements?.Length);
+            await Assert.That(actualElements?.Length).IsEqualTo(--expectedElementLength);
 
             var bookmark = bookmarks.Pop();
             var runRequest = new RunWorkflowInstanceRequest
@@ -69,7 +72,7 @@ public class VariablesArrayWorkflowTests(App app) : AppComponentTest(app)
             foreach (var newBookmark in createdBookmarks)
                 bookmarks.Push(newBookmark);
         }
-        Assert.Equal(0, expectedElementLength);
+        await Assert.That(expectedElementLength).IsEqualTo(0);
     }
 
     private VariablesDictionary GetVariablesDictionary(ActivityExecutionContextState context)

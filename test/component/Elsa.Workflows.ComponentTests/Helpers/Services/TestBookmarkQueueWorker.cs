@@ -6,60 +6,122 @@ namespace Elsa.Workflows.ComponentTests.Services;
 
 /// <summary>
 /// A test-specific bookmark queue worker that processes items immediately without throttling.
-/// This prevents timeouts in tests where many workflows complete rapidly.
 /// </summary>
-public class TestBookmarkQueueWorker(IBookmarkQueueSignaler signaler, IServiceScopeFactory scopeFactory, ILogger<TestBookmarkQueueWorker> logger) : IBookmarkQueueWorker
+public sealed class TestBookmarkQueueWorker(
+    IBookmarkQueueSignaler signaler,
+    IServiceScopeFactory scopeFactory,
+    ILogger<TestBookmarkQueueWorker> logger) : IBookmarkQueueWorker, IAsyncDisposable
 {
-    private CancellationTokenSource _cts = null!;
-    private bool _running;
+    private readonly object _lifetimeLock = new();
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task? _workerTask;
+    private bool _disposed;
 
     public void Start()
     {
-        if (_running)
-            return;
+        lock (_lifetimeLock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_workerTask is not null)
+                return;
 
-        _cts = new();
-        _running = true;
-
-        _ = Task.Run(AwaitSignalAsync);
+            var cancellationTokenSource = new CancellationTokenSource();
+            _cancellationTokenSource = cancellationTokenSource;
+            _workerTask = Task.Run(() => AwaitSignalAsync(cancellationTokenSource.Token));
+        }
     }
 
     public void Stop()
     {
-        if (_running)
+        lock (_lifetimeLock)
         {
-            _running = false;
-            _cts.Cancel();
-        }
+            if (_disposed)
+                return;
 
-        _cts.Dispose();
+            _cancellationTokenSource?.Cancel();
+        }
     }
 
-    private async Task AwaitSignalAsync()
+    public async ValueTask DisposeAsync()
     {
-        while (!_cts.IsCancellationRequested)
+        Task? workerTask;
+        CancellationTokenSource? cancellationTokenSource;
+
+        lock (_lifetimeLock)
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            workerTask = _workerTask;
+            cancellationTokenSource = _cancellationTokenSource;
+            _workerTask = null;
+            _cancellationTokenSource = null;
+        }
+
+        List<Exception>? failures = null;
+
+        try
+        {
+            cancellationTokenSource?.Cancel();
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+
+        try
+        {
+            if (workerTask is not null)
+                await workerTask;
+        }
+        catch (OperationCanceledException) when (cancellationTokenSource?.IsCancellationRequested == true)
+        {
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+        finally
         {
             try
             {
-                await signaler.AwaitAsync(_cts.Token);
-                // Process immediately without throttling for tests
-                await ProcessAsync(_cts.Token);
+                cancellationTokenSource?.Dispose();
             }
-            catch (OperationCanceledException)
+            catch (Exception exception)
             {
-                break; // Stop() was called
+                (failures ??= []).Add(exception);
             }
-            catch (Exception ex)
+        }
+
+        if (failures is { Count: > 0 })
+            throw new AggregateException("Failed to stop the test bookmark queue worker cleanly.", failures);
+    }
+
+    private async Task AwaitSignalAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
             {
-                logger.LogError(ex, "TestBookmarkQueueWorker error – continuing loop");
+                await signaler.AwaitAsync(cancellationToken);
+                await ProcessAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Test bookmark queue worker failed; continuing the loop.");
             }
         }
     }
 
-    protected virtual async Task ProcessAsync(CancellationToken cancellationToken)
+    private async Task ProcessAsync(CancellationToken cancellationToken)
     {
-        logger.LogDebug("Processing bookmark queue (test mode - no throttling)...");
-        using var scope = scopeFactory.CreateScope();
+        logger.LogDebug("Processing bookmark queue without throttling.");
+        await using var scope = scopeFactory.CreateAsyncScope();
         var processor = scope.ServiceProvider.GetRequiredService<IBookmarkQueueProcessor>();
         await processor.ProcessAsync(cancellationToken);
         logger.LogDebug("Processed bookmark queue.");

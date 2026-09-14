@@ -9,15 +9,15 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowCompletion;
 
 public class WorkflowCompletionTests(App app) : AppComponentTest(app)
 {
-    [Theory]
-    [InlineData("2630068018ac1f0a")]
-    [InlineData("5590069018aa4f0e")]
+    [Test]
+    [Arguments("2630068018ac1f0a")]
+    [Arguments("5590069018aa4f0e")]
     public async Task Workflow_ShouldComplete(string workflowDefinitionId)
     {
         var client = WorkflowServer.CreateApiClient<IExecuteWorkflowApi>();
         using var response = await client.ExecuteAsync(workflowDefinitionId);
         var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(model.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 }

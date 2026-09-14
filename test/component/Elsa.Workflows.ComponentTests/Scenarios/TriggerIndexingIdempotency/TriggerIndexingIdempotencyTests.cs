@@ -22,7 +22,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.TriggerIndexingIdempotency;
 /// </summary>
 public class TriggerIndexingIdempotencyTests(App app) : AppComponentTest(app)
 {
-    [Fact(DisplayName = "Re-indexing an unchanged workflow should not produce any trigger changes")]
+    [Test]
+    [DisplayName("Re-indexing an unchanged workflow should not produce any trigger changes")]
     public async Task ReIndexingUnchangedWorkflow_ShouldBeIdempotent()
     {
         // Arrange
@@ -32,19 +33,20 @@ public class TriggerIndexingIdempotencyTests(App app) : AppComponentTest(app)
 
         // Act: First indexing — triggers are inserted.
         var firstResult = await indexer.IndexTriggersAsync(definition);
-        Assert.Single(firstResult.AddedTriggers);
-        Assert.Empty(firstResult.RemovedTriggers);
+        await Assert.That(firstResult.AddedTriggers).HasSingleItem();
+        await Assert.That(firstResult.RemovedTriggers).IsEmpty();
 
         // Act: Second indexing — triggers already exist in the DB.
         var secondResult = await indexer.IndexTriggersAsync(definition);
 
         // Assert: The second indexing should be a no-op.
-        Assert.Empty(secondResult.AddedTriggers);
-        Assert.Empty(secondResult.RemovedTriggers);
-        Assert.Single(secondResult.UnchangedTriggers);
+        await Assert.That(secondResult.AddedTriggers).IsEmpty();
+        await Assert.That(secondResult.RemovedTriggers).IsEmpty();
+        await Assert.That(secondResult.UnchangedTriggers).HasSingleItem();
     }
 
-    [Fact(DisplayName = "Re-indexing should preserve trigger IDs when nothing changed")]
+    [Test]
+    [DisplayName("Re-indexing should preserve trigger IDs when nothing changed")]
     public async Task ReIndexingUnchangedWorkflow_ShouldPreserveTriggerIds()
     {
         // Arrange
@@ -60,7 +62,7 @@ public class TriggerIndexingIdempotencyTests(App app) : AppComponentTest(app)
         var triggerIdAfterSecondIndex = (await GetTriggersAsync(workflow.Identity.DefinitionId)).Single().Id;
 
         // Assert: The trigger ID should be preserved — no delete-reinsert happened.
-        Assert.Equal(originalTriggerId, triggerIdAfterSecondIndex);
+        await Assert.That(triggerIdAfterSecondIndex).IsEqualTo(originalTriggerId);
     }
 
     private static Workflow CreateTestWorkflow()
@@ -115,4 +117,3 @@ public class TriggerIndexingIdempotencyTests(App app) : AppComponentTest(app)
         return (await triggerStore.FindManyAsync(new() { WorkflowDefinitionId = workflowDefinitionId })).ToList();
     }
 }
-

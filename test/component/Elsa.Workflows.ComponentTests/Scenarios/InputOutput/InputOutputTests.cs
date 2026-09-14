@@ -8,7 +8,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.InputOutput;
 
 public class InputOutputTests(App app) : AppComponentTest(app)
 {
-    [Fact(DisplayName = "Input should be received by the Provider and should in turn be able to send it back to the Consumer.")]
+    [Test]
+    [DisplayName("Input should be received by the Provider and should in turn be able to send it back to the Consumer.")]
     public async Task InputShouldBeOutput()
     {
         const string workflowDefinitionVersionId = "4e993ab1b3d4e4a1";
@@ -20,6 +21,6 @@ public class InputOutputTests(App app) : AppComponentTest(app)
         var variables = await variableManager.GetVariablesAsync(result.WorkflowState.Id);
         var variableValue = variables.First().Value;
         
-        Assert.Equal("Hello World!", variableValue);
+        await Assert.That(variableValue).IsEqualTo("Hello World!");
     }
 }

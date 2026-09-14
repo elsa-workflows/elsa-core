@@ -22,7 +22,8 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
     private IActivityExecutionStore ActivityExecutionStore => Scope.ServiceProvider.GetRequiredService<IActivityExecutionStore>();
     private IWorkflowExecutionLogStore WorkflowExecutionLogStore => Scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
 
-    [Fact(DisplayName = "Delete via API endpoint should remove all related records")]
+    [Test]
+    [DisplayName("Delete via API endpoint should remove all related records")]
     public async Task DeleteViaApiEndpoint_ShouldRemoveAllRelatedRecords()
     {
         // Arrange
@@ -37,7 +38,8 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
         await AssertAllRecordsDeletedAsync(workflowInstanceId);
     }
 
-    [Fact(DisplayName = "Bulk delete via API endpoint should remove all related records")]
+    [Test]
+    [DisplayName("Bulk delete via API endpoint should remove all related records")]
     public async Task BulkDeleteViaApiEndpoint_ShouldRemoveAllRelatedRecords()
     {
         // Arrange - Create 2 workflow instances
@@ -66,7 +68,8 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
         }
     }
 
-    [Fact(DisplayName = "Delete via runtime client should remove all related records")]
+    [Test]
+    [DisplayName("Delete via runtime client should remove all related records")]
     public async Task DeleteViaRuntimeClient_ShouldRemoveAllRelatedRecords()
     {
         // Arrange
@@ -77,7 +80,7 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
         var instanceClient = await WorkflowRuntime.CreateClientAsync(workflowInstanceId);
         var deleted = await instanceClient.DeleteAsync();
 
-        Assert.True(deleted);
+        await Assert.That(deleted).IsTrue();
 
         // Assert
         await AssertAllRecordsDeletedAsync(workflowInstanceId);
@@ -110,9 +113,9 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
             WorkflowInstanceId = workflowInstanceId
         }, PageArgs.All);
 
-        Assert.NotEmpty(bookmarks);
-        Assert.NotEmpty(activityExecutions);
-        Assert.NotEmpty(executionLogs.Items);
+        await Assert.That(bookmarks).IsNotEmpty();
+        await Assert.That(activityExecutions).IsNotEmpty();
+        await Assert.That(executionLogs.Items).IsNotEmpty();
     }
 
     private async Task AssertAllRecordsDeletedAsync(string workflowInstanceId)
@@ -121,24 +124,24 @@ public class RelatedRecordsDeletionTests(App app) : AppComponentTest(app)
         {
             Id = workflowInstanceId
         });
-        Assert.Null(workflowInstance);
+        await Assert.That(workflowInstance).IsNull();
 
         var remainingBookmarks = await BookmarkStore.FindManyAsync(new()
         {
             WorkflowInstanceId = workflowInstanceId
         });
-        Assert.Empty(remainingBookmarks);
+        await Assert.That(remainingBookmarks).IsEmpty();
 
         var remainingActivityExecutions = await ActivityExecutionStore.FindManyAsync(new()
         {
             WorkflowInstanceId = workflowInstanceId
         });
-        Assert.Empty(remainingActivityExecutions);
+        await Assert.That(remainingActivityExecutions).IsEmpty();
 
         var remainingExecutionLogs = await WorkflowExecutionLogStore.FindManyAsync(new()
         {
             WorkflowInstanceId = workflowInstanceId
         }, PageArgs.All);
-        Assert.Empty(remainingExecutionLogs.Items);
+        await Assert.That(remainingExecutionLogs.Items).IsEmpty();
     }
 }

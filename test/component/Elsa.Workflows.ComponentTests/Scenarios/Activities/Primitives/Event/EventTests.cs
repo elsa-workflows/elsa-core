@@ -13,16 +13,21 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Primitives.Event;
 
 public class EventTests : AppComponentTest
 {
-    private readonly AsyncWorkflowRunner _workflowRunner;
-    private readonly IEventPublisher _eventPublisher;
+    private AsyncWorkflowRunner _workflowRunner = null!;
+    private IEventPublisher _eventPublisher = null!;
 
     public EventTests(App app) : base(app)
     {
-        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
-        _eventPublisher = Scope.ServiceProvider.GetRequiredService<IEventPublisher>();
     }
 
-    [Fact]
+    protected override ValueTask OnInitializeAsync()
+    {
+        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
+        _eventPublisher = Scope.ServiceProvider.GetRequiredService<IEventPublisher>();
+        return ValueTask.CompletedTask;
+    }
+
+    [Test]
     public async Task PublishingEventToBlockingEventWorkflow_ShouldCompleteWorkflow()
     {
         // Start the workflow - it will block at the Event activity
@@ -36,10 +41,10 @@ public class EventTests : AppComponentTest
         var result = await workflowTask;
 
         // Assert the workflow completed successfully
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact]
+    [Test]
     public async Task PublishingEventToEventAsTriggerWorkflow_ShouldStartAndCompleteWorkflow()
     {
         // Publish the event - this should trigger the workflow to start
@@ -56,8 +61,8 @@ public class EventTests : AppComponentTest
         };
 
         var instances = await workflowInstances.FindManyAsync(filter);
-        var instance = Assert.Single(instances);
-        Assert.Equal(WorkflowStatus.Finished, instance.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, instance.SubStatus);
+        var instance = await Assert.That(instances).HasSingleItem();
+        await Assert.That(instance.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(instance.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 }

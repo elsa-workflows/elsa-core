@@ -13,9 +13,10 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.JavaScriptVariables;
 
 public class JavaScriptVariablesWorkflowTests(App app) : AppComponentTest(app)
 {
-    [Theory(DisplayName = "SetVariable JS function sets a variable and does not get overridden by variables API")]
-    [MemberData(nameof(GetWorkflowDefinitions))]
-    public async Task SetVariableRetainsValue(string workflowDefinitionId)
+    [Test]
+    [DisplayName("SetVariable JS function sets a variable and does not get overridden by variables API (workflow: $workflowName)")]
+    [MethodDataSource(nameof(GetWorkflowDefinitions))]
+    public async Task SetVariableRetainsValue(string workflowName, string workflowDefinitionId)
     {
         var workflowRuntime = Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
         var workflowInstanceStore = Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
@@ -31,16 +32,16 @@ public class JavaScriptVariablesWorkflowTests(App app) : AppComponentTest(app)
         var rootWorkflowActivityExecutionContext = workflowState.ActivityExecutionContexts.Single(x => x.ParentContextId == null);
         var variables = GetVariablesDictionary(rootWorkflowActivityExecutionContext);
         var magicNumber = variables["magicNumberVariable"].ConvertTo<int>();
-        Assert.Equal(42, magicNumber);
+        await Assert.That(magicNumber).IsEqualTo(42);
     }
 
-    public static IEnumerable<object[]> GetWorkflowDefinitions()
+    public static IEnumerable<(string workflowName, string workflowDefinitionId)> GetWorkflowDefinitions()
     {
         return
         [
-            [JavaScriptVariablesWorkflow1.DefinitionId],
-            [JavaScriptVariablesWorkflow2.DefinitionId],
-            [JavaScriptVariablesWorkflow3.DefinitionId]
+            (nameof(JavaScriptVariablesWorkflow1), JavaScriptVariablesWorkflow1.DefinitionId),
+            (nameof(JavaScriptVariablesWorkflow2), JavaScriptVariablesWorkflow2.DefinitionId),
+            (nameof(JavaScriptVariablesWorkflow3), JavaScriptVariablesWorkflow3.DefinitionId)
         ];
     }
 

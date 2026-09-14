@@ -11,18 +11,18 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.OutputConverters;
 
 public class OutputConverterApiClientTests
 {
-    [Fact]
-    public void AddDefaultApiClients_RegistersOutputConverterDiscoveryClient()
+    [Test]
+    public async Task AddDefaultApiClients_RegistersOutputConverterDiscoveryClient()
     {
         var services = new ServiceCollection();
         services.AddDefaultApiClients(options => options.BaseAddress = new Uri("https://example.test/elsa/api"));
 
         using var serviceProvider = services.BuildServiceProvider();
 
-        Assert.IsAssignableFrom<IOutputConvertersApi>(serviceProvider.GetRequiredService<IOutputConvertersApi>());
+        await Assert.That(serviceProvider.GetRequiredService<IOutputConvertersApi>()).IsAssignableTo<IOutputConvertersApi>();
     }
 
-    [Fact]
+    [Test]
     public async Task ListAsync_SendsDeclaredTypesAndDeserializesTheSafeDescriptorShape()
     {
         var handler = new ResponseHandler("""
@@ -49,12 +49,12 @@ public class OutputConverterApiClientTests
             DestinationType = "String"
         });
 
-        Assert.Equal("/elsa/api/descriptors/output-converters?sourceType=String&destinationType=String", handler.RequestUri!.PathAndQuery);
-        var descriptor = Assert.Single(response.Items);
-        Assert.Equal("sample.to-text", descriptor.Id);
-        Assert.Equal("String", descriptor.SourceTypeName);
-        Assert.Equal("String", descriptor.ResultTypeName);
-        Assert.Equal("object", descriptor.SettingsSchema!.Value.GetProperty("type").GetString());
+        await Assert.That(handler.RequestUri!.PathAndQuery).IsEqualTo("/elsa/api/descriptors/output-converters?sourceType=String&destinationType=String");
+        var descriptor = await Assert.That(response.Items).HasSingleItem();
+        await Assert.That(descriptor.Id).IsEqualTo("sample.to-text");
+        await Assert.That(descriptor.SourceTypeName).IsEqualTo("String");
+        await Assert.That(descriptor.ResultTypeName).IsEqualTo("String");
+        await Assert.That(descriptor.SettingsSchema!.Value.GetProperty("type").GetString()).IsEqualTo("object");
     }
 
     private sealed class ResponseHandler(string response) : HttpMessageHandler

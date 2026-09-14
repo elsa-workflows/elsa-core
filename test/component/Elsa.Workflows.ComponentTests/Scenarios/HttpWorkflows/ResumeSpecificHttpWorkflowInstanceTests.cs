@@ -7,9 +7,9 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 
 public class ResumeSpecificHttpWorkflowInstanceTests(App app) : AppComponentTest(app)
 {
-    [Theory]
-    [InlineData("workflowInstanceId")]
-    [InlineData("correlationId")]
+    [Test]
+    [Arguments("workflowInstanceId")]
+    [Arguments("correlationId")]
     public async Task ResumingSpecificWorkflow_ShouldResumeSpecifiedWorkflow(string identifierKey)
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
@@ -20,10 +20,10 @@ public class ResumeSpecificHttpWorkflowInstanceTests(App app) : AppComponentTest
         var workflowInstanceId3 = await StartWorkflowAsync(client, identifierKey);
 
         // Resume the 2nd instance.
-        var response = await ResumeWorkflowAsync(client, identifierKey, workflowInstanceId2);
+        using var response = await ResumeWorkflowAsync(client, identifierKey, workflowInstanceId2);
         
         // Response should be OK.
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     private async Task<string> StartWorkflowAsync(HttpClient client, string identifierKey)

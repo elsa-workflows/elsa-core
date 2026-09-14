@@ -3,39 +3,38 @@
     <PropertyGroup>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <UseTUnit>true</UseTUnit>
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <!-- Merging release/3.8.0 added ExternalAuthentication, AI and Secrets to this project's
-             coverage denominator via Elsa.Server.Web, and #7945 then added Bpmn. Measured total
-             line coverage fell from 25.98% (f99f37407) to 24.74% (3.8.0 merge) to 23.98%.
-             Raise this back towards 25 as component coverage for those modules lands. -->
+        <!-- Keep the existing component-suite threshold while the native TUnit migration
+             changes the host topology and coverage instrumentation. -->
         <Threshold>23</Threshold>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Using Include="Xunit" />
+        <PackageReference Include="TUnit.AspNetCore" />
     </ItemGroup>
 	
     <ItemGroup>
-        <ProjectReference Include="..\..\..\src\apps\Elsa.Server.Web\Elsa.Server.Web.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.ComponentTests.Host\Elsa.Workflows.ComponentTests.Host.csproj" />
         <ProjectReference Include="..\..\..\src\clients\Elsa.Api.Client\Elsa.Api.Client.csproj" />
         <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared.Component\Elsa.Testing.Shared.Component.csproj" />
-        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.PostgreSql\Elsa.Persistence.EFCore.PostgreSql.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Alterations\Elsa.Alterations.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Caching\Elsa.Caching.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Http\Elsa.Http.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Identity\Elsa.Identity.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.SqlServer\Elsa.Persistence.EFCore.SqlServer.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Scheduling\Elsa.Scheduling.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Tenants.AspNetCore\Elsa.Tenants.AspNetCore.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.WorkflowProviders.BlobStorage\Elsa.WorkflowProviders.BlobStorage.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Api\Elsa.Workflows.Api.csproj" />
         <ProjectReference Include="..\..\..\src\modules\Elsa.Workflows.Runtime.Distributed\Elsa.Workflows.Runtime.Distributed.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa\Elsa.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="xunit.runner.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
         <None Update="Scenarios\BasicWorkflows\hello-world.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>

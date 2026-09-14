@@ -9,7 +9,7 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
 {
     private const int ConcurrentRequestCount = 3;
 
-    [Fact]
+    [Test]
     public async Task BasicHttpEndpoint_UnsupportedMethod_ReturnsNotFound()
     {
         // Arrange
@@ -17,18 +17,18 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
 
         // Act
         using var content = new StringContent("", Encoding.UTF8, "text/plain");
-        var response = await client.PostAsync("test/basic", content);
+        using var response = await client.PostAsync("test/basic", content);
 
         // Assert
         // In this test environment, unsupported methods on unregistered endpoints return NotFound
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Theory]
-    [InlineData("GET")]
-    [InlineData("POST")]
-    [InlineData("PUT")]
-    [InlineData("DELETE")]
+    [Test]
+    [Arguments("GET")]
+    [Arguments("POST")]
+    [Arguments("PUT")]
+    [Arguments("DELETE")]
     public async Task MultipleHttpMethods_SupportedMethods_ReturnsMethodName(string method)
     {
         // Arrange
@@ -36,48 +36,48 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         using var request = new HttpRequestMessage(new HttpMethod(method), "test/multi-method");
 
         // Act
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
         var content = await response.Content.ReadAsStringAsync();
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal($"Method: {method}", content);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(content).IsEqualTo($"Method: {method}");
     }
 
-    [Fact]
+    [Test]
     public async Task MultipleHttpMethods_UnsupportedMethod_ReturnsNotFound()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
         using var request = new HttpRequestMessage(HttpMethod.Patch, "test/multi-method");
         // Act
-        var response = await client.SendAsync(request);
+        using var response = await client.SendAsync(request);
 
         // Assert
         // In this test environment, unsupported methods on unregistered endpoints return NotFound
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task HttpEndpoint_WorkflowCompletesCleanlySynchronously()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         // Act - Make HTTP request to trigger the workflow
-        var response = await client.GetAsync("test/basic");
+        using var response = await client.GetAsync("test/basic");
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert - Verify the workflow completed and returned the expected response
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("Basic HttpEndpoint Test Response", responseContent);
-        Assert.Equal("text/plain", response.Content.Headers.ContentType?.MediaType);
-        
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(responseContent).IsEqualTo("Basic HttpEndpoint Test Response");
+        await Assert.That(response.Content.Headers.ContentType?.MediaType).IsEqualTo("text/plain");
+
         // The fact that we get a response means the workflow completed synchronously
         // without hanging or requiring additional triggers
     }
     
-    [Fact]
+    [Test]
     public async Task HttpEndpoint_ConcurrentRequests_ProcessesAllSuccessfully()
     {
         // Arrange
@@ -96,15 +96,15 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         var responses = await Task.WhenAll(tasks);
 
         // Assert
-        Assert.Equal(ConcurrentRequestCount, responses.Length);
+        await Assert.That(responses.Length).IsEqualTo(ConcurrentRequestCount);
         for (var i = 0; i < ConcurrentRequestCount; i++)
         {
-            Assert.Contains($"UserId: user-{i}", responses[i]);
-            Assert.Contains($"OrderId: order-{i}", responses[i]);
+            await Assert.That(responses[i]).Contains($"UserId: user-{i}");
+            await Assert.That(responses[i]).Contains($"OrderId: order-{i}");
         }
     }
 
-    [Fact]
+    [Test]
     public async Task HttpEndpoint_SpecialCharactersInRoute_HandlesCorrectly()
     {
         // Arrange
@@ -116,8 +116,8 @@ public class HttpEndpointTests(App app) : AppComponentTest(app)
         var response = await client.GetStringAsync($"test/users/{specialUserId}/orders/{specialOrderId}");
 
         // Assert
-        Assert.Contains("user@domain.com", response);
-        Assert.Contains("order-with-special-chars!@#$%", response);
+        await Assert.That(response).Contains("user@domain.com");
+        await Assert.That(response).Contains("order-with-special-chars!@#$%");
     }
     
 }

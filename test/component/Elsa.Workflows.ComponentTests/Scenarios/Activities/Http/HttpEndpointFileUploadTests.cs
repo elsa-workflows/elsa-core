@@ -7,10 +7,10 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointFileUploadTests(App app) : AppComponentTest(app)
 {
-    [Theory]
-    [InlineData("Test file content", "test.txt", "text/plain", "17 bytes")]
-    [InlineData("Sample document", "sample.txt", "text/plain", "15 bytes")]
-    [InlineData("", "empty.txt", "text/plain", "0 bytes")]
+    [Test]
+    [Arguments("Test file content", "test.txt", "text/plain", "17 bytes")]
+    [Arguments("Sample document", "sample.txt", "text/plain", "15 bytes")]
+    [Arguments("", "empty.txt", "text/plain", "0 bytes")]
     public async Task FileUpload_SingleFile_ReturnsExpectedMetadata(
         string fileContent,
         string fileName,
@@ -21,14 +21,14 @@ public class HttpEndpointFileUploadTests(App app) : AppComponentTest(app)
         var fileData = Encoding.UTF8.GetBytes(fileContent);
 
         // Act
-        var response = await PostSingleFileAsync(fileData, fileName, contentType);
+        using var response = await PostSingleFileAsync(fileData, fileName, contentType);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, fileName, expectedSizeText, contentType);
+        await AssertOkResponseContains(response, responseContent, fileName, expectedSizeText, contentType);
     }
 
-    [Fact]
+    [Test]
     public async Task FileUpload_MultipleFiles_ReturnsAllFileDetails()
     {
         // Arrange
@@ -39,25 +39,25 @@ public class HttpEndpointFileUploadTests(App app) : AppComponentTest(app)
         };
 
         // Act
-        var response = await PostMultipleFilesAsync(files);
+        using var response = await PostMultipleFilesAsync(files);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, "file1.txt", "file2.txt", "14 bytes");
+        await AssertOkResponseContains(response, responseContent, "file1.txt", "file2.txt", "14 bytes");
     }
 
-    [Fact]
+    [Test]
     public async Task FileUpload_NoFiles_ReturnsNoFilesMessage()
     {
         // Act
-        var response = await PostFormDataWithoutFilesAsync();
+        using var response = await PostFormDataWithoutFilesAsync();
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, "No files uploaded");
+        await AssertOkResponseContains(response, responseContent, "No files uploaded");
     }
 
-    [Fact]
+    [Test]
     public async Task FileUpload_WithFormFields_ProcessesBothFilesAndFields()
     {
         // Arrange
@@ -65,11 +65,11 @@ public class HttpEndpointFileUploadTests(App app) : AppComponentTest(app)
         var formFields = new[] { ("name", "John Doe") };
 
         // Act
-        var response = await PostFileWithFormFieldsAsync(fileData, "test.txt", "text/plain", formFields);
+        using var response = await PostFileWithFormFieldsAsync(fileData, "test.txt", "text/plain", formFields);
         var responseContent = await response.Content.ReadAsStringAsync();
 
         // Assert
-        AssertOkResponseContains(response, responseContent, "test.txt", "12 bytes");
+        await AssertOkResponseContains(response, responseContent, "test.txt", "12 bytes");
     }
 
     private async Task<HttpResponseMessage> PostSingleFileAsync(
@@ -136,16 +136,15 @@ public class HttpEndpointFileUploadTests(App app) : AppComponentTest(app)
         return await client.PostAsync("test/file-upload", content);
     }
 
-    private static void AssertOkResponseContains(
+    private static async Task AssertOkResponseContains(
         HttpResponseMessage response, 
         string responseContent, 
         params string[] expectedFragments)
     {
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         foreach (var fragment in expectedFragments)
         {
-            Assert.Contains(fragment, responseContent);
+            await Assert.That(responseContent).Contains(fragment);
         }
     }
 }
-

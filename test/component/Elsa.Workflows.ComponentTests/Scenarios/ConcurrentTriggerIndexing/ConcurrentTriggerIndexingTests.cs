@@ -18,7 +18,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.ConcurrentTriggerIndexing;
 /// </summary>
 public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
 {
-    [Fact(DisplayName = "Concurrent trigger indexing from multiple pods should not create duplicates")]
+    [Test]
+    [DisplayName("Concurrent trigger indexing from multiple pods should not create duplicates")]
     public async Task ConcurrentIndexing_ShouldNotCreateDuplicates()
     {
         // Arrange
@@ -29,11 +30,12 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         // 3 operations (one per pod) is sufficient to exercise the race condition
         // without waiting for many serialized DB round-trips.
         var startBarrier = new TaskCompletionSource();
+        var allPods = await Cluster.GetAllPodsAsync();
 
-        var indexingTasks = AllPods.Select(pod => Task.Run(async () =>
+        var indexingTasks = allPods.Select(pod => Task.Run(async () =>
         {
             await startBarrier.Task;
-            using var scope = pod.Services.CreateScope();
+            await using var scope = pod.Services.CreateAsyncScope();
             var indexer = scope.ServiceProvider.GetRequiredService<ITriggerIndexer>();
             return await indexer.IndexTriggersAsync(workflowDefinition);
         })).ToArray();
@@ -46,16 +48,18 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         await AssertSingleTriggerExistsAsync(workflow.Identity.DefinitionId);
     }
 
-    [Fact(DisplayName = "Concurrent workflow refreshes should not create duplicates")]
+    [Test]
+    [DisplayName("Concurrent workflow refreshes should not create duplicates")]
     public async Task ConcurrentWorkflowRefresh_ShouldNotCreateDuplicates()
     {
         // Arrange
         var (workflow, _) = await CreateAndSaveTestWorkflowAsync();
+        var allPods = await Cluster.GetAllPodsAsync();
 
         // Act: Simulate concurrent refresh calls from different engines (via API or file watcher)
-        var refreshTasks = AllPods.Select(pod => Task.Run(async () =>
+        var refreshTasks = allPods.Select(pod => Task.Run(async () =>
         {
-            using var scope = pod.Services.CreateScope();
+            await using var scope = pod.Services.CreateAsyncScope();
             var refresher = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionsRefresher>();
             return await refresher.RefreshWorkflowDefinitionsAsync(new()
             {
@@ -69,7 +73,8 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         await AssertSingleTriggerExistsAsync(workflow.Identity.DefinitionId);
     }
 
-    [Fact(DisplayName = "Attempting to create duplicate triggers should fail with unique constraint violation")]
+    [Test]
+    [DisplayName("Attempting to create duplicate triggers should fail with unique constraint violation")]
     public async Task ManuallyCreatedDuplicates_ShouldViolateUniqueConstraint()
     {
         // Arrange: This test verifies the database unique constraint protection layer
@@ -84,16 +89,14 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         var existingTriggers = await GetTriggersAsync(workflow.Identity.DefinitionId);
         var duplicateTrigger = CreateDuplicateTrigger(existingTriggers[0]);
 
-        var exception = await Assert.ThrowsAsync<DbUpdateException>(async () =>
-            await triggerStore.SaveAsync(duplicateTrigger));
+        var exception = (await Assert.ThrowsExactlyAsync<DbUpdateException>(async () =>
+            await triggerStore.SaveAsync(duplicateTrigger)))!;
 
         // Verify it's specifically a unique constraint violation
         var message = exception.InnerException?.Message ?? exception.Message;
-        Assert.True(
-            message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
+        await Assert.That(message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("unique constraint", StringComparison.OrdinalIgnoreCase) ||
-            message.Contains("23505", StringComparison.OrdinalIgnoreCase),
-            $"Expected unique constraint violation, but got: {message}");
+            message.Contains("23505", StringComparison.OrdinalIgnoreCase)).IsTrue().Because($"Expected unique constraint violation, but got: {message}");
     }
 
     private async Task<(Workflow workflow, WorkflowDefinition definition)> CreateAndSaveTestWorkflowAsync()
@@ -103,12 +106,10 @@ public class ConcurrentTriggerIndexingTests(App app) : AppComponentTest(app)
         return (workflow, definition);
     }
 
-    private WorkflowServer[] AllPods => [Cluster.Pod1, Cluster.Pod2, Cluster.Pod3];
-
     private async Task AssertSingleTriggerExistsAsync(string workflowDefinitionId)
     {
         var triggers = await GetTriggersAsync(workflowDefinitionId);
-        Assert.True(triggers.Count == 1, $"Expected exactly 1 trigger, but found {triggers.Count}");
+        await Assert.That(triggers.Count == 1).IsTrue().Because($"Expected exactly 1 trigger, but found {triggers.Count}");
     }
 
     private async Task<List<StoredTrigger>> GetTriggersAsync(string workflowDefinitionId)

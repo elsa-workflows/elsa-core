@@ -13,7 +13,7 @@ public class PostTests(App app) : AppComponentTest(app)
     private const string DefinitionId = "3790068018ac4f02";
     private const string Url = "workflow-definitions/{0}/execute";
 
-    [Fact]
+    [Test]
     public async Task Post_WithValidJsonBody_ShouldReturnOk()
     {
         var client = WorkflowServer.CreateHttpClient();
@@ -21,43 +21,43 @@ public class PostTests(App app) : AppComponentTest(app)
         {
             CorrelationId = Guid.NewGuid().ToString()
         });
-        var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
+        using var content = new StringContent(requestBody, Encoding.UTF8, "application/json");
         using var response = await client.PostAsync(string.Format(Url, DefinitionId), content);
         var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(model.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact]
+    [Test]
     public async Task Post_WithoutBodyAndWithoutContentType_ShouldReturnOk()
     {
         var client = WorkflowServer.CreateHttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, string.Format(Url, DefinitionId));
+        using var request = new HttpRequestMessage(HttpMethod.Post, string.Format(Url, DefinitionId));
         // No content, no content-type
         using var response = await client.SendAsync(request);
         var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(model.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact]
+    [Test]
     public async Task Post_WithoutBodyButWithContentType_ShouldReturnOk()
     {
         var client = WorkflowServer.CreateHttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, string.Format(Url, DefinitionId));
+        using var request = new HttpRequestMessage(HttpMethod.Post, string.Format(Url, DefinitionId));
         request.Content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
         using var response = await client.SendAsync(request);
         var model = await response.ReadAsJsonAsync<Response>(WorkflowServer.Services);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal(WorkflowSubStatus.Finished, model.WorkflowState.SubStatus);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(model.WorkflowState.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    [Fact]
+    [Test]
     public async Task Post_MissingDefinitionId_ShouldReturnNotFoundError()
     {
         var client = WorkflowServer.CreateHttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, "/workflow-definitions//execute");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/workflow-definitions//execute");
         using var response = await client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 }

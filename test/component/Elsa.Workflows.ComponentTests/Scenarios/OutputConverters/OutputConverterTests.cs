@@ -14,7 +14,7 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.OutputConverters;
 
 public class OutputConverterTests(App app) : AppComponentTest(app)
 {
-    [Fact]
+    [Test]
     public async Task ConfiguredConverter_WritesConvertedValueToVariableAndRetainsNativeActivityOutput()
     {
         var builder = Scope.ServiceProvider.GetRequiredService<IWorkflowBuilderFactory>().CreateBuilder();
@@ -41,11 +41,11 @@ public class OutputConverterTests(App app) : AppComponentTest(app)
 
         var result = await Scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>().InvokeAsync(workflow);
 
-        Assert.Equal("converted:native value", result.WorkflowExecutionContext.Output[observed.Name]);
-        Assert.Equal("native value", result.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id));
+        await Assert.That(result.WorkflowExecutionContext.Output[observed.Name]).IsEqualTo("converted:native value");
+        await Assert.That(result.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id)).IsEqualTo("native value");
     }
 
-    [Fact]
+    [Test]
     public async Task ConfiguredConverter_WritesConvertedValueToWorkflowOutputAndRetainsNativeActivityOutput()
     {
         var builder = Scope.ServiceProvider.GetRequiredService<IWorkflowBuilderFactory>().CreateBuilder();
@@ -62,11 +62,11 @@ public class OutputConverterTests(App app) : AppComponentTest(app)
 
         var result = await Scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>().InvokeAsync(workflow);
 
-        Assert.Equal("converted:native value", result.WorkflowExecutionContext.Output[destination.Name]);
-        Assert.Equal("native value", result.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id));
+        await Assert.That(result.WorkflowExecutionContext.Output[destination.Name]).IsEqualTo("converted:native value");
+        await Assert.That(result.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id)).IsEqualTo("native value");
     }
 
-    [Fact]
+    [Test]
     public async Task MissingConverter_FaultsWithSafeMetadataAndLeavesDestinationUnchanged()
     {
         var builder = Scope.ServiceProvider.GetRequiredService<IWorkflowBuilderFactory>().CreateBuilder();
@@ -84,13 +84,13 @@ public class OutputConverterTests(App app) : AppComponentTest(app)
 
         var result = await Scope.ServiceProvider.GetRequiredService<IWorkflowInvoker>().InvokeAsync(workflow);
 
-        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowExecutionContext.SubStatus);
-        Assert.Equal("native value", result.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id));
-        var incident = Assert.Single(result.WorkflowExecutionContext.Incidents);
-        Assert.Equal(typeof(OutputConversionException), incident.Exception!.Type);
-        Assert.Equal("tests.component.missing", incident.Exception.Metadata![nameof(OutputConversionException.ConverterId)]);
-        Assert.Equal("Resolution", incident.Exception.Metadata[nameof(OutputConversionException.Stage)]);
-        Assert.DoesNotContain("native value", incident.Message);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Faulted);
+        await Assert.That(result.WorkflowExecutionContext.GetActivityOutputRegister().FindOutputByActivityId(activity.Id)).IsEqualTo("native value");
+        var incident = await Assert.That(result.WorkflowExecutionContext.Incidents).HasSingleItem();
+        await Assert.That(incident.Exception!.Type).IsEqualTo(typeof(OutputConversionException));
+        await Assert.That(incident.Exception.Metadata![nameof(OutputConversionException.ConverterId)]).IsEqualTo("tests.component.missing");
+        await Assert.That(incident.Exception.Metadata[nameof(OutputConversionException.Stage)]).IsEqualTo("Resolution");
+        await Assert.That(incident.Message).DoesNotContain("native value");
     }
 
     private sealed class NativeStringActivity : CodeActivity<string>

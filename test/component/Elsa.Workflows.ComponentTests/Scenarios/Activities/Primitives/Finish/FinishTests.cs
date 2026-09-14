@@ -11,44 +11,49 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Primitives.Finish;
 
 public class FinishTests : AppComponentTest
 {
-    private readonly AsyncWorkflowRunner _workflowRunner;
+    private AsyncWorkflowRunner _workflowRunner = null!;
 
     public FinishTests(App app) : base(app)
     {
-        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
     }
 
-    [Fact]
+    protected override ValueTask OnInitializeAsync()
+    {
+        _workflowRunner = Scope.ServiceProvider.GetRequiredService<AsyncWorkflowRunner>();
+        return ValueTask.CompletedTask;
+    }
+
+    [Test]
     public async Task Finish_SimpleWorkflow_MarksWorkflowAsFinished()
     {
         // Act
         var result = await RunWorkflowAsync(SimpleFinishWorkflow.DefinitionId);
 
         // Assert
-        AssertWorkflowFinished(result);
+        await AssertWorkflowFinished(result);
     }
 
-    [Fact]
+    [Test]
     public async Task Finish_ClearsScheduler_NoScheduledActivities()
     {
         // Act
         var result = await RunWorkflowAsync(SimpleFinishWorkflow.DefinitionId);
 
         // Assert
-        Assert.Empty(result.WorkflowExecutionContext.Scheduler.List());
+        await Assert.That(result.WorkflowExecutionContext.Scheduler.List()).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Finish_ClearsBookmarks_NoBookmarksRemain()
     {
         // Act
         var result = await RunWorkflowAsync(SimpleFinishWorkflow.DefinitionId);
 
         // Assert
-        Assert.Empty(result.WorkflowExecutionContext.Bookmarks);
+        await Assert.That(result.WorkflowExecutionContext.Bookmarks).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Finish_WithFork_ClearsCompletionCallbacks()
     {
         // Act - Workflow publishes an event, then forks into two branches waiting for events
@@ -57,10 +62,10 @@ public class FinishTests : AppComponentTest
         var result = await RunWorkflowAsync(FinishWithForkWorkflow.DefinitionId);
 
         // Assert - Finish should have cleared all completion callbacks, bookmarks, and scheduler
-        AssertWorkflowFullyCleared(result);
+        await AssertWorkflowFullyCleared(result);
     }
 
-    [Fact]
+    [Test]
     public async Task Finish_WithMultipleBookmarks_ClearsAllBookmarksAndCallbacks()
     {
         // Act - Workflow publishes EventA, forks into 3 branches, one receives event and completes
@@ -68,22 +73,22 @@ public class FinishTests : AppComponentTest
         var result = await RunWorkflowAsync(FinishWithMultipleBookmarksWorkflow.DefinitionId);
 
         // Assert - All bookmarks and callbacks should be cleared
-        AssertWorkflowFinished(result);
-        Assert.Empty(result.WorkflowExecutionContext.Bookmarks);
-        Assert.Empty(result.WorkflowExecutionContext.CompletionCallbacks);
+        await AssertWorkflowFinished(result);
+        await Assert.That(result.WorkflowExecutionContext.Bookmarks).IsEmpty();
+        await Assert.That(result.WorkflowExecutionContext.CompletionCallbacks).IsEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task Finish_InParallelBranch_TerminatesEntireWorkflow()
     {
         // Act
         var result = await RunWorkflowAsync(FinishInParallelBranchWorkflow.DefinitionId);
 
         // Assert - Workflow should be finished (not suspended waiting for the other branch)
-        AssertWorkflowFullyCleared(result);
+        await AssertWorkflowFullyCleared(result);
     }
 
-    [Fact]
+    [Test]
     public async Task Finish_VerifiesAllClearingOperations_InSingleTest()
     {
         // Act - Run workflow demonstrating Finish's clearing behavior:
@@ -93,24 +98,24 @@ public class FinishTests : AppComponentTest
         var result = await RunWorkflowAsync(FinishWithForkWorkflow.DefinitionId);
 
         // Assert - Comprehensive verification of Finish behavior
-        AssertWorkflowFullyCleared(result);
+        await AssertWorkflowFullyCleared(result);
     }
 
     private async Task<TestWorkflowExecutionResult> RunWorkflowAsync(string definitionId) =>
         await _workflowRunner.RunAndAwaitWorkflowCompletionAsync(
             WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published));
 
-    private static void AssertWorkflowFinished(TestWorkflowExecutionResult result)
+    private static async Task AssertWorkflowFinished(TestWorkflowExecutionResult result)
     {
-        Assert.Equal(WorkflowStatus.Finished, result.WorkflowExecutionContext.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
+        await Assert.That(result.WorkflowExecutionContext.Status).IsEqualTo(WorkflowStatus.Finished);
+        await Assert.That(result.WorkflowExecutionContext.SubStatus).IsEqualTo(WorkflowSubStatus.Finished);
     }
 
-    private static void AssertWorkflowFullyCleared(TestWorkflowExecutionResult result)
+    private static async Task AssertWorkflowFullyCleared(TestWorkflowExecutionResult result)
     {
-        AssertWorkflowFinished(result);
-        Assert.Empty(result.WorkflowExecutionContext.Bookmarks);
-        Assert.Empty(result.WorkflowExecutionContext.Scheduler.List());
-        Assert.Empty(result.WorkflowExecutionContext.CompletionCallbacks);
+        await AssertWorkflowFinished(result);
+        await Assert.That(result.WorkflowExecutionContext.Bookmarks).IsEmpty();
+        await Assert.That(result.WorkflowExecutionContext.Scheduler.List()).IsEmpty();
+        await Assert.That(result.WorkflowExecutionContext.CompletionCallbacks).IsEmpty();
     }
 }

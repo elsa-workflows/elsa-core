@@ -38,10 +38,11 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
     private async Task AssertWorkflowInstanceDeletedAsync(string workflowInstanceId)
     {
         var instance = await WorkflowInstanceStore.FindAsync(new() { Id = workflowInstanceId });
-        Assert.Null(instance);
+        await Assert.That(instance).IsNull();
     }
 
-    [Fact(DisplayName = "Delete running workflow instance should cancel and remove it")]
+    [Test]
+    [DisplayName("Delete running workflow instance should cancel and remove it")]
     public async Task DeleteRunningWorkflowInstance_ShouldCancelAndRemove()
     {
         // Arrange - Start a workflow that will be running in memory
@@ -55,7 +56,8 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
         await AssertWorkflowInstanceDeletedAsync(workflowInstanceId);
     }
 
-    [Fact(DisplayName = "Delete finished workflow instance should remove it")]
+    [Test]
+    [DisplayName("Delete finished workflow instance should remove it")]
     public async Task DeleteFinishedWorkflowInstance_ShouldRemove()
     {
         // Arrange - Create and run a workflow that completes immediately
@@ -68,8 +70,8 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
 
         // Verify the workflow finished
         var finishedInstance = await WorkflowInstanceStore.FindAsync(new() { Id = workflowInstanceId });
-        Assert.NotNull(finishedInstance);
-        Assert.Equal(WorkflowStatus.Finished, finishedInstance.WorkflowState.Status);
+        await Assert.That(finishedInstance).IsNotNull();
+        await Assert.That(finishedInstance.WorkflowState.Status).IsEqualTo(WorkflowStatus.Finished);
 
         // Act - Delete the finished workflow instance
         var deleteClient = WorkflowServer.CreateApiClient<IWorkflowInstancesApi>();
@@ -79,7 +81,8 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
         await AssertWorkflowInstanceDeletedAsync(workflowInstanceId);
     }
 
-    [Fact(DisplayName = "Delete non-existent workflow instance should throw exception")]
+    [Test]
+    [DisplayName("Delete non-existent workflow instance should throw exception")]
     public async Task DeleteNonExistentWorkflowInstance_ShouldThrowException()
     {
         // Arrange - Use a non-existent workflow instance ID
@@ -87,10 +90,11 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
 
         // Act & Assert - Should throw an ApiException for non-existent instance (404 Not Found)
         var deleteClient = WorkflowServer.CreateApiClient<IWorkflowInstancesApi>();
-        await Assert.ThrowsAsync<Refit.ApiException>(async () => await deleteClient.DeleteAsync(nonExistentId));
+        await Assert.ThrowsExactlyAsync<Refit.ApiException>(async () => await deleteClient.DeleteAsync(nonExistentId));
     }
 
-    [Fact(DisplayName = "Bulk delete mixed running and finished instances should delete all")]
+    [Test]
+    [DisplayName("Bulk delete mixed running and finished instances should delete all")]
     public async Task BulkDeleteMixedInstances_ShouldDeleteAll()
     {
         // Arrange - Create 2 running and 2 finished workflow instances
@@ -123,7 +127,8 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
         }
     }
 
-    [Fact(DisplayName = "Delete workflow instance should not be resurrected by persistence")]
+    [Test]
+    [DisplayName("Delete workflow instance should not be resurrected by persistence")]
     public async Task DeleteWorkflowInstance_ShouldNotBeResurrectedByPersistence()
     {
         // This test addresses the core issue in #7077: ensuring that a deleted workflow instance
@@ -143,7 +148,7 @@ public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
         var instanceClient = await WorkflowRuntime.CreateClientAsync(workflowInstanceId);
         var deleted = await instanceClient.DeleteAsync();
 
-        Assert.True(deleted);
+        await Assert.That(deleted).IsTrue();
 
         // Assert - Instance should be deleted and NOT resurrected
         await AssertWorkflowInstanceDeletedAsync(workflowInstanceId);

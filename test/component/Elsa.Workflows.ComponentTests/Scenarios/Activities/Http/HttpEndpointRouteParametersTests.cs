@@ -1,14 +1,15 @@
 using System.Net;
 using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
+
 namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointRouteParametersTests(App app) : AppComponentTest(app)
 {
-    [Theory]
-    [InlineData("123", "456", "UserId: 123, OrderId: 456")]
-    [InlineData("user-abc", "order-xyz", "UserId: user-abc, OrderId: order-xyz")]
-    [InlineData("999", "001", "UserId: 999, OrderId: 001")]
+    [Test]
+    [Arguments("123", "456", "UserId: 123, OrderId: 456")]
+    [Arguments("user-abc", "order-xyz", "UserId: user-abc, OrderId: order-xyz")]
+    [Arguments("999", "001", "UserId: 999, OrderId: 001")]
     public async Task RouteParameters_ValidRouteValues_ReturnsExtractedParameters(string userId, string orderId, string expectedContent)
     {
         // Arrange
@@ -18,10 +19,10 @@ public class HttpEndpointRouteParametersTests(App app) : AppComponentTest(app)
         var response = await client.GetStringAsync($"test/users/{userId}/orders/{orderId}");
 
         // Assert
-        Assert.Equal(expectedContent, response);
+        await Assert.That(response).IsEqualTo(expectedContent);
     }
 
-    [Fact]
+    [Test]
     public async Task RouteParameters_UrlEncodedValues_ReturnsDecodedParameters()
     {
         // Arrange
@@ -33,33 +34,33 @@ public class HttpEndpointRouteParametersTests(App app) : AppComponentTest(app)
         var response = await client.GetStringAsync($"test/users/{encodedUserId}/orders/{encodedOrderId}");
 
         // Assert
-        Assert.Contains("user@domain.com", response);
-        Assert.Contains("order-with-special-chars!", response);
+        await Assert.That(response).Contains("user@domain.com");
+        await Assert.That(response).Contains("order-with-special-chars!");
     }
 
-    [Fact]
+    [Test]
     public async Task RouteParameters_InvalidRoute_ReturnsNotFound()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         // Act
-        var response = await client.GetAsync("test/users/123/invalid-path");
+        using var response = await client.GetAsync("test/users/123/invalid-path");
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 
-    [Fact]
+    [Test]
     public async Task RouteParameters_MissingParameter_ReturnsNotFound()
     {
         // Arrange
         var client = WorkflowServer.CreateHttpWorkflowClient();
 
         // Act
-        var response = await client.GetAsync("test/users/123/orders");
+        using var response = await client.GetAsync("test/users/123/orders");
 
         // Assert
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
     }
 }

@@ -5,10 +5,10 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Activities.Http;
 
 public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(app)
 {
-    [Theory]
-    [InlineData("name=John", "TestAgent/1.0", "Name: John", "UserAgent: TestAgent/1.0")]
-    [InlineData("name=Jane", "CustomAgent/2.0", "Name: Jane", "UserAgent: CustomAgent/2.0")]
-    [InlineData("name=John&age=30&city=NewYork", "TestAgent/1.0", "Name: John", "UserAgent: TestAgent/1.0")]
+    [Test]
+    [Arguments("name=John", "TestAgent/1.0", "Name: John", "UserAgent: TestAgent/1.0")]
+    [Arguments("name=Jane", "CustomAgent/2.0", "Name: Jane", "UserAgent: CustomAgent/2.0")]
+    [Arguments("name=John&age=30&city=NewYork", "TestAgent/1.0", "Name: John", "UserAgent: TestAgent/1.0")]
     public async Task QueryStringAndHeaders_WithParameters_ReturnsExtractedData(
         string queryString,
         string userAgent,
@@ -19,22 +19,22 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
         var response = await GetQueryHeadersResponseAsync(queryString, userAgent);
 
         // Assert
-        Assert.Contains(expectedNameFragment, response);
-        Assert.Contains(expectedUserAgentFragment, response);
+        await Assert.That(response).Contains(expectedNameFragment);
+        await Assert.That(response).Contains(expectedUserAgentFragment);
     }
 
-    [Fact]
+    [Test]
     public async Task QueryStringAndHeaders_NoParameters_ReturnsDefaultValues()
     {
         // Act
         var response = await GetQueryHeadersResponseAsync();
 
         // Assert
-        Assert.Contains("Name: unknown", response);
-        Assert.Contains("UserAgent:", response); // Should contain UserAgent even if empty
+        await Assert.That(response).Contains("Name: unknown");
+        await Assert.That(response).Contains("UserAgent:"); // Should contain UserAgent even if empty
     }
 
-    [Fact]
+    [Test]
     public async Task QueryStringAndHeaders_UrlEncodedQueryString_ReturnsDecodedValue()
     {
         // Arrange
@@ -45,10 +45,10 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
         var response = await GetQueryHeadersResponseAsync(queryString);
 
         // Assert
-        Assert.Contains("Name: John Doe", response);
+        await Assert.That(response).Contains("Name: John Doe");
     }
 
-    [Fact]
+    [Test]
     public async Task QueryStringAndHeaders_CustomHeaders_ReturnsHeaderValues()
     {
         // Arrange
@@ -62,8 +62,8 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
         var response = await GetQueryHeadersResponseAsync("name=Jane", customHeaders: customHeaders);
 
         // Assert
-        Assert.Contains("Name: Jane", response);
-        Assert.Contains("UserAgent: CustomAgent/2.0", response);
+        await Assert.That(response).Contains("Name: Jane");
+        await Assert.That(response).Contains("UserAgent: CustomAgent/2.0");
     }
 
     private async Task<string> GetQueryHeadersResponseAsync(
@@ -97,7 +97,7 @@ public class HttpEndpointQueryStringAndHeadersTests(App app) : AppComponentTest(
             }
         }
 
-        var responseMessage = await client.SendAsync(request);
+        using var responseMessage = await client.SendAsync(request);
         responseMessage.EnsureSuccessStatusCode();
         return await responseMessage.Content.ReadAsStringAsync();
     }

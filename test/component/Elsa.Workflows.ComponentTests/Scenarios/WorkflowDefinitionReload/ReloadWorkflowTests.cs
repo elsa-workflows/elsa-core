@@ -15,16 +15,20 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowDefinitionReload;
 
 public class ReloadWorkflowTests : AppComponentTest
 {
-    private readonly IActivityRegistry _activityRegistry;
-    private readonly TestWorkflowProvider _testWorkflowProvider;
-    private readonly IWorkflowBuilderFactory _workflowBuilderFactory;
-    private readonly IWorkflowDefinitionManager _workflowDefinitionManager;
-    private readonly IWorkflowDefinitionService _workflowDefinitionService;
-    private readonly IWorkflowDefinitionsReloader _workflowDefinitionsReloader;
-    private readonly IWorkflowDefinitionPublisher _workflowDefinitionPublisher;
-    private readonly ITriggerStore _triggerStore;
+    private IActivityRegistry _activityRegistry = null!;
+    private TestWorkflowProvider _testWorkflowProvider = null!;
+    private IWorkflowBuilderFactory _workflowBuilderFactory = null!;
+    private IWorkflowDefinitionManager _workflowDefinitionManager = null!;
+    private IWorkflowDefinitionService _workflowDefinitionService = null!;
+    private IWorkflowDefinitionsReloader _workflowDefinitionsReloader = null!;
+    private IWorkflowDefinitionPublisher _workflowDefinitionPublisher = null!;
+    private ITriggerStore _triggerStore = null!;
 
     public ReloadWorkflowTests(App app) : base(app)
+    {
+    }
+
+    protected override ValueTask OnInitializeAsync()
     {
         _workflowDefinitionManager = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionManager>();
         _workflowDefinitionsReloader = Scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionsReloader>();
@@ -35,21 +39,24 @@ public class ReloadWorkflowTests : AppComponentTest
         _triggerStore = Scope.ServiceProvider.GetRequiredService<ITriggerStore>();
         var workflowsProviders = Scope.ServiceProvider.GetRequiredService<IEnumerable<IWorkflowsProvider>>();
         _testWorkflowProvider = (TestWorkflowProvider)workflowsProviders.First(x => x is TestWorkflowProvider);
+        return ValueTask.CompletedTask;
     }
 
-    [Fact]
+    [Test]
     public async Task Reloading_AfterRemovingTheWorkflow_ShouldMakeWorkflowReachableAgain()
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
         await _workflowDefinitionManager.DeleteByDefinitionIdAsync("f68b09bc-2013-4617-b82f-d76b6819a624", CancellationToken.None);
-        var firstResponse = await client.SendAsync(new(HttpMethod.Get, "reload-test"));
+        using var firstRequest = new HttpRequestMessage(HttpMethod.Get, "reload-test");
+        using var firstResponse = await client.SendAsync(firstRequest);
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
-        var secondResponse = await client.SendAsync(new(HttpMethod.Get, "reload-test"));
-        Assert.Equal(HttpStatusCode.NotFound, firstResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+        using var secondRequest = new HttpRequestMessage(HttpMethod.Get, "reload-test");
+        using var secondResponse = await client.SendAsync(secondRequest);
+        await Assert.That(firstResponse.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+        await Assert.That(secondResponse.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
-    [Fact]
+    [Test]
     public async Task Reloading_AfterUpdatingSourceProvider_ShouldRefreshCaches()
     {
         var definitionId = Guid.NewGuid().ToString();
@@ -60,7 +67,7 @@ public class ReloadWorkflowTests : AppComponentTest
         _testWorkflowProvider.MaterializedWorkflows = [workflowV1];
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
         var definitionV1 = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Latest);
-        Assert.Equal(definitionVersionId1, definitionV1!.Workflow.Identity.Id);
+        await Assert.That(definitionV1!.Workflow.Identity.Id).IsEqualTo(definitionVersionId1);
 
         // Simulate the workflow provider to have a new version available.
         var definitionVersionId2 = Guid.NewGuid().ToString();
@@ -72,13 +79,13 @@ public class ReloadWorkflowTests : AppComponentTest
 
         // Assert that the workflow definition service finds the updated workflow version.
         var definitionV2 = await _workflowDefinitionService.FindWorkflowGraphAsync(definitionId, VersionOptions.Latest);
-        Assert.Equal(definitionVersionId2, definitionV2!.Workflow.Identity.Id);
-        
+        await Assert.That(definitionV2!.Workflow.Identity.Id).IsEqualTo(definitionVersionId2);
+
         // Cleanup: Delete the workflow definition and its versions.
         await _workflowDefinitionManager.DeleteByDefinitionIdAsync(definitionId, CancellationToken.None);
     }
 
-    [Fact]
+    [Test]
     public async Task Reloading_AfterUpdatingSourceProvider_ShouldRefreshActivityRegistry()
     {
         var definitionId = Guid.NewGuid().ToString();
@@ -90,7 +97,7 @@ public class ReloadWorkflowTests : AppComponentTest
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
         var activityTypeName = workflowV1.Workflow.Name!.Pascalize();
         var activityV1 = _activityRegistry.Find(activityTypeName);
-        Assert.Equal(1, activityV1!.Version);
+        await Assert.That(activityV1!.Version).IsEqualTo(1);
 
         // Simulate the workflow provider to have a new version available.
         var definitionVersionId2 = Guid.NewGuid().ToString();
@@ -102,40 +109,40 @@ public class ReloadWorkflowTests : AppComponentTest
 
         // Assert that the activity registry contains a new activity descriptor representing the new workflow version.
         var activityV2 = _activityRegistry.Find(activityTypeName)!;
-        Assert.Equal(2, activityV2.Version);
-        
+        await Assert.That(activityV2.Version).IsEqualTo(2);
+
         // Cleanup: Delete the workflow definition and its versions.
         await _workflowDefinitionManager.DeleteByDefinitionIdAsync(definitionId, CancellationToken.None);
     }
 
-    [Fact]
+    [Test]
     public async Task Reloading_AfterPublishingNewVersion_ShouldPersistTriggers()
     {
         // Get the initial workflow definition.
         const string definitionId = "f68b09bc-2013-4617-b82f-d76b6819a624";
         var initialDefinition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Published, CancellationToken.None);
-        Assert.NotNull(initialDefinition);
+        await Assert.That(initialDefinition).IsNotNull();
 
         // Assert that triggers exist initially.
         var initialTrigger = await _triggerStore.FindAsync(new(){ WorkflowDefinitionId = definitionId}, CancellationToken.None);
-        Assert.NotNull(initialTrigger);
+        await Assert.That(initialTrigger).IsNotNull();
 
         // Publish a new version of the workflow.
         var draftDefinition = await _workflowDefinitionPublisher.GetDraftAsync(definitionId, VersionOptions.Latest);
-        Assert.NotNull(draftDefinition);
+        await Assert.That(draftDefinition).IsNotNull();
         await _workflowDefinitionPublisher.PublishAsync(draftDefinition, CancellationToken.None);
         
         // Assert we are at version 2.
         var v2Definition = await _workflowDefinitionService.FindWorkflowDefinitionAsync(definitionId, VersionOptions.Published, CancellationToken.None);
-        Assert.NotNull(v2Definition);
-        Assert.Equal(2, v2Definition.Version);
+        await Assert.That(v2Definition).IsNotNull();
+        await Assert.That(v2Definition.Version).IsEqualTo(2);
 
         // Reload the workflow definitions.
         await _workflowDefinitionsReloader.ReloadWorkflowDefinitionsAsync();
 
         // Assert that triggers still exist after reload.
         var reloadedTrigger = await _triggerStore.FindAsync(new(){ WorkflowDefinitionId = definitionId}, CancellationToken.None);
-        Assert.NotNull(reloadedTrigger);
+        await Assert.That(reloadedTrigger).IsNotNull();
     }
 
     private async Task<MaterializedWorkflow> BuildWorkflowAsync(string definitionId, string definitionVersionId, int version)

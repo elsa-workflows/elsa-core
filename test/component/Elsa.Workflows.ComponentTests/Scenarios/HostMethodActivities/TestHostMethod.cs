@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Collections.Concurrent;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using JetBrains.Annotations;
@@ -12,11 +13,8 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
 /// </summary>
 [UsedImplicitly]
 [Description("Test Host Method")]
-public class TestHostMethod(ILogger<TestHostMethod> logger)
+public class TestHostMethod(ILogger<TestHostMethod> logger, TestHostMethodState state)
 {
-    // Tracks method invocations for test verification
-    public static readonly List<string> InvocationLog = new();
-
     /// <summary>
     /// Simple method with no parameters or return value
     /// </summary>
@@ -24,7 +22,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     public void SimpleAction()
     {
         logger.LogInformation("SimpleAction invoked");
-        InvocationLog.Add("SimpleAction");
+        state.Record("SimpleAction");
     }
 
     /// <summary>
@@ -33,7 +31,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     public void GreetPerson(string name)
     {
         logger.LogInformation($"Greeting {name}");
-        InvocationLog.Add($"GreetPerson:{name}");
+        state.Record($"GreetPerson:{name}");
     }
 
     /// <summary>
@@ -43,7 +41,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         var sum = a + b;
         logger.LogInformation($"Adding {a} + {b} = {sum}");
-        InvocationLog.Add($"AddNumbers:{a}+{b}={sum}");
+        state.Record($"AddNumbers:{a}+{b}={sum}");
     }
 
     /// <summary>
@@ -53,7 +51,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         var message = $"{prefix}: Hello from HostMethod!";
         logger.LogInformation($"GetMessage returned: {message}");
-        InvocationLog.Add($"GetMessage:{prefix}");
+        state.Record($"GetMessage:{prefix}");
         return message;
     }
 
@@ -64,7 +62,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         var result = x * y;
         logger.LogInformation($"Calculate: {x} * {y} = {result}");
-        InvocationLog.Add($"Calculate:{x}*{y}={result}");
+        state.Record($"Calculate:{x}*{y}={result}");
         return result;
     }
 
@@ -76,7 +74,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
         await Task.Delay(10);
         var message = $"Async: {text}";
         logger.LogInformation($"GetAsyncMessage returned: {message}");
-        InvocationLog.Add($"GetAsyncMessage:{text}");
+        state.Record($"GetAsyncMessage:{text}");
         return message;
     }
 
@@ -87,7 +85,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         var workflowInstanceId = context.WorkflowExecutionContext.Id;
         logger.LogInformation($"UseContext invoked with data={data}, workflowInstanceId={workflowInstanceId}");
-        InvocationLog.Add($"UseContext:{data}:{workflowInstanceId}");
+        state.Record($"UseContext:{data}:{workflowInstanceId}");
     }
 
     /// <summary>
@@ -97,7 +95,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         await Task.Delay(10, cancellationToken);
         logger.LogInformation($"ProcessWithCancellation completed for: {item}");
-        InvocationLog.Add($"ProcessWithCancellation:{item}");
+        state.Record($"ProcessWithCancellation:{item}");
     }
 
     /// <summary>
@@ -107,7 +105,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         logger.LogInformation($"Creating bookmark: {bookmarkName}");
         var bookmark = context.CreateBookmark(ResumeFromBookmark);
-        InvocationLog.Add($"CreateBookmark:{bookmarkName}");
+        state.Record($"CreateBookmark:{bookmarkName}");
         return context.GenerateBookmarkTriggerToken(bookmark.Id);
     }
 
@@ -117,7 +115,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     private ValueTask ResumeFromBookmark(ActivityExecutionContext context)
     {
         logger.LogInformation("Bookmark resumed");
-        InvocationLog.Add("ResumeFromBookmark");
+        state.Record("ResumeFromBookmark");
         return ValueTask.CompletedTask;
     }
 
@@ -134,7 +132,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     public void CustomAttributeMethod()
     {
         logger.LogInformation("CustomAttributeMethod invoked");
-        InvocationLog.Add("CustomAttributeMethod");
+        state.Record("CustomAttributeMethod");
     }
 
     /// <summary>
@@ -143,7 +141,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     public void WithDefaultValue(string message = "default message")
     {
         logger.LogInformation($"WithDefaultValue: {message}");
-        InvocationLog.Add($"WithDefaultValue:{message}");
+        state.Record($"WithDefaultValue:{message}");
     }
 
     /// <summary>
@@ -153,7 +151,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
     {
         await Task.Delay(10);
         logger.LogInformation($"AsyncAction: {action}");
-        InvocationLog.Add($"AsyncAction:{action}");
+        state.Record($"AsyncAction:{action}");
     }
 
     /// <summary>
@@ -167,15 +165,26 @@ public class TestHostMethod(ILogger<TestHostMethod> logger)
             ["timestamp"] = DateTime.UtcNow.ToString("O")
         };
         logger.LogInformation($"GetComplexData: {key}={value}");
-        InvocationLog.Add($"GetComplexData:{key}={value}");
+        state.Record($"GetComplexData:{key}={value}");
         return data;
     }
 
     /// <summary>
-    /// Static method to clear invocation log between tests
+    /// Static method retained solely to verify that host activity discovery excludes static methods.
     /// </summary>
     public static void ClearLog()
     {
-        InvocationLog.Clear();
     }
+}
+
+/// <summary>
+/// Host-local invocation state. A fresh instance is registered in every per-test host.
+/// </summary>
+public sealed class TestHostMethodState
+{
+    private readonly ConcurrentQueue<string> _invocations = new();
+
+    public IReadOnlyCollection<string> Invocations => [.. _invocations];
+
+    public void Record(string invocation) => _invocations.Enqueue(invocation);
 }

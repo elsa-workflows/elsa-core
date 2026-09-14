@@ -18,9 +18,9 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.LogPersistenceModes;
 
 public class InputOutputLoggingTests(App app) : AppComponentTest(app)
 {
-    [Theory]
-    [InlineData("input-output-logging-1", true, false, true, false)]
-    [InlineData("input-output-logging-2", true, false, true, false)]
+    [Test]
+    [Arguments("input-output-logging-1", true, false, true, false)]
+    [Arguments("input-output-logging-2", true, false, true, false)]
     public async Task Workflow_ShouldHonorSettings_WhenExecuting(string workflowDefinitionId, params bool[] shouldBeIncludedArray)
     {
         var workflowState = await ExecuteWorkflowAsync(workflowDefinitionId);
@@ -33,11 +33,11 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
             var activityExecutionRecord = activityExecutionRecords[i];
             var shouldBeIncluded = shouldBeIncludedArray[i];
             var isIncluded = activityExecutionRecord.ActivityState?.ContainsKey(nameof(WriteLine.Text)) == true;
-            Assert.Equal(shouldBeIncluded, isIncluded);
+            await Assert.That(isIncluded).IsEqualTo(shouldBeIncluded);
         }
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowAsActivity_ShouldHonorSettings_WhenExecuting()
     {
         await ExecuteWorkflowAsync("input-output-logging-3");
@@ -45,11 +45,12 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
         var output1IsIncluded = activityExecutionRecord.Outputs!.ContainsKey("Output1");
         var output2IsIncluded = activityExecutionRecord.Outputs!.ContainsKey("Output2");
 
-        Assert.True(output1IsIncluded);
-        Assert.True(output2IsIncluded);
+        await Assert.That(output1IsIncluded).IsTrue();
+        await Assert.That(output2IsIncluded).IsTrue();
     }
-    
-    [Fact(Skip = "Although this functionality works in practice, the component test fails from time to time for no clear reason (yet).")]
+
+    [Test]
+    [Skip("Although this functionality works in practice, the component test fails from time to time for no clear reason (yet).")]
     public async Task WorkflowAsActivityInternal_ShouldHonorSettings_WhenExecuting()
     {
         await ExecuteWorkflowAsync("input-output-logging-3");
@@ -58,8 +59,8 @@ public class InputOutputLoggingTests(App app) : AppComponentTest(app)
         var output1IsIncluded = setOutput1Record.ActivityState?.ContainsKey("OutputName") == true;
         var output2IsIncluded = setOutput2Record.ActivityState?.ContainsKey("OutputName") == true;
 
-        Assert.False(output1IsIncluded);
-        Assert.True(output2IsIncluded);
+        await Assert.That(output1IsIncluded).IsFalse();
+        await Assert.That(output2IsIncluded).IsTrue();
     }
 
     private async Task<WorkflowState> ExecuteWorkflowAsync(string workflowDefinitionId)

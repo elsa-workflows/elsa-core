@@ -5,11 +5,11 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.HttpWorkflows;
 
 public class HttpHelloWorldTests(App app) : AppComponentTest(app)
 {
-    [Fact]
+    [Test]
     public async Task HelloWorldWorkflow_ShouldRespondWithHelloWorld()
     {
         var client = WorkflowServer.CreateHttpWorkflowClient();
         var response = await client.GetStringAsync("hello-world");
-        Assert.Equal("Hello World!", response);
+        await Assert.That(response).IsEqualTo("Hello World!");
     }
 }

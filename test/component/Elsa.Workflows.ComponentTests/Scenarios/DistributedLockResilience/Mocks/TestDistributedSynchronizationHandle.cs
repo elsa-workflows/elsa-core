@@ -13,19 +13,38 @@ public class TestDistributedSynchronizationHandle(
 
     public void Dispose()
     {
-        if (provider.ShouldFailRelease())
+        var simulateFailure = provider.ShouldFailRelease();
+        try
         {
-            throw new TimeoutException("Simulated transient timeout during lock release");
+            innerHandle?.Dispose();
         }
-        innerHandle?.Dispose();
+        catch (Exception disposalFailure) when (simulateFailure)
+        {
+            throw new AggregateException(
+                new TimeoutException("Simulated transient timeout during lock release"),
+                disposalFailure);
+        }
+
+        if (simulateFailure)
+            throw new TimeoutException("Simulated transient timeout during lock release");
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        if (provider.ShouldFailRelease())
+        var simulateFailure = provider.ShouldFailRelease();
+        try
         {
-            throw new TimeoutException("Simulated transient timeout during lock release");
+            if (innerHandle is not null)
+                await innerHandle.DisposeAsync();
         }
-        return innerHandle?.DisposeAsync() ?? ValueTask.CompletedTask;
+        catch (Exception disposalFailure) when (simulateFailure)
+        {
+            throw new AggregateException(
+                new TimeoutException("Simulated transient timeout during lock release"),
+                disposalFailure);
+        }
+
+        if (simulateFailure)
+            throw new TimeoutException("Simulated transient timeout during lock release");
     }
 }

@@ -8,8 +8,6 @@
 
     <ItemGroup>
         <PackageReference Include="SSH.NET" PrivateAssets="All"/>
-        <PackageReference Include="Testcontainers.PostgreSql"/>
-        <PackageReference Include="Testcontainers.RabbitMq"/>
         <PackageReference Include="Testcontainers.MsSql"/>
     </ItemGroup>
 

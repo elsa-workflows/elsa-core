@@ -13,16 +13,16 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.Multitenancy;
 /// </summary>
 public class MultitenancyTests(App app) : AppComponentTest(app)
 {
-    [Fact]
-    public void DefaultTenant_ShouldUseEmptyStringAsId()
+    [Test]
+    public async Task DefaultTenant_ShouldUseEmptyStringAsId()
     {
         // Assert
-        Assert.Empty(Tenant.DefaultTenantId);
-        Assert.Equal(Tenant.DefaultTenantId, Tenant.Default.Id);
+        await Assert.That(Tenant.DefaultTenantId).IsEmpty();
+        await Assert.That(Tenant.Default.Id).IsEqualTo(Tenant.DefaultTenantId);
     }
 
-    [Fact]
-    public void NormalizeTenantId_WithNull_ShouldReturnEmptyString()
+    [Test]
+    public async Task NormalizeTenantId_WithNull_ShouldReturnEmptyString()
     {
         // Arrange
         string? tenantId = null;
@@ -31,12 +31,12 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
         var normalizedId = tenantId.NormalizeTenantId();
 
         // Assert
-        Assert.Equal(Tenant.DefaultTenantId, normalizedId);
-        Assert.Equal(string.Empty, normalizedId);
+        await Assert.That(normalizedId).IsEqualTo(Tenant.DefaultTenantId);
+        await Assert.That(normalizedId).IsEqualTo(string.Empty);
     }
 
-    [Fact]
-    public void NormalizeTenantId_WithEmptyString_ShouldReturnEmptyString()
+    [Test]
+    public async Task NormalizeTenantId_WithEmptyString_ShouldReturnEmptyString()
     {
         // Arrange
         var tenantId = string.Empty;
@@ -45,11 +45,11 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
         var normalizedId = tenantId.NormalizeTenantId();
 
         // Assert
-        Assert.Equal(Tenant.DefaultTenantId, normalizedId);
+        await Assert.That(normalizedId).IsEqualTo(Tenant.DefaultTenantId);
     }
 
-    [Fact]
-    public void NormalizeTenantId_WithValidTenantId_ShouldReturnSameValue()
+    [Test]
+    public async Task NormalizeTenantId_WithValidTenantId_ShouldReturnSameValue()
     {
         // Arrange
         var tenantId = "tenant-123";
@@ -58,10 +58,10 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
         var normalizedId = tenantId.NormalizeTenantId();
 
         // Assert
-        Assert.Equal("tenant-123", normalizedId);
+        await Assert.That(normalizedId).IsEqualTo("tenant-123");
     }
 
-    [Fact]
+    [Test]
     public async Task WorkflowDefinitionStore_ShouldWorkWithTenantNormalization()
     {
         // Arrange
@@ -74,11 +74,11 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
 
         // Act & Assert - Should not throw exceptions related to tenant ID handling
         var workflows = await store.FindManyAsync(filter);
-        Assert.NotNull(workflows);
+        await Assert.That(workflows).IsNotNull();
     }
 
-    [Fact]
-    public void TenantResolverContext_FindTenant_WithNull_ShouldNormalize()
+    [Test]
+    public async Task TenantResolverContext_FindTenant_WithNull_ShouldNormalize()
     {
         // Arrange
         var defaultTenant = new Tenant { Id = Tenant.DefaultTenantId, Name = "Default" };
@@ -95,12 +95,12 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
         var result = context.FindTenant(nullTenantId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(Tenant.DefaultTenantId, result.Id);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Id).IsEqualTo(Tenant.DefaultTenantId);
     }
 
-    [Fact]
-    public void TenantResolverContext_FindTenant_WithEmptyString_ShouldFindDefaultTenant()
+    [Test]
+    public async Task TenantResolverContext_FindTenant_WithEmptyString_ShouldFindDefaultTenant()
     {
         // Arrange
         var defaultTenant = new Tenant { Id = Tenant.DefaultTenantId, Name = "Default" };
@@ -114,8 +114,8 @@ public class MultitenancyTests(App app) : AppComponentTest(app)
         var result = context.FindTenant(string.Empty);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(Tenant.DefaultTenantId, result.Id);
-        Assert.Equal("Default", result.Name);
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result.Id).IsEqualTo(Tenant.DefaultTenantId);
+        await Assert.That(result.Name).IsEqualTo("Default");
     }
 }
