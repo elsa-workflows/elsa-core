@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
@@ -17,7 +18,7 @@ public class InMemoryExternalIdentityProvisionerTests
     [Fact]
     public async Task RemovesLinkWhenUserDeletionWinsThePublicationRace()
     {
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         await users.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
         var provider = new DeleteAfterResolveUserProvider(new StoreBasedUserProvider(users), users);
         using var hasher = new HmacExternalAuthenticationHandleHasher();
@@ -45,7 +46,7 @@ public class InMemoryExternalIdentityProvisionerTests
     [Fact]
     public async Task RemovesRestoredLinkWhenBothReplacementUsersAreDeleted()
     {
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         await users.SaveAsync(new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" });
         await users.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-a" });
         using var hasher = new HmacExternalAuthenticationHandleHasher();

@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
@@ -14,7 +15,7 @@ internal class Refresh(IWorkflowDefinitionsRefresher workflowDefinitionsRefreshe
     public override void Configure()
     {
         Post("/actions/workflow-definitions/refresh");
-        ConfigurePermissions("actions:workflow-definitions:refresh");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "refresh");
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

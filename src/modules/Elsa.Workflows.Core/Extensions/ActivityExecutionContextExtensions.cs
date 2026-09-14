@@ -298,11 +298,20 @@ public static partial class ActivityExecutionContextExtensions
         /// <summary>
         /// Cancel the activity. For blocking activities, it means their bookmarks will be removed. For job activities, the background work will be cancelled.
         /// </summary>
+        /// <remarks>
+        /// An activity that is still <see cref="ActivityStatus.Pending"/> is cancelled too, rather than skipped: it has
+        /// been scheduled and would otherwise be invoked after the container that scheduled it decided it must not run.
+        /// Cancelling it also withdraws the work item that would have started it.
+        /// </remarks>
         public async Task CancelActivityAsync()
         {
-            // If the activity is not running, do nothing.
-            if (activityExecutionContext.Status != ActivityStatus.Running && activityExecutionContext.Status != ActivityStatus.Faulted)
+            // If the activity has already reached a terminal state, do nothing.
+            if (activityExecutionContext.Status is ActivityStatus.Completed or ActivityStatus.Canceled)
                 return;
+
+            // Withdraw work that has been scheduled but not yet invoked, so that cancelling a branch cannot leave an
+            // activity from it running afterwards.
+            activityExecutionContext.WithdrawScheduledWork();
 
             // Select all child contexts.
             var childContexts = activityExecutionContext.Children.ToList();

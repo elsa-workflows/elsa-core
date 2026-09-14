@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Common.Models;
 using Elsa.Workflows.Api.Constants;
@@ -23,7 +24,7 @@ internal class BulkPublish(
     public override void Configure()
     {
         Post("/bulk-actions/publish/workflow-definitions/by-definition-ids");
-        ConfigurePermissions("publish:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, "publish");
     }
 
     public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
@@ -79,10 +80,10 @@ internal class BulkPublish(
         foreach (var (_, definition) in publishableDefinitions)
         {
             var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
-            var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, User, cancellationToken);
+            var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
             if (!scriptAuthorizationResult.Succeeded)
             {
-                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, Send.ForbiddenAsync, message => AddError(message), Send.ErrorsAsync, cancellationToken);
+                await WorkflowDefinitionScriptAuthorizationFailure.SendAsync(scriptAuthorizationResult, message => AddError(message), Send.ErrorsAsync, cancellationToken);
                 return null!;
             }
         }

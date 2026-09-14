@@ -722,7 +722,7 @@ Reviewed by: ___ · Date: ___
 - The `IResilienceStrategy` / `IResilienceStrategyCatalog` pattern allows custom resilience strategies to be registered and reused across activities.
 - 87 files use typed `Input<T>` / `Output<T>` generics — the generic activity port pattern is reusable across all activity implementations.
 - The scheduling (`IScheduler`, `IWorkflowScheduler`) and expressions (`IExpressionHandler`) abstractions are designed for substitution, with multiple implementations per interface.
-- `ConfigureAwait.Fody` weaving is reusable infrastructure — new projects that add `Fody` and `ConfigureAwait.Fody` to their project file inherit the pattern without code changes.
+- `ConfigureAwait.Fody` weaving is reusable infrastructure — `src/Fody.props` supplies both the package references and the single `ContinueOnCapturedContext="false"` directive to every props root under `src/`, so a new project inherits the pattern with no project-file changes at all. Adding the packages by hand is neither necessary nor sufficient: the weaver silently rewrites nothing unless it is given an explicit directive, so `Directory.Build.targets` fails the build (`ELSA0001`/`ELSA0002`) for any project that references the weaver without one, or that reintroduces a per-project `FodyWeavers.xml`.
 
 **Human completion required:**
 - [ ] Assess whether external consumers (NuGet users) can implement and register custom persistence providers, custom activities, and custom resilience strategies without forking the repository (CODE + DESIGN)

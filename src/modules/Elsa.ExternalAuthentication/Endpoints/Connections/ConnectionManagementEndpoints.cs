@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using System.Text;
 using System.Text.Json;
 using Elsa.Abstractions;
@@ -16,7 +17,7 @@ internal sealed class ListConnections(IdentityProviderConnectionManagementServic
     public override void Configure()
     {
         Get("/external-authentication/connections");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override async Task<ConnectionListResponse> ExecuteAsync(ConnectionListRequest request, CancellationToken cancellationToken)
@@ -30,7 +31,7 @@ internal sealed class ListConnections(IdentityProviderConnectionManagementServic
             !TryDecodeCursor(request.Cursor, out var cursor))
         {
             HttpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-            return new ConnectionListResponse([], null);
+            return new([], null);
         }
 
         var filter = new ConnectionFilter
@@ -57,7 +58,7 @@ internal sealed class ListConnections(IdentityProviderConnectionManagementServic
         var page = hasNextPage ? connections[..^1] : connections;
         var observationResults = await Task.WhenAll(page.Select(x => observations.FindLatestAsync(x.Connection.Id, cancellationToken).AsTask()));
         var items = await Task.WhenAll(page.Select((x, index) => ConnectionResponse.FromAsync(x, management, adapters, observationResults[index], cancellationToken).AsTask()));
-        return new ConnectionListResponse(items, hasNextPage ? EncodeCursor(CursorFor(page[^1])) : null);
+        return new(items, hasNextPage ? EncodeCursor(CursorFor(page[^1])) : null);
     }
 
     private static bool IsKnownSource(string? source) => string.IsNullOrWhiteSpace(source) ||
@@ -104,7 +105,7 @@ internal sealed class GetConnection(IdentityProviderConnectionManagementService 
     public override void Configure()
     {
         Get("/external-authentication/connections/{connectionId}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -126,7 +127,7 @@ internal sealed class CreateConnection(IdentityProviderConnectionManagementServi
     public override void Configure()
     {
         Post("/external-authentication/connections");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsCreate);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Create);
     }
 
     public override async Task HandleAsync(ConnectionRequest request, CancellationToken cancellationToken)
@@ -141,7 +142,7 @@ internal sealed class CreateConnection(IdentityProviderConnectionManagementServi
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "secret_bindings_mutation_not_allowed", "Secret bindings must be managed through the dedicated write-only secret endpoint.", cancellationToken);
             return;
         }
-        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.PoliciesManage))
+        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.Policies, CoreVerbs.Update))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "The caller may not configure policies or permission grants.", cancellationToken);
             return;
@@ -161,7 +162,7 @@ internal sealed class CreateConnection(IdentityProviderConnectionManagementServi
         await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(effective, management, adapters, null, cancellationToken), cancellationToken);
     }
 
-    private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new ConnectionScope(ConnectionScopeKind.Tenant, tenantId);
+    private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new(ConnectionScopeKind.Tenant, tenantId);
 }
 
 internal sealed class UpdateConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ElsaEndpoint<ConnectionRequest>
@@ -169,7 +170,7 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
     public override void Configure()
     {
         Put("/external-authentication/connections/{connectionId}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(ConnectionRequest request, CancellationToken cancellationToken)
@@ -201,7 +202,7 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status400BadRequest, "secret_bindings_mutation_not_allowed", "Secret bindings must be managed through the dedicated write-only secret endpoint.", cancellationToken);
             return;
         }
-        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.PoliciesManage))
+        if (ConnectionEndpointSupport.RequiresPolicyManagement(request) && !ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.Policies, CoreVerbs.Update))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "The caller may not configure policies or permission grants.", cancellationToken);
             return;
@@ -227,13 +228,13 @@ internal sealed class UpdateConnection(IdentityProviderConnectionManagementServi
 internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ElsaEndpointWithoutRequest
 {
     protected abstract ConnectionLifecycle Action { get; }
-    protected abstract string Permission { get; }
+    protected abstract string Verb { get; }
     protected abstract void ConfigureRoute();
 
     public override void Configure()
     {
         ConfigureRoute();
-        ConfigurePermissions(Permission);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, Verb);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -257,7 +258,7 @@ internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionMa
 
         var confirmOverride = string.Equals(HttpContext.Request.Query["confirmFinalLoginPathOverride"], "true", StringComparison.OrdinalIgnoreCase);
         var revokeActiveSessions = string.Equals(HttpContext.Request.Query["revokeActiveSessions"], "true", StringComparison.OrdinalIgnoreCase);
-        if (revokeActiveSessions && !ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.SessionsRevoke))
+        if (revokeActiveSessions && !ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.Sessions, ExternalAuthenticationVerbs.Revoke))
         {
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "forbidden", "Revoking active sessions requires the external-authentication sessions-revoke permission.", cancellationToken);
             return;
@@ -271,35 +272,35 @@ internal abstract class ConnectionLifecycleEndpoint(IdentityProviderConnectionMa
 
         ConnectionEndpointSupport.SetEtag(HttpContext, connection.Revision);
         HttpContext.Response.StatusCode = StatusCodes.Status200OK;
-        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, adapters, null, cancellationToken), cancellationToken);
+        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, adapters, null, cancellationToken), cancellationToken);
     }
 }
 
 internal sealed class EnableConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Enabled;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsUpdate;
+    protected override string Verb => CoreVerbs.Update;
     protected override void ConfigureRoute() => Post("/external-authentication/connections/{connectionId}/enable");
 }
 
 internal sealed class DisableConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Disabled;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsUpdate;
+    protected override string Verb => CoreVerbs.Update;
     protected override void ConfigureRoute() => Post("/external-authentication/connections/{connectionId}/disable");
 }
 
 internal sealed class ArchiveConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Archived;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsArchive;
+    protected override string Verb => ExternalAuthenticationVerbs.Archive;
     protected override void ConfigureRoute() => Delete("/external-authentication/connections/{connectionId}");
 }
 
 internal sealed class RestoreConnection(IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ITenantAccessor tenantAccessor) : ConnectionLifecycleEndpoint(management, adapters, tenantAccessor)
 {
     protected override ConnectionLifecycle Action => ConnectionLifecycle.Draft;
-    protected override string Permission => ExternalAuthenticationPermissions.ConnectionsArchive;
+    protected override string Verb => ExternalAuthenticationVerbs.Archive;
     protected override void ConfigureRoute() => Post("/external-authentication/connections/{connectionId}/restore");
 }
 
@@ -308,7 +309,7 @@ internal sealed class ValidateConnection(IdentityProviderConnectionManagementSer
     public override void Configure()
     {
         Post("/external-authentication/connections/{connectionId}/validate");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsRead);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -320,7 +321,7 @@ internal sealed class ValidateConnection(IdentityProviderConnectionManagementSer
             return;
         }
 
-        var validation = await management.ValidateAsync(connection.Connection, User, tenantAccessor.TenantId, requireCompleteConfiguration: true, confirmUnsafeSettings: ConnectionEndpointSupport.HasPermission(User, ExternalAuthenticationPermissions.ProviderTrustUnsafe), cancellationToken: cancellationToken);
+        var validation = await management.ValidateAsync(connection.Connection, User, tenantAccessor.TenantId, requireCompleteConfiguration: true, confirmUnsafeSettings: ConnectionEndpointSupport.HasPermission(HttpContext, ExternalAuthenticationResourcePermissions.ProviderTrust, ExternalAuthenticationVerbs.Override), cancellationToken: cancellationToken);
         await HttpContext.Response.WriteAsJsonAsync(new ConnectionValidationResponse(validation.IsValid, validation.Errors, validation.Warnings), cancellationToken);
     }
 }
@@ -339,7 +340,7 @@ internal sealed class ReplaceManagedSecretBinding(
     public override void Configure()
     {
         Put("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}/managed");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(ManagedSecretBindingRequest request, CancellationToken cancellationToken)
@@ -380,7 +381,7 @@ internal sealed class ReplaceManagedSecretBinding(
         }
 
         using var value = new SensitiveString(request.Value);
-        var stagedBinding = await writer.StageAsync(new ManagedSecretBindingWriteRequest(effective.Connection.Id, fieldName, value), cancellationToken);
+        var stagedBinding = await writer.StageAsync(new(effective.Connection.Id, fieldName, value), cancellationToken);
         if (effective.Connection.SecretBindings.TryGetValue(fieldName, out var liveBinding) &&
             string.Equals(liveBinding.ResolverType, stagedBinding.ResolverType, StringComparison.Ordinal) &&
             string.Equals(liveBinding.Reference, stagedBinding.Reference, StringComparison.Ordinal))
@@ -410,7 +411,7 @@ internal sealed class ReplaceManagedSecretBinding(
             await ManagedSecretBindingCleanup.TryRemoveAsync(previousWriter, previousBinding, effective.Connection.Id, logger);
 
         ConnectionEndpointSupport.SetEtag(HttpContext, connection.Revision);
-        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, adapters, null, cancellationToken), cancellationToken);
+        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, adapters, null, cancellationToken), cancellationToken);
 
         return;
 
@@ -448,7 +449,7 @@ internal sealed class RemoveSecretBinding(
     public override void Configure()
     {
         Delete("/external-authentication/connections/{connectionId}/secret-bindings/{fieldName}");
-        ConfigurePermissions(ExternalAuthenticationPermissions.ConnectionsUpdate);
+        RequirePermission(ExternalAuthenticationResourcePermissions.Connections, CoreVerbs.Update);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)
@@ -480,7 +481,7 @@ internal sealed class RemoveSecretBinding(
             await ConnectionEndpointSupport.SendErrorAsync(HttpContext, StatusCodes.Status403Forbidden, "external_secret_binding_read_only", "Deployment-owned external secret bindings cannot be removed through this API.", cancellationToken);
             return;
         }
-        var candidate = Elsa.ExternalAuthentication.Services.IdentityProviderConnectionCloner.Clone(effective.Connection);
+        var candidate = IdentityProviderConnectionCloner.Clone(effective.Connection);
         candidate.SecretBindings.Remove(fieldName);
         var result = await management.UpdateAsync(candidate.Id, candidate, revision, User, tenantAccessor.TenantId, false, cancellationToken: cancellationToken);
         if (result is not ManagementConnectionMutationResult.Success(var connection))
@@ -491,7 +492,7 @@ internal sealed class RemoveSecretBinding(
         if (_writers.TryGetValue(existingBinding.ResolverType, out var writer))
             await ManagedSecretBindingCleanup.TryRemoveAsync(writer, existingBinding, effective.Connection.Id, logger);
         ConnectionEndpointSupport.SetEtag(HttpContext, connection.Revision);
-        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, adapters, null, cancellationToken), cancellationToken);
+        await HttpContext.Response.WriteAsJsonAsync(await ConnectionResponse.FromAsync(new(connection, ConnectionSourceOwnership.Database, effective.Scope, ConnectionValidity.Unknown, false, "database"), management, adapters, null, cancellationToken), cancellationToken);
     }
 }
 

@@ -26,7 +26,6 @@ internal class LabelMapper : Mapper<Request, Response, Label>
         e.Color = r.Color?.Trim();
         e.Description = r.Description?.Trim();
         e.Name = r.Name.Trim();
-        e.NormalizedName = r.Name.ToLowerInvariant();
         return e;
     }
 }

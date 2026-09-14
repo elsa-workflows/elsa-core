@@ -7,14 +7,8 @@ internal class Request
     [Required] public string Secret { get; set; } = null!;
 }
 
-internal class Response
+internal class Response(string hashedSecret, string salt)
 {
-    public Response(string hashedSecret, string salt)
-    {
-        HashedSecret = hashedSecret;
-        Salt = salt;
-    }
-
-    public string HashedSecret { get; set; }
-    public string Salt { get; set; }
+    public string HashedSecret { get; set; } = hashedSecret;
+    public string Salt { get; set; } = salt;
 }

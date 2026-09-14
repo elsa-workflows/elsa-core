@@ -4,6 +4,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.IntegrationTests.Broker;
 using Elsa.ExternalAuthentication.Models;
+using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Stores.InMemory;
 using Elsa.Identity.Contracts;
@@ -106,7 +107,7 @@ public class ExternalRefreshPermissionTests
                 Arg.Do<TokenIssuanceContext>(context => issuanceContexts.Add(context)),
                 Arg.Any<CancellationToken>())
             .Returns(_ => ValueTask.FromResult(new IssuedAccessToken($"access-{issuanceContexts.Count}", clock.UtcNow.AddHours(1))));
-        var issuer = new DefaultExternalAuthenticationTokenIssuer(sessionStore, registry, [], users, roles, tokenService, tenantAccessor, clock);
+        var issuer = new DefaultExternalAuthenticationTokenIssuer(sessionStore, registry, [], users, roles, tokenService, tenantAccessor, clock, Microsoft.Extensions.Options.Options.Create(new ExternalAuthenticationOptions()));
         var externalGrant = new PermissionGrant("reports:view", "claim-mapping", "department:engineering");
         var session = new ExternalAuthenticationSession
         {
@@ -141,6 +142,71 @@ public class ExternalRefreshPermissionTests
         Assert.Equal(["workflows:manage", "reports:view"], issuanceContexts[1].Permissions);
         Assert.DoesNotContain("*", issuanceContexts[1].Permissions);
         Assert.Equal("session-a", issuanceContexts[1].ExternalAuthenticationSessionId);
+    }
+
+    [Fact]
+    public async Task DeploymentDenyBoundaryAppliesToRoleDerivedPermissionsAtIssuance()
+    {
+        // A role permission excluded by the boundary during grant resolution used to reappear here, because
+        // issuance concatenated the same roles' permissions raw. That made the deny list unenforceable for
+        // anything a role carried, whether or not the connection selected the elsa-roles grant source.
+        var options = new ExternalAuthenticationOptions();
+        options.PermissionGrants.DeniedPermissions = ["workflows/*:delete"];
+
+        var contexts = await IssueWithAsync(options, rolePermissions: ["workflows/definitions:delete", "workflows/definitions:view"]);
+
+        // The denied role permission is gone; the role's other permission and the undenied external grant stay.
+        Assert.DoesNotContain("workflows/definitions:delete", contexts.Single().Permissions);
+        Assert.Equal(["workflows/definitions:view", "reports:view"], contexts.Single().Permissions);
+    }
+
+    [Fact]
+    public async Task RolePermissionsAreUnaffectedWhenNoBoundaryIsConfigured()
+    {
+        // The default is both lists empty, and that must stay a no-op: an external login should not quietly
+        // hand back less than the user's roles grant just because issuance now consults the boundary.
+        var contexts = await IssueWithAsync(new ExternalAuthenticationOptions(), rolePermissions: ["workflows/definitions:delete", "*"]);
+
+        Assert.Equal(["workflows/definitions:delete", "*", "reports:view"], contexts.Single().Permissions);
+    }
+
+    private static async Task<IReadOnlyList<TokenIssuanceContext>> IssueWithAsync(ExternalAuthenticationOptions options, string[] rolePermissions)
+    {
+        var clock = new TestClock();
+        var sessionStore = new InMemoryExternalAuthenticationSessionStore(clock);
+        var connection = new IdentityProviderConnection
+        {
+            Id = "connection-a", TenantId = "tenant-a", Key = "contoso", AdapterType = "oidc",
+            AdapterSettingsVersion = 1, DisplayName = "Contoso", MaterialRevision = "revision-a"
+        };
+        var effective = new EffectiveIdentityProviderConnection(connection, ConnectionSourceOwnership.Configuration, new ConnectionScope(ConnectionScopeKind.Tenant, "tenant-a"), ConnectionValidity.Valid, false, "configuration");
+        var registry = Substitute.For<IIdentityProviderConnectionRegistry>();
+        registry.FindByKeyAsync("tenant-a", "contoso", Arg.Any<CancellationToken>()).Returns(ValueTask.FromResult<EffectiveIdentityProviderConnection?>(effective));
+        var user = new User { Id = "user-a", Name = "alice", TenantId = "tenant-a", Roles = ["role-a"] };
+        var role = new Role { Id = "role-a", Name = "Operators", TenantId = "tenant-a", Permissions = rolePermissions };
+        var tenantAccessor = new DefaultTenantAccessor();
+        var users = Substitute.For<IUserProvider>();
+        users.FindAsync(Arg.Any<UserFilter>(), Arg.Any<CancellationToken>()).Returns(_ => Task.FromResult<User?>(user));
+        var roles = Substitute.For<IRoleProvider>();
+        roles.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(_ => ValueTask.FromResult<IEnumerable<Role>>([role]));
+        var contexts = new List<TokenIssuanceContext>();
+        var tokenService = Substitute.For<IElsaTokenService>();
+        tokenService.IssueAccessTokenAsync(Arg.Do<TokenIssuanceContext>(contexts.Add), Arg.Any<CancellationToken>())
+            .Returns(_ => ValueTask.FromResult(new IssuedAccessToken($"access-{contexts.Count}", clock.UtcNow.AddHours(1))));
+        var issuer = new DefaultExternalAuthenticationTokenIssuer(sessionStore, registry, [], users, roles, tokenService, tenantAccessor, clock, Microsoft.Extensions.Options.Options.Create(options));
+
+        await issuer.IssueAsync(new ExternalAuthenticationSession
+        {
+            Id = "session-b", AuthenticationClientId = "studio", TenantId = "tenant-a", UserId = "user-a",
+            ConnectionKey = "contoso", ConnectionMaterialRevision = "revision-a",
+            SecretGenerationFingerprint = Convert.ToHexString(SHA256.HashData([])),
+            Issuer = "https://issuer.example", SubjectHash = "subject-hash",
+            ExternalGrants = [new PermissionGrant("reports:view", "claim-mapping", "department:engineering")],
+            StartedAt = clock.UtcNow, LastRefreshedAt = clock.UtcNow,
+            ExpiresAt = clock.UtcNow.AddHours(8), RefreshExpiresAt = clock.UtcNow.AddHours(8)
+        });
+
+        return contexts;
     }
 
     private sealed class TestClock : ISystemClock

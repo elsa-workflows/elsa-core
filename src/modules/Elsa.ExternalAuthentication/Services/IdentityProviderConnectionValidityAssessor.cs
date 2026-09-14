@@ -75,7 +75,7 @@ public sealed class IdentityProviderConnectionValidityAssessor(
             .Any(field => !secretStates.TryGetValue(field.Name, out var state) || !state.IsConfigured || !state.IsResolvable))
             return effective with { Validity = ConnectionValidity.Invalid };
 
-        var validation = await adapter.ValidateAsync(new ConnectionValidationContext(
+        var validation = await adapter.ValidateAsync(new(
             effective with { Connection = connection, Validity = ConnectionValidity.Unknown },
             new Dictionary<string, ResolvedSecretBinding>(),
             clock), cancellationToken);
@@ -91,7 +91,7 @@ public sealed class IdentityProviderConnectionValidityAssessor(
         {
             states[name] = _secretBindingResolvers.TryGetValue(binding.ResolverType, out var resolver)
                 ? await resolver.GetStateAsync(binding, cancellationToken)
-                : new SecretBindingState(false, false);
+                : new(false, false);
         }
 
         return states;

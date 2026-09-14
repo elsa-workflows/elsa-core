@@ -22,9 +22,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Links;
 
+[Collection(nameof(EndpointSecurityCollection))]
 public partial class ExternalIdentityLinkTests : IAsyncLifetime
 {
     private WebApplication? _app;

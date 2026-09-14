@@ -31,7 +31,7 @@ internal static class WorkflowExecutionHelper
             return;
         }
 
-        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, httpContext.User, cancellationToken);
+        var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
             await SendScriptAuthorizationFailureAsync(httpContext, scriptAuthorizationResult, cancellationToken);
@@ -99,12 +99,8 @@ internal static class WorkflowExecutionHelper
 
     private static async Task SendScriptAuthorizationFailureAsync(HttpContext httpContext, WorkflowDefinitionScriptAuthorizationResult result, CancellationToken cancellationToken)
     {
-        if (result.FailureReason == WorkflowDefinitionScriptAuthorizationFailureReason.MissingPermission)
-        {
-            await httpContext.Response.SendForbiddenAsync(cancellation: cancellationToken);
-            return;
-        }
-
+        // Only one failure is possible: the host has the language switched off. That is a property of the
+        // deployment rather than of the caller, so it is a 400 explaining what is disabled, never a 403.
         httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
         await httpContext.Response.WriteAsync(result.Message ?? "Workflow script authorization failed.", cancellationToken);
     }

@@ -30,5 +30,23 @@ public class QueueBasedActivityScheduler : IActivityScheduler
     public ActivityWorkItem? Find(Func<ActivityWorkItem, bool> predicate) => _queue.FirstOrDefault(predicate);
 
     /// <inheritdoc />
+    public int RemoveWhere(Func<ActivityWorkItem, bool> predicate)
+    {
+        // The queue enumerates front-first, so re-enqueueing what survives restores the original order.
+        var remaining = _queue.Where(x => !predicate(x)).ToList();
+        var removedCount = _queue.Count - remaining.Count;
+
+        if (removedCount == 0)
+            return 0;
+
+        _queue.Clear();
+
+        foreach (var workItem in remaining)
+            _queue.Enqueue(workItem);
+
+        return removedCount;
+    }
+
+    /// <inheritdoc />
     public void Clear() => _queue.Clear();
 }

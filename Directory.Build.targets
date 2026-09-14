@@ -3,5 +3,32 @@
   <PropertyGroup>
     <UseProjectReferences>true</UseProjectReferences>
   </PropertyGroup>
-</Project>
 
+  <!--
+    Guards the ConfigureAwait.Fody directive declared in src/Directory.Build.props.
+
+    ConfigureAwait.Fody weaves nothing unless it is given an explicit ContinueOnCapturedContext
+    value, and it reports no warning when the value is absent. That is how 76 projects came to
+    ship with a FodyWeavers.xml containing a bare <ConfigureAwait /> and no weaving at all. These
+    checks make the same mistake a build failure rather than a silent no-op.
+  -->
+  <Target Name="ValidateConfigureAwaitDirective" BeforeTargets="CoreCompile">
+
+    <ItemGroup>
+      <_ConfigureAwaitFodyReference Include="@(PackageReference)" Condition="'%(Identity)' == 'ConfigureAwait.Fody'" />
+    </ItemGroup>
+
+    <PropertyGroup>
+      <_HasConfigureAwaitDirective Condition="'$(WeaverConfiguration)' != '' And $(WeaverConfiguration.Contains('ContinueOnCapturedContext=&quot;false&quot;'))">true</_HasConfigureAwaitDirective>
+    </PropertyGroup>
+
+    <Error Condition="'@(_ConfigureAwaitFodyReference)' != '' And '$(_HasConfigureAwaitDirective)' != 'true'"
+           Code="ELSA0001"
+           Text="$(MSBuildProjectName) references ConfigureAwait.Fody, but the effective weaver configuration does not set ContinueOnCapturedContext=&quot;false&quot;, so the weaver rewrites nothing. Declare the directive in the WeaverConfiguration property (see src/Directory.Build.props), or drop the ConfigureAwait.Fody and Fody package references from this project." />
+
+    <Error Condition="'@(_ConfigureAwaitFodyReference)' != '' And Exists('$(MSBuildProjectDirectory)/FodyWeavers.xml')"
+           Code="ELSA0002"
+           Text="$(MSBuildProjectName) has a FodyWeavers.xml, which the WeaverConfiguration MSBuild property silently overrides. Delete the file; the ConfigureAwait directive belongs in src/Directory.Build.props only." />
+
+  </Target>
+</Project>

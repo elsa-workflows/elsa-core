@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using FastEndpoints;
@@ -13,7 +14,7 @@ public class Delete : ElsaEndpoint<Request>
     public override void Configure()
     {
         Delete("/labels/{id}");
-        ConfigurePermissions("delete:labels");
+        RequirePermission(Elsa.Labels.Permissions.LabelPermissions.Labels, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

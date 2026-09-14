@@ -46,7 +46,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
             return ValueTask.FromResult<ExternalAuthenticationSession?>(null);
 
         lock (_syncRoot)
-            return ValueTask.FromResult(_sessions.Values.FirstOrDefault(x => string.Equals(x.CurrentRefreshTokenHash, refreshTokenHash, StringComparison.Ordinal)) is { } session ? Clone(session) : null);
+            return ValueTask.FromResult(_sessions.Values.SingleOrDefault(x => string.Equals(x.CurrentRefreshTokenHash, refreshTokenHash, StringComparison.Ordinal)) is { } session ? Clone(session) : null);
     }
 
     public ValueTask SaveAsync(ExternalAuthenticationSession session, CancellationToken cancellationToken = default)
@@ -54,7 +54,10 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
+        {
+            EnsureRefreshTokenHashAvailable(session.Id, session.CurrentRefreshTokenHash);
             _sessions[session.Id] = Clone(session);
+        }
 
         return ValueTask.CompletedTask;
     }
@@ -87,6 +90,7 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
                 return ValueTask.FromResult<ExternalAuthenticationSessionRotationResult>(new ExternalAuthenticationSessionRotationResult.Reused());
             }
 
+            EnsureRefreshTokenHashAvailable(session.Id, nextRefreshTokenHash);
             session.CurrentRefreshTokenHash = nextRefreshTokenHash;
             session.RefreshGeneration++;
             session.LastRefreshedAt = refreshedAt;
@@ -129,6 +133,14 @@ public sealed class InMemoryExternalAuthenticationSessionStore(ISystemClock cloc
 
             return ValueTask.FromResult(count);
         }
+    }
+
+    private void EnsureRefreshTokenHashAvailable(string sessionId, string? refreshTokenHash)
+    {
+        if (refreshTokenHash is not null && _sessions.Values.Any(x =>
+                !string.Equals(x.Id, sessionId, StringComparison.Ordinal) &&
+                string.Equals(x.CurrentRefreshTokenHash, refreshTokenHash, StringComparison.Ordinal)))
+            throw new InvalidOperationException("An external authentication session already exists for the supplied refresh token hash.");
     }
 
     private static ExternalAuthenticationSession Clone(ExternalAuthenticationSession session) => new()

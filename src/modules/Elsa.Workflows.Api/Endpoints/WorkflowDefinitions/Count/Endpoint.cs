@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Management;
 using JetBrains.Annotations;
@@ -13,7 +14,7 @@ internal class Count(IWorkflowDefinitionStore store) : ElsaEndpointWithoutReques
     public override void Configure()
     {
         Get("/workflow-definitions/query/count");
-        ConfigurePermissions("read:workflow-definitions");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

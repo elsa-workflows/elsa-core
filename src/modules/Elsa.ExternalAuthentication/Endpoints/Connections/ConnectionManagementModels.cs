@@ -119,7 +119,7 @@ internal sealed class ConnectionResponse
     public string MaterialRevision { get; init; } = null!;
     public ConnectionObservationResponse? LatestObservation { get; init; }
 
-    public static async ValueTask<ConnectionResponse> FromAsync(EffectiveIdentityProviderConnection effective, Services.IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ConnectionObservation? observation, CancellationToken cancellationToken)
+    public static async ValueTask<ConnectionResponse> FromAsync(EffectiveIdentityProviderConnection effective, IdentityProviderConnectionManagementService management, IExternalAuthenticationAdapterRegistry adapters, ConnectionObservation? observation, CancellationToken cancellationToken)
     {
         var states = await management.GetSecretBindingStatesAsync(effective.Connection, cancellationToken);
         var adapterSettings = effective.Connection.AdapterSettings.ValueKind == JsonValueKind.Undefined
@@ -127,12 +127,12 @@ internal sealed class ConnectionResponse
             : adapters.TryGet(effective.Connection.AdapterType, out var adapter)
                 ? AdapterSettingsSecretFieldGuard.RedactDeclaredSecrets(effective.Connection.AdapterSettings, adapter.Describe())
                 : JsonSerializer.SerializeToElement(new Dictionary<string, object?>());
-        return new ConnectionResponse
+        return new()
         {
             Id = effective.Connection.Id,
             Key = effective.Connection.Key,
             Source = effective.Ownership == ConnectionSourceOwnership.Configuration ? "configuration" : "database",
-            Scope = new ConnectionScopeResponse(effective.Scope.Kind switch { ConnectionScopeKind.Host => "host", ConnectionScopeKind.DefaultTenant => "defaultTenant", _ => "tenant" }, effective.Scope.TenantId),
+            Scope = new(effective.Scope.Kind switch { ConnectionScopeKind.Host => "host", ConnectionScopeKind.DefaultTenant => "defaultTenant", _ => "tenant" }, effective.Scope.TenantId),
             AdapterType = effective.Connection.AdapterType,
             CallbackUri = management.GetProviderCallbackUri(effective.Connection),
             PreviewCallbackUri = management.GetProviderPreviewCallbackUri(effective.Connection),
@@ -157,7 +157,7 @@ internal sealed class ConnectionResponse
             CanCreateOverride = effective.Ownership == ConnectionSourceOwnership.Configuration && management.CanCreateConfigurationOverride(),
             CanPromoteToConfigurationOverride = management.CanPromoteToConfigurationOverride(effective),
             EnabledIntent = effective.Connection.IsEnabled,
-            EffectivelyEnabled = effective.Connection.IsEnabled && !effective.Connection.ArchivedAt.HasValue && !effective.IsShadowed && effective.Validity != ConnectionValidity.Invalid,
+            EffectivelyEnabled = effective is { Connection: { IsEnabled: true, ArchivedAt: null }, IsShadowed: false } && effective.Validity != ConnectionValidity.Invalid,
             Validity = effective.Validity.ToString().ToLowerInvariant(),
             Shadowed = effective.IsShadowed,
             ShadowedBy = effective.ShadowedBy is null ? null : ConnectionReferenceResponse.From(effective.ShadowedBy),

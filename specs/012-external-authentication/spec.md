@@ -6,7 +6,7 @@
 
 **Status**: Approved — revised 2026-07-24
 
-**Input**: Deliver Elsa 3 external authentication and Identity Provider Connections end to end across Elsa Core and Elsa Studio, based on [the approved PRD](prd.md), [domain language](../../CONTEXT.md), and [architecture decisions](../../docs/adr).
+**Input**: Deliver Elsa 3 external authentication and Identity Provider Connections end to end across Elsa Core and Elsa Studio, based on [the approved PRD](prd.md), [domain language](../../CONTEXT.md), and [architecture decisions](../../doc/adr).
 
 ## Product Context
 

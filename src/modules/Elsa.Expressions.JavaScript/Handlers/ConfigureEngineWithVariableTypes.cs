@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Expressions.JavaScript.Handlers;
 
 [UsedImplicitly]
-public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions> options) 
-    : INotificationHandler<EvaluatingJavaScript>
+public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions> options)
+    : INotificationHandler<CreatingJavaScriptEngine>
 {
     private static readonly Type[] BlacklistedTypes =
     [
@@ -19,19 +19,18 @@ public class ConfigureEngineWithWorkflowVariableTypes(IOptions<ManagementOptions
     ];
 
     /// <inheritdoc />
-    public Task HandleAsync(EvaluatingJavaScript notification, CancellationToken cancellationToken)
+    public Task HandleAsync(CreatingJavaScriptEngine notification, CancellationToken cancellationToken)
     {
-        var engine = notification.Engine;
+        var engineOptions = notification.Options;
         var variableTypes = options.Value.VariableDescriptors
             .Where(x => x.Type is { ContainsGenericParameters: false } && !BlacklistedTypes.Contains(x.Type) && !x.Type.IsPrimitive)
-            .Select(x => x.Type)
-            .ToArray();
-        
+            .Select(x => x.Type);
+
         foreach (var variableType in variableTypes)
         {
-            engine.RegisterType(variableType);
-        }                
-        
+            engineOptions.RegisterType(variableType);
+        }
+
         return Task.CompletedTask;
     }
 }

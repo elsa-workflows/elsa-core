@@ -17,7 +17,7 @@ internal static class PermissionGrantMappingSettings
         if (mappings.ValueKind == JsonValueKind.Object)
         {
             foreach (var property in mappings.EnumerateObject().OrderBy(x => x.Name, StringComparer.Ordinal))
-                result.Add(new PermissionGrantMapping(claimType, property.Name, ReadPermissions(property.Value)));
+                result.Add(new(claimType, property.Name, ReadPermissions(property.Value)));
         }
         else if (mappings.ValueKind == JsonValueKind.Array)
         {
@@ -30,7 +30,7 @@ internal static class PermissionGrantMappingSettings
                 if (string.IsNullOrWhiteSpace(value))
                     continue;
 
-                result.Add(new PermissionGrantMapping(claimType, value, ReadPermissions(permissionsProperty)));
+                result.Add(new(claimType, value, ReadPermissions(permissionsProperty)));
             }
         }
 

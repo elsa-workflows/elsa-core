@@ -4,8 +4,6 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
-using Elsa.Extensions;
-using Elsa.Identity.Models;
 using Elsa.Workflows;
 
 namespace Elsa.ExternalAuthentication.Services;
@@ -52,7 +50,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
         try
         {
             if (state.Links.TryGetValue(key, out var existingLink))
-                return new ProvisioningResult(existingLink.UserId, existingLink, false);
+                return new(existingLink.UserId, existingLink, false);
 
             var (user, wasCreated) = await _userProvisioningService.ResolveAsync(request, state.ReservedUserNames.Add, cancellationToken);
             var link = new ExternalIdentityLink(
@@ -71,7 +69,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 state.Links.Remove(key);
                 throw new InvalidOperationException("The Elsa user was deleted while its external identity link was being created.");
             }
-            return new ProvisioningResult(user.Id, link, wasCreated, true);
+            return new(user.Id, link, wasCreated, true);
         }
         finally
         {
@@ -127,7 +125,7 @@ public sealed class InMemoryExternalIdentityProvisioner(
                 return new ExternalIdentityLinkReplaceResult.Conflict(oldEntry.Value, conflictingLink);
 
             var (user, _) = await _userProvisioningService.ResolveAsync(
-                new ProvisioningRequest(request.TenantId, normalizedConnectionKey, request.Identity, null, request.UserId),
+                new(request.TenantId, normalizedConnectionKey, request.Identity, null, request.UserId),
                 cancellationToken: cancellationToken);
             var replacement = new ExternalIdentityLink(
                 identityGenerator.GenerateId(),

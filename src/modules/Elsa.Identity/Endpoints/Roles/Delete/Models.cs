@@ -8,6 +8,8 @@ internal sealed class RemediateRoleDeletionRequest
     public bool ConfirmRemoveFromEditableJitPolicies { get; set; }
     public bool ConfirmEmptyDefaultRoles { get; set; }
     public bool ConfirmBestEffort { get; set; }
+    public IReadOnlyCollection<RoleDeletionReferenceSelection>? SelectedReferences { get; set; }
+    public string? ReplacementRoleId { get; set; }
 }
 
 internal sealed record RoleDeletionErrorResponse(string Error, string Message, object? Details = null);

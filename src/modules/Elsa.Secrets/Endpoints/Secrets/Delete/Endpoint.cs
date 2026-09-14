@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Secrets.Permissions;
 
@@ -8,7 +9,7 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpointWithoutRequest
     public override void Configure()
     {
         Delete("/secrets/{name}");
-        ConfigurePermissions(SecretsPermissions.Delete);
+        RequirePermission(Elsa.Secrets.Permissions.SecretsResourcePermissions.Secrets, CoreVerbs.Delete);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

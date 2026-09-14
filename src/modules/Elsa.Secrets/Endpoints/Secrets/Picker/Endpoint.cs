@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Permissions;
@@ -10,7 +11,7 @@ internal class Endpoint(ISecretManager manager, ISecretStoreRegistry storeRegist
     public override void Configure()
     {
         Post("/secrets/picker");
-        ConfigurePermissions(SecretsPermissions.Read);
+        RequirePermission(Elsa.Secrets.Permissions.SecretsResourcePermissions.Secrets, CoreVerbs.View);
     }
 
     public override async Task<SecretPickerResponse> ExecuteAsync(SecretPickerRequest request, CancellationToken cancellationToken)

@@ -256,7 +256,16 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
             var variables = activityWorkItemState.Variables;
             var input = activityWorkItemState.Input;
             var tag = activityWorkItemState.Tag;
-            var workItem = new ActivityWorkItem(activity, ownerContext, tag, variables, existingActivityExecutionContext, input);
+            var workItem = new ActivityWorkItem(
+                activity,
+                ownerContext,
+                tag,
+                variables,
+                existingActivityExecutionContext,
+                input,
+                activityWorkItemState.SchedulingActivityExecutionId,
+                activityWorkItemState.SchedulingWorkflowInstanceId,
+                activityWorkItemState.SchedulingCallStackDepth);
             workflowExecutionContext.Scheduler.Schedule(workItem);
         }
     }
@@ -329,6 +338,9 @@ public class WorkflowStateExtractor(ILogger<WorkflowStateExtractor> logger) : IW
                 Variables = x.Variables?.ToList(),
                 ExistingActivityExecutionContextId = x.ExistingActivityExecutionContext?.Id,
                 Input = x.Input,
+                SchedulingActivityExecutionId = x.SchedulingActivityExecutionId,
+                SchedulingWorkflowInstanceId = x.SchedulingWorkflowInstanceId,
+                SchedulingCallStackDepth = x.SchedulingCallStackDepth,
             });
 
         state.ScheduledActivities = scheduledActivities.ToList();

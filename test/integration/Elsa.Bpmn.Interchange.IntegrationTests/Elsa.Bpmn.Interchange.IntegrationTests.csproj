@@ -10,4 +10,8 @@
         <ProjectReference Include="..\..\..\src\modules\Elsa.Bpmn.Interchange\Elsa.Bpmn.Interchange.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <None Update="Assets\*.bpmn" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
 </Project>

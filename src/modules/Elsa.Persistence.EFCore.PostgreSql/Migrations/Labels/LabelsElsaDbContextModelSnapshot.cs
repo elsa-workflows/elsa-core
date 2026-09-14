@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.17")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -35,16 +35,22 @@ namespace Elsa.Persistence.EFCore.PostgreSql.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("text");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("text");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Label_TenantId_NormalizedName");
 
                     b.ToTable("Labels", "Elsa");
                 });

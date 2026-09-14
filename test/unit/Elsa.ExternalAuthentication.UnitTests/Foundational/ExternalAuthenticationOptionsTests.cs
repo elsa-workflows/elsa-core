@@ -2,6 +2,7 @@ using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Validation;
+using Microsoft.Extensions.Logging.Abstractions;
 using Elsa.Extensions;
 using Microsoft.Extensions.Configuration;
 
@@ -206,7 +207,7 @@ public class ExternalAuthenticationOptionsTests
             extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.Adapter, adapter.Type));
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.UnlinkedIdentityPolicy, "reject"));
         extensions.Registrations.Add(new(ExternalAuthenticationExtensionKind.PermissionGrantSource, "elsa-roles"));
-        return new(Microsoft.Extensions.Options.Options.Create(extensions));
+        return new(Microsoft.Extensions.Options.Options.Create(extensions), NullLogger<ExternalAuthenticationOptionsValidator>.Instance);
     }
 
     private sealed class TestAdapter(string type) : IExternalAuthenticationAdapter

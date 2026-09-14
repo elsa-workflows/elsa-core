@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Services;
@@ -17,7 +18,7 @@ public class ExternalAuthenticationUserDeletionDependencyContributorTests
     [Fact]
     public async Task UserWithAnExternalIdentityLinkCannotBeDeleted()
     {
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         await users.SaveAsync(new User { Id = "external-user", Name = "external-user", TenantId = "tenant-a" });
         var links = Substitute.For<IExternalIdentityLinkManagementStore>();
         links.FindAsync(
@@ -40,7 +41,7 @@ public class ExternalAuthenticationUserDeletionDependencyContributorTests
     [Fact]
     public async Task UserWithoutAnExternalIdentityLinkCanBeDeleted()
     {
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         await users.SaveAsync(new User { Id = "local-user", Name = "local-user", TenantId = "tenant-a" });
         var links = Substitute.For<IExternalIdentityLinkManagementStore>();
         links.FindAsync(
@@ -60,7 +61,7 @@ public class ExternalAuthenticationUserDeletionDependencyContributorTests
     [Fact]
     public async Task UserIsRestoredWhenAnExternalIdentityLinkAppearsDuringDeletion()
     {
-        var users = new MemoryUserStore(new MemoryStore<User>());
+        var users = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         await users.SaveAsync(new User { Id = "racing-user", Name = "racing-user", TenantId = "tenant-a" });
         var links = Substitute.For<IExternalIdentityLinkManagementStore>();
         var inspectionCount = 0;

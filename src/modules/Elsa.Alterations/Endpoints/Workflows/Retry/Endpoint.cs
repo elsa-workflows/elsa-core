@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Alterations.AlterationTypes;
 using Elsa.Alterations.Core.Contracts;
@@ -35,7 +36,7 @@ public class Retry : ElsaEndpoint<Request, Response>
     {
         Routes("/alterations/workflows/retry");
         Verbs(FastEndpoints.Http.GET, FastEndpoints.Http.POST);
-        ConfigurePermissions("run:alterations");
+        RequirePermission(Elsa.Alterations.Permissions.AlterationPermissions.Alterations, CoreVerbs.Execute);
     }
 
     /// <inheritdoc />

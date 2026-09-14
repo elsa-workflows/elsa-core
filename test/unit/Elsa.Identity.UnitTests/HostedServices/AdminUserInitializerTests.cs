@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
@@ -41,7 +42,7 @@ public class AdminUserInitializerTests
 
     private static async Task<MemoryRoleStore> CreateRoleStoreAsync(ICollection<string> permissions)
     {
-        var roleStore = new MemoryRoleStore(new MemoryStore<Role>());
+        var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), TestTenantAccessor.Default);
         await roleStore.AddAsync(new Role
         {
             Id = "admin",

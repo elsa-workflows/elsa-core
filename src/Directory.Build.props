@@ -1,6 +1,7 @@
 <Project>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(MSBuildThisFileDirectory)Fody.props" />
 
   <PropertyGroup Label="TargetFrameworks">
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
@@ -11,8 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ConfigureAwait.Fody" PrivateAssets="All" />
-    <PackageReference Include="Fody" PrivateAssets="All" />
     <PackageReference Include="JetBrains.Annotations" PrivateAssets="All" />
   </ItemGroup>
 

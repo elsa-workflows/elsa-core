@@ -257,7 +257,7 @@
 
 - [x] T101 [US8] Add explicit authentication-mode options and fail-fast mutual-exclusion validation in `/Users/sipke/Projects/Elsa/elsa-studio/src/modules/Elsa.Studio.Authentication.Abstractions/` covering FR-104–FR-105.
 - [x] T102 [US8] Preserve existing Direct OpenID Connect registrations and select Brokered mode only when configured in `/Users/sipke/Projects/Elsa/elsa-studio/src/modules/Elsa.Studio.Authentication.OpenIdConnect.BlazorServer/Extensions/ServiceCollectionExtensions.cs` and `Elsa.Studio.Authentication.OpenIdConnect.BlazorWasm/Extensions/ServiceCollectionExtensions.cs` covering FR-104–FR-105.
-- [x] T103 [P] [US8] Document direct-to-broker setting mappings, unchanged secret ownership, explicit mode switch, rollback, and both host variants in `docs/migrations/external-authentication.md` and `/Users/sipke/Projects/Elsa/elsa-studio/docs/migrations/external-authentication.md` covering FR-104–FR-107.
+- [x] T103 [P] [US8] Document direct-to-broker setting mappings, unchanged secret ownership, explicit mode switch, rollback, and both host variants in `doc/migrations/external-authentication.md` and `/Users/sipke/Projects/Elsa/elsa-studio/docs/migrations/external-authentication.md` covering FR-104–FR-107.
 - [x] T104 [US8] Add configuration-owned migration examples for Server and WebAssembly to `specs/012-external-authentication/quickstart.md` covering FR-106–FR-108.
 - [x] T105 [US8] Verify and document unchanged direct-login behavior and additive broker-local behavior in `src/modules/Elsa.Identity/README.md` and `/Users/sipke/Projects/Elsa/elsa-studio/src/modules/Elsa.Studio.ExternalAuthentication/README.md` covering FR-073 and FR-104–FR-108.
 

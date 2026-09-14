@@ -11,12 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Bpmn.UnitTests;
 
 /// <summary>
-/// Covers the one refusal <see cref="BpmnWorkTeardown"/> can make: a subtree that still has a scheduled-but-not-yet-
-/// invoked activity in it. <see cref="IActivityScheduler"/> offers no way to withdraw a queued work item, so running
-/// it after BPMN destroyed its branch would leave a stray live branch behind. The host must throw rather than let
-/// that happen silently, and — since that throw is absorbed rather than propagated under
-/// <c>ContinueWithIncidentsStrategy</c> — the caller applying the teardown must not leave the persisted ledger
-/// claiming work it just tore down.
+/// Covers the case <see cref="BpmnWorkTeardown"/> used to refuse: a subtree that still has a scheduled-but-not-yet-
+/// invoked activity in it. Cancelling now withdraws that work item, so the activity BPMN destroyed the branch of does
+/// not run afterwards. What remains this host's own contribution is the ledger removal, persisted before the teardown
+/// so that a completion arriving for torn-down work is discarded rather than fed to the interpreter as real work.
 /// </summary>
 public class BpmnWorkTeardownTests
 {
@@ -24,26 +22,43 @@ public class BpmnWorkTeardownTests
     private const string QueuedActivityId = "queued-activity";
 
     [Fact]
-    public async Task CancelSubtreeAsync_ThrowsNamingElementAndStrandedActivity_WhenSubtreeHasWorkStillQueued()
+    public async Task CancelSubtreeAsync_WithdrawsTheQueuedWork_WhenSubtreeHasWorkStillQueued()
     {
         var (_, subtreeContext, _) = await BuildSubtreeWithQueuedWorkAsync();
+        var workflowExecutionContext = subtreeContext.WorkflowExecutionContext;
+        var queuedContext = workflowExecutionContext.ActivityExecutionContexts.Single(x => x.Activity.Id == QueuedActivityId);
 
-        var exception = await Assert.ThrowsAsync<NotSupportedException>(
-            () => BpmnWorkTeardown.CancelSubtreeAsync(subtreeContext, "boundary interrupted").AsTask());
+        await BpmnWorkTeardown.CancelSubtreeAsync(subtreeContext, "boundary interrupted");
 
-        Assert.Contains(SubtreeActivityId, exception.Message);
-        Assert.Contains(QueuedActivityId, exception.Message);
+        // Nothing is left for the engine to take, so the descendant never gets invoked...
+        Assert.False(workflowExecutionContext.Scheduler.HasAny);
+
+        // ...and it is terminal rather than left Pending, so nothing can schedule it again either.
+        Assert.Equal(ActivityStatus.Canceled, queuedContext.Status);
+        Assert.Equal(ActivityStatus.Canceled, subtreeContext.Status);
     }
 
     [Fact]
-    public async Task ApplyAsync_RemovesLedgerRecordBeforeTheRefusalPropagates_WhenSubtreeHasWorkStillQueued()
+    public async Task CancelSubtreeAsync_LeavesUnrelatedWorkScheduled_WhenSubtreeHasWorkStillQueued()
+    {
+        var (scopeContext, subtreeContext, _) = await BuildSubtreeWithQueuedWorkAsync();
+        var workflowExecutionContext = subtreeContext.WorkflowExecutionContext;
+        var siblingWorkItem = new ActivityWorkItem(new WriteLine("sibling") { Id = "sibling-activity" }, scopeContext);
+        workflowExecutionContext.Scheduler.Schedule(siblingWorkItem);
+
+        await BpmnWorkTeardown.CancelSubtreeAsync(subtreeContext, "boundary interrupted");
+
+        Assert.Equal([siblingWorkItem], workflowExecutionContext.Scheduler.List());
+    }
+
+    [Fact]
+    public async Task ApplyAsync_RemovesLedgerRecord_WhenTearingDownWorkWithSomethingStillQueued()
     {
         var (scopeContext, subtreeContext, process) = await BuildSubtreeWithQueuedWorkAsync();
         var memory = SeedLedgerRecord(scopeContext, subtreeContext);
         var applier = new BpmnCommandApplier(scopeContext, process, memory);
 
-        await Assert.ThrowsAsync<NotSupportedException>(() => applier.ApplyAsync(
-            [new BpmnHostCommand.CancelWorkSubtree("work-1", SubtreeActivityId, "boundary interrupted")]).AsTask());
+        await applier.ApplyAsync([new BpmnHostCommand.CancelWorkSubtree("work-1", SubtreeActivityId, "boundary interrupted")]);
 
         // The ledger property is reloaded from scratch, from what was actually persisted onto the context, rather
         // than read off the in-memory `memory` instance the applier already mutated.
@@ -52,14 +67,13 @@ public class BpmnWorkTeardownTests
     }
 
     [Fact]
-    public async Task OnWorkCompletedAsync_DiscardsTheCallback_ForContextTornDownByARefusedCancellation()
+    public async Task OnWorkCompletedAsync_DiscardsTheCallback_ForContextThatWasTornDown()
     {
         var (scopeContext, subtreeContext, process) = await BuildSubtreeWithQueuedWorkAsync();
         var memory = SeedLedgerRecord(scopeContext, subtreeContext);
         var applier = new BpmnCommandApplier(scopeContext, process, memory);
 
-        await Assert.ThrowsAsync<NotSupportedException>(() => applier.ApplyAsync(
-            [new BpmnHostCommand.CancelWorkSubtree("work-1", SubtreeActivityId, "boundary interrupted")]).AsTask());
+        await applier.ApplyAsync([new BpmnHostCommand.CancelWorkSubtree("work-1", SubtreeActivityId, "boundary interrupted")]);
 
         // `process.Process` is deliberately left unset. A completion that is fed to the interpreter rather than
         // discarded reaches BpmnScopeHost.Graph, which throws InvalidOperationException for want of a process

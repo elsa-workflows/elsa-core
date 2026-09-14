@@ -199,16 +199,6 @@ public interface IPermissionGrantResolver
     ValueTask<PermissionGrantResult> ResolveAsync(PermissionGrantResolutionContext context, CancellationToken cancellationToken = default);
 }
 
-public interface IPermissionDescriptorProvider
-{
-    IEnumerable<PermissionDescriptor> GetDescriptors();
-}
-
-public interface IPermissionDescriptorRegistry
-{
-    IReadOnlyCollection<PermissionDescriptor> List();
-}
-
 public interface IExternalAuthenticationStateStore
 {
     ValueTask PutAsync<T>(string purpose, string handleHash, T value, DateTimeOffset expiresAt, CancellationToken cancellationToken = default);

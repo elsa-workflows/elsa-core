@@ -86,6 +86,22 @@ public sealed class BpmnTestHost
     }
 
     /// <summary>
+    /// The invocation correlation the named BPMN scope carries — the dictionary the scope that started it wrote onto
+    /// its context, and the one an event subprocess body's start-element hint is read from.
+    /// </summary>
+    /// <remarks>
+    /// It belongs to the scope and is fixed for its lifetime, so reading it after the scope has started and finished
+    /// work is what makes "nothing overwrote it" observable rather than merely documented.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string> InvocationCorrelationOf(string scopeActivityId)
+    {
+        var scopeContext = _result!.Journal.ActivityExecutionContexts.First(x => x.Activity.Id == scopeActivityId);
+
+        return BpmnScopeMemory.Read<Dictionary<string, string>>(scopeContext, BpmnScopeHost.InvocationCorrelationPropertyKey)
+               ?? new Dictionary<string, string>(StringComparer.Ordinal);
+    }
+
+    /// <summary>
     /// Replaces the current <see cref="WorkflowState"/> with what a round trip through Elsa's own
     /// <see cref="IWorkflowStateSerializer"/> hands back — what a real persistence store would return on load,
     /// rather than the exact same in-memory object the previous run produced.
@@ -119,6 +135,23 @@ public sealed class BpmnTestHost
         return (
             executionStateJson is null ? null : JsonSerializer.Deserialize<BpmnExecutionState>(executionStateJson),
             JsonSerializer.Deserialize<BpmnWorkLedger>(workLedgerJson) ?? new BpmnWorkLedger());
+    }
+
+    /// <summary>
+    /// Removes the diagnostics cursor from a scope's persisted state, simulating a scope that was suspended before
+    /// diagnostics projection existed: it carries diagnostics in its execution state, but no
+    /// <see cref="BpmnScopeMemory.DiagnosticsCursorPropertyKey"/> property to say how many of them are already
+    /// journaled.
+    /// </summary>
+    internal void RemoveDiagnosticsCursor(bool nested = false)
+    {
+        var state = _state ?? throw new InvalidOperationException("The workflow has not been run yet.");
+        var scopeStates = state.ActivityExecutionContexts.Where(x => x.Properties.ContainsKey(BpmnScopeMemory.WorkLedgerPropertyKey));
+        var scopeState = nested
+            ? scopeStates.OrderByDescending(x => x.CallStackDepth).First()
+            : scopeStates.OrderBy(x => x.CallStackDepth).First();
+
+        scopeState.Properties.Remove(BpmnScopeMemory.DiagnosticsCursorPropertyKey);
     }
 
     private RunWorkflowResult Record(RunWorkflowResult result)

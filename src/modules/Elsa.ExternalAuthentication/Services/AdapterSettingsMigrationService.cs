@@ -29,7 +29,7 @@ public sealed class AdapterSettingsMigrationService(
         if (settingsVersion <= 0 || settingsVersion > currentVersion)
             throw new InvalidOperationException($"Settings version {settingsVersion} is not compatible with adapter '{adapterType}' version {currentVersion}.");
         if (settingsVersion == currentVersion)
-            return new AdapterSettingsMigrationResult(currentVersion, settings.Clone(), false);
+            return new(currentVersion, settings.Clone(), false);
 
         var migrated = settings.Clone();
         var version = settingsVersion;
@@ -47,7 +47,7 @@ public sealed class AdapterSettingsMigrationService(
             version = migration.ToVersion;
         }
 
-        return new AdapterSettingsMigrationResult(version, migrated, true);
+        return new(version, migrated, true);
     }
 
     private static IReadOnlyDictionary<(string AdapterType, int FromVersion), IAdapterSettingsMigration> BuildMigrationIndex(

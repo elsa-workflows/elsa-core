@@ -46,7 +46,13 @@ public partial class ConfigureEngineWithVariables(IOptions<JintOptions> options)
         var context = notification.Context;
         var engine = notification.Engine;
         var variablesContainer = (IDictionary<string, object?>)engine.GetValue("variables").ToObject()!;
-        var inputNames = GetInputNames(context).FilterInvalidVariableNames().Distinct().ToList();
+
+        // Only the variables the expression actually referenced were copied in, so an expression that never
+        // mentions "variables." has nothing to copy back and does not need the input names resolved at all.
+        if (variablesContainer.Count == 0)
+            return;
+
+        var inputNames = GetInputNames(context).FilterInvalidVariableNames().ToHashSet(StringComparer.Ordinal);
 
         foreach (var (variableName, variableValue) in variablesContainer)
         {

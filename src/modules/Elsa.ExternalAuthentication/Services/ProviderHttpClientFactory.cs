@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using System.Text;
 using Elsa.ExternalAuthentication.Options;
 using Elsa.ExternalAuthentication.Validation;
@@ -40,7 +39,7 @@ public sealed class ProviderHttpClientFactory : IProviderHttpClientFactory, IDis
         else
             handler.ConnectCallback = (context, cancellationToken) => connectionFactory.ConnectAsync(context.DnsEndPoint, cancellationToken);
 
-        invoker = new HttpMessageInvoker(handler, disposeHandler: true);
+        invoker = new(handler, disposeHandler: true);
     }
 
     /// <summary>
@@ -66,7 +65,7 @@ public interface IProviderHttpClient
 
 public sealed class ProviderHttpClient(HttpMessageInvoker invoker, OutboundDestinationValidator destinationValidator, IOptions<ExternalAuthenticationOptions> options) : IProviderHttpClient
 {
-    public ValueTask<ProviderHttpResponse> GetAsync(Uri uri, ProviderResponseKind kind, CancellationToken cancellationToken = default) => SendAsync(uri, kind, address => new HttpRequestMessage(HttpMethod.Get, address), cancellationToken);
+    public ValueTask<ProviderHttpResponse> GetAsync(Uri uri, ProviderResponseKind kind, CancellationToken cancellationToken = default) => SendAsync(uri, kind, address => new(HttpMethod.Get, address), cancellationToken);
 
     public ValueTask<ProviderHttpResponse> PostFormAsync(Uri uri, IReadOnlyDictionary<string, string> values, IReadOnlyDictionary<string, string>? headers, ProviderResponseKind kind, CancellationToken cancellationToken = default) =>
         SendAsync(uri, kind, address => CreateFormRequest(address, values, headers), cancellationToken);
@@ -100,14 +99,14 @@ public sealed class ProviderHttpClient(HttpMessageInvoker invoker, OutboundDesti
                     if (kind is ProviderResponseKind.Token or ProviderResponseKind.UserInfo || response.Headers.Location is null || redirects++ >= options.Value.ProviderEgress.MaximumRedirects)
                         throw new ProviderHttpException(ProviderHttpFailure.RedirectRejected);
 
-                    current = new Uri(current, response.Headers.Location);
+                    current = new(current, response.Headers.Location);
                     continue;
                 }
 
                 if (!response.IsSuccessStatusCode)
-                    return new ProviderHttpResponse(response.StatusCode, []);
+                    return new(response.StatusCode, []);
 
-                return new ProviderHttpResponse(response.StatusCode, await ReadResponseBodyAsync(response, kind, timeout.Token));
+                return new(response.StatusCode, await ReadResponseBodyAsync(response, kind, timeout.Token));
             }
         }
         catch (OutboundDestinationException)

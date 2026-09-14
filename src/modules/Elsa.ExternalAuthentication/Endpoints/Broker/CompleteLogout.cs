@@ -1,9 +1,7 @@
 using Elsa.Abstractions;
 using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Services;
-using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Broker;
 

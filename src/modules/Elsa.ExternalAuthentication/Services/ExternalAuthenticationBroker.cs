@@ -82,7 +82,7 @@ public sealed class ExternalAuthenticationBroker(
         if (!localOptions.IsEnabled)
             return externalMethods;
 
-        var local = new LoginMethod("local", "local", LoginMethodKind.Local, localOptions.DisplayName, localOptions.IconId, localOptions.DisplayOrder, localOptions.IsPreferred && !externalMethods.Any(x => x.IsPreferred), new Uri("/external-authentication/local/authorize", UriKind.Relative));
+        var local = new LoginMethod("local", "local", LoginMethodKind.Local, localOptions.DisplayName, localOptions.IconId, localOptions.DisplayOrder, localOptions.IsPreferred && !externalMethods.Any(x => x.IsPreferred), new("/external-authentication/local/authorize", UriKind.Relative));
         return [local, .. externalMethods];
     }
 
@@ -140,7 +140,7 @@ public sealed class ExternalAuthenticationBroker(
         {
             secrets = await ResolveSecretsAsync(connection.Connection.SecretBindings, cancellationToken);
             transaction.SecretGenerationFingerprint = GetSecretFingerprint(secrets);
-            adapterRequest = await adapter.CreateAuthorizationRequestAsync(new ExternalAuthorizationContext(connection, secrets, transaction, state, clock), cancellationToken);
+            adapterRequest = await adapter.CreateAuthorizationRequestAsync(new(connection, secrets, transaction, state, clock), cancellationToken);
             transaction.ProtectedPayload = dataProtectionProvider.CreateProtector("Elsa.ExternalAuthentication.AdapterPayload.v1").Protect(adapterRequest.ProtectedAdapterState);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -193,7 +193,7 @@ public sealed class ExternalAuthenticationBroker(
                 ExternalAuthenticationResult authentication;
                 try
                 {
-                    authentication = await adapter.AuthenticateCallbackAsync(new ExternalCallbackContext(connection, secrets, transaction, state, parameters, clock), cancellationToken);
+                    authentication = await adapter.AuthenticateCallbackAsync(new(connection, secrets, transaction, state, parameters, clock), cancellationToken);
                 }
                 finally
                 {
@@ -201,8 +201,8 @@ public sealed class ExternalAuthenticationBroker(
                 }
 
                 using var upstreamLogoutHint = authentication.UpstreamLogoutHint;
-                var resolution = await identityResolver.ResolveAsync(new ExternalIdentityResolutionContext(transaction.TenantId, connection, authentication.Identity, authentication.ProjectedClaims), cancellationToken);
-                var grantResult = await permissionGrantResolver.ResolveAsync(new PermissionGrantResolutionContext(
+                var resolution = await identityResolver.ResolveAsync(new(transaction.TenantId, connection, authentication.Identity, authentication.ProjectedClaims), cancellationToken);
+                var grantResult = await permissionGrantResolver.ResolveAsync(new(
                     transaction.TenantId,
                     resolution.UserId,
                     connection,
@@ -230,7 +230,8 @@ public sealed class ExternalAuthenticationBroker(
                 };
                 await sessionStore.SaveAsync(session, cancellationToken);
                 var code = CreateOpaqueValue();
-                await grantStore.SaveAsync(new AuthorizationGrant { CodeHash = Hash(code), ClientId = transaction.ClientId, CallbackUri = transaction.CallbackUri, TenantId = transaction.TenantId, UserId = resolution.UserId, ExternalSessionId = session.Id, PkceChallenge = transaction.PkceChallenge, ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.CompletionCodeLifetime) }, cancellationToken);
+                await grantStore.SaveAsync(new()
+                    { CodeHash = Hash(code), ClientId = transaction.ClientId, CallbackUri = transaction.CallbackUri, TenantId = transaction.TenantId, UserId = resolution.UserId, ExternalSessionId = session.Id, PkceChallenge = transaction.PkceChallenge, ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.CompletionCodeLifetime) }, cancellationToken);
                 if (notifier is not null)
                     await notifier.PublishAsync(new ExternalSignInCompleted(
                     ExternalAuthenticationSecurityNotifier.Context(null, transaction.TenantId, connection.Connection.Id, resolution.UserId, SecurityEventOutcome.Succeeded, "External sign-in completed."),
@@ -280,7 +281,7 @@ public sealed class ExternalAuthenticationBroker(
         }
         if (!options.Value.LocalLogin.IsEnabled)
             return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.MethodUnavailable)), "local", "initiate", targetTenantId, null, cancellationToken);
-        Elsa.Identity.Entities.User? user;
+        Identity.Entities.User? user;
         try
         {
             user = await credentialsValidator.ValidateAsync(request.Username.Trim(), request.Password, cancellationToken);
@@ -297,7 +298,8 @@ public sealed class ExternalAuthenticationBroker(
             return await CallbackOutcomeAsync(BrokerCallbackResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AuthenticationFailed)), "local", "initiate", targetTenantId, null, cancellationToken);
 
         var code = CreateOpaqueValue();
-        await grantStore.SaveAsync(new AuthorizationGrant { CodeHash = Hash(code), ClientId = request.ClientId, CallbackUri = request.RedirectUri, TenantId = targetTenantId, UserId = user.Id, PkceChallenge = request.CodeChallenge, ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.CompletionCodeLifetime) }, cancellationToken);
+        await grantStore.SaveAsync(new()
+            { CodeHash = Hash(code), ClientId = request.ClientId, CallbackUri = request.RedirectUri, TenantId = targetTenantId, UserId = user.Id, PkceChallenge = request.CodeChallenge, ExpiresAt = clock.UtcNow.Add(options.Value.Lifetimes.CompletionCodeLifetime) }, cancellationToken);
         return await CallbackOutcomeAsync(BrokerCallbackResult.Redirect(AppendCallbackParameters(request.RedirectUri, code, request.ClientState)), "local", "initiate", targetTenantId, null, cancellationToken);
     }
 
@@ -365,8 +367,10 @@ public sealed class ExternalAuthenticationBroker(
             }
         }
 
-        using var tenantContext = tenantAccessor.PushContext(new Tenant { Id = grant.TenantId, Name = grant.TenantId });
-        var user = await userProvider.FindAsync(new UserFilter { Id = grant.UserId }, cancellationToken);
+        using var tenantContext = tenantAccessor.PushContext(new()
+            { Id = grant.TenantId, Name = grant.TenantId });
+        var user = await userProvider.FindAsync(new()
+            { Id = grant.UserId }, cancellationToken);
         if (user is null)
             return await TokenOutcomeAsync(BrokerTokenResult.Fail(BrokerErrorFactory.Create(BrokerErrorCategory.AccessDenied)), "token_exchange", "resolve_user", cancellationToken);
         try
@@ -375,7 +379,7 @@ public sealed class ExternalAuthenticationBroker(
             var context = new TokenIssuanceContext(user, roles.Select(x => x.Name).ToArray(), roles.SelectMany(x => x.Permissions).Distinct().ToArray(), []);
             var access = await elsaTokenService.IssueAccessTokenAsync(context, cancellationToken);
             var refresh = await elsaTokenService.IssueRefreshTokenAsync(context, cancellationToken);
-            return await TokenOutcomeAsync(BrokerTokenResult.Success(new ExternalTokenResponse(
+            return await TokenOutcomeAsync(BrokerTokenResult.Success(new(
                 access.Token,
                 "Bearer",
                 SecondsUntil(access.ExpiresAt),
@@ -400,7 +404,7 @@ public sealed class ExternalAuthenticationBroker(
         if (tokens is null)
             return null;
 
-        return new ExternalTokenResponse(
+        return new(
             tokens.AccessToken,
             "Bearer",
             SecondsUntil(GetExpiresAt(tokens.AccessToken)),
@@ -478,7 +482,7 @@ public sealed class ExternalAuthenticationBroker(
             using var upstreamLogoutHint = session.ProtectedUpstreamLogoutHint is { Length: > 0 }
                 ? new SensitiveString(Encoding.UTF8.GetString(dataProtectionProvider.CreateProtector("Elsa.ExternalAuthentication.UpstreamLogoutHint.v1").Unprotect(session.ProtectedUpstreamLogoutHint)))
                 : null;
-            upstream = await adapter.CreateLogoutRequestAsync(new ExternalLogoutContext(connection, logoutSecrets, transaction, state, clock, upstreamLogoutHint), cancellationToken);
+            upstream = await adapter.CreateLogoutRequestAsync(new(connection, logoutSecrets, transaction, state, clock, upstreamLogoutHint), cancellationToken);
             transaction.ProtectedPayload = dataProtectionProvider.CreateProtector("Elsa.ExternalAuthentication.AdapterPayload.v1").Protect(upstream?.ProtectedAdapterState ?? []);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -504,7 +508,7 @@ public sealed class ExternalAuthenticationBroker(
             CallbackUri = request.PostLogoutRedirectUri, ReturnPath = upstream.NavigationUri.AbsoluteUri, TenantId = session.TenantId,
             ExpiresAt = transaction.ExpiresAt
         }, transaction.ExpiresAt, cancellationToken);
-        return await LogoutOutcomeAsync(BrokerLogoutResult.Navigate(new Uri($"/external-authentication/logout/continue/{Uri.EscapeDataString(continuationHandle)}", UriKind.Relative)), "initiate", cancellationToken);
+        return await LogoutOutcomeAsync(BrokerLogoutResult.Navigate(new($"/external-authentication/logout/continue/{Uri.EscapeDataString(continuationHandle)}", UriKind.Relative)), "initiate", cancellationToken);
     }
 
     public async ValueTask<BrokerCallbackResult> CompleteLogoutAsync(string connectionKey, string state, CancellationToken cancellationToken = default)
@@ -544,7 +548,7 @@ public sealed class ExternalAuthenticationBroker(
         var result = AppendQuery(uri, "code", code);
         return string.IsNullOrWhiteSpace(clientState) ? result : AppendQuery(result, "state", clientState);
     }
-    private static Uri AppendQuery(Uri uri, string key, string value) { var separator = string.IsNullOrEmpty(uri.Query) ? "?" : "&"; return new Uri(uri + separator + Uri.EscapeDataString(key) + "=" + Uri.EscapeDataString(value), uri.IsAbsoluteUri ? UriKind.Absolute : UriKind.Relative); }
+    private static Uri AppendQuery(Uri uri, string key, string value) { var separator = string.IsNullOrEmpty(uri.Query) ? "?" : "&"; return new(uri + separator + Uri.EscapeDataString(key) + "=" + Uri.EscapeDataString(value), uri.IsAbsoluteUri ? UriKind.Absolute : UriKind.Relative); }
     private async ValueTask<BrokerCallbackResult> FailTrustedCallbackAsync(BrokerTransaction transaction, BrokerErrorCategory category, CancellationToken cancellationToken)
     {
         var error = BrokerErrorFactory.Create(category);

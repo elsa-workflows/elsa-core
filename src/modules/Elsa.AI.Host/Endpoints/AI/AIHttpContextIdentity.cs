@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Elsa.AI.Host.Options;
+using Elsa.Authorization;
 using Elsa.Common.Multitenancy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,27 +36,29 @@ internal static class AIHttpContextIdentity
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 
-    public static string? GetAuthorizedAgent(string? requestedAgent, AIHostOptions options, ICollection<string> userPermissions)
+    public static string? GetAuthorizedAgent(string? requestedAgent, AIHostOptions options, ClaimsPrincipal? user)
     {
         if (string.IsNullOrWhiteSpace(requestedAgent))
             return null;
 
         var agent = options.Agents.FirstOrDefault(x => string.Equals(x.Name, requestedAgent, StringComparison.OrdinalIgnoreCase));
-        if (agent == null || !HasRequiredPermissions(agent.Permissions, userPermissions))
+        if (agent == null || !HasRequiredPermissions(agent.Permissions, user))
             return null;
 
         return agent.Name;
     }
 
-    private static bool HasRequiredPermissions(ICollection<string> requiredPermissions, ICollection<string> userPermissions)
+    // Routed through the shared evaluator so a wildcard grant such as ai/*:execute reaches an agent's declared
+    // permissions, and so the comparison is ordinal like every other site in the model. The previous
+    // case-insensitive exact-set containment did neither: it admitted casing the rest of the model rejects,
+    // while refusing the wildcards the rest of the model honours.
+    private static bool HasRequiredPermissions(ICollection<string> requiredPermissions, ClaimsPrincipal? user)
     {
         if (requiredPermissions.Count == 0)
             return true;
+        if (user is null)
+            return false;
 
-        var grantedPermissions = userPermissions
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        return grantedPermissions.Contains(PermissionNames.All) || requiredPermissions.All(grantedPermissions.Contains);
+        return requiredPermissions.All(x => Permission.TryParse(x, out var required) && PermissionEvaluator.Shared.HasPermission(user, required));
     }
 }

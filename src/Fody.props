@@ -1,0 +1,32 @@
+<Project>
+
+  <!--
+    The single ConfigureAwait.Fody directive, shared by every props root under src/.
+
+    ConfigureAwait.Fody only rewrites awaits when it is handed an explicit
+    ContinueOnCapturedContext value. A bare <ConfigureAwait /> element in a FodyWeavers.xml
+    parses fine and weaves nothing, so per-project XML let most of the repo drift into
+    compiling with no weaving at all while looking correctly configured.
+
+    Fody reads this MSBuild property in preference to any FodyWeavers.xml, which keeps the
+    directive in one reviewable place. src/apps has its own props root that does not chain up
+    to src/Directory.Build.props, so both import this file rather than duplicating the value.
+
+    Directory.Build.targets in the repository root fails the build for any project that
+    references ConfigureAwait.Fody without an effective directive, or that reintroduces a
+    FodyWeavers.xml alongside it.
+  -->
+  <PropertyGroup>
+    <WeaverConfiguration>
+      <Weavers>
+        <ConfigureAwait ContinueOnCapturedContext="false" />
+      </Weavers>
+    </WeaverConfiguration>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ConfigureAwait.Fody" PrivateAssets="All" />
+    <PackageReference Include="Fody" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

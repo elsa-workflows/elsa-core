@@ -42,6 +42,69 @@ public class InMemoryExternalAuthenticationSessionStoreTests
     }
 
     [Fact]
+    public async Task SavingASessionWithAnExistingRefreshTokenHashIsRejectedAcrossTenants()
+    {
+        var store = new InMemoryExternalAuthenticationSessionStore(new TestSystemClock(_now));
+        var first = ExternalAuthenticationTestData.CreateSession(_now);
+        var second = ExternalAuthenticationTestData.CreateSession(_now);
+        second.Id = "session-b";
+        second.TenantId = "tenant-b";
+        await store.SaveAsync(first);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveAsync(second).AsTask());
+
+        Assert.Null(await store.FindByIdAsync(second.Id));
+        Assert.Equal(first.Id, (await store.FindByRefreshTokenHashAsync(first.CurrentRefreshTokenHash!))!.Id);
+    }
+
+    [Fact]
+    public async Task SavingASessionWithAnExistingRefreshTokenHashFailsWithoutMutatingEitherSession()
+    {
+        var store = new InMemoryExternalAuthenticationSessionStore(new TestSystemClock(_now));
+        var first = ExternalAuthenticationTestData.CreateSession(_now);
+        var second = ExternalAuthenticationTestData.CreateSession(_now);
+        second.Id = "session-b";
+        second.CurrentRefreshTokenHash = null;
+        await store.SaveAsync(first);
+        await store.SaveAsync(second);
+
+        second.CurrentRefreshTokenHash = first.CurrentRefreshTokenHash;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.SaveAsync(second).AsTask());
+
+        var persistedFirst = await store.FindByIdAsync(first.Id);
+        var persistedSecond = await store.FindByIdAsync(second.Id);
+        Assert.NotNull(persistedFirst);
+        Assert.NotNull(persistedSecond);
+        Assert.Equal(first.CurrentRefreshTokenHash, persistedFirst.CurrentRefreshTokenHash);
+        Assert.Null(persistedSecond.CurrentRefreshTokenHash);
+        Assert.Equal(first.Id, (await store.FindByRefreshTokenHashAsync(first.CurrentRefreshTokenHash!))!.Id);
+    }
+
+    [Fact]
+    public async Task RotatingToAnExistingRefreshTokenHashFailsWithoutMutatingEitherSession()
+    {
+        var store = new InMemoryExternalAuthenticationSessionStore(new TestSystemClock(_now));
+        var first = ExternalAuthenticationTestData.CreateSession(_now);
+        var second = ExternalAuthenticationTestData.CreateSession(_now);
+        second.Id = "session-b";
+        second.CurrentRefreshTokenHash = "refresh-2";
+        await store.SaveAsync(first);
+        await store.SaveAsync(second);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => store.TryRotateRefreshTokenAsync(first.Id, "refresh-1", 0, "refresh-2", _now.AddMinutes(1)).AsTask());
+
+        var persistedFirst = await store.FindByIdAsync(first.Id);
+        var persistedSecond = await store.FindByIdAsync(second.Id);
+        Assert.NotNull(persistedFirst);
+        Assert.NotNull(persistedSecond);
+        Assert.Equal("refresh-1", persistedFirst.CurrentRefreshTokenHash);
+        Assert.Equal(0, persistedFirst.RefreshGeneration);
+        Assert.Equal(_now, persistedFirst.LastRefreshedAt);
+        Assert.Equal("refresh-2", persistedSecond.CurrentRefreshTokenHash);
+        Assert.Equal(second.Id, (await store.FindByRefreshTokenHashAsync("refresh-2"))!.Id);
+    }
+
+    [Fact]
     public async Task ReusingASupersededRefreshTokenRevokesTheSession()
     {
         var clock = new TestSystemClock(_now);

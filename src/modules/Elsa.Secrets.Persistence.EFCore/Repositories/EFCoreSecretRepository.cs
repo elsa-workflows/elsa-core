@@ -116,6 +116,12 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         return dbContext.Secrets.AnyAsync(x => EF.Property<string>(x, SecretShadowPropertyNames.NormalizedName) == normalizedName, cancellationToken);
     }
 
+    // The DbUpdateException-to-name-conflict translation below relies on the (TenantId, NormalizedName)
+    // unique index, which only covers rows with a non-null TenantId (SQL Server filters null rows out of the
+    // index; SQLite/PostgreSQL/MySQL treat nulls as distinct — Oracle alone rejects null-tenant duplicates).
+    // With multitenancy disabled nothing assigns a TenantId, so this backstop never fires there and
+    // uniqueness rests solely on the FindByNameAsync/ExistsByNormalizedNameAsync pre-checks — two concurrent
+    // creates racing past the pre-check both commit. See doc/migrations/secrets-tenancy.md.
     private async Task SaveChangesAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
     {
         try

@@ -16,7 +16,7 @@ namespace Elsa.Bpmn.Hosting;
 /// <remarks>
 /// <list type="table">
 ///   <item><term><c>StartWork</c></term><description><see cref="ActivityExecutionContext.ScheduleActivityAsync(IActivity?, ScheduleWorkOptions?)"/>.</description></item>
-///   <item><term><c>CancelWorkSubtree</c></term><description><c>CancelActivityAsync</c>, which already walks the child subtree recursively.</description></item>
+///   <item><term><c>CancelWorkSubtree</c></term><description><c>CancelActivityAsync</c>, which already walks the child subtree recursively and withdraws its not-yet-invoked work.</description></item>
 ///   <item><term><c>SignalEnclosingScope</c></term><description><c>SendSignalAsync</c>, which bubbles to ancestors.</description></item>
 /// </list>
 /// </remarks>
@@ -135,18 +135,24 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
 
         memory.Work.Remove(record);
 
-        // Saved here rather than left to the end-of-command save in ApplyAsync: CancelSubtreeAsync can refuse with a
-        // NotSupportedException when the subtree still has scheduled-but-not-invoked work, and under the
-        // continue-with-incidents strategy that throw is absorbed into an incident rather than left to crash the
-        // process — so the end-of-command save would never run. Saving the removal now, before the possible throw,
-        // keeps the persisted ledger from claiming work this scope just tore down, and is what lets a completion
-        // callback that later arrives for the stranded activity find no live record and be discarded (see
+        // Saved here rather than left to the end-of-command save in ApplyAsync: cancelling the subtree runs arbitrary
+        // activity code (CancelSignal handlers, cancellation notifications), any of which can throw, and under the
+        // continue-with-incidents strategy such a throw is absorbed into an incident rather than left to crash the
+        // process — so the end-of-command save would never run. Saving the removal now, before the teardown, keeps
+        // the persisted ledger from claiming work this scope just tore down, and is what lets a completion callback
+        // that arrives for that work anyway find no live record and be discarded (see
         // BpmnScopeHost.OnWorkCompletedAsync) instead of being handed to the interpreter as real work.
         memory.SaveWork();
 
         if (BpmnWorkTeardown.FindContext(scopeContext.WorkflowExecutionContext, record.ChildContextId) is not { } childContext)
             return;
 
+        // On the scope-completion path (an armed listener retired when its scope completes), this call is measured
+        // redundant with Elsa's own CompleteActivityAsync, which already cancels a completed container's
+        // non-completed children: see BpmnEventSubprocessTests.MessageEventSubprocess_RetiresTheStillArmedListenerWhenTheScopeCompletes,
+        // where every assertion but the ledger removal above still holds with this call skipped. The ledger removal
+        // is this host's own contribution and is not redundant. The fault-teardown path (BpmnScopeHost, tearing down
+        // a claimed fault's sibling work) is a different call site and was not part of that measurement.
         await BpmnWorkTeardown.CancelSubtreeAsync(childContext, $"element '{cancel.ElementId}', {cancel.Reason}");
     }
 

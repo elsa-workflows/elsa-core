@@ -1,4 +1,5 @@
 using Elsa.ExternalAuthentication.Models;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Permissions;
 using Microsoft.Extensions.Configuration;
 
@@ -225,7 +226,7 @@ public class FinalLoginPathGuardOptions
     /// <summary>Require another normal method, local login, break glass, or privileged confirmation.</summary>
     public bool RequireRecoveryMethod { get; set; } = true;
     /// <summary>Permission required for a confirmed final-login-path override.</summary>
-    public string PrivilegedOverridePermission { get; set; } = ExternalAuthenticationPermissions.ProviderTrustUnsafe;
+    public string PrivilegedOverridePermission { get; set; } = $"{ExternalAuthenticationResourcePermissions.ProviderTrust}{Permission.Separator}{ExternalAuthenticationVerbs.Override}";
     /// <summary>Set by deployment configuration when a separately hosted break-glass method remains available.</summary>
     public bool HasBreakGlassAuthentication { get; set; }
 }

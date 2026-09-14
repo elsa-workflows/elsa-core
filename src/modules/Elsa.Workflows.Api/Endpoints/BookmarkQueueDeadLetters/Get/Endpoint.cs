@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Workflows.Api.Endpoints.BookmarkQueueDeadLetters;
 using Elsa.Workflows.Runtime;
@@ -13,7 +14,7 @@ internal class Endpoint(IBookmarkQueueDeadLetterStore store) : ElsaEndpointWitho
     public override void Configure()
     {
         Get("/bookmark-queue/dead-letters/{id}");
-        ConfigurePermissions(PermissionNames.ReadBookmarkQueueDeadLetters);
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.BookmarkQueueDeadLetters, CoreVerbs.View);
     }
 
     public override async Task HandleAsync(CancellationToken cancellationToken)

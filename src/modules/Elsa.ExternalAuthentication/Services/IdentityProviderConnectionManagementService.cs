@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Text.Json;
-using Elsa.Abstractions;
 using Elsa.Common;
+using Elsa.Authorization;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Notifications;
@@ -32,6 +32,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
     IEnumerable<ISecretBindingResolver> secretBindingResolvers,
     IEnumerable<IManagedSecretBindingWriter> managedSecretBindingWriters,
     IPermissionDelegationAuthorizer delegationAuthorizer,
+    IPermissionEvaluator permissionEvaluator,
     ConnectionRevisionCalculator revisionCalculator,
     ISystemClock clock,
     IOptions<ExternalAuthenticationOptions> options,
@@ -150,15 +151,11 @@ public sealed partial class IdentityProviderConnectionManagementService(
                 {
                     var current = await registry.GetAsync(targetTenantId, cancellationToken);
                     if (current.Connections.Any(x =>
-                            x.Ownership == ConnectionSourceOwnership.Configuration &&
-                            !x.IsShadowed &&
-                            x.Connection.IsEnabled &&
-                            !x.Connection.ArchivedAt.HasValue &&
-                            x.Connection.IsPreferred &&
+                            x is { Ownership: ConnectionSourceOwnership.Configuration, IsShadowed: false, Connection: { IsEnabled: true, ArchivedAt: null, IsPreferred: true } } &&
                             x.Validity != ConnectionValidity.Invalid &&
                             (!candidate.OverridesConfigurationConnection || !string.Equals(x.Connection.Key, candidate.Key, StringComparison.Ordinal))))
                         return new ManagementConnectionMutationResult.Conflict("configuration_preferred_connection");
-                    if (current.Connections.Any(x => x.Ownership == ConnectionSourceOwnership.Database && x.Connection.IsPreferred && !x.Connection.ArchivedAt.HasValue && x.Scope == ToScope(candidate.TenantId) && !string.Equals(x.Connection.Id, candidate.Id, StringComparison.Ordinal)))
+                    if (current.Connections.Any(x => x is { Ownership: ConnectionSourceOwnership.Database, Connection: { IsPreferred: true, ArchivedAt: null } } && x.Scope == ToScope(candidate.TenantId) && !string.Equals(x.Connection.Id, candidate.Id, StringComparison.Ordinal)))
                         return new ManagementConnectionMutationResult.Conflict("default_connection_conflict");
                 }
                 candidate.IsEnabled = true;
@@ -206,29 +203,29 @@ public sealed partial class IdentityProviderConnectionManagementService(
         ValidateEnvelope(connection, configuredOptions, errors);
 
         if (!adapters.TryGet(connection.AdapterType, out var adapter) || !IsAllowed(configuredOptions.AllowedAdapterTypes, connection.AdapterType))
-            errors.Add(new ConnectionValidationError("adapterType", "unavailable", "The selected adapter is not installed or is not allowed by this deployment."));
+            errors.Add(new("adapterType", "unavailable", "The selected adapter is not installed or is not allowed by this deployment."));
 
-        await ValidatePolicyAsync(connection, actor, configuredOptions, errors, cancellationToken);
+        await ValidatePolicyAsync(connection, actor, targetTenantId, configuredOptions, errors, cancellationToken);
         ValidateGrantSources(connection, configuredOptions, errors);
         if (connection.PermissionGrantSources.Count != 0)
         {
             var delegation = await delegationAuthorizer.AuthorizeAsync(actor, connection.PermissionGrantSources.ToArray(), cancellationToken);
             if (!delegation.IsAuthorized)
-                errors.Add(new ConnectionValidationError("permissionGrantSources", "delegation_denied", "The caller may not delegate one or more configured permissions."));
+                errors.Add(new("permissionGrantSources", "delegation_denied", "The caller may not delegate one or more configured permissions."));
         }
 
         if (adapter is null)
-            return new ConnectionValidationResult(false, errors, warnings);
+            return new(false, errors, warnings);
 
         await ApplySettingsMigrationAsync(connection, errors, cancellationToken);
         if (errors.Count != 0)
-            return new ConnectionValidationResult(false, errors, warnings);
+            return new(false, errors, warnings);
 
         var descriptor = adapter.Describe();
         ValidateSecretBindingFields(connection, descriptor, requireCompleteConfiguration, errors);
         ValidateSecretBindingsAreNotAdapterSettings(connection.AdapterSettings, descriptor, errors);
-        if (requireUnsafeConfirmation && UsesUnsafeSettings(connection.AdapterSettings, descriptor) && (!confirmUnsafeSettings || !HasPermission(actor, ExternalAuthenticationPermissions.ProviderTrustUnsafe)))
-            errors.Add(new ConnectionValidationError("adapterSettings", "unsafe_confirmation_required", "Unsafe provider trust settings require permission and explicit confirmation."));
+        if (requireUnsafeConfirmation && UsesUnsafeSettings(connection.AdapterSettings, descriptor) && (!confirmUnsafeSettings || !permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.ProviderTrust, ExternalAuthenticationVerbs.Override)))
+            errors.Add(new("adapterSettings", "unsafe_confirmation_required", "Unsafe provider trust settings require permission and explicit confirmation."));
 
         if (requireCompleteConfiguration)
         {
@@ -236,20 +233,20 @@ public sealed partial class IdentityProviderConnectionManagementService(
             foreach (var (name, state) in secretStates)
             {
                 if (!state.IsConfigured)
-                    errors.Add(new ConnectionValidationError($"secretBindings.{name}", "required", "A required secret binding is not configured."));
+                    errors.Add(new($"secretBindings.{name}", "required", "A required secret binding is not configured."));
                 else if (!state.IsResolvable)
-                    errors.Add(new ConnectionValidationError($"secretBindings.{name}", "unresolvable", "The secret binding cannot be resolved."));
+                    errors.Add(new($"secretBindings.{name}", "unresolvable", "The secret binding cannot be resolved."));
             }
         }
 
         if (errors.Count != 0 || allowIncompleteDraft)
-            return new ConnectionValidationResult(errors.Count == 0, errors, warnings);
+            return new(errors.Count == 0, errors, warnings);
 
         var effective = ToEffective(connection);
-        var adapterValidation = await adapter.ValidateAsync(new ConnectionValidationContext(effective, new Dictionary<string, ResolvedSecretBinding>(), clock), cancellationToken);
+        var adapterValidation = await adapter.ValidateAsync(new(effective, new Dictionary<string, ResolvedSecretBinding>(), clock), cancellationToken);
         errors.AddRange(adapterValidation.Errors);
         warnings.AddRange(adapterValidation.Warnings);
-        return new ConnectionValidationResult(errors.Count == 0 && adapterValidation.IsValid, errors, warnings);
+        return new(errors.Count == 0 && adapterValidation.IsValid, errors, warnings);
     }
 
     public ValueTask<IReadOnlyDictionary<string, SecretBindingState>> GetSecretBindingStatesAsync(IdentityProviderConnection connection, CancellationToken cancellationToken = default) => GetSecretStatesAsync(connection, cancellationToken);
@@ -262,9 +259,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
     public bool CanCreateConfigurationOverride() => options.Value.AllowConfigurationConnectionOverrides;
 
     public bool CanPromoteToConfigurationOverride(EffectiveIdentityProviderConnection connection) =>
-        connection.Ownership == ConnectionSourceOwnership.Database &&
-        connection.IsShadowed &&
-        !connection.Connection.ArchivedAt.HasValue &&
+        connection is { Ownership: ConnectionSourceOwnership.Database, IsShadowed: true, Connection.ArchivedAt: null } &&
         options.Value.AllowConfigurationConnectionOverrides;
 
     private async ValueTask<bool> IsBlockedByFinalLoginPathGuardAsync(IdentityProviderConnection existing, IdentityProviderConnection candidate, string targetTenantId, ClaimsPrincipal actor, bool confirmedOverride, CancellationToken cancellationToken)
@@ -279,8 +274,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
             var normalizedKey = ConnectionRevisionCalculator.NormalizeKey(candidate.Key);
             var effective = await registry.GetAsync(targetTenantId, cancellationToken);
             var displacedConfigurationConnection = effective.Connections.FirstOrDefault(x =>
-                x.Ownership == ConnectionSourceOwnership.Configuration &&
-                !x.IsShadowed &&
+                x is { Ownership: ConnectionSourceOwnership.Configuration, IsShadowed: false } &&
                 string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), normalizedKey, StringComparison.Ordinal));
             if (displacedConfigurationConnection is not null)
                 guardExisting = displacedConfigurationConnection.Connection;
@@ -407,7 +401,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
             x.Scope.Kind == ConnectionScopeKind.Host &&
             string.Equals(ConnectionRevisionCalculator.NormalizeKey(x.Connection.Key), key, StringComparison.Ordinal));
 
-        var rows = await store.FindAsync(new ConnectionFilter(), cancellationToken);
+        var rows = await store.FindAsync(new(), cancellationToken);
         if (rows.Items.Any(x =>
                 !string.Equals(x.Id, selfId, StringComparison.Ordinal) &&
                 x.TenantId != ConnectionScope.HostTenantId &&
@@ -425,7 +419,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
         foreach (var (name, binding) in connection.SecretBindings)
         {
             if (!_secretBindingResolvers.TryGetValue(binding.ResolverType, out var resolver))
-                states[name] = new SecretBindingState(false, false);
+                states[name] = new(false, false);
             else
                 states[name] = await resolver.GetStateAsync(binding, cancellationToken);
         }
@@ -443,7 +437,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
         }
         catch (InvalidOperationException)
         {
-            errors.Add(new ConnectionValidationError("adapterSettingsVersion", "migration_unavailable", "The adapter settings version is not compatible with the installed adapter."));
+            errors.Add(new("adapterSettingsVersion", "migration_unavailable", "The adapter settings version is not compatible with the installed adapter."));
         }
     }
 
@@ -474,49 +468,96 @@ public sealed partial class IdentityProviderConnectionManagementService(
     private static void ValidateEnvelope(IdentityProviderConnection connection, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors)
     {
         if (!configuredOptions.EnableDatabaseConnections)
-            errors.Add(new ConnectionValidationError("source", "disabled", "Database-owned connections are disabled by deployment configuration."));
+            errors.Add(new("source", "disabled", "Database-owned connections are disabled by deployment configuration."));
         if (connection.OverridesConfigurationConnection && !configuredOptions.AllowConfigurationConnectionOverrides)
-            errors.Add(new ConnectionValidationError("overridesConfigurationConnection", "not_allowed", "This deployment does not allow database connections to override configuration-owned connections."));
+            errors.Add(new("overridesConfigurationConnection", "not_allowed", "This deployment does not allow database connections to override configuration-owned connections."));
         if (string.IsNullOrWhiteSpace(connection.Key) || connection.Key.Length > 128 || connection.Key.Any(char.IsWhiteSpace))
-            errors.Add(new ConnectionValidationError("key", "invalid", "Connection keys must be non-empty lowercase URL-safe tokens up to 128 characters."));
+            errors.Add(new("key", "invalid", "Connection keys must be non-empty lowercase URL-safe tokens up to 128 characters."));
         else if (!ConnectionKeyPattern().IsMatch(connection.Key))
-            errors.Add(new ConnectionValidationError("key", "invalid", "Connection keys must use lowercase letters, digits, and interior hyphens only."));
+            errors.Add(new("key", "invalid", "Connection keys must use lowercase letters, digits, and interior hyphens only."));
         if (string.IsNullOrWhiteSpace(connection.DisplayName) || connection.DisplayName.Trim().Length > 256)
-            errors.Add(new ConnectionValidationError("displayName", "invalid", "Display name is required and may not exceed 256 characters."));
+            errors.Add(new("displayName", "invalid", "Display name is required and may not exceed 256 characters."));
         if (connection.AdapterSettingsVersion <= 0)
-            errors.Add(new ConnectionValidationError("adapterSettingsVersion", "invalid", "Adapter settings version must be positive."));
+            errors.Add(new("adapterSettingsVersion", "invalid", "Adapter settings version must be positive."));
         if (!Enum.IsDefined(connection.UpstreamLogoutMode))
-            errors.Add(new ConnectionValidationError("upstreamLogoutMode", "invalid", "Upstream logout mode is invalid."));
+            errors.Add(new("upstreamLogoutMode", "invalid", "Upstream logout mode is invalid."));
         if (!IsValidScope(connection.TenantId))
-            errors.Add(new ConnectionValidationError("scope", "host_scope_required", "Identity provider connections are managed host-wide in this version."));
+            errors.Add(new("scope", "host_scope_required", "Identity provider connections are managed host-wide in this version."));
         if (connection.ClaimProjection.MaximumClaimCount < 0 || connection.ClaimProjection.MaximumValueLength < 0 || connection.ClaimProjection.MaximumTotalBytes < 0 ||
             connection.ClaimProjection.MaximumClaimCount > configuredOptions.Claims.MaximumClaimCount || connection.ClaimProjection.MaximumValueLength > configuredOptions.Claims.MaximumValueLength || connection.ClaimProjection.MaximumTotalBytes > configuredOptions.Claims.MaximumTotalBytes)
-            errors.Add(new ConnectionValidationError("claimProjection", "invalid", "Claim projection limits exceed deployment bounds."));
+            errors.Add(new("claimProjection", "invalid", "Claim projection limits exceed deployment bounds."));
         if (!connection.ClaimProjection.RedactedClaimTypes.IsSubsetOf(connection.ClaimProjection.AllowedClaimTypes))
-            errors.Add(new ConnectionValidationError("claimProjection.redactedClaimTypes", "invalid", "Redacted claim types must also be allowed claim types."));
+            errors.Add(new("claimProjection.redactedClaimTypes", "invalid", "Redacted claim types must also be allowed claim types."));
     }
 
-    private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
+    private async ValueTask ValidatePolicyAsync(IdentityProviderConnection connection, ClaimsPrincipal actor, string targetTenantId, ExternalAuthenticationOptions configuredOptions, ICollection<ConnectionValidationError> errors, CancellationToken cancellationToken)
     {
+        // The roles the candidate would actually assign. A policy that does not create users assigns none,
+        // and so does no policy at all -- which is what makes switching away from, or clearing, a stored
+        // create-user fallback a change rather than a no-op.
+        var defaultRoleIds = connection.UnlinkedPolicy is { } candidate && UsesCreateUserFallback(candidate)
+            ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(candidate.Settings)
+            : [];
+
+        // Two independent checks, reported separately because they answer different questions. The
+        // permission asks whether this actor may decide what auto-created users receive; the subset rule
+        // asks whether these particular roles stay within what the actor already holds. Only the second
+        // existed, which left the sibling resource guarded on the write path while the roles inside it
+        // were not -- see #7977.
+        //
+        // Gated on the effective set *changing*, not on it being non-empty, and evaluated before the
+        // null-policy early return. Validation runs on every update, on enabling a connection, and on
+        // read-only validate, so keying off presence would stop an administrator without this permission
+        // from editing an unrelated field once anyone had set roles. Evaluating it only for non-null
+        // policies would be worse: omitting unlinkedPolicy from an update clears a stored fallback and
+        // drops its role assignments, the same decision as switching it to 'reject'.
+        //
+        // The cheap in-memory permission check goes first: the unchanged-roles comparison rebuilds the
+        // effective registry, and its answer is irrelevant for an actor who holds the permission.
+        if (!permissionEvaluator.HasPermission(actor, ExternalAuthenticationResourcePermissions.PolicyDefaultRoles, CoreVerbs.Update)
+            && !await DefaultRolesAreUnchangedAsync(connection, targetTenantId, defaultRoleIds, cancellationToken))
+            errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "Changing the default roles for an unlinked identity policy requires the policy default roles update permission."));
+
         if (connection.UnlinkedPolicy is not { } policy)
             return;
         if (!configuredOptions.UnlinkedIdentityPolicy.AllowDatabaseConnectionOverride)
-            errors.Add(new ConnectionValidationError("unlinkedPolicy", "not_allowed", "This deployment does not allow database connection policy overrides."));
+            errors.Add(new("unlinkedPolicy", "not_allowed", "This deployment does not allow database connection policy overrides."));
         else if (policy.SettingsVersion <= 0 || !policies.TryGet(policy.Type, out _) || !IsAllowed(configuredOptions.AllowedUnlinkedIdentityPolicyTypes, policy.Type))
-            errors.Add(new ConnectionValidationError("unlinkedPolicy", "unavailable", "The selected unlinked identity policy is not installed or allowed."));
+            errors.Add(new("unlinkedPolicy", "unavailable", "The selected unlinked identity policy is not installed or allowed."));
         else
         {
-            if (UsesCreateUserFallback(policy) &&
-                !await roleAuthorizationService.CanAssignRolesAsync(actor, Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(policy.Settings), cancellationToken))
-                errors.Add(new ConnectionValidationError("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
+            // The subset rule only has something to say about roles actually being assigned.
+            if (UsesCreateUserFallback(policy) && !await roleAuthorizationService.CanAssignRolesAsync(actor, defaultRoleIds, cancellationToken))
+                errors.Add(new("unlinkedPolicy.defaultRoleIds", "forbidden", "The selected default roles are unavailable or grant permissions the actor cannot delegate."));
 
             if (string.Equals(policy.Type, Policies.MatchExternalUserUnlinkedIdentityPolicy.PolicyType, StringComparison.Ordinal) &&
                 (!TryGetMatcherSelection(policy.Settings, out var matcherType, out var matcherSettingsVersion) ||
                  !IsAllowed(configuredOptions.AllowedExternalUserMatcherTypes, matcherType) ||
                  !matchers.TryGet(matcherType, out _) ||
                  matchers.ListDescriptors().All(x => !string.Equals(x.Type, matcherType, StringComparison.Ordinal) || x.SettingsVersion != matcherSettingsVersion)))
-                errors.Add(new ConnectionValidationError("unlinkedPolicy.matcher", "unavailable", "The selected external user matcher is not installed or allowed."));
+                errors.Add(new("unlinkedPolicy.matcher", "unavailable", "The selected external user matcher is not installed or allowed."));
         }
+    }
+
+    /// <summary>Whether <paramref name="candidateRoleIds"/> matches what the connection already assigns.</summary>
+    /// <remarks>
+    /// The baseline comes from the registry rather than the database store, because a configuration-owned
+    /// connection has no database record: looking only there made its configured roles read as newly assigned
+    /// on every validation, so a caller with view access could not validate one at all. The registry answers
+    /// for both ownerships, which is the question being asked -- what does this connection assign today.
+    /// </remarks>
+    private async ValueTask<bool> DefaultRolesAreUnchangedAsync(IdentityProviderConnection connection, string targetTenantId, IReadOnlyCollection<string> candidateRoleIds, CancellationToken cancellationToken)
+    {
+        var existing = string.IsNullOrWhiteSpace(connection.Id)
+            ? null
+            : (await registry.FindByIdAsync(targetTenantId, connection.Id, cancellationToken))?.Connection
+              ?? await store.FindByIdAsync(connection.Id, cancellationToken);
+        var storedRoleIds = existing?.UnlinkedPolicy is { } storedPolicy && UsesCreateUserFallback(storedPolicy)
+            ? Policies.CreateUserUnlinkedIdentityPolicy.ReadRoleIds(storedPolicy.Settings)
+            : [];
+
+        // Order is not meaningful in a role set, so a reordering is not a change.
+        return storedRoleIds.OrderBy(x => x, StringComparer.Ordinal).SequenceEqual(candidateRoleIds.OrderBy(x => x, StringComparer.Ordinal), StringComparer.Ordinal);
     }
 
     private static bool UsesCreateUserFallback(PolicySelection policy) =>
@@ -548,9 +589,9 @@ public sealed partial class IdentityProviderConnectionManagementService(
         foreach (var source in connection.PermissionGrantSources)
         {
             if (source.SettingsVersion <= 0 || !grantSources.TryGet(source.Type, out _) || !IsAllowed(configuredOptions.AllowedPermissionGrantSourceTypes, source.Type))
-                errors.Add(new ConnectionValidationError("permissionGrantSources", "unavailable", "A selected permission grant source is not installed or allowed."));
+                errors.Add(new("permissionGrantSources", "unavailable", "A selected permission grant source is not installed or allowed."));
             if (!orders.Add(source.Order))
-                errors.Add(new ConnectionValidationError("permissionGrantSources", "duplicate_order", "Permission grant source orders must be unique."));
+                errors.Add(new("permissionGrantSources", "duplicate_order", "Permission grant source orders must be unique."));
         }
     }
 
@@ -559,12 +600,12 @@ public sealed partial class IdentityProviderConnectionManagementService(
         var secretFields = descriptor.Fields.Where(x => x.IsSecretBinding).ToDictionary(x => x.Name, StringComparer.Ordinal);
         foreach (var name in connection.SecretBindings.Keys)
             if (!secretFields.ContainsKey(name))
-                errors.Add(new ConnectionValidationError($"secretBindings.{name}", "undeclared", "The adapter does not declare this secret binding field."));
+                errors.Add(new($"secretBindings.{name}", "undeclared", "The adapter does not declare this secret binding field."));
         if (!requireCompleteConfiguration)
             return;
         foreach (var field in secretFields.Values.Where(x => x.IsRequired))
             if (!connection.SecretBindings.ContainsKey(field.Name))
-                errors.Add(new ConnectionValidationError($"secretBindings.{field.Name}", "required", "A required secret binding is missing."));
+                errors.Add(new($"secretBindings.{field.Name}", "required", "A required secret binding is missing."));
     }
 
     private static void ValidateSecretBindingsAreNotAdapterSettings(JsonElement settings, ExternalAuthenticationAdapterDescriptor descriptor, ICollection<ConnectionValidationError> errors)
@@ -574,7 +615,7 @@ public sealed partial class IdentityProviderConnectionManagementService(
 
         foreach (var field in descriptor.Fields.Where(x => x.IsSecretBinding))
             if (settings.TryGetProperty(field.Name, out _))
-                errors.Add(new ConnectionValidationError($"adapterSettings.{field.Name}", "secret_binding_required", "Secret fields must be configured through Secret Bindings, not adapter settings."));
+                errors.Add(new($"adapterSettings.{field.Name}", "secret_binding_required", "Secret fields must be configured through Secret Bindings, not adapter settings."));
     }
 
     private static bool UsesUnsafeSettings(JsonElement settings, ExternalAuthenticationAdapterDescriptor descriptor)
@@ -609,12 +650,11 @@ public sealed partial class IdentityProviderConnectionManagementService(
         left.ValueKind == right.ValueKind && string.Equals(left.GetRawText(), right.GetRawText(), StringComparison.Ordinal);
 
     private static EffectiveIdentityProviderConnection ToEffective(IdentityProviderConnection connection) => new(connection, ConnectionSourceOwnership.Database, ToScope(connection.TenantId), ConnectionValidity.Unknown, false, DatabaseIdentityProviderConnectionSource.SourceName);
-    private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new ConnectionScope(ConnectionScopeKind.Tenant, tenantId);
+    private static ConnectionScope ToScope(string tenantId) => tenantId == ConnectionScope.HostTenantId ? ConnectionScope.Host : tenantId.Length == 0 ? ConnectionScope.DefaultTenant : new(ConnectionScopeKind.Tenant, tenantId);
     private static bool CanMutate(string connectionTenantId, string targetTenantId) => connectionTenantId == ConnectionScope.HostTenantId || string.Equals(connectionTenantId, targetTenantId, StringComparison.Ordinal);
     private static bool IsValidScope(string tenantId) => tenantId == ConnectionScope.HostTenantId;
     private static string NormalizeScopeTenantId(string requestedTenantId, string fallback) => requestedTenantId is null ? fallback : requestedTenantId.Trim();
     private static bool IsAllowed(ICollection<string> allowedTypes, string type) => allowedTypes.Count == 0 || allowedTypes.Contains(type, StringComparer.Ordinal);
-    private static bool HasPermission(ClaimsPrincipal actor, string permission) => actor.FindAll(PermissionNames.ClaimType).Any(x => x.Value == PermissionNames.All || x.Value == permission);
     private static ConnectionLifecycle GetLifecycle(IdentityProviderConnection connection) => connection.ArchivedAt.HasValue ? ConnectionLifecycle.Archived : connection.IsEnabled ? ConnectionLifecycle.Enabled : ConnectionLifecycle.Disabled;
     private static bool Matches(EffectiveIdentityProviderConnection connection, ConnectionFilter filter) =>
         (filter.Ownership is null || filter.Ownership == connection.Ownership) &&

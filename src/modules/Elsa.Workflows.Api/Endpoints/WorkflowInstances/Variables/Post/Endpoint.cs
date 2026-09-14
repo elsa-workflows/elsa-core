@@ -1,3 +1,4 @@
+using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Models;
 using Elsa.Workflows.Management;
@@ -13,7 +14,7 @@ internal class List(IWorkflowInstanceVariableManager workflowInstanceVariableMan
     public override void Configure()
     {
         Post("/workflow-instances/{id}/variables");
-        ConfigurePermissions("write:workflow-instances");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Instances, CoreVerbs.Write);
     }
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)

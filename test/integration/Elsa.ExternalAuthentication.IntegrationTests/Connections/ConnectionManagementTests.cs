@@ -1,3 +1,5 @@
+using Elsa.Authorization;
+using Elsa.Extensions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -21,9 +23,11 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using Elsa.ExternalAuthentication.IntegrationTests.Fixtures;
 
 namespace Elsa.ExternalAuthentication.IntegrationTests.Connections;
 
+[Collection(nameof(EndpointSecurityCollection))]
 public class ConnectionManagementTests : IAsyncLifetime
 {
     private WebApplication? _app;
@@ -40,6 +44,15 @@ public class ConnectionManagementTests : IAsyncLifetime
     private IExternalAuthenticationSessionStore _sessions = null!;
     private INotificationSender _notifications = null!;
     private bool _unsafePermissionGranted = true;
+
+    /// <summary>
+    /// Overrides the acting principal's permissions for one test.
+    /// </summary>
+    /// <remarks>
+    /// The default is all-or-nothing, which cannot express "may manage policies but may not decide default
+    /// roles" -- the separation of duties #7977 is about. A test that needs that distinction sets this.
+    /// </remarks>
+    private string[]? _permissions;
     private string _tenantId = "tenant-a";
 
     public async Task InitializeAsync()
@@ -54,6 +67,9 @@ public class ConnectionManagementTests : IAsyncLifetime
             options.Filter = endpoint => endpoint.Namespace == "Elsa.ExternalAuthentication.Endpoints.Connections";
         });
         builder.Services.AddAuthorization();
+        // This fixture wires the module's services by hand rather than through
+        // AddExternalAuthenticationServices, so it has to register the permission evaluator the way a host does.
+        builder.Services.AddElsaAuthorization();
         builder.Services.Configure<ExternalAuthenticationOptions>(options =>
         {
             options.EnableDatabaseConnections = true;
@@ -101,7 +117,8 @@ public class ConnectionManagementTests : IAsyncLifetime
         _app = builder.Build();
         _app.Use(async (context, next) =>
         {
-            context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim(PermissionNames.ClaimType, _unsafePermissionGranted ? PermissionNames.All : ExternalAuthenticationPermissions.ConnectionsUpdate)], "test"));
+            var granted = _permissions ?? [_unsafePermissionGranted ? PermissionNames.All : $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}"];
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(granted.Select(x => new Claim(PermissionNames.ClaimType, x)), "test"));
             await next(context);
         });
         _app.UseAuthorization();
@@ -633,6 +650,229 @@ public class ConnectionManagementTests : IAsyncLifetime
         Assert.Contains("validation_failed", await response.Content.ReadAsStringAsync());
         Assert.Equal(new[] { "workflow-user" }, _roleAuthorizationService.LastRequestedRoleIds);
     }
+
+    [Fact]
+    public async Task SettingDefaultRolesRequiresThePolicyDefaultRolesPermission()
+    {
+        // The actor may create connections and manage policies, but not decide what auto-created users get.
+        // Before #7977 that was inexpressible: policies:update guarded the policy while the roles inside it
+        // were guarded only by the subset rule, so any connection administrator could set them.
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-guard", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task HoldingThePolicyDefaultRolesPermissionClearsThatObjection()
+    {
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}",
+            $"{ExternalAuthenticationResourcePermissions.PolicyDefaultRoles}:{CoreVerbs.Update}"
+        ];
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-allowed", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        // The subset rule is a separate question and still applies; only this objection must be gone.
+        Assert.DoesNotContain("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task LeavingStoredDefaultRolesAloneNeedsNoPermission()
+    {
+        // Validation runs on every update, on enabling a connection, and on read-only validate. Keying the
+        // permission off the roles being present rather than changing meant that once anyone set default
+        // roles, an administrator without it could no longer edit an unrelated field on that connection.
+        var created = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-untouched", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var id = (await created.Content.ReadFromJsonAsync<ConnectionDocument>())!.Id;
+        var revision = created.Headers.ETag!.Tag;
+
+        // Now act as someone who may edit connections and policies, but not decide default roles.
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        {
+            Content = JsonContent.Create(CreateRequest("roles-untouched", displayName: "Renamed", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")))
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", revision);
+
+        var response = await _client.SendAsync(request);
+
+        // Asserting the status, not just the absence of a message: DoesNotContain alone passes for any
+        // failure response, which would make this test vacuous exactly when it matters.
+        Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    [Fact]
+    public async Task AbandoningACreateUserPolicyStillCountsAsChangingDefaultRoles()
+    {
+        // Turning off a stored create-user fallback removes its automatic role assignments. That is a
+        // decision about what auto-created users receive, so it needs the same permission as editing the
+        // list -- checking only create-user candidates would have let it through unguarded. Expressed here by
+        // changing noMatchAction rather than the policy type, because the test registry only knows match-user.
+        var created = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-abandoned", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var id = (await created.Content.ReadFromJsonAsync<ConnectionDocument>())!.Id;
+        var revision = created.Headers.ETag!.Tag;
+
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        {
+            Content = JsonContent.Create(CreateRequest("roles-abandoned", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "reject")))
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", revision);
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task OmittingAStoredCreateUserPolicyStillCountsAsChangingDefaultRoles()
+    {
+        // The abandonment guard above works by switching noMatchAction, but a PUT can drop the stored
+        // fallback more quietly: omit unlinkedPolicy altogether. Normalization does not carry the stored
+        // policy forward, so a null candidate clears it -- and its role assignments with it. That is the
+        // same decision as switching to 'reject', so it needs the same permission.
+        var (id, revision) = await CreateConnectionAsync(
+            CreateRequest("roles-omitted", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        _permissions = UpdateWithoutDefaultRolesPermission;
+
+        var response = await PutConnectionAsync(id, revision, CreateRequest("roles-omitted"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task IntroducingACreateUserPolicyOnAPolicylessConnectionRequiresThePermission()
+    {
+        // The reverse transition: the stored connection has no policy, so the baseline role set is empty,
+        // and an update that introduces a create-user fallback with roles is deciding what auto-created
+        // users receive.
+        var (id, revision) = await CreateConnectionAsync(CreateRequest("roles-introduced"));
+
+        _permissions = UpdateWithoutDefaultRolesPermission;
+
+        var response = await PutConnectionAsync(id, revision,
+            CreateRequest("roles-introduced", unlinkedPolicy: CreateMatcherPolicy("allowed-matcher", "create-user")));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task ClearingAPolicyThatAssignsNoRolesNeedsNoPermission()
+    {
+        // Clearing a create-user fallback whose role list is already empty changes nothing about what
+        // auto-created users receive, so the guard must stay quiet -- it keys off the effective set
+        // changing, not off the policy disappearing.
+        var (id, revision) = await CreateConnectionAsync(
+            CreateRequest("no-roles-cleared", unlinkedPolicy: CreateMatcherPolicyWithoutDefaultRoles("allowed-matcher", "create-user")));
+
+        _permissions = UpdateWithoutDefaultRolesPermission;
+
+        var response = await PutConnectionAsync(id, revision, CreateRequest("no-roles-cleared"));
+
+        Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}: {await response.Content.ReadAsStringAsync()}");
+    }
+
+    /// <summary>May edit connections and policies, but not decide default roles -- the #7977 separation.</summary>
+    private static readonly string[] UpdateWithoutDefaultRolesPermission =
+    [
+        $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Update}",
+        $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+    ];
+
+    private async Task<(string Id, string Revision)> CreateConnectionAsync(object request)
+    {
+        var created = await _client!.PostAsJsonAsync("/external-authentication/connections", request);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        return ((await created.Content.ReadFromJsonAsync<ConnectionDocument>())!.Id, created.Headers.ETag!.Tag);
+    }
+
+    private async Task<HttpResponseMessage> PutConnectionAsync(string id, string revision, object request)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Put, $"/external-authentication/connections/{id}")
+        {
+            Content = JsonContent.Create(request)
+        };
+        message.Headers.TryAddWithoutValidation("If-Match", revision);
+        return await _client!.SendAsync(message);
+    }
+
+    [Fact]
+    public async Task ValidatingAConfigurationOwnedConnectionDoesNotReadItsRolesAsNew()
+    {
+        // A configuration-owned connection has no database row, so taking the baseline from the database
+        // store alone made its configured roles look newly assigned every time. Validation only needs
+        // connections:view, so a caller with exactly that could not validate one at all.
+        var configuration = ConfigurationConnection("config-roles", isEnabled: true);
+        configuration.UnlinkedPolicy = CreateMatcherPolicy("allowed-matcher", "create-user");
+        _registry.ConfigurationConnection = configuration;
+
+        _permissions = [$"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.View}"];
+
+        var response = await _client!.PostAsync($"/external-authentication/connections/{configuration.Id}/validate", null);
+
+        Assert.DoesNotContain("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task APolicyThatSetsNoDefaultRolesNeedsNoExtraPermission()
+    {
+        // Creating with none decides nothing, so it needs nothing. Changing a stored set -- including
+        // clearing it -- is deciding, and is covered by the permission.
+        _permissions =
+        [
+            $"{ExternalAuthenticationResourcePermissions.Connections}:{CoreVerbs.Create}",
+            $"{ExternalAuthenticationResourcePermissions.Policies}:{CoreVerbs.Update}"
+        ];
+
+        var response = await _client!.PostAsJsonAsync(
+            "/external-authentication/connections",
+            CreateRequest("roles-empty", unlinkedPolicy: CreateMatcherPolicyWithoutDefaultRoles("allowed-matcher", "create-user")));
+
+        Assert.DoesNotContain("policy default roles update permission", await response.Content.ReadAsStringAsync());
+    }
+
+    private static PolicySelection CreateMatcherPolicyWithoutDefaultRoles(string matcherType, string noMatchAction) => new(
+        "match-user",
+        1,
+        JsonSerializer.SerializeToElement(new
+        {
+            matcher = new { type = matcherType, settingsVersion = 1, settings = new { } },
+            noMatchAction,
+            defaultRoleIds = Array.Empty<string>()
+        }));
 
     private static object CreateRequest(string key, object? scope = null, string displayName = "Contoso", object? settings = null, bool confirmUnsafeSettings = false, object? unlinkedPolicy = null, string upstreamLogoutMode = "disabled", bool overridesConfigurationConnection = false) => new
     {

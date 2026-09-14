@@ -33,7 +33,7 @@ public sealed class ConfigureExternalAuthenticationRateLimiterOptions(IOptions<E
     {
         options.AddPolicy(name, context => RateLimitPartition.GetFixedWindowLimiter(
             GetPartitionKey(context, partitionStrategy),
-            _ => new FixedWindowRateLimiterOptions
+            _ => new()
             {
                 PermitLimit = rule.PermitLimit,
                 Window = rule.Window,

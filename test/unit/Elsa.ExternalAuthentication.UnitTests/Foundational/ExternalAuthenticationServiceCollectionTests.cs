@@ -1,3 +1,5 @@
+using Elsa.Permissions;
+using Elsa.Authorization;
 using Elsa.Common;
 using Elsa.ExternalAuthentication.Contracts;
 using Elsa.ExternalAuthentication.Models;
@@ -7,6 +9,7 @@ using Elsa.ExternalAuthentication.Permissions;
 using Elsa.ExternalAuthentication.Providers;
 using Elsa.ExternalAuthentication.Services;
 using Elsa.ExternalAuthentication.Stores.InMemory;
+using Elsa.Identity.Contracts;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -39,8 +42,9 @@ public class ExternalAuthenticationServiceCollectionTests
         Assert.IsType<InMemoryPreviewResultStore>(serviceProvider.GetRequiredService<IPreviewResultStore>());
         Assert.IsType<InMemoryConnectionObservationStore>(serviceProvider.GetRequiredService<IConnectionObservationStore>());
         Assert.IsType<InMemoryConnectionRegistryVersionStore>(serviceProvider.GetRequiredService<IConnectionRegistryVersionStore>());
-        Assert.Contains(serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()), x => x.Name == ExternalAuthenticationPermissions.ConnectionsRead);
-        Assert.Contains(serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()), x => x.Name == ExternalAuthenticationPermissions.RolesAssign);
+        var descriptors = serviceProvider.GetServices<IPermissionDescriptorProvider>().SelectMany(x => x.GetDescriptors()).ToArray();
+        Assert.Contains(descriptors, x => x.Resource == ExternalAuthenticationResourcePermissions.Connections && x.Supports(CoreVerbs.View));
+        Assert.Contains(descriptors, x => x.Resource == ExternalAuthenticationResourcePermissions.PolicyDefaultRoles && x.Supports(CoreVerbs.Update));
         Assert.NotNull(serviceProvider.GetRequiredService<IOptions<RateLimiterOptions>>().Value);
         Assert.Contains(serviceProvider.GetServices<IConfigureOptions<RateLimiterOptions>>(), x => x.GetType().Name == "ConfigureExternalAuthenticationRateLimiterOptions");
     }
@@ -58,5 +62,24 @@ public class ExternalAuthenticationServiceCollectionTests
 
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(IProviderHttpClient) && descriptor.ImplementationFactory is not null);
         Assert.Contains(services, descriptor => descriptor.ServiceType == typeof(OpenIdConnectExternalAuthenticationAdapter));
+    }
+
+    [Fact]
+    public void RoleDeletionContributorResolvesWhenIdentityIsNotRegistered()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ISystemClock>(new TestSystemClock(DateTimeOffset.UnixEpoch));
+        services.AddExternalAuthenticationServices(options =>
+        {
+            options.AllowedUnlinkedIdentityPolicyTypes.Clear();
+            options.AllowedPermissionGrantSourceTypes.Clear();
+        });
+
+        using var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using var scope = serviceProvider.CreateScope();
+
+        var contributor = Assert.Single(scope.ServiceProvider.GetServices<IRoleDeletionDependencyContributor>());
+        Assert.IsType<ExternalAuthenticationRoleDeletionDependencyContributor>(contributor);
+        Assert.Empty(scope.ServiceProvider.GetServices<IRoleStore>());
     }
 }

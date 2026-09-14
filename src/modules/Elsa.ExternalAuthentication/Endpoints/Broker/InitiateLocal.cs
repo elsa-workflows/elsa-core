@@ -3,9 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.ExternalAuthentication.Constants;
 using Elsa.ExternalAuthentication.Models;
 using Elsa.ExternalAuthentication.Services;
-using FastEndpoints;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Elsa.ExternalAuthentication.Endpoints.Broker;
 
@@ -26,7 +24,7 @@ internal sealed class InitiateLocal(IExternalAuthenticationBroker broker, ITenan
             return;
         }
 
-        var result = await broker.InitiateLocalAsync(new LocalBrokerAuthorizationRequest(
+        var result = await broker.InitiateLocalAsync(new(
             request.ClientId ?? string.Empty, redirectUri, request.ResponseType ?? string.Empty, request.CodeChallenge ?? string.Empty,
             request.CodeChallengeMethod ?? string.Empty, request.ReturnPath ?? string.Empty, request.Username ?? string.Empty,
             request.Password ?? string.Empty, request.State), tenantAccessor.TenantId, cancellationToken);

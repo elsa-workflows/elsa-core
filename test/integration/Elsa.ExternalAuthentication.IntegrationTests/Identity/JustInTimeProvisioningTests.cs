@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using System.Text.Json;
 using Elsa.Common.Services;
 using Elsa.Common;
@@ -74,7 +75,7 @@ public class JustInTimeProvisioningTests
     [Fact]
     public async Task InMemoryProvisionerCreatesALinkForAnExistingUserOnlyInTheTargetTenant()
     {
-        var userStore = new MemoryUserStore(new MemoryStore<User>());
+        var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         var user = new User { Id = "user-a", Name = "alice", TenantId = "tenant-a" };
         await userStore.SaveAsync(user);
         var provisioner = CreateInMemoryProvisioner(userStore);
@@ -92,7 +93,7 @@ public class JustInTimeProvisioningTests
     [Fact]
     public async Task InMemoryProvisionerRejectsLinkingAUserFromAnotherTenant()
     {
-        var userStore = new MemoryUserStore(new MemoryStore<User>());
+        var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-b"));
         await userStore.SaveAsync(new User { Id = "user-b", Name = "bob", TenantId = "tenant-b" });
         var provisioner = CreateInMemoryProvisioner(userStore);
 
@@ -102,7 +103,7 @@ public class JustInTimeProvisioningTests
     [Fact]
     public async Task InMemoryProvisionerRetriesAGeneratedUserNameCollision()
     {
-        var userStore = new MemoryUserStore(new MemoryStore<User>());
+        var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         await userStore.SaveAsync(new User { Id = "existing", Name = "external-collision", TenantId = "tenant-a" });
         var provisioner = CreateInMemoryProvisioner(userStore, new SequenceIdentityGenerator("collision", "available", "user-1", "link-1"));
 
@@ -119,8 +120,8 @@ public class JustInTimeProvisioningTests
     [Fact]
     public async Task InMemoryProvisionerAssignsConfiguredDefaultRolesToNewUser()
     {
-        var userStore = new MemoryUserStore(new MemoryStore<User>());
-        var roleStore = new MemoryRoleStore(new MemoryStore<Role>());
+        var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
+        var roleStore = new MemoryRoleStore(new MemoryStore<Role>(), new TestTenantAccessor("tenant-a"));
         await roleStore.AddAsync(new Role { Id = "admin", Name = "Administrator", TenantId = "tenant-a", Permissions = ["*"] });
         var provisioner = CreateInMemoryProvisioner(userStore, roleProvider: new StoreBasedRoleProvider(roleStore));
 
@@ -134,7 +135,7 @@ public class JustInTimeProvisioningTests
     [Fact]
     public async Task InMemoryProvisionerTreatsEachExternalIdentityTupleAsDistinct()
     {
-        var userStore = new MemoryUserStore(new MemoryStore<User>());
+        var userStore = new MemoryUserStore(new MemoryStore<User>(), new TestTenantAccessor("tenant-a"));
         var provisioner = CreateInMemoryProvisioner(userStore);
         var first = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest());
         var differentIssuer = await provisioner.CreateLinkOrGetExistingAsync(CreateProvisioningRequest(issuer: "https://issuer-two.example"));
@@ -153,6 +154,7 @@ public class JustInTimeProvisioningTests
         services.AddSingleton<ISystemClock>(new FixedSystemClock(new DateTimeOffset(2026, 7, 24, 12, 0, 0, TimeSpan.Zero)));
         services.AddSingleton<IExternalAuthenticationHandleHasher, HmacExternalAuthenticationHandleHasher>();
         services.AddSingleton<InMemoryExternalIdentityProvisionerState>();
+        services.AddSingleton<Elsa.Common.Multitenancy.ITenantAccessor>(new TestTenantAccessor("tenant-a"));
         services.AddScoped<IUserStore, MemoryUserStore>();
         services.AddScoped<IUserProvider, StoreBasedUserProvider>();
         services.AddSingleton<IRoleProvider>(NSubstitute.Substitute.For<IRoleProvider>());

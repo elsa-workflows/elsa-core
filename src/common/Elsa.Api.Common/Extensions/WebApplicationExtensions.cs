@@ -129,7 +129,7 @@ public static class WebApplicationExtensions
     {
         var value = routePrefix.Trim().Trim('/');
 
-        return string.IsNullOrEmpty(value) ? PathString.Empty : new PathString("/" + value);
+        return string.IsNullOrEmpty(value) ? PathString.Empty : new("/" + value);
     }
 
     private static void ConfigureWorkflowsApi(Config config, string routePrefix)
@@ -151,7 +151,7 @@ public static class WebApplicationExtensions
         if (originalEndpoint is RouteEndpoint routeEndpoint)
             return new RouteEndpoint(routeEndpoint.RequestDelegate ?? NotFoundRequestDelegate, routeEndpoint.RoutePattern, routeEndpoint.Order, metadata, routeEndpoint.DisplayName ?? displayName);
 
-        return new Endpoint(originalEndpoint?.RequestDelegate ?? NotFoundRequestDelegate, metadata, originalEndpoint?.DisplayName ?? displayName);
+        return new(originalEndpoint?.RequestDelegate ?? NotFoundRequestDelegate, metadata, originalEndpoint?.DisplayName ?? displayName);
     }
 
     private static ValueTask<object?> DeserializeRequestAsync(HttpRequest httpRequest, Type modelType, JsonSerializerContext? serializerContext, CancellationToken cancellationToken)

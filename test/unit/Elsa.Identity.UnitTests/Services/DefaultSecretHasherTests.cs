@@ -1,3 +1,4 @@
+using Elsa.Testing.Shared.Multitenancy;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -120,7 +121,7 @@ public class DefaultSecretHasherTests
     [Fact]
     public async Task ValidateAsync_RehashesLegacyUserPassword()
     {
-        var userStore = new MemoryUserStore(new MemoryStore<User>());
+        var userStore = new MemoryUserStore(new MemoryStore<User>(), TestTenantAccessor.Default);
         var legacyHash = CreateLegacyHash("secret");
         await userStore.SaveAsync(new User
         {
@@ -146,7 +147,7 @@ public class DefaultSecretHasherTests
     {
         var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
         var apiKey = apiKeyGenerator.Generate("client-1");
-        var applicationStore = new MemoryApplicationStore(new MemoryStore<Application>());
+        var applicationStore = new MemoryApplicationStore(new MemoryStore<Application>(), TestTenantAccessor.Default);
         var legacyHash = CreateLegacyHash(apiKey);
         await applicationStore.SaveAsync(new Application
         {

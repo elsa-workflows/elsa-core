@@ -50,6 +50,38 @@ public class BpmnCompositionTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "A BPMN process composed into a flowchart and connected on both outcomes routes down the one it completes with")]
+    public async Task BpmnProcessInsideAFlowchart_RoutesDownTheCancelledPortWhenTheProcessCancels()
+    {
+        // The gap this closes: the activity declares both outcomes as flow ports, so a flowchart can connect the
+        // Cancelled port explicitly rather than only ever seeing Studio's synthesized default port.
+
+        // Arrange
+        var process = BpmnTestProcesses.CancelledTransaction(_host.Log);
+        var onCancelled = Work("on-cancelled");
+        var onDone = Work("on-done");
+
+        var flowchart = new Flowchart
+        {
+            Start = process,
+            Activities = { process, onCancelled, onDone },
+            Connections =
+            {
+                new Connection(new Endpoint(process, BpmnInterpreter.CancelledOutcomeName), new Endpoint(onCancelled)),
+                new Connection(new Endpoint(process, BpmnInterpreter.DoneOutcomeName), new Endpoint(onDone))
+            }
+        };
+
+        // Act
+        var result = await _host.RunAsync(flowchart);
+
+        // Assert: only the Cancelled branch ran.
+        Assert.Contains("executed:work", _host.Log.Entries);
+        Assert.Contains("executed:on-cancelled", _host.Log.Entries);
+        Assert.DoesNotContain("executed:on-done", _host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
     [Fact(DisplayName = "A nested scope runs with the trigger opt-out off, which is its default")]
     public async Task NestedScope_RunsWithTheTriggerOptOutOff()
     {

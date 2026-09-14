@@ -61,16 +61,16 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Application_ClientId");
-
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Application_Name");
-
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Application_TenantId");
+
+                    b.HasIndex("TenantId", "ClientId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Application_TenantId_ClientId");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Application_TenantId_Name");
 
                     b.ToTable("Applications", "Elsa");
                 });
@@ -94,12 +94,12 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Role_Name");
-
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_Role_TenantId");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Role_TenantId_Name");
 
                     b.ToTable("Roles", "Elsa");
                 });
@@ -129,12 +129,12 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Identity
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
-                        .IsUnique()
-                        .HasDatabaseName("IX_User_Name");
-
                     b.HasIndex("TenantId")
                         .HasDatabaseName("IX_User_TenantId");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_User_TenantId_Name");
 
                     b.ToTable("Users", "Elsa");
                 });

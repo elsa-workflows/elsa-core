@@ -20,6 +20,7 @@ public class PublishEventTests : AppComponentTest
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly WorkflowEvents _workflowEvents;
+    private static readonly JsonSerializerOptions CaseInsensitive = new() { PropertyNameCaseInsensitive = true };
 
     public PublishEventTests(App app) : base(app)
     {
@@ -72,11 +73,16 @@ public class PublishEventTests : AppComponentTest
         Assert.True(consumerInstance.WorkflowState.Output.TryGetValue("ReceivedPayload", out var receivedPayload), "Consumer workflow should have ReceivedPayload output");
         Assert.NotNull(receivedPayload);
 
-        // Verify the payload structure and content
-        using var payloadDocument = JsonDocument.Parse(JsonSerializer.Serialize(receivedPayload));
-        Assert.True(payloadDocument.RootElement.TryGetProperty("Status", out var status), "Received payload should contain a Status property");
-        Assert.Equal("Shipped", status.GetString());
+        // Verify the payload content. The payload's runtime representation is not stable: while it is still the
+        // original CLR object its properties are PascalCase, but once it has been through the workflow state
+        // serializer it is an ExpandoObject whose keys have been camelCased by that serializer's naming policy.
+        // Which one this test observes depends on whether the instance was read back from the store, so match
+        // the property name case-insensitively rather than asserting one of the two representations.
+        var payload = JsonSerializer.Deserialize<ReceivedEventPayload>(JsonSerializer.Serialize(receivedPayload), CaseInsensitive);
+        Assert.Equal("Shipped", payload?.Status);
     }
+
+    private record ReceivedEventPayload(string? Status);
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
     {
@@ -87,9 +93,11 @@ public class PublishEventTests : AppComponentTest
         cts.Token.Register(() => tcs.TrySetException(new TimeoutException($"Workflow instance with DefinitionId '{definitionId}' and CorrelationId '{correlationId}' was not saved within {timeoutMs}ms")));
 
         // Subscribe to the WorkflowInstanceSaved event
+        // A workflow instance is saved several times over its lifetime, so only accept a terminal one: both callers
+        // assert on the finished state, and an intermediate save would hand them an instance that is still running.
         void OnWorkflowInstanceSaved(object? sender, WorkflowInstanceSavedEventArgs args)
         {
-            if (args.WorkflowInstance.DefinitionId == definitionId && args.WorkflowInstance.CorrelationId == correlationId)
+            if (args.WorkflowInstance.DefinitionId == definitionId && args.WorkflowInstance.CorrelationId == correlationId && args.WorkflowInstance.Status == WorkflowStatus.Finished)
             {
                 tcs.TrySetResult(args.WorkflowInstance);
             }
@@ -106,7 +114,7 @@ public class PublishEventTests : AppComponentTest
                 CorrelationId = correlationId
             }, cts.Token)).ToList();
 
-            if (existingInstances.Any())
+            if (existingInstances.Any(x => x.Status == WorkflowStatus.Finished))
                 return Assert.Single(existingInstances);
 
             // Wait for the event to be raised

@@ -78,7 +78,7 @@ public sealed class ConfigurationIdentityProviderConnectionSource(
     private static ClaimProjection CloneClaimProjection(ClaimProjection? projection)
     {
         projection ??= ClaimProjection.Empty;
-        return new ClaimProjection(
+        return new(
             new HashSet<string>(projection.AllowedClaimTypes ?? new HashSet<string>(), StringComparer.Ordinal),
             new HashSet<string>(projection.RedactedClaimTypes ?? new HashSet<string>(), StringComparer.Ordinal),
             projection.MaximumClaimCount,

@@ -16,7 +16,7 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12");
+                .HasAnnotation("ProductVersion", "9.0.17");
 
             modelBuilder.Entity("Elsa.Labels.Entities.Label", b =>
                 {
@@ -31,16 +31,22 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
+                        .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("TenantId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Label_TenantId_NormalizedName");
 
                     b.ToTable("Labels", "Elsa");
                 });
