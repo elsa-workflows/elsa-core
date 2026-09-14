@@ -27,4 +27,14 @@ public static class JsonSerializerOptionsExtensions
     {
         return new(options);
     }
+
+    /// <summary>
+    /// Clones the options and sets <see cref="ReferenceHandler.Preserve"/> for execution-time value conversion.
+    /// </summary>
+    public static JsonSerializerOptions CloneForValueConversion(this JsonSerializerOptions options)
+    {
+        var clone = options.Clone();
+        clone.ReferenceHandler = ReferenceHandler.Preserve;
+        return clone;
+    }
 }

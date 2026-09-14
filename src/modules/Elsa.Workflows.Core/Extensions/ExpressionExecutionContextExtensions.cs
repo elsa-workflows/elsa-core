@@ -394,17 +394,9 @@ public static class ExpressionExecutionContextExtensions
         }
     }
 
-    private static JsonSerializerOptions? _serializerOptions;
-
     private static JsonSerializerOptions GetSerializerOptions(ExpressionExecutionContext context)
     {
-        if (_serializerOptions != null)
-            return _serializerOptions;
-
-        var serializerOptions = context.GetRequiredService<IJsonSerializer>().GetOptions().Clone();
-        serializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
-        _serializerOptions = serializerOptions;
-        return serializerOptions;
+        return context.GetRequiredService<IJsonSerializer>().GetOptions().CloneForValueConversion();
     }
 
     extension(ExpressionExecutionContext context)

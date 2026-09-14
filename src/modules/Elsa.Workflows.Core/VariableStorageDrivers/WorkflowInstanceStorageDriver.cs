@@ -32,7 +32,7 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         {
             try
             {
-                var node = JsonSerializer.SerializeToNode(value);
+                var node = JsonSerializer.SerializeToNode(value, GetSerializationType(value, context), GetSerializerOptions());
                 dictionary[id] = node!;
             }
             catch (Exception ex) when (ex is JsonException or NotSupportedException or ObjectDisposedException)
@@ -51,10 +51,15 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         var node = dictionary.GetValueOrDefault(id);
         var variable = context.Variable;
         var variableType = variable.GetVariableType();
+        var serializerOptions = GetSerializerOptions();
+
+        if (variableType == typeof(object))
+            return new(node?.Deserialize(typeof(object), serializerOptions));
+
         var options = new ObjectConverterOptions
         {
             DeserializeJsonObjectToObject = true,
-            SerializerOptions = payloadSerializer.GetOptions()  
+            SerializerOptions = serializerOptions
         };
         var result = node.TryConvertTo(variableType, options);
         if (result.IsSuccess)
@@ -74,6 +79,17 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
     {
         UpdateVariablesDictionary(context, dictionary => dictionary.Remove(id));
         return ValueTask.CompletedTask;
+    }
+
+    private JsonSerializerOptions GetSerializerOptions() => payloadSerializer.GetOptions().Clone();
+
+    private static Type GetSerializationType(object? value, StorageDriverContext context)
+    {
+        var declaredType = context.Variable.GetVariableType();
+        if (declaredType == typeof(object))
+            return typeof(object);
+
+        return value?.GetType() ?? declaredType;
     }
 
     private VariablesDictionary GetVariablesDictionary(StorageDriverContext context) => context.ExecutionContext.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new VariablesDictionary());
