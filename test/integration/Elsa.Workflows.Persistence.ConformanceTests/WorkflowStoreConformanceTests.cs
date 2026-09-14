@@ -377,6 +377,123 @@ public abstract class WorkflowStoreConformanceTests
         Assert.Equal(["el-c", "el-d"], secondPage.Items.Select(x => x.Id).ToArray());
     }
 
+    [Fact]
+    public async Task ExecutionLogOrderedFindManyUsesProvidedOrderNotDefault()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        var timestamp = StartedAt;
+
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-seq-2", "instance-1", "activity-a", "Completed", timestamp: timestamp, sequence: 2));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-seq-3", "instance-1", "activity-a", "Faulted", timestamp: timestamp, sequence: 3));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-seq-1", "instance-1", "activity-a", "Started", timestamp: timestamp, sequence: 1));
+
+        var filter = new WorkflowExecutionLogRecordFilter
+        {
+            WorkflowInstanceId = "instance-1",
+            ActivityId = "activity-a"
+        };
+
+        var defaultPage = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.All);
+        Assert.Equal(["el-seq-1", "el-seq-2", "el-seq-3"], defaultPage.Items.Select(x => x.Id).ToArray());
+
+        var descending = new WorkflowExecutionLogRecordOrder<long>(x => x.Sequence, OrderDirection.Descending);
+        var descendingPage = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.All, descending);
+        Assert.Equal(["el-seq-3", "el-seq-2", "el-seq-1"], descendingPage.Items.Select(x => x.Id).ToArray());
+
+        var firstDescendingPage = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.FromRange(0, 2), descending);
+        Assert.Equal(3, firstDescendingPage.TotalCount);
+        Assert.Equal(["el-seq-3", "el-seq-2"], firstDescendingPage.Items.Select(x => x.Id).ToArray());
+
+        var journalOrder = new WorkflowExecutionLogRecordOrder<long>(x => x.Sequence, OrderDirection.Ascending);
+        var journalPage = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.FromRange(0, 2), journalOrder);
+        Assert.Equal(["el-seq-1", "el-seq-2"], journalPage.Items.Select(x => x.Id).ToArray());
+    }
+
+    [Fact]
+    public async Task ActivityExecutionFindManyAndSummariesShareCompletedStatusAndNameFilters()
+    {
+        await using var scenario = await CreateScenarioAsync();
+
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution("ae-running", "instance-1", "activity-a", ActivityStatus.Running, activityName: "WriteLine"));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution(
+            "ae-completed",
+            "instance-1",
+            "activity-b",
+            ActivityStatus.Completed,
+            completedAt: StartedAt.AddMinutes(1),
+            activityName: "WriteLine",
+            startedAt: StartedAt.AddMinutes(1)));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution(
+            "ae-faulted",
+            "instance-1",
+            "activity-c",
+            ActivityStatus.Faulted,
+            completedAt: StartedAt.AddMinutes(2),
+            activityName: "HttpEndpoint",
+            startedAt: StartedAt.AddMinutes(2)));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution(
+            "ae-other",
+            "instance-2",
+            "activity-b",
+            ActivityStatus.Completed,
+            completedAt: StartedAt.AddMinutes(1),
+            activityName: "WriteLine"));
+
+        await AssertFindManyAndSummariesMatchAsync(scenario, new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1", Completed = true }, ["ae-completed", "ae-faulted"]);
+        await AssertFindManyAndSummariesMatchAsync(scenario, new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1", Completed = false }, ["ae-running"]);
+        await AssertFindManyAndSummariesMatchAsync(scenario, new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1", Status = ActivityStatus.Completed }, ["ae-completed"]);
+        await AssertFindManyAndSummariesMatchAsync(scenario, new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1", Name = "HttpEndpoint" }, ["ae-faulted"]);
+        await AssertFindManyAndSummariesMatchAsync(scenario, new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1", Name = "WriteLine" }, ["ae-running", "ae-completed"]);
+    }
+
+    [Fact]
+    public async Task ActivityExecutionSummariesHonorStartedAtOrderAndProjectIdentityFields()
+    {
+        await using var scenario = await CreateScenarioAsync();
+
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution(
+            "ae-late",
+            "instance-1",
+            "activity-c",
+            ActivityStatus.Completed,
+            completedAt: StartedAt.AddMinutes(3),
+            activityName: "WriteLine",
+            startedAt: StartedAt.AddMinutes(2)));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution(
+            "ae-early",
+            "instance-1",
+            "activity-a",
+            ActivityStatus.Running,
+            activityName: "HttpEndpoint"));
+        await scenario.ActivityExecutions.SaveAsync(ActivityExecution(
+            "ae-mid",
+            "instance-1",
+            "activity-b",
+            ActivityStatus.Faulted,
+            completedAt: StartedAt.AddMinutes(2),
+            activityName: "WriteLine",
+            startedAt: StartedAt.AddMinutes(1)));
+
+        var filter = new ActivityExecutionRecordFilter { WorkflowInstanceId = "instance-1" };
+        var order = new ActivityExecutionRecordOrder<DateTimeOffset>(x => x.StartedAt, OrderDirection.Ascending);
+        var records = (await scenario.ActivityExecutions.FindManyAsync(filter, order)).ToList();
+        var summaries = (await scenario.ActivityExecutions.FindManySummariesAsync(filter, order)).ToList();
+
+        Assert.Equal(["ae-early", "ae-mid", "ae-late"], records.Select(x => x.Id).ToArray());
+        Assert.Equal(["ae-early", "ae-mid", "ae-late"], summaries.Select(x => x.Id).ToArray());
+
+        for (var i = 0; i < records.Count; i++)
+        {
+            Assert.Equal(records[i].Id, summaries[i].Id);
+            Assert.Equal(records[i].WorkflowInstanceId, summaries[i].WorkflowInstanceId);
+            Assert.Equal(records[i].ActivityId, summaries[i].ActivityId);
+            Assert.Equal(records[i].ActivityName, summaries[i].ActivityName);
+            Assert.Equal(records[i].Status, summaries[i].Status);
+            Assert.Equal(records[i].StartedAt, summaries[i].StartedAt);
+            Assert.Equal(records[i].CompletedAt, summaries[i].CompletedAt);
+        }
+    }
+
     private static async Task SeedMixedTriggersAsync(WorkflowStoreScenario scenario)
     {
         await scenario.Triggers.SaveAsync(Trigger("id-a", hash: "hash-a", tenantId: "tenant-a"));
@@ -446,12 +563,27 @@ public abstract class WorkflowStoreConformanceTests
             CreatedAt = StartedAt
         };
 
+    private static async Task AssertFindManyAndSummariesMatchAsync(
+        WorkflowStoreScenario scenario,
+        ActivityExecutionRecordFilter filter,
+        string[] expectedIds)
+    {
+        var records = (await scenario.ActivityExecutions.FindManyAsync(filter)).Select(x => x.Id).OrderBy(x => x).ToArray();
+        var summaries = (await scenario.ActivityExecutions.FindManySummariesAsync(filter)).Select(x => x.Id).OrderBy(x => x).ToArray();
+        var expected = expectedIds.OrderBy(x => x).ToArray();
+
+        Assert.Equal(expected, records);
+        Assert.Equal(expected, summaries);
+    }
+
     private static ActivityExecutionRecord ActivityExecution(
         string id,
         string workflowInstanceId,
         string activityId,
         ActivityStatus status,
-        DateTimeOffset? completedAt = null) =>
+        DateTimeOffset? completedAt = null,
+        string? activityName = null,
+        DateTimeOffset? startedAt = null) =>
         new()
         {
             Id = id,
@@ -461,9 +593,9 @@ public abstract class WorkflowStoreConformanceTests
             ActivityNodeId = $"node-{activityId}",
             ActivityType = "Elsa.WriteLine",
             ActivityTypeVersion = 1,
-            ActivityName = activityId,
+            ActivityName = activityName ?? activityId,
             Status = status,
-            StartedAt = StartedAt,
+            StartedAt = startedAt ?? StartedAt,
             CompletedAt = completedAt
         };
 
