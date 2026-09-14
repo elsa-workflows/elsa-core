@@ -55,10 +55,7 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
             if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
-            // Insert-side ID collisions must have the same non-mutating Try contract as the file repository.
-            if (_secrets.ContainsKey(secret.Id))
-                return Task.FromResult(false);
-
+            EnsureIdAvailable(secret);
             _secrets.Add(secret.Id, Clone(secret));
         }
 
@@ -93,7 +90,10 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
             if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
                 return Task.FromResult(false);
 
-            EnsureIdAvailable(secret);
+            // Insert-side ID collisions must have the same non-mutating Try contract as the file repository.
+            if (_secrets.ContainsKey(secret.Id))
+                return Task.FromResult(false);
+
             _secrets.Add(secret.Id, Clone(secret));
             return Task.FromResult(true);
         }
