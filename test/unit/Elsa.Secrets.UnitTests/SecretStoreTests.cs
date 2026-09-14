@@ -175,6 +175,12 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task FileRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWhenInserting()
+    {
+        await WithFileRepositoryAsync(async (repository, _) => await AssertInsertIdCollisionRejectedAsync(repository));
+    }
+
+    [Fact]
     public async Task FileRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWithoutMutatingFile()
     {
         await WithFileRepositoryAsync(async (repository, path) =>
@@ -240,6 +246,12 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task InMemoryRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWhenInserting()
+    {
+        await AssertInsertIdCollisionRejectedAsync(new InMemorySecretRepository());
+    }
+
+    [Fact]
     public async Task FileRepository_RecoversFromCorruptJson()
     {
         await WithFileRepositoryAsync(async (repository, path) =>
@@ -290,5 +302,21 @@ public class SecretStoreTests
             if (File.Exists(path))
                 File.Delete(path);
         }
+    }
+
+    private static async Task AssertInsertIdCollisionRejectedAsync(ISecretRepository repository)
+    {
+        await repository.AddAsync(new Secret { Id = "existing-id", Name = "existing:secret", DisplayName = "Existing" });
+
+        var result = await repository.TryAddOrReplaceDeletedAsync(new Secret
+        {
+            Id = "existing-id",
+            Name = "new:secret",
+            DisplayName = "New"
+        });
+
+        Assert.False(result);
+        Assert.Equal("Existing", (await repository.GetAsync("existing:secret"))!.DisplayName);
+        Assert.Null(await repository.GetAsync("new:secret"));
     }
 }

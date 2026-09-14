@@ -165,51 +165,144 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task NamedTenantCannotSaveOrReplaceAgnosticSecret()
+    public async Task SaveAsync_RejectsNamedWriterUpdatingAgnosticSecretWithoutMutation()
     {
-        await using var scope = _serviceProvider.CreateAsyncScope();
-        var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
-
-        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-a", Name = "Tenant A" }))
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
         {
-            await repository.AddAsync(new Secret
+            using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
             {
-                Name = "agnostic:active",
-                DisplayName = "Agnostic active",
-                TenantId = Tenant.AgnosticTenantId
-            });
-            await repository.AddAsync(new Secret
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "agnostic-id",
+                    Name = "smtp:password",
+                    DisplayName = "Agnostic secret",
+                    TenantId = Tenant.AgnosticTenantId
+                });
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-a"))
             {
-                Name = "agnostic:deleted",
-                DisplayName = "Agnostic deleted",
-                Status = SecretStatus.Deleted,
-                TenantId = Tenant.AgnosticTenantId
-            });
+                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                {
+                    Id = "replacement-id",
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Forged update"
+                }));
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                Assert.Equal("A secret named 'SMTP:PASSWORD' belongs to another tenant.", exception.Message);
+                var unchanged = await repository.GetAsync("smtp:password");
+                Assert.NotNull(unchanged);
+                Assert.Equal("agnostic-id", unchanged!.Id);
+                Assert.Equal("Agnostic secret", unchanged.DisplayName);
+                Assert.Equal(Tenant.AgnosticTenantId, unchanged.TenantId);
+            }
+        });
+    }
+
+    [Fact]
+    public async Task TryAddOrReplaceDeletedAsync_RejectsNamedWriterReplacingAgnosticSecretWithoutMutation()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
             {
-                Name = "agnostic:active",
-                DisplayName = "Tenant overwrite",
-                TenantId = "tenant-a"
-            }));
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "agnostic-id",
+                    Name = "smtp:password",
+                    DisplayName = "Deleted agnostic secret",
+                    Status = SecretStatus.Deleted,
+                    TenantId = Tenant.AgnosticTenantId
+                });
+            }
 
-            Assert.False(await repository.TryAddOrReplaceDeletedAsync(new Secret
+            using (UseTenant(tenantAccessor, "tenant-a"))
             {
-                Name = "agnostic:deleted",
-                DisplayName = "Tenant replacement",
-                TenantId = "tenant-a"
-            }));
+                var result = await repository.TryAddOrReplaceDeletedAsync(new Secret
+                {
+                    Id = "replacement-id",
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Forged replacement"
+                });
 
-            var active = await repository.GetAsync("agnostic:active");
-            Assert.NotNull(active);
-            Assert.Equal(Tenant.AgnosticTenantId, active!.TenantId);
-            Assert.Equal("Agnostic active", active.DisplayName);
+                Assert.False(result);
+                var unchanged = await repository.GetAsync("smtp:password");
+                Assert.NotNull(unchanged);
+                Assert.Equal("agnostic-id", unchanged!.Id);
+                Assert.Equal("Deleted agnostic secret", unchanged.DisplayName);
+                Assert.Equal(SecretStatus.Deleted, unchanged.Status);
+                Assert.Equal(Tenant.AgnosticTenantId, unchanged.TenantId);
+            }
+        });
+    }
 
-            var deleted = await repository.GetAsync("agnostic:deleted");
-            Assert.NotNull(deleted);
-            Assert.Equal(Tenant.AgnosticTenantId, deleted!.TenantId);
-            Assert.Equal("Agnostic deleted", deleted.DisplayName);
-            Assert.Equal(SecretStatus.Deleted, deleted.Status);
+    [Fact]
+    public async Task TryAddOrReplaceDeletedAsync_AllowsAgnosticWriterReplacingAgnosticSecret()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            {
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "agnostic-id",
+                    Name = "smtp:password",
+                    DisplayName = "Deleted agnostic secret",
+                    Status = SecretStatus.Deleted,
+                    TenantId = Tenant.AgnosticTenantId
+                });
+
+                var result = await repository.TryAddOrReplaceDeletedAsync(new Secret
+                {
+                    Id = "replacement-id",
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Replacement agnostic secret",
+                    TenantId = Tenant.AgnosticTenantId
+                });
+
+                Assert.True(result);
+                var replacement = await repository.GetAsync("smtp:password");
+                Assert.NotNull(replacement);
+                Assert.Equal("replacement-id", replacement!.Id);
+                Assert.Equal("Replacement agnostic secret", replacement.DisplayName);
+                Assert.Equal(Tenant.AgnosticTenantId, replacement.TenantId);
+            }
+        });
+    }
+
+    private static async Task WithTenantAwareRepositoryAsync(Func<EFCoreSecretRepository, DefaultTenantAccessor, Task> test)
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-secrets-tenant-{Guid.NewGuid():N}.db");
+        var tenantAccessor = new DefaultTenantAccessor();
+        var services = new ServiceCollection()
+            .AddSqliteEntityModelCreatingHandlers()
+            .AddSingleton<ITenantAccessor>(tenantAccessor)
+            .Configure<TenantsOptions>(options => options.IsEnabled = true)
+            .AddScoped<IEntitySavingHandler, ApplyTenantId>()
+            .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
+            .AddDbContextFactory<SecretsElsaDbContext>(builder => builder.UseElsaSqlite(typeof(SqliteSecretsPersistenceFeatureExtensions).Assembly, $"Data Source={databasePath}"))
+            .AddSingleton<ISecretNameValidator, DefaultSecretNameValidator>()
+            .AddScoped<Store<SecretsElsaDbContext, Secret>>()
+            .AddScoped<EFCoreSecretRepository>()
+            .BuildServiceProvider();
+
+        try
+        {
+            await using var scope = services.CreateAsyncScope();
+            var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SecretsElsaDbContext>>();
+            await using (var dbContext = await factory.CreateDbContextAsync())
+                await dbContext.Database.MigrateAsync();
+
+            await test(scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>(), tenantAccessor);
+        }
+        finally
+        {
+            await services.DisposeAsync();
+            if (File.Exists(databasePath))
+                File.Delete(databasePath);
         }
     }
+
+    private static IDisposable UseTenant(DefaultTenantAccessor tenantAccessor, string tenantId) =>
+        tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
 }
