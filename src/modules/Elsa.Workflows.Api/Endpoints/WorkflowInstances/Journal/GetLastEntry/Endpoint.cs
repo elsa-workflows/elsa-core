@@ -32,8 +32,10 @@ public class Get(IWorkflowExecutionLogStore store) : ElsaEndpoint<Request, Workf
             EventNames = ["Started", "Completed", "Faulted"]
         };
 
-        var sort = new WorkflowExecutionLogRecordOrder<DateTimeOffset>(
-            x => x.Timestamp,
+        // Sequence is the instance-monotonic event cursor. Same-timestamp batches must not
+        // pick an arbitrary "last" entry when only Timestamp descending is applied.
+        var sort = new WorkflowExecutionLogRecordOrder<long>(
+            x => x.Sequence,
             OrderDirection.Descending
         );
 
