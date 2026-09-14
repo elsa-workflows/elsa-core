@@ -71,7 +71,7 @@ public abstract class StructuredLogStoreConformanceTests
     }
 
     [Fact]
-    public async Task QueryAsync_WhenTimestampsTie_OrdersBySourceIdThenSequenceThenId()
+    public async Task QueryAsync_WhenTimestampsTie_OrdersBySourceId()
     {
         await using var scenario = await CreateScenarioAsync();
         await scenario.WriteAsync(
@@ -81,6 +81,32 @@ public abstract class StructuredLogStoreConformanceTests
         var result = await scenario.Store.QueryAsync(new() { Take = 10 });
 
         Assert.Equal(["pod-a", "pod-b"], result.Items.Select(x => x.SourceId).ToList());
+    }
+
+    [Fact]
+    public async Task QueryAsync_WhenSourceIdTies_OrdersBySequence()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        await scenario.WriteAsync(
+            Log("later-seq", BaseTime, sourceId: "pod-a", sequence: 9),
+            Log("earlier-seq", BaseTime, sourceId: "pod-a", sequence: 2));
+
+        var result = await scenario.Store.QueryAsync(new() { Take = 10 });
+
+        Assert.Equal(["earlier-seq", "later-seq"], result.Items.Select(x => x.Id).ToList());
+    }
+
+    [Fact]
+    public async Task QueryAsync_WhenSequenceTies_OrdersById()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        await scenario.WriteAsync(
+            Log("zzz", BaseTime, sourceId: "pod-a", sequence: 1),
+            Log("aaa", BaseTime, sourceId: "pod-a", sequence: 1));
+
+        var result = await scenario.Store.QueryAsync(new() { Take = 10 });
+
+        Assert.Equal(["aaa", "zzz"], result.Items.Select(x => x.Id).ToList());
     }
 
     [Fact]

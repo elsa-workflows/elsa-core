@@ -9,7 +9,7 @@ the contracts already aligned on `main` after #8147 (Take clamp) and #8148
 | Surface | Locked behavior |
 | --- | --- |
 | Null `Take` / max clamp | `StructuredLogsOptions.MaxRecentLogQuerySize`; negative ceiling or `Take` yields empty |
-| Multi-source timestamp ties | `Timestamp`, `ReceivedAt`, `SourceId`, `Sequence`, `Id` (ascending after Relational DESC+Reverse) |
+| Timestamp / ReceivedAt ties | `SourceId`, then `Sequence`, then `Id` (each stage asserted with preceding fields tied; ascending after Relational DESC+Reverse) |
 | `ListSources` | In-process `IStructuredLogSourceRegistry` metadata and `SourceHeartbeatTimeout` → `Stale` |
 | `QueryAsync.DroppedEvents` when writes fit | `0` |
 | Portable filters | Exact-case equality, category prefix, text substring, level, and timestamp range applied before `Take` |
