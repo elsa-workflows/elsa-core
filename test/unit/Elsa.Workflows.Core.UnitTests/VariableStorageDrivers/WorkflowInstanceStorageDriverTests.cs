@@ -32,7 +32,7 @@ public class WorkflowInstanceStorageDriverTests
     [Fact]
     public async Task WriteAsync_WhenSerializeFailsWithNoPriorValue_DoesNotCreateEntry()
     {
-        var harness = CreateHarness(new Variable<string>("name"));
+        var harness = CreateHarness(new Variable<string>("name", ""));
         const string id = "nameVariable";
 
         await harness.Driver.WriteAsync(id, CreateUnserializableValue(), harness.Context);
@@ -55,7 +55,7 @@ public class WorkflowInstanceStorageDriverTests
     [Fact]
     public async Task ReadAsync_WhenConvertFails_DoesNotReturnUntypedJsonNode()
     {
-        var harness = CreateHarness(new Variable<int>("count"));
+        var harness = CreateHarness(new Variable<int>("count", 0));
         const string id = "countVariable";
         SeedIncompatibleNode(harness.Properties, id);
 
@@ -69,7 +69,7 @@ public class WorkflowInstanceStorageDriverTests
     [Fact]
     public async Task ReadAsync_WhenConvertFailsAndStrictMode_Throws()
     {
-        var harness = CreateHarness(new Variable<int>("count"));
+        var harness = CreateHarness(new Variable<int>("count", 0));
         const string id = "countVariable";
         SeedIncompatibleNode(harness.Properties, id);
 
