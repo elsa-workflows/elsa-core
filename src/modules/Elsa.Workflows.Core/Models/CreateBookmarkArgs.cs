@@ -31,9 +31,11 @@ public class CreateBookmarkArgs
     public bool AutoBurn { get; set; } = true;
 
     /// <summary>
-    /// Whether the activity instance ID should be included in the bookmark payload.
+    /// Whether the activity instance ID should be included in the stimulus hash. Defaults to <c>true</c>
+    /// so unset <see cref="CreateBookmarkArgs"/> objects match <c>CreateBookmark()</c> and documented overload defaults.
+    /// Set to <c>false</c> for broadcast-style bookmarks that must resume regardless of activity instance.
     /// </summary>
-    public bool IncludeActivityInstanceId { get; set; }
+    public bool IncludeActivityInstanceId { get; set; } = true;
 
     /// <summary>
     /// Whether the activity being resumed should be automatically completed if CallBack is not specified.
