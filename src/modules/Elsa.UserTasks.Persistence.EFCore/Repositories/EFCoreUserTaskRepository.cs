@@ -191,11 +191,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             records = records.Where(x => x.AssigneeType == query.AssigneeType);
         if (!string.IsNullOrWhiteSpace(query.AssigneeId))
             records = records.Where(x => x.AssigneeId == query.AssigneeId);
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var search = query.Search.Trim();
-            records = records.Where(x => x.Title.Contains(search) || (x.Summary != null && x.Summary.Contains(search)) || (x.Reference != null && x.Reference.Contains(search)) || (x.TaskType != null && x.TaskType.Contains(search)));
-        }
+        records = ApplySafeSearch(records, query.Search);
 
         var limit = query.Limit is > 0 ? Math.Min(query.Limit.Value, 200) : 100;
         return await records.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenByDescending(x => x.Priority).ThenBy(x => x.CreatedAt).ThenBy(x => x.Id).Take(limit).ToListAsync(cancellationToken);
@@ -269,11 +265,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             records = records.Where(x => x.WorkflowInstanceId == query.WorkflowInstanceId);
         if (!string.IsNullOrWhiteSpace(query.Reference))
             records = records.Where(x => x.Reference == query.Reference);
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var search = query.Search.Trim();
-            records = records.Where(x => x.Title.Contains(search) || (x.Summary != null && x.Summary.Contains(search)) || (x.Reference != null && x.Reference.Contains(search)) || (x.TaskType != null && x.TaskType.Contains(search)));
-        }
+        records = ApplySafeSearch(records, query.Search);
         if (query.Scope is { } requestedScope &&
             (!string.Equals(requestedScope.TenantId, query.TenantId, StringComparison.Ordinal) ||
              !string.Equals(requestedScope.Subject.TenantId, query.TenantId, StringComparison.Ordinal) ||
@@ -347,16 +339,42 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         };
     }
 
+    /// <summary>
+    /// Safe search is a bounded text contains over title, summary, reference, task type, and tags.
+    /// Tags stay in the existing <c>TagsJson</c> column as a primitive collection, so each tag is
+    /// matched individually and case-insensitively — the same semantics as InMemory/VNext, with no
+    /// tag table and no JSON-syntax false positives.
+    /// </summary>
+    private static IQueryable<UserTaskRecord> ApplySafeSearch(IQueryable<UserTaskRecord> records, string? search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return records;
+
+        var value = search.Trim();
+        var tag = value.ToLower();
+        return records.Where(x =>
+            x.Title.Contains(value)
+            || (x.Summary != null && x.Summary.Contains(value))
+            || (x.Reference != null && x.Reference.Contains(value))
+            || (x.TaskType != null && x.TaskType.Contains(value))
+            || x.Tags.Any(t => t.ToLower().Contains(tag)));
+    }
+
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
     {
+        // Id is always ThenBy ascending so a page of ties is the same in both directions and across providers.
         return query.Sort.ToLowerInvariant() switch
         {
             "due" when query.Descending => records.OrderBy(x => x.DueAt == null).ThenByDescending(x => x.DueAt).ThenBy(x => x.Id),
             "due" => records.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
             "priority" when query.Descending => records.OrderByDescending(x => x.Priority).ThenBy(x => x.Id),
             "priority" => records.OrderBy(x => x.Priority).ThenBy(x => x.Id),
+            // Title OrderBy and cursor use column collation (self-consistent). Title cursors are not
+            // portable to InMemory/VNext ordinal comparison; recreate the list after a provider change.
             "title" when query.Descending => records.OrderByDescending(x => x.Title).ThenBy(x => x.Id),
             "title" => records.OrderBy(x => x.Title).ThenBy(x => x.Id),
+            "updated" when query.Descending => records.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id),
+            "updated" => records.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id),
             _ when query.Descending => records.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id),
             _ => records.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
         };
@@ -373,12 +391,15 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
                 ? records.Where(x => x.Priority < priority || (x.Priority == priority && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.Priority > priority || (x.Priority == priority && string.Compare(x.Id, cursorId) > 0)),
             "title" => query.Descending
-                ? records.Where(x => string.Compare(x.Title, cursorValue) < 0 || (x.Title == cursorValue && string.Compare(x.Id, cursorId) > 0))
-                : records.Where(x => string.Compare(x.Title, cursorValue) > 0 || (x.Title == cursorValue && string.Compare(x.Id, cursorId) > 0)),
+                ? records.Where(x => string.Compare(x.Title, cursorValue) < 0 || (string.Compare(x.Title, cursorValue) == 0 && string.Compare(x.Id, cursorId) > 0))
+                : records.Where(x => string.Compare(x.Title, cursorValue) > 0 || (string.Compare(x.Title, cursorValue) == 0 && string.Compare(x.Id, cursorId) > 0)),
             "due" when cursorValue == "~null" => records.Where(x => x.DueAt == null && string.Compare(x.Id, cursorId) > 0),
             "due" when DateTimeOffset.TryParse(cursorValue, out var dueAt) => query.Descending
                 ? records.Where(x => x.DueAt == null || x.DueAt < dueAt || (x.DueAt == dueAt && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.DueAt == null || x.DueAt > dueAt || (x.DueAt == dueAt && string.Compare(x.Id, cursorId) > 0)),
+            "updated" when DateTimeOffset.TryParse(cursorValue, out var updatedAt) => query.Descending
+                ? records.Where(x => x.UpdatedAt < updatedAt || (x.UpdatedAt == updatedAt && string.Compare(x.Id, cursorId) > 0))
+                : records.Where(x => x.UpdatedAt > updatedAt || (x.UpdatedAt == updatedAt && string.Compare(x.Id, cursorId) > 0)),
             _ when DateTimeOffset.TryParse(cursorValue, out var createdAt) => query.Descending
                 ? records.Where(x => x.CreatedAt < createdAt || (x.CreatedAt == createdAt && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.CreatedAt > createdAt || (x.CreatedAt == createdAt && string.Compare(x.Id, cursorId) > 0)),
@@ -393,6 +414,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             "priority" => record.Priority.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "title" => record.Title,
             "due" => record.DueAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "~null",
+            "updated" => record.UpdatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             _ => record.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
         };
         return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new[] { value, record.Id }, JsonOptions))
@@ -495,7 +517,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         Title = record.Title,
         Summary = record.Summary,
         Reference = record.Reference,
-        Tags = Deserialize<HashSet<string>>(record.TagsJson) ?? new(StringComparer.OrdinalIgnoreCase),
+        Tags = new HashSet<string>(record.Tags ?? [], StringComparer.OrdinalIgnoreCase),
         TaskType = record.TaskType,
         Requester = ToParticipant(record.RequesterProvider, record.RequesterType, record.RequesterId, record.RequesterDisplayName, record.TenantId),
         Assignee = ToParticipant(record.AssigneeProvider, record.AssigneeType, record.AssigneeId, record.AssigneeDisplayName, record.TenantId),
@@ -549,7 +571,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         target.Summary = source.Summary;
         target.Reference = source.Reference;
         target.TaskType = source.TaskType;
-        target.TagsJson = Serialize(source.Tags);
+        target.Tags = source.Tags.ToList();
         target.RequesterProvider = source.Requester?.Provider;
         target.RequesterType = source.Requester?.Type.ToString();
         target.RequesterId = source.Requester?.Id;
@@ -601,7 +623,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
         target.Summary = source.Summary;
         target.Reference = source.Reference;
         target.TaskType = source.TaskType;
-        target.TagsJson = source.TagsJson;
+        target.Tags = [..source.Tags];
         target.RequesterProvider = source.RequesterProvider;
         target.RequesterType = source.RequesterType;
         target.RequesterId = source.RequesterId;

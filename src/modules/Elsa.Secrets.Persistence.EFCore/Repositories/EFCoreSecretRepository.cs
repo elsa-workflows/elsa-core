@@ -43,6 +43,7 @@ public class EFCoreSecretRepository(
     public async Task AddAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        AssignDefaultTenantId(secret, dbContext);
         var normalizedName = secretNameValidator.Normalize(secret.Name);
         if (await ExistsByNormalizedNameAsync(dbContext, normalizedName, cancellationToken))
             throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
@@ -56,6 +57,7 @@ public class EFCoreSecretRepository(
     public async Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        AssignDefaultTenantId(secret, dbContext);
         var tenancyEnabled = IsTenancyEnabled(dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
@@ -93,6 +95,7 @@ public class EFCoreSecretRepository(
     public async Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        AssignDefaultTenantId(secret, dbContext);
         var tenancyEnabled = IsTenancyEnabled(dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
@@ -159,11 +162,8 @@ public class EFCoreSecretRepository(
     }
 
     // The DbUpdateException-to-name-conflict translation below relies on the (TenantId, NormalizedName)
-    // unique index, which only covers rows with a non-null TenantId (SQL Server filters null rows out of the
-    // index; SQLite/PostgreSQL/MySQL treat nulls as distinct — Oracle alone rejects null-tenant duplicates).
-    // With multitenancy disabled nothing assigns a TenantId, so this backstop never fires there and
-    // uniqueness rests solely on the FindByNameAsync/ExistsByNormalizedNameAsync pre-checks — two concurrent
-    // creates racing past the pre-check both commit. See doc/migrations/secrets-tenancy.md.
+    // unique index. Default-tenant writes are stamped with an empty TenantId before saving so the index
+    // provides the same concurrency backstop when multitenancy is disabled. See doc/migrations/secrets-tenancy.md.
     private async Task SaveChangesAsync(SecretsElsaDbContext dbContext, string name, CancellationToken cancellationToken)
     {
         try
@@ -204,5 +204,20 @@ public class EFCoreSecretRepository(
     private void SetNormalizedName(SecretsElsaDbContext dbContext, Secret secret)
     {
         dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = secretNameValidator.Normalize(secret.Name);
+    }
+
+    /// <summary>
+    /// Default-tenant uniqueness uses <see cref="Tenant.DefaultTenantId"/> (<c>""</c>), not null.
+    /// Named and agnostic ambient tenants are left for <c>ApplyTenantId</c>.
+    /// </summary>
+    private static void AssignDefaultTenantId(Secret secret, SecretsElsaDbContext dbContext)
+    {
+        if (secret.TenantId is not null)
+            return;
+
+        if (!string.IsNullOrEmpty(dbContext.TenantId) && dbContext.TenantId != Tenant.DefaultTenantId)
+            return;
+
+        secret.TenantId = Tenant.DefaultTenantId;
     }
 }

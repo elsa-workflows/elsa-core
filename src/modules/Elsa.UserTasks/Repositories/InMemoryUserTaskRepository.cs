@@ -1,5 +1,5 @@
-using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 
@@ -11,6 +11,17 @@ namespace Elsa.UserTasks.Repositories;
 /// </summary>
 public sealed class InMemoryUserTaskRepository : IUserTaskRepository
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    /// <summary>
+    /// Title OrderBy, ties, and cursors share this comparer. Title cursors are not portable to EF
+    /// (column collation) or across databases; recreate the list after a provider change.
+    /// </summary>
+    private static readonly StringComparer TitleComparer = StringComparer.Ordinal;
+
     private readonly object _sync = new();
     private readonly Dictionary<string, UserTask> _tasks = new(StringComparer.Ordinal);
 
@@ -44,14 +55,13 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
                 .Where(x => MatchesSearch(x, query.Search));
 
             var filteredCount = query.IncludeTotalCount ? items.Count() : 0;
-            var materialized = Sort(items, query.Sort, query.Descending).ToList();
-            if (!string.IsNullOrWhiteSpace(query.Cursor) && DecodeCursor(query.Cursor!) is { } cursor)
-                materialized = materialized.Where(x => IsAfterCursor(x, cursor, query.Descending, query.Sort)).ToList();
+            var materialized = ApplyOrdering(items, query).ToList();
+            materialized = ApplyCursor(materialized, query).ToList();
 
             int? total = query.IncludeTotalCount ? filteredCount : null;
             var limit = Math.Clamp(query.Limit, 1, 200);
             var page = materialized.Take(limit).Select(Clone).ToArray();
-            var next = materialized.Count > limit ? EncodeCursor(page[^1], query.Sort) : null;
+            var next = materialized.Count > limit ? CreateCursor(page[^1], query.Sort) : null;
             return Task.FromResult(new UserTaskQueryResult(page, next, total));
         }
     }
@@ -191,120 +201,76 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
                || task.Tags.Any(x => x.Contains(value, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static IEnumerable<UserTask> Sort(IEnumerable<UserTask> items, string sort, bool descending)
+    // Same contract as EF/VNext: REST sorts only, Id always ThenBy ascending, JSON base64url cursors.
+    private static IEnumerable<UserTask> ApplyOrdering(IEnumerable<UserTask> tasks, UserTaskQuery query) => query.Sort.ToLowerInvariant() switch
     {
-        var normalized = NormalizeSort(sort);
-        return normalized switch
+        "priority" => query.Descending ? tasks.OrderByDescending(x => x.Priority).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Priority).ThenBy(x => x.Id),
+        "title" => query.Descending ? tasks.OrderByDescending(x => x.Title, TitleComparer).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Title, TitleComparer).ThenBy(x => x.Id),
+        "due" => query.Descending ? tasks.OrderBy(x => x.DueAt == null).ThenByDescending(x => x.DueAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
+        "updated" => query.Descending ? tasks.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id),
+        _ => query.Descending ? tasks.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
+    };
+
+    private static IEnumerable<UserTask> ApplyCursor(IEnumerable<UserTask> tasks, UserTaskQuery query)
+    {
+        if (string.IsNullOrWhiteSpace(query.Cursor) || !TryReadCursor(query.Cursor, out var value, out var id))
+            return tasks;
+        return query.Sort.ToLowerInvariant() switch
         {
-            "due" => descending
-                ? items.OrderByDescending(x => x.DueAt.HasValue).ThenByDescending(x => x.DueAt).ThenByDescending(x => x.Id, StringComparer.Ordinal)
-                : items.OrderBy(x => x.DueAt.HasValue ? 0 : 1).ThenBy(x => x.DueAt).ThenBy(x => x.Id, StringComparer.Ordinal),
-            "priority" => descending
-                ? items.OrderByDescending(x => x.Priority).ThenByDescending(x => x.Id, StringComparer.Ordinal)
-                : items.OrderBy(x => x.Priority).ThenBy(x => x.Id, StringComparer.Ordinal),
-            "updated" => descending
-                ? items.OrderByDescending(x => x.UpdatedAt).ThenByDescending(x => x.Id, StringComparer.Ordinal)
-                : items.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id, StringComparer.Ordinal),
-            "completed" => descending
-                ? items.OrderByDescending(x => x.CompletedAt.HasValue).ThenByDescending(x => x.CompletedAt).ThenByDescending(x => x.Id, StringComparer.Ordinal)
-                : items.OrderBy(x => x.CompletedAt.HasValue ? 0 : 1).ThenBy(x => x.CompletedAt).ThenBy(x => x.Id, StringComparer.Ordinal),
-            "title" => descending
-                ? items.OrderByDescending(x => x.Title, StringComparer.OrdinalIgnoreCase).ThenByDescending(x => x.Id, StringComparer.Ordinal)
-                : items.OrderBy(x => x.Title, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Id, StringComparer.Ordinal),
-            _ => descending
-                ? items.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id, StringComparer.Ordinal)
-                : items.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id, StringComparer.Ordinal)
+            "priority" when int.TryParse(value, out var priority) => tasks.Where(x => query.Descending ? x.Priority < priority || x.Priority == priority && string.Compare(x.Id, id) > 0 : x.Priority > priority || x.Priority == priority && string.Compare(x.Id, id) > 0),
+            "title" => tasks.Where(x => TitleIsAfterCursor(x.Title, value, x.Id, id, query.Descending)),
+            "due" when value == "~null" => tasks.Where(x => x.DueAt == null && string.Compare(x.Id, id) > 0),
+            "due" when DateTimeOffset.TryParse(value, out var due) => tasks.Where(x => x.DueAt == null || query.Descending && x.DueAt < due || !query.Descending && x.DueAt > due || x.DueAt == due && string.Compare(x.Id, id) > 0),
+            "updated" when DateTimeOffset.TryParse(value, out var updated) => tasks.Where(x => query.Descending ? x.UpdatedAt < updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0 : x.UpdatedAt > updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0),
+            _ when DateTimeOffset.TryParse(value, out var created) => tasks.Where(x => query.Descending ? x.CreatedAt < created || x.CreatedAt == created && string.Compare(x.Id, id) > 0 : x.CreatedAt > created || x.CreatedAt == created && string.Compare(x.Id, id) > 0),
+            _ => tasks
         };
     }
 
-    private static bool IsAfterCursor(UserTask task, (string Kind, string Value, string Id) cursor, bool descending, string sort)
+    private static bool TitleIsAfterCursor(string title, string cursorTitle, string id, string cursorId, bool descending)
     {
-        var normalized = NormalizeSort(sort);
-        // Due/completed ordering keeps null values at the end in both directions. A generic numeric
-        // comparison would incorrectly drop nulls after a descending non-null page (or reintroduce
-        // non-null values after a descending null page).
-        if (descending && (normalized is "due" or "completed"))
+        var comparison = TitleComparer.Compare(title, cursorTitle);
+        return descending
+            ? comparison < 0 || comparison == 0 && string.Compare(id, cursorId) > 0
+            : comparison > 0 || comparison == 0 && string.Compare(id, cursorId) > 0;
+    }
+
+    private static string CreateCursor(UserTask task, string sort)
+    {
+        var value = sort.ToLowerInvariant() switch
         {
-            var valueIsNull = SortValue(task, normalized) == null;
-            var cursorIsNull = cursor.Value == "~";
-            if (valueIsNull != cursorIsNull)
-                return valueIsNull;
-        }
-
-        var comparison = CompareSortValue(SortKind(sort), SortValue(task, sort), cursor.Kind, cursor.Value);
-        if (comparison == 0)
-            comparison = StringComparer.Ordinal.Compare(task.Id, cursor.Id);
-        return descending ? comparison < 0 : comparison > 0;
+            "priority" => task.Priority.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "title" => task.Title,
+            "due" => task.DueAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "~null",
+            "updated" => task.UpdatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+            _ => task.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
+        };
+        return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new[] { value, task.Id }, JsonOptions)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
 
-    private static string EncodeCursor(UserTask task, string sort)
+    private static bool TryReadCursor(string? cursor, out string value, out string id)
     {
-        var kind = SortKind(sort);
-        var value = EncodeSortValue(SortValue(task, sort), kind);
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes(kind + "|" + value + "|" + task.Id));
-    }
-
-    private static (string Kind, string Value, string Id)? DecodeCursor(string cursor)
-    {
+        value = id = "";
+        if (string.IsNullOrWhiteSpace(cursor))
+            return false;
         try
         {
-            var value = Encoding.UTF8.GetString(Convert.FromBase64String(cursor));
-            var first = value.IndexOf('|');
-            var last = value.LastIndexOf('|');
-            return first <= 0 || last <= first ? null : (value[..first], value[(first + 1)..last], value[(last + 1)..]);
+            var padded = cursor.Replace('-', '+').Replace('_', '/') + new string('=', (4 - cursor.Length % 4) % 4);
+            var values = JsonSerializer.Deserialize<string[]>(Convert.FromBase64String(padded), JsonOptions);
+            if (values is not [var parsedValue, var parsedId] || string.IsNullOrWhiteSpace(parsedId))
+                return false;
+            value = parsedValue;
+            id = parsedId;
+            return true;
         }
         catch (FormatException)
         {
-            return null;
+            return false;
         }
-    }
-
-    private static string NormalizeSort(string sort) => sort.ToLowerInvariant() switch
-    {
-        "dueat" => "due",
-        "completedat" => "completed",
-        _ => sort.ToLowerInvariant() is "due" or "priority" or "updated" or "completed" or "title" ? sort.ToLowerInvariant() : "created"
-    };
-
-    private static string SortKind(string sort) => NormalizeSort(sort) switch
-    {
-        "priority" => "i",
-        "title" => "s",
-        "due" or "completed" => "n",
-        _ => "n"
-    };
-
-    private static object? SortValue(UserTask task, string sort) => NormalizeSort(sort) switch
-    {
-        "due" => task.DueAt,
-        "priority" => task.Priority,
-        "updated" => task.UpdatedAt,
-        "completed" => task.CompletedAt,
-        "title" => task.Title,
-        _ => task.CreatedAt
-    };
-
-    private static string EncodeSortValue(object? value, string kind) => value switch
-    {
-        null => "~",
-        DateTimeOffset date => date.UtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture),
-        int number => number.ToString(System.Globalization.CultureInfo.InvariantCulture),
-        _ => Convert.ToBase64String(Encoding.UTF8.GetBytes(value.ToString() ?? ""))
-    };
-
-    private static int CompareSortValue(string kind, object? value, string cursorKind, string cursorValue)
-    {
-        if (!string.Equals(kind, cursorKind, StringComparison.Ordinal))
-            return 0;
-        if (value == null || cursorValue == "~")
-            return value == null && cursorValue == "~" ? 0 : value == null ? 1 : -1;
-        if (kind == "i")
-            return int.Parse(value.ToString()!, System.Globalization.CultureInfo.InvariantCulture).CompareTo(int.Parse(cursorValue, System.Globalization.CultureInfo.InvariantCulture));
-        if (kind == "n")
-            return long.Parse(value switch { DateTimeOffset d => d.UtcTicks.ToString(System.Globalization.CultureInfo.InvariantCulture), _ => value.ToString()! }, System.Globalization.CultureInfo.InvariantCulture)
-                .CompareTo(long.Parse(cursorValue, System.Globalization.CultureInfo.InvariantCulture));
-        var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(cursorValue));
-        return StringComparer.OrdinalIgnoreCase.Compare(value.ToString(), decoded);
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static string Key(string tenantId, string taskId) => tenantId + "\0" + taskId;
