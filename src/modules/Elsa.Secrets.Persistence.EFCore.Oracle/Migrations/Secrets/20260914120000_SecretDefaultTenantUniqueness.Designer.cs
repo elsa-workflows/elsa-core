@@ -3,6 +3,7 @@ using System;
 using Elsa.Secrets.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 
@@ -11,9 +12,11 @@ using Oracle.EntityFrameworkCore.Metadata;
 namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
 {
     [DbContext(typeof(SecretsElsaDbContext))]
-    partial class SecretsElsaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260914120000_SecretDefaultTenantUniqueness")]
+    partial class SecretDefaultTenantUniqueness
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

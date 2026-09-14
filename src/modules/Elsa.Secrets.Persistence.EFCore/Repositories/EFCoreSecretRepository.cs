@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
@@ -29,6 +30,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     public async Task AddAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        AssignDefaultTenantId(secret, dbContext);
         var normalizedName = secretNameValidator.Normalize(secret.Name);
         if (await ExistsByNormalizedNameAsync(dbContext, normalizedName, cancellationToken))
             throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
@@ -42,6 +44,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     public async Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        AssignDefaultTenantId(secret, dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
         if (existingSecret == null)
@@ -72,6 +75,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     public async Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        AssignDefaultTenantId(secret, dbContext);
         var existingSecret = await FindByNameAsync(dbContext, secret.Name, cancellationToken);
 
         if (existingSecret == null)
@@ -162,5 +166,20 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     private void SetNormalizedName(SecretsElsaDbContext dbContext, Secret secret)
     {
         dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = secretNameValidator.Normalize(secret.Name);
+    }
+
+    /// <summary>
+    /// Default-tenant uniqueness uses <see cref="Tenant.DefaultTenantId"/> (<c>""</c>), not null.
+    /// Named and agnostic ambient tenants are left for <c>ApplyTenantId</c>.
+    /// </summary>
+    private static void AssignDefaultTenantId(Secret secret, SecretsElsaDbContext dbContext)
+    {
+        if (secret.TenantId is not null)
+            return;
+
+        if (!string.IsNullOrEmpty(dbContext.TenantId) && dbContext.TenantId != Tenant.DefaultTenantId)
+            return;
+
+        secret.TenantId = Tenant.DefaultTenantId;
     }
 }

@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Secrets.Contracts;
@@ -66,11 +67,10 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ExistingSecretsCarryNoTenantUntilOneIsAssigned()
+    public async Task DefaultTenantWritesUseEmptyTenantId()
     {
-        // The upgrade adds the column nullable with no backfill, so rows written before it stay null. That is
-        // what SetTenantIdFilter's "null counts as the default tenant" clause is for, and it is why the
-        // migration needs no data step.
+        // Default-tenant uniqueness uses "" so the composite unique index covers these rows.
+        // Leftover nulls from SecretTenancy are stamped by SecretDefaultTenantUniqueness.
         await using var scope = _serviceProvider.CreateAsyncScope();
         var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
 
@@ -78,7 +78,21 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
 
         var stored = await repository.GetAsync("legacy:secret");
         Assert.NotNull(stored);
-        Assert.Null(stored!.TenantId);
+        Assert.Equal(string.Empty, stored!.TenantId);
+    }
+
+    [Fact]
+    public async Task UniqueIndexRejectsDuplicateDefaultTenantNames()
+    {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SecretsElsaDbContext>>();
+        await using var dbContext = await factory.CreateDbContextAsync();
+
+        await InsertSecretAsync(dbContext, "first", "smtp:password", Tenant.DefaultTenantId);
+        await dbContext.SaveChangesAsync();
+
+        await InsertSecretAsync(dbContext, "second", "smtp:password", Tenant.DefaultTenantId);
+        await Assert.ThrowsAsync<DbUpdateException>(() => dbContext.SaveChangesAsync());
     }
 
     [Fact]
@@ -159,5 +173,21 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         Assert.Equal("new", reloaded.Id);
         Assert.Equal("Replacement password", reloaded.DisplayName);
         Assert.Equal(SecretStatus.Active, reloaded.Status);
+    }
+
+    private static async Task InsertSecretAsync(SecretsElsaDbContext dbContext, string id, string name, string tenantId)
+    {
+        var secret = new Secret
+        {
+            Id = id,
+            Name = name,
+            DisplayName = name,
+            TenantId = tenantId
+        };
+
+        await dbContext.Secrets.AddAsync(secret);
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = name;
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.SerializedTags).CurrentValue = "[]";
+        dbContext.Entry(secret).Property(SecretShadowPropertyNames.SerializedVersions).CurrentValue = "[]";
     }
 }

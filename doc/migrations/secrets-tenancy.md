@@ -9,8 +9,10 @@ against which tenant owns the secret, so any caller holding it reached the whole
 
 ## What you have to do
 
-Apply the `SecretTenancy` migration for your provider. There is no data step, and nothing else is required for
-a single-tenant deployment.
+Apply the `SecretTenancy` and `SecretDefaultTenantUniqueness` migrations for your provider. The second
+migration stamps leftover null `TenantId` values to `""` (the default tenant) and rebuilds the unique
+index. It does **not** delete duplicate names — if two leftover rows share a name in the same tenant,
+the upgrade aborts and lists the keys. Reconcile those rows, then re-run.
 
 ## Existing secrets
 
@@ -46,32 +48,28 @@ the first tenant to claim a name took it globally.
 Downgrading recreates the global unique index and **will fail if two tenants hold the same secret name by
 then**. Reconcile the duplicates first.
 
-### Null-tenant rows sit outside the index
+### Default-tenant rows use `""`
 
-"Unique per tenant" is enforced by the database only for rows whose `TenantId` is non-null. SQL Server
-creates the composite index with a `[TenantId] IS NOT NULL` filter, and SQLite, PostgreSQL and MySQL treat
-nulls as distinct in unique indexes — either way, null-tenant rows never collide in it. Only Oracle, where
-equal nulls do count as duplicates in a composite unique index, still rejects them.
+The default tenant id is `""` (`Tenant.DefaultTenantId`), the same sentinel Labels uses. New EF writes that
+would have left `TenantId` null now persist `""`, so they participate in `(TenantId, NormalizedName)`.
 
-This matters more than it sounds, because null is the common case. With multitenancy **disabled** — the
-default single-tenant deployment — nothing ever assigns a `TenantId`, so every row keeps null and the schema
-no longer enforces secret-name uniqueness at all. Uniqueness then rests on the repository's read-before-write
-check, which blocks sequential duplicates but not two concurrent creates racing past it. The old global index
-was the backstop for exactly that race; accepting its loss for null rows is a consequence of the no-backfill
-decision above. The same gap applies in a multi-tenant deployment's default tenant: pre-upgrade null rows and
-new `""`-tenant rows are distinct index keys, so the index cannot stop a new default-tenant secret from
-colliding by name with a legacy row.
+`SecretDefaultTenantUniqueness` stamps leftover nulls from `SecretTenancy` to `""` and rebuilds that unique
+index. SQL Server still creates the composite index with a `TenantId IS NOT NULL` filter; after the stamp
+those rows are non-null, so they collide in it. SQLite, PostgreSQL and MySQL treat nulls as distinct — the
+stamp is what brings them into the index.
 
-Backfilling `TenantId` to `""` yourself does **not** restore the database guarantee, and it is worth being
-precise about why. The backfill indexes the rows that exist when you run it, but nothing changes what happens
-afterwards: with multitenancy disabled no `TenantId` is ever assigned, so every subsequent write still lands
-as a null row outside the index. Two concurrent creates can still both pass the repository's read-before-write
-check and commit the same name. Restoring the guarantee for real would mean making disabled-mode writes use
-the same non-null sentinel the index is built on — Elsa does not do that, and the backfill alone does not
-substitute for it. Until it does, treat the read-before-write check as the only protection in single-tenant
-mode and serialize secret creation if you cannot tolerate the race. (The `SetTenantIdFilter`
-null-compatibility clause keeps backfilled and straggler rows visible either way, so a backfill is still
-useful for de-duplicating what you already have.)
+Oracle is different: it stores `''` as `NULL`, so the stamp is a no-op and a `TenantId IS NOT NULL` filter
+would leave every default-tenant row outside the index. That provider creates a function-based unique index
+on `NVL(TenantId, CHR(1))` plus `NormalizedName` instead. `CHR(1)` is not a tenant id; it only exists so
+NULL default-tenant names share one index key. The EF model snapshot cannot express `NVL`, so it looks like
+the other unfiltered unique indexes; the physical Oracle index is the function-based one from this migration.
+
+The migration does not delete duplicates: it lists leftover `(TenantId, NormalizedName)` keys and aborts,
+then the unique index fails loudly if any remain.
+
+`SetTenantIdFilter`'s null-compatibility clause still treats a stray null as the default tenant, so a row
+that somehow remains unstamped stays visible there. File and InMemory already treat null and `""` as the
+same tenant for uniqueness.
 
 ## The MySQL provider ships for net8.0 and net9.0 only
 
