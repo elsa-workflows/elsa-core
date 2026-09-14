@@ -1,4 +1,6 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Tenants.Options;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Repositories;
 
@@ -11,11 +13,20 @@ namespace Elsa.Secrets.Repositories;
 /// <see cref="TenantVisibility"/>. This is deliberately the same shape as the persisted contract rather
 /// than a test-only global name dictionary.
 /// </remarks>
-public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : ISecretRepository
+public class InMemorySecretRepository(
+    ITenantAccessor? tenantAccessor = null,
+    IOptions<TenantsOptions>? tenantsOptions = null) : ISecretRepository
 {
+    private readonly bool _tenancyEnabled = tenantsOptions?.Value.IsEnabled ?? tenantAccessor != null;
+
     // Keep the pre-tenancy parameterless constructor in the public binary surface. Optional parameters do
     // not emit a zero-argument constructor for existing binaries to bind to.
-    public InMemorySecretRepository() : this(null)
+    public InMemorySecretRepository() : this(null, null)
+    {
+    }
+
+    // Keep the merged one-argument constructor in the public binary surface.
+    public InMemorySecretRepository(ITenantAccessor? tenantAccessor) : this(tenantAccessor, null)
     {
     }
 
@@ -36,7 +47,7 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
         lock (_sync)
         {
             var secrets = _secrets.Values
-                .Where(x => SecretRepositoryTenant.IsVisible(x, tenantAccessor))
+                .Where(x => SecretRepositoryTenant.IsVisible(x, tenantAccessor, _tenancyEnabled))
                 .Select(Clone)
                 .ToList();
             return Task.FromResult<IReadOnlyCollection<Secret>>(secrets);
@@ -45,14 +56,14 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
 
     public Task AddAsync(Secret secret, CancellationToken cancellationToken = default)
     {
-        SecretRepositoryTenant.Stamp(secret, tenantAccessor);
+        SecretRepositoryTenant.Stamp(secret, tenantAccessor, _tenancyEnabled);
 
         lock (_sync)
         {
             if (FindVisible(secret.Name) is not null)
                 throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
-            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret, _tenancyEnabled)))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
             EnsureIdAvailable(secret);
@@ -64,14 +75,14 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
 
     public Task<bool> TryAddOrReplaceDeletedAsync(Secret secret, CancellationToken cancellationToken = default)
     {
-        SecretRepositoryTenant.Stamp(secret, tenantAccessor);
+        SecretRepositoryTenant.Stamp(secret, tenantAccessor, _tenancyEnabled);
 
         lock (_sync)
         {
             var existing = FindVisible(secret.Name);
             if (existing is not null)
             {
-                if (existing.Status != SecretStatus.Deleted || !SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor))
+                if (existing.Status != SecretStatus.Deleted || !SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor, _tenancyEnabled))
                     return Task.FromResult(false);
 
                 var replacement = Clone(secret);
@@ -87,10 +98,13 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
                 return Task.FromResult(true);
             }
 
-            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret, _tenancyEnabled)))
                 return Task.FromResult(false);
 
-            EnsureIdAvailable(secret);
+            // Insert-side ID collisions must have the same non-mutating Try contract as the file repository.
+            if (_secrets.ContainsKey(secret.Id))
+                return Task.FromResult(false);
+
             _secrets.Add(secret.Id, Clone(secret));
             return Task.FromResult(true);
         }
@@ -98,14 +112,14 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
 
     public Task SaveAsync(Secret secret, CancellationToken cancellationToken = default)
     {
-        SecretRepositoryTenant.Stamp(secret, tenantAccessor);
+        SecretRepositoryTenant.Stamp(secret, tenantAccessor, _tenancyEnabled);
 
         lock (_sync)
         {
             var existing = FindVisible(secret.Name);
             if (existing is not null)
             {
-                if (!SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor))
+                if (!SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor, _tenancyEnabled))
                     throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
 
                 // EF updates the row found by name, retaining its primary key and tenant ownership.
@@ -116,7 +130,7 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
                 return Task.CompletedTask;
             }
 
-            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret, _tenancyEnabled)))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
             EnsureIdAvailable(secret);
@@ -127,7 +141,7 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
     }
 
     private Secret? FindVisible(string name) =>
-        _secrets.Values.FirstOrDefault(x => SecretRepositoryTenant.IsVisible(x, tenantAccessor) && SecretRepositoryTenant.HasName(x, name));
+        _secrets.Values.FirstOrDefault(x => SecretRepositoryTenant.IsVisible(x, tenantAccessor, _tenancyEnabled) && SecretRepositoryTenant.HasName(x, name));
 
     private void EnsureIdAvailable(Secret secret)
     {

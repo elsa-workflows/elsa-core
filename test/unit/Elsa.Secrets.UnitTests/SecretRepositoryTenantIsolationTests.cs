@@ -3,6 +3,7 @@ using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Options;
 using Elsa.Secrets.Repositories;
+using Elsa.Tenants.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -24,8 +25,16 @@ public class SecretRepositoryTenantIsolationTests
             typeof(IOptions<SecretsOptions>),
             typeof(ILogger<FileSecretRepository>),
             typeof(ITenantAccessor)]));
+        Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
+            typeof(IOptions<SecretsOptions>),
+            typeof(ILogger<FileSecretRepository>),
+            typeof(ITenantAccessor),
+            typeof(IOptions<TenantsOptions>)]));
         Assert.NotNull(typeof(InMemorySecretRepository).GetConstructor(Type.EmptyTypes));
         Assert.NotNull(typeof(InMemorySecretRepository).GetConstructor([typeof(ITenantAccessor)]));
+        Assert.NotNull(typeof(InMemorySecretRepository).GetConstructor([
+            typeof(ITenantAccessor),
+            typeof(IOptions<TenantsOptions>)]));
     }
 
     [Fact]
@@ -67,6 +76,33 @@ public class SecretRepositoryTenantIsolationTests
                 Assert.Single(await repository.ListAsync());
             }
         });
+    }
+
+    [Fact]
+    public async Task Repositories_DisabledTenancyIgnoresInjectedAccessor()
+    {
+        await ForEachRepositoryAsync(async (tenantAccessor, repository) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                var unassigned = new Secret { Name = "shared:secret", DisplayName = "Shared" };
+                await repository.AddAsync(unassigned);
+                await repository.AddAsync(new Secret { Name = "tenant-b:secret", DisplayName = "Tenant B", TenantId = "tenant-b" });
+                await repository.AddAsync(new Secret { Name = "agnostic:secret", DisplayName = "Agnostic", TenantId = Tenant.AgnosticTenantId });
+
+                Assert.Null(unassigned.TenantId);
+                Assert.Equal(3, (await repository.ListAsync()).Count);
+                Assert.Equal("Tenant B", (await repository.GetAsync("tenant-b:secret"))!.DisplayName);
+                Assert.Equal("Agnostic", (await repository.GetAsync("agnostic:secret"))!.DisplayName);
+
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new Secret
+                {
+                    Name = "SHARED:SECRET",
+                    DisplayName = "Duplicate",
+                    TenantId = "tenant-b"
+                }));
+            }
+        }, tenancyEnabled: false);
     }
 
     [Fact]
@@ -221,6 +257,30 @@ public class SecretRepositoryTenantIsolationTests
     }
 
     [Fact]
+    public async Task Repositories_TreatWhitespaceAndCaseAsTheSameNameForAddSaveAndTry()
+    {
+        await ForEachRepositoryAsync(async (tenantAccessor, repository) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await repository.AddAsync(new Secret { Id = "original", Name = " SMTP:PASSWORD ", DisplayName = "Original" });
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "Duplicate" }));
+
+                await repository.SaveAsync(new Secret { Id = "ignored", Name = " smtp:password ", DisplayName = "Updated" });
+                Assert.Equal("Updated", (await repository.GetAsync("SMTP:PASSWORD"))!.DisplayName);
+
+                await repository.SaveAsync(new Secret { Name = "SMTP:PASSWORD", DisplayName = "Deleted", Status = SecretStatus.Deleted });
+                var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret { Id = "replacement", Name = " smtp:password ", DisplayName = "Replacement" });
+
+                Assert.True(replaced);
+                var loaded = await repository.GetAsync(" SMTP:PASSWORD ");
+                Assert.Equal("replacement", loaded!.Id);
+                Assert.Equal("Replacement", loaded.DisplayName);
+            }
+        });
+    }
+
+    [Fact]
     public async Task Repositories_PreserveNullRowsForLegacyNoAccessorUse()
     {
         var inMemory = new InMemorySecretRepository();
@@ -312,17 +372,20 @@ public class SecretRepositoryTenantIsolationTests
         Assert.False(await repository.TryAddOrReplaceDeletedAsync(explicitDefault));
     }
 
-    private static async Task ForEachRepositoryAsync(Func<ITenantAccessor, ISecretRepository, Task> test)
+    private static async Task ForEachRepositoryAsync(Func<ITenantAccessor, ISecretRepository, Task> test, bool? tenancyEnabled = null)
     {
+        var tenantsOptions = tenancyEnabled.HasValue
+            ? Microsoft.Extensions.Options.Options.Create(new TenantsOptions { IsEnabled = tenancyEnabled.Value })
+            : null;
         var inMemoryAccessor = new DefaultTenantAccessor();
-        await test(inMemoryAccessor, new InMemorySecretRepository(inMemoryAccessor));
+        await test(inMemoryAccessor, new InMemorySecretRepository(inMemoryAccessor, tenantsOptions));
 
         var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
         try
         {
             var fileAccessor = new DefaultTenantAccessor();
             var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path });
-            await test(fileAccessor, new FileSecretRepository(options, tenantAccessor: fileAccessor));
+            await test(fileAccessor, new FileSecretRepository(options, tenantAccessor: fileAccessor, tenantsOptions: tenantsOptions));
         }
         finally
         {
