@@ -32,11 +32,6 @@ public class FileSecretRepository : ISecretRepository
     {
     }
 
-    public FileSecretRepository(IOptions<SecretsOptions> options, ITenantAccessor tenantAccessor)
-        : this(options, null, tenantAccessor)
-    {
-    }
-
     public FileSecretRepository(
         IOptions<SecretsOptions> options,
         IOptions<TenantsOptions> tenantsOptions,

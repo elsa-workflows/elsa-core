@@ -20,6 +20,9 @@ public class SecretRepositoryTenantIsolationTests
     [Fact]
     public void Repositories_RetainPreTenancyConstructorShapes()
     {
+        var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions());
+        _ = new FileSecretRepository(options, null);
+
         Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
             typeof(IOptions<SecretsOptions>),
             typeof(ILogger<FileSecretRepository>)]));
@@ -269,7 +272,7 @@ public class SecretRepositoryTenantIsolationTests
         {
             var accessor = new MutableTenantAccessor(null);
             var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path });
-            await AssertNullAndEmptyAreDuplicatesAsync(accessor, new FileSecretRepository(options, tenantAccessor: accessor));
+            await AssertNullAndEmptyAreDuplicatesAsync(accessor, new FileSecretRepository(options, null, accessor));
         }
         finally
         {
@@ -368,12 +371,12 @@ public class SecretRepositoryTenantIsolationTests
             await legacyRepository.AddAsync(new Secret { Name = "legacy:secret", DisplayName = "Legacy" });
 
             var namedAccessor = new DefaultTenantAccessor();
-            var namedRepository = new FileSecretRepository(options, tenantAccessor: namedAccessor);
+            var namedRepository = new FileSecretRepository(options, null, namedAccessor);
             using (UseTenant(namedAccessor, "tenant-a"))
                 Assert.Empty(await namedRepository.ListAsync());
 
             var defaultAccessor = new DefaultTenantAccessor();
-            var defaultRepository = new FileSecretRepository(options, tenantAccessor: defaultAccessor);
+            var defaultRepository = new FileSecretRepository(options, null, defaultAccessor);
             Assert.Equal("Legacy", (await defaultRepository.GetAsync("legacy:secret"))!.DisplayName);
             Assert.Null((await defaultRepository.GetAsync("legacy:secret"))!.TenantId);
         }
@@ -414,7 +417,7 @@ public class SecretRepositoryTenantIsolationTests
         {
             var fileAccessor = new DefaultTenantAccessor();
             var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path });
-            await test(fileAccessor, new FileSecretRepository(options, tenantAccessor: fileAccessor));
+            await test(fileAccessor, new FileSecretRepository(options, null, fileAccessor));
         }
         finally
         {

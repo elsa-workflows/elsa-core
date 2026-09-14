@@ -2,12 +2,25 @@ using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Persistence.EFCore.Repositories;
 
-public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator) : ISecretRepository
+public class EFCoreSecretRepository(
+    Store<SecretsElsaDbContext, Secret> store,
+    ISecretNameValidator secretNameValidator,
+    IOptions<TenantsOptions>? tenantsOptions = null) : ISecretRepository
 {
+    private readonly bool _tenancyEnabled = tenantsOptions?.Value.IsEnabled == true;
+
+    // Keep the pre-tenancy constructor in the public binary surface.
+    public EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator)
+        : this(store, secretNameValidator, null)
+    {
+    }
+
     public async Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -56,10 +69,11 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         if (existingSecret.Status != SecretStatus.Deleted)
             return false;
 
-        if (!TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+        if (_tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
             return false;
 
-        secret.TenantId = existingSecret.TenantId;
+        if (_tenancyEnabled)
+            secret.TenantId = existingSecret.TenantId;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Secrets.Remove(existingSecret);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -87,7 +101,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         }
         else
         {
-            if (!TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+            if (_tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
 
             Copy(secret, existingSecret);

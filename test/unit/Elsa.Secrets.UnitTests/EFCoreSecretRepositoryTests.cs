@@ -11,6 +11,7 @@ using Elsa.Secrets.Services;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
@@ -46,6 +47,18 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
 
         if (File.Exists(_databasePath))
             File.Delete(_databasePath);
+    }
+
+    [Fact]
+    public void Repository_RetainsPreTenancyConstructorShape()
+    {
+        Assert.NotNull(typeof(EFCoreSecretRepository).GetConstructor([
+            typeof(Store<SecretsElsaDbContext, Secret>),
+            typeof(ISecretNameValidator)]));
+        Assert.NotNull(typeof(EFCoreSecretRepository).GetConstructor([
+            typeof(Store<SecretsElsaDbContext, Secret>),
+            typeof(ISecretNameValidator),
+            typeof(IOptions<TenantsOptions>)]));
     }
 
     [Fact]
@@ -200,6 +213,35 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
             using (UseTenant(tenantAccessor, "tenant-b"))
                 Assert.Null(await repository.GetAsync("smtp:password"));
         });
+    }
+
+    [Fact]
+    public async Task TryAddOrReplaceDeletedAsync_WhenTenancyIsDisabled_PreservesLegacyReplacementBehavior()
+    {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
+        await repository.SaveAsync(new Secret
+        {
+            Id = "old",
+            Name = "smtp:password",
+            DisplayName = "Deleted password",
+            Status = SecretStatus.Deleted,
+            TenantId = Tenant.AgnosticTenantId
+        });
+
+        var replacement = new Secret
+        {
+            Id = "new",
+            Name = "SMTP:PASSWORD",
+            DisplayName = "Replacement password",
+            TenantId = "tenant-b"
+        };
+
+        Assert.True(await repository.TryAddOrReplaceDeletedAsync(replacement));
+        var reloaded = await repository.GetAsync("smtp:password");
+        Assert.NotNull(reloaded);
+        Assert.Equal("tenant-b", reloaded!.TenantId);
+        Assert.Equal("new", reloaded.Id);
     }
 
     [Fact]
