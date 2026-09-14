@@ -87,6 +87,18 @@ public class RelationalStructuredLogSqlBuilderTests
         Assert.Contains(expectedLimit, query.Sql, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData(-5)]
+    [InlineData(25)]
+    public void BuildQuery_WhenMaxRecentLogQuerySizeIsNegative_UsesZeroLimit(int? take)
+    {
+        var builder = CreateBuilder(maxRecentLogQuerySize: -10);
+        var query = builder.BuildQuery(new() { Take = take });
+
+        Assert.Contains("FETCH 0", query.Sql, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void BuildListSources_GroupsBySourceAndOrdersBySource()
     {

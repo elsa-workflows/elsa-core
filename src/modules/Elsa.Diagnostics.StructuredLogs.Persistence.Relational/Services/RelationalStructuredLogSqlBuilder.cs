@@ -22,8 +22,7 @@ public class RelationalStructuredLogSqlBuilder(IRelationalStructuredLogDialect d
         var parameters = new Dictionary<string, object?>();
         var predicates = BuildFilterPredicates(filter, parameters);
         var where = predicates.Count == 0 ? "" : $" WHERE {string.Join(" AND ", predicates)}";
-        var maxTake = options.Value.MaxRecentLogQuerySize;
-        var limit = Math.Clamp(filter.Take ?? maxTake, 0, maxTake);
+        var limit = options.Value.ClampRecentLogQueryTake(filter.Take);
         var sql = $"SELECT {string.Join(", ", Columns.Select(dialect.QuoteIdentifier))} FROM {_table}{where} ORDER BY {dialect.QuoteIdentifier("Timestamp")} DESC, {dialect.QuoteIdentifier("ReceivedAt")} DESC, {dialect.QuoteIdentifier("Sequence")} DESC, {dialect.QuoteIdentifier("Id")} DESC";
         sql = dialect.ApplyLimit(sql, limit);
         return new(sql, parameters);
