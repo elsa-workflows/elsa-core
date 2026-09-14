@@ -70,8 +70,10 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
 
                 var replacement = Clone(secret);
                 replacement.TenantId = existing.TenantId;
+                if (replacement.Id != existing.Id)
+                    EnsureIdAvailable(replacement);
+
                 _secrets.Remove(existing.Id);
-                EnsureIdAvailable(replacement);
                 _secrets.Add(replacement.Id, replacement);
                 return Task.FromResult(true);
             }

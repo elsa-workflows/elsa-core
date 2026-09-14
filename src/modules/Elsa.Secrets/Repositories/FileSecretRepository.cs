@@ -72,6 +72,9 @@ public class FileSecretRepository(
                 if (!SecretRepositoryTenant.CanReplace(secrets[index], secret, tenantAccessor))
                     return false;
 
+                if (secrets.Where((_, i) => i != index).Any(x => x.Id == secret.Id))
+                    return false;
+
                 secrets[index] = ReplaceTenantOwnedSecret(secrets[index], secret);
             }
             else
