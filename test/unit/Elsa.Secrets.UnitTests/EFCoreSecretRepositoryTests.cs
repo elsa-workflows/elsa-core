@@ -456,7 +456,9 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
             .Configure<TenantsOptions>(options => options.IsEnabled = true)
             .AddScoped<IEntitySavingHandler, ApplyTenantId>()
             .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
-            .AddDbContextFactory<SecretsElsaDbContext>(builder => builder.UseElsaSqlite(typeof(SqliteSecretsPersistenceFeatureExtensions).Assembly, $"Data Source={databasePath}"))
+            .AddDbContextFactory<SecretsElsaDbContext>(builder => builder
+                .EnableServiceProviderCaching(false)
+                .UseElsaSqlite(typeof(SqliteSecretsPersistenceFeatureExtensions).Assembly, $"Data Source={databasePath}"))
             .Decorate<IDbContextFactory<SecretsElsaDbContext>, TenantAwareDbContextFactory<SecretsElsaDbContext>>()
             .AddSingleton<ISecretNameValidator, DefaultSecretNameValidator>()
             .AddScoped<Store<SecretsElsaDbContext, Secret>>()
