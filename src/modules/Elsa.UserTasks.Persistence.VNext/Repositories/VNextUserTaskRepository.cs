@@ -232,7 +232,7 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
                (string.IsNullOrWhiteSpace(query.WorkflowDefinitionId) || task.WorkflowDefinitionId == query.WorkflowDefinitionId) &&
                (string.IsNullOrWhiteSpace(query.WorkflowInstanceId) || task.WorkflowInstanceId == query.WorkflowInstanceId) &&
                (string.IsNullOrWhiteSpace(query.Reference) || task.Reference == query.Reference) &&
-               (string.IsNullOrWhiteSpace(search) || task.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || task.Summary?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.Reference?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.TaskType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true);
+               (string.IsNullOrWhiteSpace(search) || task.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || task.Summary?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.Reference?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.TaskType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.Tags.Any(tag => tag.Contains(search, StringComparison.OrdinalIgnoreCase)));
     }
 
     private static bool IsVisible(UserTask task, UserTaskQueryScope scope)

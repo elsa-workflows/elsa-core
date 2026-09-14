@@ -185,6 +185,54 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
     }
 
     [ConformanceFact]
+    public async Task SafeSearchByTagReturnsOnlyTheMatchingTask()
+    {
+        await ActivateAsync();
+        var subject = Subject();
+
+        var tagged = CreateTask(subject, title: "Approve invoice");
+        tagged.Tags = ["priority-escalation", "routine-review"];
+        await Repository.AddProjectionAsync(tagged);
+
+        var other = CreateTask(subject, title: "Approve invoice");
+        other.Tags = ["routine-review"];
+        await Repository.AddProjectionAsync(other);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "priority-escalation"
+        });
+
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal(tagged.Id, Assert.Single(page.Items).Id);
+
+        var upper = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "PRIORITY-ESCALATION"
+        });
+        Assert.Equal(tagged.Id, Assert.Single(upper.Items).Id);
+
+        // JSON array syntax sits between tags in EF storage. That text is not a tag value, so
+        // InMemory/VNext reject it and EF must not treat the serialized payload as a match.
+        var jsonSyntax = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = """priority-escalation","routine-review"""
+        });
+        Assert.Empty(jsonSyntax.Items);
+        Assert.Equal(0, jsonSyntax.TotalCount);
+
+        var punctuated = CreateTask(subject, title: "Approve invoice");
+        punctuated.Tags = ["review[urgent]"];
+        await Repository.AddProjectionAsync(punctuated);
+
+        var bracket = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "review[urgent]"
+        });
+        Assert.Equal(punctuated.Id, Assert.Single(bracket.Items).Id);
+    }
+
+    [ConformanceFact]
     public async Task ScopeAndExclusionApplyBeforeTotalsCursorsAndPageLimits()
     {
         await ActivateAsync();
