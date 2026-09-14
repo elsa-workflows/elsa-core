@@ -8,7 +8,6 @@ using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Memory;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace Elsa.Expressions.UnitTests.CSharp;
@@ -70,7 +69,7 @@ public class GenerateWorkflowVariableAccessorsTests
         {
             AllowHostCodeExecution = true
         };
-        var options = Options.Create(csharpOptions);
+        var options = Microsoft.Extensions.Options.Options.Create(csharpOptions);
         var accessors = new GenerateWorkflowVariableAccessors(options);
         var assemblies = new AddAssembliesAndReferencesFromOptions(options);
         var notificationSender = Substitute.For<INotificationSender>();
