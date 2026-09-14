@@ -74,6 +74,41 @@ public class SecretRepositoryTenantIsolationTests
     }
 
     [Fact]
+    public async Task Repositories_RejectExplicitHiddenTenantDuplicatesWithoutMutation()
+    {
+        await ForEachRepositoryAsync(async (tenantAccessor, repository) =>
+        {
+            using (UseTenant(tenantAccessor, "tenant-b"))
+                await repository.AddAsync(new Secret { Name = "smtp:password", DisplayName = "Tenant B", TenantId = "tenant-b" });
+
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(new Secret
+                {
+                    Name = "SMTP:PASSWORD",
+                    DisplayName = "Duplicate",
+                    TenantId = "tenant-b"
+                }));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                {
+                    Name = "smtp:password",
+                    DisplayName = "Duplicate",
+                    TenantId = "tenant-b"
+                }));
+                Assert.False(await repository.TryAddOrReplaceDeletedAsync(new Secret
+                {
+                    Name = "smtp:password",
+                    DisplayName = "Duplicate",
+                    TenantId = "tenant-b"
+                }));
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-b"))
+                Assert.Equal("Tenant B", (await repository.GetAsync("smtp:password"))!.DisplayName);
+        });
+    }
+
+    [Fact]
     public async Task Repositories_SaveRetainsTheOwnedTenant()
     {
         await ForEachRepositoryAsync(async (tenantAccessor, repository) =>

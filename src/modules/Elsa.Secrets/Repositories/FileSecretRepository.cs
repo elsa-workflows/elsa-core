@@ -40,6 +40,9 @@ public class FileSecretRepository(
             if (secrets.Any(x => SecretRepositoryTenant.IsVisible(x, tenantAccessor) && SecretRepositoryTenant.HasName(x, secret.Name)))
                 throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
+            if (secrets.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+                throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
+
             if (secrets.Any(x => x.Id == secret.Id))
                 throw new InvalidOperationException($"A secret with ID '{secret.Id}' already exists.");
 
@@ -73,6 +76,9 @@ public class FileSecretRepository(
             }
             else
             {
+                if (secrets.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+                    return false;
+
                 if (secrets.Any(x => x.Id == secret.Id))
                     return false;
 
@@ -99,6 +105,9 @@ public class FileSecretRepository(
             var index = secrets.FindIndex(x => SecretRepositoryTenant.IsVisible(x, tenantAccessor) && SecretRepositoryTenant.HasName(x, secret.Name));
             if (index < 0)
             {
+                if (secrets.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+                    throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
+
                 if (secrets.Any(x => x.Id == secret.Id))
                     throw new InvalidOperationException($"A secret with ID '{secret.Id}' already exists.");
 

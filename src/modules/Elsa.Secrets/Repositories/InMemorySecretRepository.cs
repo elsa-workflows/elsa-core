@@ -46,6 +46,9 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
             if (FindVisible(secret.Name) is not null)
                 throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
+            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+                throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
+
             EnsureIdAvailable(secret);
             _secrets.Add(secret.Id, Clone(secret));
         }
@@ -73,6 +76,9 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
                 return Task.FromResult(true);
             }
 
+            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+                return Task.FromResult(false);
+
             EnsureIdAvailable(secret);
             _secrets.Add(secret.Id, Clone(secret));
             return Task.FromResult(true);
@@ -98,6 +104,9 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
                 _secrets[existing.Id] = replacement;
                 return Task.CompletedTask;
             }
+
+            if (_secrets.Values.Any(x => SecretRepositoryTenant.HasSameTenantName(x, secret)))
+                throw new InvalidOperationException($"A secret named '{secret.Name}' already exists.");
 
             EnsureIdAvailable(secret);
             _secrets.Add(secret.Id, Clone(secret));

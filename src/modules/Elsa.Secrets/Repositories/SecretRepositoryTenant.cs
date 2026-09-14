@@ -27,4 +27,7 @@ internal static class SecretRepositoryTenant
 
     public static bool HasName(Secret secret, string name) =>
         string.Equals(secret.Name, name, StringComparison.OrdinalIgnoreCase);
+
+    public static bool HasSameTenantName(Secret existing, Secret incoming) =>
+        existing.TenantId == incoming.TenantId && HasName(existing, incoming.Name);
 }
