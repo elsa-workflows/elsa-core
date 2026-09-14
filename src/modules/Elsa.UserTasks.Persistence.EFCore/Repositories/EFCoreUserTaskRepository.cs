@@ -349,14 +349,19 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
 
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
     {
+        // Id is always ThenBy ascending so a page of ties is the same in both directions and across providers.
         return query.Sort.ToLowerInvariant() switch
         {
             "due" when query.Descending => records.OrderBy(x => x.DueAt == null).ThenByDescending(x => x.DueAt).ThenBy(x => x.Id),
             "due" => records.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
             "priority" when query.Descending => records.OrderByDescending(x => x.Priority).ThenBy(x => x.Id),
             "priority" => records.OrderBy(x => x.Priority).ThenBy(x => x.Id),
+            // Title OrderBy and cursor use column collation (self-consistent). Title cursors are not
+            // portable to InMemory/VNext ordinal comparison; recreate the list after a provider change.
             "title" when query.Descending => records.OrderByDescending(x => x.Title).ThenBy(x => x.Id),
             "title" => records.OrderBy(x => x.Title).ThenBy(x => x.Id),
+            "updated" when query.Descending => records.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id),
+            "updated" => records.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id),
             _ when query.Descending => records.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id),
             _ => records.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
         };
@@ -373,12 +378,15 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
                 ? records.Where(x => x.Priority < priority || (x.Priority == priority && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.Priority > priority || (x.Priority == priority && string.Compare(x.Id, cursorId) > 0)),
             "title" => query.Descending
-                ? records.Where(x => string.Compare(x.Title, cursorValue) < 0 || (x.Title == cursorValue && string.Compare(x.Id, cursorId) > 0))
-                : records.Where(x => string.Compare(x.Title, cursorValue) > 0 || (x.Title == cursorValue && string.Compare(x.Id, cursorId) > 0)),
+                ? records.Where(x => string.Compare(x.Title, cursorValue) < 0 || (string.Compare(x.Title, cursorValue) == 0 && string.Compare(x.Id, cursorId) > 0))
+                : records.Where(x => string.Compare(x.Title, cursorValue) > 0 || (string.Compare(x.Title, cursorValue) == 0 && string.Compare(x.Id, cursorId) > 0)),
             "due" when cursorValue == "~null" => records.Where(x => x.DueAt == null && string.Compare(x.Id, cursorId) > 0),
             "due" when DateTimeOffset.TryParse(cursorValue, out var dueAt) => query.Descending
                 ? records.Where(x => x.DueAt == null || x.DueAt < dueAt || (x.DueAt == dueAt && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.DueAt == null || x.DueAt > dueAt || (x.DueAt == dueAt && string.Compare(x.Id, cursorId) > 0)),
+            "updated" when DateTimeOffset.TryParse(cursorValue, out var updatedAt) => query.Descending
+                ? records.Where(x => x.UpdatedAt < updatedAt || (x.UpdatedAt == updatedAt && string.Compare(x.Id, cursorId) > 0))
+                : records.Where(x => x.UpdatedAt > updatedAt || (x.UpdatedAt == updatedAt && string.Compare(x.Id, cursorId) > 0)),
             _ when DateTimeOffset.TryParse(cursorValue, out var createdAt) => query.Descending
                 ? records.Where(x => x.CreatedAt < createdAt || (x.CreatedAt == createdAt && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.CreatedAt > createdAt || (x.CreatedAt == createdAt && string.Compare(x.Id, cursorId) > 0)),
@@ -393,6 +401,7 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             "priority" => record.Priority.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "title" => record.Title,
             "due" => record.DueAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "~null",
+            "updated" => record.UpdatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             _ => record.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
         };
         return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new[] { value, record.Id }, JsonOptions))

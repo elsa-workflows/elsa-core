@@ -327,6 +327,8 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
     [InlineData("priority", true)]
     [InlineData("title", false)]
     [InlineData("title", true)]
+    [InlineData("updated", false)]
+    [InlineData("updated", true)]
     public async Task CursorsAreStableAcrossEverySupportedSortAndDirection(string sort, bool descending)
     {
         await ActivateAsync();
@@ -340,6 +342,21 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         // dependence on the page size. A cursor that only works at one limit is not a cursor.
         foreach (var pageSize in new[] { 1, 2, 3 })
             Assert.Equal(expected, await PageThroughAsync(query, pageSize));
+    }
+
+    [ConformanceFact]
+    public async Task UpdatedSortUsesUpdatedAtThenAscendingId()
+    {
+        await ActivateAsync();
+        await SeedSortableTasksAsync();
+
+        // Seed UpdatedAt order is Bravo, Foxtrot, Charlie+Delta (shared, Id tie), Echo, Alpha —
+        // not the created/title order — so a provider that still maps updated to created fails.
+        var ascending = await Repository.QueryAsync(Query(sort: "updated", limit: 200));
+        Assert.Equal(["Bravo", "Foxtrot", "Charlie", "Delta", "Echo", "Alpha"], ascending.Items.Select(x => x.Title));
+
+        var descending = await Repository.QueryAsync(Query(sort: "updated", descending: true, limit: 200));
+        Assert.Equal(["Alpha", "Echo", "Charlie", "Delta", "Foxtrot", "Bravo"], descending.Items.Select(x => x.Title));
     }
 
     [ConformanceFact]
@@ -392,21 +409,23 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
 
     /// <summary>
     /// Seeds a set that exercises every sort key at once: distinct titles, distinct priorities, a mix of
-    /// present and absent due dates, and two rows sharing a due date so the identity tiebreaker is used.
+    /// present and absent due dates, updated times that are not the created order, and two rows sharing a
+    /// due date and two sharing an updated time so the identity tiebreaker is used.
     /// </summary>
     private async Task SeedSortableTasksAsync()
     {
         var subject = Subject();
         var baseline = Clock.UtcNow;
         var shared = baseline.AddDays(3);
+        var sharedUpdated = baseline.AddHours(3);
         UserTask[] tasks =
         [
-            CreateTask(subject, "Alpha", priority: 10, dueAt: baseline.AddDays(1)),
-            CreateTask(subject, "Bravo", priority: 90, dueAt: shared),
-            CreateTask(subject, "Charlie", priority: 50, dueAt: shared),
-            CreateTask(subject, "Delta", priority: 30, dueAt: baseline.AddDays(5)),
-            CreateTask(subject, "Echo", priority: 70, dueAt: null),
-            CreateTask(subject, "Foxtrot", priority: 20, dueAt: null)
+            CreateTask(subject, "Alpha", priority: 10, dueAt: baseline.AddDays(1), updatedAt: baseline.AddHours(6)),
+            CreateTask(subject, "Bravo", priority: 90, dueAt: shared, updatedAt: baseline.AddHours(1)),
+            CreateTask(subject, "Charlie", priority: 50, dueAt: shared, updatedAt: sharedUpdated),
+            CreateTask(subject, "Delta", priority: 30, dueAt: baseline.AddDays(5), updatedAt: sharedUpdated),
+            CreateTask(subject, "Echo", priority: 70, dueAt: null, updatedAt: baseline.AddHours(5)),
+            CreateTask(subject, "Foxtrot", priority: 20, dueAt: null, updatedAt: baseline.AddHours(2))
         ];
 
         foreach (var task in tasks)
