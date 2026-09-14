@@ -353,6 +353,30 @@ public abstract class WorkflowStoreConformanceTests
         Assert.Equal("el-seq-3", last!.Id);
     }
 
+    [Fact]
+    public async Task ExecutionLogDefaultOrderUsesIdWhenTimestampAndSequenceTieAcrossInstances()
+    {
+        await using var scenario = await CreateScenarioAsync();
+        var timestamp = StartedAt;
+        const long sequence = 1;
+
+        // Reverse Id insert order so dictionary/heap order cannot accidentally match Id ascending.
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-d", "instance-4", "activity-a", "Started", timestamp: timestamp, sequence: sequence));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-b", "instance-2", "activity-a", "Started", timestamp: timestamp, sequence: sequence));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-c", "instance-3", "activity-a", "Started", timestamp: timestamp, sequence: sequence));
+        await scenario.ExecutionLogs.SaveAsync(ExecutionLog("el-a", "instance-1", "activity-a", "Started", timestamp: timestamp, sequence: sequence));
+
+        var filter = new WorkflowExecutionLogRecordFilter();
+        var all = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.All);
+        Assert.Equal(["el-a", "el-b", "el-c", "el-d"], all.Items.Select(x => x.Id).ToArray());
+
+        var firstPage = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.FromRange(0, 2));
+        var secondPage = await scenario.ExecutionLogs.FindManyAsync(filter, PageArgs.FromRange(2, 2));
+        Assert.Equal(4, firstPage.TotalCount);
+        Assert.Equal(["el-a", "el-b"], firstPage.Items.Select(x => x.Id).ToArray());
+        Assert.Equal(["el-c", "el-d"], secondPage.Items.Select(x => x.Id).ToArray());
+    }
+
     private static async Task SeedMixedTriggersAsync(WorkflowStoreScenario scenario)
     {
         await scenario.Triggers.SaveAsync(Trigger("id-a", hash: "hash-a", tenantId: "tenant-a"));

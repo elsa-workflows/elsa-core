@@ -25,7 +25,7 @@ public interface IWorkflowExecutionLogStore : ILogRecordStore<WorkflowExecutionL
 
     /// <summary>
     /// Returns the first workflow execution log record matching the specified filter,
-    /// ordered by Timestamp then Sequence ascending.
+    /// ordered by Timestamp, Sequence, then Id ascending.
     /// </summary>
     Task<WorkflowExecutionLogRecord?> FindAsync(WorkflowExecutionLogRecordFilter filter, CancellationToken cancellationToken = default);
 
@@ -36,7 +36,7 @@ public interface IWorkflowExecutionLogStore : ILogRecordStore<WorkflowExecutionL
 
     /// <summary>
     /// Returns a set of workflow execution log records matching the specified filter,
-    /// ordered by Timestamp then Sequence ascending.
+    /// ordered by Timestamp, Sequence, then Id ascending.
     /// </summary>
     Task<Page<WorkflowExecutionLogRecord>> FindManyAsync(WorkflowExecutionLogRecordFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default);
 
