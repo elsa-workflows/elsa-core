@@ -30,21 +30,21 @@ The fix implements three layers of protection:
 
 ## Test Scenarios
 
-### Theory: `ConcurrentIndexing_ShouldNotCreateDuplicates`
+### Parameterized test: `ConcurrentIndexing_ShouldNotCreateDuplicates`
 
-Tests three scenarios using a parameterized theory:
+Tests three scenarios using native TUnit arguments:
 - **Synchronized start** (10 operations, no delay): All engines start simultaneously
 - **Staggered start** (10 operations, 1-5ms random delays): Simulates real-world timing variations
 - **Multiple rounds** (3 operations × 3 rounds): Tests repeated indexing operations
 
-### Fact: `ConcurrentWorkflowRefresh_ShouldNotCreateDuplicates`
+### Test: `ConcurrentWorkflowRefresh_ShouldNotCreateDuplicates`
 
 Tests concurrent calls to the workflow refresh API from multiple engines, simulating:
 - Manual API refresh requests
 - File watcher triggered refreshes
 - Simultaneous blob storage updates
 
-### Fact: `ManuallyCreatedDuplicates_ShouldHaveSameHash`
+### Test: `ManuallyCreatedDuplicates_ShouldHaveSameHash`
 
 Documents the original bug symptom by deliberately creating duplicates to verify they have the same hash, which would cause ambiguous workflow matching.
 
@@ -60,19 +60,21 @@ Documents the original bug symptom by deliberately creating duplicates to verify
 
 ### Test Infrastructure
 
-Uses the existing component test infrastructure:
-- **App**: Test application fixture with infrastructure setup
-- **Cluster**: Multi-pod cluster (Pod1, Pod2, Pod3) simulating multi-engine deployment
-- **Infrastructure**: Manages Docker containers (PostgreSQL, RabbitMQ)
+Uses the native TUnit component-test infrastructure:
+
+- **Infrastructure**: Owns one SQL Server Testcontainer for the TUnit test session
+- **App**: Gives every expanded test invocation its own SQL catalog and filesystem root
+- **Cluster**: Starts Pod1 for the invocation and creates Pod2 and Pod3 lazily when a scenario needs them
+- **Host**: Boots the dedicated ASP.NET Core component-test entry point through the TUnit.AspNetCore lifecycle gate
 
 ## Running the Tests
 
 ```bash
 # Run all concurrent trigger tests
-dotnet test --filter "FullyQualifiedName~ConcurrentTriggerIndexing"
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/ConcurrentTriggerIndexingTests*/*"
 
 # Run specific test
-dotnet test --filter "FullyQualifiedName~ConcurrentIndexing_ShouldNotCreateDuplicates"
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/ConcurrentTriggerIndexingTests*/ConcurrentIndexing_ShouldNotCreateDuplicates"
 ```
 
 ## Test Validation

@@ -95,23 +95,21 @@ The `Workflows/` directory contains test workflow implementations:
 ## Test Execution
 
 ### Prerequisites
+
 - .NET 10.0 SDK
-- PostgreSQL (for component tests)
-- Docker (for TestContainers)
+- Docker; the test session starts its SQL Server Testcontainer automatically
 
 ### Running Tests
+
 ```bash
 # Run all HttpEndpoint tests
-dotnet test --filter "FullyQualifiedName~HttpEndpoint"
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpoint*Tests*/*"
 
 # Run specific test categories
-dotnet test --filter "HttpEndpointTests"
-dotnet test --filter "HttpEndpointSecurityAndEdgeCasesTests"
-dotnet test --filter "HttpEndpointRouteParametersTests"
-dotnet test --filter "HttpEndpointFileUploadTests"
-
-# Run with detailed output
-dotnet test --filter "FullyQualifiedName~HttpEndpoint" --verbosity detailed
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointTests*/*"
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointSecurityAndEdgeCasesTests*/*"
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointRouteParametersTests*/*"
+dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -- --treenode-filter "/*/*/HttpEndpointFileUploadTests*/*"
 ```
 
 ### Test Data and Scenarios
@@ -130,13 +128,13 @@ The tests cover a wide range of scenarios:
 
 ## Architecture and Design
 
-The tests follow the established patterns in the Elsa component test suite:
+The tests follow the native TUnit component-test patterns:
 
-1. **Test Inheritance**: All tests inherit from `AppComponentTest` base class
+1. **Invocation Isolation**: Every expanded test gets its own `App`, SQL catalog, filesystem root, and host graph
 2. **Workflow Fixtures**: Each test scenario has corresponding workflow implementations
 3. **HTTP Client**: Tests use `WorkflowServer.CreateHttpWorkflowClient()` for HTTP calls
-4. **Assertions**: Comprehensive assertions for status codes, content, and behavior
-5. **Clean Code**: DRY principles with shared test utilities and patterns
+4. **Host Lifecycle**: The dedicated ASP.NET Core host starts through TUnit.AspNetCore; additional cluster pods are lazy
+5. **Assertions**: Native TUnit assertions validate status codes, content, and behavior
 
 ## Integration with Elsa Framework
 

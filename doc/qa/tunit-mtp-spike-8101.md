@@ -1,7 +1,8 @@
 # Issue #8101: TUnit migration research and rollout plan
 
-Status: **full migration in progress by explicit project decision after the spike research**  
-Recorded: 2026-09-13  
+Status: **all 55 active test projects migrated; root CI/tooling cutover remains**
+Recorded: 2026-09-13
+Updated: 2026-09-14
 Issue: [elsa-workflows/elsa-core#8101][s1]  
 Comparison base: `37b1a453169201e577ef6db0bfd0348b08070211`  
 Isolated branch: `spike/8101-tunit-mtp`  
@@ -746,11 +747,31 @@ One separate supporting metadata commit, `900d7dc4775b3e2d13ad2ef10c54e3e8b6a260
 
 The final-four scoped audit found no xUnit source/configuration references or legacy attributes and no un-awaited TUnit assertions. All four restored graphs contain TUnit `1.66.27` and no xUnit or `Microsoft.NET.Test.Sdk` library; their Release outputs contain no xUnit-named file or `xunit` string in the primary test assembly. The host project contains exactly six declared `[Test]` methods plus two `[InheritsTests]` expansions, 15 awaited assertion sites, and only the two matching keyed constraints described above.
 
-#### Final 54-project native boundary
+#### Final 54-project native boundary (pre-component checkpoint)
 
 A final native discovery audit re-listed all 54 converted executables successfully. The 37 unit/conformance projects were re-listed from their already-verified Debug outputs and returned 2,645 cases; all 17 integration projects were re-listed from Release outputs and returned 1,126 cases. The combined manifest contains exactly 3,771 cases and 3,771 unique UIDs. The verified per-project outcomes aggregate to 3,645 passed, 126 intentionally provider-gated skips, and zero failed. This is a targeted aggregation, not a claim that one monolithic repository command ran every project. Display names are not claimed to be globally unique: BPMN Interchange intentionally reuses labels across rows in three pre-existing parameterized methods.
 
 The 3,771 figure assumes `ELSA_USERTASKS_TEST_SQLSERVER`, `ELSA_USERTASKS_TEST_POSTGRES`, and `ELSA_USERTASKS_TEST_ORACLE` are unset, as they were during the audit. If `k` of those optional providers is configured, the intended aggregate becomes `3,771 + 7k` discoveries, `3,645 + 49k` passes, and `126 - 42k` skips. The fixed comparison-base inventory now resolves to 54 native projects and one residual component project out of 55.
+
+#### Component migration checkpoint (2026-09-14)
+
+Signed code commit `8a9bc8988ff43608c82a6ba3700761adbe311406` migrates the final active project, `Elsa.Workflows.ComponentTests`, to native TUnit. The fixed comparison-base inventory therefore resolves to 55 of 55 active projects on TUnit. The new `Elsa.Workflows.ComponentTests.Host` project is a non-test dependency and is not a 56th project in that denominator. Adding the component result to the preceding targeted evidence yields 3,974 discoveries: 3,845 passed, 129 intentionally skipped, and zero failed. This remains a per-project evidence aggregation, not a claim that one monolithic command executed all 55 projects.
+
+The component host is a dedicated non-test ASP.NET Core project under `test/component` and uses ordinary `WebApplication.CreateBuilder(args)`. Its entry point records the base Elsa module configuration without applying it. Each case-owned TUnit.AspNetCore factory appends invocation configuration, leases that host's exact process-wide Elsa module-registry entry, and calls `Apply()` exactly once. There is no static test hook or `IsTesting` branch.
+
+One session-shared SQL Server Testcontainer is the only shared component infrastructure. Every expanded invocation receives a fresh `App`, SQL catalog, temporary/cache directories, service graph, and primary pod; Pod2 and Pod3 are created lazily. Catalog creation and the four distinct Elsa schema migrations run once per case inside the native TUnit.AspNetCore server-initialization gate, while all four baseline tenants still activate. Cleanup stops all materialized hosts before dropping that case's catalog and files. No `[NotInParallel]`, `ParallelLimiter`, `IParallelLimit`, runner-wide maximum, or disguised suite serialization is present.
+
+The final default-parallel Release invocation was:
+
+```bash
+TUNIT_OTEL_RECEIVER=0 dotnet run --project test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 --no-build -- --minimum-expected-tests 203 --results-directory /tmp/elsa-8101-tunit-full-final-01 --report-trx --report-trx-filename full.trx --timeout 20m
+```
+
+TUnit reported `Passed` with 203 total, 200 passed, three intended skips, zero failed, zero cancelled, zero timed out, and zero flaky in 6m27.8s; its finalized JSON records `totalDurationMs = 387784.054` and 203 unique case IDs. The retained skips are `ActivityRegistrySyncTests.ImportWorkflowActivity_ShouldUpdateOtherPods`, `InputOutputLoggingTests.WorkflowAsActivityInternal_ShouldHonorSettings_WhenExecuting`, and `DeleteWorkflowTests.DeleteWorkflow_Clustered`. The TRX counters are `total=203`, `executed=200`, `passed=200`, `failed=0`, and `notExecuted=3`. The process exit code was 9 only because Microsoft Testing Platform 2.3.3 applies `--minimum-expected-tests` to executed cases: the supplied value 203 exceeded the 200 non-skipped executions. It was a `MinimumExpectedTestsPolicyViolation`, not a test failure.
+
+Discovery/report parity and execution-floor enforcement are therefore two distinct gates. Component runs must use `--minimum-expected-tests 200`, while the finalized TUnit JSON must independently be checked for exactly 203 total cases. `TUNIT_OTEL_RECEIVER=0` only disables the optional test-runner OTLP receiver in a restricted local environment; it does not alter scheduling or application telemetry. The focused four-tenant cohort also passed 41 of 41 in 1m36.786s after catalog migration was reduced to once per case.
+
+The component project restored successfully outside the restricted sandbox and built in Release with zero warnings and zero errors. Its restored graph contains TUnit 1.66.27 and no xUnit or `Microsoft.NET.Test.Sdk`; the dedicated host graph contains neither test framework. The component source/configuration audit found no legacy xUnit attributes or APIs, and the migration has no `src/**` diff. The previously started ten-cycle component repeat was force-stopped and is invalid evidence; no component repeat-run claim is made.
 
 At the 50-project checkpoint, the scoped audit covered the then-native 13 integration projects and all three shared testing libraries. It found zero xUnit source/configuration references, zero legacy xUnit test attributes, 1,919 `Assert.That` sites and 1,919 matching awaited sites, zero restored xUnit libraries in all 13 `project.assets.json` graphs, TUnit `1.66.27` in all 13 graphs, zero xUnit-named Release files, and zero `xunit` strings in each primary test assembly. Central `TUnit` and `TUnit.AspNetCore` pins remain `1.66.27`.
 
@@ -770,13 +791,13 @@ The earlier supporting package-alignment commits are `7696f3d0e5b1390569a6add613
 
 The baseline's 2,931 figure is a source count of attributed test methods before theory expansion, not a repository-wide runner-discovered case count. Neither the 1,482-case rollout wave, the earlier cumulative 2,766 discoveries, nor the final 3,771 targeted discoveries may be presented as a percentage of 2,931 or as repository-wide discovery parity.
 
-The repository remains mixed-runner during rollout. There is no root `global.json`; MTP selection remains scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables are the verified path for the converted projects; `dotnet test --project` from the nested MTP context currently reports zero tests for these test applications. These counts are not evidence of a root-level or full-suite MTP pass, and root runner integration remains an explicit final migration step.
+The fixed 55-project migration boundary is no longer mixed-runner, but repository-root runner selection and CI have not been switched. There is no root `global.json`; MTP selection remains scoped to `eng/tunit-spike/mtp/global.json`. Targeted native executables are the verified path for the converted projects. These counts are not evidence of a root-level or full-suite MTP pass, and root runner integration remains an explicit final migration step.
 
-At the committed snapshot, the residual xUnit execution boundary is exactly `test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj`. The remaining dependency/configuration surface still includes conditional central package and runner wiring in `Directory.Packages.props` and `test/Directory.Build.props`, that component project's xUnit references, and its `xunit.runner.json`. The performance props still mention removing inherited xUnit, but performance and `test/TlsSmoke` are outside the fixed 55-project denominator.
+At the component checkpoint, no active test-project execution boundary remains on xUnit: the component project uses TUnit and TUnit.AspNetCore, and its `xunit.runner.json` is removed. Conditional central package/runner wiring still needs removal during the final repository and CI cutover. The performance props still mention removing inherited xUnit, but performance and `test/TlsSmoke` are outside the fixed 55-project denominator.
 
 At the earlier 46-project integration checkpoint, the protected 15-path framework-neutral shared-helper patch was incorporated into `48337b147` together with the eight dependent integration projects. The three shared libraries and all eight migrated projects build for every targeted framework/configuration used by that tranche. A post-restore audit found zero resolved xUnit packages in their `project.assets.json` graphs, zero xUnit-named files in their build output, and zero xUnit strings in 42 scanned first-party DLLs. Source audits found zero xUnit references, zero potentially un-awaited `Assert.That` calls among 1,450 assertion sites, zero temporary trace/sentinel references, and no changed paths outside the accepted tranche plus the `ElsaScriptCompiler` race fix and that evidence.
 
-This documentation update is the deliberate stop point after all integration projects, at 54 of 55 active projects and 3,771 targeted discoveries in the default provider environment. It does not migrate or verify `Elsa.Workflows.ComponentTests`, switch the repository root or CI to MTP, close the coverage/reporting/diagnostics/IDE gates, or claim repository-wide xUnit removal. Those plan steps and checklist items remain open.
+This documentation update closes the component-project commit boundary at 55 of 55 active projects and 3,974 targeted discoveries in the default provider environment. It does not switch the repository root or CI to MTP, remove the remaining conditional central xUnit wiring, close the coverage/diagnostics/IDE gates, or claim one repository-wide execution. Those plan steps and checklist items remain open.
 
 1. **`docs: research TUnit migration and isolation plan`** — freeze the base SHA, inventories, baseline counts/timings, primary-source findings, accepted scope, risks, and reproducible validation matrix.
 2. **`test: add opt-in TUnit MTP infrastructure`** — central package versions, conditional test-project wiring, and a directory-scoped MTP selector. Exit: converted and unconverted projects can coexist without changing the root runner.
@@ -784,7 +805,7 @@ This documentation update is the deliberate stop point after all integration pro
 4. **`test: migrate unit suites to native TUnit (wave 1)`** — fixture-light and representative core projects; convert attributes, data sources, lifecycle, output, and assertions. Exit: exact discovery parity, no un-awaited assertions, and ten stable default-parallel runs per representative suite.
 5. **`test: migrate unit suites to native TUnit (wave 2)`** — remaining unit projects, including data-heavy and global-state cases. Exit: all unit projects pass with native assertions; global hazards have narrow constraints and ordinary tests remain parallel.
 6. **`test: migrate integration suites to native TUnit`** — convert output/lifecycle and allocate unique databases, tenants, workflow identities, queues, files, and other mutable resources per invocation. Exit: exact case parity and repeated parallel runs with idempotent cleanup.
-7. **`test: migrate conformance and component suites to TUnit`** — replace custom xUnit discovery with TUnit-native data generation while preserving unavailable-provider suppression; model shared host/container lifetime explicitly. Exit: component/conformance counts, skips, fixture lifetime, serialization, and teardown are proven.
+7. **`test: migrate conformance and component suites to TUnit`** — completed by the earlier conformance commits and signed component commit `8a9bc8988ff43608c82a6ba3700761adbe311406`; unavailable-provider suppression, component counts/skips, native host lifetime, invocation isolation, and teardown are verified.
 8. **`test: enforce isolated parallel execution`** — complete the repository hazard audit, add isolation sentinels, use keyed constraints for genuinely shared resources and unkeyed `[NotInParallel]` only for irreducible process-global state. Exit: independent sentinels overlap, protected sentinels do not, and repeated full runs show no count drift or cross-test contamination.
 9. **`ci: switch Elsa tests to MTP`** — move runner selection to the repository root, update developer/CI commands, preserve GitHub annotations and TRX, wire coverage formats plus an external threshold gate, and validate hang dumps. Exit: success and deliberate-failure paths produce the expected artifacts and exit codes.
 10. **`chore: remove the final xUnit surface`** — remove xUnit packages, runners, configuration, discoverers, names, and stale documentation; build the solution and run the full matrix. Exit: case-insensitive repository audit and restored dependency graphs contain no xUnit, and the original checkout remains untouched.
@@ -795,28 +816,28 @@ Every commit is gated by a focused build and test run before it is created. Ever
 
 The migration is complete only when every required box has evidence:
 
-- [ ] Every active unit, integration, and component project uses TUnit on MTP.
-- [ ] Unit, integration, conformance, and component case manifests match the intended baseline.
-- [ ] Skip reasons and display identities match or have reviewed mappings.
-- [ ] Ten consecutive default-parallel unit-pilot runs pass without count drift.
+- [x] Every active unit, integration, and component project uses TUnit on MTP.
+- [x] Unit, integration, conformance, and component case manifests match the intended baseline.
+- [x] Skip reasons and display identities match or have reviewed mappings.
+- [x] Ten consecutive default-parallel unit-pilot runs pass without count drift.
 - [x] Ten consecutive default-parallel integration-pilot runs pass without count drift.
 - [ ] Shared fixture initialization/disposal counts match intended lifetime.
-- [ ] Mutable databases, queues, topics, keys, files, workflows, and tenants are isolated per invocation.
-- [ ] Process-global tests are exclusive and restore state.
+- [x] Mutable databases, queues, topics, keys, files, workflows, and tenants are isolated per invocation.
+- [x] Process-global tests are exclusive and restore state.
 - [ ] Independent parallelism sentinels overlap while constrained sentinels never overlap.
-- [ ] `ITestOutputHelper` replacement preserves concurrent/failure output.
+- [x] `ITestOutputHelper` replacement preserves concurrent/failure output.
 - [x] Conformance discovery preserves unavailable-provider suppression.
 - [ ] Cobertura is equivalent and existing filters are retained.
 - [ ] LCOV/OpenCover disposition is explicit.
 - [ ] Every nonzero coverage threshold fails the build when violated.
 - [ ] GitHub annotations are source-linked and useful.
-- [ ] TRX totals, outcomes, names, output, and attachments are acceptable.
+- [ ] TRX totals, outcomes, names, output, and attachments are acceptable; component counters are verified, but CI must use execution minimum 200 separately from discovery/report total 203.
 - [ ] A two-minute hang creates and uploads a mini dump.
 - [ ] Supported IDEs discover, filter, run, debug, cancel, and show output.
 - [ ] Root and CI test commands use MTP syntax and return correct exit codes.
 - [ ] Case-insensitive source/config audit contains no xUnit surface.
-- [ ] Restored dependency graphs and built artifacts contain no xUnit assemblies.
-- [ ] Original checkout and unrelated user changes remain untouched.
+- [ ] Restored dependency graphs and built artifacts contain no xUnit assemblies; active-project graphs are clean, but the final repository-wide zero-xUnit audit remains.
+- [x] Original checkout and unrelated user changes remain untouched.
 
 ## Sources
 
