@@ -123,6 +123,7 @@ public class CreateSchedulesStartupTaskTests
         BookmarkFilter? purgedFilter = null;
         _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
             .Returns(new Page<StoredBookmark>(bookmarks, bookmarks.Length));
+        StubBookmarkReload(bookmarks);
         _workflowInstanceStore.FindManyIdsAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(["suspended-instance"]);
         _bookmarkManager.DeleteManyAsync(Arg.Do<BookmarkFilter>(x => purgedFilter = x), Arg.Any<CancellationToken>())
@@ -139,9 +140,33 @@ public class CreateSchedulesStartupTaskTests
         Assert.Equal(
             new[]
             {
-                "missing-bookmark", "finished-bookmark", "cancelled-bookmark", "faulted-bookmark", "empty-instance-bookmark"
+                "cancelled-bookmark", "empty-instance-bookmark", "faulted-bookmark", "finished-bookmark", "missing-bookmark"
             },
-            purgedFilter.BookmarkIds);
+            purgedFilter.BookmarkIds?.OrderBy(x => x, StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_DoesNotPurgeOrphanWhoseInstanceBecomesRunningBeforePurge()
+    {
+        var revived = Bookmark("revived-bookmark", "revived-instance");
+        var stillMissing = Bookmark("missing-bookmark", "missing-instance");
+        var bookmarks = new[] { revived, stillMissing };
+        BookmarkFilter? purgedFilter = null;
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredBookmark>(bookmarks, bookmarks.Length));
+        StubBookmarkReload(bookmarks);
+        _workflowInstanceStore.FindManyIdsAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Array.Empty<string>(), _ => new[] { "revived-instance" });
+        _bookmarkManager.DeleteManyAsync(Arg.Do<BookmarkFilter>(x => purgedFilter = x), Arg.Any<CancellationToken>())
+            .Returns(1);
+        var task = new CreateSchedulesStartupTask(CreateServiceProvider(), OptionsFactory.Create(_options));
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await _bookmarkScheduler.DidNotReceive().ScheduleAsync(Arg.Any<IEnumerable<StoredBookmark>>(), Arg.Any<CancellationToken>());
+        await _bookmarkManager.Received(1).DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
+        Assert.NotNull(purgedFilter);
+        Assert.Equal(["missing-bookmark"], purgedFilter.BookmarkIds);
     }
 
     [Fact]
@@ -165,6 +190,21 @@ public class CreateSchedulesStartupTaskTests
         services.AddSingleton(_bookmarkManager);
         configureServices?.Invoke(services);
         return services.BuildServiceProvider();
+    }
+
+    private void StubBookmarkReload(IEnumerable<StoredBookmark> bookmarks)
+    {
+        var bookmarkList = bookmarks.ToList();
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var ids = call.Arg<BookmarkFilter>().BookmarkIds;
+                if (ids == null)
+                    return bookmarkList.AsEnumerable();
+
+                var idSet = ids.ToHashSet(StringComparer.Ordinal);
+                return bookmarkList.Where(x => idSet.Contains(x.Id));
+            });
     }
 
     private static IEnumerable<string> RunningIds(WorkflowInstanceFilter filter)

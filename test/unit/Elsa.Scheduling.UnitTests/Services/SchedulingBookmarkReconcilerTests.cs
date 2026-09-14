@@ -87,6 +87,19 @@ public class SchedulingBookmarkReconcilerTests
         await bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task PurgeAsync_DoesNotDeleteWhenInstanceBecameRunning()
+    {
+        var bookmarkManager = Substitute.For<IBookmarkManager>();
+        var reconciler = new SchedulingBookmarkReconciler(
+            CreateInstanceStore(Instance("revived", WorkflowStatus.Running, WorkflowSubStatus.Suspended)),
+            bookmarkManager);
+
+        await reconciler.PurgeAsync([Bookmark("revived-bookmark", "revived")]);
+
+        await bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
+    }
+
     private static MemoryWorkflowInstanceStore CreateInstanceStore(params WorkflowInstance[] instances)
     {
         var store = new MemoryStore<WorkflowInstance>();

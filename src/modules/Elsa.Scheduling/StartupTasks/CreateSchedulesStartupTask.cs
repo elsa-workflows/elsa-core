@@ -5,7 +5,6 @@ using Elsa.Scheduling.Options;
 using Elsa.Scheduling.Services;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,7 +86,7 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromRange(0, pageSize);
-        var orphanBookmarks = new List<StoredBookmark>();
+        var orphanBookmarkIds = new HashSet<string>(StringComparer.Ordinal);
 
         while (true)
         {
@@ -98,8 +97,11 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
 
             var classification = await bookmarkReconciler.ClassifyAsync(page.Items, cancellationToken);
 
-            if (classification.Orphans.Count > 0)
-                orphanBookmarks.AddRange(classification.Orphans);
+            foreach (var orphan in classification.Orphans)
+            {
+                if (!string.IsNullOrWhiteSpace(orphan.Id))
+                    orphanBookmarkIds.Add(orphan.Id);
+            }
 
             if (classification.Schedulable.Count > 0)
                 await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
@@ -111,6 +113,13 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
             pageArgs = pageArgs.Next();
         }
 
-        await bookmarkReconciler.PurgeAsync(orphanBookmarks, cancellationToken);
+        if (orphanBookmarkIds.Count == 0)
+            return;
+
+        var candidates = await bookmarkStore.FindManyAsync(new BookmarkFilter
+        {
+            BookmarkIds = orphanBookmarkIds.ToList()
+        }, cancellationToken);
+        await bookmarkReconciler.PurgeAsync(candidates, cancellationToken);
     }
 }

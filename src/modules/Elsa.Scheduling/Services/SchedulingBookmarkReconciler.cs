@@ -52,11 +52,12 @@ public class SchedulingBookmarkReconciler(IWorkflowInstanceStore workflowInstanc
     }
 
     /// <summary>
-    /// Deletes orphan scheduling bookmarks so the next rebuild does not rehydrate them.
+    /// Revalidates candidates against the workflow-instance store, then deletes bookmarks that are still orphans.
     /// </summary>
-    public async Task PurgeAsync(IEnumerable<StoredBookmark> orphanBookmarks, CancellationToken cancellationToken = default)
+    public async Task PurgeAsync(IEnumerable<StoredBookmark> candidateBookmarks, CancellationToken cancellationToken = default)
     {
-        var bookmarkIds = orphanBookmarks
+        var remainingOrphans = (await ClassifyAsync(candidateBookmarks, cancellationToken)).Orphans;
+        var bookmarkIds = remainingOrphans
             .Select(x => x.Id)
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Distinct(StringComparer.Ordinal)
