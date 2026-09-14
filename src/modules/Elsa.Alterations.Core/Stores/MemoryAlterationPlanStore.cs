@@ -69,15 +69,22 @@ public class MemoryAlterationPlanStore : IAlterationPlanStore
     {
         var existing = _store.Find(x => x.Id == plan.Id);
 
-        if (existing is not null && !CanReplace(existing))
+        if (existing is null)
+            return;
+
+        if (!CanReplace(existing, plan))
             throw AlterationStoreConflict.HiddenPlanId(plan.Id);
+
+        // An accepted update may change the payload, but it must not rehome the row.
+        plan.TenantId = existing.TenantId;
     }
 
     /// <summary>
     /// <c>*</c> is visible to every tenant, but only an agnostic writer may replace it.
     /// Named tenants may upsert their own visible rows.
     /// </summary>
-    private bool CanReplace(Entity existing) => TenantVisibility.CanReplace(existing.TenantId, CurrentTenantId);
+    private bool CanReplace(Entity existing, Entity incoming) =>
+        TenantVisibility.CanReplaceOwnedRow(existing.TenantId, incoming.TenantId, CurrentTenantId);
 
     private void ApplyCurrentTenant(Entity entity)
     {

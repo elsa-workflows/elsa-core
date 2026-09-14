@@ -101,6 +101,21 @@ public class MemoryAlterationPlanStoreTenantIsolationTests
         Assert.Equal(Tenant.AgnosticTenantId, remaining.TenantId);
     }
 
+    [Fact(DisplayName = "SaveAsync refuses a named source when an agnostic writer updates a * row")]
+    public async Task SaveAsync_WhenAgnosticAmbientReceivesNamedSource_ThrowsAndLeavesExisting()
+    {
+        var backing = new MemoryStore<AlterationPlan>();
+        var agnostic = new MemoryAlterationPlanStore(backing, new TestTenantAccessor(Tenant.AgnosticTenantId));
+        await agnostic.SaveAsync(Plan("shared", Tenant.AgnosticTenantId));
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => agnostic.SaveAsync(Plan("shared", "tenant-b")));
+        var remaining = await agnostic.FindAsync(new AlterationPlanFilter { Id = "shared" });
+
+        Assert.Contains("shared", ex.Message);
+        Assert.NotNull(remaining);
+        Assert.Equal(Tenant.AgnosticTenantId, remaining.TenantId);
+    }
+
     [Fact(DisplayName = "SaveAsync still lets an agnostic writer update a * row")]
     public async Task SaveAsync_WhenAmbientIsAgnostic_UpsertsAgnosticRow()
     {
@@ -123,6 +138,22 @@ public class MemoryAlterationPlanStoreTenantIsolationTests
         var store = CreateStore("tenant-a");
         await store.SaveAsync(Plan("plan-a", "tenant-a"));
         var updated = Plan("plan-a", "tenant-a");
+        updated.Status = AlterationPlanStatus.Completed;
+
+        await store.SaveAsync(updated);
+
+        var found = await store.FindAsync(new AlterationPlanFilter { Id = "plan-a" });
+        Assert.NotNull(found);
+        Assert.Equal(AlterationPlanStatus.Completed, found.Status);
+        Assert.Equal("tenant-a", found.TenantId);
+    }
+
+    [Fact(DisplayName = "SaveAsync preserves the stored TenantId on an accepted update")]
+    public async Task SaveAsync_WhenIncomingTenantDiffers_PreservesExistingTenantId()
+    {
+        var store = CreateStore("tenant-a");
+        await store.SaveAsync(Plan("plan-a", "tenant-a"));
+        var updated = Plan("plan-a", "tenant-b");
         updated.Status = AlterationPlanStatus.Completed;
 
         await store.SaveAsync(updated);

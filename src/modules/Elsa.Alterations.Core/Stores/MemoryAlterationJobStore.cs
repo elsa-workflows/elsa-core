@@ -52,8 +52,9 @@ public class MemoryAlterationJobStore : IAlterationJobStore
             foreach (var job in list)
                 ApplyCurrentTenant(job);
 
+            var tenantIdsById = new Dictionary<string, string?>(StringComparer.Ordinal);
             foreach (var job in list)
-                EnsureIdAvailable(job);
+                EnsureIdAvailable(job, tenantIdsById);
 
             _store.SaveMany(list, x => x.Id);
         }
@@ -98,19 +99,41 @@ public class MemoryAlterationJobStore : IAlterationJobStore
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 
-    private void EnsureIdAvailable(AlterationJob job)
+    private void EnsureIdAvailable(AlterationJob job, IDictionary<string, string?>? tenantIdsById = null)
     {
+        if (tenantIdsById?.TryGetValue(job.Id, out var stagedTenantId) == true)
+        {
+            if (!CanReplace(stagedTenantId, job.TenantId))
+                throw AlterationStoreConflict.HiddenJobId(job.Id);
+
+            // A repeated ID in one batch is an update of the row established by the
+            // earlier item, even when that row was absent before the batch started.
+            job.TenantId = stagedTenantId;
+            return;
+        }
+
         var existing = _store.Find(x => x.Id == job.Id);
 
-        if (existing is not null && !CanReplace(existing))
+        if (existing is null)
+        {
+            tenantIdsById?.Add(job.Id, job.TenantId);
+            return;
+        }
+
+        if (!CanReplace(existing.TenantId, job.TenantId))
             throw AlterationStoreConflict.HiddenJobId(job.Id);
+
+        // An accepted update may change the payload, but it must not rehome the row.
+        job.TenantId = existing.TenantId;
+        tenantIdsById?.Add(job.Id, existing.TenantId);
     }
 
     /// <summary>
     /// <c>*</c> is visible to every tenant, but only an agnostic writer may replace it.
     /// Named tenants may upsert their own visible rows.
     /// </summary>
-    private bool CanReplace(Entity existing) => TenantVisibility.CanReplace(existing.TenantId, CurrentTenantId);
+    private bool CanReplace(string? existingTenantId, string? incomingTenantId) =>
+        TenantVisibility.CanReplaceOwnedRow(existingTenantId, incomingTenantId, CurrentTenantId);
 
     private void ApplyCurrentTenant(Entity entity)
     {

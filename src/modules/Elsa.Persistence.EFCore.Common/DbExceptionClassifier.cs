@@ -19,12 +19,21 @@ internal static class DbExceptionClassifier
         49920,
     ];
 
-    public static bool IsSqlServerTransient(string providerName, Exception exception)
-    {
-        if (!providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
-            return false;
+    private static readonly HashSet<int> MySqlTransientErrorNumbers =
+    [
+        1205, // ER_LOCK_WAIT_TIMEOUT
+        1213, // ER_LOCK_DEADLOCK
+    ];
 
-        return EnumerateExceptions(exception).Any(IsSqlServerTransientException);
+    public static bool IsTransient(string providerName, Exception exception)
+    {
+        if (providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
+            return EnumerateExceptions(exception).Any(IsSqlServerTransientException);
+
+        if (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase))
+            return EnumerateExceptions(exception).Any(IsMySqlTransientException);
+
+        return false;
     }
 
     public static bool IsDuplicateKey(Exception exception)
@@ -39,6 +48,17 @@ internal static class DbExceptionClassifier
 
         return GetErrorNumbers(exception).Any(SqlServerTransientErrorNumbers.Contains)
                || exception.Message.Contains("deadlock", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsMySqlTransientException(Exception exception)
+    {
+        var type = exception.GetType();
+        var typeNamespace = type.Namespace ?? string.Empty;
+        var isMySqlException = type.Name.Equals("MySqlException", StringComparison.OrdinalIgnoreCase)
+                               && (typeNamespace.Equals("MySqlConnector", StringComparison.OrdinalIgnoreCase)
+                                   || typeNamespace.Equals("MySql.Data.MySqlClient", StringComparison.OrdinalIgnoreCase));
+
+        return isMySqlException && GetErrorNumbers(exception).Any(MySqlTransientErrorNumbers.Contains);
     }
 
     private static bool IsDuplicateKeyException(Exception exception)

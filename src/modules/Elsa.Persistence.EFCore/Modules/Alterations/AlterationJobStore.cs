@@ -49,8 +49,15 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
             return;
         }
 
-        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        await UpsertAsync(dbContext, record, cancellationToken);
+        await _store.ExecuteWithDbExceptionHandlingAsync(
+            async () =>
+            {
+                await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+                await UpsertAsync(dbContext, record, cancellationToken, handleDbExceptions: false);
+                return true;
+            },
+            cancellationToken,
+            IsDatabaseException);
     }
 
     /// <inheritdoc />
@@ -69,7 +76,7 @@ public class EFCoreAlterationJobStore : IAlterationJobStore
         await _store.ExecuteWithDbExceptionHandlingAsync(
             async () =>
             {
-                await _store.ExecuteSqlServerWriteWithRetryAsync(async (dbContext, ct) =>
+                await _store.ExecuteWriteWithRetryAsync(async (dbContext, ct) =>
                 {
                     await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
 

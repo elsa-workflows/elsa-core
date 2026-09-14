@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Elsa.Persistence.EFCore.UnitTests;
 
 public sealed class DbExceptionClassifierTests
@@ -24,6 +26,33 @@ public sealed class DbExceptionClassifierTests
         Assert.Equal(expected, DbExceptionClassifier.IsDuplicateKey(exception));
     }
 
+    [Theory]
+    [InlineData(1205, true)]
+    [InlineData(1213, true)]
+    [InlineData(1062, false)]
+    public void IsTransient_WhenMySqlProviderUsesInnoDbLockErrorCodes(int number, bool expected)
+    {
+        var exception = new MySqlConnector.MySqlException(number);
+
+        Assert.Equal(expected, DbExceptionClassifier.IsTransient("Pomelo.EntityFrameworkCore.MySql", exception));
+    }
+
+    [Fact]
+    public void IsTransient_WhenMySqlProviderExceptionOnlyHasAnUnrelatedNumberProperty_ReturnsFalse()
+    {
+        var exception = new UnrelatedNumberException(1213);
+
+        Assert.False(DbExceptionClassifier.IsTransient("Pomelo.EntityFrameworkCore.MySql", exception));
+    }
+
+    [Fact]
+    public void IsTransient_WhenMySqlDeadlockIsWrappedByDbUpdateException_ReturnsTrue()
+    {
+        var exception = new DbUpdateException("Write failed", new MySqlConnector.MySqlException(1213));
+
+        Assert.True(DbExceptionClassifier.IsTransient("Pomelo.EntityFrameworkCore.MySql", exception));
+    }
+
     private sealed class SqliteExceptionWithExtendedCode(int sqliteErrorCode, int sqliteExtendedErrorCode) : Exception
     {
         public int SqliteErrorCode { get; } = sqliteErrorCode;
@@ -33,5 +62,10 @@ public sealed class DbExceptionClassifierTests
     private sealed class SqliteExceptionWithoutExtendedCode(int sqliteErrorCode) : Exception
     {
         public int SqliteErrorCode { get; } = sqliteErrorCode;
+    }
+
+    private sealed class UnrelatedNumberException(int number) : Exception
+    {
+        public int Number { get; } = number;
     }
 }
