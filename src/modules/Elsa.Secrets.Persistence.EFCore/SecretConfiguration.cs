@@ -23,8 +23,9 @@ internal class SecretConfiguration : IEntityTypeConfiguration<Secret>
         builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(32).IsRequired();
         // Uniqueness is per tenant, matching Labels (and User, Role, Application).
         // A global unique index would make the name a shared resource across tenants.
-        // SQL Server/Oracle still emit a filtered unique index (TenantId IS NOT NULL).
-        // Default-tenant rows use "" — migrations stamp leftover null TenantId to "" first.
+        // SQL Server still emits a filtered unique index (TenantId IS NOT NULL); leftover
+        // nulls are stamped to "" first. Oracle stores '' as NULL, so that provider uses
+        // a function-based unique index on NVL(TenantId, CHR(1)) instead of a filter.
         builder.HasIndex("TenantId", SecretShadowPropertyNames.NormalizedName).HasDatabaseName($"IX_{nameof(Secret)}_TenantId_{SecretShadowPropertyNames.NormalizedName}").IsUnique();
         builder.HasIndex(x => x.TypeName).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.TypeName)}");
         builder.HasIndex(x => x.StoreName).HasDatabaseName($"IX_{nameof(Secret)}_{nameof(Secret.StoreName)}");

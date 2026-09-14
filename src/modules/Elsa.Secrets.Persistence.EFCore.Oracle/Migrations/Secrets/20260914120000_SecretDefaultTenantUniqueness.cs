@@ -23,8 +23,9 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
                 schema: _schema.Schema,
                 table: "Secrets");
 
-            // Default tenant is "" (not null). Stamp leftover nulls so the filtered unique
-            // index (TenantId IS NOT NULL) covers them. Duplicates are not deleted.
+            // Oracle persists '' as NULL, so this stamp is a no-op. It is kept so leftover
+            // default-tenant rows stay in one GROUP BY bucket for the fail-loud preflight.
+            // Uniqueness is the NVL unique index below, not a TenantId IS NOT NULL filter.
             migrationBuilder.Sql($"""
                 UPDATE "{_schema.Schema}"."Secrets"
                 SET "TenantId" = ''
@@ -69,13 +70,12 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
                 END;
                 """);
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Secret_TenantId_NormalizedName",
-                schema: _schema.Schema,
-                table: "Secrets",
-                columns: new[] { "TenantId", "NormalizedName" },
-                unique: true,
-                filter: "\"TenantId\" IS NOT NULL");
+            // CHR(1) is not a tenant id. NVL maps Oracle's NULL (from '') onto one index key
+            // so two default-tenant rows with the same NormalizedName collide.
+            migrationBuilder.Sql($"""
+                CREATE UNIQUE INDEX "{_schema.Schema}"."IX_Secret_TenantId_NormalizedName"
+                ON "{_schema.Schema}"."Secrets" (NVL("TenantId", CHR(1)), "NormalizedName");
+                """);
         }
 
         /// <inheritdoc />

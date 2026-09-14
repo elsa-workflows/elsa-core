@@ -3,8 +3,9 @@ namespace Elsa.Secrets.UnitTests;
 /// <summary>
 /// SecretDefaultTenantUniqueness must stamp null TenantId to "" and must not
 /// auto-delete duplicate secrets. A preflight lists leftover keys and aborts;
-/// CreateIndex then fails loudly if any remain. SQL Server/Oracle keep the
-/// filtered unique index (TenantId IS NOT NULL) after leftover nulls become "".
+/// CreateIndex then fails loudly if any remain. SQL Server keeps the filtered
+/// unique index (TenantId IS NOT NULL) after leftover nulls become "". Oracle
+/// stores '' as NULL, so it uses NVL(TenantId, CHR(1)) instead of a filter.
 /// </summary>
 public class SecretDefaultTenantUniquenessMigrationTests
 {
@@ -50,13 +51,19 @@ public class SecretDefaultTenantUniquenessMigrationTests
         Assert.Contains("HAVING COUNT(*) > 1", migration, StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("Elsa.Secrets.Persistence.EFCore.SqlServer", "[TenantId] IS NOT NULL")]
-    [InlineData("Elsa.Secrets.Persistence.EFCore.Oracle", "\\\"TenantId\\\" IS NOT NULL")]
-    public void SecretDefaultTenantUniqueness_KeepsFilteredUniqueIndex(string providerProject, string filter)
+    [Fact]
+    public void SecretDefaultTenantUniqueness_SqlServerKeepsFilteredUniqueIndex()
     {
-        var migration = FindMigration(providerProject);
-        Assert.Contains(filter, migration, StringComparison.Ordinal);
+        var migration = FindMigration("Elsa.Secrets.Persistence.EFCore.SqlServer");
+        Assert.Contains("[TenantId] IS NOT NULL", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SecretDefaultTenantUniqueness_OracleUsesNvlBecauseEmptyStringIsNull()
+    {
+        var migration = FindMigration("Elsa.Secrets.Persistence.EFCore.Oracle");
+        Assert.Contains("NVL(\"TenantId\", CHR(1))", migration, StringComparison.Ordinal);
+        Assert.Contains("CREATE UNIQUE INDEX", migration, StringComparison.Ordinal);
     }
 
     private static string FindMigration(string providerProject)

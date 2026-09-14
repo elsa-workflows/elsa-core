@@ -54,10 +54,18 @@ The default tenant id is `""` (`Tenant.DefaultTenantId`), the same sentinel Labe
 would have left `TenantId` null now persist `""`, so they participate in `(TenantId, NormalizedName)`.
 
 `SecretDefaultTenantUniqueness` stamps leftover nulls from `SecretTenancy` to `""` and rebuilds that unique
-index. SQL Server and Oracle still create the composite index with a `TenantId IS NOT NULL` filter; after the
-stamp those rows are non-null, so they collide in it. SQLite, PostgreSQL and MySQL treat nulls as distinct —
-the stamp is what brings them into the index. The migration does not delete duplicates: it lists leftover
-`(TenantId, NormalizedName)` keys and aborts, then `CreateIndex` fails loudly if any remain.
+index. SQL Server still creates the composite index with a `TenantId IS NOT NULL` filter; after the stamp
+those rows are non-null, so they collide in it. SQLite, PostgreSQL and MySQL treat nulls as distinct — the
+stamp is what brings them into the index.
+
+Oracle is different: it stores `''` as `NULL`, so the stamp is a no-op and a `TenantId IS NOT NULL` filter
+would leave every default-tenant row outside the index. That provider creates a function-based unique index
+on `NVL(TenantId, CHR(1))` plus `NormalizedName` instead. `CHR(1)` is not a tenant id; it only exists so
+NULL default-tenant names share one index key. The EF model snapshot cannot express `NVL`, so it looks like
+the other unfiltered unique indexes; the physical Oracle index is the function-based one from this migration.
+
+The migration does not delete duplicates: it lists leftover `(TenantId, NormalizedName)` keys and aborts,
+then the unique index fails loudly if any remain.
 
 `SetTenantIdFilter`'s null-compatibility clause still treats a stray null as the default tenant, so a row
 that somehow remains unstamped stays visible there. File and InMemory already treat null and `""` as the
