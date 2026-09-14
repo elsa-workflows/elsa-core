@@ -19,11 +19,16 @@ public class StimulusSender(
     public Task<SendStimulusResult> SendAsync(string activityTypeName, object stimulus, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
     {
         var stimulusHash = stimulusHasher.Hash(activityTypeName, stimulus, metadata?.ActivityInstanceId);
-        return SendAsync(stimulusHash, metadata, cancellationToken);
+        return SendAsync(stimulusHash, metadata, activityTypeName, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<SendStimulusResult> SendAsync(string stimulusHash, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
+    public Task<SendStimulusResult> SendAsync(string stimulusHash, StimulusMetadata? metadata = null, CancellationToken cancellationToken = default)
+    {
+        return SendAsync(stimulusHash, metadata, activityTypeName: null, cancellationToken);
+    }
+
+    private async Task<SendStimulusResult> SendAsync(string stimulusHash, StimulusMetadata? metadata, string? activityTypeName, CancellationToken cancellationToken)
     {
         var responses = new List<RunWorkflowInstanceResponse>();
 
@@ -33,7 +38,7 @@ public class StimulusSender(
             responses.AddRange(triggered);
         }
 
-        var resumed = await ResumeExistingWorkflowsAsync(stimulusHash, metadata, cancellationToken);
+        var resumed = await ResumeExistingWorkflowsAsync(stimulusHash, metadata, activityTypeName, cancellationToken);
         responses.AddRange(resumed);
         return new(responses);
     }
@@ -79,7 +84,7 @@ public class StimulusSender(
         return responses;
     }
 
-    private async Task<ICollection<RunWorkflowInstanceResponse>> ResumeExistingWorkflowsAsync(string stimulusHash, StimulusMetadata? metadata, CancellationToken cancellationToken)
+    private async Task<ICollection<RunWorkflowInstanceResponse>> ResumeExistingWorkflowsAsync(string stimulusHash, StimulusMetadata? metadata, string? activityTypeName, CancellationToken cancellationToken)
     {
         var input = metadata?.Input;
         var properties = metadata?.Properties;
@@ -113,6 +118,8 @@ public class StimulusSender(
             BookmarkId = metadata?.BookmarkId,
             CorrelationId = metadata?.CorrelationId,
             StimulusHash = stimulusHash,
+            ActivityInstanceId = metadata?.ActivityInstanceId,
+            ActivityTypeName = activityTypeName,
             Options = new()
             {
                 Input = input,
