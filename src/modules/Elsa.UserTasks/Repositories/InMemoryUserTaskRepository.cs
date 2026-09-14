@@ -16,6 +16,12 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         Converters = { new JsonStringEnumConverter() }
     };
 
+    /// <summary>
+    /// Title OrderBy, ties, and cursors share this comparer. Title cursors are not portable to EF
+    /// (column collation) or across databases; recreate the list after a provider change.
+    /// </summary>
+    private static readonly StringComparer TitleComparer = StringComparer.Ordinal;
+
     private readonly object _sync = new();
     private readonly Dictionary<string, UserTask> _tasks = new(StringComparer.Ordinal);
 
@@ -199,7 +205,7 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
     private static IEnumerable<UserTask> ApplyOrdering(IEnumerable<UserTask> tasks, UserTaskQuery query) => query.Sort.ToLowerInvariant() switch
     {
         "priority" => query.Descending ? tasks.OrderByDescending(x => x.Priority).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Priority).ThenBy(x => x.Id),
-        "title" => query.Descending ? tasks.OrderByDescending(x => x.Title).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Title).ThenBy(x => x.Id),
+        "title" => query.Descending ? tasks.OrderByDescending(x => x.Title, TitleComparer).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Title, TitleComparer).ThenBy(x => x.Id),
         "due" => query.Descending ? tasks.OrderBy(x => x.DueAt == null).ThenByDescending(x => x.DueAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
         "updated" => query.Descending ? tasks.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id),
         _ => query.Descending ? tasks.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
@@ -212,13 +218,21 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         return query.Sort.ToLowerInvariant() switch
         {
             "priority" when int.TryParse(value, out var priority) => tasks.Where(x => query.Descending ? x.Priority < priority || x.Priority == priority && string.Compare(x.Id, id) > 0 : x.Priority > priority || x.Priority == priority && string.Compare(x.Id, id) > 0),
-            "title" => tasks.Where(x => query.Descending ? string.Compare(x.Title, value) < 0 || string.Compare(x.Title, value) == 0 && string.Compare(x.Id, id) > 0 : string.Compare(x.Title, value) > 0 || string.Compare(x.Title, value) == 0 && string.Compare(x.Id, id) > 0),
+            "title" => tasks.Where(x => TitleIsAfterCursor(x.Title, value, x.Id, id, query.Descending)),
             "due" when value == "~null" => tasks.Where(x => x.DueAt == null && string.Compare(x.Id, id) > 0),
             "due" when DateTimeOffset.TryParse(value, out var due) => tasks.Where(x => x.DueAt == null || query.Descending && x.DueAt < due || !query.Descending && x.DueAt > due || x.DueAt == due && string.Compare(x.Id, id) > 0),
             "updated" when DateTimeOffset.TryParse(value, out var updated) => tasks.Where(x => query.Descending ? x.UpdatedAt < updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0 : x.UpdatedAt > updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0),
             _ when DateTimeOffset.TryParse(value, out var created) => tasks.Where(x => query.Descending ? x.CreatedAt < created || x.CreatedAt == created && string.Compare(x.Id, id) > 0 : x.CreatedAt > created || x.CreatedAt == created && string.Compare(x.Id, id) > 0),
             _ => tasks
         };
+    }
+
+    private static bool TitleIsAfterCursor(string title, string cursorTitle, string id, string cursorId, bool descending)
+    {
+        var comparison = TitleComparer.Compare(title, cursorTitle);
+        return descending
+            ? comparison < 0 || comparison == 0 && string.Compare(id, cursorId) > 0
+            : comparison > 0 || comparison == 0 && string.Compare(id, cursorId) > 0;
     }
 
     private static string CreateCursor(UserTask task, string sort)

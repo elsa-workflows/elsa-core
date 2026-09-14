@@ -112,8 +112,8 @@ public class UserTaskTests
         await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "caf\u00E9" });
         await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "cafe\u0301" });
 
-        // OrderBy and cursor both use string.Compare, not ordinal ==, so a culture-equal
-        // NFC/NFD pair is a tie and must still appear on the next page.
+        // InMemory title sort is ordinal: NFC/NFD café are distinct keys and must both
+        // appear. Recreate the list after switching to an EF collation host.
         var first = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1 });
         var second = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1, Cursor = first.NextCursor });
 
