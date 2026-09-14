@@ -1,12 +1,26 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Persistence.EFCore.Repositories;
 
-public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator) : ISecretRepository
+public class EFCoreSecretRepository(
+    Store<SecretsElsaDbContext, Secret> store,
+    ISecretNameValidator secretNameValidator,
+    IOptions<TenantsOptions>? tenantsOptions = null) : ISecretRepository
 {
+    private readonly bool _tenancyEnabled = tenantsOptions?.Value.IsEnabled == true;
+
+    // Keep the pre-tenancy constructor in the public binary surface.
+    public EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, ISecretNameValidator secretNameValidator)
+        : this(store, secretNameValidator, null)
+    {
+    }
+
     public async Task<Secret?> GetAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
@@ -55,6 +69,9 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         if (existingSecret.Status != SecretStatus.Deleted)
             return false;
 
+        if (!CanReplaceOwnedRow(existingSecret, secret, dbContext))
+            return false;
+
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Secrets.Remove(existingSecret);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -82,6 +99,9 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         }
         else
         {
+            if (!CanReplaceOwnedRow(existingSecret, secret, dbContext))
+                throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+
             Copy(secret, existingSecret);
             SetNormalizedName(dbContext, existingSecret);
             SecretSerialization.StoreSerializedProperties(dbContext, existingSecret);
@@ -163,4 +183,7 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
     {
         dbContext.Entry(secret).Property(SecretShadowPropertyNames.NormalizedName).CurrentValue = secretNameValidator.Normalize(secret.Name);
     }
+
+    private bool CanReplaceOwnedRow(Secret existing, Secret incoming, SecretsElsaDbContext dbContext) =>
+        !_tenancyEnabled || TenantVisibility.CanReplaceOwnedRow(existing.TenantId, incoming.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId);
 }

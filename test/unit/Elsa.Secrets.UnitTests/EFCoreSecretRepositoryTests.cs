@@ -1,4 +1,6 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
+using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
@@ -6,8 +8,10 @@ using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Repositories;
 using Elsa.Secrets.Persistence.EFCore.Sqlite.Extensions;
 using Elsa.Secrets.Services;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace Elsa.Secrets.UnitTests;
@@ -43,6 +47,18 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
 
         if (File.Exists(_databasePath))
             File.Delete(_databasePath);
+    }
+
+    [Fact]
+    public void Repository_RetainsPreTenancyConstructorShape()
+    {
+        Assert.NotNull(typeof(EFCoreSecretRepository).GetConstructor([
+            typeof(Store<SecretsElsaDbContext, Secret>),
+            typeof(ISecretNameValidator)]));
+        Assert.NotNull(typeof(EFCoreSecretRepository).GetConstructor([
+            typeof(Store<SecretsElsaDbContext, Secret>),
+            typeof(ISecretNameValidator),
+            typeof(IOptions<TenantsOptions>)]));
     }
 
     [Fact]
@@ -160,4 +176,93 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         Assert.Equal("Replacement password", reloaded.DisplayName);
         Assert.Equal(SecretStatus.Active, reloaded.Status);
     }
+
+    [Fact]
+    public async Task TenantAwareRepository_GatesAgnosticRowsByAmbientWriter()
+    {
+        await WithTenantAwareRepositoryAsync(async (repository, tenantAccessor) =>
+        {
+            using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            {
+                await repository.SaveAsync(new Secret
+                {
+                    Id = "agnostic-id",
+                    Name = "shared:secret",
+                    DisplayName = "Deleted agnostic secret",
+                    Status = SecretStatus.Deleted,
+                    TenantId = Tenant.AgnosticTenantId
+                });
+            }
+
+            using (UseTenant(tenantAccessor, "tenant-a"))
+            {
+                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                {
+                    Id = "named-id",
+                    Name = "SHARED:SECRET",
+                    DisplayName = "Named update"
+                }));
+
+                Assert.False(await repository.TryAddOrReplaceDeletedAsync(new Secret
+                {
+                    Id = "named-id",
+                    Name = "SHARED:SECRET",
+                    DisplayName = "Named replacement"
+                }));
+            }
+
+            using (UseTenant(tenantAccessor, Tenant.AgnosticTenantId))
+            {
+                var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+                {
+                    Id = "replacement-id",
+                    Name = "SHARED:SECRET",
+                    DisplayName = "Agnostic replacement",
+                    TenantId = Tenant.AgnosticTenantId
+                });
+
+                Assert.True(replaced);
+                var loaded = await repository.GetAsync("shared:secret");
+                Assert.Equal("replacement-id", loaded!.Id);
+                Assert.Equal("Agnostic replacement", loaded.DisplayName);
+                Assert.Equal(Tenant.AgnosticTenantId, loaded.TenantId);
+            }
+        });
+    }
+
+    private static async Task WithTenantAwareRepositoryAsync(Func<EFCoreSecretRepository, DefaultTenantAccessor, Task> test)
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-secrets-tenant-{Guid.NewGuid():N}.db");
+        var tenantAccessor = new DefaultTenantAccessor();
+        var services = new ServiceCollection()
+            .AddSqliteEntityModelCreatingHandlers()
+            .AddSingleton<ITenantAccessor>(tenantAccessor)
+            .Configure<TenantsOptions>(options => options.IsEnabled = true)
+            .AddScoped<IEntitySavingHandler, ApplyTenantId>()
+            .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
+            .AddDbContextFactory<SecretsElsaDbContext>(builder => builder.UseElsaSqlite(typeof(SqliteSecretsPersistenceFeatureExtensions).Assembly, $"Data Source={databasePath}"))
+            .AddSingleton<ISecretNameValidator, DefaultSecretNameValidator>()
+            .AddScoped<Store<SecretsElsaDbContext, Secret>>()
+            .AddScoped<EFCoreSecretRepository>()
+            .BuildServiceProvider();
+
+        try
+        {
+            await using var scope = services.CreateAsyncScope();
+            var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SecretsElsaDbContext>>();
+            await using (var dbContext = await factory.CreateDbContextAsync())
+                await dbContext.Database.MigrateAsync();
+
+            await test(scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>(), tenantAccessor);
+        }
+        finally
+        {
+            await services.DisposeAsync();
+            if (File.Exists(databasePath))
+                File.Delete(databasePath);
+        }
+    }
+
+    private static IDisposable UseTenant(DefaultTenantAccessor tenantAccessor, string tenantId) =>
+        tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
 }
