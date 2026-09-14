@@ -18,10 +18,38 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowInstanceDeletion;
 public class WorkflowInstanceDeletionTests(App app) : AppComponentTest(app)
 {
     private const string WorkflowStartedSignal = "workflow-started";
+    private SignalManager? _signalManager;
 
     private IWorkflowRuntime WorkflowRuntime => Scope.ServiceProvider.GetRequiredService<IWorkflowRuntime>();
-    private SignalManager SignalManager => Scope.ServiceProvider.GetRequiredService<SignalManager>();
+    private SignalManager SignalManager => _signalManager ??= Scope.ServiceProvider.GetRequiredService<SignalManager>();
     private IWorkflowInstanceStore WorkflowInstanceStore => Scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+
+    protected override ValueTask OnInitializeAsync()
+    {
+        // Resolve this before the test body so failure cleanup can always remove a signal emitted by the shared host.
+        _signalManager = Scope.ServiceProvider.GetRequiredService<SignalManager>();
+        return ValueTask.CompletedTask;
+    }
+
+    protected override async ValueTask OnDisposeAsync()
+    {
+        if (_signalManager is null)
+            return;
+
+        try
+        {
+            // Remove a completed or pending signal so a failed test cannot satisfy the next test's wait.
+            await _signalManager.WaitAsync(WorkflowStartedSignal, millisecondsTimeout: 1);
+        }
+        catch (TimeoutException)
+        {
+            // A timeout removes the pending entry from SignalManager.
+        }
+        finally
+        {
+            _signalManager = null;
+        }
+    }
 
     private async Task<string> StartRunningWorkflowAsync()
     {

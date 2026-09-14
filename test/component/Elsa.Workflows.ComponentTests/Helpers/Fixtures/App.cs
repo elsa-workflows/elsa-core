@@ -5,7 +5,7 @@ using TUnit.Core.Interfaces;
 namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 /// <summary>
-/// Owns every mutable resource used by one expanded TUnit test invocation.
+/// Owns the catalog, host graph, and mutable filesystem root shared by the serialized component-test suite.
 /// </summary>
 public sealed class App : IAsyncInitializer, IAsyncDisposable
 {
@@ -149,7 +149,7 @@ public sealed class App : IAsyncInitializer, IAsyncDisposable
             try
             {
                 // ASP.NET Core retains every derived factory until its parent is disposed.
-                // Disposing this case-owned root bounds all pod hosts to one expanded case.
+                // Disposing this session-owned root tears down every shared cluster pod.
                 await rootFactory.DisposeAsync();
                 rootFactoryDisposed = true;
                 _rootFactory = null;
@@ -212,8 +212,8 @@ public sealed class App : IAsyncInitializer, IAsyncDisposable
 }
 
 /// <summary>
-/// Provisions one case-owned catalog from inside the native TUnit.AspNetCore server-start gate.
-/// Every pod for the case shares the same memoized provisioning task.
+/// Provisions the suite-owned catalog from inside the native TUnit.AspNetCore server-start gate.
+/// Every pod in the shared cluster uses the same memoized provisioning task.
 /// </summary>
 internal sealed class ComponentTestCatalog(
     string catalogName,
@@ -299,8 +299,8 @@ internal sealed class ComponentTestCatalog(
         if (Volatile.Read(ref _cleanupRequired) == 0)
             return;
 
-        // Every catalog has a distinct connection string and pool. Clear only this case's pool
-        // after all of its hosts are down so DROP cannot disturb a concurrently running sibling.
+        // Clear the session catalog's pool after all shared hosts are down so DROP can take
+        // exclusive ownership and release the database files cleanly.
         using (var pooledConnection = new SqlConnection(connectionString))
             SqlConnection.ClearPool(pooledConnection);
 

@@ -9,7 +9,7 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.WorkflowDefinitionRefresh;
 
 public class DynamicEndpointTests : AppComponentTest
 {
-    private TestJavaScriptState _javaScriptState = null!;
+    private TestJavaScriptState? _javaScriptState;
     private IWorkflowDefinitionsRefresher _workflowDefinitionsRefresher = null!;
 
     public DynamicEndpointTests(App app) : base(app)
@@ -24,6 +24,17 @@ public class DynamicEndpointTests : AppComponentTest
         return ValueTask.CompletedTask;
     }
 
+    protected override ValueTask OnDisposeAsync()
+    {
+        if (_javaScriptState is not null)
+        {
+            _javaScriptState.Value = null;
+            _javaScriptState = null;
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
     [Test]
     public async Task ChangingEndpointValueThenRefresh_WorkflowShouldRespondToTheNewValue()
     {
@@ -32,7 +43,7 @@ public class DynamicEndpointTests : AppComponentTest
         using var firstRequest = new HttpRequestMessage(HttpMethod.Get, "first-value");
         using var firstResponse = await client.SendAsync(firstRequest);
 
-        _javaScriptState.Value = "second-value";
+        _javaScriptState!.Value = "second-value";
         _ = await _workflowDefinitionsRefresher.RefreshWorkflowDefinitionsAsync(
             new() { DefinitionIds = ["f69f061159adc3ae"] }, CancellationToken.None);
 

@@ -6,7 +6,7 @@ using Elsa.Workflows.State;
 namespace Elsa.Workflows.ComponentTests.Services;
 
 /// <summary>
-/// Tracks actual in-flight workflow-runner calls across one isolated test cluster.
+/// Tracks actual in-flight workflow-runner calls across the session-shared test cluster.
 /// Persisted workflow status cannot provide this signal: rejected inputs can leave an
 /// Executing snapshot even after the request and runner call have unwound.
 /// </summary>

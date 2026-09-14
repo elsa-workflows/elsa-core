@@ -130,11 +130,12 @@ The tests cover a wide range of scenarios:
 
 The tests follow the native TUnit component-test patterns:
 
-1. **Invocation Isolation**: Every expanded test gets its own `App`, SQL catalog, filesystem root, and host graph
-2. **Workflow Fixtures**: Each test scenario has corresponding workflow implementations
-3. **HTTP Client**: Tests use `WorkflowServer.CreateHttpWorkflowClient()` for HTTP calls
-4. **Host Lifecycle**: The dedicated ASP.NET Core host starts through TUnit.AspNetCore; additional cluster pods are lazy
-5. **Assertions**: Native TUnit assertions validate status codes, content, and behavior
+1. **Shared Application**: App-backed component tests serialize on one TUnit constraint and share one session `App`, SQL catalog, filesystem root, and host graph
+2. **Per-Test Isolation**: Each test gets a fresh DI scope, tenant context, and tracked HTTP clients that are disposed during cleanup
+3. **Workflow Fixtures**: Each test scenario has corresponding workflow implementations
+4. **HTTP Client**: Tests use `WorkflowServer.CreateHttpWorkflowClient()` for HTTP calls
+5. **Host Lifecycle**: The dedicated ASP.NET Core host starts through TUnit.AspNetCore; additional cluster pods are lazy
+6. **Assertions**: Native TUnit assertions validate status codes, content, and behavior
 
 ## Integration with Elsa Framework
 

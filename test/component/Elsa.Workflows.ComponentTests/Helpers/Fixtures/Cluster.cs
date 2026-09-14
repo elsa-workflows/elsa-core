@@ -3,7 +3,7 @@ using Elsa.Workflows.ComponentTests.Services;
 namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 /// <summary>
-/// Lazily creates independent in-memory hosts that share only this invocation's catalog and lock directory.
+/// Lazily creates the in-memory hosts shared by the serialized component-test suite.
 /// </summary>
 public sealed class Cluster : IAsyncDisposable
 {

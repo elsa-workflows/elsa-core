@@ -63,8 +63,8 @@ Documents the original bug symptom by deliberately creating duplicates to verify
 Uses the native TUnit component-test infrastructure:
 
 - **Infrastructure**: Owns one SQL Server Testcontainer for the TUnit test session
-- **App**: Gives every expanded test invocation its own SQL catalog and filesystem root
-- **Cluster**: Starts Pod1 for the invocation and creates Pod2 and Pod3 lazily when a scenario needs them
+- **App**: Owns the SQL catalog and filesystem root shared by the serialized component-test suite
+- **Cluster**: Starts Pod1 for the session and creates Pod2 and Pod3 lazily when a scenario needs them
 - **Host**: Boots the dedicated ASP.NET Core component-test entry point through the TUnit.AspNetCore lifecycle gate
 
 ## Running the Tests

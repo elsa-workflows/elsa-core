@@ -1,20 +1,18 @@
-using System.Collections.Immutable;
+using Elsa.Workflows.ComponentTests.Abstractions;
 using Elsa.Workflows.ComponentTests.Fixtures;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.DependencyInjection;
-using TUnit.Core.Interfaces;
 
 namespace Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
 
-[ClassDataSource<HostMethodDescriptorFixture>(Shared = SharedType.PerClass)]
-public class HostMethodActivityTests(HostMethodDescriptorFixture fixture)
+public class HostMethodActivityTests(App app) : AppComponentTest(app)
 {
     [Test]
     [DisplayName("All TestHostMethod public methods are registered as activities")]
     public async Task AllPublicMethodsRegistered()
     {
         // Arrange
-        var allDescriptors = fixture.ListAll();
+        var allDescriptors = ActivityRegistry.ListAll().ToList();
         var hostMethodDescriptors = allDescriptors
             .Where(d => d.TypeName.StartsWith("Elsa.Dynamic.HostMethod.TestHostMethod."))
             .ToList();
@@ -177,7 +175,7 @@ public class HostMethodActivityTests(HostMethodDescriptorFixture fixture)
     public async Task CustomAttributeMethodUsesCustomValues()
     {
         // Act
-        var descriptor = fixture.Find("CustomNamespace.CustomType");
+        var descriptor = ActivityRegistry.Find("CustomNamespace.CustomType");
 
         // Assert
         await Assert.That(descriptor).IsNotNull();
@@ -213,93 +211,8 @@ public class HostMethodActivityTests(HostMethodDescriptorFixture fixture)
         }
     }
     
-    private HostMethodDescriptorSnapshot? FindDescriptor(string methodName) =>
-        fixture.Find($"Elsa.Dynamic.HostMethod.TestHostMethod.{methodName}");
+    private IActivityRegistry ActivityRegistry => Scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
+
+    private ActivityDescriptor? FindDescriptor(string methodName) =>
+        ActivityRegistry.Find($"Elsa.Dynamic.HostMethod.TestHostMethod.{methodName}");
 }
-
-/// <summary>
-/// Materializes the host-method registry once, then tears down the component host before any
-/// test body runs. Test bodies consume immutable value snapshots only; no provider, scope, client,
-/// DbContext, host, catalog, or other mutable application state crosses test boundaries.
-/// </summary>
-public sealed class HostMethodDescriptorFixture : IAsyncInitializer
-{
-    private ImmutableArray<HostMethodDescriptorSnapshot> _descriptors = [];
-
-    [ClassDataSource<Infrastructure>(Shared = SharedType.PerTestSession)]
-    public required Infrastructure Infrastructure { get; init; }
-
-    public async Task InitializeAsync()
-    {
-        var testContext = TestContext.Current
-            ?? throw new InvalidOperationException("A current TUnit test context is required to initialize host-method descriptors.");
-        var app = new App { Infrastructure = Infrastructure };
-
-        try
-        {
-            await app.InitializeAsync();
-            var cluster = await app.StartAsync(testContext);
-            await using var scope = cluster.Pod1.Services.CreateAsyncScope();
-            var activityRegistry = scope.ServiceProvider.GetRequiredService<IActivityRegistry>();
-
-            _descriptors = activityRegistry.ListAll()
-                .Where(IsTestHostMethodDescriptor)
-                .Select(HostMethodDescriptorSnapshot.FromDescriptor)
-                .ToImmutableArray();
-        }
-        catch (Exception initializationFailure)
-        {
-            try
-            {
-                await app.DisposeAsync();
-            }
-            catch (Exception cleanupFailure)
-            {
-                throw new AggregateException(
-                    "Host-method descriptor initialization and component cleanup both failed.",
-                    initializationFailure,
-                    cleanupFailure);
-            }
-
-            throw;
-        }
-
-        await app.DisposeAsync();
-    }
-
-    public ImmutableArray<HostMethodDescriptorSnapshot> ListAll() => _descriptors;
-
-    public HostMethodDescriptorSnapshot? Find(string typeName) =>
-        _descriptors
-            .Where(x => string.Equals(x.TypeName, typeName, StringComparison.Ordinal))
-            .OrderByDescending(x => x.Version)
-            .FirstOrDefault();
-
-    private static bool IsTestHostMethodDescriptor(ActivityDescriptor descriptor) =>
-        descriptor.TypeName.StartsWith("Elsa.Dynamic.HostMethod.TestHostMethod.", StringComparison.Ordinal) ||
-        string.Equals(descriptor.TypeName, "CustomNamespace.CustomType", StringComparison.Ordinal);
-}
-
-public sealed record HostMethodDescriptorSnapshot(
-    string Name,
-    string TypeName,
-    int Version,
-    string Category,
-    string? DisplayName,
-    string? Description,
-    ImmutableArray<HostMethodPortSnapshot> Inputs,
-    ImmutableArray<HostMethodPortSnapshot> Outputs)
-{
-    public static HostMethodDescriptorSnapshot FromDescriptor(ActivityDescriptor descriptor) =>
-        new(
-            descriptor.Name,
-            descriptor.TypeName,
-            descriptor.Version,
-            descriptor.Category,
-            descriptor.DisplayName,
-            descriptor.Description,
-            descriptor.Inputs.Select(x => new HostMethodPortSnapshot(x.Name, x.Type)).ToImmutableArray(),
-            descriptor.Outputs.Select(x => new HostMethodPortSnapshot(x.Name, x.Type)).ToImmutableArray());
-}
-
-public sealed record HostMethodPortSnapshot(string Name, Type Type);

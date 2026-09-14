@@ -178,7 +178,7 @@ public class TestHostMethod(ILogger<TestHostMethod> logger, TestHostMethodState 
 }
 
 /// <summary>
-/// Host-local invocation state. A fresh instance is registered in every per-test host.
+/// Host-local invocation state owned by the session-shared component host.
 /// </summary>
 public sealed class TestHostMethodState
 {

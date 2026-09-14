@@ -8,7 +8,7 @@ namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 /// <summary>
 /// Owns the SQL Server container and migrated database template shared by the native TUnit test session.
-/// Each expanded test invocation restores that immutable template into a uniquely named catalog.
+/// The session-shared <see cref="App"/> restores that immutable template exactly once.
 /// </summary>
 public sealed class Infrastructure : IAsyncInitializer, IAsyncDisposable
 {

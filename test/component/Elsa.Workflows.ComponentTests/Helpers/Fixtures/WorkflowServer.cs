@@ -48,7 +48,7 @@ using static Elsa.Api.Client.RefitSettingsHelper;
 namespace Elsa.Workflows.ComponentTests.Fixtures;
 
 /// <summary>
-/// Case-owned root factory. TUnit creates an isolated derived TestServer host for each pod by
+/// Session-owned root factory. TUnit creates a derived TestServer host for each pod by
 /// executing the dedicated component-test entry point.
 /// </summary>
 public sealed class ComponentTestWebApplicationFactory : TestWebApplicationFactory<ComponentTestHost>
@@ -288,7 +288,7 @@ public sealed class ComponentTestWebApplicationFactory : TestWebApplicationFacto
 }
 
 /// <summary>
-/// Immutable resources shared by the pods belonging to one test invocation.
+/// Immutable resources shared by every pod in the component-test session.
 /// </summary>
 internal sealed record ComponentTestHostOptions(
     string ConnectionString,
@@ -315,7 +315,7 @@ internal sealed class ComponentDatabaseBootstrapTracker
 }
 
 /// <summary>
-/// Creates the case catalog before Elsa's tenant activation and migration hosted services run.
+/// Creates the shared app catalog before Elsa's tenant activation and migration hosted services run.
 /// The host itself is materialized while TUnit.AspNetCore holds its native server-init gate.
 /// </summary>
 internal sealed class ComponentCatalogProvisioningService(ComponentTestCatalog catalog) : IHostedService
@@ -326,8 +326,8 @@ internal sealed class ComponentCatalogProvisioningService(ComponentTestCatalog c
 }
 
 /// <summary>
-/// Applies each distinct component schema once to the session template. Restored case catalogs
-/// start with those schemas, while Elsa's per-tenant migration startup tasks remain disabled.
+/// Applies each distinct component schema once to the session template. The restored app catalog
+/// starts with those schemas, while Elsa's per-tenant migration startup tasks remain disabled.
 /// </summary>
 internal sealed class ComponentDatabaseMigrationService(
     IServiceScopeFactory scopeFactory,
@@ -429,6 +429,20 @@ public sealed class WorkflowServer : IAsyncDisposable
         client.BaseAddress = new Uri(client.BaseAddress!, "/workflows/");
         client.Timeout = TimeSpan.FromMinutes(1);
         return client;
+    }
+
+    internal void DisposeTrackedClients()
+    {
+        HttpClient[] clients;
+        lock (_clientLock)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            clients = [.. _clients];
+            _clients.Clear();
+        }
+
+        foreach (var client in clients)
+            client.Dispose();
     }
 
     public ValueTask DisposeAsync()

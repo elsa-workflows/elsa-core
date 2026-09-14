@@ -6,9 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Elsa.Workflows.ComponentTests.Abstractions;
 
 /// <summary>
-/// Supplies a fresh application, catalog, DI graph, and mutable filesystem root to every expanded test invocation.
+/// Supplies the session-shared component application while keeping each test's scope and tenant context isolated.
 /// </summary>
-[ClassDataSource<App>(Shared = SharedType.None)]
+[ClassDataSource<App>(Shared = SharedType.PerTestSession)]
+[NotInParallel(nameof(AppComponentTest))]
 public abstract class AppComponentTest : IAsyncDisposable
 {
     private readonly App _app;
@@ -53,31 +54,7 @@ public abstract class AppComponentTest : IAsyncDisposable
     // TUnit currently suppresses exceptions thrown from test-instance IAsyncDisposable cleanup.
     // Running the same idempotent path as an After(Test) hook makes cleanup failures part of the test result.
     [After(Test)]
-    public async Task CleanupAsync()
-    {
-        List<Exception>? failures = null;
-
-        try
-        {
-            await DisposeAsync();
-        }
-        catch (Exception exception)
-        {
-            (failures ??= []).Add(exception);
-        }
-
-        try
-        {
-            await _app.DisposeAsync();
-        }
-        catch (Exception exception)
-        {
-            (failures ??= []).Add(exception);
-        }
-
-        if (failures is { Count: > 0 })
-            throw new AggregateException("Failed to clean up a component-test invocation.", failures);
-    }
+    public async Task CleanupAsync() => await DisposeAsync();
 
     public async ValueTask DisposeAsync()
     {
@@ -98,6 +75,15 @@ public abstract class AppComponentTest : IAsyncDisposable
         try
         {
             await OnDisposeAsync();
+        }
+        catch (Exception exception)
+        {
+            (failures ??= []).Add(exception);
+        }
+
+        try
+        {
+            _workflowServer?.DisposeTrackedClients();
         }
         catch (Exception exception)
         {
@@ -133,22 +119,8 @@ public abstract class AppComponentTest : IAsyncDisposable
             }
         }
 
-        if (_cluster is not null)
-        {
-            try
-            {
-                await _cluster.DisposeAsync();
-            }
-            catch (Exception exception)
-            {
-                (failures ??= []).Add(exception);
-            }
-            finally
-            {
-                _cluster = null;
-                _workflowServer = null;
-            }
-        }
+        _cluster = null;
+        _workflowServer = null;
 
         if (failures is { Count: > 0 })
             throw new AggregateException("Failed to dispose a component-test instance cleanly.", failures);
@@ -161,13 +133,11 @@ public abstract class AppComponentTest : IAsyncDisposable
     private async Task WaitForWorkflowsToCompleteAsync()
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
-            timeout.Token,
-            TestContext.Current?.Execution.CancellationToken ?? CancellationToken.None);
 
         try
         {
-            await _workflowExecutionTracker.WaitForIdleAsync(linked.Token);
+            // Cleanup must finish draining the shared host even when the test itself was cancelled.
+            await _workflowExecutionTracker.WaitForIdleAsync(timeout.Token);
         }
         catch (OperationCanceledException) when (timeout.IsCancellationRequested)
         {

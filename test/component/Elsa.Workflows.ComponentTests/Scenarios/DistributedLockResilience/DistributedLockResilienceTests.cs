@@ -19,14 +19,23 @@ namespace Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience;
 public class DistributedLockResilienceTests(App app) : AppComponentTest(app)
 {
     private const int MaxRetryAttempts = 3;
+    private SelectiveMockLockProvider? _selectiveMockProvider;
 
     // Selective mock provider - only mocks specific locks, not all locks globally
-    private SelectiveMockLockProvider SelectiveMockProvider => Scope.ServiceProvider.GetRequiredService<SelectiveMockLockProvider>();
+    private SelectiveMockLockProvider SelectiveMockProvider =>
+        _selectiveMockProvider ??= Scope.ServiceProvider.GetRequiredService<SelectiveMockLockProvider>();
 
     private ITransientExceptionDetector TransientExceptionDetector => Scope.ServiceProvider.GetRequiredService<ITransientExceptionDetector>();
     private ILogger<DistributedLockResilienceTests> Logger => Scope.ServiceProvider.GetRequiredService<ILogger<DistributedLockResilienceTests>>();
     private DistributedLockingOptions LockOptions => Scope.ServiceProvider.GetRequiredService<IOptions<DistributedLockingOptions>>().Value;
     private ResiliencePipeline RetryPipeline => CreateRetryPipeline(TransientExceptionDetector, Logger);
+
+    protected override ValueTask OnDisposeAsync()
+    {
+        _selectiveMockProvider?.Reset();
+        _selectiveMockProvider = null;
+        return ValueTask.CompletedTask;
+    }
 
     [Test]
     [Arguments(1, 2, false)] // Single failure, succeeds on retry
