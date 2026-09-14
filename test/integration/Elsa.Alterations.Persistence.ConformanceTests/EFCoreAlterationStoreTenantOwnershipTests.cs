@@ -1,4 +1,3 @@
-using System.Data;
 using System.Data.Common;
 using Elsa.Alterations.Core.Entities;
 using Elsa.Alterations.Core.Enums;
@@ -657,7 +656,7 @@ public sealed class DeferredSqliteTransactionInterceptor : DbTransactionIntercep
     {
         if (connection is SqliteConnection sqliteConnection)
         {
-            var transaction = sqliteConnection.BeginTransaction(IsolationLevel.ReadUncommitted);
+            var transaction = sqliteConnection.BeginTransaction(deferred: true);
             return ValueTask.FromResult(InterceptionResult<DbTransaction>.SuppressWithResult(transaction));
         }
 
