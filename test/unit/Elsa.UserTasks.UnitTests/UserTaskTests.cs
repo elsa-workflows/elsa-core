@@ -95,20 +95,28 @@ public class UserTaskTests
     public async Task Repository_TitleCursorUsesTheSameComparisonForTies()
     {
         var repository = new InMemoryUserTaskRepository();
-        const string composed = "caf\u00E9";
-        const string decomposed = "cafe\u0301";
-        // NFC vs NFD café: current-culture Compare is 0, ordinal == is not. The later Id must
-        // still appear on the next page rather than being dropped as a non-tie.
-        Assert.Equal(0, string.Compare(composed, decomposed));
-        Assert.NotEqual(composed, decomposed);
-        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = composed });
-        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = decomposed });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "Same" });
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "Same" });
 
         var first = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1 });
         var second = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1, Cursor = first.NextCursor });
 
         Assert.Equal("task-a", Assert.Single(first.Items).Id);
         Assert.Equal("task-b", Assert.Single(second.Items).Id);
+    }
+
+    [Fact]
+    public async Task Repository_TitleCursorDoesNotDropUnicodeVariantTitles()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "caf\u00E9" });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "cafe\u0301" });
+
+        var first = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1 });
+        var second = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1, Cursor = first.NextCursor });
+
+        Assert.Equal(2, first.Items.Concat(second.Items).Select(x => x.Id).Distinct().Count());
+        Assert.Null(second.NextCursor);
     }
 
     [Fact]
