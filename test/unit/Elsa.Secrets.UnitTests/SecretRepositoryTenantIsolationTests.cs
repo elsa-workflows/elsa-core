@@ -22,14 +22,19 @@ public class SecretRepositoryTenantIsolationTests
     {
         var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions());
         _ = new FileSecretRepository(options, null);
+        _ = new FileSecretRepository(options, tenantAccessor: new DefaultTenantAccessor());
 
-        Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
+        var binaryConstructor = typeof(FileSecretRepository).GetConstructor([
             typeof(IOptions<SecretsOptions>),
-            typeof(ILogger<FileSecretRepository>)]));
-        Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
+            typeof(ILogger<FileSecretRepository>)])!;
+        Assert.False(binaryConstructor.GetParameters()[1].IsOptional);
+
+        var compatibilityConstructor = typeof(FileSecretRepository).GetConstructor([
             typeof(IOptions<SecretsOptions>),
             typeof(ILogger<FileSecretRepository>),
-            typeof(ITenantAccessor)]));
+            typeof(ITenantAccessor)])!;
+        Assert.True(compatibilityConstructor.GetParameters()[1].IsOptional);
+        Assert.True(compatibilityConstructor.GetParameters()[2].IsOptional);
         Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
             typeof(IOptions<SecretsOptions>),
             typeof(IOptions<TenantsOptions>),

@@ -19,15 +19,15 @@ public class FileSecretRepository : ISecretRepository
 
     public FileSecretRepository(
         IOptions<SecretsOptions> options,
-        ILogger<FileSecretRepository>? logger = null)
+        ILogger<FileSecretRepository>? logger)
         : this(options, logger, null)
     {
     }
 
     public FileSecretRepository(
         IOptions<SecretsOptions> options,
-        ILogger<FileSecretRepository>? logger,
-        ITenantAccessor? tenantAccessor)
+        ILogger<FileSecretRepository>? logger = null,
+        ITenantAccessor? tenantAccessor = null)
         : this(options, logger, tenantAccessor, tenantAccessor is not null, new DefaultSecretNameValidator())
     {
     }
