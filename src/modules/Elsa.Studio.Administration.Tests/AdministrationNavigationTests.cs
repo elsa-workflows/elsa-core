@@ -32,7 +32,7 @@ public class AdministrationNavigationTests
     [Fact]
     public async Task LabelsMenu_PlacesLabelsInAdministration()
     {
-        var item = Assert.Single(await new LabelsMenu(new TestLocalizer()).GetMenuItemsAsync());
+        var item = Assert.Single(await new LabelsMenu(new TestLocalizer(), new EnabledRemoteFeatureProvider()).GetMenuItemsAsync());
 
         Assert.Equal(MenuItemGroups.Administration.Name, item.GroupName);
         Assert.Equal(200, item.Order);

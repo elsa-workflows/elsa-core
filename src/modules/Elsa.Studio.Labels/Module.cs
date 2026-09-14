@@ -1,4 +1,5 @@
 using Elsa.Studio.Abstractions;
+using Elsa.Studio.Attributes;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.WorkflowContexts.Widgets;
 
@@ -7,8 +8,11 @@ namespace Elsa.Studio.Labels;
 /// <summary>
 /// Represents a feature that initializes and registers widgets for workflow definition labels.
 /// </summary>
+[RemoteFeature(RemoteFeatureName)]
 public class Feature : FeatureBase
 {
+    public const string RemoteFeatureName = "Elsa.Labels.ShellFeatures.Labels";
+
     private readonly IWidgetRegistry _widgetRegistry;
 
     /// <summary>
