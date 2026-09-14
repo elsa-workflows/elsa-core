@@ -279,7 +279,7 @@ jobs:
           dotnet-version: 10.x
 
       - name: Compile+Pack
-        run: ./build.sh Compile+Pack --version ${VERSION} --analyseCode true
+        run: ./build.sh Compile+Pack --version ${VERSION}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
