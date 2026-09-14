@@ -13,6 +13,7 @@ using Elsa.Secrets.Services;
 using Elsa.Tenants.Options;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Secrets.UnitTests;
@@ -85,7 +86,8 @@ public sealed class SecretRepositoryScenario(
                 .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
                 .AddSqliteEntityModelCreatingHandlers()
                 .AddDbContextFactory<SecretsElsaDbContext>((_, builder) =>
-                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath}"))
+                    builder.UseElsaSqlite(migrationsAssembly, $"Data Source={databasePath}")
+                        .ReplaceService<IModelCacheKeyFactory, TenantAwareSecretModelCacheKeyFactory>())
                 .Decorate<IDbContextFactory<SecretsElsaDbContext>, TenantAwareDbContextFactory<SecretsElsaDbContext>>()
                 .AddSingleton<ISecretNameValidator, DefaultSecretNameValidator>()
                 .AddScoped<Store<SecretsElsaDbContext, Secret>>()
@@ -119,4 +121,14 @@ public sealed class SecretRepositoryScenario(
             throw;
         }
     }
+}
+
+/// <summary>
+/// Keeps the tenant-aware Secrets model out of the default EF cache shared with
+/// <c>EFCoreSecretRepositoryTests</c>, which builds the same context type without a query filter.
+/// </summary>
+file sealed class TenantAwareSecretModelCacheKeyFactory : IModelCacheKeyFactory
+{
+    public object Create(DbContext context, bool designTime) =>
+        (context.GetType(), designTime, "secrets-tenant-aware");
 }

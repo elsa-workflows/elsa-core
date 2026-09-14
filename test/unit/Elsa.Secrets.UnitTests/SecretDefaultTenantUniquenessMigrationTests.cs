@@ -25,8 +25,17 @@ public class SecretDefaultTenantUniquenessMigrationTests
         Assert.DoesNotContain("COALESCE", migration, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void SecretDefaultTenantUniqueness_SqliteFailsLoudlyAtCreateIndex()
+    {
+        // SQLite cannot abort from a standalone SELECT, so CreateIndex unique is the fail-loud path.
+        var migration = FindMigration("Elsa.Secrets.Persistence.EFCore.Sqlite");
+        Assert.DoesNotContain("RAISE", migration, StringComparison.Ordinal);
+        Assert.Contains("CreateIndex", migration, StringComparison.Ordinal);
+        Assert.Contains("unique: true", migration, StringComparison.Ordinal);
+    }
+
     [Theory]
-    [InlineData("Elsa.Secrets.Persistence.EFCore.Sqlite", "RAISE")]
     [InlineData("Elsa.Secrets.Persistence.EFCore.SqlServer", "THROW")]
     [InlineData("Elsa.Secrets.Persistence.EFCore.PostgreSql", "RAISE EXCEPTION")]
     [InlineData("Elsa.Secrets.Persistence.EFCore.MySql", "SIGNAL")]

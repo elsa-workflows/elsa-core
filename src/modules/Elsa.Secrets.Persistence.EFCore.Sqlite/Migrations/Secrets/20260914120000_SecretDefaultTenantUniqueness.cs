@@ -23,29 +23,15 @@ namespace Elsa.Secrets.Persistence.EFCore.Sqlite.Migrations.Secrets
                 schema: _schema.Schema,
                 table: "Secrets");
 
+            // SQLite ignores schemas; the table is created as "Secrets".
+            const string table = "\"Secrets\"";
+
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
+            // Leftover duplicates fail at CreateIndex; SQLite cannot abort from a standalone SELECT.
             migrationBuilder.Sql($"""
-                UPDATE "{_schema.Schema}"."Secrets"
+                UPDATE {table}
                 SET "TenantId" = ''
                 WHERE "TenantId" IS NULL;
-                """);
-
-            // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
-            migrationBuilder.Sql($"""
-                SELECT RAISE(ABORT, 'Cannot apply IX_Secret_TenantId_NormalizedName. Operators must resolve leftover (TenantId, NormalizedName) rows before upgrade. Duplicate keys: ' ||
-                    (SELECT group_concat('(' || IFNULL("TenantId", '') || ', ' || "NormalizedName" || ')', ', ')
-                     FROM (
-                         SELECT "TenantId", "NormalizedName"
-                         FROM "{_schema.Schema}"."Secrets"
-                         GROUP BY "TenantId", "NormalizedName"
-                         HAVING COUNT(*) > 1
-                     )))
-                WHERE EXISTS (
-                    SELECT 1
-                    FROM "{_schema.Schema}"."Secrets"
-                    GROUP BY "TenantId", "NormalizedName"
-                    HAVING COUNT(*) > 1
-                );
                 """);
 
             migrationBuilder.CreateIndex(
