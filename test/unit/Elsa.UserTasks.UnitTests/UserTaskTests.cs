@@ -92,6 +92,26 @@ public class UserTaskTests
     }
 
     [Fact]
+    public async Task Repository_TitleCursorUsesTheSameComparisonForTies()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        const string composed = "caf\u00E9";
+        const string decomposed = "cafe\u0301";
+        // NFC vs NFD café: current-culture Compare is 0, ordinal == is not. The later Id must
+        // still appear on the next page rather than being dropped as a non-tie.
+        Assert.Equal(0, string.Compare(composed, decomposed));
+        Assert.NotEqual(composed, decomposed);
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = composed });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = decomposed });
+
+        var first = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1 });
+        var second = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1, Cursor = first.NextCursor });
+
+        Assert.Equal("task-a", Assert.Single(first.Items).Id);
+        Assert.Equal("task-b", Assert.Single(second.Items).Id);
+    }
+
+    [Fact]
     public async Task Repository_UnknownSortCompletedUsesCreatedOrder()
     {
         var repository = new InMemoryUserTaskRepository();

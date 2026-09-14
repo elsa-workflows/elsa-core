@@ -212,7 +212,7 @@ public sealed class InMemoryUserTaskRepository : IUserTaskRepository
         return query.Sort.ToLowerInvariant() switch
         {
             "priority" when int.TryParse(value, out var priority) => tasks.Where(x => query.Descending ? x.Priority < priority || x.Priority == priority && string.Compare(x.Id, id) > 0 : x.Priority > priority || x.Priority == priority && string.Compare(x.Id, id) > 0),
-            "title" => tasks.Where(x => query.Descending ? string.Compare(x.Title, value) < 0 || x.Title == value && string.Compare(x.Id, id) > 0 : string.Compare(x.Title, value) > 0 || x.Title == value && string.Compare(x.Id, id) > 0),
+            "title" => tasks.Where(x => query.Descending ? string.Compare(x.Title, value) < 0 || string.Compare(x.Title, value) == 0 && string.Compare(x.Id, id) > 0 : string.Compare(x.Title, value) > 0 || string.Compare(x.Title, value) == 0 && string.Compare(x.Id, id) > 0),
             "due" when value == "~null" => tasks.Where(x => x.DueAt == null && string.Compare(x.Id, id) > 0),
             "due" when DateTimeOffset.TryParse(value, out var due) => tasks.Where(x => x.DueAt == null || query.Descending && x.DueAt < due || !query.Descending && x.DueAt > due || x.DueAt == due && string.Compare(x.Id, id) > 0),
             "updated" when DateTimeOffset.TryParse(value, out var updated) => tasks.Where(x => query.Descending ? x.UpdatedAt < updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0 : x.UpdatedAt > updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0),

@@ -345,6 +345,21 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
     }
 
     [ConformanceFact]
+    public async Task UpdatedSortUsesUpdatedAtThenAscendingId()
+    {
+        await ActivateAsync();
+        await SeedSortableTasksAsync();
+
+        // Seed UpdatedAt order is Bravo, Foxtrot, Charlie+Delta (shared, Id tie), Echo, Alpha —
+        // not the created/title order — so a provider that still maps updated to created fails.
+        var ascending = await Repository.QueryAsync(Query(sort: "updated", limit: 200));
+        Assert.Equal(["Bravo", "Foxtrot", "Charlie", "Delta", "Echo", "Alpha"], ascending.Items.Select(x => x.Title));
+
+        var descending = await Repository.QueryAsync(Query(sort: "updated", descending: true, limit: 200));
+        Assert.Equal(["Alpha", "Echo", "Charlie", "Delta", "Foxtrot", "Bravo"], descending.Items.Select(x => x.Title));
+    }
+
+    [ConformanceFact]
     public async Task TasksWithoutADueDateOrderLastInBothDirections()
     {
         await ActivateAsync();

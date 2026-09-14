@@ -376,8 +376,8 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
                 ? records.Where(x => x.Priority < priority || (x.Priority == priority && string.Compare(x.Id, cursorId) > 0))
                 : records.Where(x => x.Priority > priority || (x.Priority == priority && string.Compare(x.Id, cursorId) > 0)),
             "title" => query.Descending
-                ? records.Where(x => string.Compare(x.Title, cursorValue) < 0 || (x.Title == cursorValue && string.Compare(x.Id, cursorId) > 0))
-                : records.Where(x => string.Compare(x.Title, cursorValue) > 0 || (x.Title == cursorValue && string.Compare(x.Id, cursorId) > 0)),
+                ? records.Where(x => string.Compare(x.Title, cursorValue) < 0 || (string.Compare(x.Title, cursorValue) == 0 && string.Compare(x.Id, cursorId) > 0))
+                : records.Where(x => string.Compare(x.Title, cursorValue) > 0 || (string.Compare(x.Title, cursorValue) == 0 && string.Compare(x.Id, cursorId) > 0)),
             "due" when cursorValue == "~null" => records.Where(x => x.DueAt == null && string.Compare(x.Id, cursorId) > 0),
             "due" when DateTimeOffset.TryParse(cursorValue, out var dueAt) => query.Descending
                 ? records.Where(x => x.DueAt == null || x.DueAt < dueAt || (x.DueAt == dueAt && string.Compare(x.Id, cursorId) > 0))
