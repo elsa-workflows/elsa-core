@@ -86,6 +86,7 @@ public class WorkflowInstanceStorageDriverTests
 
         // Assert
         Assert.Equal(JsonValueKind.Array, node.GetValueKind());
+        Assert.NotNull(actual);
         Assert.Equal(["Element 1", "Element 2"], actual);
     }
 
@@ -104,6 +105,7 @@ public class WorkflowInstanceStorageDriverTests
 
         // Assert
         Assert.Equal(JsonValueKind.Array, node.GetValueKind());
+        Assert.NotNull(actual);
         Assert.Equal(["A", "B", "C"], actual);
     }
 
