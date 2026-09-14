@@ -74,8 +74,11 @@ public class HangfireWorkflowScheduler(
         var queuedJobsIds = GetQueuedJobIds(taskName);
         foreach (var jobId in queuedJobsIds) backgroundJobClient.Delete(jobId);
         
-        var recurringJobIds = GetRecurringJobIds<RunWorkflowJob>(taskName);
-        foreach (var jobId in recurringJobIds) recurringJobManager.RemoveIfExists(jobId);
+        var runRecurringJobIds = GetRecurringJobIds<RunWorkflowJob>(taskName);
+        foreach (var jobId in runRecurringJobIds) recurringJobManager.RemoveIfExists(jobId);
+
+        var resumeRecurringJobIds = GetRecurringJobIds<ResumeWorkflowJob>(taskName);
+        foreach (var jobId in resumeRecurringJobIds) recurringJobManager.RemoveIfExists(jobId);
     }
     
     private IEnumerable<string> GetScheduledJobIds(string taskName)
