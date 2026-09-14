@@ -88,12 +88,12 @@ public abstract class StructuredLogStoreConformanceTests
     {
         await using var scenario = await CreateScenarioAsync();
         await scenario.WriteAsync(
-            Log("later-seq", BaseTime, sourceId: "pod-a", sequence: 9),
-            Log("earlier-seq", BaseTime, sourceId: "pod-a", sequence: 2));
+            Log("aaa", BaseTime, sourceId: "pod-a", sequence: 9),
+            Log("zzz", BaseTime, sourceId: "pod-a", sequence: 2));
 
         var result = await scenario.Store.QueryAsync(new() { Take = 10 });
 
-        Assert.Equal(["earlier-seq", "later-seq"], result.Items.Select(x => x.Id).ToList());
+        Assert.Equal(["zzz", "aaa"], result.Items.Select(x => x.Id).ToList());
     }
 
     [Fact]
