@@ -54,7 +54,7 @@ public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer,
         var options = new ObjectConverterOptions
         {
             DeserializeJsonObjectToObject = true,
-            SerializerOptions = payloadSerializer.GetOptions()  
+            SerializerOptions = payloadSerializer.GetOptions().CloneForValueConversion()
         };
         var result = node.TryConvertTo(variableType, options);
         if (result.IsSuccess)
