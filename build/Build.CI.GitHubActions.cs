@@ -13,9 +13,7 @@ using Nuke.Components;
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile)],
         CacheKeyFiles = [],
-        ConcurrencyCancelInProgress = true,
-        ReadPermissions = [GitHubActionsPermissions.Contents],
-        WritePermissions = [GitHubActionsPermissions.Checks, GitHubActionsPermissions.PullRequests]
+        ConcurrencyCancelInProgress = true
     )
 ]
 public partial class Build;
@@ -31,8 +29,6 @@ class CustomGitHubActionsAttribute(string name, GitHubActionsImage image, params
         // only need to list the ones that are missing from default image
         newSteps.Insert(0, new GitHubActionsSetupDotNetStep(["10.x"]));
         newSteps.Add(new GitHubActionsRunTestsStep());
-        newSteps.Add(new GitHubActionsUploadTestResultsStep());
-        newSteps.Add(new GitHubActionsPublishTestResultsStep());
 
         job.Steps = newSteps.ToArray();
         return job;
@@ -43,64 +39,8 @@ class GitHubActionsRunTestsStep : GitHubActionsStep
 {
     public override void Write(CustomFileWriter writer)
     {
-        writer.WriteLine("- name: 'Run: TUnit tests with coverage'");
-        using (writer.Indent())
-        {
-            writer.WriteLine("run: |");
-            using (writer.Indent())
-            {
-                writer.WriteLine("dotnet test --solution Elsa.sln \\");
-                writer.WriteLine("  --configuration Release \\");
-                writer.WriteLine("  --no-build \\");
-                writer.WriteLine("  --results-directory artifacts/test-results/pr \\");
-                writer.WriteLine("  -- \\");
-                writer.WriteLine("  --coverage \\");
-                writer.WriteLine("  --coverage-settings \"$GITHUB_WORKSPACE/test/coverage.settings.xml\" \\");
-                writer.WriteLine("  --coverage-output-format cobertura \\");
-                writer.WriteLine("  --report-trx");
-            }
-        }
-    }
-}
-
-class GitHubActionsUploadTestResultsStep : GitHubActionsStep
-{
-    public override void Write(CustomFileWriter writer)
-    {
-        writer.WriteLine("- name: 'Upload: TUnit test results and coverage'");
-        using (writer.Indent())
-        {
-            writer.WriteLine("if: ${{ !cancelled() }}");
-            writer.WriteLine("uses: actions/upload-artifact@v4");
-            writer.WriteLine("with:");
-            using (writer.Indent())
-            {
-                writer.WriteLine("name: pr-test-results");
-                writer.WriteLine("path: artifacts/test-results/pr");
-                writer.WriteLine("if-no-files-found: warn");
-            }
-        }
-    }
-}
-
-class GitHubActionsPublishTestResultsStep : GitHubActionsStep
-{
-    public override void Write(CustomFileWriter writer)
-    {
-        writer.WriteLine("- name: 'Publish: TUnit test results'");
-        using (writer.Indent())
-        {
-            writer.WriteLine("if: ${{ !cancelled() && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'dependabot[bot]' }}");
-            writer.WriteLine("uses: EnricoMi/publish-unit-test-result-action@v2");
-            writer.WriteLine("with:");
-            using (writer.Indent())
-            {
-                writer.WriteLine("files: artifacts/test-results/pr/**/*.trx");
-                writer.WriteLine("check_name: TUnit Test Results");
-                writer.WriteLine("comment_title: TUnit Test Results");
-                writer.WriteLine("comment_mode: always");
-            }
-        }
+        writer.WriteLine("- name: 'Run: Test'");
+        writer.WriteLine("  run: dotnet test --solution Elsa.sln --configuration Release --no-build");
     }
 }
 
