@@ -11,7 +11,7 @@ namespace Elsa.Scheduling.Services;
 /// Classifies Delay/Timer/Cron/StartAt stored bookmarks against the workflow-instance store so startup
 /// schedule rebuild can skip and purge bookmarks whose instance is missing or finished.
 /// </summary>
-public class SchedulingBookmarkReconciler(IWorkflowInstanceStore workflowInstanceStore, IBookmarkManager bookmarkManager)
+public class SchedulingBookmarkReconciler(IWorkflowInstanceStore workflowInstanceStore, IBookmarkManager? bookmarkManager)
 {
     /// <summary>
     /// Splits bookmarks into those that may be scheduled and those whose instance is missing or terminal.
@@ -56,6 +56,9 @@ public class SchedulingBookmarkReconciler(IWorkflowInstanceStore workflowInstanc
     /// </summary>
     public async Task PurgeAsync(IEnumerable<StoredBookmark> candidateBookmarks, CancellationToken cancellationToken = default)
     {
+        if (bookmarkManager == null)
+            return;
+
         var remainingOrphans = (await ClassifyAsync(candidateBookmarks, cancellationToken)).Orphans;
         var bookmarkIds = remainingOrphans
             .Select(x => x.Id)

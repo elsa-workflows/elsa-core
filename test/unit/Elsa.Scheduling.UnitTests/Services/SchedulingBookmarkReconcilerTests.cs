@@ -100,6 +100,14 @@ public class SchedulingBookmarkReconcilerTests
         await bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task PurgeAsync_DoesNotDeleteWhenBookmarkManagerIsMissing()
+    {
+        var reconciler = new SchedulingBookmarkReconciler(CreateInstanceStore(), bookmarkManager: null);
+
+        await reconciler.PurgeAsync([Bookmark("orphan-1", "missing")]);
+    }
+
     private static MemoryWorkflowInstanceStore CreateInstanceStore(params WorkflowInstance[] instances)
     {
         var store = new MemoryStore<WorkflowInstance>();

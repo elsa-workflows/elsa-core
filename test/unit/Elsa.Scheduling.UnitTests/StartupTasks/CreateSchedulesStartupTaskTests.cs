@@ -146,7 +146,7 @@ public class CreateSchedulesStartupTaskTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_DoesNotPurgeOrphanWhoseInstanceBecomesRunningBeforePurge()
+    public async Task ExecuteAsync_SchedulesOrphanWhoseInstanceBecomesRunningBeforePurge()
     {
         var revived = Bookmark("revived-bookmark", "revived-instance");
         var stillMissing = Bookmark("missing-bookmark", "missing-instance");
@@ -163,10 +163,86 @@ public class CreateSchedulesStartupTaskTests
 
         await task.ExecuteAsync(CancellationToken.None);
 
-        await _bookmarkScheduler.DidNotReceive().ScheduleAsync(Arg.Any<IEnumerable<StoredBookmark>>(), Arg.Any<CancellationToken>());
+        await _bookmarkScheduler.Received(1).ScheduleAsync(
+            Arg.Is<IEnumerable<StoredBookmark>>(x => x.SequenceEqual(new[] { revived })),
+            Arg.Any<CancellationToken>());
         await _bookmarkManager.Received(1).DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
         Assert.NotNull(purgedFilter);
         Assert.Equal(["missing-bookmark"], purgedFilter.BookmarkIds);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_ReconcilesOrphansInConfiguredPages()
+    {
+        var firstOrphan = Bookmark("orphan-1", "missing-1");
+        var secondOrphan = Bookmark("orphan-2", "missing-2");
+        var bookmarks = new[] { firstOrphan, secondOrphan };
+        var purgedFilters = new List<BookmarkFilter>();
+        var reloadedIdBatches = new List<ICollection<string>>();
+        _options.StartupSchedulePageSize = 1;
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Is<PageArgs>(x => x.Offset == 0 && x.Limit == 1), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredBookmark>([firstOrphan], 2));
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Is<PageArgs>(x => x.Offset == 1 && x.Limit == 1), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredBookmark>([secondOrphan], 2));
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var ids = call.Arg<BookmarkFilter>().BookmarkIds ?? [];
+                reloadedIdBatches.Add(ids.ToList());
+                return bookmarks.Where(x => ids.Contains(x.Id));
+            });
+        _workflowInstanceStore.FindManyIdsAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<string>());
+        _bookmarkManager.DeleteManyAsync(Arg.Do<BookmarkFilter>(x => purgedFilters.Add(x)), Arg.Any<CancellationToken>())
+            .Returns(1);
+        var task = new CreateSchedulesStartupTask(CreateServiceProvider(), OptionsFactory.Create(_options));
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await _bookmarkScheduler.DidNotReceive().ScheduleAsync(Arg.Any<IEnumerable<StoredBookmark>>(), Arg.Any<CancellationToken>());
+        Assert.Equal(2, reloadedIdBatches.Count);
+        Assert.All(reloadedIdBatches, batch => Assert.Single(batch));
+        Assert.Equal(2, purgedFilters.Count);
+        Assert.All(purgedFilters, filter => Assert.Single(filter.BookmarkIds!));
+        Assert.Equal(["orphan-1", "orphan-2"], purgedFilters.SelectMany(x => x.BookmarkIds!).OrderBy(x => x, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithoutWorkflowInstanceStore_SchedulesAllBookmarks()
+    {
+        var missingInstance = Bookmark("missing-bookmark", "missing-instance");
+        var bookmarks = new[] { missingInstance, _bookmarks[0] };
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredBookmark>(bookmarks, bookmarks.Length));
+        var task = new CreateSchedulesStartupTask(CreateServiceProvider(registerReconcileServices: false), OptionsFactory.Create(_options));
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await _bookmarkScheduler.Received(1).ScheduleAsync(Arg.Is<IEnumerable<StoredBookmark>>(x => x.SequenceEqual(bookmarks)), Arg.Any<CancellationToken>());
+        await _bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithoutBookmarkManager_SkipsOrphansButDoesNotPurge()
+    {
+        var missingInstance = Bookmark("missing-bookmark", "missing-instance");
+        var suspendedInstance = Bookmark("suspended-bookmark", "suspended-instance");
+        var bookmarks = new[] { missingInstance, suspendedInstance };
+        _bookmarkStore.FindManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(new Page<StoredBookmark>(bookmarks, bookmarks.Length));
+        StubBookmarkReload(bookmarks);
+        _workflowInstanceStore.FindManyIdsAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(["suspended-instance"]);
+        var task = new CreateSchedulesStartupTask(
+            CreateServiceProvider(services => services.AddSingleton(_workflowInstanceStore), registerReconcileServices: false),
+            OptionsFactory.Create(_options));
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await _bookmarkScheduler.Received(1).ScheduleAsync(
+            Arg.Is<IEnumerable<StoredBookmark>>(x => x.SequenceEqual(new[] { suspendedInstance })),
+            Arg.Any<CancellationToken>());
+        await _bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -179,15 +255,20 @@ public class CreateSchedulesStartupTaskTests
         await _bookmarkManager.DidNotReceive().DeleteManyAsync(Arg.Any<BookmarkFilter>(), Arg.Any<CancellationToken>());
     }
 
-    private ServiceProvider CreateServiceProvider(Action<IServiceCollection>? configureServices = null)
+    private ServiceProvider CreateServiceProvider(Action<IServiceCollection>? configureServices = null, bool registerReconcileServices = true)
     {
         var services = new ServiceCollection();
         services.AddSingleton(_triggerStore);
         services.AddSingleton(_bookmarkStore);
         services.AddSingleton(_triggerScheduler);
         services.AddSingleton(_bookmarkScheduler);
-        services.AddSingleton(_workflowInstanceStore);
-        services.AddSingleton(_bookmarkManager);
+
+        if (registerReconcileServices)
+        {
+            services.AddSingleton(_workflowInstanceStore);
+            services.AddSingleton(_bookmarkManager);
+        }
+
         configureServices?.Invoke(services);
         return services.BuildServiceProvider();
     }

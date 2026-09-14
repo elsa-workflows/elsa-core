@@ -35,9 +35,10 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         var bookmarkStore = serviceProvider.GetRequiredService<IBookmarkStore>();
         var triggerScheduler = serviceProvider.GetRequiredService<ITriggerScheduler>();
         var bookmarkScheduler = serviceProvider.GetRequiredService<IBookmarkScheduler>();
-        var bookmarkReconciler = new SchedulingBookmarkReconciler(
-            serviceProvider.GetRequiredService<IWorkflowInstanceStore>(),
-            serviceProvider.GetRequiredService<IBookmarkManager>());
+        var workflowInstanceStore = serviceProvider.GetService<IWorkflowInstanceStore>();
+        var bookmarkReconciler = workflowInstanceStore == null
+            ? null
+            : new SchedulingBookmarkReconciler(workflowInstanceStore, serviceProvider.GetService<IBookmarkManager>());
         var pageSize = Math.Max(1, options.Value.StartupSchedulePageSize);
         var stimulusNames = new[]
         {
@@ -80,7 +81,7 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
     private static async Task ScheduleBookmarksAsync(
         IBookmarkStore bookmarkStore,
         IBookmarkScheduler bookmarkScheduler,
-        SchedulingBookmarkReconciler bookmarkReconciler,
+        SchedulingBookmarkReconciler? bookmarkReconciler,
         BookmarkFilter bookmarkFilter,
         int pageSize,
         CancellationToken cancellationToken)
@@ -95,16 +96,18 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
             if (page.Items.Count == 0)
                 break;
 
-            var classification = await bookmarkReconciler.ClassifyAsync(page.Items, cancellationToken);
-
-            foreach (var orphan in classification.Orphans)
+            if (bookmarkReconciler == null)
             {
-                if (!string.IsNullOrWhiteSpace(orphan.Id))
-                    orphanBookmarkIds.Add(orphan.Id);
+                await bookmarkScheduler.ScheduleAsync(page.Items, cancellationToken);
             }
+            else
+            {
+                var classification = await bookmarkReconciler.ClassifyAsync(page.Items, cancellationToken);
+                orphanBookmarkIds.UnionWith(classification.Orphans.Select(x => x.Id).Where(id => !string.IsNullOrWhiteSpace(id)));
 
-            if (classification.Schedulable.Count > 0)
-                await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
+                if (classification.Schedulable.Count > 0)
+                    await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
+            }
 
             var nextOffset = pageArgs.Offset.GetValueOrDefault() + page.Items.Count;
             if (nextOffset >= page.TotalCount)
@@ -113,13 +116,21 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
             pageArgs = pageArgs.Next();
         }
 
-        if (orphanBookmarkIds.Count == 0)
+        if (bookmarkReconciler == null || orphanBookmarkIds.Count == 0)
             return;
 
-        var candidates = await bookmarkStore.FindManyAsync(new BookmarkFilter
+        foreach (var orphanIdBatch in orphanBookmarkIds.Chunk(pageSize))
         {
-            BookmarkIds = orphanBookmarkIds.ToList()
-        }, cancellationToken);
-        await bookmarkReconciler.PurgeAsync(candidates, cancellationToken);
+            var candidates = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            {
+                BookmarkIds = orphanIdBatch.ToList()
+            }, cancellationToken);
+            var classification = await bookmarkReconciler.ClassifyAsync(candidates, cancellationToken);
+
+            if (classification.Schedulable.Count > 0)
+                await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
+
+            await bookmarkReconciler.PurgeAsync(classification.Orphans, cancellationToken);
+        }
     }
 }
