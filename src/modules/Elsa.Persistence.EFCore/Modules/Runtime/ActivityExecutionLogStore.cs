@@ -58,7 +58,7 @@ public class EFCoreActivityExecutionStore(
     /// <inheritdoc />
     public async Task<IEnumerable<ActivityExecutionRecordSummary>> FindManySummariesAsync<TOrderBy>(ActivityExecutionRecordFilter filter, ActivityExecutionRecordOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var shadowRecords = await store.QueryAsync(query => Filter(query, filter), FromRecordExpression(), cancellationToken).ToList();
+        var shadowRecords = await store.QueryAsync(query => Filter(query, filter).OrderBy(order), FromRecordExpression(), cancellationToken).ToList();
         return Map(shadowRecords);
     }
 
