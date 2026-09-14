@@ -152,7 +152,7 @@ public class EFCoreSecretRepository(
 #if NET10_0_OR_GREATER
         return entityType?.GetDeclaredQueryFilters().Any() == true;
 #else
-        return entityType?.GetQueryFilter() is not null;
+        return entityType?.FindAnnotation("QueryFilter")?.Value is not null;
 #endif
     }
 
