@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
@@ -55,6 +56,9 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         if (existingSecret.Status != SecretStatus.Deleted)
             return false;
 
+        if (!TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+            return false;
+
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         dbContext.Secrets.Remove(existingSecret);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -82,6 +86,9 @@ public class EFCoreSecretRepository(Store<SecretsElsaDbContext, Secret> store, I
         }
         else
         {
+            if (!TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, secret.TenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
+                throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+
             Copy(secret, existingSecret);
             SetNormalizedName(dbContext, existingSecret);
             SecretSerialization.StoreSerializedProperties(dbContext, existingSecret);

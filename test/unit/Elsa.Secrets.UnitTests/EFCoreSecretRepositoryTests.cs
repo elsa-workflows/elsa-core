@@ -1,4 +1,6 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
+using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
@@ -6,6 +8,7 @@ using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Repositories;
 using Elsa.Secrets.Persistence.EFCore.Sqlite.Extensions;
 using Elsa.Secrets.Services;
+using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -159,5 +162,54 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         Assert.Equal("new", reloaded.Id);
         Assert.Equal("Replacement password", reloaded.DisplayName);
         Assert.Equal(SecretStatus.Active, reloaded.Status);
+    }
+
+    [Fact]
+    public async Task NamedTenantCannotSaveOrReplaceAgnosticSecret()
+    {
+        await using var scope = _serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreSecretRepository>();
+
+        using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-a", Name = "Tenant A" }))
+        {
+            await repository.AddAsync(new Secret
+            {
+                Name = "agnostic:active",
+                DisplayName = "Agnostic active",
+                TenantId = Tenant.AgnosticTenantId
+            });
+            await repository.AddAsync(new Secret
+            {
+                Name = "agnostic:deleted",
+                DisplayName = "Agnostic deleted",
+                Status = SecretStatus.Deleted,
+                TenantId = Tenant.AgnosticTenantId
+            });
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+            {
+                Name = "agnostic:active",
+                DisplayName = "Tenant overwrite",
+                TenantId = "tenant-a"
+            }));
+
+            Assert.False(await repository.TryAddOrReplaceDeletedAsync(new Secret
+            {
+                Name = "agnostic:deleted",
+                DisplayName = "Tenant replacement",
+                TenantId = "tenant-a"
+            }));
+
+            var active = await repository.GetAsync("agnostic:active");
+            Assert.NotNull(active);
+            Assert.Equal(Tenant.AgnosticTenantId, active!.TenantId);
+            Assert.Equal("Agnostic active", active.DisplayName);
+
+            var deleted = await repository.GetAsync("agnostic:deleted");
+            Assert.NotNull(deleted);
+            Assert.Equal(Tenant.AgnosticTenantId, deleted!.TenantId);
+            Assert.Equal("Agnostic deleted", deleted.DisplayName);
+            Assert.Equal(SecretStatus.Deleted, deleted.Status);
+        }
     }
 }
