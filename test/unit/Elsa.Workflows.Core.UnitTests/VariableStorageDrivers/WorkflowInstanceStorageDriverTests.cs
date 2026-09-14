@@ -7,6 +7,7 @@ using NSubstitute;
 
 namespace Elsa.Workflows.Core.UnitTests.VariableStorageDrivers;
 
+[Collection(nameof(WorkflowInstanceStorageDriverTestsCollection))]
 public class WorkflowInstanceStorageDriverTests
 {
     [Fact]
@@ -131,3 +132,6 @@ public class WorkflowInstanceStorageDriverTests
         public CyclicValue Self { get; set; } = null!;
     }
 }
+
+[CollectionDefinition(nameof(WorkflowInstanceStorageDriverTestsCollection), DisableParallelization = true)]
+public sealed class WorkflowInstanceStorageDriverTestsCollection;
