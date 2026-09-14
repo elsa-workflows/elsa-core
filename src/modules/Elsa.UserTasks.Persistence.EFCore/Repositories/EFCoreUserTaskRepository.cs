@@ -340,9 +340,10 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
     }
 
     /// <summary>
-    /// Safe search is a bounded text contains over title, summary, reference, task type, and the
-    /// serialized tags payload. Tags live in <see cref="UserTaskRecord.TagsJson"/>; there is no tag
-    /// table, so this matches InMemory substring semantics without a schema change.
+    /// Safe search is a bounded text contains over title, summary, reference, task type, and tags.
+    /// Tags live in <see cref="UserTaskRecord.TagsJson"/>; there is no tag table. Tag matching is
+    /// case-insensitive like InMemory/VNext. JSON punctuation is not treated as tag text, so a
+    /// query that only spans array syntax cannot match.
     /// </summary>
     private static IQueryable<UserTaskRecord> ApplySafeSearch(IQueryable<UserTaskRecord> records, string? search)
     {
@@ -350,13 +351,25 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
             return records;
 
         var value = search.Trim();
+        if (ContainsJsonStructure(value))
+        {
+            return records.Where(x =>
+                x.Title.Contains(value)
+                || (x.Summary != null && x.Summary.Contains(value))
+                || (x.Reference != null && x.Reference.Contains(value))
+                || (x.TaskType != null && x.TaskType.Contains(value)));
+        }
+
+        var tag = value.ToLower();
         return records.Where(x =>
             x.Title.Contains(value)
             || (x.Summary != null && x.Summary.Contains(value))
             || (x.Reference != null && x.Reference.Contains(value))
             || (x.TaskType != null && x.TaskType.Contains(value))
-            || x.TagsJson.Contains(value));
+            || x.TagsJson.ToLower().Contains(tag));
     }
+
+    private static bool ContainsJsonStructure(string value) => value.AsSpan().IndexOfAny("\"\\[]") >= 0;
 
     private static IQueryable<UserTaskRecord> ApplyOrdering(IQueryable<UserTaskRecord> records, UserTaskQuery query)
     {

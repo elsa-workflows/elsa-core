@@ -191,7 +191,7 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         var subject = Subject();
 
         var tagged = CreateTask(subject, title: "Approve invoice");
-        tagged.Tags = ["priority-escalation"];
+        tagged.Tags = ["priority-escalation", "routine-review"];
         await Repository.AddProjectionAsync(tagged);
 
         var other = CreateTask(subject, title: "Approve invoice");
@@ -205,6 +205,21 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
 
         Assert.Equal(1, page.TotalCount);
         Assert.Equal(tagged.Id, Assert.Single(page.Items).Id);
+
+        var upper = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "PRIORITY-ESCALATION"
+        });
+        Assert.Equal(tagged.Id, Assert.Single(upper.Items).Id);
+
+        // JSON array syntax sits between tags in EF storage. That text is not a tag value, so
+        // InMemory/VNext reject it and EF must not treat the serialized payload as a match.
+        var jsonSyntax = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = """priority-escalation","routine-review"""
+        });
+        Assert.Empty(jsonSyntax.Items);
+        Assert.Equal(0, jsonSyntax.TotalCount);
     }
 
     [ConformanceFact]
