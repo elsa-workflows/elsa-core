@@ -148,7 +148,7 @@ Routes under `/elsa/api` (Elsa route prefix applies):
 | `POST /secrets/picker` | `read:secrets` |
 | `GET /secrets/descriptors` | `read:secrets` |
 
-Permission constants are in [SecretsPermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsPermissions.cs).
+Permission constants are in [SecretsResourcePermissions](../../src/modules/Elsa.Secrets/Permissions/SecretsResourcePermissions.cs).
 
 ### Using Secrets In Workflows
 
