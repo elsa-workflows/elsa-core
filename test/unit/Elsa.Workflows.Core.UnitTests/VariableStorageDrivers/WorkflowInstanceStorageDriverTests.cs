@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Elsa.Common.Serialization;
 using Elsa.Expressions.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Serialization.Converters;
@@ -70,6 +71,27 @@ public class WorkflowInstanceStorageDriverTests
         // Assert
         var restored = Assert.IsType<RefPayload>(read);
         Assert.Equal("ordinary", restored.Ref);
+    }
+
+    [Fact]
+    public async Task WriteThenRead_WhenObjectVariableHoldsAliasedType_RestoresConcreteClrType()
+    {
+        // Arrange
+        var registry = SerializationTypeRegistry.CreateDefault();
+        registry.RegisterType(typeof(AliasedPerson), nameof(AliasedPerson));
+        var harness = CreateHarness(new Variable<object>("payload", new()), registry);
+        const string id = "payloadVariable";
+        var value = new AliasedPerson { Name = "Ada" };
+
+        // Act
+        await harness.Driver.WriteAsync(id, value, harness.Context);
+        var stored = GetVariables(harness.Properties)[id].AsObject();
+        var read = await harness.Driver.ReadAsync(id, harness.Context);
+
+        // Assert
+        Assert.Equal(nameof(AliasedPerson), stored["_type"]?.GetValue<string>());
+        var restored = Assert.IsType<AliasedPerson>(read);
+        Assert.Equal("Ada", restored.Name);
     }
 
     [Fact]
@@ -145,14 +167,14 @@ public class WorkflowInstanceStorageDriverTests
         }
     }
 
-    private static Harness CreateHarness(Variable variable)
+    private static Harness CreateHarness(Variable variable, ISerializationTypeRegistry? typeRegistry = null)
     {
         var properties = new Dictionary<string, object>();
         var executionContext = Substitute.For<IExecutionContext>();
         executionContext.Properties.Returns(properties);
 
         var payloadSerializer = Substitute.For<IPayloadSerializer>();
-        payloadSerializer.GetOptions().Returns(CreatePayloadSerializerOptions());
+        payloadSerializer.GetOptions().Returns(CreatePayloadSerializerOptions(typeRegistry));
 
         var driver = new WorkflowInstanceStorageDriver(payloadSerializer, NullLogger<WorkflowInstanceStorageDriver>.Instance);
         var context = new StorageDriverContext(executionContext, variable, CancellationToken.None);
@@ -160,14 +182,16 @@ public class WorkflowInstanceStorageDriverTests
         return new(driver, context, properties);
     }
 
-    private static JsonSerializerOptions CreatePayloadSerializerOptions()
+    private static JsonSerializerOptions CreatePayloadSerializerOptions(ISerializationTypeRegistry? typeRegistry = null)
     {
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true
         };
-        options.Converters.Add(new PolymorphicObjectConverterFactory());
+        options.Converters.Add(typeRegistry is null
+            ? new PolymorphicObjectConverterFactory()
+            : new PolymorphicObjectConverterFactory(typeRegistry));
         return options;
     }
 
@@ -203,6 +227,11 @@ public class WorkflowInstanceStorageDriverTests
     {
         [JsonPropertyName("$ref")]
         public string Ref { get; set; } = "";
+    }
+
+    private sealed class AliasedPerson
+    {
+        public string Name { get; set; } = "";
     }
 }
 
