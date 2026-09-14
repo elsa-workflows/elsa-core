@@ -2,7 +2,7 @@ using Elsa.Diagnostics.StructuredLogs.Models;
 using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
-using Microsoft.Extensions.Options;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests;
 
@@ -138,7 +138,7 @@ public class RelationalStructuredLogSqlBuilderTests
         if (maxRecentLogQuerySize is { } maxTake)
             options.MaxRecentLogQuerySize = maxTake;
 
-        return new(new FakeDialect(), Options.Create(options));
+        return new(new FakeDialect(), MicrosoftOptions.Create(options));
     }
 
     private class FakeDialect : IRelationalStructuredLogDialect
