@@ -2,6 +2,8 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Models;
 using Elsa.Scheduling.Options;
+using Elsa.Scheduling.Services;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Tasks;
@@ -12,6 +14,7 @@ namespace Elsa.Scheduling.StartupTasks;
 
 /// <summary>
 /// Enqueues schedule creation when using the default scheduler, which doesn't have its own persistence layer like Quartz or Hangfire.
+/// Scheduling bookmarks whose workflow instance is missing or finished are skipped and purged so startup does not rehydrate dead work.
 /// </summary>
 [TaskDependency(typeof(PopulateRegistriesStartupTask))]
 public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptions<SchedulingOptions> options) : IStartupTask
@@ -32,6 +35,10 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         var bookmarkStore = serviceProvider.GetRequiredService<IBookmarkStore>();
         var triggerScheduler = serviceProvider.GetRequiredService<ITriggerScheduler>();
         var bookmarkScheduler = serviceProvider.GetRequiredService<IBookmarkScheduler>();
+        var workflowInstanceStore = serviceProvider.GetService<IWorkflowInstanceStore>();
+        var bookmarkReconciler = workflowInstanceStore == null
+            ? null
+            : new SchedulingBookmarkReconciler(workflowInstanceStore, serviceProvider.GetService<IBookmarkManager>());
         var pageSize = Math.Max(1, options.Value.StartupSchedulePageSize);
         var stimulusNames = new[]
         {
@@ -47,7 +54,7 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         };
 
         await ScheduleTriggersAsync(triggerStore, triggerScheduler, triggerFilter, pageSize, cancellationToken);
-        await ScheduleBookmarksAsync(bookmarkStore, bookmarkScheduler, bookmarkFilter, pageSize, cancellationToken);
+        await ScheduleBookmarksAsync(bookmarkStore, bookmarkScheduler, bookmarkReconciler, bookmarkFilter, pageSize, cancellationToken);
     }
 
     private static async Task ScheduleTriggersAsync(ITriggerStore triggerStore, ITriggerScheduler triggerScheduler, TriggerFilter triggerFilter, int pageSize, CancellationToken cancellationToken)
@@ -71,9 +78,16 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         }
     }
 
-    private static async Task ScheduleBookmarksAsync(IBookmarkStore bookmarkStore, IBookmarkScheduler bookmarkScheduler, BookmarkFilter bookmarkFilter, int pageSize, CancellationToken cancellationToken)
+    private static async Task ScheduleBookmarksAsync(
+        IBookmarkStore bookmarkStore,
+        IBookmarkScheduler bookmarkScheduler,
+        SchedulingBookmarkReconciler? bookmarkReconciler,
+        BookmarkFilter bookmarkFilter,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromRange(0, pageSize);
+        var orphanBookmarkIds = new HashSet<string>(StringComparer.Ordinal);
 
         while (true)
         {
@@ -82,13 +96,41 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
             if (page.Items.Count == 0)
                 break;
 
-            await bookmarkScheduler.ScheduleAsync(page.Items, cancellationToken);
+            if (bookmarkReconciler == null)
+            {
+                await bookmarkScheduler.ScheduleAsync(page.Items, cancellationToken);
+            }
+            else
+            {
+                var classification = await bookmarkReconciler.ClassifyAsync(page.Items, cancellationToken);
+                orphanBookmarkIds.UnionWith(classification.Orphans.Select(x => x.Id).Where(id => !string.IsNullOrWhiteSpace(id)));
+
+                if (classification.Schedulable.Count > 0)
+                    await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
+            }
 
             var nextOffset = pageArgs.Offset.GetValueOrDefault() + page.Items.Count;
             if (nextOffset >= page.TotalCount)
                 break;
 
             pageArgs = pageArgs.Next();
+        }
+
+        if (bookmarkReconciler == null || orphanBookmarkIds.Count == 0)
+            return;
+
+        foreach (var orphanIdBatch in orphanBookmarkIds.Chunk(pageSize))
+        {
+            var candidates = await bookmarkStore.FindManyAsync(new BookmarkFilter
+            {
+                BookmarkIds = orphanIdBatch.ToList()
+            }, cancellationToken);
+            var classification = await bookmarkReconciler.ClassifyAsync(candidates, cancellationToken);
+
+            if (classification.Schedulable.Count > 0)
+                await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
+
+            await bookmarkReconciler.PurgeAsync(classification.Orphans, cancellationToken);
         }
     }
 }
