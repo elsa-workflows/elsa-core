@@ -2,7 +2,10 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.Models;
 using Elsa.Scheduling.Options;
+using Elsa.Scheduling.Services;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +15,7 @@ namespace Elsa.Scheduling.StartupTasks;
 
 /// <summary>
 /// Enqueues schedule creation when using the default scheduler, which doesn't have its own persistence layer like Quartz or Hangfire.
+/// Scheduling bookmarks whose workflow instance is missing or finished are skipped and purged so startup does not rehydrate dead work.
 /// </summary>
 [TaskDependency(typeof(PopulateRegistriesStartupTask))]
 public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptions<SchedulingOptions> options) : IStartupTask
@@ -32,6 +36,9 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         var bookmarkStore = serviceProvider.GetRequiredService<IBookmarkStore>();
         var triggerScheduler = serviceProvider.GetRequiredService<ITriggerScheduler>();
         var bookmarkScheduler = serviceProvider.GetRequiredService<IBookmarkScheduler>();
+        var bookmarkReconciler = new SchedulingBookmarkReconciler(
+            serviceProvider.GetRequiredService<IWorkflowInstanceStore>(),
+            serviceProvider.GetRequiredService<IBookmarkManager>());
         var pageSize = Math.Max(1, options.Value.StartupSchedulePageSize);
         var stimulusNames = new[]
         {
@@ -47,7 +54,7 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         };
 
         await ScheduleTriggersAsync(triggerStore, triggerScheduler, triggerFilter, pageSize, cancellationToken);
-        await ScheduleBookmarksAsync(bookmarkStore, bookmarkScheduler, bookmarkFilter, pageSize, cancellationToken);
+        await ScheduleBookmarksAsync(bookmarkStore, bookmarkScheduler, bookmarkReconciler, bookmarkFilter, pageSize, cancellationToken);
     }
 
     private static async Task ScheduleTriggersAsync(ITriggerStore triggerStore, ITriggerScheduler triggerScheduler, TriggerFilter triggerFilter, int pageSize, CancellationToken cancellationToken)
@@ -71,9 +78,16 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
         }
     }
 
-    private static async Task ScheduleBookmarksAsync(IBookmarkStore bookmarkStore, IBookmarkScheduler bookmarkScheduler, BookmarkFilter bookmarkFilter, int pageSize, CancellationToken cancellationToken)
+    private static async Task ScheduleBookmarksAsync(
+        IBookmarkStore bookmarkStore,
+        IBookmarkScheduler bookmarkScheduler,
+        SchedulingBookmarkReconciler bookmarkReconciler,
+        BookmarkFilter bookmarkFilter,
+        int pageSize,
+        CancellationToken cancellationToken)
     {
         var pageArgs = PageArgs.FromRange(0, pageSize);
+        var orphanBookmarks = new List<StoredBookmark>();
 
         while (true)
         {
@@ -82,7 +96,13 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
             if (page.Items.Count == 0)
                 break;
 
-            await bookmarkScheduler.ScheduleAsync(page.Items, cancellationToken);
+            var classification = await bookmarkReconciler.ClassifyAsync(page.Items, cancellationToken);
+
+            if (classification.Orphans.Count > 0)
+                orphanBookmarks.AddRange(classification.Orphans);
+
+            if (classification.Schedulable.Count > 0)
+                await bookmarkScheduler.ScheduleAsync(classification.Schedulable, cancellationToken);
 
             var nextOffset = pageArgs.Offset.GetValueOrDefault() + page.Items.Count;
             if (nextOffset >= page.TotalCount)
@@ -90,5 +110,7 @@ public class CreateSchedulesStartupTask(IServiceProvider serviceProvider, IOptio
 
             pageArgs = pageArgs.Next();
         }
+
+        await bookmarkReconciler.PurgeAsync(orphanBookmarks, cancellationToken);
     }
 }
