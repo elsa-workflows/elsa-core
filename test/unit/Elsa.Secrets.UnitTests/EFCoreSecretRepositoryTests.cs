@@ -361,6 +361,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
             .AddScoped<IEntitySavingHandler, ApplyTenantId>()
             .AddScoped<IEntityModelCreatingHandler, SetTenantIdFilter>()
             .AddDbContextFactory<SecretsElsaDbContext>(builder => builder.UseElsaSqlite(typeof(SqliteSecretsPersistenceFeatureExtensions).Assembly, $"Data Source={databasePath}"))
+            .Decorate<IDbContextFactory<SecretsElsaDbContext>, TenantAwareDbContextFactory<SecretsElsaDbContext>>()
             .AddSingleton<ISecretNameValidator, DefaultSecretNameValidator>()
             .AddScoped<Store<SecretsElsaDbContext, Secret>>()
             .AddScoped<EFCoreSecretRepository>()
