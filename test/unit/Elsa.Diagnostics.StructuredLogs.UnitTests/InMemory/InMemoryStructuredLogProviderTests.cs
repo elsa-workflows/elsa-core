@@ -44,6 +44,17 @@ public class InMemoryStructuredLogProviderTests
     }
 
     [Fact]
+    public async Task GetRecentAsync_WhenMaxRecentLogQuerySizeIsNegative_ReturnsEmptyWithoutThrowing()
+    {
+        _options.MaxRecentLogQuerySize = -10;
+        await _provider.PublishAsync(CreateLog(1, StructuredLogLevel.Information));
+
+        var result = await _provider.GetRecentAsync(new() { Take = 25 });
+
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
     public async Task SubscribeAsync_YieldsOnlyMatchingLiveEvents()
     {
         using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));

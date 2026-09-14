@@ -1,12 +1,14 @@
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests;
 
 public class RelationalStructuredLogSqlBuilderTests
 {
-    private readonly RelationalStructuredLogSqlBuilder _builder = new(new FakeDialect());
+    private readonly RelationalStructuredLogSqlBuilder _builder = CreateBuilder();
 
     [Fact]
     public void BuildInsert_UsesDialectQuotingAndParameters()
@@ -61,16 +63,40 @@ public class RelationalStructuredLogSqlBuilderTests
     }
 
     [Theory]
-    [InlineData(null, "FETCH 100")]
+    [InlineData(null, "FETCH 1000")]
     [InlineData(-5, "FETCH 0")]
     [InlineData(-1, "FETCH 0")]
     [InlineData(2000, "FETCH 1000")]
     [InlineData(5000, "FETCH 1000")]
-    public void BuildQuery_ClampsTakeToSupportedRange(int? take, string expectedLimit)
+    public void BuildQuery_ClampsTakeToMaxRecentLogQuerySize(int? take, string expectedLimit)
     {
         var query = _builder.BuildQuery(new() { Take = take });
 
         Assert.Contains(expectedLimit, query.Sql, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null, "FETCH 50")]
+    [InlineData(25, "FETCH 25")]
+    [InlineData(200, "FETCH 50")]
+    public void BuildQuery_UsesConfiguredMaxRecentLogQuerySize(int? take, string expectedLimit)
+    {
+        var builder = CreateBuilder(maxRecentLogQuerySize: 50);
+        var query = builder.BuildQuery(new() { Take = take });
+
+        Assert.Contains(expectedLimit, query.Sql, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(-5)]
+    [InlineData(25)]
+    public void BuildQuery_WhenMaxRecentLogQuerySizeIsNegative_UsesZeroLimit(int? take)
+    {
+        var builder = CreateBuilder(maxRecentLogQuerySize: -10);
+        var query = builder.BuildQuery(new() { Take = take });
+
+        Assert.Contains("FETCH 0", query.Sql, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -116,6 +142,15 @@ public class RelationalStructuredLogSqlBuilderTests
 
         Assert.Contains("SKIP 250", query.Sql, StringComparison.Ordinal);
         Assert.DoesNotContain("LIMIT -1", query.Sql, StringComparison.Ordinal);
+    }
+
+    private static RelationalStructuredLogSqlBuilder CreateBuilder(int? maxRecentLogQuerySize = null)
+    {
+        var options = new StructuredLogsOptions();
+        if (maxRecentLogQuerySize is { } maxTake)
+            options.MaxRecentLogQuerySize = maxTake;
+
+        return new(new FakeDialect(), MicrosoftOptions.Create(options));
     }
 
     private class FakeDialect : IRelationalStructuredLogDialect

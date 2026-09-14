@@ -140,6 +140,8 @@ services.AddElsa(elsa =>
 
 The write buffer uses a bounded queue. If the queue is full, newest events are dropped and the dropped-write count is reported through storage diagnostics.
 
+Recent-log queries honor `StructuredLogsOptions.MaxRecentLogQuerySize` for both the default `Take` and the upper clamp, matching the in-memory store.
+
 ## SQLite Provider Boundary
 
 [AddSqliteStructuredLogPersistence](../../src/modules/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite/Extensions/SqliteStructuredLogsModuleExtensions.cs) supplies provider-specific services:

@@ -28,7 +28,7 @@ public class InMemoryStructuredLogStore : IStructuredLogStore
 
     public ValueTask<RecentStructuredLogsResult> QueryAsync(StructuredLogFilter filter, CancellationToken cancellationToken = default)
     {
-        var take = Math.Clamp(filter.Take ?? _options.MaxRecentLogQuerySize, 0, _options.MaxRecentLogQuerySize);
+        var take = _options.ClampRecentLogQueryTake(filter.Take);
         var items = _recentLogs
             .Snapshot()
             .Where(x => StructuredLogFilterEvaluator.Matches(x, filter))
