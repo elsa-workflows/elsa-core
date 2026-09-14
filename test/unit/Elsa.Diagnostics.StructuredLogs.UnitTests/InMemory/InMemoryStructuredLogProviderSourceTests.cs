@@ -52,20 +52,20 @@ public class InMemoryStructuredLogProviderSourceTests
     public async Task GetRecentAsync_WhenTimestampsTie_OrdersDeterministicallyAcrossSources()
     {
         var timestamp = DateTimeOffset.UtcNow;
-        await _provider.PublishAsync(CreateLog(2, "pod-b", timestamp));
-        await _provider.PublishAsync(CreateLog(1, "pod-a", timestamp));
+        await _provider.PublishAsync(CreateLog(1, "pod-b", timestamp, id: "zzz"));
+        await _provider.PublishAsync(CreateLog(2, "pod-a", timestamp, id: "aaa"));
 
         var result = await _provider.GetRecentAsync(new());
 
         await Assert.That(result.Items.Select(x => x.SourceId)).IsEquivalentTo(["pod-a", "pod-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
-    private static StructuredLogEvent CreateLog(long sequence, string sourceId, DateTimeOffset? timestamp = null)
+    private static StructuredLogEvent CreateLog(long sequence, string sourceId, DateTimeOffset? timestamp = null, string? id = null)
     {
         var logTimestamp = timestamp ?? DateTimeOffset.UtcNow.AddSeconds(sequence);
         return new()
         {
-            Id = $"{sourceId}-{sequence}",
+            Id = id ?? $"{sourceId}-{sequence}",
             Sequence = sequence,
             Timestamp = logTimestamp,
             ReceivedAt = logTimestamp,

@@ -1,13 +1,14 @@
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
-using System.Threading.Tasks;
+using MicrosoftOptions = Microsoft.Extensions.Options.Options;
 
 namespace Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests;
 
 public class RelationalStructuredLogSqlBuilderTests
 {
-    private readonly RelationalStructuredLogSqlBuilder _builder = new(new FakeDialect());
+    private readonly RelationalStructuredLogSqlBuilder _builder = CreateBuilder();
 
     [Test]
     public async Task BuildInsert_UsesDialectQuotingAndParameters()
@@ -62,16 +63,48 @@ public class RelationalStructuredLogSqlBuilderTests
     }
 
     [Test]
-    [Arguments(null, "FETCH 100")]
+    [Arguments(null, "FETCH 1000")]
     [Arguments(-5, "FETCH 0")]
     [Arguments(-1, "FETCH 0")]
     [Arguments(2000, "FETCH 1000")]
     [Arguments(5000, "FETCH 1000")]
-    public async Task BuildQuery_ClampsTakeToSupportedRange(int? take, string expectedLimit)
+    public async Task BuildQuery_ClampsTakeToMaxRecentLogQuerySize(int? take, string expectedLimit)
     {
         var query = _builder.BuildQuery(new() { Take = take });
 
         await Assert.That(query.Sql).Contains(expectedLimit).WithComparison(StringComparison.Ordinal);
+    }
+
+    [Test]
+    [Arguments(null, "FETCH 50")]
+    [Arguments(25, "FETCH 25")]
+    [Arguments(200, "FETCH 50")]
+    public async Task BuildQuery_UsesConfiguredMaxRecentLogQuerySize(int? take, string expectedLimit)
+    {
+        var builder = CreateBuilder(maxRecentLogQuerySize: 50);
+        var query = builder.BuildQuery(new() { Take = take });
+
+        await Assert.That(query.Sql).Contains(expectedLimit).WithComparison(StringComparison.Ordinal);
+    }
+
+    [Test]
+    [Arguments(null)]
+    [Arguments(-5)]
+    [Arguments(25)]
+    public async Task BuildQuery_WhenMaxRecentLogQuerySizeIsNegative_UsesZeroLimit(int? take)
+    {
+        var builder = CreateBuilder(maxRecentLogQuerySize: -10);
+        var query = builder.BuildQuery(new() { Take = take });
+
+        await Assert.That(query.Sql).Contains("FETCH 0").WithComparison(StringComparison.Ordinal);
+    }
+
+    [Test]
+    public async Task BuildQuery_OrdersByTimestampReceivedAtSourceIdSequenceAndIdDescending()
+    {
+        var query = _builder.BuildQuery(new());
+
+        await Assert.That(query.Sql).Contains("ORDER BY [Timestamp] DESC, [ReceivedAt] DESC, [SourceId] DESC, [Sequence] DESC, [Id] DESC").WithComparison(StringComparison.Ordinal);
     }
 
     [Test]
@@ -117,6 +150,15 @@ public class RelationalStructuredLogSqlBuilderTests
 
         await Assert.That(query.Sql).Contains("SKIP 250").WithComparison(StringComparison.Ordinal);
         await Assert.That(query.Sql).DoesNotContain("LIMIT -1").WithComparison(StringComparison.Ordinal);
+    }
+
+    private static RelationalStructuredLogSqlBuilder CreateBuilder(int? maxRecentLogQuerySize = null)
+    {
+        var options = new StructuredLogsOptions();
+        if (maxRecentLogQuerySize is { } maxTake)
+            options.MaxRecentLogQuerySize = maxTake;
+
+        return new(new FakeDialect(), MicrosoftOptions.Create(options));
     }
 
     private class FakeDialect : IRelationalStructuredLogDialect

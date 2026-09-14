@@ -50,6 +50,12 @@
         <None Update="Scenarios\LogPersistenceModes\input-output-logging-3-child.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
+        <None Update="Scenarios\LogPersistenceModes\internal-state-logging-activity.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="Scenarios\LogPersistenceModes\internal-state-logging-workflow.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
         <None Update="Scenarios\WorkflowCompletion\hello-world.json">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>

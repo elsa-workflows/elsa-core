@@ -1,7 +1,10 @@
+using System.IO;
+using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Options;
 using Elsa.Secrets.Repositories;
 using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
 
 namespace Elsa.Secrets.UnitTests;
 
@@ -106,11 +109,11 @@ public class SecretStoreTests
     {
         var fixture = new SecretTestFixture();
 
-        var missingType = Assert.ThrowsExactly<InvalidOperationException>(() => fixture.TypeRegistry.Get("missing-type"));
-        var missingStore = Assert.ThrowsExactly<InvalidOperationException>(() => fixture.StoreRegistry.Get("missing-store"));
+        var missingType = await Assert.That(() => fixture.TypeRegistry.Get("missing-type")).ThrowsExactly<InvalidOperationException>();
+        var missingStore = await Assert.That(() => fixture.StoreRegistry.Get("missing-store")).ThrowsExactly<InvalidOperationException>();
 
-        await Assert.That(missingType.Message).Contains("missing-type").WithComparison(StringComparison.CurrentCulture);
-        await Assert.That(missingStore.Message).Contains("missing-store").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(missingType.Message).Contains("missing-type");
+        await Assert.That(missingStore.Message).Contains("missing-store");
     }
 
     [Test]
@@ -171,6 +174,82 @@ public class SecretStoreTests
     }
 
     [Test]
+    public async Task FileRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWhenInserting()
+    {
+        await WithFileRepositoryAsync(async (repository, _) => await AssertInsertIdCollisionRejectedAsync(repository));
+    }
+
+    [Test]
+    public async Task FileRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWithoutMutatingFile()
+    {
+        await WithFileRepositoryAsync(async (repository, path) =>
+        {
+            await repository.AddAsync(new Secret { Id = "owned-id", Name = "other:secret", DisplayName = "Other" });
+            await repository.AddAsync(new Secret
+            {
+                Id = "deleted-id",
+                Name = "smtp:password",
+                DisplayName = "Deleted password",
+                Status = SecretStatus.Deleted
+            });
+            var originalContents = await File.ReadAllTextAsync(path);
+
+            var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+            {
+                Id = "owned-id",
+                Name = "smtp:password",
+                DisplayName = "Replacement password"
+            });
+
+            await Assert.That(replaced).IsFalse();
+            await Assert.That(await File.ReadAllTextAsync(path)).IsEqualTo(originalContents);
+
+            var secrets = await repository.ListAsync();
+            await Assert.That(secrets.Count).IsEqualTo(2);
+            await Assert.That(secrets.Select(x => x.Id).Distinct().Count()).IsEqualTo(2);
+            var stillDeleted = await repository.GetAsync("smtp:password");
+            await Assert.That(stillDeleted!.Id).IsEqualTo("deleted-id");
+            await Assert.That(stillDeleted.DisplayName).IsEqualTo("Deleted password");
+            await Assert.That(stillDeleted.Status).IsEqualTo(SecretStatus.Deleted);
+        });
+    }
+
+    [Test]
+    public async Task InMemoryRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWithoutLosingDeletedSecret()
+    {
+        var repository = new InMemorySecretRepository();
+        await repository.AddAsync(new Secret { Id = "owned-id", Name = "other:secret", DisplayName = "Other" });
+        await repository.AddAsync(new Secret
+        {
+            Id = "deleted-id",
+            Name = "smtp:password",
+            DisplayName = "Deleted password",
+            Status = SecretStatus.Deleted
+        });
+
+        var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+        {
+            Id = "owned-id",
+            Name = "smtp:password",
+            DisplayName = "Replacement password"
+        });
+
+        await Assert.That(replaced).IsFalse();
+
+        var stillDeleted = await Assert.That(await repository.GetAsync("smtp:password")).IsNotNull();
+        await Assert.That(stillDeleted.Id).IsEqualTo("deleted-id");
+        await Assert.That(stillDeleted.DisplayName).IsEqualTo("Deleted password");
+        await Assert.That(stillDeleted.Status).IsEqualTo(SecretStatus.Deleted);
+        await Assert.That((await repository.GetAsync("other:secret"))!.Id).IsEqualTo("owned-id");
+    }
+
+    [Test]
+    public async Task InMemoryRepository_TryAddOrReplaceDeletedAsync_RejectsCollidingIdWhenInserting()
+    {
+        await AssertInsertIdCollisionRejectedAsync(new InMemorySecretRepository());
+    }
+
+    [Test]
     public async Task FileRepository_RecoversFromCorruptJson()
     {
         await WithFileRepositoryAsync(async (repository, path) =>
@@ -197,13 +276,13 @@ public class SecretStoreTests
             Versions = { new SecretVersion { Version = 1, Payload = new SecretPayload { Metadata = { ["protectedValue"] = "ciphertext" } } } }
         });
 
-        var loaded = await Assert.That(await repository.GetAsync("smtp:password")).IsNotNull();
-        loaded.Versions.Clear();
+        var loaded = await repository.GetAsync("smtp:password");
+        loaded!.Versions.Clear();
         loaded.DisplayName = "Changed";
 
-        var reloaded = await Assert.That(await repository.GetAsync("smtp:password")).IsNotNull();
+        var reloaded = await repository.GetAsync("smtp:password");
 
-        await Assert.That(reloaded.DisplayName).IsEqualTo("SMTP password");
+        await Assert.That(reloaded!.DisplayName).IsEqualTo("SMTP password");
         await Assert.That(reloaded.Versions).HasSingleItem();
         await Assert.That(reloaded.Versions.Single().Payload.Metadata.ContainsKey("protectedValue")).IsTrue();
     }
@@ -221,5 +300,21 @@ public class SecretStoreTests
             if (File.Exists(path))
                 File.Delete(path);
         }
+    }
+
+    private static async Task AssertInsertIdCollisionRejectedAsync(ISecretRepository repository)
+    {
+        await repository.AddAsync(new Secret { Id = "existing-id", Name = "existing:secret", DisplayName = "Existing" });
+
+        var result = await repository.TryAddOrReplaceDeletedAsync(new Secret
+        {
+            Id = "existing-id",
+            Name = "new:secret",
+            DisplayName = "New"
+        });
+
+        await Assert.That(result).IsFalse();
+        await Assert.That((await repository.GetAsync("existing:secret"))!.DisplayName).IsEqualTo("Existing");
+        await Assert.That(await repository.GetAsync("new:secret")).IsNull();
     }
 }

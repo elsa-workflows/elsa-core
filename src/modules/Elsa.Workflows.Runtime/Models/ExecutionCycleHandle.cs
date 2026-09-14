@@ -10,11 +10,20 @@ namespace Elsa.Workflows.Runtime;
 public sealed class ExecutionCycleHandle : IDisposable
 {
     private readonly CancellationTokenSource _cycleCts;
+    private readonly CancellationTokenRegistration _linkedTokenRegistration;
     private readonly Action<ExecutionCycleHandle>? _onDisposed;
     private readonly Action? _cancelCallback;
     private readonly TaskCompletionSource _disposedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private int _cancelled;
-    private int _disposed;
+    private readonly object _cycleCtsGate = new();
+    private int _cycleCtsCancellationInProgress;
+    private bool _cycleCtsDisposeRequested;
+    private bool _cycleCtsDisposed;
+    private int _lifecycleState;
+
+    private const int ActiveState = 0;
+    private const int CancellingState = 1;
+    private const int CancelledState = 2;
+    private const int DisposedState = 3;
 
     /// <summary>
     /// Creates a new handle. The owning <see cref="IExecutionCycleRegistry"/> supplies <paramref name="onDisposed"/>
@@ -39,7 +48,10 @@ public sealed class ExecutionCycleHandle : IDisposable
         WorkflowInstanceId = workflowInstanceId;
         IngressSourceName = ingressSourceName;
         StartedAt = startedAt;
-        _cycleCts = CancellationTokenSource.CreateLinkedTokenSource(linkedToken);
+        _cycleCts = new CancellationTokenSource();
+        _linkedTokenRegistration = linkedToken.UnsafeRegister(
+            static state => ((ExecutionCycleHandle)state!).PropagateLinkedCancellation(),
+            this);
         _onDisposed = onDisposed;
         _cancelCallback = cancelCallback;
     }
@@ -62,10 +74,12 @@ public sealed class ExecutionCycleHandle : IDisposable
     public CancellationToken CancellationToken => _cycleCts.Token;
 
     /// <summary>
-    /// Completes when <see cref="Dispose"/> runs — i.e., when the workflow runner finishes the cycle (cleanly or
-    /// via cancellation) and the middleware exits its <c>using</c> block. The drain orchestrator awaits this with
-    /// a timeout before persisting <see cref="WorkflowSubStatus.Interrupted"/>, ensuring its write happens AFTER
-    /// any commit the runner emits in response to <see cref="Cancel"/>.
+    /// Completes after <see cref="Dispose"/> logically releases the handle and physically cleans up its linked CTS —
+    /// i.e., when the workflow runner finishes the cycle (cleanly or via cancellation) and the middleware exits its
+    /// <c>using</c> block. If cancellation callbacks are in flight, <see cref="Dispose"/> may return before this
+    /// cleanup completes. The drain orchestrator awaits this with a timeout before persisting
+    /// <see cref="WorkflowSubStatus.Interrupted"/>, ensuring its write happens AFTER any commit the runner emits in
+    /// response to <see cref="Cancel"/>.
     /// </summary>
     public Task Disposed => _disposedTcs.Task;
 
@@ -74,13 +88,18 @@ public sealed class ExecutionCycleHandle : IDisposable
     /// Invokes the cancel callback (when supplied at construction) to propagate cancellation into the workflow
     /// execution, then cancels the cycle's own linked CTS. Safe to call multiple times; idempotent.
     /// </summary>
-    public void Cancel()
+    public void Cancel() => TryCancel();
+
+    /// <summary>
+    /// Attempts to cancel the cycle. Returns <c>true</c> only when this call transitioned the handle from
+    /// active to cancelled. Returns <c>false</c> when the handle was already disposed or already cancelling/cancelled,
+    /// so drain can avoid treating a finished cycle as a force-cancel. Disposal wins if it races with the cancellation
+    /// callback, so a cycle that completes while cancellation is in flight is not reported as drain-cancelled.
+    /// </summary>
+    public bool TryCancel()
     {
-        if (_disposed != 0) return;
-        // Idempotent guard: ensures the cancel callback and CTS cancellation run AT MOST once even if Cancel() is
-        // called repeatedly before disposal. Without this the drain orchestrator (or any other future caller) could
-        // accidentally trigger a non-idempotent cancellation side effect multiple times.
-        if (Interlocked.Exchange(ref _cancelled, 1) != 0) return;
+        if (Interlocked.CompareExchange(ref _lifecycleState, CancellingState, ActiveState) != ActiveState)
+            return false;
 
         // Propagate to the workflow execution first (this typically marks the workflow as Cancelled and clears its
         // schedule, so the runner stops scheduling new activities). The orchestrator's subsequent Interrupted
@@ -88,15 +107,97 @@ public sealed class ExecutionCycleHandle : IDisposable
         try { _cancelCallback?.Invoke(); }
         catch (Exception ex) when (!ex.IsFatal()) { /* Cancellation is best-effort; non-fatal failures here must not break the drain. */ }
 
-        try { _cycleCts.Cancel(); }
-        catch (ObjectDisposedException) { /* Race with Dispose — acceptable. */ }
+        PropagateCycleCtsCancellation();
+
+        // Publish cancellation only after its effects complete. Dispose can transition CancellingState directly to
+        // DisposedState, making this CAS fail when the cycle completed during the callback or CTS cancellation.
+        return Interlocked.CompareExchange(ref _lifecycleState, CancelledState, CancellingState) == CancellingState;
     }
 
-    /// <summary>Releases the linked CTS, notifies the registry, and signals <see cref="Disposed"/>.</summary>
+    /// <summary>
+    /// Logically releases the handle and notifies the registry. If cancellation callbacks are in flight, this method
+    /// may return before physical cleanup of the linked CTS completes; <see cref="Disposed"/> is signaled afterwards.
+    /// </summary>
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        while (true)
+        {
+            var state = Volatile.Read(ref _lifecycleState);
+            if (state == DisposedState) return;
+            if (Interlocked.CompareExchange(ref _lifecycleState, DisposedState, state) == state) break;
+        }
+
         _onDisposed?.Invoke(this);
+        RequestCycleCtsDisposal();
+    }
+
+    private void PropagateLinkedCancellation()
+    {
+        PropagateCycleCtsCancellation();
+    }
+
+    private void PropagateCycleCtsCancellation()
+    {
+        lock (_cycleCtsGate)
+        {
+            if (_cycleCtsDisposed)
+                return;
+
+            _cycleCtsCancellationInProgress++;
+        }
+
+        try
+        {
+            _cycleCts.Cancel();
+        }
+        catch (ObjectDisposedException)
+        {
+            // Dispose may have won before cancellation propagation started.
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            // CTS callbacks are best-effort; preserve the lifecycle transition even when one reports a non-fatal error.
+        }
+        finally
+        {
+            var dispose = false;
+            lock (_cycleCtsGate)
+            {
+                _cycleCtsCancellationInProgress--;
+                if (_cycleCtsDisposeRequested && _cycleCtsCancellationInProgress == 0 && !_cycleCtsDisposed)
+                {
+                    _cycleCtsDisposed = true;
+                    dispose = true;
+                }
+            }
+
+            if (dispose)
+                DisposeCycleCts();
+        }
+    }
+
+    private void RequestCycleCtsDisposal()
+    {
+        var dispose = false;
+        lock (_cycleCtsGate)
+        {
+            _cycleCtsDisposeRequested = true;
+            if (_cycleCtsCancellationInProgress == 0 && !_cycleCtsDisposed)
+            {
+                _cycleCtsDisposed = true;
+                dispose = true;
+            }
+        }
+
+        if (dispose)
+            DisposeCycleCts();
+    }
+
+    private void DisposeCycleCts()
+    {
+        // CancellationTokenRegistration.Dispose is self-unregister-safe when this is called from the linked
+        // token callback, and waits for a callback running on another thread before releasing the registration.
+        _linkedTokenRegistration.Dispose();
         _cycleCts.Dispose();
         _disposedTcs.TrySetResult();
     }

@@ -18,6 +18,12 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         Converters = { new JsonStringEnumConverter() }
     };
 
+    /// <summary>
+    /// Title OrderBy, ties, and cursors share this comparer. Title cursors are not portable to EF
+    /// (column collation) or across databases; recreate the list after a provider change.
+    /// </summary>
+    private static readonly StringComparer TitleComparer = StringComparer.Ordinal;
+
     public async Task<UserTask?> GetAsync(string tenantId, string taskId, CancellationToken cancellationToken = default)
     {
         var document = await documentStore.LoadAsync(StorageUnitName, DocumentId(tenantId, taskId), cancellationToken);
@@ -226,7 +232,7 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
                (string.IsNullOrWhiteSpace(query.WorkflowDefinitionId) || task.WorkflowDefinitionId == query.WorkflowDefinitionId) &&
                (string.IsNullOrWhiteSpace(query.WorkflowInstanceId) || task.WorkflowInstanceId == query.WorkflowInstanceId) &&
                (string.IsNullOrWhiteSpace(query.Reference) || task.Reference == query.Reference) &&
-               (string.IsNullOrWhiteSpace(search) || task.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || task.Summary?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.Reference?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.TaskType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true);
+               (string.IsNullOrWhiteSpace(search) || task.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || task.Summary?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.Reference?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.TaskType?.Contains(search, StringComparison.OrdinalIgnoreCase) == true || task.Tags.Any(tag => tag.Contains(search, StringComparison.OrdinalIgnoreCase)));
     }
 
     private static bool IsVisible(UserTask task, UserTaskQueryScope scope)
@@ -257,8 +263,10 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
     {
         if (task.ExcludedUsers.Any(x => x.Matches(subject)))
             return false;
+        // SnapshotGroups are the original group refs. Eligibility is the expanded SnapshotMembers,
+        // matching DefaultUserTaskAccessPolicy.IsCandidate and InMemory IsEligible.
         if (task.MembershipResolutionMode == UserTaskMembershipResolutionMode.Snapshot)
-            return task.SnapshotMembers.Any(x => x.Matches(subject)) || task.SnapshotGroups.Any(x => groups.Any(x.Matches));
+            return task.SnapshotMembers.Any(x => x.Matches(subject));
         return task.CandidateUsers.Any(x => x.Matches(subject)) || task.CandidateGroups.Any(x => groups.Any(x.Matches));
     }
 
@@ -268,11 +276,13 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         || (task.IsOpen && task.Assignee is null)
         || task.Status is UserTaskStatus.Completing or UserTaskStatus.TimingOut or UserTaskStatus.Cancelling;
 
+    // Id is always ThenBy ascending so a page of ties is the same in both directions and across providers.
     private static IEnumerable<UserTask> ApplyOrdering(IEnumerable<UserTask> tasks, UserTaskQuery query) => query.Sort.ToLowerInvariant() switch
     {
         "priority" => query.Descending ? tasks.OrderByDescending(x => x.Priority).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Priority).ThenBy(x => x.Id),
-        "title" => query.Descending ? tasks.OrderByDescending(x => x.Title).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Title).ThenBy(x => x.Id),
+        "title" => query.Descending ? tasks.OrderByDescending(x => x.Title, TitleComparer).ThenBy(x => x.Id) : tasks.OrderBy(x => x.Title, TitleComparer).ThenBy(x => x.Id),
         "due" => query.Descending ? tasks.OrderBy(x => x.DueAt == null).ThenByDescending(x => x.DueAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.DueAt == null).ThenBy(x => x.DueAt).ThenBy(x => x.Id),
+        "updated" => query.Descending ? tasks.OrderByDescending(x => x.UpdatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.UpdatedAt).ThenBy(x => x.Id),
         _ => query.Descending ? tasks.OrderByDescending(x => x.CreatedAt).ThenBy(x => x.Id) : tasks.OrderBy(x => x.CreatedAt).ThenBy(x => x.Id)
     };
 
@@ -283,12 +293,21 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
         return query.Sort.ToLowerInvariant() switch
         {
             "priority" when int.TryParse(value, out var priority) => tasks.Where(x => query.Descending ? x.Priority < priority || x.Priority == priority && string.Compare(x.Id, id) > 0 : x.Priority > priority || x.Priority == priority && string.Compare(x.Id, id) > 0),
-            "title" => tasks.Where(x => query.Descending ? string.Compare(x.Title, value) < 0 || x.Title == value && string.Compare(x.Id, id) > 0 : string.Compare(x.Title, value) > 0 || x.Title == value && string.Compare(x.Id, id) > 0),
+            "title" => tasks.Where(x => TitleIsAfterCursor(x.Title, value, x.Id, id, query.Descending)),
             "due" when value == "~null" => tasks.Where(x => x.DueAt == null && string.Compare(x.Id, id) > 0),
             "due" when DateTimeOffset.TryParse(value, out var due) => tasks.Where(x => x.DueAt == null || query.Descending && x.DueAt < due || !query.Descending && x.DueAt > due || x.DueAt == due && string.Compare(x.Id, id) > 0),
+            "updated" when DateTimeOffset.TryParse(value, out var updated) => tasks.Where(x => query.Descending ? x.UpdatedAt < updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0 : x.UpdatedAt > updated || x.UpdatedAt == updated && string.Compare(x.Id, id) > 0),
             _ when DateTimeOffset.TryParse(value, out var created) => tasks.Where(x => query.Descending ? x.CreatedAt < created || x.CreatedAt == created && string.Compare(x.Id, id) > 0 : x.CreatedAt > created || x.CreatedAt == created && string.Compare(x.Id, id) > 0),
             _ => tasks
         };
+    }
+
+    private static bool TitleIsAfterCursor(string title, string cursorTitle, string id, string cursorId, bool descending)
+    {
+        var comparison = TitleComparer.Compare(title, cursorTitle);
+        return descending
+            ? comparison < 0 || comparison == 0 && string.Compare(id, cursorId) > 0
+            : comparison > 0 || comparison == 0 && string.Compare(id, cursorId) > 0;
     }
 
     private static string CreateCursor(UserTask task, string sort)
@@ -298,6 +317,7 @@ public sealed class VNextUserTaskRepository(IDocumentStore documentStore) : IUse
             "priority" => task.Priority.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "title" => task.Title,
             "due" => task.DueAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture) ?? "~null",
+            "updated" => task.UpdatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
             _ => task.CreatedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
         };
         return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(new[] { value, task.Id }, JsonOptions)).TrimEnd('=').Replace('+', '-').Replace('/', '_');

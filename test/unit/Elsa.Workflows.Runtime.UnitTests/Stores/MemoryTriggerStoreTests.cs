@@ -4,6 +4,7 @@ using Elsa.Testing.Shared.Multitenancy;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Stores;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Stores;
 
@@ -102,7 +103,7 @@ public class MemoryTriggerStoreTests
 
         await store.ReplaceAsync([], [tenantA, tenantB]);
 
-        var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
+        var stored = (await store.FindManyAsync(new TriggerFilter { TenantAgnostic = true })).ToList();
         await Assert.That(stored.Count).IsEqualTo(2);
         await Assert.That(stored).Contains(x => x.Id == "id-a");
         await Assert.That(stored).Contains(x => x.Id == "id-b");
@@ -143,14 +144,13 @@ public class MemoryTriggerStoreTests
         var store = CreateStore();
         await store.SaveAsync(Trigger("id-1", hash: "hash-1"));
 
-        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
-            store.SaveAsync(Trigger("id-2", hash: "hash-1")).AsTask());
+        var exception = await Assert.That(() => store.SaveAsync(Trigger("id-2", hash: "hash-1")).AsTask())
+            .ThrowsExactly<InvalidOperationException>();
 
-        var actualException = await Assert.That(exception).IsNotNull();
-        await Assert.That(actualException.Message).Contains("already exists").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains("already exists");
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        var match = await Assert.That(stored).HasSingleItem();
-        await Assert.That(match.Id).IsEqualTo("id-1");
+        var onlyTrigger = await Assert.That(stored).HasSingleItem();
+        await Assert.That(onlyTrigger.Id).IsEqualTo("id-1");
     }
 
     [Test]
@@ -162,8 +162,8 @@ public class MemoryTriggerStoreTests
         await store.SaveManyAsync([Trigger("id-1"), Trigger("id-2")]);
 
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        var match = await Assert.That(stored).HasSingleItem();
-        await Assert.That(match.Id).IsEqualTo("id-1");
+        var onlyTrigger = await Assert.That(stored).HasSingleItem();
+        await Assert.That(onlyTrigger.Id).IsEqualTo("id-1");
     }
 
     [Test]
@@ -173,14 +173,13 @@ public class MemoryTriggerStoreTests
         var store = CreateStore();
         await store.SaveAsync(Trigger("id-1", hash: "hash-1"));
 
-        var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() =>
-            store.SaveManyAsync([Trigger("id-2", hash: "hash-1")]).AsTask());
+        var exception = await Assert.That(() => store.SaveManyAsync([Trigger("id-2", hash: "hash-1")]).AsTask())
+            .ThrowsExactly<InvalidOperationException>();
 
-        var actualException = await Assert.That(exception).IsNotNull();
-        await Assert.That(actualException.Message).Contains("already exists").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(exception.Message).Contains("already exists");
         var stored = (await store.FindManyAsync(new TriggerFilter())).ToList();
-        var match = await Assert.That(stored).HasSingleItem();
-        await Assert.That(match.Id).IsEqualTo("id-1");
+        var onlyTrigger = await Assert.That(stored).HasSingleItem();
+        await Assert.That(onlyTrigger.Id).IsEqualTo("id-1");
     }
 
     [Test]

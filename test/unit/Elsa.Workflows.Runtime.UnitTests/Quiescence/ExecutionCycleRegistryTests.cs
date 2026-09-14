@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Services;
 using NSubstitute;
+using System.Threading.Tasks;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Quiescence;
 
@@ -25,10 +26,10 @@ public class ExecutionCycleRegistryTests
 
         await Assert.That(sut.ActiveCount).IsEqualTo(0);
 
-        using var a = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None);
+        var a = sut.BeginCycle("instance-1", ingressSourceName: null, CancellationToken.None);
         await Assert.That(sut.ActiveCount).IsEqualTo(1);
 
-        using var b = sut.BeginCycle("instance-2", ingressSourceName: null, CancellationToken.None);
+        var b = sut.BeginCycle("instance-2", ingressSourceName: null, CancellationToken.None);
         await Assert.That(sut.ActiveCount).IsEqualTo(2);
 
         a.Dispose();
@@ -82,8 +83,8 @@ public class ExecutionCycleRegistryTests
     public async Task ListActiveCyclesReturnsSnapshot()
     {
         var sut = new ExecutionCycleRegistry(_sources, _clock);
-        using var a = sut.BeginCycle("instance-1", null, CancellationToken.None);
-        using var b = sut.BeginCycle("instance-2", null, CancellationToken.None);
+        var a = sut.BeginCycle("instance-1", null, CancellationToken.None);
+        var b = sut.BeginCycle("instance-2", null, CancellationToken.None);
 
         var snapshot = sut.ListActiveCycles();
 
@@ -108,6 +109,145 @@ public class ExecutionCycleRegistryTests
     }
 
     [Test]
+    [DisplayName("ExecutionCycleHandle.TryCancel reports whether this call transitioned the handle")]
+    public async Task ExecutionCycleHandleTryCancelReportsTransition()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        var handle = sut.BeginCycle("instance-1", null, CancellationToken.None);
+
+        await Assert.That(handle.TryCancel()).IsTrue();
+        await Assert.That(handle.TryCancel()).IsFalse();
+
+        handle.Dispose();
+        await Assert.That(handle.TryCancel()).IsFalse();
+
+        var disposed = sut.BeginCycle("instance-2", null, CancellationToken.None);
+        disposed.Dispose();
+        await Assert.That(disposed.TryCancel()).IsFalse();
+    }
+
+    [Test]
+    [DisplayName("ExecutionCycleHandle.TryCancel reports false when disposed during the cancellation callback")]
+    public async Task TryCancelReportsFalseWhenDisposedDuringCancellationCallback()
+    {
+        var sut = new ExecutionCycleRegistry(_sources, _clock);
+        var callbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handle = sut.BeginCycle(
+            "instance-1",
+            ingressSourceName: null,
+            linkedToken: CancellationToken.None,
+            cancelCallback: () =>
+            {
+                callbackEntered.SetResult();
+                releaseCallback.Task.GetAwaiter().GetResult();
+            });
+
+        var cancelTask = Task.Run(handle.TryCancel);
+        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        handle.Dispose();
+        releaseCallback.SetResult();
+
+        await Assert.That(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5))).IsFalse();
+    }
+
+    [Test]
+    [DisplayName("ExecutionCycleHandle.Dispose completes while a CTS callback waits for it")]
+    public async Task DisposeCompletesWhileCtsCallbackWaitsForIt()
+    {
+        var cancellationCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var disposalCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackObservedDisposal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None,
+            onDisposed: null);
+        using var registration = handle.CancellationToken.Register(() =>
+        {
+            cancellationCallbackEntered.SetResult();
+            callbackObservedDisposal.SetResult(disposalCompleted.Task.Wait(TimeSpan.FromSeconds(5)));
+        });
+
+        var cancelTask = Task.Run(handle.TryCancel);
+        await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var disposeTask = Task.Run(() =>
+        {
+            handle.Dispose();
+            disposalCompleted.TrySetResult();
+        });
+
+        await Assert.That(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5))).IsTrue();
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(await cancelTask.WaitAsync(TimeSpan.FromSeconds(5))).IsFalse();
+        await Assert.That(handle.Disposed.IsCompletedSuccessfully).IsTrue();
+    }
+
+    [Test]
+    [DisplayName("ExecutionCycleHandle defers CTS disposal while linked-token cancellation is in progress")]
+    public async Task DisposeCompletesWhileLinkedTokenCancellationWaitsForIt()
+    {
+        using var linkedCts = new CancellationTokenSource();
+        var cancellationCallbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var disposalCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var callbackObservedDisposal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-linked-cancellation",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: linkedCts.Token);
+        var cycleToken = handle.CancellationToken;
+        using var registration = cycleToken.Register(() =>
+        {
+            cancellationCallbackEntered.SetResult();
+            callbackObservedDisposal.SetResult(disposalCompleted.Task.Wait(TimeSpan.FromSeconds(5)));
+        });
+
+        var cancelTask = Task.Run(() => linkedCts.Cancel());
+        await cancellationCallbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var disposeTask = Task.Run(() =>
+        {
+            handle.Dispose();
+            disposalCompleted.TrySetResult();
+        });
+
+        await Assert.That(await callbackObservedDisposal.Task.WaitAsync(TimeSpan.FromSeconds(5))).IsTrue();
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await cancelTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(handle.Disposed.IsCompletedSuccessfully).IsTrue();
+        await Assert.That(cycleToken.IsCancellationRequested).IsTrue();
+    }
+
+    [Test]
+    [DisplayName("ExecutionCycleHandle defers CTS disposal from a cancellation callback")]
+    public async Task DisposeDefersCtsDisposalUntilCancellationPropagationExits()
+    {
+        var disposedDuringCancellation = false;
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None);
+
+        using var registration = handle.CancellationToken.Register(() =>
+        {
+            handle.Dispose();
+            disposedDuringCancellation = handle.Disposed.IsCompleted;
+        });
+
+        await Assert.That(handle.TryCancel()).IsFalse();
+        await Assert.That(disposedDuringCancellation).IsFalse();
+        await Assert.That(handle.Disposed.IsCompletedSuccessfully).IsTrue();
+    }
+
+    [Test]
     [DisplayName("ExecutionCycleHandle.Cancel invokes the cancel callback supplied at registration")]
     public async Task CancelCallbackIsInvoked()
     {
@@ -123,7 +263,7 @@ public class ExecutionCycleRegistryTests
         await Assert.That(callbackInvocations).IsEqualTo(1);
 
         // Truly idempotent: a second Cancel() before Dispose() must NOT re-invoke the callback. The handle uses an
-        // Interlocked _cancelled flag so callers can't accidentally trigger non-idempotent cancellation side effects.
+        // Interlocked lifecycle state so callers can't accidentally trigger non-idempotent cancellation side effects.
         handle.Cancel();
         await Assert.That(callbackInvocations).IsEqualTo(1);
 
@@ -150,11 +290,49 @@ public class ExecutionCycleRegistryTests
     }
 
     [Test]
+    [DisplayName("ExecutionCycleHandle.TryCancel swallows non-fatal CTS callback exceptions")]
+    public async Task TryCancelSwallowsNonFatalCtsCallbackExceptions()
+    {
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None);
+        using var registration = handle.CancellationToken.Register(() => throw new InvalidOperationException("callback refused to cancel"));
+
+        await Assert.That(handle.TryCancel()).IsTrue();
+        await Assert.That(handle.TryCancel()).IsFalse();
+
+        handle.Dispose();
+        await Assert.That(handle.Disposed.IsCompletedSuccessfully).IsTrue();
+    }
+
+    [Test]
+    [DisplayName("ExecutionCycleHandle.TryCancel propagates fatal CTS callback exceptions wrapped in an aggregate")]
+    public async Task TryCancelPropagatesFatalCtsCallbackExceptions()
+    {
+        var handle = new ExecutionCycleHandle(
+            Guid.NewGuid(),
+            "instance-1",
+            ingressSourceName: null,
+            startedAt: DateTimeOffset.UtcNow,
+            linkedToken: CancellationToken.None);
+        using var registration = handle.CancellationToken.Register(() => throw new OutOfMemoryException("fatal callback failure"));
+
+        var exception = await Assert.That(() => handle.TryCancel()).ThrowsExactly<AggregateException>();
+
+        await Assert.That(exception.Flatten().InnerExceptions).Contains(inner => inner is OutOfMemoryException);
+        handle.Dispose();
+        await Assert.That(handle.Disposed.IsCompletedSuccessfully).IsTrue();
+    }
+
+    [Test]
     [DisplayName("ExecutionCycleHandle.Disposed completes when the handle is disposed")]
     public async Task DisposedTaskCompletesOnDispose()
     {
         var sut = new ExecutionCycleRegistry(_sources, _clock);
-        using var handle = sut.BeginCycle("instance-1", null, CancellationToken.None);
+        var handle = sut.BeginCycle("instance-1", null, CancellationToken.None);
 
         await Assert.That(handle.Disposed.IsCompleted).IsFalse();
         handle.Dispose();

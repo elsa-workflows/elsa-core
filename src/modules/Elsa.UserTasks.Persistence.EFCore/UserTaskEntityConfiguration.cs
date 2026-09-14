@@ -22,7 +22,7 @@ internal static class UserTaskEntityConfiguration
             entity.Property(x => x.Summary).HasMaxLength(4000);
             entity.Property(x => x.Reference).HasMaxLength(500);
             entity.Property(x => x.TaskType).HasMaxLength(200);
-            entity.Property(x => x.TagsJson).IsRequired();
+            entity.PrimitiveCollection(x => x.Tags).HasColumnName("TagsJson").IsRequired();
             entity.Property(x => x.RequesterProvider).HasMaxLength(200);
             entity.Property(x => x.RequesterType).HasMaxLength(64);
             entity.Property(x => x.RequesterId).HasMaxLength(450);

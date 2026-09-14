@@ -17,7 +17,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Labels
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("Elsa")
-                .HasAnnotation("ProductVersion", "8.0.12")
+                .HasAnnotation("ProductVersion", "9.0.17")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             OracleModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -35,16 +35,23 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Labels
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(255)
+                        .HasColumnType("NVARCHAR2(255)");
 
                     b.Property<string>("NormalizedName")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasMaxLength(255)
+                        .HasColumnType("NVARCHAR2(255)");
 
                     b.Property<string>("TenantId")
-                        .HasColumnType("NVARCHAR2(2000)");
+                        .HasColumnType("NVARCHAR2(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Label_TenantId_NormalizedName")
+                        .HasFilter("\"TenantId\" IS NOT NULL");
 
                     b.ToTable("Labels", "Elsa");
                 });

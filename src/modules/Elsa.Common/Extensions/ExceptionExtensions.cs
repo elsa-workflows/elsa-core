@@ -25,9 +25,10 @@ public static class ExceptionExtensions
     ///   <item><see cref="ThreadAbortException"/></item>
     /// </list>
     /// <para>
-    /// Wrapper exceptions (<see cref="TypeInitializationException"/>, <see cref="System.Reflection.TargetInvocationException"/>)
-    /// are unwrapped before classification so that, for example, a <see cref="TypeInitializationException"/>
-    /// wrapping a <see cref="StackOverflowException"/> is classified as fatal.
+    /// Wrapper exceptions (<see cref="AggregateException"/>, <see cref="TypeInitializationException"/>,
+    /// <see cref="System.Reflection.TargetInvocationException"/>) are unwrapped before classification so that,
+    /// for example, an aggregate or <see cref="TypeInitializationException"/> wrapping a
+    /// <see cref="StackOverflowException"/> is classified as fatal.
     /// </para>
     /// <para>
     /// Pattern: use as a filter on a generic <c>catch</c> where the surrounding logic must remain best-effort
@@ -45,6 +46,9 @@ public static class ExceptionExtensions
     {
         while (exception is not null)
         {
+            if (exception is AggregateException aggregateException)
+                return aggregateException.Flatten().InnerExceptions.Any(inner => inner.IsFatal());
+
             switch (exception)
             {
                 case StackOverflowException:

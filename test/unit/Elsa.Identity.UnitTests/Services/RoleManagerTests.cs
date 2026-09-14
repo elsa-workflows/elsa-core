@@ -4,7 +4,6 @@ using Elsa.Common.Services;
 using Elsa.Identity.Entities;
 using Elsa.Identity.Providers;
 using Elsa.Identity.Services;
-using System.Threading.Tasks;
 
 namespace Elsa.Identity.UnitTests.Services;
 
@@ -24,16 +23,18 @@ public class RoleManagerTests
     [Test]
     public async Task CreateListUpdateAndDeleteAreIsolatedForRolesWithTheSameNameAcrossTenants()
     {
-        var roleA = await _manager.CreateRoleAsync("Operators", ["tenant-a:permission"]);
+        var roleA = await _manager.CreateRoleAsync("Operators", ["tenant-a:permission"], "operators-a");
 
         await Assert.That(roleA.Role.TenantId).IsEqualTo("tenant-a");
         await Assert.That(await _roleStore.FindManyAsync(new() { TenantId = "tenant-a" })).HasSingleItem();
 
+        var roleBId = string.Empty;
         using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
         {
-            var roleB = await _manager.CreateRoleAsync("Operators", ["tenant-b:permission"]);
+            var roleB = await _manager.CreateRoleAsync("Operators", ["tenant-b:permission"], "operators-b");
+            roleBId = roleB.Role.Id;
 
-            await Assert.That(roleB.Role.Id).IsEqualTo(roleA.Role.Id);
+            await Assert.That(roleB.Role.Id).IsNotEqualTo(roleA.Role.Id);
             await Assert.That(roleB.Role.TenantId).IsEqualTo("tenant-b");
             await Assert.That(roleB.Role.Permissions).IsEquivalentTo(["tenant-b:permission"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
@@ -61,7 +62,7 @@ public class RoleManagerTests
 
         using (_tenantAccessor.PushContext(new Tenant { Id = "tenant-b", Name = "Tenant B" }))
         {
-            var remainingTenantBRole = await _roleStore.FindAsync(new() { Id = roleA.Role.Id });
+            var remainingTenantBRole = await _roleStore.FindAsync(new() { Id = roleBId });
             await Assert.That(remainingTenantBRole).IsNotNull();
             await Assert.That(remainingTenantBRole.Name).IsEqualTo("Operators B");
         }

@@ -30,7 +30,7 @@ public sealed class UserTaskRecord
     public string? Summary { get; set; }
     public string? Reference { get; set; }
     public string? TaskType { get; set; }
-    public string TagsJson { get; set; } = "[]";
+    public List<string> Tags { get; set; } = [];
     public string? RequesterProvider { get; set; }
     public string? RequesterType { get; set; }
     public string? RequesterId { get; set; }

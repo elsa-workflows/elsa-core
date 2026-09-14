@@ -50,6 +50,8 @@ public sealed class ConformanceCursorCasesAttribute : DataSourceGeneratorAttribu
         yield return () => ("priority", true);
         yield return () => ("title", false);
         yield return () => ("title", true);
+        yield return () => ("updated", false);
+        yield return () => ("updated", true);
     }
 }
 

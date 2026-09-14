@@ -19,12 +19,21 @@ internal static class DbExceptionClassifier
         49920,
     ];
 
-    public static bool IsSqlServerTransient(string providerName, Exception exception)
-    {
-        if (!providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
-            return false;
+    private static readonly HashSet<int> MySqlTransientErrorNumbers =
+    [
+        1205, // ER_LOCK_WAIT_TIMEOUT
+        1213, // ER_LOCK_DEADLOCK
+    ];
 
-        return EnumerateExceptions(exception).Any(IsSqlServerTransientException);
+    public static bool IsTransient(string providerName, Exception exception)
+    {
+        if (providerName.Contains("SqlServer", StringComparison.OrdinalIgnoreCase))
+            return EnumerateExceptions(exception).Any(IsSqlServerTransientException);
+
+        if (providerName.Contains("MySql", StringComparison.OrdinalIgnoreCase))
+            return EnumerateExceptions(exception).Any(IsMySqlTransientException);
+
+        return false;
     }
 
     public static bool IsDuplicateKey(Exception exception)
@@ -41,6 +50,17 @@ internal static class DbExceptionClassifier
                || exception.Message.Contains("deadlock", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsMySqlTransientException(Exception exception)
+    {
+        var type = exception.GetType();
+        var typeNamespace = type.Namespace ?? string.Empty;
+        var isMySqlException = type.Name.Equals("MySqlException", StringComparison.OrdinalIgnoreCase)
+                               && (typeNamespace.Equals("MySqlConnector", StringComparison.OrdinalIgnoreCase)
+                                   || typeNamespace.Equals("MySql.Data.MySqlClient", StringComparison.OrdinalIgnoreCase));
+
+        return isMySqlException && GetErrorNumbers(exception).Any(MySqlTransientErrorNumbers.Contains);
+    }
+
     private static bool IsDuplicateKeyException(Exception exception)
     {
         var type = exception.GetType();
@@ -54,8 +74,16 @@ internal static class DbExceptionClassifier
         if (typeName.Contains("MySql", StringComparison.OrdinalIgnoreCase) && errorNumbers.Contains(1062))
             return true;
 
-        if (typeName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) && errorNumbers.Any(number => number is 19 or 1555 or 2067))
-            return true;
+        if (typeName.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+        {
+            // Microsoft.Data.Sqlite exposes the extended result code when it is
+            // available. It must take precedence over the base code: a base 19
+            // can describe a non-duplicate constraint such as NOT NULL.
+            if (HasProperty(exception, "SqliteExtendedErrorCode"))
+                return GetIntProperty(exception, "SqliteExtendedErrorCode") is 1555 or 2067;
+
+            return GetIntProperty(exception, "SqliteErrorCode") == 19;
+        }
 
         if (typeName.Contains("Oracle", StringComparison.OrdinalIgnoreCase) && errorNumbers.Contains(1))
             return true;
@@ -113,6 +141,8 @@ internal static class DbExceptionClassifier
             _ => null
         };
     }
+
+    private static bool HasProperty(object source, string name) => source.GetType().GetProperty(name) is not null;
 
     private static string? GetStringProperty(object source, string name)
     {

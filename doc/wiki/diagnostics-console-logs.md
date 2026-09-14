@@ -72,14 +72,14 @@ Endpoint code is under [Endpoints/ConsoleLogs](../../src/modules/Elsa.Diagnostic
 
 SignalR:
 
-- Hub: `ConsoleLogStream.SignalR.ConsoleLogsHub`
+- Hub: `ElsaConsoleLogsHub` (`Elsa.Diagnostics.ConsoleLogs.RealTime`)
 - Route: `/elsa/hubs/diagnostics/console-logs`
 - Mapping: [MapConsoleLogsHub](../../src/modules/Elsa.Diagnostics.ConsoleLogs/Extensions/EndpointRouteBuilderExtensions.cs)
 - App extension: [UseConsoleLogs](../../src/modules/Elsa.Diagnostics.ConsoleLogs/Extensions/ApplicationBuilderExtensions.cs)
 
 ## Authorization
 
-All endpoints and the SignalR hub require `read:diagnostics:console-logs`, defined in [ConsoleLogsPermissions](../../src/modules/Elsa.Diagnostics.ConsoleLogs/Permissions/ConsoleLogsPermissions.cs).
+All endpoints and the SignalR hub require `read:diagnostics:console-logs`, defined in [ConsoleLogsResourcePermissions](../../src/modules/Elsa.Diagnostics.ConsoleLogs/Permissions/ConsoleLogsResourcePermissions.cs).
 
 ## Safety Boundaries
 

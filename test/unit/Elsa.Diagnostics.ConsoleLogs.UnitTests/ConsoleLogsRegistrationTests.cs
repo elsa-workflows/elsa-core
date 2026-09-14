@@ -1,5 +1,4 @@
 using ConsoleLogStreaming.Core;
-using ConsoleLogStreaming.Core.Capture;
 using ConsoleLogStreaming.Core.Models;
 using CShells.Lifecycle;
 using Elsa.Diagnostics.ConsoleLogs.Contracts;
@@ -16,20 +15,6 @@ namespace Elsa.Diagnostics.ConsoleLogs.UnitTests;
 
 public class ConsoleLogsRegistrationTests
 {
-    [Before(Test)]
-    public async Task InitializeAsync()
-    {
-        await ConsoleLogStreamingHost.ShutdownAsync();
-        ConsoleStreamHook.Uninstall();
-    }
-
-    [After(Test)]
-    public async Task DisposeAsync()
-    {
-        await ConsoleLogStreamingHost.ShutdownAsync();
-        ConsoleStreamHook.Uninstall();
-    }
-
     [Test]
     public async Task AddConsoleLogsServices_RegistersConsoleLogPipeline()
     {

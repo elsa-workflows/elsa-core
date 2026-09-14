@@ -26,15 +26,24 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// <inheritdoc />
     public Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, GetStorageKey);
+        lock (_store.Sync)
+        {
+            MemoryIdentityUniqueness.EnsureAvailable(_store, role, x => x.Name, "name");
+            _store.Add(role, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task DeleteAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var roles = _store.Query(query => Filter(query, filter)).ToList();
-        _store.DeleteMany(roles, GetStorageKey);
+        lock (_store.Sync)
+        {
+            var roles = _store.Query(query => Filter(query, filter)).ToList();
+            _store.DeleteMany(roles, x => x.Id);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -46,30 +55,62 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
     /// </remarks>
     public Task<bool> TryDeleteAsync(string roleId, CancellationToken cancellationToken = default)
     {
-        var role = _store.Query(query => Filter(query, new RoleFilter { Id = roleId })).FirstOrDefault();
-        var deleted = role is not null && _store.Delete(GetStorageKey(role));
+        lock (_store.Sync)
+        {
+            var role = _store.Query(query => Filter(query, new RoleFilter { Id = roleId })).FirstOrDefault();
+            var deleted = role is not null && _store.Delete(role.Id);
 
-        return Task.FromResult(deleted);
+            return Task.FromResult(deleted);
+        }
     }
 
     /// <inheritdoc />
     public Task SaveAsync(Role role, CancellationToken cancellationToken = default)
     {
-        _store.Save(role, GetStorageKey);
+        Save(role);
         return Task.CompletedTask;
     }
+
+    private void Save(Role role)
+    {
+        lock (_store.Sync)
+        {
+            EnsureIdIsAvailable(role);
+            MemoryIdentityUniqueness.EnsureAvailable(_store, role, x => x.Name, "name");
+            _store.Save(role, x => x.Id);
+        }
+    }
+
+    private void EnsureIdIsAvailable(Role role)
+    {
+        var existing = _store.Find(x => x.Id == role.Id);
+        if (existing is not null && !CanReplace(existing, role))
+        {
+            throw new InvalidOperationException(
+                $"A role already exists with ID '{role.Id}' in tenant '{existing.TenantId}'.");
+        }
+    }
+
+    /// <summary>
+    /// A role may be replaced only when its existing row is visible to the ambient tenant and the incoming role
+    /// retains that row's tenant marker. This matches the durable store's query-filtered ID lookup while preventing
+    /// a caller from re-homing a globally keyed row by changing its <c>TenantId</c>.
+    /// </summary>
+    private bool CanReplace(Role existing, Role replacement) =>
+        string.Equals(existing.TenantId, replacement.TenantId, StringComparison.Ordinal) &&
+        TenantVisibility.IsVisible(existing.TenantId, _tenantAccessor.TenantId);
 
     /// <inheritdoc />
     public Task<Role?> FindAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<Role>> FindManyAsync(RoleFilter filter, CancellationToken cancellationToken = default)
     {
-        var result = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        var result = _store.Query(query => Filter(query, filter)).Select(Clone).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
     
@@ -87,8 +128,12 @@ public class MemoryRoleStore : IRoleStore, IRoleStoreWithAtomicDelete
         return filter.Apply(queryable);
     }
 
-    private static string GetStorageKey(Role role) => GetStorageKey(role.TenantId, role.Id);
-
-    private static string GetStorageKey(string? tenantId, string roleId) =>
-        $"{tenantId?.Length ?? -1}:{tenantId}{roleId.Length}:{roleId}";
+    private static Role Clone(Role role) =>
+        new()
+        {
+            Id = role.Id,
+            Name = role.Name,
+            TenantId = role.TenantId,
+            Permissions = role.Permissions.ToList()
+        };
 }

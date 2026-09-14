@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Workflows.Management.Entities;
@@ -10,7 +11,7 @@ namespace Elsa.Workflows.Management.Stores;
 /// <summary>
 /// A memory implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
-public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store) : IWorkflowDefinitionStore
+public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store, ITenantAccessor? tenantAccessor = null) : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
     public Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -97,7 +98,10 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     public Task SaveAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)
+        {
+            EnsureVersionKeyAvailable(definition);
             store.Save(definition, GetId);
+        }
 
         return Task.CompletedTask;
     }
@@ -106,7 +110,15 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     public Task SaveManyAsync(IEnumerable<WorkflowDefinition> definitions, CancellationToken cancellationToken = default)
     {
         lock (store.Sync)
-            store.SaveMany(definitions, GetId);
+        {
+            var definitionList = definitions.ToList();
+            EnsureBatchVersionKeysUnique(definitionList);
+
+            foreach (var definition in definitionList)
+                EnsureVersionKeyAvailable(definition);
+
+            store.SaveMany(definitionList, GetId);
+        }
 
         return Task.CompletedTask;
     }
@@ -147,7 +159,9 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
         lock (store.Sync)
         {
             var workflowDefinitionIds = store.Query(query => Filter(query, filter)).Select(x => x.DefinitionId).Distinct().ToList();
-            store.DeleteWhere(x => workflowDefinitionIds.Contains(x.DefinitionId));
+            store.DeleteWhere(x =>
+                workflowDefinitionIds.Contains(x.DefinitionId)
+                && (filter.TenantAgnostic || TenantVisibility.IsVisible(x.TenantId, CurrentTenantId)));
             return Task.FromResult(workflowDefinitionIds.LongCount());
         }
     }
@@ -162,17 +176,69 @@ public class MemoryWorkflowDefinitionStore(MemoryStore<WorkflowDefinition> store
     /// <inheritdoc />
     public Task<long> CountDistinctAsync(CancellationToken cancellationToken = default)
     {
-        return Task.FromResult(store.Count(x => true, x => x.DefinitionId));
+        var count = store.Query(query => query.WhereVisibleToTenant(CurrentTenantId))
+            .Select(x => x.DefinitionId)
+            .Distinct()
+            .LongCount();
+        return Task.FromResult(count);
     }
 
     /// <inheritdoc />
     public Task<bool> GetIsNameUnique(string name, string? definitionId = default, CancellationToken cancellationToken = default)
     {
-        var exists = store.Any(x => x.Name == name && x.DefinitionId != definitionId);
+        var exists = store.Any(x =>
+            x.Name == name
+            && x.DefinitionId != definitionId
+            && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
         return Task.FromResult(!exists);
     }
 
-    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) => filter.Apply(queryable);
+    /// <remarks>
+    /// Ambient tenant is applied here rather than in <see cref="WorkflowDefinitionFilter.Apply"/>.
+    /// EF owns that via <c>SetTenantIdFilter</c> / <c>IgnoreQueryFilters</c>; Memory must compensate.
+    /// </remarks>
+    private IQueryable<WorkflowDefinition> Filter(IQueryable<WorkflowDefinition> queryable, WorkflowDefinitionFilter filter) =>
+        filter.Apply(queryable.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
+
+    private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    /// <remarks>
+    /// EF enforces <c>(DefinitionId, Version)</c> globally via
+    /// <c>IX_WorkflowDefinition_DefinitionId_Version</c>. Memory keeps tenant in the key so
+    /// same-tenant duplicates fail closed while cross-tenant rows remain distinct until #7539
+    /// adds <c>TenantId</c> to that index.
+    /// </remarks>
+    private void EnsureVersionKeyAvailable(WorkflowDefinition definition)
+    {
+        var versionKey = GetVersionKey(definition);
+        var existing = store.Find(x => x.Id != definition.Id && GetVersionKey(x) == versionKey);
+
+        if (existing is not null)
+            throw CreateVersionKeyConflict(definition);
+    }
+
+    private static void EnsureBatchVersionKeysUnique(IEnumerable<WorkflowDefinition> definitions)
+    {
+        var seen = new Dictionary<DefinitionVersionKey, string>();
+
+        foreach (var definition in definitions)
+        {
+            var versionKey = GetVersionKey(definition);
+
+            if (seen.TryGetValue(versionKey, out var existingId) && existingId != definition.Id)
+                throw CreateVersionKeyConflict(definition);
+
+            seen[versionKey] = definition.Id;
+        }
+    }
+
+    private static InvalidOperationException CreateVersionKeyConflict(WorkflowDefinition definition) =>
+        new($"A workflow definition already exists for definition '{definition.DefinitionId}' version {definition.Version} tenant '{definition.TenantId}'.");
+
+    private static DefinitionVersionKey GetVersionKey(WorkflowDefinition definition) =>
+        new(definition.DefinitionId, definition.Version, definition.TenantId);
 
     private string GetId(WorkflowDefinition workflowDefinition) => workflowDefinition.Id;
+
+    private readonly record struct DefinitionVersionKey(string DefinitionId, int Version, string? TenantId);
 }

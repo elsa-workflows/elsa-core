@@ -1,6 +1,7 @@
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Extensions;
 using Elsa.Diagnostics.StructuredLogs.Models;
+using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Services;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.Extensions;
@@ -16,7 +17,10 @@ internal sealed class SqliteStructuredLogTestHost : IAsyncDisposable
 {
     private readonly string _directory;
 
-    public SqliteStructuredLogTestHost(Action<SqliteStructuredLogOptions>? configure = null, bool migrate = true)
+    public SqliteStructuredLogTestHost(
+        Action<SqliteStructuredLogOptions>? configure = null,
+        bool migrate = true,
+        Action<StructuredLogsOptions>? configureStructuredLogs = null)
     {
         _directory = Path.Join(Path.GetTempPath(), $"elsa-structured-logs-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_directory);
@@ -25,7 +29,7 @@ internal sealed class SqliteStructuredLogTestHost : IAsyncDisposable
 
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddStructuredLogsServices();
+        services.AddStructuredLogsServices(configureStructuredLogs);
         services.AddSqliteStructuredLogPersistence(options =>
         {
             options.ConnectionString = ConnectionString;
@@ -44,6 +48,7 @@ internal sealed class SqliteStructuredLogTestHost : IAsyncDisposable
     public IStructuredLogStore Store => Services.GetRequiredService<IStructuredLogStore>();
     public IStructuredLogProvider Provider => Services.GetRequiredService<IStructuredLogProvider>();
     public IStructuredLogWriteBuffer Buffer => Services.GetRequiredService<IStructuredLogWriteBuffer>();
+    public IStructuredLogSourceRegistry SourceRegistry => Services.GetRequiredService<IStructuredLogSourceRegistry>();
     public IStructuredLogSchemaMigrator Migrator => Services.GetRequiredService<IStructuredLogSchemaMigrator>();
     public StructuredLogRetentionService Retention => Services.GetRequiredService<StructuredLogRetentionService>();
 

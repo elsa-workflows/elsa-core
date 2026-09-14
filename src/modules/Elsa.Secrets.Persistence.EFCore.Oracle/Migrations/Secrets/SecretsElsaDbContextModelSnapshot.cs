@@ -100,8 +100,7 @@ namespace Elsa.Secrets.Persistence.EFCore.Oracle.Migrations.Secrets
 
                     b.HasIndex("TenantId", "NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("IX_Secret_TenantId_NormalizedName")
-                        .HasFilter("\"TenantId\" IS NOT NULL");
+                        .HasDatabaseName("IX_Secret_TenantId_NormalizedName");
 
                     b.ToTable("Secrets", "Elsa");
                 });

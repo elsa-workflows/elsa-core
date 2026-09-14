@@ -160,16 +160,40 @@ public sealed class EFCoreConnectionRegistryVersionStore(ExternalAuthenticationD
     {
         await using var lease = await dbContextFactory.CreateAsync(cancellationToken);
         var dbContext = lease.DbContext;
-        var changed = await dbContext.ExternalAuthenticationRegistryVersions.Where(x => x.Id == SingletonId)
-            .ExecuteUpdateAsync(x => x.SetProperty(y => y.Version, y => y.Version + 1), cancellationToken);
-        if (changed == 0)
+        while (true)
         {
-            dbContext.ExternalAuthenticationRegistryVersions.Add(new ExternalAuthenticationRegistryVersion { Id = SingletonId, Version = 2 });
-            try { await dbContext.SaveChangesAsync(cancellationToken); }
-            catch (DbUpdateException) { return await AdvanceAsync(cancellationToken); }
-            return 2;
+            var current = await dbContext.ExternalAuthenticationRegistryVersions
+                .Where(x => x.Id == SingletonId)
+                .Select(x => (long?)x.Version)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            if (current is not long currentVersion)
+            {
+                dbContext.ExternalAuthenticationRegistryVersions.Add(new ExternalAuthenticationRegistryVersion { Id = SingletonId, Version = 2 });
+                try
+                {
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    return 2;
+                }
+                catch (DbUpdateException)
+                {
+                    // Another caller may have won the initialization race. Clear the failed Added entry before
+                    // checking whether this was that expected duplicate-key outcome or another database failure.
+                    dbContext.ChangeTracker.Clear();
+                    if (!await dbContext.ExternalAuthenticationRegistryVersions.AnyAsync(x => x.Id == SingletonId, cancellationToken))
+                        throw;
+                }
+
+                continue;
+            }
+
+            var next = currentVersion + 1;
+            var changed = await dbContext.ExternalAuthenticationRegistryVersions
+                .Where(x => x.Id == SingletonId && x.Version == currentVersion)
+                .ExecuteUpdateAsync(x => x.SetProperty(y => y.Version, next), cancellationToken);
+            if (changed == 1)
+                return next;
         }
-        return await GetVersionAsync(cancellationToken);
     }
 
     public async ValueTask<bool> IsCurrentAsync(long version, CancellationToken cancellationToken = default) => await GetVersionAsync(cancellationToken) == version;

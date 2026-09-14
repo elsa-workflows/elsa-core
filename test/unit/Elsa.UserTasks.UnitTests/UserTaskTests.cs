@@ -6,6 +6,7 @@ using Elsa.UserTasks.Options;
 using Elsa.UserTasks.Permissions;
 using Elsa.UserTasks.Repositories;
 using Elsa.UserTasks.Services;
+using System.Threading.Tasks;
 
 namespace Elsa.UserTasks.UnitTests;
 
@@ -57,13 +58,15 @@ public class UserTaskTests
     [Arguments("priority", true)]
     [Arguments("title", false)]
     [Arguments("title", true)]
+    [Arguments("updated", false)]
+    [Arguments("updated", true)]
     public async Task Repository_CursorCoversSupportedSortsAndDirections(string sort, bool descending)
     {
         var repository = new InMemoryUserTaskRepository();
         var now = DateTimeOffset.UtcNow;
-        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "Alpha", Priority = 10, DueAt = now.AddHours(1), CreatedAt = now.AddMinutes(1) });
-        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "Beta", Priority = 50, DueAt = null, CreatedAt = now.AddMinutes(2) });
-        await repository.AddProjectionAsync(new() { Id = "task-c", TenantId = "tenant", Title = "Gamma", Priority = 90, DueAt = now.AddHours(2), CreatedAt = now.AddMinutes(3) });
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "Alpha", Priority = 10, DueAt = now.AddHours(1), CreatedAt = now.AddMinutes(1), UpdatedAt = now.AddHours(3) });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "Beta", Priority = 50, DueAt = null, CreatedAt = now.AddMinutes(2), UpdatedAt = now.AddHours(1) });
+        await repository.AddProjectionAsync(new() { Id = "task-c", TenantId = "tenant", Title = "Gamma", Priority = 90, DueAt = now.AddHours(2), CreatedAt = now.AddMinutes(3), UpdatedAt = now.AddHours(2) });
 
         var first = await repository.QueryAsync(new() { TenantId = "tenant", Limit = 2, Sort = sort, Descending = descending, IncludeTotalCount = true });
         var second = await repository.QueryAsync(new() { TenantId = "tenant", Limit = 2, Sort = sort, Descending = descending, Cursor = first.NextCursor, IncludeTotalCount = true });
@@ -72,6 +75,65 @@ public class UserTaskTests
         await Assert.That(first.TotalCount).IsEqualTo(3);
         await Assert.That(second.TotalCount).IsEqualTo(3);
         await Assert.That(ids.Distinct().Count()).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task Repository_DescendingSortUsesAscendingIdTiebreaker()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        var now = DateTimeOffset.UtcNow;
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Priority = 50, CreatedAt = now });
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Priority = 50, CreatedAt = now });
+
+        var page = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "priority", Descending = true, Limit = 10 });
+
+        await Assert.That(page.Items.Select(x => x.Id)).IsEquivalentTo(["task-a", "task-b"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+    }
+
+    [Test]
+    public async Task Repository_TitleCursorUsesTheSameComparisonForTies()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "Same" });
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "Same" });
+
+        var first = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1 });
+        var second = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1, Cursor = first.NextCursor });
+
+        var firstTask = await Assert.That(first.Items).HasSingleItem();
+        var secondTask = await Assert.That(second.Items).HasSingleItem();
+        await Assert.That(firstTask.Id).IsEqualTo("task-a");
+        await Assert.That(secondTask.Id).IsEqualTo("task-b");
+    }
+
+    [Test]
+    public async Task Repository_TitleCursorDoesNotDropUnicodeVariantTitles()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", Title = "caf\u00E9" });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", Title = "cafe\u0301" });
+
+        // InMemory title sort is ordinal: NFC/NFD café are distinct keys and must both
+        // appear. Recreate the list after switching to an EF collation host.
+        var first = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1 });
+        var second = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "title", Limit = 1, Cursor = first.NextCursor });
+
+        await Assert.That(first.Items.Concat(second.Items).Select(x => x.Id).Distinct().Count()).IsEqualTo(2);
+        await Assert.That(second.NextCursor).IsNull();
+    }
+
+    [Test]
+    public async Task Repository_UnknownSortCompletedUsesCreatedOrder()
+    {
+        var repository = new InMemoryUserTaskRepository();
+        var now = DateTimeOffset.UtcNow;
+        await repository.AddProjectionAsync(new() { Id = "task-a", TenantId = "tenant", CreatedAt = now.AddMinutes(1), CompletedAt = now.AddHours(3) });
+        await repository.AddProjectionAsync(new() { Id = "task-b", TenantId = "tenant", CreatedAt = now.AddMinutes(2), CompletedAt = now.AddHours(1) });
+
+        var created = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "created", Limit = 10 });
+        var completed = await repository.QueryAsync(new() { TenantId = "tenant", Sort = "completed", Limit = 10 });
+
+        await Assert.That(completed.Items.Select(x => x.Id)).IsEquivalentTo(created.Items.Select(x => x.Id), TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -171,22 +233,18 @@ public class UserTaskTests
             ExcludedUsers = [excluded.Subject]
         });
 
-        var availableToCandidate = await Assert.That(
-            await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Available, candidate)).IsNotNull();
+        var availableToCandidate = await Assert.That(await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Available, candidate)).IsNotNull();
         await Assert.That(availableToCandidate.Items).HasSingleItem();
 
-        var availableToExcluded = await Assert.That(
-            await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Available, excluded)).IsNotNull();
+        var availableToExcluded = await Assert.That(await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Available, excluded)).IsNotNull();
         await Assert.That(availableToExcluded.Items).IsEmpty();
 
         await _fixture.Manager.ClaimAsync(UserTaskTestFixture.TenantId, open.Id, new(1, "claim-1"), candidate);
 
-        var afterClaim = await Assert.That(
-            await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Available, candidate)).IsNotNull();
+        var afterClaim = await Assert.That(await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Available, candidate)).IsNotNull();
         await Assert.That(afterClaim.Items).IsEmpty();
 
-        var assigned = await Assert.That(
-            await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Assigned, candidate)).IsNotNull();
+        var assigned = await Assert.That(await _fixture.Manager.QueryAsync(new() { TenantId = UserTaskTestFixture.TenantId }, UserTaskQueryScopeKind.Assigned, candidate)).IsNotNull();
         await Assert.That(assigned.Items).HasSingleItem();
     }
 
@@ -202,7 +260,7 @@ public class UserTaskTests
         var summary = await UserTaskModelMapper.ToSummaryAsync(task, candidate, _fixture.Policy);
 
         await Assert.That(summary.CandidateSummary).IsEqualTo("2 users");
-        await Assert.That(JsonSerializer.Serialize(summary)).DoesNotContain(peer.Subject.Id).WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(JsonSerializer.Serialize(summary)).DoesNotContain(peer.Subject.Id);
         await Assert.That(summary.HealthSeverity).IsNull();
         await Assert.That(summary.HealthCode).IsNull();
     }
@@ -226,17 +284,15 @@ public class UserTaskTests
         var candidate = _fixture.Actor("user-1");
         var task = await _fixture.ProjectAsync(candidate.Subject);
 
-        var beforeClaim = await Assert.That(
-            await _fixture.Manager.GetEventsAsync(UserTaskTestFixture.TenantId, task.Id, null, 50, candidate)).IsNotNull();
+        var beforeClaim = await Assert.That(await _fixture.Manager.GetEventsAsync(UserTaskTestFixture.TenantId, task.Id, null, 50, candidate)).IsNotNull();
         await Assert.That(beforeClaim.Items).IsEmpty();
 
         await _fixture.Manager.ClaimAsync(UserTaskTestFixture.TenantId, task.Id, new(1, "claim-1"), candidate);
 
-        var afterClaim = await Assert.That(
-            await _fixture.Manager.GetEventsAsync(UserTaskTestFixture.TenantId, task.Id, null, 50, candidate)).IsNotNull();
+        var afterClaim = await Assert.That(await _fixture.Manager.GetEventsAsync(UserTaskTestFixture.TenantId, task.Id, null, 50, candidate)).IsNotNull();
         await Assert.That(afterClaim.Items).IsNotEmpty();
         // Actor identifiers never reach the audit projection; only a display name may.
-        await Assert.That(JsonSerializer.Serialize(afterClaim)).DoesNotContain(candidate.Subject.Id).WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(JsonSerializer.Serialize(afterClaim)).DoesNotContain(candidate.Subject.Id);
     }
 
     [Test]
@@ -263,7 +319,7 @@ public class UserTaskTests
         await Assert.That(fields["pin"].Value).IsNull();
         await Assert.That(fields["iban"].CanReveal).IsTrue();
         await Assert.That(fields["pin"].CanReveal).IsFalse();
-        await Assert.That(JsonSerializer.Serialize(detail.Form)).DoesNotContain("NL00BANK").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(JsonSerializer.Serialize(detail.Form)).DoesNotContain("NL00BANK");
 
         var revisionBeforeReveal = detail.Revision;
         var revealed = await fixture.Manager.RevealFieldAsync(UserTaskTestFixture.TenantId, task.Id, "iban", actor);
@@ -278,7 +334,7 @@ public class UserTaskTests
         // would conflict for no reason.
         await Assert.That(afterReveal!.Revision).IsEqualTo(revisionBeforeReveal);
         await Assert.That(afterReveal.Events).Contains(x => x.EventType == "FieldRevealed");
-        await Assert.That(JsonSerializer.Serialize(afterReveal.Events)).DoesNotContain("NL00BANK").WithComparison(StringComparison.CurrentCulture);
+        await Assert.That(JsonSerializer.Serialize(afterReveal.Events)).DoesNotContain("NL00BANK");
 
         var completion = await fixture.Manager.CompleteAsync(UserTaskTestFixture.TenantId, task.Id,
             new(revisionBeforeReveal, "complete-1", "Approve", payload), actor);

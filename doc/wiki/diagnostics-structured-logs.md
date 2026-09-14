@@ -92,7 +92,7 @@ The README states the hub is mapped at `/elsa/hubs/diagnostics/structured-logs`.
 
 ## Authorization
 
-The endpoints require `read:diagnostics:structured-logs`, defined in [StructuredLogsPermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsPermissions.cs). The SignalR hub requires an authenticated user.
+The endpoints require `read:diagnostics:structured-logs`, defined in [StructuredLogsResourcePermissions](../../src/modules/Elsa.Diagnostics.StructuredLogs/Permissions/StructuredLogsResourcePermissions.cs). The SignalR hub requires an authenticated user.
 
 ## Redaction
 
@@ -139,6 +139,8 @@ services.AddElsa(elsa =>
 - hosted service for the write buffer
 
 The write buffer uses a bounded queue. If the queue is full, newest events are dropped and the dropped-write count is reported through storage diagnostics.
+
+Recent-log queries honor `StructuredLogsOptions.MaxRecentLogQuerySize` for both the default `Take` and the upper clamp, matching the in-memory store. Query order is `Timestamp`, `ReceivedAt`, `SourceId`, `Sequence`, then `Id`. `ListSources` prefers the in-process source registry for identity metadata and heartbeat/`Stale` status, and uses persisted `SourceId` rows only as a fallback for sources this process has not seen.
 
 ## SQLite Provider Boundary
 

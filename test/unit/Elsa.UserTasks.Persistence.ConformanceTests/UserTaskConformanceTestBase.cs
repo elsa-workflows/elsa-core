@@ -36,7 +36,8 @@ public abstract class UserTaskConformanceTestBase(UserTaskStoreFixture fixture)
         string title = "Approve request",
         int priority = 50,
         DateTimeOffset? dueAt = null,
-        DateTimeOffset? createdAt = null)
+        DateTimeOffset? createdAt = null,
+        DateTimeOffset? updatedAt = null)
     {
         var ordinal = ++_sequence;
         var created = createdAt ?? Clock.UtcNow.AddMinutes(ordinal);
@@ -58,7 +59,7 @@ public abstract class UserTaskConformanceTestBase(UserTaskStoreFixture fixture)
             CandidateUsers = candidate is null ? [] : [candidate],
             InvitationDefinitions = [new UserTaskInvitationDefinition("bearer", ["Complete"], BearerOnly: true)],
             CreatedAt = created,
-            UpdatedAt = created
+            UpdatedAt = updatedAt ?? created
         };
     }
 

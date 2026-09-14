@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Data.Sqlite"/>
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Alterations.Core\Elsa.Alterations.Core.csproj"/>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.Sqlite\Elsa.Persistence.EFCore.Sqlite.csproj"/>
+    </ItemGroup>
+
+</Project>

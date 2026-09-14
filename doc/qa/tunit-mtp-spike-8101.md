@@ -1,6 +1,6 @@
 # Issue #8101: TUnit migration research and rollout plan
 
-Status: **all 55 active test projects migrated and root MTP/CI cutover implemented; success-path validation complete, with focused lifetime/sentinel, failure-path, and IDE checks remaining**
+Status: **all 60 active test projects migrated and root MTP/CI cutover implemented; post-upstream-sync validation complete, with focused lifetime/sentinel, failure-path, and IDE checks remaining**
 Recorded: 2026-09-13
 Updated: 2026-09-14
 Issue: [elsa-workflows/elsa-core#8101][s1]  
@@ -20,7 +20,7 @@ That project decision intentionally goes beyond the issue's original experiment 
 4. shared mutable resources use invocation-unique identities, while irreducible process-global hazards use narrowly scoped native TUnit constraints;
 5. discovery counts, intended skips, reports, coverage enforcement, diagnostics, and supported developer commands are preserved or replaced by an explicit native contract.
 
-The accepted implementation now selects MTP from the repository-root `global.json`, runs individual projects with `dotnet test --project`, and runs checked-in solution or solution-filter scopes with `dotnet test --solution`. All 55 active test projects are native TUnit projects. NUKE remains responsible for compile/package work but no longer owns a test target; PR and package workflows invoke MTP directly. Package coverage is native Cobertura, merged into one repository-wide 10% line gate, with TRX and five-minute supported mini-dump diagnostics retained.
+The accepted implementation now selects MTP from the repository-root `global.json`, runs individual projects with `dotnet test --project`, and runs checked-in solution or solution-filter scopes with `dotnet test --solution`. All 60 active test projects are native TUnit projects. NUKE remains responsible for compile/package work but no longer owns a test target; PR and package workflows invoke MTP directly. Package coverage is native Cobertura, merged into one repository-wide 10% line gate, with TRX and five-minute supported mini-dump diagnostics retained.
 
 At the comparison base, the most important risks were behavioral rather than syntactic:
 
@@ -818,7 +818,7 @@ The rollout evidence above was gated by focused builds and test runs. Every proj
 
 ### Current implementation: repository-root MTP cutover (2026-09-14)
 
-The root `global.json` selects `Microsoft.Testing.Platform`. `Elsa.Mediator.UnitTests` is now a member of `Elsa.sln`, so the solution contains all 55 active test projects. Two checked-in solution filters provide the package-workflow lanes: `Elsa.UnitIntegration.Tests.slnf` contains the 54 unit/integration projects, and `Elsa.Component.Tests.slnf` contains the component project. Current root commands are:
+The root `global.json` selects `Microsoft.Testing.Platform`. `Elsa.sln` contains all 60 active test projects. Two checked-in solution filters provide the package-workflow lanes: `Elsa.UnitIntegration.Tests.slnf` contains the 59 unit/integration projects, and `Elsa.Component.Tests.slnf` contains the component project. Current root commands are:
 
 ```bash
 dotnet test --solution Elsa.sln
@@ -829,13 +829,19 @@ dotnet test --project test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Cor
 
 Outer SDK options belong before the literal `--`; options after it are forwarded to each TUnit test application. NUKE no longer exposes or selects a `Test` target. The PR workflow runs `./build.cmd Compile` and then invokes `dotnet test --solution Elsa.sln --configuration Release --no-build` directly. The package workflow restores and tests the two solution filters directly. The workflows remain the source of truth for detailed runner switches while developer examples intentionally stay minimal.
 
-SDK 10.0.400's outer `--minimum-expected-tests` option was verified as an aggregate floor whose count includes all discovered cases. It is not equivalent to the 54-unit/integration and one-component coverage-shard checks and was removed from the active commands under the minimal-command policy. The shard checks prove that the expected test applications emitted coverage, while normal MTP exit behavior still handles zero discovery. CI therefore no longer enforces an exact aggregate case count, and these solution/filter runs do not by themselves prove exact discovery parity.
+SDK 10.0.400's outer `--minimum-expected-tests` option was verified as an aggregate floor whose count includes all discovered cases. It is not equivalent to the 59-unit/integration and one-component coverage-shard checks and was removed from the active commands under the minimal-command policy. The shard checks prove that the expected test applications emitted coverage, while normal MTP exit behavior still handles zero discovery. CI therefore no longer enforces an exact aggregate case count, and these solution/filter runs do not by themselves prove exact discovery parity.
 
-The accepted coverage contract is Microsoft Testing Platform native Cobertura with `test/coverage.settings.xml`. Each test application writes a collision-safe GUID-named Cobertura shard into its lane-specific results directory; CI requires 54 unit/integration shards and one component shard. The raw lane artifacts remain separate, then ReportGenerator merges all 55 shards and enforces one repository-wide 10% line threshold. This deliberately retires LCOV/OpenCover and replaces the historical per-project 10% default and 23% component thresholds with one aggregate gate.
+The accepted coverage contract is Microsoft Testing Platform native Cobertura with `test/coverage.settings.xml`. Each test application writes a collision-safe GUID-named Cobertura shard into its lane-specific results directory; CI requires 59 unit/integration shards and one component shard. The raw lane artifacts remain separate, then ReportGenerator merges all 60 shards and enforces one repository-wide 10% line threshold. This deliberately retires LCOV/OpenCover and replaces the historical per-project 10% default and 23% component thresholds with one aggregate gate.
 
 TUnit's built-in GitHub Actions reporter auto-activates in GitHub Actions, so no external GitHub reporter package or switch is required. Both package lanes retain TRX, while only the component lane enables a five-minute supported mini-dump policy; their result directories are uploaded on every outcome. The five-minute component hang window and aggregate 10% coverage gate supersede the earlier two-minute dump and per-project threshold passages retained above as historical evidence.
 
-Post-cutover validation completed outside the restricted sandbox. Restore succeeded for both solution filters and `Elsa.sln`, and a Release `--no-restore` solution build completed with zero errors. The exact PR command passed all 3,974 cases (3,845 passed, 129 intentionally skipped, zero failed). The native unit/integration lane passed 3,771 cases (3,645 passed, 126 intentionally skipped, zero failed) and emitted all 54 expected Cobertura shards. The native component lane passed 203 cases (200 passed, three intended skips, zero failed) and emitted its one expected shard. ReportGenerator 5.5.11, restored from the repository-local .NET tool manifest, merged all 55 fresh shards without a downstream assembly filter and passed the aggregate gate at 63.1% line coverage. The collector output contains neither `Elsa.*Tests*`/`Elsa.Testing.Shared*` packages nor `Elsa.Workflows.ComponentTests.Host`.
+Before the upstream synchronization, post-cutover validation completed outside the restricted sandbox. Restore succeeded for both solution filters and `Elsa.sln`, and a Release `--no-restore` solution build completed with zero errors. The exact PR command passed all 3,974 cases (3,845 passed, 129 intentionally skipped, zero failed). The native unit/integration lane passed 3,771 cases (3,645 passed, 126 intentionally skipped, zero failed) and emitted all 54 then-expected Cobertura shards. The native component lane passed 203 cases (200 passed, three intended skips, zero failed) and emitted its one expected shard. ReportGenerator 5.5.11, restored from the repository-local .NET tool manifest, merged all 55 fresh shards without a downstream assembly filter and passed the aggregate gate at 63.1% line coverage. The collector output contains neither `Elsa.*Tests*`/`Elsa.Testing.Shared*` packages nor `Elsa.Workflows.ComponentTests.Host`.
+
+### Post-upstream-sync inventory (2026-09-14)
+
+Synchronizing upstream `main` at `507522469ba810ee8b618ebd60294823436d6820` adds five active test projects: `Elsa.Alterations.Core.UnitTests`, `Elsa.Labels.UnitTests`, `Elsa.Alterations.Persistence.ConformanceTests`, `Elsa.Labels.Persistence.ConformanceTests`, and `Elsa.Workflows.Persistence.ConformanceTests`. The active inventory is now 60 projects: 39 unit, 20 integration, and one component project. The component host remains a non-test dependency, while the performance benchmark and `test/TlsSmoke` remain outside this inventory. `Elsa.sln` and the two solution filters carry the exact 60-project split, and package CI expects 59 unit/integration Cobertura shards plus one component shard. The preceding 3,974-case and 55-shard results remain explicitly pre-sync evidence.
+
+Fresh post-sync validation completed outside the restricted sandbox. `dotnet restore Elsa.sln` evaluated all 168 solution projects successfully, restoring 22 while 146 were already current, and the Release solution build completed with zero errors. The five new projects passed focused native runs of 38, 31, 39, 12, and 16 cases respectively. The exact PR command, `dotnet test --solution Elsa.sln --configuration Release --no-build`, then passed all 4,417 discovered cases: 4,270 succeeded, 147 were intentionally skipped, and none failed. All 60 active restored test graphs resolve TUnit 1.66.27 and its intentional TRX 2.3.3 dependency, with no xUnit or `Microsoft.NET.Test.Sdk`; the filter and workflow audit confirms the 59-plus-one coverage-shard contract and the single aggregate 10% line gate.
 
 ## Final migration checklist
 
@@ -852,7 +858,7 @@ Checked items have either the rollout evidence recorded above or completed cutov
 - [ ] Independent parallelism sentinels overlap while constrained sentinels never overlap.
 - [x] `ITestOutputHelper` replacement preserves concurrent/failure output.
 - [x] Conformance discovery preserves unavailable-provider suppression.
-- [x] Native Cobertura uses the translated shared filters and CI guards the expected 54 plus one report shards.
+- [x] Native Cobertura uses the translated shared filters and CI guards the expected 59 plus one report shards.
 - [x] LCOV/OpenCover are deliberately retired in favor of Cobertura.
 - [x] ReportGenerator merges every lane and enforces the single repository-wide 10% line threshold.
 - [x] TUnit's built-in GitHub Actions reporter replaces the external reporter package and switch.

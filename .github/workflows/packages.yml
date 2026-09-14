@@ -72,8 +72,8 @@ jobs:
             --report-trx
 
           coverage_count=$(find artifacts/test-results/unit-integration -maxdepth 1 -type f -name '*.cobertura.xml' | wc -l | tr -d ' ')
-          if [[ "$coverage_count" != "54" ]]; then
-            echo "Expected 54 unit/integration coverage files, found $coverage_count." >&2
+          if [[ "$coverage_count" != "59" ]]; then
+            echo "Expected 59 unit/integration coverage files, found $coverage_count." >&2
             exit 1
           fi
 

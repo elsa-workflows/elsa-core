@@ -2,6 +2,7 @@ using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Persistence.ConformanceTests.Infrastructure;
 using Elsa.UserTasks.Persistence.ConformanceTests.Providers;
+using System.Threading.Tasks;
 
 namespace Elsa.UserTasks.Persistence.ConformanceTests;
 
@@ -24,10 +25,10 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         await Repository.SaveAsync(first, first.Revision);
 
         second.Priority = 10;
-        // ThrowsExactlyAsync pins the exact type, so this also proves that the store's own concurrency
+        // ThrowsExactly matches the exact type, so this also pins that the store's own concurrency
         // exception does not escape: DbUpdateConcurrencyException and DocumentStoreConcurrencyException
         // would both fail here, which is precisely the defect that shipped a 500 instead of a 409.
-        var conflict = (await Assert.ThrowsExactlyAsync<UserTaskRevisionConflictException>(() => Repository.SaveAsync(second, second.Revision)))!;
+        var conflict = await Assert.That(() => Repository.SaveAsync(second, second.Revision)).ThrowsExactly<UserTaskRevisionConflictException>();
 
         await Assert.That(conflict.TaskId).IsEqualTo(task.Id);
         await Assert.That(conflict.ExpectedRevision).IsEqualTo(second.Revision);
@@ -46,7 +47,7 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         theirs.Status = UserTaskStatus.Cancelled;
 
         await Repository.SaveAsync(mine, mine.Revision);
-        await Assert.ThrowsExactlyAsync<UserTaskRevisionConflictException>(() => other.SaveAsync(theirs, theirs.Revision));
+        await Assert.That(() => other.SaveAsync(theirs, theirs.Revision)).ThrowsExactly<UserTaskRevisionConflictException>();
 
         var settled = await GetAsync(task.Id);
         await Assert.That(settled.Status).IsEqualTo(UserTaskStatus.Assigned);
@@ -142,8 +143,8 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
 
         var all = await Repository.QueryAsync(Query(UserTaskQueryScopeKind.Available, includeTotalCount: true));
         await Assert.That(all.TotalCount).IsEqualTo(1);
-        var projected = await Assert.That(all.Items).HasSingleItem();
-        await Assert.That(projected.Id).IsEqualTo(task.Id);
+        var onlyTask = await Assert.That(all.Items).HasSingleItem();
+        await Assert.That(onlyTask.Id).IsEqualTo(task.Id);
         await Assert.That(await Repository.GetAsync(TenantId, replay.Id)).IsNull();
     }
 
@@ -180,9 +181,60 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         var resolved = await Assert.That(match).IsNotNull();
         await Assert.That(resolved.Task.Id).IsEqualTo(task.Id);
         await Assert.That(resolved.Task.TenantId).IsEqualTo(TenantId);
-        var allowedAction = await Assert.That(resolved.Invitation.AllowedActions).HasSingleItem();
-        await Assert.That(allowedAction).IsEqualTo("Complete");
+        var onlyAction = await Assert.That(resolved.Invitation.AllowedActions).HasSingleItem();
+        await Assert.That(onlyAction).IsEqualTo("Complete");
         await Assert.That(await Repository.FindByInvitationTokenHashAsync($"HASH-UNKNOWN-{Guid.NewGuid():N}")).IsNull();
+    }
+
+    [Test]
+    public async Task SafeSearchByTagReturnsOnlyTheMatchingTask()
+    {
+        await ActivateAsync();
+        var subject = Subject();
+
+        var tagged = CreateTask(subject, title: "Approve invoice");
+        tagged.Tags = ["priority-escalation", "routine-review"];
+        await Repository.AddProjectionAsync(tagged);
+
+        var other = CreateTask(subject, title: "Approve invoice");
+        other.Tags = ["routine-review"];
+        await Repository.AddProjectionAsync(other);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "priority-escalation"
+        });
+
+        await Assert.That(page.TotalCount).IsEqualTo(1);
+        var onlyPageTask = await Assert.That(page.Items).HasSingleItem();
+        await Assert.That(onlyPageTask.Id).IsEqualTo(tagged.Id);
+
+        var upper = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "PRIORITY-ESCALATION"
+        });
+        var onlyUpperTask = await Assert.That(upper.Items).HasSingleItem();
+        await Assert.That(onlyUpperTask.Id).IsEqualTo(tagged.Id);
+
+        // JSON array syntax sits between tags in EF storage. That text is not a tag value, so
+        // InMemory/VNext reject it and EF must not treat the serialized payload as a match.
+        var jsonSyntax = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = """priority-escalation","routine-review"""
+        });
+        await Assert.That(jsonSyntax.Items).IsEmpty();
+        await Assert.That(jsonSyntax.TotalCount).IsEqualTo(0);
+
+        var punctuated = CreateTask(subject, title: "Approve invoice");
+        punctuated.Tags = ["review[urgent]"];
+        await Repository.AddProjectionAsync(punctuated);
+
+        var bracket = await Repository.QueryAsync(Query(includeTotalCount: true) with
+        {
+            Search = "review[urgent]"
+        });
+        var onlyBracketTask = await Assert.That(bracket.Items).HasSingleItem();
+        await Assert.That(onlyBracketTask.Id).IsEqualTo(punctuated.Id);
     }
 
     [Test]
@@ -205,13 +257,103 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         // The unauthorized rows are absent from the total, not merely hidden on the page. A count that
         // includes them leaks their existence and pushes authorized rows off the last page.
         await Assert.That(page.TotalCount).IsEqualTo(2);
-        await Assert.That(page.Items.Select(x => x.Id).Order(StringComparer.Ordinal))
-            .IsEquivalentTo([visible.Id, alsoVisible.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(page.Items.Select(x => x.Id).Order(StringComparer.Ordinal)).IsEquivalentTo([visible.Id, alsoVisible.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
 
         // The same must hold once a page limit forces a cursor: the excluded rows cannot occupy a slot.
         var paged = await PageThroughAsync(Query(), pageSize: 1);
-        await Assert.That(paged.Order(StringComparer.Ordinal))
-            .IsEquivalentTo([visible.Id, alsoVisible.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        await Assert.That(paged.Order(StringComparer.Ordinal)).IsEquivalentTo([visible.Id, alsoVisible.Id], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+    }
+
+    [Test]
+    public async Task AvailableScopeShowsASnapshotMemberOnlyWhenTheTaskUsesSnapshotMode()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+        var other = Subject("other");
+
+        var snapshotVisible = CreateTask(title: "Snapshot member");
+        snapshotVisible.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        snapshotVisible.SnapshotMembers = [alice];
+        snapshotVisible.CandidateUsers = [other];
+        await Repository.AddProjectionAsync(snapshotVisible);
+
+        var liveHidden = CreateTask(title: "Live ignores leftover snapshot members");
+        liveHidden.MembershipResolutionMode = UserTaskMembershipResolutionMode.Live;
+        liveHidden.SnapshotMembers = [alice];
+        liveHidden.CandidateUsers = [other];
+        await Repository.AddProjectionAsync(liveHidden);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice));
+
+        await Assert.That(page.TotalCount).IsEqualTo(1);
+        var onlyTask = await Assert.That(page.Items).HasSingleItem();
+        await Assert.That(onlyTask.Id).IsEqualTo(snapshotVisible.Id);
+    }
+
+    [Test]
+    public async Task AvailableScopeShowsALiveCandidateOnlyWhenTheTaskUsesLiveMode()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+        var other = Subject("other");
+
+        var liveVisible = CreateTask(title: "Live candidate");
+        liveVisible.MembershipResolutionMode = UserTaskMembershipResolutionMode.Live;
+        liveVisible.CandidateUsers = [alice];
+        liveVisible.SnapshotMembers = [other];
+        await Repository.AddProjectionAsync(liveVisible);
+
+        var snapshotHidden = CreateTask(title: "Snapshot ignores leftover live candidates");
+        snapshotHidden.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        snapshotHidden.CandidateUsers = [alice];
+        snapshotHidden.SnapshotMembers = [other];
+        await Repository.AddProjectionAsync(snapshotHidden);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice));
+
+        await Assert.That(page.TotalCount).IsEqualTo(1);
+        var onlyTask = await Assert.That(page.Items).HasSingleItem();
+        await Assert.That(onlyTask.Id).IsEqualTo(liveVisible.Id);
+    }
+
+    [Test]
+    public async Task AvailableScopeDoesNotTreatSnapshotGroupsAsLiveMembership()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+        var reviewers = Group("reviewers");
+
+        var snapshot = CreateTask(title: "Snapshot group without enumerated member");
+        snapshot.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        snapshot.CandidateGroups = [reviewers];
+        snapshot.SnapshotGroups = [reviewers];
+        await Repository.AddProjectionAsync(snapshot);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice) with
+        {
+            Scope = new(TenantId, alice, [reviewers], Kind: UserTaskQueryScopeKind.Available)
+        });
+
+        await Assert.That(page.Items).IsEmpty();
+        await Assert.That(page.TotalCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task AvailableScopeStillAppliesExclusionsBeforeSnapshotMembership()
+    {
+        await ActivateAsync();
+        var alice = Subject("alice");
+
+        var excluded = CreateTask(title: "Excluded snapshot member");
+        excluded.MembershipResolutionMode = UserTaskMembershipResolutionMode.Snapshot;
+        excluded.SnapshotMembers = [alice];
+        excluded.ExcludedUsers = [alice];
+        await Repository.AddProjectionAsync(excluded);
+
+        var page = await Repository.QueryAsync(Query(includeTotalCount: true, subject: alice));
+
+        await Assert.That(page.Items).IsEmpty();
+        await Assert.That(page.TotalCount).IsEqualTo(0);
     }
 
     [Test]
@@ -231,7 +373,8 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         await Assert.That(result.TotalCount).IsEqualTo(0);
     }
 
-    [Test, ConformanceCursorCases]
+    [Test]
+    [ConformanceCursorCases]
     public async Task CursorsAreStableAcrossEverySupportedSortAndDirection(string sort, bool descending)
     {
         await ActivateAsync();
@@ -244,8 +387,22 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
         // Paging must reproduce the unpaged order exactly: no row seen twice, none skipped, and no
         // dependence on the page size. A cursor that only works at one limit is not a cursor.
         foreach (var pageSize in new[] { 1, 2, 3 })
-            await Assert.That(await PageThroughAsync(query, pageSize))
-                .IsEquivalentTo(expected, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+            await Assert.That(await PageThroughAsync(query, pageSize)).IsEquivalentTo(expected, TUnit.Assertions.Enums.CollectionOrdering.Matching);
+    }
+
+    [Test]
+    public async Task UpdatedSortUsesUpdatedAtThenAscendingId()
+    {
+        await ActivateAsync();
+        await SeedSortableTasksAsync();
+
+        // Seed UpdatedAt order is Bravo, Foxtrot, Charlie+Delta (shared, Id tie), Echo, Alpha —
+        // not the created/title order — so a provider that still maps updated to created fails.
+        var ascending = await Repository.QueryAsync(Query(sort: "updated", limit: 200));
+        await Assert.That(ascending.Items.Select(x => x.Title)).IsEquivalentTo(["Bravo", "Foxtrot", "Charlie", "Delta", "Echo", "Alpha"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+
+        var descending = await Repository.QueryAsync(Query(sort: "updated", descending: true, limit: 200));
+        await Assert.That(descending.Items.Select(x => x.Title)).IsEquivalentTo(["Alpha", "Echo", "Charlie", "Delta", "Foxtrot", "Bravo"], TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -263,8 +420,7 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
             await Assert.That(firstNull).IsNotEqualTo(-1);
             // Once the nulls start they must not be interrupted, in either direction. A generic numeric
             // comparison reorders them and the cursor then drops or repeats rows at the boundary.
-            foreach (var dueDate in dueDates.Skip(firstNull))
-                await Assert.That(dueDate).IsNull();
+            await Assert.That(dueDates.Skip(firstNull)).All(x => x == null);
         }
     }
 
@@ -299,21 +455,23 @@ public abstract class UserTaskRepositoryConformanceTests(UserTaskStoreFixture fi
 
     /// <summary>
     /// Seeds a set that exercises every sort key at once: distinct titles, distinct priorities, a mix of
-    /// present and absent due dates, and two rows sharing a due date so the identity tiebreaker is used.
+    /// present and absent due dates, updated times that are not the created order, and two rows sharing a
+    /// due date and two sharing an updated time so the identity tiebreaker is used.
     /// </summary>
     private async Task SeedSortableTasksAsync()
     {
         var subject = Subject();
         var baseline = Clock.UtcNow;
         var shared = baseline.AddDays(3);
+        var sharedUpdated = baseline.AddHours(3);
         UserTask[] tasks =
         [
-            CreateTask(subject, "Alpha", priority: 10, dueAt: baseline.AddDays(1)),
-            CreateTask(subject, "Bravo", priority: 90, dueAt: shared),
-            CreateTask(subject, "Charlie", priority: 50, dueAt: shared),
-            CreateTask(subject, "Delta", priority: 30, dueAt: baseline.AddDays(5)),
-            CreateTask(subject, "Echo", priority: 70, dueAt: null),
-            CreateTask(subject, "Foxtrot", priority: 20, dueAt: null)
+            CreateTask(subject, "Alpha", priority: 10, dueAt: baseline.AddDays(1), updatedAt: baseline.AddHours(6)),
+            CreateTask(subject, "Bravo", priority: 90, dueAt: shared, updatedAt: baseline.AddHours(1)),
+            CreateTask(subject, "Charlie", priority: 50, dueAt: shared, updatedAt: sharedUpdated),
+            CreateTask(subject, "Delta", priority: 30, dueAt: baseline.AddDays(5), updatedAt: sharedUpdated),
+            CreateTask(subject, "Echo", priority: 70, dueAt: null, updatedAt: baseline.AddHours(5)),
+            CreateTask(subject, "Foxtrot", priority: 20, dueAt: null, updatedAt: baseline.AddHours(2))
         ];
 
         foreach (var task in tasks)

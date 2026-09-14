@@ -3,7 +3,6 @@ using Elsa.Diagnostics.StructuredLogs.Options;
 using Elsa.Diagnostics.StructuredLogs.Providers.InMemory;
 using Elsa.Diagnostics.StructuredLogs.Services;
 using MicrosoftOptions = Microsoft.Extensions.Options.Options;
-using System.Threading.Tasks;
 
 namespace Elsa.Diagnostics.StructuredLogs.UnitTests.InMemory;
 
@@ -42,6 +41,17 @@ public class InMemoryStructuredLogProviderTests
 
         await Assert.That(result.DroppedEvents).IsEqualTo(1);
         await Assert.That(result.Items.Select(x => x.Sequence)).IsEquivalentTo([2L, 4L], TUnit.Assertions.Enums.CollectionOrdering.Matching);
+    }
+
+    [Test]
+    public async Task GetRecentAsync_WhenMaxRecentLogQuerySizeIsNegative_ReturnsEmptyWithoutThrowing()
+    {
+        _options.MaxRecentLogQuerySize = -10;
+        await _provider.PublishAsync(CreateLog(1, StructuredLogLevel.Information));
+
+        var result = await _provider.GetRecentAsync(new() { Take = 25 });
+
+        await Assert.That(result.Items).IsEmpty();
     }
 
     [Test]

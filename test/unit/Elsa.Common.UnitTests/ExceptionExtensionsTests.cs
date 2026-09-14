@@ -1,7 +1,6 @@
 using Elsa.Common;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 
 namespace Elsa.Common.UnitTests;
 
@@ -53,6 +52,28 @@ public class ExceptionExtensionsTests
         var inner = new StackOverflowException();
         var outer = new TypeInitializationException("X", inner);
         await Assert.That(outer.IsFatal()).IsTrue();
+    }
+
+    [Test]
+    [DisplayName("AggregateException containing a fatal cause is fatal")]
+    public async Task AggregateWrappingFatalIsFatal()
+    {
+        var outer = new AggregateException(
+            new InvalidOperationException("recoverable"),
+            new AggregateException(new OutOfMemoryException("fatal")));
+
+        await Assert.That(outer.IsFatal()).IsTrue();
+    }
+
+    [Test]
+    [DisplayName("AggregateException containing only recoverable causes is not fatal")]
+    public async Task AggregateWrappingRecoverableIsNotFatal()
+    {
+        var outer = new AggregateException(
+            new InvalidOperationException("recoverable"),
+            new TimeoutException("recoverable"));
+
+        await Assert.That(outer.IsFatal()).IsFalse();
     }
 
     [Test]

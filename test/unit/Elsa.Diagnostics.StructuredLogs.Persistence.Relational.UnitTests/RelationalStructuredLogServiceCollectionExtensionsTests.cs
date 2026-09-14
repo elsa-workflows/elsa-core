@@ -2,6 +2,7 @@ using System.Data.Common;
 using Elsa.Diagnostics.StructuredLogs.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Contracts;
 using Elsa.Diagnostics.StructuredLogs.Persistence.Relational.Extensions;
+using Elsa.Diagnostics.StructuredLogs.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 
@@ -15,6 +16,7 @@ public class RelationalStructuredLogServiceCollectionExtensionsTests
         var services = new ServiceCollection();
         services.AddSingleton<IRelationalStructuredLogConnectionFactory, FakeConnectionFactory>();
         services.AddSingleton<IRelationalStructuredLogDialect, FakeDialect>();
+        services.AddSingleton<IStructuredLogSourceRegistry, StructuredLogSourceRegistry>();
 
         services.AddRelationalStructuredLogPersistence();
         var diagnosticsCount = Count<IStructuredLogStorageDiagnostics>(services);

@@ -17,6 +17,7 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Services;
 using Elsa.Workflows.State;
 using Elsa.Workflows.Telemetry;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using System.Threading.Tasks;
@@ -25,7 +26,6 @@ namespace Elsa.Workflows.Core.UnitTests.Telemetry;
 
 using DiagnosticsActivity = System.Diagnostics.Activity;
 
-[NotInParallel]
 public class WorkflowInstrumentationTests
 {
     [Test]
@@ -34,7 +34,7 @@ public class WorkflowInstrumentationTests
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
         var activity = new TestActivity { Name = "Test activity" };
-        var context = await new ActivityTestFixture(activity).BuildAsync();
+        var context = await BuildTelemetryContextAsync(activity);
         var invoker = new ActivityInvoker(new CompletingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         await invoker.InvokeAsync(context);
@@ -55,7 +55,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = await BuildTelemetryContextAsync(new TestActivity());
         var invoker = new ActivityInvoker(new CancellingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
@@ -72,7 +72,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = await BuildTelemetryContextAsync(new TestActivity());
         var invoker = new ActivityInvoker(new NonMutatingCancellingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => invoker.InvokeAsync(context));
@@ -91,7 +91,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         context.Workflow.WorkflowMetadata = new("Test workflow");
         context.ParentWorkflowInstanceId = "parent-instance-id";
@@ -124,7 +124,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         context.Workflow.WorkflowMetadata = new("Test workflow");
         var runner = CreateWorkflowRunner(context, new ThrowingWorkflowExecutionPipeline());
@@ -160,7 +160,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new CancellingWorkflowExecutionPipeline());
 
@@ -178,7 +178,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new NonMutatingCancellingWorkflowExecutionPipeline());
 
@@ -197,7 +197,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new ExceptionHandlingCancellingWorkflowExecutionPipeline());
 
@@ -215,7 +215,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         var notificationSender = Substitute.For<INotificationSender>();
         notificationSender
@@ -243,7 +243,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = await BuildTelemetryContextAsync(new TestActivity());
         var invoker = new ActivityInvoker(new ThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         var exception = await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
@@ -261,7 +261,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = await BuildTelemetryContextAsync(new TestActivity());
         var invoker = new ActivityInvoker(new CancelledThenThrowingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => invoker.InvokeAsync(context));
@@ -280,7 +280,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var context = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var context = await BuildTelemetryContextAsync(new TestActivity());
         var invoker = new ActivityInvoker(new FaultingActivityExecutionPipeline(), new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
 
         await invoker.InvokeAsync(context);
@@ -296,7 +296,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         var exception = new InvalidOperationException("Faulted by middleware");
         var runner = CreateWorkflowRunner(context, new FaultingWorkflowExecutionPipeline(exception));
@@ -314,7 +314,7 @@ public class WorkflowInstrumentationTests
     {
         using var activityCapture = new ActivityCapture();
         using var meterCapture = new MeterCapture();
-        var activityExecutionContext = await new ActivityTestFixture(new TestActivity()).BuildAsync();
+        var activityExecutionContext = await BuildTelemetryContextAsync(new TestActivity());
         var context = activityExecutionContext.WorkflowExecutionContext;
         var runner = CreateWorkflowRunner(context, new CancelledThenThrowingWorkflowExecutionPipeline());
 
@@ -361,6 +361,21 @@ public class WorkflowInstrumentationTests
             new WorkflowLoggerStateGenerator(),
             Substitute.For<ICommitStateHandler>(),
             NullLogger<WorkflowRunner>.Instance);
+    }
+
+    private static async Task<ActivityExecutionContext> BuildTelemetryContextAsync(IActivity activity)
+    {
+        var fixture = new ActivityTestFixture(activity)
+            .ConfigureServices(services => services.AddSingleton<IIdentityGenerator, GuidIdentityGenerator>());
+        var context = await fixture.BuildAsync();
+        var invocationId = Guid.NewGuid().ToString("N");
+        var identity = context.WorkflowExecutionContext.Workflow.Identity;
+        context.WorkflowExecutionContext.Workflow.Identity = identity with
+        {
+            DefinitionId = invocationId,
+            Id = $"{invocationId}:{identity.Version}"
+        };
+        return context;
     }
 
     private static async Task<DiagnosticsActivity> GetStoppedActivity(ActivityCapture capture, string operationName, string tagKey, object? tagValue)

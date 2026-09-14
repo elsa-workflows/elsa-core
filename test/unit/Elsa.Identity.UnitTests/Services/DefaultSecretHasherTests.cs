@@ -148,7 +148,7 @@ public class DefaultSecretHasherTests
     {
         var apiKeyGenerator = new DefaultApiKeyGeneratorAndParser();
         var apiKey = apiKeyGenerator.Generate("client-1");
-        var applicationStore = new MemoryApplicationStore(new MemoryStore<Application>());
+        var applicationStore = new MemoryApplicationStore(new MemoryStore<Application>(), TestTenantAccessor.Default);
         var legacyHash = CreateLegacyHash(apiKey);
         await applicationStore.SaveAsync(new Application
         {
