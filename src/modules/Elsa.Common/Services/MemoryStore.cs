@@ -10,6 +10,13 @@ namespace Elsa.Common.Services;
 public class MemoryStore<TEntity>
 {
     private IDictionary<string, TEntity> Entities { get; set; } = new ConcurrentDictionary<string, TEntity>();
+
+    /// <summary>
+    /// One lock for every scoped wrapper that shares this store. Compare-and-swap
+    /// load/match/write and the other Save/Delete paths take it so two scopes cannot
+    /// race on the same in-memory set.
+    /// </summary>
+    public object Sync { get; } = new();
     
     /// <summary>
     /// Gets a queryable of all entities.
