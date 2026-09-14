@@ -3,6 +3,7 @@ using Elsa.Secrets.Contracts;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Options;
 using Elsa.Secrets.Repositories;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.UnitTests;
@@ -13,6 +14,20 @@ namespace Elsa.Secrets.UnitTests;
 /// </summary>
 public class SecretRepositoryTenantIsolationTests
 {
+    [Fact]
+    public void Repositories_RetainPreTenancyConstructorShapes()
+    {
+        Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
+            typeof(IOptions<SecretsOptions>),
+            typeof(ILogger<FileSecretRepository>)]));
+        Assert.NotNull(typeof(FileSecretRepository).GetConstructor([
+            typeof(IOptions<SecretsOptions>),
+            typeof(ILogger<FileSecretRepository>),
+            typeof(ITenantAccessor)]));
+        Assert.NotNull(typeof(InMemorySecretRepository).GetConstructor(Type.EmptyTypes));
+        Assert.NotNull(typeof(InMemorySecretRepository).GetConstructor([typeof(ITenantAccessor)]));
+    }
+
     [Fact]
     public async Task Repositories_StampAndIsolateSecretsByTenant()
     {
@@ -231,6 +246,26 @@ public class SecretRepositoryTenantIsolationTests
     }
 
     [Fact]
+    public async Task Repositories_TreatNullAndEmptyTenantIdsAsTheSameDefaultTenantForUniqueness()
+    {
+        var inMemoryAccessor = new MutableTenantAccessor(null);
+        await AssertNullAndEmptyAreDuplicatesAsync(inMemoryAccessor, new InMemorySecretRepository(inMemoryAccessor));
+
+        var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
+        try
+        {
+            var accessor = new MutableTenantAccessor(null);
+            var options = Microsoft.Extensions.Options.Options.Create(new SecretsOptions { RepositoryFilePath = path });
+            await AssertNullAndEmptyAreDuplicatesAsync(accessor, new FileSecretRepository(options, tenantAccessor: accessor));
+        }
+        finally
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task FileRepository_DefaultTenantKeepsReadingLegacyNullTenantRows()
     {
         var path = Path.Join(Path.GetTempPath(), $"elsa-secrets-{Guid.NewGuid():N}.json");
@@ -260,6 +295,23 @@ public class SecretRepositoryTenantIsolationTests
     private static IDisposable UseTenant(ITenantAccessor tenantAccessor, string tenantId) =>
         tenantAccessor.PushContext(new Tenant { Id = tenantId, Name = tenantId });
 
+    private static async Task AssertNullAndEmptyAreDuplicatesAsync(MutableTenantAccessor tenantAccessor, ISecretRepository repository)
+    {
+        await repository.AddAsync(new Secret { Name = "legacy:secret", DisplayName = "Legacy" });
+        tenantAccessor.TenantId = "tenant-a";
+
+        var explicitDefault = new Secret
+        {
+            Name = "LEGACY:SECRET",
+            DisplayName = "Duplicate",
+            TenantId = Tenant.DefaultTenantId
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.AddAsync(explicitDefault));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(explicitDefault));
+        Assert.False(await repository.TryAddOrReplaceDeletedAsync(explicitDefault));
+    }
+
     private static async Task ForEachRepositoryAsync(Func<ITenantAccessor, ISecretRepository, Task> test)
     {
         var inMemoryAccessor = new DefaultTenantAccessor();
@@ -276,6 +328,25 @@ public class SecretRepositoryTenantIsolationTests
         {
             if (File.Exists(path))
                 File.Delete(path);
+        }
+    }
+
+    private sealed class MutableTenantAccessor(string? tenantId) : ITenantAccessor
+    {
+        public string TenantId { get; set; } = tenantId!;
+
+        public Tenant? Tenant => TenantId is null ? null : new Tenant { Id = TenantId, Name = TenantId };
+
+        public IDisposable PushContext(Tenant? tenant)
+        {
+            var previous = TenantId;
+            TenantId = tenant?.Id;
+            return new Scope(() => TenantId = previous);
+        }
+
+        private sealed class Scope(Action dispose) : IDisposable
+        {
+            public void Dispose() => dispose();
         }
     }
 }

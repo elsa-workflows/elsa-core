@@ -13,6 +13,12 @@ namespace Elsa.Secrets.Repositories;
 /// </remarks>
 public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : ISecretRepository
 {
+    // Keep the pre-tenancy parameterless constructor in the public binary surface. Optional parameters do
+    // not emit a zero-argument constructor for existing binaries to bind to.
+    public InMemorySecretRepository() : this(null)
+    {
+    }
+
     private readonly Dictionary<string, Secret> _secrets = new(StringComparer.Ordinal);
     private readonly object _sync = new();
 
@@ -70,8 +76,11 @@ public class InMemorySecretRepository(ITenantAccessor? tenantAccessor = null) : 
 
                 var replacement = Clone(secret);
                 replacement.TenantId = existing.TenantId;
-                if (replacement.Id != existing.Id)
-                    EnsureIdAvailable(replacement);
+
+                // Validate before removing the deleted row. Reusing its own ID is valid; another row's ID
+                // is a collision and must leave the deleted row untouched when validation fails.
+                if (replacement.Id != existing.Id && _secrets.ContainsKey(replacement.Id))
+                    return Task.FromResult(false);
 
                 _secrets.Remove(existing.Id);
                 _secrets.Add(replacement.Id, replacement);

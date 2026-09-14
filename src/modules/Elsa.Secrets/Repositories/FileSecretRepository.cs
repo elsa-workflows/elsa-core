@@ -11,6 +11,13 @@ public class FileSecretRepository(
     ILogger<FileSecretRepository>? logger = null,
     ITenantAccessor? tenantAccessor = null) : ISecretRepository
 {
+    // Keep the pre-tenancy constructor in the public binary surface. Optional parameters only preserve
+    // source compatibility; existing binaries still look for this exact two-argument constructor.
+    public FileSecretRepository(IOptions<SecretsOptions> options, ILogger<FileSecretRepository>? logger)
+        : this(options, logger, null)
+    {
+    }
+
     private readonly SemaphoreSlim _lock = new(1, 1);
     private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
     {

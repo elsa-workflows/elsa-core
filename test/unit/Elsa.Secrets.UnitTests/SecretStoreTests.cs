@@ -222,15 +222,14 @@ public class SecretStoreTests
             Status = SecretStatus.Deleted
         });
 
-        var collision = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            repository.TryAddOrReplaceDeletedAsync(new Secret
-            {
-                Id = "owned-id",
-                Name = "smtp:password",
-                DisplayName = "Replacement password"
-            }));
+        var replaced = await repository.TryAddOrReplaceDeletedAsync(new Secret
+        {
+            Id = "owned-id",
+            Name = "smtp:password",
+            DisplayName = "Replacement password"
+        });
 
-        Assert.Contains("owned-id", collision.Message);
+        Assert.False(replaced);
 
         var stillDeleted = await repository.GetAsync("smtp:password");
         Assert.NotNull(stillDeleted);
