@@ -52,10 +52,12 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         Module.AddMassTransitConsumer<DispatchStimulusRequestConsumer, DispatchStimulusRequestConsumerDefinition>("elsa-dispatch-stimulus");
         Module.Configure<WorkflowRuntimeFeature>(f =>
         {
+            // Same decorator shape as core: Validating → Transactional → MassTransit.
             f.WorkflowDispatcher = sp =>
             {
                 var decoratedService = ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
-                return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+                var transactionalService = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(sp, decoratedService);
+                return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, transactionalService);
             };
 
             f.WorkflowCancellationDispatcher = sp => sp.GetRequiredService<MassTransitWorkflowCancellationDispatcher>();

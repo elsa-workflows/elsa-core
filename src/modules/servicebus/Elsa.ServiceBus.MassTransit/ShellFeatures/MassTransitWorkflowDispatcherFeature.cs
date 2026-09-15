@@ -35,11 +35,13 @@ public class MassTransitWorkflowDispatcherFeature(ShellFeatureContext context) :
         services.AddScoped<MassTransitWorkflowDispatcher>();
         services.AddScoped<ValidatingWorkflowDispatcher>();
 
-        // Register as factory delegates that will be picked up by WorkflowRuntime
+        // Register as factory delegates that will be picked up by WorkflowRuntime.
+        // Same decorator shape as core: Validating → Transactional → MassTransit.
         services.AddSingleton<Func<IServiceProvider, IWorkflowDispatcher>>(sp =>
         {
             var decoratedService = sp.GetRequiredService<MassTransitWorkflowDispatcher>();
-            return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, decoratedService);
+            var transactionalService = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(sp, decoratedService);
+            return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, transactionalService);
         });
     }
 }
