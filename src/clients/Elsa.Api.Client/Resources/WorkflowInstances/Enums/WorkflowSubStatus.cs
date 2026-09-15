@@ -19,7 +19,7 @@ public enum WorkflowSubStatus
     /// The workflow is currently suspended and waiting for external stimuli to resume.   
     /// </summary>
     Suspended,
-    
+
     /// <summary>
     /// The workflow completed successfully.
     /// </summary>
@@ -40,4 +40,9 @@ public enum WorkflowSubStatus
     /// The instance is resumable and will be picked up by the runtime's shell-activation recovery scan.
     /// </summary>
     Interrupted,
+
+    /// <summary>
+    /// Cancellation was requested and is being processed.
+    /// </summary>
+    Cancelling,
 }
