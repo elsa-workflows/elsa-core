@@ -16,6 +16,10 @@ public class WorkflowDispatcherOptions
     /// <summary>
     /// Gets or sets whether workflow dispatch calls made during workflow execution are written to the transactional outbox.
     /// </summary>
+    /// <remarks>
+    /// When enabled, in-workflow child dispatches and in-workflow asynchronous event publications
+    /// (<c>PublishEvent</c> / <c>IEventPublisher</c>) are written to the same outbox and delivered after the parent state commits.
+    /// </remarks>
     public bool UseTransactionalOutbox { get; set; }
 
     /// <summary>
