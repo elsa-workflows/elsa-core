@@ -16,6 +16,7 @@ public class RemoteFeatureProvider(
 {
     private readonly SemaphoreSlim _catalogLock = new(1, 1);
     private IReadOnlyCollection<FeatureDescriptor>? _catalog;
+    private Uri? _catalogUrl;
 
     /// <inheritdoc />
     public async Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default)
@@ -37,25 +38,29 @@ public class RemoteFeatureProvider(
                 return [];
         }
 
-        if (_catalog is not null)
+        if (_catalog is not null && _catalogUrl == remoteBackendApiClientProvider.Url)
             return _catalog;
 
         await _catalogLock.WaitAsync(cancellationToken);
         try
         {
-            if (_catalog is not null)
+            var api = await remoteBackendApiClientProvider.GetApiAsync<IFeaturesApi>(cancellationToken);
+            var backendUrl = remoteBackendApiClientProvider.Url;
+
+            if (_catalog is not null && _catalogUrl == backendUrl)
                 return _catalog;
 
-            var api = await remoteBackendApiClientProvider.GetApiAsync<IFeaturesApi>(cancellationToken);
             try
             {
                 var response = await api.ListAsync(cancellationToken);
                 _catalog = response.Items.ToArray();
+                _catalogUrl = backendUrl;
                 return _catalog;
             }
             catch (ApiException e) when (e.StatusCode is HttpStatusCode.NotFound)
             {
                 _catalog = [];
+                _catalogUrl = backendUrl;
                 return _catalog;
             }
             catch (ApiException e) when (e.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)

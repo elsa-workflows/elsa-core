@@ -155,6 +155,8 @@ if (selectedAuthProvider != StudioAuthenticationProvider.ElsaLogin)
         .AddElsaStudioLoginThemes();
 }
 builder.Services.AddRemoteBackend(backendApiConfig);
+// Optional: multi-environment switching. Requires Elsa.Studio.Environments and a backend /environments API.
+// builder.Services.AddEnvironmentsModule(backendApiConfig);
 builder.Services.AddSettingsModule();
 builder.Services.AddSecurityModule(backendApiConfig);
 

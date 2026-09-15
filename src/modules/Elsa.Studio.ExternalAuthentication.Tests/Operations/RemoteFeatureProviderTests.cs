@@ -114,9 +114,62 @@ public class RemoteFeatureProviderTests
         return ApiException.Create(request, HttpMethod.Get, response, new RefitSettings()).GetAwaiter().GetResult();
     }
 
+    [Fact]
+    public async Task FeatureChecks_RefetchWhenBackendUrlChanges()
+    {
+        var api = new FeaturesApi();
+        var backend = new BackendApiClientProvider(api);
+        var provider = new RemoteFeatureProvider(backend);
+
+        Assert.True(await provider.IsEnabledAsync("Elsa.ExternalAuthentication"));
+        Assert.Equal(1, api.ListCalls);
+
+        backend.Url = new("https://other.example.test/");
+        Assert.True(await provider.IsEnabledAsync("Elsa.ExternalAuthentication"));
+        Assert.Equal(2, api.ListCalls);
+    }
+
+    [Fact]
+    public async Task FeatureChecks_DoNotCacheUnderStaleUrlWhenEnvironmentChangesMidLoad()
+    {
+        var firstListStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstList = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var api = new FeaturesApi();
+        api.Responses.Enqueue(async _ =>
+        {
+            firstListStarted.SetResult();
+            await releaseFirstList.Task;
+            return FeaturesFor("Elsa.A");
+        });
+        api.Responses.Enqueue(_ => Task.FromResult(FeaturesFor("Elsa.B")));
+        api.Responses.Enqueue(_ => Task.FromResult(FeaturesFor("Elsa.A")));
+
+        var backend = new BackendApiClientProvider(api);
+        var provider = new RemoteFeatureProvider(backend);
+
+        var firstCheck = provider.IsEnabledAsync("Elsa.A");
+        await firstListStarted.Task;
+
+        // A second check waits on the catalog lock, then must re-read Url after GetApiAsync.
+        var secondCheck = provider.IsEnabledAsync("Elsa.A");
+        backend.Url = new("https://b.example.test/");
+        releaseFirstList.SetResult();
+
+        Assert.True(await firstCheck);
+        Assert.False(await secondCheck);
+
+        backend.Url = new("https://elsa.example.test/");
+        Assert.True(await provider.IsEnabledAsync("Elsa.A"));
+        Assert.False(await provider.IsEnabledAsync("Elsa.B"));
+        Assert.Equal(3, api.ListCalls);
+    }
+
+    private static ListResponse<FeatureDescriptor> FeaturesFor(string fullName) =>
+        new([new FeatureDescriptor { FullName = fullName }], 1);
+
     private sealed class BackendApiClientProvider(IFeaturesApi api) : IBackendApiClientProvider
     {
-        public Uri Url { get; } = new("https://elsa.example.test/");
+        public Uri Url { get; set; } = new("https://elsa.example.test/");
 
         public ValueTask<T> GetApiAsync<T>(CancellationToken cancellationToken = default) where T : class =>
             ValueTask.FromResult((T)api);
