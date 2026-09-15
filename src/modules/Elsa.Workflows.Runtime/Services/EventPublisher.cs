@@ -1,11 +1,12 @@
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
-public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher stimulusDispatcher) : IEventPublisher
+public class EventPublisher(IStimulusSender stimulusSender, IWorkflowDispatcher workflowDispatcher) : IEventPublisher
 {
     /// <inheritdoc />
     public async Task PublishAsync(
@@ -22,6 +23,20 @@ public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher 
         {
             [Event.EventInputWorkflowInputKey] = payload ?? new Dictionary<string, object>()
         };
+        var triggerName = ActivityTypeNameHelper.GenerateTypeName<Event>();
+
+        if (asynchronous)
+        {
+            await workflowDispatcher.DispatchAsync(new DispatchTriggerWorkflowsRequest(triggerName, stimulus)
+            {
+                CorrelationId = correlationId,
+                WorkflowInstanceId = workflowInstanceId,
+                ActivityInstanceId = activityInstanceId,
+                Input = workflowInput
+            }, options: null, cancellationToken);
+            return;
+        }
+
         var metadata = new StimulusMetadata
         {
             CorrelationId = correlationId,
@@ -29,17 +44,6 @@ public class EventPublisher(IStimulusSender stimulusSender, IStimulusDispatcher 
             WorkflowInstanceId = workflowInstanceId,
             Input = workflowInput
         };
-        var triggerName = ActivityTypeNameHelper.GenerateTypeName<Event>();
-        if (asynchronous)
-        {
-            await stimulusDispatcher.SendAsync(new()
-            {
-                ActivityTypeName = triggerName,
-                Stimulus = stimulus,
-                Metadata = metadata
-            }, cancellationToken);
-        }
-        else
-            await stimulusSender.SendAsync(triggerName, stimulus, metadata, cancellationToken);
+        await stimulusSender.SendAsync(triggerName, stimulus, metadata, cancellationToken);
     }
 }
