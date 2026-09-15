@@ -45,11 +45,19 @@ public class DistributedWorkflowClient(
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
             ParentId = request.ParentId
         };
-        var workflowInstance = await _localWorkflowClient.CreateInstanceInternalAsync(createRequest, cancellationToken);
-        
+        var createResponse = await _localWorkflowClient.CreateInstanceAsync(createRequest, cancellationToken);
+        if (createResponse.CannotStart)
+        {
+            return new()
+            {
+                CannotStart = true,
+                WorkflowInstanceId = WorkflowInstanceId
+            };
+        }
+
         // We need to lock newly created workflow instances too, because it might dispatch child workflows that attempt to resume the parent workflow.
         // For example, when using a DispatchWorkflow activity configured to wait for the dispatched workflow to complete.
-        return await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(workflowInstance, new()
+        return await WithLockAsync(async () => await _localWorkflowClient.RunInstanceAsync(new()
         {
             Input = request.Input,
             Variables = request.Variables,
