@@ -18,13 +18,6 @@ namespace Elsa.Scheduling.Hangfire.ShellFeatures;
 public class HangfireShellFeature : IShellFeature
 {
     [ManifestSetting(
-        DisplayName = "Use memory storage",
-        Description = "Use Hangfire's in-memory storage provider.",
-        Category = "Storage",
-        RestartRequired = true)]
-    public bool UseMemoryStorage { get; set; } = true;
-
-    [ManifestSetting(
         DisplayName = "Worker count",
         Description = "The number of Hangfire worker threads to run.",
         Category = "Workers",
@@ -40,7 +33,9 @@ public class HangfireShellFeature : IShellFeature
 
     public void ConfigureServices(IServiceCollection services)
     {
-        var jobStorage = UseMemoryStorage ? new() : null ?? new MemoryStorage();
+        // Memory storage is the only provider this shell feature configures.
+        // SQL Server / SQLite remain on the classic HangfireFeature path (or a self-hosted Hangfire setup).
+        var jobStorage = new MemoryStorage();
 
         services.AddHangfire(cfg =>
         {
