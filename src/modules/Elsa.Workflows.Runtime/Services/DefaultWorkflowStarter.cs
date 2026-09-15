@@ -15,7 +15,8 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         var canStart = await workflowActivationStrategyEvaluator.CanStartWorkflowAsync(new()
         {
             Workflow = workflow,
-            CorrelationId = request.CorrelationId
+            CorrelationId = request.CorrelationId,
+            CancellationToken = cancellationToken
         });
 
         if (!canStart)
@@ -39,6 +40,13 @@ public class DefaultWorkflowStarter(IWorkflowDefinitionService workflowDefinitio
         };
 
         var runWorkflowResponse = await workflowClient.CreateAndRunInstanceAsync(createWorkflowInstanceRequest, cancellationToken);
+
+        if (runWorkflowResponse.CannotStart)
+            return new()
+            {
+                CannotStart = true
+            };
+
         return new()
         {
             CannotStart = false,

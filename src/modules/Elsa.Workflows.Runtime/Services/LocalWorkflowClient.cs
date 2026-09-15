@@ -22,6 +22,7 @@ public class LocalWorkflowClient(
     IWorkflowDefinitionService workflowDefinitionService,
     IWorkflowRunner workflowRunner,
     IWorkflowCanceler workflowCanceler,
+    IWorkflowActivationGate workflowActivationGate,
     WorkflowStateMapper workflowStateMapper,
     ILogger<LocalWorkflowClient> logger) : IWorkflowClient
 {
@@ -33,6 +34,16 @@ public class LocalWorkflowClient(
     {
         var workflowDefinitionHandle = request.WorkflowDefinitionHandle;
         var workflowGraph = await GetWorkflowGraphAsync(workflowDefinitionHandle, cancellationToken);
+
+        await using var lease = await workflowActivationGate.EvaluateAsync(workflowGraph.Workflow, request.CorrelationId, cancellationToken);
+        if (!lease.CanStart)
+        {
+            logger.LogWarning("Workflow activation strategy disallowed creating instance of {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", workflowDefinitionHandle, request.CorrelationId);
+            return new()
+            {
+                CannotStart = true
+            };
+        }
 
         var options = new WorkflowInstanceOptions
         {
@@ -67,8 +78,17 @@ public class LocalWorkflowClient(
             WorkflowDefinitionHandle = request.WorkflowDefinitionHandle,
             ParentId = request.ParentId
         };
-        var workflowInstance = await CreateInstanceInternalAsync(createRequest, cancellationToken);
-        return await RunInstanceAsync(workflowInstance, new()
+        var createResponse = await CreateInstanceAsync(createRequest, cancellationToken);
+        if (createResponse.CannotStart)
+        {
+            return new()
+            {
+                CannotStart = true,
+                WorkflowInstanceId = WorkflowInstanceId
+            };
+        }
+
+        return await RunInstanceAsync(new()
         {
             Input = request.Input,
             Variables = request.Variables,

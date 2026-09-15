@@ -1,3 +1,4 @@
+using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Exceptions;
@@ -17,6 +18,7 @@ public class LocalWorkflowClientTests
     private readonly IWorkflowDefinitionService _workflowDefinitionService = Substitute.For<IWorkflowDefinitionService>();
     private readonly IWorkflowRunner _workflowRunner = Substitute.For<IWorkflowRunner>();
     private readonly IWorkflowCanceler _workflowCanceler = Substitute.For<IWorkflowCanceler>();
+    private readonly IWorkflowActivationGate _workflowActivationGate = Substitute.For<IWorkflowActivationGate>();
     private readonly WorkflowStateMapper _workflowStateMapper = Substitute.For<WorkflowStateMapper>();
     private readonly ILogger<LocalWorkflowClient> _logger = Substitute.For<ILogger<LocalWorkflowClient>>();
 
@@ -117,14 +119,71 @@ public class LocalWorkflowClientTests
             client.CreateAndRunInstanceAsync(request));
     }
 
-    private LocalWorkflowClient CreateClient()
+    [Fact]
+    public async Task CreateInstanceAsync_ReturnsCannotStart_WhenActivationGateDenies()
     {
+        var client = CreateClient(canStart: false);
+        var request = new CreateWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition"),
+            CorrelationId = "order-1"
+        };
+        SetupWorkflowGraph("test-definition");
+
+        var response = await client.CreateInstanceAsync(request);
+
+        Assert.True(response.CannotStart);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAndCommitWorkflowInstanceAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task CreateAndRunInstanceAsync_ReturnsCannotStart_WhenActivationGateDenies()
+    {
+        var client = CreateClient(canStart: false);
+        var request = new CreateAndRunWorkflowInstanceRequest
+        {
+            WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId("test-definition"),
+            CorrelationId = "order-1"
+        };
+        SetupWorkflowGraph("test-definition");
+
+        var response = await client.CreateAndRunInstanceAsync(request);
+
+        Assert.True(response.CannotStart);
+        await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAndCommitWorkflowInstanceAsync(default!, default, default);
+    }
+
+    private void SetupWorkflowGraph(string definitionId)
+    {
+        var workflow = new Workflow
+        {
+            Id = definitionId,
+            Identity = new WorkflowIdentity(definitionId, 1, definitionId)
+        };
+        var node = new ActivityNode(workflow, "Root");
+        var graph = new WorkflowGraph(workflow, node, [node]);
+        var definition = new WorkflowDefinition
+        {
+            Id = definitionId,
+            DefinitionId = definitionId
+        };
+
+        _workflowDefinitionService.TryFindWorkflowGraphAsync(Arg.Any<WorkflowDefinitionHandle>(), Arg.Any<CancellationToken>())
+            .Returns(new WorkflowGraphFindResult(definition, graph));
+    }
+
+    private LocalWorkflowClient CreateClient(bool canStart = true)
+    {
+        _workflowActivationGate.EvaluateAsync(Arg.Any<Workflow>(), Arg.Any<string?>(), Arg.Any<CancellationToken>())
+            .Returns(canStart ? new WorkflowActivationLease(true, null) : WorkflowActivationLease.Denied);
+
         return new(
             "test-workflow-instance-id",
             _workflowInstanceManager,
             _workflowDefinitionService,
             _workflowRunner,
             _workflowCanceler,
+            _workflowActivationGate,
             _workflowStateMapper,
             _logger);
     }

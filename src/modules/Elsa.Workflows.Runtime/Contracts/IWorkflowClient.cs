@@ -15,6 +15,7 @@ public interface IWorkflowClient
     
     /// <summary>
     /// Creates a new workflow instance for the specified workflow definition version.
+    /// Returns <c>CannotStart</c> when the workflow's activation strategy refuses a new instance.
     /// </summary>
     Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
     
@@ -25,6 +26,7 @@ public interface IWorkflowClient
     
     /// <summary>
     /// Creates a new workflow instance and executes it.
+    /// Returns <c>CannotStart</c> when the workflow's activation strategy refuses a new instance.
     /// </summary>
     Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
     

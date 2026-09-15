@@ -67,6 +67,23 @@ Key files:
 - [BookmarkResumer](../../src/modules/Elsa.Workflows.Runtime/Services/BookmarkResumer.cs)
 - [TriggerInvoker](../../src/modules/Elsa.Workflows.Runtime/Services/TriggerInvoker.cs)
 
+## Correlation IDs And Activation Strategies
+
+`CorrelationId` groups and routes instances. It is not a unique identity unless the workflow opts into an activation strategy. The decision is recorded in [Refuse duplicate running instances through activation strategies](../adr/2026-09-15-correlated-workflow-activation.md).
+
+| Strategy | Running-instance uniqueness | Blank `CorrelationId` |
+| --- | --- | --- |
+| None / `AllowAlwaysStrategy` (default) | None. Many Running instances may share a correlation ID. | Many |
+| `CorrelatedSingletonStrategy` | At most one Running instance per `(DefinitionId, CorrelationId)`. Different definitions may share a correlation ID. | Many |
+| `CorrelationStrategy` | At most one Running instance per `CorrelationId` across definitions. | Many |
+| `SingletonStrategy` | At most one Running instance per definition. | N/A |
+
+`StartWorkflow` and `DispatchWorkflowDefinition` both evaluate the strategy at create time. The check is serialized with the persist of the new instance so two concurrent dispatches cannot both observe "no Running instance" and both create one. A refused create returns `CannotStart` and does not attach to or resume the existing instance. Later events for the same conversation should resume through stimulus / bookmarks, not by dispatching the definition again.
+
+Conversation workflows that treat `CorrelationId` as the identity of a long-running process should set `CorrelatedSingletonStrategy` (or `CorrelationStrategy` when the conversation key is process-wide). Clustered hosts must use a cross-node `IDistributedLockProvider`; the default file-system provider only coordinates on one node.
+
+Do not add a unique database index on `CorrelationId`. That would collapse the three scopes above and reject blank correlation IDs.
+
 ## Transactional Dispatch Outbox
 
 Hosts can opt into at-least-once workflow dispatch for dispatch calls made from inside a running workflow, including child workflow dispatches and in-workflow asynchronous event publications (`PublishEvent` / `IEventPublisher.PublishAsync(..., asynchronous: true)`):

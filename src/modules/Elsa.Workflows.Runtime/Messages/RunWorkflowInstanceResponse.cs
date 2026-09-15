@@ -33,4 +33,10 @@ public record RunWorkflowInstanceResponse
     /// The output produced by the workflow instance.
     /// </summary>
     public IDictionary<string, object>? Output { get; set; }
+
+    /// <summary>
+    /// When <c>true</c>, the workflow's activation strategy refused to create a new instance.
+    /// No instance was persisted. Other fields are unset.
+    /// </summary>
+    public bool CannotStart { get; set; }
 }
