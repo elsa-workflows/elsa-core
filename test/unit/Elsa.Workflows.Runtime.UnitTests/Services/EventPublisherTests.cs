@@ -25,15 +25,7 @@ public class EventPublisherTests
         await publisher.PublishAsync(eventName, correlationId, workflowInstanceId, activityInstanceId, payload, asynchronous: true);
 
         await _workflowDispatcher.Received(1).DispatchAsync(
-            Arg.Is<DispatchTriggerWorkflowsRequest>(request =>
-                request.ActivityTypeName == ActivityTypeNameHelper.GenerateTypeName<Event>() &&
-                request.BookmarkPayload is EventStimulus stimulus &&
-                stimulus.EventName == eventName &&
-                request.CorrelationId == correlationId &&
-                request.WorkflowInstanceId == workflowInstanceId &&
-                request.ActivityInstanceId == activityInstanceId &&
-                request.Input != null &&
-                request.Input[Event.EventInputWorkflowInputKey] == payload),
+            Arg.Is<DispatchTriggerWorkflowsRequest>(request => IsMatchingTriggerRequest(request, eventName, correlationId, workflowInstanceId, activityInstanceId, payload)),
             Arg.Any<DispatchWorkflowOptions?>(),
             Arg.Any<CancellationToken>());
         await _stimulusSender.DidNotReceiveWithAnyArgs().SendAsync(default!, default!, default, default);
@@ -59,4 +51,23 @@ public class EventPublisherTests
     }
 
     private EventPublisher CreatePublisher() => new(_stimulusSender, _workflowDispatcher);
+
+    private static bool IsMatchingTriggerRequest(
+        DispatchTriggerWorkflowsRequest request,
+        string eventName,
+        string correlationId,
+        string workflowInstanceId,
+        string activityInstanceId,
+        object payload)
+    {
+        var stimulus = request.BookmarkPayload as EventStimulus;
+        return request.ActivityTypeName == ActivityTypeNameHelper.GenerateTypeName<Event>() &&
+               stimulus != null &&
+               stimulus.EventName == eventName &&
+               request.CorrelationId == correlationId &&
+               request.WorkflowInstanceId == workflowInstanceId &&
+               request.ActivityInstanceId == activityInstanceId &&
+               request.Input != null &&
+               request.Input[Event.EventInputWorkflowInputKey] == payload;
+    }
 }

@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.KeyValues.Features;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
@@ -32,6 +33,7 @@ public class Tests
         await services.PopulateRegistriesAsync();
 
         var parentResponse = await RunPublisherAsync(services);
+        Assert.Equal(WorkflowStatus.Finished, parentResponse.Status);
 
         var outboxItems = (await services.GetRequiredService<IWorkflowDispatchOutboxStore>().FindManyAsync()).ToList();
         var outboxItem = Assert.Single(outboxItems);
@@ -60,8 +62,8 @@ public class Tests
         var services = CreateServices(useTransactionalOutbox: false, processOutboxAfterCommit: false);
         await services.PopulateRegistriesAsync();
 
-        await RunPublisherAsync(services);
-
+        var parentResponse = await RunPublisherAsync(services);
+        Assert.Equal(WorkflowStatus.Finished, parentResponse.Status);
         Assert.Empty(await services.GetRequiredService<IWorkflowDispatchOutboxStore>().FindManyAsync());
     }
 
@@ -70,6 +72,7 @@ public class Tests
         return new TestApplicationBuilder(_testOutputHelper)
             .AddWorkflow<PublishOrderShippedEventWorkflow>()
             .AddWorkflow<ConsumeOrderShippedEventWorkflow>()
+            .ConfigureElsa(elsa => elsa.Configure<KeyValueFeature>())
             .ConfigureServices(services => services.Configure<WorkflowDispatcherOptions>(options =>
             {
                 options.UseTransactionalOutbox = useTransactionalOutbox;
@@ -88,7 +91,7 @@ public class Tests
         });
     }
 
-    private static Task<IEnumerable<WorkflowInstance>> FindConsumerInstancesAsync(IServiceProvider services)
+    private static ValueTask<IEnumerable<WorkflowInstance>> FindConsumerInstancesAsync(IServiceProvider services)
     {
         return services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(new WorkflowInstanceFilter
         {
