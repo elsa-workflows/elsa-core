@@ -1,5 +1,6 @@
 using Elsa.Common.Models;
 using Elsa.KeyValues.Features;
+using Elsa.Mediator.HostedServices;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
@@ -13,6 +14,7 @@ using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Stimuli;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.PublishEventOutbox;
@@ -54,6 +56,19 @@ public class Tests
         await services.GetRequiredService<IWorkflowDispatchOutboxProcessor>().ProcessAsync();
 
         Assert.Empty(await services.GetRequiredService<IWorkflowDispatchOutboxStore>().FindManyAsync());
+
+        var commandProcessor = services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+        await commandProcessor.StartAsync(CancellationToken.None);
+
+        try
+        {
+            await WaitUntilConsumerInstanceExistsAsync(services);
+            Assert.Single(await FindConsumerInstancesAsync(services));
+        }
+        finally
+        {
+            await commandProcessor.StopAsync(CancellationToken.None);
+        }
     }
 
     [Fact(DisplayName = "With outbox off, in-workflow PublishEvent is not written to the outbox")]
@@ -97,5 +112,20 @@ public class Tests
         {
             DefinitionId = nameof(ConsumeOrderShippedEventWorkflow)
         });
+    }
+
+    private static async Task WaitUntilConsumerInstanceExistsAsync(IServiceProvider services)
+    {
+        using var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+
+        while (!timeoutTokenSource.IsCancellationRequested)
+        {
+            if ((await FindConsumerInstancesAsync(services)).Any())
+                return;
+
+            await Task.Delay(50);
+        }
+
+        Assert.Fail("ConsumeOrderShippedEventWorkflow was not created before the timeout elapsed.");
     }
 }
