@@ -107,7 +107,7 @@ public class WorkflowActivationGateTests
         return new(
             evaluator,
             lockProvider,
-            Options.Create(new DistributedLockingOptions()),
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             tenantAccessor);
     }
 

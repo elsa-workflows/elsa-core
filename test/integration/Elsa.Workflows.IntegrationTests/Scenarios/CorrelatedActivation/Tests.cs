@@ -63,11 +63,11 @@ public class Tests
                 dispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(graph.Workflow.Identity.Id)
                 {
                     CorrelationId = "conversation-1"
-                }),
+                }, null),
                 dispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(graph.Workflow.Identity.Id)
                 {
                     CorrelationId = "conversation-1"
-                }));
+                }, null));
 
             await WaitUntilAsync(async () => (await FindRunningAsync(services, nameof(CorrelatedSingletonConversationWorkflow), "conversation-1")).Count != 0);
 
